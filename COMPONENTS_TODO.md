@@ -22,50 +22,51 @@
 - [x] Toast
 - [x] Alert
 - [x] Kbd
-
 A faire (dans l'ordre proposé)
-- [ ] Accordion
-- [ ] Calendar
-- [ ] Card
-- [ ] Carousel
-- [ ] Chat Bubble
-- [ ] Collapse
-- [ ] Countdown
-- [ ] Diff
-- [ ] Dock
-- [ ] Drawer
-- [ ] Fieldset
-- [ ] File Input
-- [ ] Filter
-- [ ] Footer
-- [ ] Hero
-- [ ] Indicator
-- [ ] Join
-- [ ] List
-- [ ] Mask
-- [ ] Menu
-- [ ] Mockup Browser
-- [ ] Mockup Code
-- [ ] Mockup Phone
-- [ ] Mockup Window
-- [ ] Navbar
-- [ ] Pagination
-- [ ] Progress
-- [ ] Radial Progress
-- [ ] Range Slider
-- [ ] Rating
-- [ ] Skeleton
-- [ ] Stack
-- [ ] Stat
-- [ ] Status
-- [ ] Steps
-- [ ] Swap
-- [ ] Tabs
-- [ ] Table
-- [ ] Theme Controller
-- [ ] Timeline
-- [ ] Tooltip
-- [ ] Validator
+- [x] Card
+- [x] Indicator
+- [x] Progress
+- [x] Radial Progress
+- [x] Rating
+- [x] Stat
+- [x] Skeleton
+- [x] Stack
+- [x] Timeline
+- [x] Steps
+- [x] Tooltip
+- [x] Collapse
+- [x] Accordion
+- [x] Tabs
+- [x] Swap
+- [x] Menu
+- [x] Navbar
+- [x] Drawer
+- [ ] Modal (déjà fait - peut servir de base)
+- [ ] Dropdown (déjà fait - peut servir de base)
+- [x] Pagination
+- [x] Table
+- [x] List
+- [x] Join
+- [x] Fieldset
+- [x] File Input
+- [x] Range Slider
+- [x] Mask
+- [x] Calendar
+- [x] Filter
+- [x] Hero
+- [x] Footer
+- [x] Carousel
+- [x] Chat Bubble
+- [x] Countdown
+- [x] Diff
+- [x] Dock
+- [x] Mockup Browser
+- [x] Mockup Code
+- [x] Mockup Phone
+- [x] Mockup Window
+- [x] Theme Controller
+- [x] Status
+- [x] Validator
 
 Note: chaque composant doit offrir des props de personnalisation cohérentes avec la doc DaisyUI et des exemples dans `resources/views/demo.blade.php`.
 
