@@ -1,0 +1,71 @@
+# DaisyUI Kit - Avancement des composants
+
+- [x] Layout
+- [x] Button
+- [x] Input
+- [x] Label
+- [x] Select
+- [x] Textarea
+- [x] Checkbox
+- [x] Radio
+- [x] Toggle
+- [x] Loading
+- [x] Icon
+- [x] Login Button
+- [x] Divider
+- [x] Badge
+- [x] Avatar
+- [x] Link
+- [x] Breadcrumbs
+- [x] Dropdown
+- [x] Modal
+- [x] Toast
+- [x] Alert
+- [x] Kbd
+
+A faire (dans l'ordre proposé)
+- [ ] Accordion
+- [ ] Calendar
+- [ ] Card
+- [ ] Carousel
+- [ ] Chat Bubble
+- [ ] Collapse
+- [ ] Countdown
+- [ ] Diff
+- [ ] Dock
+- [ ] Drawer
+- [ ] Fieldset
+- [ ] File Input
+- [ ] Filter
+- [ ] Footer
+- [ ] Hero
+- [ ] Indicator
+- [ ] Join
+- [ ] List
+- [ ] Mask
+- [ ] Menu
+- [ ] Mockup Browser
+- [ ] Mockup Code
+- [ ] Mockup Phone
+- [ ] Mockup Window
+- [ ] Navbar
+- [ ] Pagination
+- [ ] Progress
+- [ ] Radial Progress
+- [ ] Range Slider
+- [ ] Rating
+- [ ] Skeleton
+- [ ] Stack
+- [ ] Stat
+- [ ] Status
+- [ ] Steps
+- [ ] Swap
+- [ ] Tabs
+- [ ] Table
+- [ ] Theme Controller
+- [ ] Timeline
+- [ ] Tooltip
+- [ ] Validator
+
+Note: chaque composant doit offrir des props de personnalisation cohérentes avec la doc DaisyUI et des exemples dans `resources/views/demo.blade.php`.
+
