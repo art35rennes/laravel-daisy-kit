@@ -1,5 +1,25 @@
 * text=auto eol=lf
 
+# Exclure les artefacts d'application lors de l'export (pour Packagist)
+/artisan export-ignore
+/public export-ignore
+/routes export-ignore
+/bootstrap export-ignore
+/config export-ignore
+/database export-ignore
+/.env* export-ignore
+/.github export-ignore
+/.idea export-ignore
+/.vscode export-ignore
+/storage export-ignore
+/tests export-ignore
+/vendor export-ignore
+/phpunit.xml export-ignore
+/package.json export-ignore
+/package-lock.json export-ignore
+/vite.config.js export-ignore
+* text=auto eol=lf
+
 *.blade.php diff=html
 *.css diff=css
 *.html diff=html
