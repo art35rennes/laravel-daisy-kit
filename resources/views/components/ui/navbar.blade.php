@@ -26,12 +26,12 @@
 
 <div {{ $attributes->merge(['class' => $classes]) }}>
     <div class="navbar-start">
-        {{ $start ?? '' }}
+        {{ $start ?? ($brand ?? '') }}
     </div>
     <div class="{{ $centerClasses }}">
-        {{ $center ?? '' }}
+        {{ $center ?? ($nav ?? '') }}
     </div>
     <div class="navbar-end">
-        {{ $end ?? '' }}
+        {{ $end ?? ($actions ?? '') }}
     </div>
 </div>
