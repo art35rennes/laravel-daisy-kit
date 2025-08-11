@@ -3,11 +3,13 @@ alwaysApply: true
 ---
 Ce projet Laravel est un package et non une application. Il faut donc prendre en compte cet aspect dans la génération de code.
 
+Toujours privilégier les composants déjà développés dans le package avant de créer de nouveaux composants. Vérifier d'abord l'existence des composants existants dans resources/views/components/ui/.
+
 Pour les icônes, le package blade-ui-kit/blade-icons est installé et doit être privilégié. Ne créer un icône SVG personnalisé que pour les cas spécifiques ou absents de cette bibliothèque.
 
 La page de démonstration (demo.blade.php) doit être organisée par sections de composants. Chaque composant doit avoir sa propre section dédiée avec des exemples d'utilisation.
 
-Liste des composants à inclure dans la démonstration :
+Liste des composants :
 - Accordion
 - Alert
 - Avatar
@@ -39,6 +41,7 @@ Liste des composants à inclure dans la démonstration :
 - Link
 - List
 - Loading
+- Login Button
 - Mask
 - Menu
 - Mockup Browser
