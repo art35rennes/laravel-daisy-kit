@@ -2256,6 +2256,158 @@
             </div>
         </section>
 
+        <!-- Layouts avancés: Navbar / Sidebar / Combiné -->
+        <section class="space-y-6 bg-base-200 p-6 rounded-box">
+            <h2 class="text-lg font-medium">Layouts</h2>
+            <div class="space-y-10">
+                <!-- Navbar layout -->
+                <div class="space-y-3">
+                    <h3 class="font-semibold">Navbar</h3>
+                    <x-daisy::layout.navbar-layout title="DaisyKit Demo" navbarBg="base-100" navbarShadow="sm" :navbarFixed="false">
+                        <x-slot:brand>
+                            <a class="btn btn-ghost text-xl">DaisyKit</a>
+                        </x-slot:brand>
+                        <x-slot:nav>
+                            <x-daisy::ui.menu :vertical="false" class="px-1">
+                                <li><a>{{ __('daisy::layout.menu') }}</a></li>
+                                <li>
+                                    <details>
+                                        <summary>Docs</summary>
+                                        <ul class="p-2">
+                                            <li><a>Guide</a></li>
+                                            <li><a>API</a></li>
+                                        </ul>
+                                    </details>
+                                </li>
+                                <li><a>Blog</a></li>
+                            </x-daisy::ui.menu>
+                        </x-slot:nav>
+                        <x-slot:actions>
+                            <button class="btn btn-ghost btn-circle">
+                                <x-heroicon-o-bell class="h-6 w-6" />
+                            </button>
+                            <button class="btn btn-primary">{{ __('daisy::layout.profile') }}</button>
+                        </x-slot:actions>
+
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div class="card bg-base-100 shadow">
+                                <div class="card-body">
+                                    <div class="card-title">Card content</div>
+                                    <p>Contenu de démonstration.</p>
+                                </div>
+                            </div>
+                            <div class="card bg-base-100 shadow">
+                                <div class="card-body">
+                                    <div class="card-title">Card content</div>
+                                    <p>Contenu de démonstration.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </x-daisy::layout.navbar-layout>
+                </div>
+
+                <!-- Sidebar layout (slim & wide) -->
+                <div class="space-y-3">
+                    <h3 class="font-semibold">Sidebar</h3>
+                    <div class="grid gap-6 lg:grid-cols-2">
+                        <!-- Slim -->
+                        <x-daisy::layout.sidebar-layout title="Slim Sidebar" variant="slim">
+                            <x-slot:sidebar>
+                                <li>
+                                    <a class="gap-3">
+                                        <x-heroicon-o-home class="w-5 h-5" />
+                                        <span class="hidden lg:inline">Home</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="gap-3">
+                                        <x-heroicon-o-cog-6-tooth class="w-5 h-5" />
+                                        <span class="hidden lg:inline">Settings</span>
+                                    </a>
+                                </li>
+                            </x-slot:sidebar>
+                            <div class="prose">
+                                <p>Contenu avec barre latérale fine.</p>
+                            </div>
+                        </x-daisy::layout.sidebar-layout>
+
+                        <!-- Wide -->
+                        <x-daisy::layout.sidebar-layout title="Wide Sidebar" variant="wide">
+                            <x-slot:sidebar>
+                                <li class="menu-title">{{ __('daisy::layout.menu') }}</li>
+                                <li><a>Dashboard</a></li>
+                                <li>
+                                    <details open>
+                                        <summary>Projects</summary>
+                                        <ul>
+                                            <li><a>Alpha</a></li>
+                                            <li><a>Beta</a></li>
+                                        </ul>
+                                    </details>
+                                </li>
+                                <li><a>Billing</a></li>
+                            </x-slot:sidebar>
+                            <div class="prose">
+                                <p>Contenu avec barre latérale large.</p>
+                            </div>
+                        </x-daisy::layout.sidebar-layout>
+                    </div>
+                </div>
+
+                <!-- Combiné Navbar + Sidebar -->
+                <div class="space-y-3">
+                    <h3 class="font-semibold">Navbar + Sidebar</h3>
+                    <x-daisy::layout.navbar-sidebar-layout title="App">
+                        <x-slot:brand>
+                            <a class="btn btn-ghost text-xl">App</a>
+                        </x-slot:brand>
+                        <x-slot:nav>
+                            <x-daisy::ui.menu :vertical="false" class="px-1">
+                                <li><a>Overview</a></li>
+                                <li><a>Teams</a></li>
+                                <li><a>Docs</a></li>
+                            </x-daisy::ui.menu>
+                        </x-slot:nav>
+                        <x-slot:actions>
+                            <label class="input input-sm input-bordered flex items-center gap-2">
+                                <x-heroicon-o-magnifying-glass class="w-4 h-4" />
+                                <input type="text" class="grow" placeholder="{{ __('daisy::layout.search') }}" />
+                            </label>
+                        </x-slot:actions>
+
+                        <x-slot:sidebar>
+                            <li class="menu-title">{{ __('daisy::layout.menu') }}</li>
+                            <li class="menu-active"><a>Dashboard</a></li>
+                            <li>
+                                <details open>
+                                    <summary>Management</summary>
+                                    <ul>
+                                        <li><a>Users</a></li>
+                                        <li><a>Roles</a></li>
+                                    </ul>
+                                </details>
+                            </li>
+                            <li><a>Reports</a></li>
+                        </x-slot:sidebar>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div class="card bg-base-100 shadow">
+                                <div class="card-body">
+                                    <div class="card-title">Card</div>
+                                    <p>Contenu principal.</p>
+                                </div>
+                            </div>
+                            <div class="card bg-base-100 shadow">
+                                <div class="card-body">
+                                    <div class="card-title">Card</div>
+                                    <p>Contenu principal.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </x-daisy::layout.navbar-sidebar-layout>
+                </div>
+            </div>
+        </section>
+
         <!-- Validator -->
         <section class="space-y-4 bg-base-200 p-6 rounded-box">
             <h2 class="text-lg font-medium">Validator</h2>
