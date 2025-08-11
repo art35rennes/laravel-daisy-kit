@@ -2,6 +2,11 @@
     'label' => null,
     'position' => 'top-end', // top|middle|bottom + start|center|end
     'color' => 'primary', // for badge shortcut
+    // Rendu de l'indicateur: badge (par défaut) | status
+    'type' => 'badge',
+    'statusColor' => 'success',
+    // Classes additionnelles pour l'item (permet responsive: sm:indicator-middle ...)
+    'itemClass' => null,
 ])
 
 @php
@@ -21,11 +26,15 @@
 @endphp
 
 <div {{ $attributes->merge(['class' => $classes]) }}>
-    <span class="indicator-item {{ $indicatorPos }}">
+    <span class="indicator-item {{ $indicatorPos }} {{ $itemClass }}">
         @isset($indicator)
             {{ $indicator }}
         @else
-            <span class="badge badge-{{ $color }}">{{ $label }}</span>
+            @if($type === 'status')
+                <span class="status status-{{ $statusColor }}"></span>
+            @else
+                <span class="badge badge-{{ $color }}">{{ $label }}</span>
+            @endif
         @endisset
     </span>
     {{ $slot }}

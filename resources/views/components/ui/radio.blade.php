@@ -2,7 +2,7 @@
     'name' => null,
     'value' => null,
     'color' => null, // primary | secondary | accent | info | success | warning | error | neutral
-    'size' => null,  // xs | sm | md | lg
+    'size' => null,  // xs | sm | md | lg | xl
     'checked' => false,
     'disabled' => false,
 ])
@@ -13,6 +13,7 @@
         'sm' => 'radio-sm',
         'md' => 'radio-md',
         'lg' => 'radio-lg',
+        'xl' => 'radio-xl',
     ];
 
     $classes = 'radio';

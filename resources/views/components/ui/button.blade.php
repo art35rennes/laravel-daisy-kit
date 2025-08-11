@@ -1,8 +1,8 @@
 @props([
     'type' => 'button',
-    'variant' => 'solid', // solid | outline | ghost | link
+    'variant' => 'solid', // solid | outline | ghost | link | soft | dash
     'color' => 'primary', // primary | secondary | accent | info | success | warning | error | neutral
-    'size' => 'md',       // xs | sm | md | lg
+    'size' => 'md',       // xs | sm | md | lg | xl
     'wide' => false,
     'block' => false,
     'circle' => false,
@@ -19,6 +19,7 @@
         'sm' => 'btn-sm',
         'md' => 'btn-md',
         'lg' => 'btn-lg',
+        'xl' => 'btn-xl',
     ];
 
     $classes = 'btn';
@@ -33,6 +34,10 @@
         $classes .= ' btn-ghost';
     } elseif ($variant === 'link') {
         $classes .= ' btn-link';
+    } elseif ($variant === 'soft') {
+        $classes .= ' btn-soft';
+    } elseif ($variant === 'dash') {
+        $classes .= ' btn-dash';
     }
 
     if ($color) {
@@ -61,6 +66,7 @@
     if ($loading) $classes .= ' loading';
     if ($noAnimation) $classes .= ' no-animation';
     if ($active) $classes .= ' btn-active';
+    if ($disabled) $classes .= ' btn-disabled';
 @endphp
 
 <button type="{{ $type }}" @disabled($disabled) {{ $attributes->merge(['class' => $classes]) }}>

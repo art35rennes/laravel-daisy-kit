@@ -2,6 +2,10 @@
     'title' => null,
     'value' => null,
     'desc' => null,
+    // Classes personnalisables
+    'titleClass' => null,
+    'valueClass' => null,
+    'descClass' => null,
 ])
 
 <div {{ $attributes->merge(['class' => 'stat']) }}>
@@ -9,13 +13,13 @@
         <div class="stat-figure">{{ $figure }}</div>
     @endisset
     @if($title)
-        <div class="stat-title">{{ $title }}</div>
+        <div class="stat-title {{ $titleClass }}">{{ $title }}</div>
     @endif
     @if($value)
-        <div class="stat-value">{{ $value }}</div>
+        <div class="stat-value {{ $valueClass }}">{{ $value }}</div>
     @endif
     @if(!is_null($desc))
-        <div class="stat-desc">{{ $desc }}</div>
+        <div class="stat-desc {{ $descClass }}">{{ $desc }}</div>
     @endif
     @isset($actions)
         <div class="stat-actions">{{ $actions }}</div>

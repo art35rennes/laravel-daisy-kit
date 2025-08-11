@@ -46,30 +46,13 @@
     ];
     $btnClasses = $classMap[$provider] ?? 'btn-neutral';
 
-    $iconMap = [
-        'google' => 'google',
-        'apple' => 'apple',
-        'microsoft' => 'microsoft',
-        'github' => 'github',
-        'twitter' => 'twitter',
-        'facebook' => 'facebook',
-        'discord' => 'discord',
-        'gitlab' => 'gitlab',
-        'linkedin' => 'linkedin',
-        'slack' => 'slack',
-        'steam' => 'steam',
-        'spotify' => 'spotify',
-        'yahoo' => 'yahoo',
-        'wechat' => 'wechat',
-        'metamask' => 'metamask',
-    ];
-    $iconName = $iconMap[$provider] ?? 'external-link';
+    // Icône générique par défaut (évite dépendances d'icônes marque)
 @endphp
 
 <a href="{{ $href }}" class="inline-block">
     <x-daisy::ui.button :variant="$variant" color="" :size="$size" class="gap-2 {{ $btnClasses }}">
         <x-slot:icon>
-            <x-daisy::ui.icon :name="$iconName" />
+            <x-heroicon-o-arrow-top-right-on-square class="h-4 w-4" />
         </x-slot:icon>
         {{ $text }}
     </x-daisy::ui.button>

@@ -1,8 +1,9 @@
 @props([
     'color' => null, // primary | secondary | accent | info | success | warning | error | neutral
-    'size' => null,  // xs | sm | md | lg
+    'size' => null,  // xs | sm | md | lg | xl
     'checked' => false,
     'disabled' => false,
+    'indeterminate' => false,
 ])
 
 @php
@@ -11,6 +12,7 @@
         'sm' => 'toggle-sm',
         'md' => 'toggle-md',
         'lg' => 'toggle-lg',
+        'xl' => 'toggle-xl',
     ];
 
     $classes = 'toggle';
@@ -24,6 +26,6 @@
     }
 @endphp
 
-<input type="checkbox" role="switch" @checked($checked) @disabled($disabled) {{ $attributes->merge(['class' => $classes]) }} />
+<input type="checkbox" role="switch" @checked($checked) @disabled($disabled) @if($indeterminate) aria-checked="mixed" data-indeterminate="true" @endif {{ $attributes->merge(['class' => $classes]) }} />
 
 

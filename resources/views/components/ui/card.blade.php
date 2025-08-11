@@ -6,6 +6,11 @@
     'side' => false,
     'imageFull' => false,
     'color' => null, // base-100 (default) or any bg-* utility
+    // Styles DaisyUI supplémentaires
+    'dash' => false, // card-dash
+    'size' => 'md',  // xs|sm|md|lg|xl
+    // Accessibilité image
+    'imageAlt' => '',
 ])
 
 @php
@@ -14,6 +19,18 @@
     if ($side) $root .= ' card-side';
     if ($imageFull) $root .= ' image-full';
     if ($bordered) $root .= ' card-border';
+    if ($dash) $root .= ' card-dash';
+
+    $sizeMap = [
+        'xs' => 'card-xs',
+        'sm' => 'card-sm',
+        'md' => 'card-md',
+        'lg' => 'card-lg',
+        'xl' => 'card-xl',
+    ];
+    if (isset($sizeMap[$size])) {
+        $root .= ' ' . $sizeMap[$size];
+    }
 
     $bgClass = $color ? ' bg-'.$color : ' bg-base-100';
     $root .= $bgClass.' shadow';
@@ -23,7 +40,7 @@
     @if($imageUrl || isset($figure))
         <figure>
             @if($imageUrl)
-                <img src="{{ $imageUrl }}" alt="" />
+                <img src="{{ $imageUrl }}" alt="{{ $imageAlt }}" />
             @else
                 {{ $figure }}
             @endif

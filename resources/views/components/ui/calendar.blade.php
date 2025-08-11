@@ -1,13 +1,17 @@
 @props([
-    'weekdays' => ['Lu','Ma','Me','Je','Ve','Sa','Di'],
-    'days' => [], // array of ['label' => 1, 'muted' => false, 'active' => false]
+    'provider' => 'cally', // cally | native
+    // Props forwards
+    'withMonth' => true,
+    'showPrevNext' => true,
+    'inputId' => null,
+    'value' => null,
+    'placeholder' => null,
 ])
 
-<div class="grid grid-cols-7 gap-2">
-    @foreach($weekdays as $wd)
-        <div class="text-xs text-base-content/70 text-center">{{ $wd }}</div>
-    @endforeach
-    @foreach($days as $d)
-        <button class="btn btn-sm {{ ($d['muted'] ?? false) ? 'btn-ghost text-base-content/50' : 'btn-ghost' }} {{ ($d['active'] ?? false) ? 'btn-active' : '' }}">{{ $d['label'] }}</button>
-    @endforeach
-</div>
+@if($provider === 'native')
+    <x-daisy::ui.calendar-native :inputId="$inputId" :value="$value" :placeholder="$placeholder" {{ $attributes }} />
+@else
+    <x-daisy::ui.calendar-cally :withMonth="$withMonth" :showPrevNext="$showPrevNext" {{ $attributes }}>
+        {{ $slot }}
+    </x-daisy::ui.calendar-cally>
+@endif

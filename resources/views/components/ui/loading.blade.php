@@ -1,7 +1,7 @@
 @props([
     'shape' => 'spinner', // spinner | dots | ring | ball | bars | infinity
-    'size' => 'md',       // xs | sm | md | lg
-    'color' => 'primary', // primary | secondary | accent | info | success | warning | error | neutral
+    'size' => 'md',       // xs | sm | md | lg | xl
+    'color' => null,      // primary | secondary | accent | info | success | warning | error | neutral
 ])
 
 @php
@@ -10,6 +10,7 @@
         'sm' => 'loading-sm',
         'md' => 'loading-md',
         'lg' => 'loading-lg',
+        'xl' => 'loading-xl',
     ];
 
     $classes = 'loading';
@@ -17,7 +18,9 @@
     if (isset($sizeMap[$size])) {
         $classes .= ' '.$sizeMap[$size];
     }
-    $classes .= ' text-'.$color;
+    if (!empty($color)) {
+        $classes .= ' text-'.$color;
+    }
 @endphp
 
 <span aria-live="polite" aria-busy="true" {{ $attributes->merge(['class' => $classes]) }}></span>

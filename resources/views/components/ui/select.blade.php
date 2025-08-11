@@ -1,7 +1,7 @@
 @props([
-    'size' => 'md',        // xs | sm | md | lg
-    'variant' => 'bordered', // default | bordered | ghost
-    'color' => null,       // primary | secondary | accent | info | success | warning | error | neutral
+    'size' => 'md',         // xs | sm | md | lg | xl
+    'variant' => null,      // null | ghost
+    'color' => null,        // primary | secondary | accent | info | success | warning | error | neutral
     'disabled' => false,
 ])
 
@@ -11,13 +11,12 @@
         'sm' => 'select-sm',
         'md' => 'select-md',
         'lg' => 'select-lg',
+        'xl' => 'select-xl',
     ];
 
     $classes = 'select w-full';
 
-    if ($variant === 'bordered') {
-        $classes .= ' select-bordered';
-    } elseif ($variant === 'ghost') {
+    if ($variant === 'ghost') {
         $classes .= ' select-ghost';
     }
 

@@ -2,7 +2,9 @@
     'text' => null,
     'open' => false,
     'position' => 'top', // top|right|bottom|left
-    'color' => null, // primary|secondary|accent|info|success|warning|error
+    'color' => null, // neutral|primary|secondary|accent|info|success|warning|error
+    // Utiliser un contenu personnalisé au lieu de data-tip
+    'content' => null,
 ])
 
 @php
@@ -13,6 +15,15 @@
     if ($color) $classes .= ' tooltip-'.$color;
 @endphp
 
-<div data-tip="{{ $text }}" {{ $attributes->merge(['class' => $classes]) }}>
+<div @if(!is_null($text) && empty($content)) data-tip="{{ $text }}" @endif {{ $attributes->merge(['class' => $classes]) }}>
+    @if(!empty($content) || isset($contentSlot))
+        <div class="tooltip-content">
+            @isset($contentSlot)
+                {{ $contentSlot }}
+            @else
+                {!! $content !!}
+            @endisset
+        </div>
+    @endif
     {{ $slot }}
 </div>

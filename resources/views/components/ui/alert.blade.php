@@ -1,8 +1,12 @@
 @props([
     'color' => 'neutral', // neutral|primary|secondary|accent|info|success|warning|error
-    'variant' => 'solid', // solid|soft
+    'variant' => 'solid', // solid|soft|outline|dash
     'icon' => null,
     'title' => null,
+    // Orientation
+    'vertical' => null,       // bool|null
+    'horizontal' => null,     // bool|null
+    'horizontalAt' => null,   // ex: 'sm' → alert-vertical sm:alert-horizontal
 ])
 
 @php
@@ -10,8 +14,19 @@
     // Color
     $classes .= ' alert-'.$color;
     // Variant
-    if ($variant === 'soft') {
-        $classes .= ' alert-soft';
+    $variantMap = [
+        'soft' => 'alert-soft',
+        'outline' => 'alert-outline',
+        'dash' => 'alert-dash',
+    ];
+    if (isset($variantMap[$variant])) $classes .= ' '.$variantMap[$variant];
+
+    // Orientation
+    if ($horizontalAt) {
+        $classes .= ' alert-vertical '.($horizontalAt).':alert-horizontal';
+    } elseif (!is_null($vertical) || !is_null($horizontal)) {
+        if ($vertical) $classes .= ' alert-vertical';
+        if ($horizontal) $classes .= ' alert-horizontal';
     }
 @endphp
 

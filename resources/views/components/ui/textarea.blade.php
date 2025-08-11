@@ -1,6 +1,6 @@
 @props([
-    'size' => 'md',        // xs | sm | md | lg
-    'variant' => 'bordered', // default | bordered | ghost
+    'size' => 'md',        // xs | sm | md | lg | xl
+    'variant' => null,     // null | ghost
     'color' => null,       // primary | secondary | accent | info | success | warning | error | neutral
     'disabled' => false,
     'rows' => 4,
@@ -12,13 +12,12 @@
         'sm' => 'textarea-sm',
         'md' => 'textarea-md',
         'lg' => 'textarea-lg',
+        'xl' => 'textarea-xl',
     ];
 
     $classes = 'textarea w-full';
 
-    if ($variant === 'bordered') {
-        $classes .= ' textarea-bordered';
-    } elseif ($variant === 'ghost') {
+    if ($variant === 'ghost') {
         $classes .= ' textarea-ghost';
     }
 

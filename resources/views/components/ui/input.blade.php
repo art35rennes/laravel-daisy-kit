@@ -1,7 +1,7 @@
 @props([
     'type' => 'text',
-    'size' => 'md',        // xs | sm | md | lg
-    'variant' => 'bordered', // default | bordered | ghost
+    'size' => 'md',        // xs | sm | md | lg | xl
+    'variant' => null,     // null | ghost
     'color' => null,       // primary | secondary | accent | info | success | warning | error | neutral
     'disabled' => false,
 ])
@@ -12,13 +12,12 @@
         'sm' => 'input-sm',
         'md' => 'input-md',
         'lg' => 'input-lg',
+        'xl' => 'input-xl',
     ];
 
     $classes = 'input w-full';
 
-    if ($variant === 'bordered') {
-        $classes .= ' input-bordered';
-    } elseif ($variant === 'ghost') {
+    if ($variant === 'ghost') {
         $classes .= ' input-ghost';
     }
 
