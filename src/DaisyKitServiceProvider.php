@@ -12,10 +12,24 @@ class DaisyKitServiceProvider extends ServiceProvider
         // Charger les vues du package avec un namespace: x-daisy::ui.button
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'daisy');
 
-        // Publication optionnelle des vues
+        // Charger les vues de dev (pages de démo/templates) sans les publier par défaut
+        $devViews = __DIR__.'/../resources/dev/views';
+        if (is_dir($devViews)) {
+            $this->loadViewsFrom($devViews, 'daisy-dev');
+        }
+
+        // Charger les traductions du package: __('daisy::...')
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'daisy');
+
+        // Publication optionnelle des vues (uniquement les composants du package)
         $this->publishes([
-            __DIR__.'/../resources/views' => resource_path('views/vendor/daisy'),
+            __DIR__.'/../resources/views/components' => resource_path('views/vendor/daisy/components'),
         ], 'daisy-views');
+
+        // Publication optionnelle des fichiers de traduction
+        $this->publishes([
+            __DIR__.'/../resources/lang' => resource_path('lang/vendor/daisy'),
+        ], 'daisy-lang');
     }
 }
 
