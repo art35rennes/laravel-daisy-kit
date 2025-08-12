@@ -20,6 +20,7 @@
         "mallardduck/blade-lucide-icons": "^1.23"
     },
     "require-dev": {
+        "laravel/framework": "^12.0",
         "phpunit/phpunit": "^11.5.3"
     },
     "autoload": {

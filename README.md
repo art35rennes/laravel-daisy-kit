@@ -1,40 +1,46 @@
 ## Laravel Daisy Kit
 
-Composants Blade (DaisyUI/Tailwind) prêts à l’emploi pour Laravel.
+Composants Blade (DaisyUI/Tailwind) prêts à l’emploi pour Laravel, fournis en tant que package.
 
 ### Installation
 
 1. Installer via Composer:
 
 ```bash
-composer require art35rennes/laravel-daisy-kit:^0.1@alpha
+composer require art35rennes/laravel-daisy-kit
 ```
 
 2. Aucune étape manuelle: le Service Provider est auto‑découvert.
 
 ### Utilisation
 
-- Bouton:
+- Bouton (namespace `daisy`):
 
 ```blade
-<x-ui::button color="primary">Primary</x-ui::button>
+<x-daisy::ui.button color="primary">Primary</x-daisy::ui.button>
 ```
 
 - Input:
 
 ```blade
-<x-ui::input placeholder="Votre nom" />
+<x-daisy::ui.input placeholder="Votre nom" />
 ```
 
 - Layout:
 
 ```blade
-<x-layout::app title="Titre">
+<x-daisy::layout.app title="Titre">
     Contenu…
-</x-layout::app>
+</x-daisy::layout.app>
 ```
 
-Voir `resources/views/demo.blade.php` pour des exemples plus complets.
+Liste complète des composants disponibles: voir `resources/views/components/ui/` et la page de démo `resources/dev/views/demo/index.blade.php`.
+
+### Démo locale (dans ce repo)
+
+- Lancer l’app puis ouvrir `/demo` pour visualiser tous les composants (pages de démo non publiées dans le package):
+  - Route: `routes/web.php` → `Route::get('/demo', fn () => view('daisy-dev::demo.index'));`
+  - Vue: `resources/dev/views/demo/index.blade.php`
 
 ### Icônes
 
@@ -48,10 +54,11 @@ Exemple d'utilisation d'une icône Heroicons :
 
 ### Publication (optionnelle)
 
-Vous pouvez publier les vues pour les surcharger:
+Vous pouvez publier les vues et les traductions pour les surcharger:
 
 ```bash
-php artisan vendor:publish --tag=daisy-kit-views
+php artisan vendor:publish --tag=daisy-views
+php artisan vendor:publish --tag=daisy-lang
 ```
 
 ### Licence

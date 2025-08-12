@@ -6,8 +6,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Page de démo réservée au dev (non publiée) via le namespace daisy-dev
 Route::get('/demo', function () {
-    return view('demo');
+    return view('daisy-dev::demo.index');
 })->name('demo');
 
 // Pages dédiées aux layouts/templates avancés
