@@ -18,15 +18,15 @@ class DaisyKitServiceProvider extends ServiceProvider
             $this->loadViewsFrom($devViews, 'daisy-dev');
         }
 
-        // Charger les traductions du package: __('daisy::...')
+        // Charger les traductions du package: __('daisy::calendar.today')
         $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'daisy');
 
-        // Publication optionnelle des vues (uniquement les composants du package)
+        // Publication optionnelle des vues
         $this->publishes([
             __DIR__.'/../resources/views/components' => resource_path('views/vendor/daisy/components'),
         ], 'daisy-views');
 
-        // Publication optionnelle des fichiers de traduction
+        // Publication optionnelle des traductions
         $this->publishes([
             __DIR__.'/../resources/lang' => resource_path('lang/vendor/daisy'),
         ], 'daisy-lang');

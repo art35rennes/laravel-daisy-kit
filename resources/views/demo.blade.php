@@ -229,6 +229,49 @@
             </div>
         </section>
 
+        <!-- Stepper (Wizard) -->
+        <section class="space-y-4 bg-base-200 p-6 rounded-box">
+            <h2 class="text-lg font-medium">Stepper</h2>
+            <div class="grid md:grid-cols-2 gap-6 items-start">
+                <div class="space-y-4">
+                    <div class="text-sm opacity-70">Horizontal non-linéaire (clic autorisé)</div>
+                    <x-daisy::ui.stepper id="demoStepper1" :items="[
+                        ['label' => 'Compte'],
+                        ['label' => 'Profil'],
+                        ['label' => 'Confirmation'],
+                    ]" :current="1" :persist="true">
+                        <x-slot:step_1>
+                            <div class="p-4 rounded-box bg-base-100 border">Contenu étape 1</div>
+                        </x-slot:step_1>
+                        <x-slot:step_2>
+                            <div class="p-4 rounded-box bg-base-100 border">Contenu étape 2</div>
+                        </x-slot:step_2>
+                        <x-slot:step_3>
+                            <div class="p-4 rounded-box bg-base-100 border">Contenu étape 3</div>
+                        </x-slot:step_3>
+                    </x-daisy::ui.stepper>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="text-sm opacity-70">Vertical linéaire (étape 2 disabled)</div>
+                    <x-daisy::ui.stepper id="demoStepper2" :items="[
+                        ['label' => 'Adresse'],
+                        ['label' => 'Paiement (désactivé)', 'disabled' => true],
+                        ['label' => 'Résumé'],
+                    ]" :current="1" :linear="true" :persist="false" :horizontalAt="'lg'">
+                        <x-slot:step_1>
+                            <div class="p-4 rounded-box bg-base-100 border">Adresse</div>
+                        </x-slot:step_1>
+                        <x-slot:step_2>
+                            <div class="p-4 rounded-box bg-base-100 border">Paiement indisponible</div>
+                        </x-slot:step_2>
+                        <x-slot:step_3>
+                            <div class="p-4 rounded-box bg-base-100 border">Résumé</div>
+                        </x-slot:step_3>
+                    </x-daisy::ui.stepper>
+                </div>
+            </div>
+        </section>
         <!-- Inputs -->
         <section class="space-y-4 bg-base-200 p-6 rounded-box">
             <h2 class="text-lg font-medium">Inputs</h2>
@@ -1292,6 +1335,128 @@
             </div>
         </section>
 
+        <!-- Popover -->
+        <section class="space-y-4 bg-base-200 p-6 rounded-box">
+            <h2 class="text-lg font-medium">Popover</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Basique (click) -->
+                <x-daisy::ui.popover title="Popover title">
+                    <x-slot:triggerSlot>
+                        <x-daisy::ui.button color="primary">Click to toggle popover</x-daisy::ui.button>
+                    </x-slot:triggerSlot>
+                    And here's some amazing content. It's very engaging. Right?
+                </x-daisy::ui.popover>
+
+                <!-- Directions -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <x-daisy::ui.popover position="top" trigger="click" title="Top">
+                        <x-slot:triggerSlot><x-daisy::ui.button>Top</x-daisy::ui.button></x-slot:triggerSlot>
+                        Vivamus sagittis lacus vel augue laoreet rutrum faucibus.
+                    </x-daisy::ui.popover>
+                    <x-daisy::ui.popover position="right" trigger="click" title="Right">
+                        <x-slot:triggerSlot><x-daisy::ui.button>Right</x-daisy::ui.button></x-slot:triggerSlot>
+                        Vivamus sagittis lacus vel augue laoreet rutrum faucibus.
+                    </x-daisy::ui.popover>
+                    <x-daisy::ui.popover position="bottom" trigger="click" title="Bottom">
+                        <x-slot:triggerSlot><x-daisy::ui.button>Bottom</x-daisy::ui.button></x-slot:triggerSlot>
+                        Vivamus sagittis lacus vel augue laoreet rutrum faucibus.
+                    </x-daisy::ui.popover>
+                    <x-daisy::ui.popover position="left" trigger="click" title="Left">
+                        <x-slot:triggerSlot><x-daisy::ui.button>Left</x-daisy::ui.button></x-slot:triggerSlot>
+                        Vivamus sagittis lacus vel augue laoreet rutrum faucibus.
+                    </x-daisy::ui.popover>
+                </div>
+
+                <!-- Trigger hover & focus -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <x-daisy::ui.popover trigger="hover" position="top" title="Hover popover">
+                        <x-slot:triggerSlot><x-daisy::ui.button variant="outline">Hover me</x-daisy::ui.button></x-slot:triggerSlot>
+                        Content when hovering.
+                    </x-daisy::ui.popover>
+                    <x-daisy::ui.popover trigger="focus" position="bottom" title="Focus popover">
+                        <x-slot:triggerSlot><x-daisy::ui.button>Focus me</x-daisy::ui.button></x-slot:triggerSlot>
+                        Content when focused.
+                    </x-daisy::ui.popover>
+                </div>
+
+                <!-- Avec flèche, header/footer slots -->
+                <x-daisy::ui.popover :arrow="true">
+                    <x-slot:triggerSlot>
+                        <x-daisy::ui.button>With arrow</x-daisy::ui.button>
+                    </x-slot:triggerSlot>
+                    <x-slot:header>
+                        <div class="flex items-center gap-2">
+                            <x-heroicon-o-chat-bubble-bottom-center-text class="w-4 h-4" />
+                            Custom header
+                        </div>
+                    </x-slot:header>
+                    <div>Body content</div>
+                    <x-slot:footer>
+                        <div class="text-xs opacity-70">Footer note</div>
+                    </x-slot:footer>
+                </x-daisy::ui.popover>
+            </div>
+        </section>
+
+        <!-- Popconfirm -->
+        <section class="space-y-4 bg-base-200 p-6 rounded-box">
+            <h2 class="text-lg font-medium">Popconfirm</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Inline basique -->
+                <div class="space-y-3">
+                    <x-daisy::ui.popconfirm message="Cette action est irréversible. Continuer ?">
+                        <x-slot:trigger>
+                            <x-daisy::ui.button color="warning">Supprimer (inline)</x-daisy::ui.button>
+                        </x-slot:trigger>
+                    </x-daisy::ui.popconfirm>
+                </div>
+
+                <!-- Inline avec position & icône -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <x-daisy::ui.popconfirm position="top" message="Confirmer ?">
+                        <x-slot:icon>
+                            <x-heroicon-o-exclamation-triangle class="w-5 h-5 text-warning" />
+                        </x-slot:icon>
+                        <x-slot:trigger>
+                            <x-daisy::ui.button>Top</x-daisy::ui.button>
+                        </x-slot:trigger>
+                    </x-daisy::ui.popconfirm>
+
+                    <x-daisy::ui.popconfirm position="right" message="Confirmer ?" okText="Oui" cancelText="Non">
+                        <x-slot:trigger>
+                            <x-daisy::ui.button>Right</x-daisy::ui.button>
+                        </x-slot:trigger>
+                    </x-daisy::ui.popconfirm>
+
+                    <x-daisy::ui.popconfirm position="left" message="Valider cette opération ?" :okClass="'btn-success'" :cancelClass="'btn-ghost'">
+                        <x-slot:trigger>
+                            <x-daisy::ui.button>Left</x-daisy::ui.button>
+                        </x-slot:trigger>
+                    </x-daisy::ui.popconfirm>
+                </div>
+
+                <!-- Modal mode -->
+                <div class="space-y-3">
+                    <x-daisy::ui.popconfirm mode="modal" id="demo-popconfirm-modal" title="Confirmation" message="Voulez-vous enregistrer ces modifications ?" okText="Enregistrer" cancelText="Annuler">
+                        <x-slot:trigger>
+                            <x-daisy::ui.button color="primary">Ouvrir (modal)</x-daisy::ui.button>
+                        </x-slot:trigger>
+                    </x-daisy::ui.popconfirm>
+                    <div class="text-sm opacity-70">Écoute des événements:</div>
+                    <div class="text-xs opacity-70">Dans votre JS, écoutez <code>popconfirm:confirm</code> et <code>popconfirm:cancel</code> sur l'élément.</div>
+                </div>
+
+                <!-- Variantes de boutons -->
+                <div class="space-y-3">
+                    <x-daisy::ui.popconfirm message="Appliquer les changements ?" okText="Appliquer" cancelText="Annuler" :okClass="'btn-success'" :cancelClass="'btn-outline'">
+                        <x-slot:trigger>
+                            <x-daisy::ui.button variant="outline" color="success">Appliquer</x-daisy::ui.button>
+                        </x-slot:trigger>
+                    </x-daisy::ui.popconfirm>
+                </div>
+            </div>
+        </section>
+
         <!-- Theme Controller -->
         <section class="space-y-4 bg-base-200 p-6 rounded-box">
             <h2 class="text-lg font-medium">Theme Controller</h2>
@@ -1578,7 +1743,7 @@
                         </div>
                         <div class="p-4 space-y-2">
                             <p>Content area. En grand écran, la sidebar reste ouverte.</p>
-                            <p>Réduisez la fenêtre pour voir le bouton d’ouverture.</p>
+                            <p>Réduisez la fenêtre pour voir le bouton d'ouverture.</p>
                         </div>
                     </x-slot:content>
                     <x-slot:side>
@@ -1612,36 +1777,36 @@
             <h2 class="text-lg font-medium">Table</h2>
             <div class="space-y-4">
                 <!-- Basique -->
-                <x-daisy::ui.table :headers="['','Name','Job','Favorite Color']"
+                <x-daisy::ui.table :headers="['#','Name','Job','Favorite Color']"
                     :rows="[
                         ['1','Cy Ganderton','Quality Control Specialist','Blue'],
                         ['2','Hart Hagerty','Desktop Support Technician','Purple'],
                         ['3','Brice Swyre','Tax Accountant','Red'],
                     ]"
-                    :rowHeaders="true"
+                    :rowHeaders="true" selection="multiple" :showRowNumbers="true" :offset="1"
                 />
 
                 <!-- Avec bordure et fond -->
                 <x-daisy::ui.table containerClass="rounded-box border border-base-content/5 bg-base-100"
-                    :headers="['','Name','Job','Favorite Color']"
+                    :headers="['#','Name','Job','Favorite Color']"
                     :rows="[
                         ['1','Cy Ganderton','Quality Control Specialist','Blue'],
                         ['2','Hart Hagerty','Desktop Support Technician','Purple'],
                         ['3','Brice Swyre','Tax Accountant','Red'],
                     ]"
-                    :rowHeaders="true"
+                    :rowHeaders="true" selection="single" :showRowNumbers="true" :offset="11"
                 />
 
                 <!-- Zebra + tailles + pin -->
-                <x-daisy::ui.table zebra size="sm" :pinRows="true" :pinCols="true"
-                    :headers="['','Name','Job','Company','Location','Last Login','Favorite Color','']"
+                <x-daisy::ui.table zebra size="sm" :pinRows="true" :pinCols="true" overflowX overflowY
+                    :headers="['#','Name','Job','Company','Location','Last Login','Favorite Color','']"
                     :rows="[
                         ['1','Cy Ganderton','Quality Control Specialist','Littel, Schaden and Vandervort','Canada','12/16/2020','Blue','1'],
                         ['2','Hart Hagerty','Desktop Support Technician','Zemlak, Daniel and Leannon','United States','12/5/2020','Purple','2'],
                         ['3','Brice Swyre','Tax Accountant','Carroll Group','China','8/15/2020','Red','3'],
                     ]"
                     :footer="['','Name','Job','Company','Location','Last Login','Favorite Color','']"
-                    :rowHeaders="true"
+                    :rowHeaders="true" selection="multiple" :showRowNumbers="true" :offset="21"
                 />
             </div>
         </section>
@@ -1690,7 +1855,7 @@
                             <div class="text-xs uppercase font-semibold opacity-60">Remaining Reason</div>
                         </div>
                         <p class="list-col-wrap text-xs opacity-80">
-                            "Remaining Reason" blends introspective lyrics with a dynamic beat, becoming one of Dio Lupa’s most iconic tracks.
+                            "Remaining Reason" blends introspective lyrics with a dynamic beat, becoming one of Dio Lupa's most iconic tracks.
                         </p>
                         <button class="btn btn-square btn-ghost">▶</button>
                         <button class="btn btn-square btn-ghost">❤</button>
@@ -1729,14 +1894,14 @@
 
                 <!-- Pagination compacte (exemple réaliste) -->
                 <x-daisy::ui.join>
-                    <button class="btn join-item">«</button>
+                    <button class="btn join-item"><x-heroicon-o-chevron-left class="w-4 h-4" /></button>
                     <button class="btn join-item btn-active">1</button>
                     <button class="btn join-item">2</button>
                     <button class="btn join-item">3</button>
-                    <button class="btn join-item">»</button>
+                    <button class="btn join-item"><x-heroicon-o-chevron-right class="w-4 h-4" /></button>
                 </x-daisy::ui.join>
 
-                <!-- Groupe d’actions (vertical en mobile, horizontal en lg) -->
+                <!-- Groupe d'actions (vertical en mobile, horizontal en lg) -->
                 <x-daisy::ui.join direction="vertical" horizontalAt="lg">
                     <button class="btn join-item">Save draft</button>
                     <button class="btn join-item">Preview</button>
@@ -1820,6 +1985,12 @@
                 <x-daisy::ui.file-input size="md" />
                 <x-daisy::ui.file-input size="lg" />
                 <x-daisy::ui.file-input size="xl" />
+            </div>
+
+            <div class="divider">Drag & Drop + Preview</div>
+            <div class="grid md:grid-cols-2 gap-6">
+                <x-daisy::ui.file-input :dragdrop="true" :preview="true" :multiple="true" />
+                <x-daisy::ui.file-input :dragdrop="true" :preview="true" />
             </div>
         </section>
 
@@ -2228,9 +2399,14 @@
         <section class="space-y-4 bg-base-200 p-6 rounded-box">
             <h2 class="text-lg font-medium">Calendar</h2>
             <div class="space-y-6">
-                <!-- Cally (via npm) -->
+                <!-- Cally (via npm) : date simple -->
                 <div class="bg-base-100 border border-base-300 shadow-lg rounded-box p-4">
-                    <x-daisy::ui.calendar provider="cally" class="cally" />
+                    <x-daisy::ui.calendar provider="cally" mode="date" class="cally" />
+                </div>
+
+                <!-- Cally : range + 2 mois -->
+                <div class="bg-base-100 border border-base-300 shadow-lg rounded-box p-4">
+                    <x-daisy::ui.calendar provider="cally" mode="range" :months="2" class="cally" />
                 </div>
 
                 <!-- Native input type=date -->
@@ -2253,6 +2429,36 @@
                 <x-daisy::ui.filter :useForm="false" name="metaframeworks" allLabel="All" :items="[
                     'Sveltekit', 'Nuxt', 'Next.js'
                 ]" />
+            </div>
+        </section>
+
+        <!-- Color Picker -->
+        <section class="space-y-4 bg-base-200 p-6 rounded-box">
+            <h2 class="text-lg font-medium">Color Picker</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Native -->
+                <div class="space-y-2">
+                    <div class="text-sm opacity-70">Native</div>
+                    <x-daisy::ui.color-picker mode="native" value="#563d7c" />
+                </div>
+
+                <!-- Advanced (panel inline) -->
+                <div class="space-y-2">
+                    <div class="text-sm opacity-70">Advanced (inline)</div>
+                    <x-daisy::ui.color-picker :swatches="[
+                        ['#0d6efd','#6610f2','#6f42c1','#b23cfd','#d63384','#dc3545','#fd7e14','#ffc107'],
+                        ['#198754','#20c997','#0dcaf0','#39c0ed','#757575','#4f4f4f','#262626','#000000'],
+                    ]" value="hsla(270,60%,50%,1)" />
+                </div>
+
+                <!-- Dropdown -->
+                <div class="space-y-2">
+                    <div class="text-sm opacity-70">Dropdown</div>
+                    <x-daisy::ui.color-picker dropdown :swatchesHeight="100" :swatches="[
+                        ['#0d6efd','#6610f2','#6f42c1','#b23cfd','#d63384','#dc3545','#fd7e14','#ffc107'],
+                        ['#198754','#20c997','#0dcaf0','#39c0ed','#757575','#4f4f4f','#262626','#000000'],
+                    ]" />
+                </div>
             </div>
         </section>
 
@@ -2407,13 +2613,12 @@
                 </div>
             </div>
         </section>
-
         <!-- Validator -->
         <section class="space-y-4 bg-base-200 p-6 rounded-box">
             <h2 class="text-lg font-medium">Validator</h2>
             <!-- Email requis avec hint -->
             <div>
-                <input class="input validator" type="email" required placeholder="[email protected]" />
+                <input class="input validator" type="email" required placeholder="[email protected]" />
                 <div class="validator-hint">Enter valid email address</div>
             </div>
 
@@ -2429,7 +2634,7 @@
             <div>
                 <input type="text" class="input validator" required placeholder="Username"
                   pattern="[A-Za-z][A-Za-z0-9\-]*" minlength="3" maxlength="30" title="Only letters, numbers or dash" />
-                <p class="validator-hint">3–30 chars, letters, numbers or dash</p>
+                <p class="validator-hint">3-30 chars, letters, numbers or dash</p>
             </div>
 
             <!-- Select requis -->
@@ -2442,6 +2647,541 @@
                 <p class="validator-hint">Required</p>
                 <button class="btn" type="submit">Submit form</button>
             </form>
+        </section>
+
+        <!-- TreeView -->
+        <section class="space-y-4 bg-base-200 p-6 rounded-box">
+            <h2 class="text-lg font-medium">TreeView</h2>
+            <div class="grid md:grid-cols-2 gap-6 items-start">
+                <div class="space-y-3">
+                    <div class="text-sm opacity-70">Sélection simple</div>
+                    <x-daisy::ui.tree-view id="demoTreeSingle" selection="single" :persist="true" controlSize="xs" :data="[
+                        ['id' => 'root', 'label' => 'Racine', 'expanded' => true, 'children' => [
+                            ['id' => 'a', 'label' => 'Dossier A', 'children' => [
+                                ['id' => 'a1', 'label' => 'Fichier A1'],
+                                ['id' => 'a2', 'label' => 'Fichier A2'],
+                            ]],
+                            ['id' => 'b', 'label' => 'Dossier B', 'lazy' => true],
+                            ['id' => 'c', 'label' => 'Fichier C'],
+                        ]],
+                    ]" />
+                    <div class="text-xs opacity-70">Événements: <code>tree:select</code>, <code>tree:lazy</code></div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="text-sm opacity-70">Sélection multiple</div>
+                    <x-daisy::ui.tree-view id="demoTreeMulti" selection="multiple" :persist="true" controlSize="xs" :data="[
+                        ['id' => '1', 'label' => 'Projets', 'expanded' => true, 'children' => [
+                            ['id' => '1-1', 'label' => 'Kit UI', 'children' => [
+                                ['id' => '1-1-1', 'label' => 'Roadmap.md'],
+                                ['id' => '1-1-2', 'label' => 'Changelog.md (disable)', 'disabled' => true],
+                            ]],
+                            ['id' => '1-2', 'label' => 'Site (disable)', 'disabled' => true, 'children' => [
+                                ['id' => '1-2-1', 'label' => 'Home.vue'],
+                                ['id' => '1-2-2', 'label' => 'About.vue'],
+                            ]],
+                            ['id' => '1-3', 'label' => 'Sandbox (mixed au chargement)', 'children' => [
+                                ['id' => '1-3-1', 'label' => 'Draft.md', 'selected' => true],
+                                ['id' => '1-3-2', 'label' => 'Notes.md', 'selected' => false],
+                            ]],
+                        ]],
+                    ]" />
+                </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="space-y-2">
+                <div class="flex gap-2">
+                    <button id="btnReadSelected" class="btn btn-primary btn-sm">Lire la sélection (multi)</button>
+                    <button id="btnExpandB" class="btn btn-ghost btn-sm">Développer B (lazy)</button>
+                </div>
+                <pre id="selectedOutput" class="mockup-code w-full"><code></code></pre>
+            </div>
+
+            <script>
+                (function(){
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const single = document.getElementById('demoTreeSingle');
+                        const multi = document.getElementById('demoTreeMulti');
+                        const out = document.getElementById('selectedOutput').querySelector('code');
+
+                        if (single) {
+                            single.addEventListener('tree:select', (e) => {
+                                // noop demo
+                            });
+                            single.addEventListener('tree:lazy', (e) => {
+                                const { li } = e.detail;
+                                // Simuler lazy: remplacer placeholder par 2 enfants
+                                const group = li.querySelector(':scope > ul[role="group"]');
+                                if (!group) return;
+                                group.innerHTML = '';
+                                const mk = (id, label) => `<li role="treeitem" aria-level="2" aria-expanded="false" aria-selected="false" data-id="${id}"><div class="flex items-center gap-2 px-2 py-1 rounded hover:bg-base-200"><span class="inline-block w-6"></span><span class="flex-1 cursor-default select-none" data-label="1">${label}</span></div></li>`;
+                                group.insertAdjacentHTML('beforeend', mk('b1','Fichier B1'));
+                                group.insertAdjacentHTML('beforeend', mk('b2','Fichier B2'));
+                                li.setAttribute('aria-expanded', 'true');
+                                const btn = li.querySelector('[data-toggle]');
+                                if (btn) {
+                                    const c = btn.querySelector('[data-icon-collapsed]');
+                                    const e2 = btn.querySelector('[data-icon-expanded]');
+                                    if (c) c.classList.add('hidden');
+                                    if (e2) e2.classList.remove('hidden');
+                                }
+                            });
+                        }
+
+                        if (multi) {
+                            multi.addEventListener('tree:select', () => {
+                                const ids = window.DaisyTreeView.getSelected(multi);
+                                if (out) out.textContent = JSON.stringify(ids);
+                            });
+                        }
+
+                        const btnRead = document.getElementById('btnReadSelected');
+                        if (btnRead && multi) btnRead.addEventListener('click', () => {
+                            const ids = window.DaisyTreeView.getSelected(multi);
+                            if (out) out.textContent = JSON.stringify(ids);
+                        });
+
+                        const btnExpandB = document.getElementById('btnExpandB');
+                        if (btnExpandB && single) btnExpandB.addEventListener('click', () => {
+                            if (single.__treeApi) single.__treeApi.expand('b');
+                        });
+                    });
+                })();
+            </script>
+        </section>
+
+        <!-- Code Editor -->
+        <section class="space-y-4 bg-base-200 p-6 rounded-box">
+            <h2 class="text-lg font-medium">Code Editor</h2>
+            <div class="grid gap-6 items-start">
+                <div class="space-y-3">
+                    <div class="text-sm opacity-70">JSON</div>
+                    <x-daisy::ui.code-editor id="demoCodeJson" language="json" :showToolbar="true" value='{"title":"Sample","users":[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}]}' height="320px" />
+                </div>
+            </div>
+            <div class="divider"></div>
+            <div class="flex flex-wrap gap-2">
+                <button id="codeFoldAll" class="btn btn-sm">Plier tout</button>
+                <button id="codeUnfoldAll" class="btn btn-sm">Déplier tout</button>
+                <button id="codeFormat" class="btn btn-sm">Formatter</button>
+                <button id="codeCopy" class="btn btn-sm">Copier</button>
+            </div>
+            <pre class="mockup-code"><code id="codeChangeOut"></code></pre>
+            <script>
+                (function(){
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const js = document.getElementById('demoCodeJson');
+                        const php = null;
+                        const out = document.getElementById('codeChangeOut');
+                        if (js) {
+                            js.addEventListener('code:change', (e) => {
+                                if (out) {
+                                    out.textContent = e.detail.value.slice(0, 120) + (e.detail.value.length > 120 ? '…' : '');
+                                }
+                            });
+                        }
+                        // aucun second éditeur dans cette démo
+                        const fold = document.getElementById('codeFoldAll');
+                        const unfold = document.getElementById('codeUnfoldAll');
+                        const fmt = document.getElementById('codeFormat');
+                        const cp = document.getElementById('codeCopy');
+                        const swap = null;
+                        if (fold && js) fold.addEventListener('click', () => window.DaisyCodeEditor.foldAll(js));
+                        if (unfold && js) unfold.addEventListener('click', () => window.DaisyCodeEditor.unfoldAll(js));
+                        if (fmt && js) fmt.addEventListener('click', () => window.DaisyCodeEditor.format(js));
+                        if (cp && js) cp.addEventListener('click', () => window.DaisyCodeEditor.copy(js));
+                        // pas de swap de langage dans la démo simplifiée
+                    });
+                })();
+            </script>
+        </section>
+
+        <!-- ScrollSpy -->
+        <section class="space-y-4 bg-base-200 p-6 rounded-box">
+            <h2 class="text-lg font-medium">ScrollSpy</h2>
+            <div class="grid md:grid-cols-3 gap-6 items-start">
+                <div class="md:col-span-2">
+                    <div id="spyContainer" class="h-80 overflow-y-auto bg-base-100 rounded-box border border-base-300 p-4 space-y-16">
+                        <section id="sec-1">
+                            <h3 class="text-lg font-semibold mb-2">Section 1</h3>
+                            <p>
+                                Dans cette première section, nous abordons l'introduction du sujet avec une explication détaillée des enjeux principaux. L'objectif est de fournir un contexte solide afin que le lecteur comprenne l'importance du thème traité. Nous évoquons également les différentes perspectives qui seront explorées dans les sections suivantes, tout en mettant en avant les problématiques actuelles et les défis à relever. Cette section sert de point de départ pour approfondir la réflexion et invite à une lecture attentive des développements à venir, en posant les bases nécessaires à la compréhension globale du sujet.
+                            </p>
+                        </section>
+                        <section id="sec-2">
+                            <h3 class="text-lg font-semibold mb-2">Section 2</h3>
+                            <p>
+                                La deuxième section se concentre sur l'analyse des méthodes et des outils utilisés dans le domaine. Nous présentons ici les approches traditionnelles ainsi que les innovations récentes qui ont permis d'améliorer les résultats. Un accent particulier est mis sur l'importance de l'adaptabilité et de la rigueur méthodologique. Des exemples concrets illustrent les propos, permettant au lecteur de mieux saisir les avantages et les limites de chaque méthode. Cette partie vise à donner une vision claire et structurée des pratiques actuelles, tout en ouvrant la voie à de futures évolutions.
+                            </p>
+                        </section>
+                        <section id="sec-3">
+                            <h3 class="text-lg font-semibold mb-2">Section 3</h3>
+                            <p>
+                                Dans cette troisième section, nous examinons les résultats obtenus à travers différentes études de cas. Chaque exemple est analysé en détail afin de mettre en lumière les facteurs de réussite et les obstacles rencontrés. Nous discutons également des enseignements tirés de ces expériences, en insistant sur l'importance de l'évaluation continue et de l'amélioration des processus. Cette analyse approfondie permet de dégager des tendances et des recommandations utiles pour les professionnels du secteur, tout en soulignant la nécessité d'une approche personnalisée selon les contextes.
+                            </p>
+                        </section>
+                        <section id="sec-4">
+                            <h3 class="text-lg font-semibold mb-2">Section 4</h3>
+                            <p>
+                                Enfin, la quatrième section propose une synthèse des points abordés précédemment et ouvre la réflexion sur les perspectives d'avenir. Nous évoquons les pistes de recherche à explorer, ainsi que les évolutions technologiques susceptibles d'impacter le domaine. L'accent est mis sur la collaboration entre les différents acteurs et sur l'importance de l'innovation pour répondre aux nouveaux défis. Cette conclusion invite le lecteur à poursuivre la réflexion et à s'impliquer activement dans le développement de solutions adaptées, en gardant à l'esprit les enjeux éthiques et sociétaux.
+                            </p>
+                        </section>
+                    </div>
+                </div>
+                <div>
+                    <x-daisy::ui.scrollspy :items="[
+                        ['id' => 'sec-1', 'label' => 'Section 1'],
+                        ['id' => 'sec-2', 'label' => 'Section 2'],
+                        ['id' => 'sec-3', 'label' => 'Section 3'],
+                        ['id' => 'sec-4', 'label' => 'Section 4'],
+                    ]" container="#spyContainer" :smoothScroll="true" offset="8" navClass="menu menu-sm bg-base-100 rounded-box p-2 w-full" activeClass="active" />
+                </div>
+            </div>
+            <div class="divider">Auto-génération</div>
+            <div class="grid md:grid-cols-3 gap-6 items-start">
+                <div class="md:col-span-2">
+                    <div id="spyContainerAuto" class="h-80 overflow-y-auto bg-base-100 rounded-box border border-base-300 p-4 space-y-12">
+                        <section>
+                            <h3 class="text-lg font-semibold mb-2">Intro</h3>
+                            <p>
+                                Le composant ScrollSpy permet de mettre en évidence dynamiquement la section actuellement visible dans une zone de contenu défilante. Il est particulièrement utile pour les longues pages ou les documentations techniques, où la navigation rapide entre différentes parties est essentielle. Grâce à ScrollSpy, l'utilisateur bénéficie d'une expérience de navigation améliorée, car il sait toujours où il se trouve dans la page. Ce composant s'intègre facilement dans n'importe quelle interface et peut être personnalisé pour s'adapter à la charte graphique du projet. Il prend en charge le suivi automatique des sections, la gestion du défilement fluide et l'ajout de classes actives pour indiquer la section courante. L'objectif principal est d'améliorer l'ergonomie et la lisibilité des contenus structurés, tout en offrant une navigation intuitive et moderne.
+                            </p>
+                        </section>
+                        <section>
+                            <h3 class="text-lg font-semibold mb-2">Features</h3>
+                            <p>
+                                Parmi les fonctionnalités principales du composant ScrollSpy, on retrouve la détection automatique des sections visibles, la génération dynamique du menu de navigation, et la possibilité de personnaliser les classes CSS appliquées à l'élément actif. Le composant supporte également le défilement fluide (smooth scroll), ce qui permet à l'utilisateur de naviguer d'une section à l'autre sans à-coups. Il est possible de définir un offset pour ajuster la détection en fonction de la hauteur de l'en-tête ou d'autres éléments fixes. De plus, ScrollSpy peut être configuré pour fonctionner avec différents types de conteneurs, qu'il s'agisse d'une page entière ou d'une zone spécifique à l'intérieur d'une interface. Enfin, il est compatible avec l'accessibilité, en mettant à jour les attributs ARIA pour indiquer la section courante aux technologies d'assistance.
+                            </p>
+                        </section>
+                        <section>
+                            <h3 class="text-lg font-semibold mb-2">API</h3>
+                            <p>
+                                L'API du composant ScrollSpy est conçue pour être simple et flexible. Il suffit de spécifier le sélecteur du conteneur à surveiller via l'attribut <code>container</code>, et d'indiquer le type d'éléments à suivre avec l'attribut <code>track</code> (par exemple, "section" ou "h2"). L'option <code>:autogen="true"</code> permet de générer automatiquement le menu de navigation à partir des titres présents dans le contenu. Il est également possible de personnaliser la classe CSS du menu via <code>navClass</code> et la classe active via <code>activeClass</code>. Pour une expérience utilisateur optimale, l'attribut <code>offset</code> permet d'ajuster la détection de la section active. Le composant émet des événements personnalisés lors du changement de section, ce qui permet d'intégrer des comportements additionnels si nécessaire.
+                            </p>
+                        </section>
+                        <section>
+                            <h3 class="text-lg font-semibold mb-2">Examples</h3>
+                            <p>
+                                Un exemple typique d'utilisation de ScrollSpy consiste à l'intégrer dans une documentation technique, où chaque section du guide est suivie et le menu latéral se met à jour automatiquement. Il peut également être utilisé dans des pages de présentation de produits, des FAQ ou des blogs à structure longue. Pour l'utiliser, il suffit d'entourer les sections à suivre dans un conteneur avec un identifiant, puis d'ajouter le composant ScrollSpy en lui passant le sélecteur du conteneur. Le menu généré permet à l'utilisateur de cliquer sur une section pour y accéder directement, tandis que le survol ou le défilement met à jour la section active. Grâce à sa flexibilité, ScrollSpy s'adapte à de nombreux cas d'usage et améliore significativement la navigation dans les interfaces riches en contenu.
+                            </p>
+                        </section>
+                    </div>
+                </div>
+                <div>
+                    <x-daisy::ui.scrollspy container="#spyContainerAuto" :autogen="true" track="section" navClass="menu menu-sm bg-base-100 rounded-box p-2 w-full" />
+                </div>
+            </div>
+        </section>
+
+        <!-- Lightbox -->
+        <section class="space-y-4 bg-base-200 p-6 rounded-box">
+            <h2 class="text-lg font-medium">Lightbox</h2>
+            <x-daisy::ui.lightbox :images="[
+                ['thumb' => 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=300', 'src' => 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1600', 'alt' => 'Table Full of Spices', 'caption' => 'Table Full of Spices'],
+                ['thumb' => 'https://images.unsplash.com/photo-1482192596544-9eb780fc7f66?w=300', 'src' => 'https://images.unsplash.com/photo-1482192596544-9eb780fc7f66?w=1600', 'alt' => 'Winter Landscape', 'caption' => 'Winter Landscape'],
+                ['thumb' => 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300', 'src' => 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1600', 'alt' => 'View of the City in the Mountains', 'caption' => 'View of the City in the Mountains'],
+            ]" cols="grid-cols-3 md:grid-cols-4" />
+        </section>
+
+        <!-- Media Gallery -->
+        <section class="space-y-4 bg-base-200 p-6 rounded-box">
+            <h2 class="text-lg font-medium">Media Gallery</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <x-daisy::ui.media-gallery :images="[
+                    ['thumb' => 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=300', 'src' => 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1600', 'alt' => 'Table Full of Spices'],
+                    ['thumb' => 'https://images.unsplash.com/photo-1482192596544-9eb780fc7f66?w=300', 'src' => 'https://images.unsplash.com/photo-1482192596544-9eb780fc7f66?w=1600', 'alt' => 'Winter Landscape'],
+                    ['thumb' => 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300', 'src' => 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1600', 'alt' => 'View of the City in the Mountains'],
+                ]" activation="click" :zoomEffect="true" position="bottom" />
+
+                <x-daisy::ui.media-gallery :images="[
+                    ['thumb' => 'https://images.unsplash.com/photo-1556909114-26dd1332b9de?w=300', 'src' => 'https://images.unsplash.com/photo-1556909114-26dd1332b9de?w=1600', 'alt' => 'White blouse'],
+                    ['thumb' => 'https://images.unsplash.com/photo-1520975922284-9bcd50f5fb39?w=300', 'src' => 'https://images.unsplash.com/photo-1520975922284-9bcd50f5fb39?w=1600', 'alt' => 'Blue Jeans Jacket'],
+                    ['thumb' => 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=300', 'src' => 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600', 'alt' => 'Red Sweatshirt'],
+                    ['thumb' => 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300', 'src' => 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=1600', 'alt' => 'Black Shirt'],
+                ]" activation="mouseenter" position="right" :autoHeight="true" />
+            </div>
+        </section>
+
+        <!-- Input Mask -->
+        <section class="space-y-4 bg-base-200 p-6 rounded-box">
+            <h2 class="text-lg font-medium">Input Mask</h2>
+            <p class="opacity-70">Masquage de saisie léger. Compatible avec n'importe quel <code>input</code> DaisyUI via des data-attributes.</p>
+            <div class="grid md:grid-cols-2 gap-6 items-start">
+                <div class="space-y-3">
+                    <div class="text-sm opacity-70">Obfuscation: tout masqué</div>
+                    <x-daisy::ui.input data-obfuscate="1" data-obfuscate-char="•" />
+                </div>
+
+                <div class="space-y-3">
+                    <div class="text-sm opacity-70">Obfuscation partielle: garder les 4 derniers</div>
+                    <x-daisy::ui.input data-obfuscate="1" data-obfuscate-char="*" data-obfuscate-keep-end="4" value="1234567890" />
+                </div>
+
+                <div class="space-y-3">
+                    <div class="text-sm opacity-70">Saisie mot de passe obfusquée</div>
+                    <x-daisy::ui.input type="text" placeholder="Mot de passe" data-obfuscate="1" data-obfuscate-char="*" />
+                </div>
+
+                <div class="space-y-3">
+                    <div class="text-sm opacity-70">Numéro de carte (afficher les 4 derniers)</div>
+                    <x-daisy::ui.input type="text" value="4242424242424242" data-obfuscate="1" data-obfuscate-keep-end="4" />
+                </div>
+
+                
+
+                
+            </div>
+        </section>
+
+        <!-- Embeds / Ratio -->
+        <section class="space-y-4 bg-base-200 p-6 rounded-box">
+            <h2 class="text-lg font-medium">Embeds</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- YouTube 16x9 -->
+                <x-daisy::ui.embed tag="iframe" ratio="16x9" src="https://www.youtube.com/embed/vlDzYIIOYmM" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" />
+
+                <!-- 4x3 -->
+                <x-daisy::ui.embed tag="div" ratio="4x3">
+                    <div class="flex items-center justify-center h-full w-full bg-base-300/50">4x3</div>
+                </x-daisy::ui.embed>
+
+                <!-- 1x1 -->
+                <x-daisy::ui.embed tag="div" ratio="1x1">
+                    <div class="flex items-center justify-center h-full w-full bg-base-300/50">1x1</div>
+                </x-daisy::ui.embed>
+
+                <!-- Custom 2x1 via pourcentage -->
+                <x-daisy::ui.embed tag="div" :ratioPercent="'50%'">
+                    <div class="flex items-center justify-center h-full w-full bg-base-300/50">2x1</div>
+                </x-daisy::ui.embed>
+            </div>
+        </section>
+
+
+
+        <!-- Scroll Status -->
+        <section class="space-y-4 bg-base-200 p-6 rounded-box">
+            <h2 class="text-lg font-medium">Scroll Status</h2>
+            <p class="opacity-70">Barre de progression indiquant le niveau de scroll (conteneur ou page complète).</p>
+
+            <div class="grid md:grid-cols-2 gap-6 items-start">
+                <div>
+                    <h3 class="font-semibold mb-2">Local (conteneur)</h3>
+                    <div class="border rounded-box" style="height: 180px; overflow-y: auto;">
+                        <x-daisy::ui.scroll-status color="#22c55e" height="6px" :offset="0" class="top-0" />
+                        <div class="p-4 space-y-4">
+                            @for($i=0;$i<12;$i++)
+                                <p>Some content here ({{ $i+1 }})</p>
+                            @endfor
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold mb-2">Global (page)</h3>
+                    <x-daisy::ui.scroll-status :global="true" color="#3b82f6" height="6px" :offset="0" class="top-0" />
+                    <div class="text-sm opacity-70">Faites défiler la page pour voir la barre bleue en haut.</div>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold mb-2">Position / Hauteur</h3>
+                    <div class="border rounded-box" style="height: 180px; overflow-y: auto;">
+                        <x-daisy::ui.scroll-status color="#f59e0b" height="12px" :offset="10" class="top-2" />
+                        <div class="p-4 space-y-4">
+                            @for($i=0;$i<12;$i++)
+                                <p>Custom height & offset ({{ $i+1 }})</p>
+                            @endfor
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold mb-2">Modal à 50% (once)</h3>
+                    <div class="border rounded-box" style="height: 180px; overflow-y: auto;">
+                        <x-daisy::ui.scroll-status color="#ef4444" height="6px" scroll="50" target="#demoScrollModalOnce" />
+                        <div class="p-4 space-y-4">
+                            @for($i=0;$i<16;$i++)
+                                <p>Scroll to open modal once ({{ $i+1 }})</p>
+                            @endfor
+                        </div>
+                    </div>
+                    <x-daisy::ui.modal id="demoScrollModalOnce" title="Scroll Status">
+                        <x-slot:actions>
+                            <form method="dialog">
+                                <button class="btn">Close</button>
+                            </form>
+                        </x-slot:actions>
+                        Showing scroll status on 50% once
+                    </x-daisy::ui.modal>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold mb-2">Modal à 50% (multi)</h3>
+                    <div class="border rounded-box" style="height: 180px; overflow-y: auto;">
+                        <x-daisy::ui.scroll-status color="#06b6d4" height="6px" scroll="50" target="#demoScrollModalMulti" :openOnce="false" />
+                        <div class="p-4 space-y-4">
+                            @for($i=0;$i<16;$i++)
+                                <p>Scroll to open modal multiple ({{ $i+1 }})</p>
+                            @endfor
+                        </div>
+                    </div>
+                    <x-daisy::ui.modal id="demoScrollModalMulti" title="Scroll Status">
+                        <x-slot:actions>
+                            <form method="dialog">
+                                <button class="btn">Close</button>
+                            </form>
+                        </x-slot:actions>
+                        Showing scroll status on 50% multiple
+                    </x-daisy::ui.modal>
+                </div>
+            </div>
+        </section>
+
+        <!-- Transfer -->
+        <section class="space-y-4 bg-base-200 p-6 rounded-box">
+            <h2 class="text-lg font-medium">Transfer</h2>
+            <p class="opacity-70">Transférer des éléments entre deux listes.</p>
+
+            <div class="grid md:grid-cols-2 gap-8 items-start">
+                <div class="space-y-4">
+                    <h3 class="font-semibold">Basique</h3>
+                    <x-daisy::ui.transfer :source="[
+                        ['data' => 'Lorem ipsum'],
+                        ['data' => 'Something special'],
+                        ['data' => 'John Wick'],
+                        ['data' => 'Poland'],
+                        ['data' => 'Germany'],
+                        ['data' => 'USA'],
+                        ['data' => 'China'],
+                        ['data' => 'Madagascar'],
+                        ['data' => 'Argentina'],
+                    ]" />
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="font-semibold">Disabled items</h3>
+                    <x-daisy::ui.transfer :source="[
+                        ['data' => 'Lorem ipsum'],
+                        ['data' => 'Something special', 'disabled' => true],
+                        ['data' => 'John Wick', 'disabled' => true],
+                        ['data' => 'Poland'],
+                        ['data' => 'Germany'],
+                        ['data' => 'USA'],
+                        ['data' => 'China'],
+                        ['data' => 'Madagascar', 'disabled' => true],
+                        ['data' => 'Argentina'],
+                    ]" :target="[
+                        ['data' => 'Russia', 'disabled' => true],
+                        ['data' => 'Australia'],
+                        ['data' => 'Hungary', 'disabled' => true],
+                        ['data' => 'France'],
+                    ]" />
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="font-semibold">Checked items</h3>
+                    <x-daisy::ui.transfer :source="[
+                        ['data' => 'Lorem ipsum', 'checked' => true],
+                        ['data' => 'Something special', 'checked' => true],
+                        ['data' => 'John Wick', 'checked' => true],
+                        ['data' => 'Poland'],
+                        ['data' => 'Germany'],
+                        ['data' => 'USA', 'checked' => true],
+                        ['data' => 'China'],
+                        ['data' => 'Madagascar'],
+                        ['data' => 'Argentina'],
+                    ]" :target="[
+                        ['data' => 'Russia', 'checked' => true],
+                        ['data' => 'Australia', 'checked' => true],
+                        ['data' => 'Hungary'],
+                        ['data' => 'France'],
+                    ]" />
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="font-semibold">One way</h3>
+                    <x-daisy::ui.transfer :source="[
+                        ['data' => 'Lorem ipsum', 'checked' => true],
+                        ['data' => 'Something special', 'checked' => true],
+                        ['data' => 'John Wick', 'checked' => true],
+                        ['data' => 'Poland'],
+                        ['data' => 'Germany'],
+                        ['data' => 'USA', 'checked' => true],
+                        ['data' => 'China'],
+                        ['data' => 'Madagascar'],
+                        ['data' => 'Argentina'],
+                    ]" :target="[
+                        ['data' => 'Russia', 'checked' => true],
+                        ['data' => 'Australia', 'checked' => true],
+                        ['data' => 'Hungary'],
+                        ['data' => 'France'],
+                    ]" :oneWay="true" />
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="font-semibold">Pagination</h3>
+                    <x-daisy::ui.transfer :source="[
+                        ['data' => 'Lorem ipsum', 'checked' => true],
+                        ['data' => 'Something special', 'checked' => true],
+                        ['data' => 'John Wick', 'checked' => true],
+                        ['data' => 'Poland'],
+                        ['data' => 'Germany', 'disabled' => true],
+                        ['data' => 'USA', 'checked' => true],
+                        ['data' => 'China'],
+                        ['data' => 'Madagascar'],
+                        ['data' => 'Argentina'],
+                    ]" :target="[
+                        ['data' => 'Russia', 'checked' => true],
+                        ['data' => 'Australia', 'checked' => true],
+                        ['data' => 'Hungary'],
+                        ['data' => 'France'],
+                    ]" :pagination="true" />
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="font-semibold">Pagination custom</h3>
+                    <x-daisy::ui.transfer :source="[
+                        ['data' => 'Lorem ipsum', 'checked' => true],
+                        ['data' => 'Something special', 'checked' => true],
+                        ['data' => 'John Wick', 'checked' => true],
+                        ['data' => 'Poland'],
+                        ['data' => 'Germany', 'disabled' => true],
+                        ['data' => 'USA', 'checked' => true],
+                        ['data' => 'China'],
+                        ['data' => 'Madagascar'],
+                        ['data' => 'Argentina'],
+                        ['data' => 'Spain'],
+                        ['data' => 'Italy'],
+                        ['data' => 'Portugal'],
+                    ]" :target="[
+                        ['data' => 'Russia', 'checked' => true],
+                        ['data' => 'Australia', 'checked' => true],
+                        ['data' => 'Hungary'],
+                        ['data' => 'France'],
+                    ]" :pagination="true" :elementsPerPage="7" />
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="font-semibold">Search</h3>
+                    <x-daisy::ui.transfer :source="[
+                        ['data' => 'Lorem ipsum', 'checked' => true],
+                        ['data' => 'Something special', 'checked' => true],
+                        ['data' => 'John Wick', 'checked' => true],
+                        ['data' => 'Poland'],
+                        ['data' => 'Germany', 'disabled' => true],
+                        ['data' => 'USA', 'checked' => true],
+                        ['data' => 'China'],
+                        ['data' => 'Madagascar'],
+                        ['data' => 'Argentina'],
+                    ]" :target="[
+                        ['data' => 'Russia', 'checked' => true],
+                        ['data' => 'Australia', 'checked' => true],
+                        ['data' => 'Hungary'],
+                        ['data' => 'France'],
+                    ]" :pagination="true" :search="true" />
+                </div>
+            </div>
         </section>
     </div>
     <script>
@@ -2476,4 +3216,16 @@
         })();
     </script>
 </x-daisy::layout.app>
+
+<script>
+// Marquer toutes les images de la démo en lazy pour éviter que l'onglet reste en "chargement"
+(function(){
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('img:not([loading])').forEach((img) => {
+      img.setAttribute('loading', 'lazy');
+      img.setAttribute('decoding', 'async');
+    });
+  });
+})();
+</script>
 
