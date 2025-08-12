@@ -186,7 +186,6 @@
         @include('daisy-dev::demo.partials.progress')
         @include('daisy-dev::demo.partials.radial-progress')
         @include('daisy-dev::demo.partials.rating')
-        @include('daisy-dev::demo.partials.select-advanced')
         @include('daisy-dev::demo.partials.stat')
         @include('daisy-dev::demo.partials.skeleton')
         @include('daisy-dev::demo.partials.stack')
