@@ -4,8 +4,8 @@
     <p class="opacity-70">Transférer des éléments entre deux listes.</p>
 
     <div class="grid md:grid-cols-2 gap-8 items-start">
-        <div class="space-y-4">
-            <h3 class="font-semibold">Basique</h3>
+        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
+            <h3 class="font-semibold text-primary">Basique</h3>
             <x-daisy::ui.transfer :source="[
                 ['data' => 'Lorem ipsum'],
                 ['data' => 'Something special'],
@@ -19,8 +19,8 @@
             ]" />
         </div>
 
-        <div class="space-y-4">
-            <h3 class="font-semibold">Disabled items</h3>
+        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
+            <h3 class="font-semibold text-primary">Disabled items</h3>
             <x-daisy::ui.transfer :source="[
                 ['data' => 'Lorem ipsum'],
                 ['data' => 'Something special', 'disabled' => true],
@@ -39,8 +39,8 @@
             ]" />
         </div>
 
-        <div class="space-y-4">
-            <h3 class="font-semibold">Checked items</h3>
+        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
+            <h3 class="font-semibold text-primary">Checked items</h3>
             <x-daisy::ui.transfer :source="[
                 ['data' => 'Lorem ipsum', 'checked' => true],
                 ['data' => 'Something special', 'checked' => true],
@@ -59,8 +59,8 @@
             ]" />
         </div>
 
-        <div class="space-y-4">
-            <h3 class="font-semibold">One way</h3>
+        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
+            <h3 class="font-semibold text-primary">One way</h3>
             <x-daisy::ui.transfer :source="[
                 ['data' => 'Lorem ipsum', 'checked' => true],
                 ['data' => 'Something special', 'checked' => true],
@@ -79,8 +79,8 @@
             ]" :oneWay="true" />
         </div>
 
-        <div class="space-y-4">
-            <h3 class="font-semibold">Pagination</h3>
+        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
+            <h3 class="font-semibold text-primary">Pagination</h3>
             <x-daisy::ui.transfer :source="[
                 ['data' => 'Lorem ipsum', 'checked' => true],
                 ['data' => 'Something special', 'checked' => true],
@@ -99,8 +99,8 @@
             ]" :pagination="true" />
         </div>
 
-        <div class="space-y-4">
-            <h3 class="font-semibold">Pagination custom</h3>
+        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
+            <h3 class="font-semibold text-primary">Pagination custom</h3>
             <x-daisy::ui.transfer :source="[
                 ['data' => 'Lorem ipsum', 'checked' => true],
                 ['data' => 'Something special', 'checked' => true],
@@ -122,8 +122,8 @@
             ]" :pagination="true" :elementsPerPage="7" />
         </div>
 
-        <div class="space-y-4">
-            <h3 class="font-semibold">Search</h3>
+        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
+            <h3 class="font-semibold text-primary">Search</h3>
             <x-daisy::ui.transfer :source="[
                 ['data' => 'Lorem ipsum', 'checked' => true],
                 ['data' => 'Something special', 'checked' => true],
@@ -140,6 +140,56 @@
                 ['data' => 'Hungary'],
                 ['data' => 'France'],
             ]" :pagination="true" :search="true" />
+        </div>
+
+        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
+            <h3 class="font-semibold text-primary">Textes personnalisés - Utilisateurs</h3>
+            <x-daisy::ui.transfer 
+                titleSource="Utilisateurs disponibles"
+                titleTarget="Utilisateurs sélectionnés"
+                selectAllTextSource="Tous les utilisateurs"
+                selectAllTextTarget="Tous sélectionnés"
+                searchPlaceholderSource="Rechercher un utilisateur..."
+                searchPlaceholderTarget="Filtrer les sélectionnés..."
+                toTargetButtonText="Ajouter →"
+                toSourceButtonText="← Retirer"
+                :source="[
+                    ['data' => 'Alice Martin'],
+                    ['data' => 'Bob Dupont'],
+                    ['data' => 'Claire Bernard'],
+                    ['data' => 'David Laurent'],
+                    ['data' => 'Emma Rousseau'],
+                ]" 
+                :target="[
+                    ['data' => 'François Moreau'],
+                    ['data' => 'Sophie Blanc'],
+                ]" 
+                :search="true" />
+        </div>
+
+        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
+            <h3 class="font-semibold text-primary">Textes personnalisés - Permissions</h3>
+            <x-daisy::ui.transfer 
+                titleSource="Permissions disponibles"
+                titleTarget="Permissions accordées"
+                selectAllTextSource="Toutes les permissions"
+                selectAllTextTarget="Toutes accordées"
+                searchPlaceholderSource="Chercher une permission..."
+                searchPlaceholderTarget="Filtrer les permissions accordées..."
+                :oneWay="true"
+                :source="[
+                    ['data' => 'Lire les articles'],
+                    ['data' => 'Écrire des articles'],
+                    ['data' => 'Modifier les articles'],
+                    ['data' => 'Supprimer les articles'],
+                    ['data' => 'Gérer les utilisateurs'],
+                    ['data' => 'Gérer les rôles'],
+                ]" 
+                :target="[
+                    ['data' => 'Lire les articles', 'checked' => true],
+                    ['data' => 'Écrire des articles', 'checked' => true],
+                ]" 
+                :search="true" />
         </div>
     </div>
 </section>
