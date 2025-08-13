@@ -342,5 +342,9 @@ window.DaisyLightbox = {
   reset: resetTransform
 };
 
-// Initialisation automatique à la fin du chargement du DOM
-document.addEventListener('DOMContentLoaded', initAll);
+// Initialisation automatique (aussi si importé après DOMContentLoaded)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAll);
+} else {
+  initAll();
+}

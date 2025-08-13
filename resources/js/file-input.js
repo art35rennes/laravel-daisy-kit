@@ -93,6 +93,10 @@ function initFileInput(root) {
   const drop = root.querySelector('[data-dropzone]');
   const previews = root.querySelector('[data-previews]');
   const wantPreview = root.dataset.preview === 'true';
+  // Forcer le mode multiple si demandé côté wrapper (fiable même si l'attribut manque)
+  if (root.dataset.multiple === 'true') {
+    try { input.multiple = true; } catch (_) {}
+  }
 
   // Analyse de l'attribut accept pour filtrer les fichiers autorisés
   const acceptAttr = (input.getAttribute('accept') || '').toLowerCase();
@@ -167,6 +171,10 @@ function initFileInput(root) {
         // Utilise DataTransfer pour assigner les fichiers à l'input (supporte le mode multiple)
         if (window.DataTransfer) {
           const d = new DataTransfer();
+          // Si multiple, on conserve les fichiers déjà sélectionnés puis on ajoute les nouveaux
+          if (input.multiple && input.files?.length) {
+            Array.from(input.files).forEach((f) => d.items.add(f));
+          }
           if (input.multiple) accepted.forEach((f) => d.items.add(f));
           else d.items.add(accepted[0]);
           input.files = d.files;
@@ -207,5 +215,9 @@ function initAllFileInputs() {
 // Expose l'API globale pour usage externe (ex: Alpine, Livewire, etc.)
 window.DaisyFileInput = { init: initFileInput, initAll: initAllFileInputs };
 
-// Initialisation automatique à la fin du chargement du DOM
-document.addEventListener('DOMContentLoaded', initAllFileInputs);
+// Initialisation automatique (compatible import tardif)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAllFileInputs);
+} else {
+  initAllFileInputs();
+}

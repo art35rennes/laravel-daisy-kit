@@ -292,5 +292,9 @@ function initAllTransfers() {
 // Expose l'API globale pour usage externe
 window.DaisyTransfer = { init: initTransfer, initAll: initAllTransfers };
 
-// Initialisation automatique à la fin du chargement du DOM
-document.addEventListener('DOMContentLoaded', initAllTransfers);
+// Initialisation automatique (compatible import tardif)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAllTransfers);
+} else {
+  initAllTransfers();
+}

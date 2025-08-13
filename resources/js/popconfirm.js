@@ -127,12 +127,17 @@ function setupModalPopconfirm() {
   });
 }
 
-// Initialisation automatique au chargement du DOM
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialise tous les popconfirms inline présents dans la page
-  document.querySelectorAll('[data-popconfirm]')
-    .forEach(setupInlinePopconfirm);
-  // Initialise la gestion globale des popconfirms modaux
+// API globale + initialisation automatique (robuste à l'import tardif)
+function initAllPopconfirms() {
+  document.querySelectorAll('[data-popconfirm]').forEach(setupInlinePopconfirm);
   setupModalPopconfirm();
-});
+}
+
+window.DaisyPopconfirm = { initAll: initAllPopconfirms };
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAllPopconfirms);
+} else {
+  initAllPopconfirms();
+}
 

@@ -198,5 +198,9 @@ function dispose(root) {
 // Exposition de l'API globale pour usage externe
 window.DaisyScrollStatus = { init, initAll, dispose };
 
-// Initialisation automatique au chargement du DOM
-document.addEventListener('DOMContentLoaded', initAll);
+// Initialisation automatique (compatible import tardif)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAll);
+} else {
+  initAll();
+}

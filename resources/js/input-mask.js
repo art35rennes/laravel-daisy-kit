@@ -465,8 +465,14 @@ window.DaisyInputMask = {
   initAllObfuscate
 };
 
-// Initialise automatiquement tous les inputs masqués/obfusqués au chargement du DOM
-document.addEventListener('DOMContentLoaded', () => {
+// Initialise automatiquement (compatible import tardif)
+function doInit() {
   initAllInputMasks();
   initAllObfuscate();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', doInit);
+} else {
+  doInit();
+}

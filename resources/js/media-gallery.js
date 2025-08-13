@@ -107,5 +107,9 @@ window.DaisyMediaGallery = {
   initAll: initAllMediaGalleries
 };
 
-// Initialise automatiquement toutes les galeries à la fin du chargement du DOM
-document.addEventListener('DOMContentLoaded', initAllMediaGalleries);
+// Initialisation automatique (compatible import tardif)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAllMediaGalleries);
+} else {
+  initAllMediaGalleries();
+}

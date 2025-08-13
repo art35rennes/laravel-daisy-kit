@@ -85,14 +85,14 @@ function ensureIndex(root) {
 }
 
 // Gère le focus clavier sur un treeitem
-function setFocus(root, li) {
+function setFocus(root, li, doFocus = true) {
   if (!li) return;
   const tree = $(root, 'ul[role="tree"]');
   if (!tree) return;
   // On retire le tabIndex de tous les items, puis on le met sur l'élément ciblé
   $all(root, 'li[role="treeitem"]').forEach((n) => n.tabIndex = -1);
   li.tabIndex = 0;
-  li.focus();
+  if (doFocus) li.focus();
 }
 
 // Déclenche un événement CustomEvent sur la racine
@@ -398,12 +398,19 @@ function attachInteractions(root) {
       else input.checked = false;
       return;
     }
-    // Si la case était mixed, un clic doit la décocher (UX attendue)
+    // Si la case était mixed, un clic doit la décocher et normaliser l'état aria
     if (input.type === 'checkbox' && input.dataset.wasIndeterminate === '1') {
       setCheckboxState(input, 'unchecked');
+      input.indeterminate = false;
+      input.setAttribute('aria-checked', 'false');
       delete input.dataset.wasIndeterminate;
       selectNode(root, li, false, true);
       return;
+    }
+    // Normalise aria-checked après tout changement
+    if (input.type === 'checkbox') {
+      input.indeterminate = false;
+      input.setAttribute('aria-checked', input.checked ? 'true' : 'false');
     }
     selectNode(root, li, false, true);
   });
@@ -486,9 +493,23 @@ function init(root) {
   root.__treeInit = true;
   attachInteractions(root);
   restoreState(root);
-  // Focus initial sur le premier nœud
+  // Détermine s'il faut autofocus au chargement
+  function shouldAutofocusOnInit(r) {
+    // Opt-in via data-autofocus="true" pour éviter de casser l'ancre URL et le focus existant
+    if (r.dataset.autofocus !== 'true') return false;
+    // Si une ancre est présente ou une cible :target existe, ne pas voler le focus
+    if (document.querySelector(':target')) return false;
+    if (location.hash && location.hash.length > 1) return false;
+    // Si un autre élément a déjà le focus, on n'interfère pas
+    const active = document.activeElement;
+    if (active && active !== document.body) return false;
+    return true;
+  }
+  // Prépare le premier élément focusable (tabIndex) sans déclencher un focus/scroll
   const first = root.querySelector('li[role="treeitem"]');
-  if (first) setFocus(root, first);
+  if (first) setFocus(root, first, false);
+  // Autofocus uniquement si explicitement demandé et sans ancre
+  if (first && shouldAutofocusOnInit(root)) setFocus(root, first, true);
   // Expose l'API instance sur la racine
   root.__treeApi = apiFor(root);
 }
@@ -505,5 +526,9 @@ window.DaisyTreeView = {
   getSelected(root) { return getSelected(root); },
 };
 
-// Initialisation automatique à la fin du chargement DOM
-document.addEventListener('DOMContentLoaded', initAll);
+// Initialisation automatique (compatible import tardif)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAll);
+} else {
+  initAll();
+}

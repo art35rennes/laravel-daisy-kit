@@ -319,5 +319,9 @@ window.DaisyCodeEditor = {
   copy: doCopy,
 };
 
-// Auto-initialisation au chargement de la page
-document.addEventListener('DOMContentLoaded', initAll);
+// Auto-initialisation (compatible import tardif)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAll);
+} else {
+  initAll();
+}

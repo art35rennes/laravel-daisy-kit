@@ -112,7 +112,15 @@ function setupPopover(root) {
   });
 }
 
-// Initialisation automatique de tous les popovers présents dans le DOM au chargement de la page
-document.addEventListener('DOMContentLoaded', () => {
+// API globale + initialisation automatique (même si importé après DOMContentLoaded)
+function initAllPopovers() {
   document.querySelectorAll('[data-popover]').forEach(setupPopover);
-});
+}
+
+window.DaisyPopover = { init: setupPopover, initAll: initAllPopovers };
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAllPopovers);
+} else {
+  initAllPopovers();
+}
