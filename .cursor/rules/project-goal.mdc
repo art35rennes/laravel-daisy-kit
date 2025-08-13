@@ -1,76 +1,14 @@
 ---
 alwaysApply: true
 ---
-Ce projet Laravel est un package et non une application. Il faut donc prendre en compte cet aspect dans la génération de code.
+Ce projet Laravel est un package, pas une application. Toute génération de code doit respecter cette architecture de package.
 
-Toujours privilégier les composants déjà développés dans le package avant de créer de nouveaux composants. Vérifier d'abord l'existence des composants existants dans resources/views/components/ui/.
+Avant de créer un nouveau composant, il est impératif de vérifier l'existence d'un composant équivalent dans `resources/views/components/ui/` et de privilégier sa réutilisation.
 
-Pour les icônes, le package blade-ui-kit/blade-icons est installé et doit être privilégié. Ne créer un icône SVG personnalisé que pour les cas spécifiques ou absents de cette bibliothèque.
+Pour les icônes, il faut utiliser en priorité le package `blade-ui-kit/blade-icons` (y compris les bibliothèques Lucide et Heroicons qui sont installées). Un SVG personnalisé ne doit être créé qu'en cas d'absence d'icône appropriée dans ces bibliothèques.
 
-La page de démonstration (demo.blade.php) doit être organisée par sections de composants. Chaque composant doit avoir sa propre section dédiée avec des exemples d'utilisation.
+La page de démonstration (`demo.blade.php`) doit être structurée en sections distinctes, une par composant. Chaque section doit présenter des exemples d'utilisation du composant, couvrant différentes variantes, tailles et états pour une démonstration exhaustive.
 
-Liste des composants :
-- Accordion
-- Alert
-- Avatar
-- Badge
-- Breadcrumbs
-- Button
-- Calendar
-- Card
-- Carousel
-- Chat Bubble
-- Checkbox
-- Collapse
-- Countdown
-- Diff
-- Divider
-- Dock
-- Drawer
-- Dropdown
-- Fieldset
-- File Input
-- Filter
-- Footer
-- Hero
-- Indicator
-- Input
-- Join
-- Kbd
-- Label
-- Link
-- List
-- Loading
-- Login Button
-- Mask
-- Menu
-- Mockup Browser
-- Mockup Code
-- Mockup Phone
-- Mockup Window
-- Modal
-- Navbar
-- Pagination
-- Progress
-- Radial Progress
-- Radio
-- Range Slider
-- Rating
-- Select
-- Skeleton
-- Stack
-- Stat
-- Status
-- Steps
-- Swap
-- Tabs
-- Table
-- Textarea
-- Theme Controller
-- Timeline
-- Toast
-- Toggle
-- Tooltip
-- Validator
+DaisyUI v5 est utilisé : toutes les classes et composants doivent être compatibles avec cette version.
 
-Chaque section doit présenter différentes variantes, tailles et états du composant pour une démonstration complète.
+Chaque ajout ou modification doit respecter ces principes pour garantir la cohérence et la maintenabilité du package.
