@@ -47,17 +47,22 @@ function setCurrent(root, index) {
   // Met à jour l'index courant dans le data-attribute
   root.dataset.current = String(i);
 
-  // Met à jour l'état visuel des entêtes (step-primary = étape atteinte)
+  // Met à jour l'état visuel et ARIA des entêtes (step-primary = étape atteinte)
   steps.forEach((li, idx) => {
     const sIdx = idx + 1;
     const done = sIdx <= i;
     li.classList.toggle('step-primary', done);
+    // aria-current sur l'étape active
+    if (sIdx === i) li.setAttribute('aria-current', 'step');
+    else li.removeAttribute('aria-current');
   });
 
-  // Affiche le panneau correspondant à l'étape courante, masque les autres
+  // Affiche le panneau correspondant à l'étape courante, masque les autres + ARIA
   panels.forEach((p) => {
     const sIdx = parseInt(p.dataset.stepIndex || '0', 10);
-    p.classList.toggle('hidden', sIdx !== i);
+    const isActive = sIdx === i;
+    p.classList.toggle('hidden', !isActive);
+    p.setAttribute('aria-hidden', isActive ? 'false' : 'true');
   });
 
   // Met à jour l'état des boutons de navigation (précédent, suivant, terminer)
@@ -165,12 +170,29 @@ function init(root) {
 
   // Navigation par clic sur les entêtes d'étape (si autorisé)
   headers.addEventListener('click', (e) => {
-    const li = e.target.closest('[data-step-index]');
-    if (!li) return;
+    const target = e.target;
+    const li = target && typeof target.closest === 'function' ? target.closest('[data-step-index]') : null;
+    if (!li || !headers.contains(li)) return;
     if (root.dataset.allowClick !== 'true') return;
+    if (isDisabledStep(li)) return;
     const idx = parseInt(li.dataset.stepIndex || '0', 10);
     if (!idx) return;
     if (!canGoTo(root, idx)) return;
+    setCurrent(root, idx);
+  });
+
+  // Navigation clavier (Enter/Space) sur les entêtes
+  headers.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const target = e.target;
+    const li = target && typeof target.closest === 'function' ? target.closest('[data-step-index]') : null;
+    if (!li || !headers.contains(li)) return;
+    if (root.dataset.allowClick !== 'true') return;
+    if (isDisabledStep(li)) return;
+    const idx = parseInt(li.dataset.stepIndex || '0', 10);
+    if (!idx) return;
+    if (!canGoTo(root, idx)) return;
+    e.preventDefault();
     setCurrent(root, idx);
   });
 
@@ -196,7 +218,7 @@ function init(root) {
  * Initialise tous les steppers présents dans le document (ayant [data-stepper="true"]).
  */
 function initAll() {
-  document.querySelectorAll('[data-stepper="true"]').forEach(init);
+  document.querySelectorAll('[data-stepper]').forEach(init);
 }
 
 // Expose l'API globale DaisyStepper
