@@ -16,11 +16,11 @@
 
         <!-- Pagination compacte (exemple réaliste) -->
         <x-daisy::ui.join>
-            <button class="btn join-item"><x-heroicon-o-chevron-left class="w-4 h-4" /></button>
+            <button class="btn join-item"><x-bi-chevron-left class="w-4 h-4" /></button>
             <button class="btn join-item btn-active">1</button>
             <button class="btn join-item">2</button>
             <button class="btn join-item">3</button>
-            <button class="btn join-item"><x-heroicon-o-chevron-right class="w-4 h-4" /></button>
+            <button class="btn join-item"><x-bi-chevron-right class="w-4 h-4" /></button>
         </x-daisy::ui.join>
 
         <!-- Groupe d'actions (vertical en mobile, horizontal en lg) -->

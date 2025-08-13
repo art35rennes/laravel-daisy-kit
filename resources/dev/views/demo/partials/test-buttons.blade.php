@@ -40,26 +40,26 @@
             <x-daisy::ui.button color="primary" :block="true">Block</x-daisy::ui.button>
             <x-daisy::ui.button color="primary" :circle="true">
                 <x-slot:icon>
-                    <x-heroicon-o-heart class="h-5 w-5" />
+                    <x-bi-heart class="h-5 w-5" />
                 </x-slot:icon>
             </x-daisy::ui.button>
             <x-daisy::ui.button color="primary" :square="true">
                 <x-slot:icon>
-                    <x-heroicon-o-x-mark class="h-5 w-5" />
+                    <x-bi-x class="h-5 w-5" />
                 </x-slot:icon>
             </x-daisy::ui.button>
         </div>
         <div class="flex flex-wrap items-center gap-2">
             <x-daisy::ui.button color="primary">
                 <x-slot:icon>
-                    <x-heroicon-o-arrow-right class="h-5 w-5" />
+                    <x-bi-arrow-right class="h-5 w-5" />
                 </x-slot:icon>
                 Icône à gauche
             </x-daisy::ui.button>
             <x-daisy::ui.button variant="link" color="primary">
                 Icône à droite
                 <x-slot:iconRight>
-                    <x-lucide-external-link class="h-5 w-5" />
+                    <x-bi-box-arrow-up-right class="h-5 w-5" />
                 </x-slot:iconRight>
             </x-daisy::ui.button>
         </div>

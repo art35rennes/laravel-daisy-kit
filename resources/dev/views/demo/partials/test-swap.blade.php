@@ -5,10 +5,10 @@
         <!-- Icônes avec rotation -->
         <x-daisy::ui.swap :rotate="true">
             <x-slot:on>
-                <x-heroicon-o-x-mark class="w-6 h-6" />
+                <x-bi-x class="w-6 h-6" />
             </x-slot:on>
             <x-slot:off>
-                <x-heroicon-o-heart class="w-6 h-6" />
+                <x-bi-heart class="w-6 h-6" />
             </x-slot:off>
         </x-daisy::ui.swap>
 

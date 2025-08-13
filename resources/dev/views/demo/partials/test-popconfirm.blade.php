@@ -15,7 +15,7 @@
         <div class="flex flex-wrap items-center gap-3">
             <x-daisy::ui.popconfirm position="top" message="Confirmer ?">
                 <x-slot:icon>
-                    <x-heroicon-o-exclamation-triangle class="w-5 h-5 text-warning" />
+                    <x-bi-exclamation-triangle class="w-5 h-5 text-warning" />
                 </x-slot:icon>
                 <x-slot:trigger>
                     <x-daisy::ui.button>Top</x-daisy::ui.button>

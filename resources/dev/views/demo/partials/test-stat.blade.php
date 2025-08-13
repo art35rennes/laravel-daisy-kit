@@ -11,7 +11,7 @@
         <div class="stats shadow">
             <x-daisy::ui.stat>
                 <x-slot:figure>
-                    <x-heroicon-o-heart class="inline-block h-8 w-8 stroke-current text-primary" />
+                    <x-bi-heart class="inline-block h-8 w-8 stroke-current text-primary" />
                 </x-slot:figure>
                 <x-slot:title>Total Likes</x-slot:title>
                 <x-slot:value><span class="text-primary">25.6K</span></x-slot:value>
@@ -19,7 +19,7 @@
             </x-daisy::ui.stat>
             <x-daisy::ui.stat>
                 <x-slot:figure>
-                    <x-heroicon-o-bolt class="inline-block h-8 w-8 stroke-current text-secondary" />
+                    <x-bi-lightning-fill class="inline-block h-8 w-8 stroke-current text-secondary" />
                 </x-slot:figure>
                 <x-slot:title>Page Views</x-slot:title>
                 <x-slot:value><span class="text-secondary">2.6M</span></x-slot:value>

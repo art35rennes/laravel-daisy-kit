@@ -16,7 +16,7 @@
             </x-slot:start>
             <x-slot:end>
                 <button class="btn btn-square btn-ghost">
-                    <x-heroicon-o-ellipsis-horizontal class="h-5 w-5" />
+                    <x-bi-three-dots class="h-5 w-5" />
                 </button>
             </x-slot:end>
         </x-daisy::ui.navbar>
@@ -25,7 +25,7 @@
         <x-daisy::ui.navbar bg="base-100" shadow="sm" centerHiddenBelow="lg">
             <x-slot:start>
                 <button class="btn btn-square btn-ghost">
-                    <x-heroicon-o-bars-3 class="h-5 w-5" />
+                    <x-bi-list class="h-5 w-5" />
                 </button>
                 <a class="btn btn-ghost text-xl">DaisyKit</a>
             </x-slot:start>

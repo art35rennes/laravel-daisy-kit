@@ -7,15 +7,15 @@
     </div>
     <x-daisy::ui.dock id="onDemandDock" as="nav" label="Bottom navigation" mobile position="bottom" size="sm" class="hidden z-50 bg-neutral text-neutral-content">
         <button class="dock-item">
-            <x-heroicon-o-home class="size-5" />
+            <x-bi-house class="size-5" />
             <span class="dock-label">Accueil</span>
         </button>
         <button class="dock-item dock-active">
-            <x-heroicon-o-inbox class="size-5" />
+            <x-bi-inbox class="size-5" />
             <span class="dock-label">Inbox</span>
         </button>
         <button id="closeDockBtn" class="dock-item">
-            <x-heroicon-o-x-mark class="size-5" />
+            <x-bi-x class="size-5" />
             <span class="dock-label">Fermer</span>
         </button>
     </x-daisy::ui.dock>

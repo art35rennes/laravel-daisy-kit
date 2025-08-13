@@ -1,11 +1,14 @@
 <x-daisy::layout.app title="DaisyUI Kit - Demo">
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1 class="text-2xl font-semibold">DaisyUI Kit - Demo</h1>
-        <div class="flex items-center gap-3">
-            <!-- Sélecteur unique des thèmes DaisyUI (incluant Light/Dark) -->
-            <label class="form-control w-64">
-                <div class="label"><span class="label-text">Thème DaisyUI</span></div>
-                <select id="themeSelect" class="select select-bordered">
+    </div>
+    
+    <!-- Sélecteur de thème flottant -->
+    <div class="fixed top-4 right-4 z-50">
+        <div class="bg-base-100 rounded-lg shadow-lg p-3 border border-base-300">
+            <label class="form-control w-48">
+                <div class="label"><span class="label-text text-xs">Thème DaisyUI</span></div>
+                <select id="themeSelect" class="select select-bordered select-sm">
                     <option value="light">Light</option>
                     <option value="dark">Dark</option>
                     <option value="cupcake">Cupcake</option>
@@ -116,21 +119,39 @@
             const iconClose = document.getElementById('sectionNavIconClose');
             if (!root || !panel || !btn) return;
             function normalizeText(t){ return (t || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,''); }
+            function slugify(text){ return (text || '').toLowerCase().trim().replace(/[^\w\s-]/g,'').replace(/\s+/g,'-'); }
             function collectSections(){
                 const wrap = document.querySelector('div.space-y-10');
-                const sections = wrap ? Array.from(wrap.querySelectorAll('section')) : [];
+                const sections = wrap ? Array.from(wrap.querySelectorAll(':scope > section')) : [];
                 const seen = new Set();
                 const data = [];
                 for (const sec of sections) {
                     const h2 = sec.querySelector('h2');
                     if (!h2) continue;
                     const label = h2.textContent.trim();
-                    let id = sec.id || label.toLowerCase().trim().replace(/[^\w\s-]/g,'').replace(/\s+/g,'-');
+                    let id = sec.id || slugify(label);
                     let base = id, i = 2;
                     while (seen.has(id)) { id = base + '-' + (i++); }
                     seen.add(id);
                     if (!sec.id) sec.id = id;
-                    data.push({ id, label, labelKey: normalizeText(label) });
+                    data.push({ id, label, labelKey: normalizeText(label), level: 1 });
+                    // Sous-entrées (h3, .label .label-text)
+                    const subs = [];
+                    sec.querySelectorAll('h3').forEach((h3) => subs.push(h3));
+                    sec.querySelectorAll('.label .label-text').forEach((lbl) => subs.push(lbl));
+                    for (const sub of subs) {
+                        const subLabel = (sub.textContent || '').trim();
+                        if (!subLabel) continue;
+                        // Assigne un id sur l'élément porteur
+                        let target = sub.closest('[id]') || sub;
+                        if (!target.id) target.id = slugify(label + '-' + subLabel);
+                        let sid = target.id;
+                        let sbase = sid; let j = 2;
+                        while (seen.has(sid)) { sid = sbase + '-' + (j++); }
+                        seen.add(sid);
+                        target.id = sid;
+                        data.push({ id: sid, label: subLabel, labelKey: normalizeText(subLabel), level: 2 });
+                    }
                 }
                 // Tri alphabétique insensible à la casse/accents
                 data.sort((a,b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }));
@@ -147,6 +168,7 @@
                     const a = document.createElement('a');
                     a.href = '#' + d.id;
                     a.textContent = d.label;
+                    if (d.level === 2) a.classList.add('pl-4','text-sm','opacity-80');
                     li.appendChild(a);
                     list.appendChild(li);
                 });
@@ -191,6 +213,12 @@
                     if (search) { e.preventDefault(); search.focus(); }
                 }
             });
+            // Observer: si le contenu change, invalider le cache
+            const wrap = document.querySelector('div.space-y-10');
+            if (wrap) {
+                const mo = new MutationObserver(() => { cachedData = []; if (!panel.classList.contains('hidden')) buildList(search?.value || ''); });
+                mo.observe(wrap, { childList: true, subtree: true });
+            }
         })();
     </script>
 
@@ -204,6 +232,7 @@
                 @include('daisy-dev::demo.partials.test-modal')
                 @include('daisy-dev::demo.partials.test-swap')
                 @include('daisy-dev::demo.partials.test-theme-controller')
+                @include('daisy-dev::demo.partials.test-login-buttons')
             </div>
         </section>
 
@@ -220,6 +249,7 @@
                 @include('daisy-dev::demo.partials.test-collapse')
                 @include('daisy-dev::demo.partials.test-countdown')
                 @include('daisy-dev::demo.partials.test-diff')
+                @include('daisy-dev::demo.partials.test-icons')
                 @include('daisy-dev::demo.partials.test-kbd')
                 @include('daisy-dev::demo.partials.test-list')
                 @include('daisy-dev::demo.partials.test-stat')
@@ -243,6 +273,7 @@
                 @include('daisy-dev::demo.partials.test-navbar')
                 @include('daisy-dev::demo.partials.test-pagination')
                 @include('daisy-dev::demo.partials.test-steps')
+                @include('daisy-dev::demo.partials.test-stepper')
                 @include('daisy-dev::demo.partials.test-tabs')
                 @include('daisy-dev::demo.partials.test-scrollspy')
                 @include('daisy-dev::demo.partials.test-tree-view')
@@ -253,6 +284,7 @@
         <section>
             <h2 class="text-xl font-semibold">Components · Feedback</h2>
             <div class="space-y-6">
+                @include('daisy-dev::demo.partials.test-callout')
                 @include('daisy-dev::demo.partials.test-alert')
                 @include('daisy-dev::demo.partials.test-loading')
                 @include('daisy-dev::demo.partials.test-progress')
@@ -262,6 +294,7 @@
                 @include('daisy-dev::demo.partials.test-popover')
                 @include('daisy-dev::demo.partials.test-popconfirm')
                 @include('daisy-dev::demo.partials.test-scroll-status')
+                @include('daisy-dev::demo.partials.test-notifications')
             </div>
         </section>
 
@@ -269,7 +302,6 @@
         <section>
             <h2 class="text-xl font-semibold">Components · Data input</h2>
             <div class="space-y-6">
-                @include('daisy-dev::demo.partials.test-calendar')
                 @include('daisy-dev::demo.partials.test-checkbox')
                 @include('daisy-dev::demo.partials.test-fieldset')
                 @include('daisy-dev::demo.partials.test-file-input')
@@ -283,7 +315,6 @@
                 @include('daisy-dev::demo.partials.test-textareas')
                 @include('daisy-dev::demo.partials.test-toggle')
                 @include('daisy-dev::demo.partials.test-validator')
-                @include('daisy-dev::demo.partials.test-code-editor')
                 @include('daisy-dev::demo.partials.test-color-picker')
                 @include('daisy-dev::demo.partials.test-input-mask')
                 @include('daisy-dev::demo.partials.test-transfer')
@@ -313,6 +344,28 @@
                 @include('daisy-dev::demo.partials.test-mockup-code')
                 @include('daisy-dev::demo.partials.test-mockup-phone')
                 @include('daisy-dev::demo.partials.test-mockup-window')
+            </div>
+        </section>
+
+
+        <!-- Extensions · Composants avec dépendances externes -->
+        <section>
+            <h2 class="text-xl font-semibold">Extensions · Dépendances externes</h2>
+            <div class="space-y-6">
+                @include('daisy-dev::demo.partials.test-charts')
+                @include('daisy-dev::demo.partials.test-leaflet')
+                @include('daisy-dev::demo.partials.test-calendar')
+                @include('daisy-dev::demo.partials.test-wysiwyg')
+                @include('daisy-dev::demo.partials.test-code-editor')
+            </div>
+        </section>
+
+
+        <!-- JavaScript / Runtime -->
+        <section>
+            <h2 class="text-xl font-semibold">JavaScript · Runtime</h2>
+            <div class="space-y-6">
+                @include('daisy-dev::demo.partials.test-js-modules')
             </div>
         </section>
     </div>

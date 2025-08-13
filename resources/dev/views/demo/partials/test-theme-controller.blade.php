@@ -11,8 +11,8 @@
         <!-- Toggle unique (synthwave) -->
         <label class="swap swap-rotate">
             <input type="checkbox" class="theme-controller" value="synthwave" />
-            <x-heroicon-o-sun class="swap-off h-8 w-8" />
-            <x-heroicon-o-moon class="swap-on h-8 w-8" />
+            <x-bi-sun class="swap-off h-8 w-8" />
+            <x-bi-moon class="swap-on h-8 w-8" />
         </label>
     </div>
 </section>
