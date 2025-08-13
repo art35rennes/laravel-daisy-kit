@@ -5,10 +5,10 @@
         <!-- Exemple images (comme la doc) -->
         <x-daisy::ui.diff aspect="aspect-16/9" :resizable="true">
             <x-slot:before>
-                <img alt="daisy" src="https://picsum.photos/seed/daisy/200/200" />
+                <img alt="before" src="{{ Vite::asset('resources/dev/img/object/dummy-600x900-Windflower.jpg') }}" />
             </x-slot:before>
             <x-slot:after>
-                <img alt="daisy" src="https://picsum.photos/seed/daisyblur/200/200?blur=2" />
+                <img alt="after" src="{{ Vite::asset('resources/dev/img/object/dummy-667x1000-Bottle.jpg') }}" />
             </x-slot:after>
         </x-daisy::ui.diff>
 

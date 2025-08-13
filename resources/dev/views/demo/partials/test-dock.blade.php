@@ -19,6 +19,23 @@
             <span class="dock-label">Fermer</span>
         </button>
     </x-daisy::ui.dock>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const dock = document.getElementById('onDemandDock');
+        const show = document.getElementById('showDockBtn');
+        const hide = document.getElementById('hideDockBtn');
+        const close = document.getElementById('closeDockBtn');
+        if (show) show.addEventListener('click', () => dock?.classList.remove('hidden'));
+        if (hide) hide.addEventListener('click', () => dock?.classList.add('hidden'));
+        if (close) close.addEventListener('click', () => dock?.classList.add('hidden'));
+        dock?.addEventListener('click', (e) => {
+          const it = e.target.closest('.dock-item');
+          if (!it || !dock.contains(it)) return;
+          dock.querySelectorAll('.dock-item').forEach((b) => b.classList.remove('dock-active'));
+          it.classList.add('dock-active');
+        });
+      });
+    </script>
 </section>
 
 

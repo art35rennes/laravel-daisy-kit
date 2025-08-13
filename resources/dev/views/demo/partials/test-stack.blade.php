@@ -11,9 +11,9 @@
 
         <!-- Images -->
         <x-daisy::ui.stack class="w-48">
-            <img src="https://picsum.photos/seed/s1/400/300" class="rounded-box" />
-            <img src="https://picsum.photos/seed/s2/400/300" class="rounded-box" />
-            <img src="https://picsum.photos/seed/s3/400/300" class="rounded-box" />
+            <img src="{{ Vite::asset('resources/dev/img/object/dummy-600x450-Buoy.jpg') }}" class="rounded-box" />
+            <img src="{{ Vite::asset('resources/dev/img/food/dummy-600x450-AzukiBeans.jpg') }}" class="rounded-box" />
+            <img src="{{ Vite::asset('resources/dev/img/business/dummy-600x450-Bull.jpg') }}" class="rounded-box" />
         </x-daisy::ui.stack>
 
         <!-- Cards -->

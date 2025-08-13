@@ -5,7 +5,7 @@
         <!-- Exemple simple -->
         <x-daisy::ui.list :bg="true" :rounded="true" shadow="md" title="Most played songs this week">
             <x-daisy::ui.list-row>
-                <div><img class="w-10 h-10 rounded-box" src="https://i.pravatar.cc/80?img=48" alt="Avatar"/></div>
+                <div><img class="w-10 h-10 rounded-box" src="{{ Vite::asset('resources/dev/img/people/dummy-100x100-Rosa.jpg') }}" alt="Avatar"/></div>
                 <div>
                     <div>Dio Lupa</div>
                     <div class="text-xs uppercase font-semibold opacity-60">Remaining Reason</div>
@@ -14,7 +14,7 @@
                 <button class="btn btn-square btn-ghost">❤</button>
             </x-daisy::ui.list-row>
             <x-daisy::ui.list-row>
-                <div><img class="w-10 h-10 rounded-box" src="https://i.pravatar.cc/80?img=51" alt="Avatar"/></div>
+                <div><img class="w-10 h-10 rounded-box" src="{{ Vite::asset('resources/dev/img/people/dummy-100x100-Rosa.jpg') }}" alt="Avatar"/></div>
                 <div>
                     <div>Ellie Beilish</div>
                     <div class="text-xs uppercase font-semibold opacity-60">Bears of a fever</div>
@@ -23,7 +23,7 @@
                 <button class="btn btn-square btn-ghost">❤</button>
             </x-daisy::ui.list-row>
             <x-daisy::ui.list-row>
-                <div><img class="w-10 h-10 rounded-box" src="https://i.pravatar.cc/80?img=49" alt="Avatar"/></div>
+                <div><img class="w-10 h-10 rounded-box" src="{{ Vite::asset('resources/dev/img/people/dummy-100x100-Rosa.jpg') }}" alt="Avatar"/></div>
                 <div>
                     <div>Sabrino Gardener</div>
                     <div class="text-xs uppercase font-semibold opacity-60">Cappuccino</div>
@@ -36,7 +36,7 @@
         <!-- Exemple avec list-col-wrap (colonne qui passe à la ligne) -->
         <x-daisy::ui.list :bg="true" :rounded="true" shadow="md" title="With descriptions">
             <x-daisy::ui.list-row>
-                <div><img class="w-10 h-10 rounded-box" src="https://i.pravatar.cc/80?img=48" alt="Avatar"/></div>
+                <div><img class="w-10 h-10 rounded-box" src="{{ Vite::asset('resources/dev/img/people/dummy-100x100-Rosa.jpg') }}" alt="Avatar"/></div>
                 <div>
                     <div>Dio Lupa</div>
                     <div class="text-xs uppercase font-semibold opacity-60">Remaining Reason</div>
@@ -48,7 +48,7 @@
                 <button class="btn btn-square btn-ghost">❤</button>
             </x-daisy::ui.list-row>
             <x-daisy::ui.list-row>
-                <div><img class="w-10 h-10 rounded-box" src="https://i.pravatar.cc/80?img=51" alt="Avatar"/></div>
+                <div><img class="w-10 h-10 rounded-box" src="{{ Vite::asset('resources/dev/img/people/dummy-100x100-Rosa.jpg') }}" alt="Avatar"/></div>
                 <div>
                     <div>Ellie Beilish</div>
                     <div class="text-xs uppercase font-semibold opacity-60">Bears of a fever</div>

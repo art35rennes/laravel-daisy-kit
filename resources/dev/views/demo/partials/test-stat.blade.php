@@ -29,7 +29,7 @@
                 <x-slot:figure>
                     <div class="avatar avatar-online">
                         <div class="w-16 rounded-full">
-                            <img src="https://i.pravatar.cc/100?img=48" />
+                            <img src="{{ Vite::asset('resources/dev/img/people/dummy-100x100-Rosa.jpg') }}" />
                         </div>
                     </div>
                 </x-slot:figure>

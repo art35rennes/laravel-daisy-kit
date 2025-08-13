@@ -18,11 +18,11 @@
     <div class="grid md:grid-cols-2 gap-6">
         <x-daisy::ui.card :side="true" title="Side" imageAlt="Exemple image">
             <x-slot:figure>
-                <img src="https://picsum.photos/seed/picsum/200/200" alt="" />
+                <img src="{{ Vite::asset('resources/dev/img/divers/dummy-200x200-Map.jpg') }}" alt="" />
             </x-slot:figure>
             Carte avec image latérale
         </x-daisy::ui.card>
-        <x-daisy::ui.card :imageFull="true" title="Image Full" imageUrl="https://picsum.photos/seed/daisy/600/300" imageAlt="Image de démonstration">
+        <x-daisy::ui.card :imageFull="true" title="Image Full" imageUrl="{{ Vite::asset('resources/dev/img/food/dummy-600x800-Strawberry.jpg') }}" imageAlt="Image de démonstration">
             Texte sur image full
         </x-daisy::ui.card>
     </div>
