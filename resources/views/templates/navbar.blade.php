@@ -19,11 +19,11 @@
     </x-slot:nav>
     <x-slot:actions>
         <label class="input input-bordered flex items-center gap-2">
-            <x-heroicon-o-magnifying-glass class="w-5 h-5" />
+            <x-bi-search class="w-5 h-5" />
             <input type="text" class="grow" placeholder="{{ __('daisy::layout.search') }}" />
         </label>
         <button class="btn btn-ghost btn-circle">
-            <x-heroicon-o-bell class="h-6 w-6" />
+            <x-bi-bell class="h-6 w-6" />
         </button>
         <a class="btn" href="{{ route('templates.index') }}">Templates</a>
     </x-slot:actions>

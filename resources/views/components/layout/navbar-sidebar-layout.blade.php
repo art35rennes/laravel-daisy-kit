@@ -24,7 +24,7 @@
         <x-daisy::ui.navbar :bg="$navbarBg" :text="$navbarText" :shadow="$navbarShadow" :fixed="false">
             <x-slot:start>
                 <label for="{{ $drawerId }}" aria-label="open sidebar" class="btn btn-square btn-ghost lg:hidden">
-                    <x-heroicon-o-bars-3 class="h-6 w-6" />
+                    <x-bi-list class="h-6 w-6" />
                 </label>
                 {{ $brand ?? '' }}
             </x-slot:start>

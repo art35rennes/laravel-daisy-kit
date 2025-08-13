@@ -1,8 +1,8 @@
 <x-daisy::layout.sidebar-layout title="Sidebar Template" variant="wide" brand="DaisyKit" brandHref="#" :sections="[
     ['label' => __('daisy::layout.menu'), 'items' => [
-        ['label' => 'Dashboard', 'href' => '#', 'icon' => 'home', 'active' => true],
+        ['label' => 'Dashboard', 'href' => '#', 'icon' => 'house', 'active' => true],
         ['label' => 'Projects', 'icon' => 'folder', 'children' => [
-            ['label' => 'Alpha', 'href' => '#', 'icon' => 'cube'],
+            ['label' => 'Alpha', 'href' => '#', 'icon' => 'alphabet'],
             ['label' => 'Beta', 'href' => '#', 'icon' => 'beaker'],
         ]],
         ['label' => 'Billing', 'href' => '#', 'icon' => 'credit-card'],

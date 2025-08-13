@@ -23,7 +23,7 @@
                 <div class="bg-base-100 border-b border-base-content/10 px-4 h-14 flex items-center justify-between lg:justify-end">
                     <div class="flex items-center gap-2 lg:hidden">
                         <label for="{{ $drawerId }}" aria-label="open sidebar" class="btn btn-square btn-ghost">
-                            <x-heroicon-o-bars-3 class="h-6 w-6" />
+                            <x-bi-list class="h-6 w-6" />
                         </label>
                         @if($title)
                             <div class="font-semibold">{{ __($title) }}</div>
