@@ -7,6 +7,11 @@ use Illuminate\Support\ServiceProvider;
 
 class DaisyKitServiceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        $this->mergeConfigFrom(__DIR__.'/../config/daisy-kit.php', 'daisy-kit');
+    }
+
     public function boot(): void
     {
         // Charger les vues du package avec un namespace: x-daisy::ui.button
@@ -30,6 +35,17 @@ class DaisyKitServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../resources/lang' => resource_path('lang/vendor/daisy'),
         ], 'daisy-lang');
+
+        // Publication optionnelle de la configuration
+        $this->publishes([
+            __DIR__.'/../config/daisy-kit.php' => config_path('daisy-kit.php'),
+        ], 'daisy-config');
+
+        // Publication optionnelle des sources d'assets (pour intégration dans le build du projet hôte)
+        $this->publishes([
+            __DIR__.'/../resources/js' => resource_path('vendor/daisy-kit/js'),
+            __DIR__.'/../resources/css' => resource_path('vendor/daisy-kit/css'),
+        ], 'daisy-src');
     }
 }
 
