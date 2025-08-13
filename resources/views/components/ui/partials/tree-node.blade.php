@@ -4,7 +4,8 @@
     $children = is_array($node) ? ($node[$childrenKey] ?? []) : [];
     $isLazy = is_array($node) ? (bool)($node[$lazyKey] ?? false) : false;
     $hasChildren = $isLazy || (is_array($children) && count($children) > 0);
-    $expanded = (bool)($node['expanded'] ?? false);
+    // Les nœuds lazy sont toujours repliés par défaut pour ne charger qu'à l'ouverture
+    $expanded = $isLazy ? false : (bool)($node['expanded'] ?? false);
     $selected = (bool)($node['selected'] ?? false);
     $nodeDisabled = (bool)($node['disabled'] ?? false) || (bool)($disabledParent ?? false);
     $isMulti = $selection === 'multiple';
@@ -18,6 +19,7 @@
     aria-expanded="{{ $hasChildren ? ($expanded ? 'true' : 'false') : 'false' }}"
     aria-selected="{{ $selected ? 'true' : 'false' }}"
     data-id="{{ $id }}"
+    @if($isLazy) data-lazy-node="1" @endif
     class="outline-none">
 
     <div class="flex items-center gap-2 px-2 py-1 rounded hover:bg-base-200 focus:bg-base-200"
@@ -30,10 +32,10 @@
                     data-toggle="1"
                     tabindex="-1">
                 <span data-icon-collapsed class="@if($expanded) hidden @endif">
-                    <x-heroicon-o-chevron-right class="size-4" />
+                    <x-bi-chevron-right class="size-4" />
                 </span>
                 <span data-icon-expanded class="@if(!$expanded) hidden @endif">
-                    <x-heroicon-o-chevron-down class="size-4" />
+                    <x-bi-chevron-down class="size-4" />
                 </span>
             </button>
         @else
@@ -68,7 +70,7 @@
                     ])
                 @endforeach
             @else
-                <li class="px-2 py-1 text-sm opacity-60" data-lazy-placeholder="1">Loading…</li>
+                <li class="px-2 py-1 text-sm opacity-60 hidden" data-lazy-placeholder="1">Loading…</li>
             @endif
         </ul>
     @endif
