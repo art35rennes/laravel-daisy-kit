@@ -44,13 +44,17 @@ Liste complète des composants disponibles: voir `resources/views/components/ui/
 
 ### Icônes
 
-Ce package utilise [Blade Icons](https://blade-ui-kit.com/blade-icons#search) pour la gestion des icônes SVG. Vous pouvez rechercher et utiliser des icônes parmi 84 sets d'icônes différents.
+Ce package utilise [Blade Icons](https://blade-ui-kit.com/blade-icons#search) avec Bootstrap Icons pour la gestion des icônes SVG. Bootstrap Icons offre plus de 1800 icônes de haute qualité.
 
-Exemple d'utilisation d'une icône Heroicons :
+Exemple d'utilisation d'une icône Bootstrap Icons :
 
 ```blade
-<x-heroicon-s-heart class="h-6 w-6 text-red-600" />
+<x-bi-heart class="h-6 w-6 text-red-600" />
+<x-bi-house class="h-5 w-5" />
+<x-bi-search class="w-4 h-4" />
 ```
+
+Vous pouvez parcourir toutes les icônes disponibles sur [Bootstrap Icons](https://icons.getbootstrap.com/).
 
 ### Publication (optionnelle)
 
