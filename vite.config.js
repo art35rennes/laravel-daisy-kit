@@ -7,6 +7,8 @@ export default defineConfig({
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
             refresh: true,
+            buildDirectory: 'vendor/art35rennes/laravel-daisy-kit',
+            hotFile: 'storage/daisy-kit-vite.hot',
         }),
         tailwindcss(),
     ],
