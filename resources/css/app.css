@@ -8,3 +8,76 @@
 @plugin "daisyui" {
   themes: light --default, dark --prefersdark, cupcake, bumblebee, emerald, corporate, synthwave, retro, cyberpunk, valentine, halloween, garden, forest, aqua, lofi, pastel, fantasy, wireframe, black, luxury, dracula, cmyk, autumn, business, acid, lemonade, night, coffee, winter;
 }
+
+/* Trix editor styles */
+@import "trix/dist/trix.css";
+
+/* Cacher le bouton pièces jointes quand attachments=0 */
+.trix-wrapper[data-trix-attachments="0"] trix-toolbar [data-trix-action="attachFiles"] {
+  display: none !important;
+}
+
+/* Theming Trix to follow DaisyUI tokens */
+.trix-wrapper {
+  --trix-bg: hsl(var(--b1));
+  --trix-content: hsl(var(--bc));
+  --trix-muted: hsl(var(--bc) / 0.6);
+  --trix-border: hsl(var(--b3));
+  --trix-toolbar-bg: hsl(var(--b2));
+  --trix-toolbar-border: hsl(var(--b3));
+  --trix-button: hsl(var(--bc) / 0.8);
+  --trix-button-hover: hsl(var(--bc));
+  --trix-button-active-bg: hsl(var(--b3) / 0.3);
+  --trix-link: hsl(var(--p));
+  --trix-selection: hsl(var(--p) / 0.2);
+}
+
+.trix-wrapper trix-toolbar {
+  background-color: var(--trix-toolbar-bg);
+  border: 1px solid var(--trix-toolbar-border);
+  border-bottom: none;
+  border-top-left-radius: var(--rounded-box);
+  border-top-right-radius: var(--rounded-box);
+}
+
+.trix-wrapper trix-toolbar .trix-button-group {
+  border-color: var(--trix-toolbar-border);
+}
+
+.trix-wrapper trix-toolbar .trix-button {
+  color: var(--trix-button);
+}
+.trix-wrapper trix-toolbar .trix-button:hover {
+  color: var(--trix-button-hover);
+  background-color: var(--trix-button-active-bg);
+}
+.trix-wrapper trix-toolbar .trix-button.trix-active {
+  background-color: var(--trix-button-active-bg);
+}
+
+.trix-wrapper trix-editor {
+  background-color: var(--trix-bg);
+  color: var(--trix-content);
+  border: 1px solid var(--trix-border);
+  border-bottom-left-radius: var(--rounded-box);
+  border-bottom-right-radius: var(--rounded-box);
+}
+
+.trix-wrapper trix-editor a { color: var(--trix-link); }
+.trix-wrapper trix-editor [data-trix-cursor-target] { color: var(--trix-content); }
+.trix-wrapper trix-editor ::selection { background: var(--trix-selection); }
+.trix-wrapper trix-editor ::-moz-selection { background: var(--trix-selection); }
+
+.trix-wrapper .trix-dialog {
+  background-color: var(--trix-bg);
+  color: var(--trix-content);
+  border-color: var(--trix-border);
+}
+.trix-wrapper .trix-input--dialog {
+  background-color: var(--trix-bg);
+  color: var(--trix-content);
+  border-color: var(--trix-border);
+}
+
+.trix-wrapper .attachment__caption-editor { color: var(--trix-content); }
+.trix-wrapper .attachment__toolbar a { color: var(--trix-link); }
