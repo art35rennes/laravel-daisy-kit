@@ -10,6 +10,8 @@
     'stickyAt' => 'lg', // null|sm|md|lg|xl
     // Classes de largeur personnalisées si besoin
     'sideClass' => null,
+    // Clé de stockage (localStorage) pour mémoriser l'état plié/déplié côté client
+    'storageKey' => null,
     // Nom/branding du site
     'brand' => null,
     // Lien du brand
@@ -43,7 +45,7 @@
 <aside {{ $attributes->merge(['class' => trim($rootClasses.' '.$widthClass.' min-h-full flex flex-col')]) }}
        data-sidebar-root
        data-wide-class="{{ $wideWidthClass }}" data-collapsed-class="{{ $collapsedWidthClass }}"
-       data-collapsed="{{ $effectiveCollapsed ? '1' : '0' }}">
+       data-collapsed="{{ $effectiveCollapsed ? '1' : '0' }}" @if($storageKey) data-storage-key="{{ $storageKey }}" @endif>
     <div class="px-4 py-3 border-b border-base-content/10 flex items-center gap-2">
         <a href="{{ $brandHref ?: '#' }}" class="flex items-center gap-2 flex-1">
             <div class="font-bold text-lg truncate sidebar-label {{ $effectiveCollapsed ? 'hidden' : '' }}">{{ $brand ?: config('app.name', 'App') }}</div>
@@ -67,7 +69,7 @@
                         <details {{ $isActive ? 'open' : '' }}>
                             <summary class="flex items-center gap-2">
                                 @if(!empty($item['icon']))
-                                    <x-dynamic-component :component="'heroicon-o-'.str_replace('_','-',$item['icon'])" class="w-5 h-5" />
+                                    <x-dynamic-component :component="'bi-'.str_replace('_','-',$item['icon'])" class="w-5 h-5" />
                                 @endif
                                 <span class="sidebar-label {{ $effectiveCollapsed ? 'hidden' : '' }}">{{ __($item['label'] ?? '') }}</span>
                             </summary>
@@ -76,7 +78,7 @@
                                     <li>
                                         <a href="{{ $child['href'] ?? '#' }}" class="flex items-center gap-2 {{ !empty($child['active']) ? 'menu-active' : '' }}">
                                             @if(!empty($child['icon']))
-                                                <x-dynamic-component :component="'heroicon-o-'.str_replace('_','-',$child['icon'])" class="w-5 h-5" />
+                                                <x-dynamic-component :component="'bi-'.str_replace('_','-',$child['icon'])" class="w-5 h-5" />
                                             @endif
                                             <span class="sidebar-label {{ $effectiveCollapsed ? 'hidden' : '' }}">{{ __($child['label'] ?? '') }}</span>
                                         </a>
@@ -89,7 +91,7 @@
                     <li>
                         <a href="{{ $item['href'] ?? '#' }}" class="flex items-center gap-2 {{ $isActive ? 'menu-active' : '' }}">
                             @if(!empty($item['icon']))
-                                <x-dynamic-component :component="'heroicon-o-'.str_replace('_','-',$item['icon'])" class="w-5 h-5" />
+                                <x-dynamic-component :component="'bi-'.str_replace('_','-',$item['icon'])" class="w-5 h-5" />
                             @endif
                             <span class="sidebar-label {{ $effectiveCollapsed ? 'hidden' : '' }}">{{ __($item['label'] ?? '') }}</span>
                         </a>
@@ -106,9 +108,9 @@
             <button type="button" class="btn btn-ghost btn-sm w-full justify-between sidebar-toggle">
                 <span class="sidebar-label-toggle">{{ $effectiveCollapsed ? __('Expand') : __('Collapse') }}</span>
                 @if($effectiveCollapsed)
-                    <x-heroicon-o-chevron-double-right class="w-4 h-4" />
+                    <x-bi-chevron-double-right class="w-4 h-4" />
                 @else
-                    <x-heroicon-o-chevron-double-left class="w-4 h-4" />
+                    <x-bi-chevron-double-left class="w-4 h-4" />
                 @endif
             </button>
         @endif

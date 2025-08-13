@@ -6,17 +6,25 @@
     'responsiveOpen' => null, // ex: 'lg' -> lg:drawer-open
     // Quand true, la zone côté est un <ul class="menu ...">. Sinon, on rend le contenu brut.
     'sideIsMenu' => true,
+    // Contrôle de la hauteur du contenu: par défaut plein écran, peut être désactivé pour les démos compactes
+    'fullHeight' => true,
+    // Classes supplémentaires injectées dans la zone contenu
+    'contentClass' => '',
 ])
 
 @php
     $rootClasses = 'drawer';
     if ($end) $rootClasses .= ' drawer-end';
     if ($responsiveOpen) $rootClasses .= ' '.$responsiveOpen.':drawer-open';
+
+    $contentClasses = 'drawer-content';
+    if ($fullHeight) $contentClasses .= ' min-h-screen';
+    if (!empty($contentClass)) $contentClasses .= ' '.$contentClass;
 @endphp
 
 <div {{ $attributes->merge(['class' => $rootClasses]) }}>
   <input id="{{ $id }}" type="checkbox" class="drawer-toggle" @checked($open) />
-  <div class="drawer-content min-h-screen">
+  <div class="{{ $contentClasses }}">
     {{ $content ?? $slot }}
   </div>
   <div class="drawer-side">

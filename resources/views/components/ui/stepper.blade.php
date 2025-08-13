@@ -21,7 +21,7 @@
 ])
 
 @php
-    $containerAttrs = $attributes->class('w-full')->merge([
+    $containerAttrs = $attributes->class('w-full relative isolate')->merge([
         'data-stepper' => true,
         'data-linear' => $linear ? 'true' : 'false',
         'data-allow-click' => $allowClickNav ? 'true' : 'false',
@@ -29,7 +29,7 @@
         'data-current' => (int) $current,
     ]);
 
-    $stepsClasses = 'steps';
+    $stepsClasses = 'steps z-10';
     if ($horizontalAt) {
         $stepsClasses .= ' steps-vertical '.($horizontalAt).':steps-horizontal';
     } elseif ($vertical) {
@@ -37,6 +37,8 @@
     } elseif ($horizontal) {
         $stepsClasses .= ' steps-horizontal';
     }
+
+    $rootId = $attributes->get('id');
 @endphp
 
 <div {{ $containerAttrs }}>
@@ -52,8 +54,9 @@
                 if ($i <= $current) $classes .= ' step-primary';
                 if ($invalid) $classes .= ' step-error';
                 if ($disabled) $classes .= ' pointer-events-none opacity-50';
+                $headerId = $rootId ? ($rootId.'-header-'.$i) : null;
             @endphp
-            <li class="{{ $classes }}" data-step-index="{{ $i }}">
+            <li class="{{ $classes }}" data-step-index="{{ $i }}" @if($allowClickNav && !$disabled) tabindex="0" role="button" @endif @if($headerId) id="{{ $headerId }}" @endif @if($rootId) aria-controls="{{ $rootId }}-panel-{{ $i }}" @endif>
                 @if(!is_null($icon))
                     <span class="step-icon">{!! $icon !!}</span>
                 @endif
@@ -62,10 +65,10 @@
         @endforeach
     </ul>
 
-    <div class="space-y-4" data-stepper-contents>
+    <div class="space-y-4 relative z-0" data-stepper-contents>
         @foreach($items as $idx => $item)
             @php $i = $idx + 1; @endphp
-            <div class="@if($i !== (int)$current) hidden @endif" data-step-content data-step-index="{{ $i }}">
+            <div class="@if($i !== (int)$current) hidden @endif" data-step-content data-step-index="{{ $i }}" @if($rootId) id="{{ $rootId }}-panel-{{ $i }}" @endif @if($rootId) aria-labelledby="{{ $rootId }}-header-{{ $i }}" @endif role="region">
                 @if (isset(${'step_'.$i}))
                     {{ ${'step_'.$i} }}
                 @else

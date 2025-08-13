@@ -16,7 +16,7 @@
 <a href="{{ $href }}" {{ $attributes->merge(['class' => $classes, 'target' => $external ? '_blank' : null, 'rel' => $external ? 'noopener noreferrer' : null]) }}>
     {{ $slot }}
     @if($external)
-        <x-heroicon-o-arrow-top-right-on-square class="ml-1 align-[-2px] h-4 w-4" />
+        <x-bi-box-arrow-up-right class="ml-1 align-[-2px] h-4 w-4" />
     @endif
 </a>
 

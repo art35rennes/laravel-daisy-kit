@@ -50,19 +50,19 @@
             <!-- Toolbar top-left: close -->
             <div class="absolute top-3 left-3 flex items-center gap-2">
                 <button type="button" class="btn btn-sm btn-ghost" data-close title="{{ $labelClose }}" aria-label="{{ $labelClose }}">
-                    <x-heroicon-o-x-mark class="size-5" />
+                    <x-bi-x class="size-5" />
                 </button>
             </div>
 
             <!-- Arrows -->
             <div class="absolute left-2 md:left-4 top-1/2 -translate-y-1/2">
                 <button type="button" class="btn btn-circle btn-ghost" data-prev title="{{ $labelPrev }}" aria-label="{{ $labelPrev }}">
-                    <x-heroicon-o-chevron-left class="size-6" />
+                    <x-bi-chevron-left class="size-6" />
                 </button>
             </div>
             <div class="absolute right-2 md:right-4 top-1/2 -translate-y-1/2">
                 <button type="button" class="btn btn-circle btn-ghost" data-next title="{{ $labelNext }}" aria-label="{{ $labelNext }}">
-                    <x-heroicon-o-chevron-right class="size-6" />
+                    <x-bi-chevron-right class="size-6" />
                 </button>
             </div>
 
@@ -78,16 +78,16 @@
             <div class="absolute bottom-3 inset-x-0 flex items-center justify-center gap-2">
                 <div class="btn-group">
                     <button type="button" class="btn btn-sm" data-zoom-in title="{{ $labelZoomIn }}" aria-label="{{ $labelZoomIn }}">
-                        <x-heroicon-o-plus class="size-5" />
+                        <x-bi-plus class="size-5" />
                     </button>
                     <button type="button" class="btn btn-sm" data-zoom-out title="{{ $labelZoomOut }}" aria-label="{{ $labelZoomOut }}">
-                        <x-heroicon-o-minus class="size-5" />
+                        <x-bi-dash class="size-5" />
                     </button>
                     <button type="button" class="btn btn-sm" data-zoom-reset title="{{ $labelZoomReset }}" aria-label="{{ $labelZoomReset }}">
-                        <x-heroicon-o-arrow-path class="size-5" />
+                        <x-bi-arrow-clockwise class="size-5" />
                     </button>
                     <button type="button" class="btn btn-sm" data-fullscreen title="{{ $labelFullscreen }}" aria-label="{{ $labelFullscreen }}">
-                        <x-heroicon-o-arrows-pointing-out class="size-5" />
+                        <x-bi-arrows-fullscreen class="size-5" />
                     </button>
                 </div>
                 <div class="ml-3 text-xs text-base-100/80" data-counter>1 / 1</div>

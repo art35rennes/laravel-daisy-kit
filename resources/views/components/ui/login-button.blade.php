@@ -46,18 +46,34 @@
     ];
     $btnClasses = $classMap[$provider] ?? 'btn-neutral';
 
-    // Icône générique par défaut (évite dépendances d'icônes marque)
+    // Icônes Bootstrap Icons par provider
+    $iconMap = [
+        'google' => 'bi-google',
+        'apple' => 'bi-apple',
+        'microsoft' => 'bi-microsoft',
+        'github' => 'bi-github',
+        'twitter' => 'bi-twitter',
+        'facebook' => 'bi-facebook',
+        'discord' => 'bi-discord',
+        'gitlab' => 'bi-box-arrow-in-right', // GitLab n'existe pas dans Bootstrap Icons
+        'linkedin' => 'bi-linkedin',
+        'slack' => 'bi-slack',
+        'steam' => 'bi-steam',
+        'spotify' => 'bi-spotify',
+        'yahoo' => 'bi-box-arrow-in-right', // Yahoo n'existe pas dans Bootstrap Icons
+        'wechat' => 'bi-wechat',
+        'metamask' => 'bi-box-arrow-in-right', // MetaMask n'existe pas dans Bootstrap Icons
+    ];
+    $iconClass = $iconMap[$provider] ?? 'bi-box-arrow-in-right';
 @endphp
 
 <a href="{{ $href }}" class="inline-block">
     <x-daisy::ui.button :variant="$variant" color="" :size="$size" class="gap-2 {{ $btnClasses }}">
         <x-slot:icon>
-            <x-heroicon-o-arrow-top-right-on-square class="h-4 w-4" />
+            <x-icon :name="$iconClass" class="h-4 w-4" />
         </x-slot:icon>
         {{ $text }}
     </x-daisy::ui.button>
     <span class="sr-only">{{ $text }}</span>
     {{ $slot }}
 </a>
-
-
