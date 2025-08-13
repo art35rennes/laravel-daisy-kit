@@ -5,6 +5,7 @@
     'size' => null,  // xs | sm | md | lg | xl
     'checked' => false,
     'disabled' => false,
+    'uncheckable' => false, // permet de décocher un radio déjà coché
 ])
 
 @php
@@ -27,6 +28,6 @@
     }
 @endphp
 
-<input type="radio" @if($name) name="{{ $name }}" @endif @if(!is_null($value)) value="{{ $value }}" @endif @checked($checked) @disabled($disabled) {{ $attributes->merge(['class' => $classes]) }} />
+<input type="radio" @if($name) name="{{ $name }}" @endif @if(!is_null($value)) value="{{ $value }}" @endif @checked($checked) @disabled($disabled) {{ $attributes->merge(['class' => $classes]) }} @if($uncheckable) data-uncheckable="1" @endif />
 
 

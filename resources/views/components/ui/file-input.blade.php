@@ -43,3 +43,5 @@
         @endif
     </div>
 @endif
+
+@include('daisy::components.partials.assets')

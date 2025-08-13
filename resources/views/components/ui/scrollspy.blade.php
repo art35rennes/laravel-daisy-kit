@@ -51,4 +51,6 @@
     </ul>
 </nav>
 
+@include('daisy::components.partials.assets')
+
 

@@ -9,10 +9,23 @@
 
 @php
     $classes = 'tooltip';
-    $pos = ['top','right','bottom','left'];
-    if (in_array($position, $pos)) $classes .= ' tooltip-'.$position;
-    if ($open) $classes .= ' tooltip-open';
-    if ($color) $classes .= ' tooltip-'.$color;
+    
+    // Position
+    $validPositions = ['top','right','bottom','left'];
+    if (in_array($position, $validPositions)) {
+        $classes .= ' tooltip-'.$position;
+    }
+    
+    // Open state
+    if ($open) {
+        $classes .= ' tooltip-open';
+    }
+    
+    // Color
+    $validColors = ['neutral','primary','secondary','accent','info','success','warning','error'];
+    if ($color && in_array($color, $validColors)) {
+        $classes .= ' tooltip-'.$color;
+    }
 @endphp
 
 <div @if(!is_null($text) && empty($content)) data-tip="{{ $text }}" @endif {{ $attributes->merge(['class' => $classes]) }}>

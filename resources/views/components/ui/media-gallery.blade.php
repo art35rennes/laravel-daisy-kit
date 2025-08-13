@@ -70,3 +70,5 @@
 
     <template data-items>{{ json_encode($imgs) }}</template>
 </div>
+
+@include('daisy::components.partials.assets')

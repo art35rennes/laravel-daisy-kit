@@ -60,4 +60,4 @@
     </ul>
 </div>
 
-
+@include('daisy::components.partials.assets')

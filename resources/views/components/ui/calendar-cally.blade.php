@@ -42,3 +42,4 @@
 </{{ $tag }}>
 
 
+@include('daisy::components.partials.assets')

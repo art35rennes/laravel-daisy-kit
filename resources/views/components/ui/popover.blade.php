@@ -34,15 +34,19 @@
         {{ $triggerSlot ?? ($triggerContent ?? $slot) }}
     </span>
     <div class="popover-panel absolute z-50 {{ $panelPos }} {{ $panelHidden }}">
-        <div class="rounded-box bg-base-100 shadow border border-base-200 p-4 {{ $panelClass }}">
+        <div class="relative rounded-box bg-base-100 shadow border border-base-200 p-4 {{ $panelClass }}">
             @if($arrow)
                 @php
                     $arrowBase = 'absolute w-3 h-3 rotate-45 bg-base-100 border border-base-200';
                     $arrowPos = [
+                        // Panel au-dessus du trigger → décale d'1px pour cacher la jonction
                         'top' => 'left-1/2 -translate-x-1/2 -bottom-1 border-t-0 border-l-0',
-                        'right' => '-left-1 -translate-y-1/2 top-1/2 border-t-0 border-r-0',
+                        // Panel à droite du trigger
+                        'right' => '-left-1 top-1/2 -translate-y-1/2 border-t-0 border-r-0',
+                        // Panel en-dessous du trigger
                         'bottom' => 'left-1/2 -translate-x-1/2 -top-1 border-b-0 border-r-0',
-                        'left' => '-right-1 -translate-y-1/2 top-1/2 border-b-0 border-l-0',
+                        // Panel à gauche du trigger
+                        'left' => '-right-1 top-1/2 -translate-y-1/2 border-b-0 border-l-0',
                     ][$position] ?? 'left-1/2 -translate-x-1/2 -bottom-1 border-t-0 border-l-0';
                 @endphp
                 <span class="{{ $arrowBase }} {{ $arrowPos }}"></span>
@@ -75,4 +79,4 @@
     </div>
 </span>
 
-
+@include('daisy::components.partials.assets')

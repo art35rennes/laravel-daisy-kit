@@ -26,6 +26,10 @@
     }
 @endphp
 
-<input type="checkbox" @checked($checked) @disabled($disabled) @if($indeterminate) aria-checked="mixed" data-indeterminate="true" @endif {{ $attributes->merge(['class' => $classes]) }} />
+<input type="checkbox" @checked($checked && !$indeterminate) @disabled($disabled) @if($indeterminate) aria-checked="mixed" data-indeterminate="true" @endif {{ $attributes->merge(['class' => $classes]) }} />
+
+@if($indeterminate)
+	@include('daisy::components.partials.assets')
+@endif
 
 

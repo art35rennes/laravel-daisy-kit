@@ -7,10 +7,15 @@
     'as' => 'div',
     // aria-label si as=nav
     'label' => 'Dock',
+    // Coller au viewport (recommandé)
+    'fixed' => true,
 ])
 
 @php
     $classes = 'dock';
+    if ($fixed) {
+        $classes = 'fixed left-0 right-0 '.($position === 'bottom' ? 'bottom-0' : 'top-0').' '.$classes;
+    }
     if ($mobile) $classes .= ' dock-mobile';
     if ($position === 'bottom') $classes .= ' dock-bottom';
     if ($position === 'top') $classes .= ' dock-top';

@@ -53,3 +53,13 @@
     <script type="application/json" data-initial>@json(['value' => $value])</script>
 </div>
 
+@pushOnce('styles')
+<style>
+/* Composant code-editor: hauteur et scroll internes */
+.code-editor .cm-editor { height: 100%; }
+.code-editor .cm-scroller { overflow: auto; }
+</style>
+@endPushOnce
+
+
+@include('daisy::components.partials.assets')

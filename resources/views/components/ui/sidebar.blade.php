@@ -116,3 +116,4 @@
  </aside>
 
 
+@include('daisy::components.partials.assets')
