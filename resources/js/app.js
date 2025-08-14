@@ -152,6 +152,7 @@ onReady(async () => {
   importWhenIdle('[data-popconfirm], [data-popconfirm-modal]', () => { mediumQueue(() => import('./popconfirm')); });
   importWhenIdle('[data-popover]', () => { mediumQueue(() => import('./popover')); });
   importWhenIdle('[data-stepper]', () => { mediumQueue(() => import('./stepper')); });
+  importWhenIdle('[data-onboarding="1"]', () => { mediumQueue(() => import('./onboarding')); });
   importWhenIdle('[data-table-select]:not([data-table-select="none"])', () => { mediumQueue(() => import('./table')); });
   importWhenIdle('[data-colorpicker="1"]', () => { mediumQueue(() => import('./color-picker')); });
   importWhenIdle('[data-fileinput="1"]', () => { mediumQueue(() => import('./file-input')); });
@@ -172,4 +173,7 @@ onReady(async () => {
 
   // Leaflet: charge le module seulement si un composant data-leaflet est proche du viewport
   importWhenNearViewport('[data-leaflet="1"]', () => { heavyQueue(() => import('./leaflet')); }, { rootMargin: '800px 0px' });
+
+  // Calendar Full: composant interne (sans lib externe) – lazy près du viewport
+  importWhenNearViewport('[data-calendar-full="1"]', () => { heavyQueue(() => import('./calendar-full')); }, { rootMargin: '800px 0px' });
 });

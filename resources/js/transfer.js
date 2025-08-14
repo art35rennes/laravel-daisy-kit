@@ -80,7 +80,7 @@ function renderList(listEl, items, opts) {
     // Pour chaque item à afficher, on crée un <li> avec une case à cocher et le label
     pageItems.forEach((it) => {
       const li = document.createElement('li');
-      li.className = 'px-2';
+      li.className = '';
       li.setAttribute('data-transfer-item', '');
       li.setAttribute('data-id', it.id);
       li.setAttribute('data-label', it.label);
@@ -88,18 +88,18 @@ function renderList(listEl, items, opts) {
       li.setAttribute('data-checked', it.checked ? 'true' : 'false');
       // Création du label contenant la checkbox et le texte
       const label = document.createElement('label');
-      label.className = 'flex items-center gap-2 py-1';
+      label.className = 'label cursor-pointer';
       // Création de la checkbox
       const cb = document.createElement('input');
       cb.type = 'checkbox';
-      cb.className = 'checkbox checkbox-xs';
+      cb.className = 'checkbox';
       cb.checked = !!it.checked;
       cb.disabled = !!it.disabled;
       // Synchronisation de l'état checked de l'objet métier lors du changement
       cb.addEventListener('change', () => { it.checked = cb.checked; });
       // Ajout du texte du label
       const span = document.createElement('span');
-      span.className = 'truncate';
+      span.className = 'font-medium truncate';
       span.textContent = it.label;
       // Assemblage
       label.append(cb, span);
@@ -161,6 +161,8 @@ function initTransfer(root) {
   const search = root.getAttribute('data-search') === 'true';
   const selectAll = root.getAttribute('data-select-all') !== 'false';
   const noDataText = root.getAttribute('data-no-data-text') || 'No Data';
+  const stackOn = root.getAttribute('data-stack-on') || 'md';
+  const orientWrap = root.querySelector('[data-transfer-orient]');
 
   // Sélection des éléments DOM internes
   const listSource = root.querySelector('[data-transfer-list="source"]');
@@ -195,12 +197,21 @@ function initTransfer(root) {
     const t = renderList(listTarget, itemsTarget, stateTarget);
     stateTarget.pages = t.pages;
     if (stateTarget._updatePagerInfo) stateTarget._updatePagerInfo();
+    // Met à jour les compteurs (sélectionnés / total)
+    try {
+      const cSrc = root.querySelector('[data-transfer-count="source"]');
+      const cTgt = root.querySelector('[data-transfer-count="target"]');
+      if (cSrc) cSrc.textContent = `${itemsSource.filter((i) => i.checked).length} / ${itemsSource.length}`;
+      if (cTgt) cTgt.textContent = `${itemsTarget.filter((i) => i.checked).length} / ${itemsTarget.length}`;
+    } catch (_) {}
     // Émission de l'événement personnalisé pour signaler le changement
     root.dispatchEvent(new CustomEvent('listChange', {
       detail: { source: itemsSource, target: itemsTarget },
       bubbles: true
     }));
   }
+  // Orientation responsive (vertical si parent trop petit ou overflow-x)
+  // Grid CSS utilisée, pas besoin de toggler flex manuellement
 
   /**
    * Déplace les éléments sélectionnés d'une liste vers l'autre.

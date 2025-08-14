@@ -60,6 +60,48 @@ function setupInlinePopconfirm(root) {
     }
   };
 
+  // Mappings de classes utilitaires par position
+  const POSITION_CLASSES = {
+    bottom: ['top-full', 'left-1/2', '-translate-x-1/2', 'mt-2'],
+    top: ['bottom-full', 'left-1/2', '-translate-x-1/2', 'mb-2'],
+    right: ['left-full', 'top-1/2', '-translate-y-1/2', 'ml-2'],
+    left: ['right-full', 'top-1/2', '-translate-y-1/2', 'mr-2'],
+  };
+
+  function applyPanelPosition(pos) {
+    Object.values(POSITION_CLASSES).forEach(list => list.forEach(cls => panel.classList.remove(cls)));
+    (POSITION_CLASSES[pos] || POSITION_CLASSES.bottom).forEach(cls => panel.classList.add(cls));
+    panel.dataset.currentPosition = pos;
+  }
+
+  function isInViewport(rect, margin = 6) {
+    const w = window.innerWidth; const h = window.innerHeight;
+    return rect.left >= margin && rect.top >= margin && rect.right <= w - margin && rect.bottom <= h - margin;
+  }
+
+  function candidatesFor(pos) {
+    if (pos === 'auto') return ['bottom', 'top', 'right', 'left'];
+    switch (pos) {
+      case 'top': return ['top', 'bottom', 'right', 'left'];
+      case 'right': return ['right', 'left', 'top', 'bottom'];
+      case 'bottom': return ['bottom', 'top', 'right', 'left'];
+      case 'left': return ['left', 'right', 'top', 'bottom'];
+      default: return ['bottom', 'top', 'right', 'left'];
+    }
+  }
+
+  function adjustPlacement() {
+    const desired = root.getAttribute('data-position') || 'bottom';
+    const list = candidatesFor(desired);
+    let chosen = list[0];
+    for (const pos of list) {
+      applyPanelPosition(pos);
+      const r = panel.getBoundingClientRect();
+      if (isInViewport(r)) { chosen = pos; break; }
+    }
+    applyPanelPosition(chosen);
+  }
+
   // Affiche ou masque le panneau au clic sur le déclencheur
   trigger.addEventListener('click', (e) => {
     e.preventDefault();
@@ -69,6 +111,8 @@ function setupInlinePopconfirm(root) {
     if (isHidden) {
       // Affiche le panneau
       panel.classList.remove('hidden');
+      // Ajuste la position si le panneau déborde (auto flip)
+      adjustPlacement();
       // Met le focus sur le premier bouton d'action (accessibilité)
       const focusable = panel.querySelector('[data-popconfirm-action]');
       if (focusable) focusable.focus();
