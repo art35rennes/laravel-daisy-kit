@@ -3,12 +3,12 @@
     <h2 class="text-lg font-medium">Stat</h2>
     <div class="space-y-4">
         <!-- Simple -->
-        <div class="stats shadow">
+        <div class="stats stats-vertical sm:stats-horizontal shadow w-full">
             <x-daisy::ui.stat title="Total Page Views" value="89,400" desc="21% more than last month" />
         </div>
 
         <!-- Avec icônes / image -->
-        <div class="stats shadow">
+        <div class="stats stats-vertical sm:stats-horizontal shadow w-full">
             <x-daisy::ui.stat>
                 <x-slot:figure>
                     <x-bi-heart class="inline-block h-8 w-8 stroke-current text-primary" />
@@ -29,7 +29,7 @@
                 <x-slot:figure>
                     <div class="avatar avatar-online">
                         <div class="w-16 rounded-full">
-                            <img src="{{ Vite::asset('resources/dev/img/people/dummy-100x100-Rosa.jpg') }}" />
+                            <img src="/img/people/dummy-100x100-Rosa.jpg" />
                         </div>
                     </div>
                 </x-slot:figure>
@@ -47,7 +47,7 @@
         </div>
 
         <!-- Avec boutons (actions) -->
-        <div class="stats bg-base-100 border-base-300 border">
+        <div class="stats stats-vertical sm:stats-horizontal bg-base-100 border-base-300 border w-full">
             <x-daisy::ui.stat title="Account balance" value="$89,400">
                 <x-slot:actions>
                     <button class="btn btn-xs btn-success">Add funds</button>

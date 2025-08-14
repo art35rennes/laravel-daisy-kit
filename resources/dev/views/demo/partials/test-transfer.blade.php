@@ -16,7 +16,7 @@
                 ['data' => 'China'],
                 ['data' => 'Madagascar'],
                 ['data' => 'Argentina'],
-            ]" />
+            ]" buttonsSize="sm" />
         </div>
 
         <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
@@ -36,71 +36,11 @@
                 ['data' => 'Australia'],
                 ['data' => 'Hungary', 'disabled' => true],
                 ['data' => 'France'],
-            ]" />
+            ]" buttonsSize="sm" />
         </div>
 
         <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
-            <h3 class="font-semibold text-primary">Checked items</h3>
-            <x-daisy::ui.transfer :source="[
-                ['data' => 'Lorem ipsum', 'checked' => true],
-                ['data' => 'Something special', 'checked' => true],
-                ['data' => 'John Wick', 'checked' => true],
-                ['data' => 'Poland'],
-                ['data' => 'Germany'],
-                ['data' => 'USA', 'checked' => true],
-                ['data' => 'China'],
-                ['data' => 'Madagascar'],
-                ['data' => 'Argentina'],
-            ]" :target="[
-                ['data' => 'Russia', 'checked' => true],
-                ['data' => 'Australia', 'checked' => true],
-                ['data' => 'Hungary'],
-                ['data' => 'France'],
-            ]" />
-        </div>
-
-        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
-            <h3 class="font-semibold text-primary">One way</h3>
-            <x-daisy::ui.transfer :source="[
-                ['data' => 'Lorem ipsum', 'checked' => true],
-                ['data' => 'Something special', 'checked' => true],
-                ['data' => 'John Wick', 'checked' => true],
-                ['data' => 'Poland'],
-                ['data' => 'Germany'],
-                ['data' => 'USA', 'checked' => true],
-                ['data' => 'China'],
-                ['data' => 'Madagascar'],
-                ['data' => 'Argentina'],
-            ]" :target="[
-                ['data' => 'Russia', 'checked' => true],
-                ['data' => 'Australia', 'checked' => true],
-                ['data' => 'Hungary'],
-                ['data' => 'France'],
-            ]" :oneWay="true" />
-        </div>
-
-        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
-            <h3 class="font-semibold text-primary">Pagination</h3>
-            <x-daisy::ui.transfer :source="[
-                ['data' => 'Lorem ipsum', 'checked' => true],
-                ['data' => 'Something special', 'checked' => true],
-                ['data' => 'John Wick', 'checked' => true],
-                ['data' => 'Poland'],
-                ['data' => 'Germany', 'disabled' => true],
-                ['data' => 'USA', 'checked' => true],
-                ['data' => 'China'],
-                ['data' => 'Madagascar'],
-                ['data' => 'Argentina'],
-            ]" :target="[
-                ['data' => 'Russia', 'checked' => true],
-                ['data' => 'Australia', 'checked' => true],
-                ['data' => 'Hungary'],
-                ['data' => 'France'],
-            ]" :pagination="true" />
-        </div>
-
-        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
-            <h3 class="font-semibold text-primary">Pagination custom</h3>
+            <h3 class="font-semibold text-primary">One way avec pagination</h3>
             <x-daisy::ui.transfer :source="[
                 ['data' => 'Lorem ipsum', 'checked' => true],
                 ['data' => 'Something special', 'checked' => true],
@@ -119,31 +59,11 @@
                 ['data' => 'Australia', 'checked' => true],
                 ['data' => 'Hungary'],
                 ['data' => 'France'],
-            ]" :pagination="true" :elementsPerPage="7" />
+            ]" :oneWay="true" :pagination="true" :elementsPerPage="7" buttonsSize="sm" />
         </div>
 
         <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
-            <h3 class="font-semibold text-primary">Search</h3>
-            <x-daisy::ui.transfer :source="[
-                ['data' => 'Lorem ipsum', 'checked' => true],
-                ['data' => 'Something special', 'checked' => true],
-                ['data' => 'John Wick', 'checked' => true],
-                ['data' => 'Poland'],
-                ['data' => 'Germany', 'disabled' => true],
-                ['data' => 'USA', 'checked' => true],
-                ['data' => 'China'],
-                ['data' => 'Madagascar'],
-                ['data' => 'Argentina'],
-            ]" :target="[
-                ['data' => 'Russia', 'checked' => true],
-                ['data' => 'Australia', 'checked' => true],
-                ['data' => 'Hungary'],
-                ['data' => 'France'],
-            ]" :pagination="true" :search="true" />
-        </div>
-
-        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
-            <h3 class="font-semibold text-primary">Textes personnalisés - Utilisateurs</h3>
+            <h3 class="font-semibold text-primary">Recherche avec textes personnalisés</h3>
             <x-daisy::ui.transfer 
                 titleSource="Utilisateurs disponibles"
                 titleTarget="Utilisateurs sélectionnés"
@@ -164,34 +84,8 @@
                     ['data' => 'François Moreau'],
                     ['data' => 'Sophie Blanc'],
                 ]" 
-                :search="true" />
-        </div>
-
-        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
-            <h3 class="font-semibold text-primary">Textes personnalisés - Permissions</h3>
-            <x-daisy::ui.transfer 
-                titleSource="Permissions disponibles"
-                titleTarget="Permissions accordées"
-                selectAllTextSource="Toutes les permissions"
-                selectAllTextTarget="Toutes accordées"
-                searchPlaceholderSource="Chercher une permission..."
-                searchPlaceholderTarget="Filtrer les permissions accordées..."
-                :oneWay="true"
-                :source="[
-                    ['data' => 'Lire les articles'],
-                    ['data' => 'Écrire des articles'],
-                    ['data' => 'Modifier les articles'],
-                    ['data' => 'Supprimer les articles'],
-                    ['data' => 'Gérer les utilisateurs'],
-                    ['data' => 'Gérer les rôles'],
-                ]" 
-                :target="[
-                    ['data' => 'Lire les articles', 'checked' => true],
-                    ['data' => 'Écrire des articles', 'checked' => true],
-                ]" 
-                :search="true" />
+                :search="true" 
+                buttonsSize="sm" />
         </div>
     </div>
 </section>
-
-

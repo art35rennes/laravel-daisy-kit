@@ -21,7 +21,7 @@
         <div class="avatar indicator">
             <span class="indicator-item indicator-bottom indicator-end badge badge-secondary">Justice</span>
             <div class="h-20 w-20 rounded-lg">
-                <img alt="User avatar" src="{{ Vite::asset('resources/dev/img/people/dummy-100x100-Rosa.jpg') }}" />
+                <img alt="User avatar" src="/img/people/dummy-100x100-Rosa.jpg" />
             </div>
         </div>
 

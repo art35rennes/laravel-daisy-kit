@@ -13,6 +13,12 @@
 
         <!-- XL, neutre, avec extrémités masquées -->
         <x-daisy::ui.pagination :total="15" :current="10" size="lg" :edges="false" color="neutral" />
+
+        <!-- Responsive: sur mobile affiche "Page X/Y", sur ≥ sm affiche les numéros -->
+        <div class="space-y-2">
+            <p class="text-sm opacity-70">Responsive</p>
+            <x-daisy::ui.pagination :total="24" :current="9" size="sm" color="primary" :maxButtons="5" :responsive="true" mobileLabel="Page :current/:total" />
+        </div>
     </div>
 </section>
 

@@ -1,14 +1,14 @@
 <x-daisy::layout.app title="DaisyUI Kit - Demo">
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1 class="text-2xl font-semibold">DaisyUI Kit - Demo</h1>
+        <h1 class="text-xl sm:text-2xl font-semibold">DaisyUI Kit - Demo</h1>
     </div>
     
     <!-- Sélecteur de thème flottant -->
-    <div class="fixed top-4 right-4 z-50">
-        <div class="bg-base-100 rounded-lg shadow-lg p-3 border border-base-300">
-            <label class="form-control w-48">
+    <div id="themePicker" class="fixed top-4 right-4 z-50 hidden md:block">
+        <div id="themePickerBox" class="bg-base-100 rounded-lg shadow-lg p-3 border border-base-300 w-56 sm:w-64 max-w-[calc(100vw-2rem)]">
+            <label class="form-control w-full">
                 <div class="label"><span class="label-text text-xs">Thème DaisyUI</span></div>
-                <select id="themeSelect" class="select select-bordered select-sm">
+                <select id="themeSelect" class="select select-bordered select-sm w-full">
                     <option value="light">Light</option>
                     <option value="dark">Dark</option>
                     <option value="cupcake">Cupcake</option>
@@ -47,6 +47,8 @@
             const THEME_KEY = 'daisy-theme';
             const htmlEl = document.documentElement;
             const themeSelect = document.getElementById('themeSelect');
+            const themePicker = document.getElementById('themePicker');
+            const themePickerBox = document.getElementById('themePickerBox');
             const controllers = () => Array.from(document.querySelectorAll('.theme-controller'));
 
             function applyTheme(theme) {
@@ -71,6 +73,7 @@
                 const current = saved || htmlEl.getAttribute('data-theme') || 'light';
                 applyTheme(current);
                 if (themeSelect) themeSelect.value = current;
+                adjustThemePicker();
             }
 
             if (themeSelect) {
@@ -84,15 +87,29 @@
                 }
             });
 
+            function adjustThemePicker(){
+                if (!themePickerBox) return;
+                const vw = window.innerWidth;
+                // Max width: viewport - 2rem
+                const maxW = Math.max(240, vw - 32);
+                themePickerBox.style.maxWidth = maxW + 'px';
+                // Décaler si dépasse à droite malgré right-4
+                const r = themePickerBox.getBoundingClientRect();
+                const shift = Math.max(0, r.right - vw + 8);
+                themePicker.style.transform = shift ? `translateX(-${shift}px)` : '';
+            }
+
+            window.addEventListener('resize', adjustThemePicker);
+
             document.addEventListener('DOMContentLoaded', init);
         })();
     </script>
 
     <!-- Floating Section Navigator (sans Alpine) -->
-    <div id="sectionNav" class="fixed bottom-6 right-6 z-50">
-        <div id="sectionNavPanel" class="toast toast-end mb-4 hidden">
-            <div id="sectionNavBox" class="bg-base-200 rounded-box shadow-lg p-3 w-72">
-                <div class="font-semibold mb-2">All sections</div>
+    <div id="sectionNav" class="fixed bottom-6 right-6 z-50 hidden md:block">
+        <div id="sectionNavPanel" class="absolute bottom-16 right-0 hidden">
+            <div id="sectionNavBox" class="bg-base-200 rounded-box shadow-lg p-3 w-72 sm:w-80 max-w-[calc(100vw-2rem)]">
+                <div class="font-semibold mb-2">Sections</div>
                 <div class="mb-2">
                     <label class="input input-bordered flex items-center gap-2 w-full">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 opacity-70"><path fill-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 1 0 3.897 12.303l3.775 3.775a.75.75 0 1 0 1.06-1.06l-3.775-3.776A6.75 6.75 0 0 0 10.5 3.75ZM5.25 10.5a5.25 5.25 0 1 1 10.5 0 5.25 5.25 0 0 1-10.5 0Z" clip-rule="evenodd"/></svg>
@@ -134,27 +151,9 @@
                     while (seen.has(id)) { id = base + '-' + (i++); }
                     seen.add(id);
                     if (!sec.id) sec.id = id;
+                    // On ne conserve que les sections de premier niveau, dans l'ordre du document
                     data.push({ id, label, labelKey: normalizeText(label), level: 1 });
-                    // Sous-entrées (h3, .label .label-text)
-                    const subs = [];
-                    sec.querySelectorAll('h3').forEach((h3) => subs.push(h3));
-                    sec.querySelectorAll('.label .label-text').forEach((lbl) => subs.push(lbl));
-                    for (const sub of subs) {
-                        const subLabel = (sub.textContent || '').trim();
-                        if (!subLabel) continue;
-                        // Assigne un id sur l'élément porteur
-                        let target = sub.closest('[id]') || sub;
-                        if (!target.id) target.id = slugify(label + '-' + subLabel);
-                        let sid = target.id;
-                        let sbase = sid; let j = 2;
-                        while (seen.has(sid)) { sid = sbase + '-' + (j++); }
-                        seen.add(sid);
-                        target.id = sid;
-                        data.push({ id: sid, label: subLabel, labelKey: normalizeText(subLabel), level: 2 });
-                    }
                 }
-                // Tri alphabétique insensible à la casse/accents
-                data.sort((a,b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }));
                 return data;
             }
             let cachedData = [];
@@ -168,7 +167,6 @@
                     const a = document.createElement('a');
                     a.href = '#' + d.id;
                     a.textContent = d.label;
-                    if (d.level === 2) a.classList.add('pl-4','text-sm','opacity-80');
                     li.appendChild(a);
                     list.appendChild(li);
                 });
@@ -176,9 +174,13 @@
 
             function adjustOverflow(){
                 if (!box) return;
-                const viewport = window.innerHeight;
-                const maxH = Math.max(240, Math.floor(viewport * 0.7));
+                const viewportH = window.innerHeight;
+                const viewportW = window.innerWidth;
+                // Hauteur max à 70% de l'écran, min 240px
+                const maxH = Math.max(240, Math.floor(viewportH * 0.7));
                 box.style.maxHeight = maxH + 'px';
+                // Largeur max: bord à 1rem
+                box.style.maxWidth = Math.max(240, viewportW - 32) + 'px';
                 const needScroll = box.scrollHeight > box.clientHeight;
                 box.style.overflowY = needScroll ? 'auto' : 'visible';
             }
@@ -193,6 +195,10 @@
                     if (search) search.value = '';
                     buildList();
                     adjustOverflow();
+                    // Si le panneau déborde horizontalement, le décaler à gauche
+                    const pr = panel.getBoundingClientRect();
+                    const shift = Math.max(0, pr.right - window.innerWidth + 16);
+                    panel.style.transform = shift ? `translateX(-${shift}px)` : '';
                     // Focus le champ de recherche après ouverture
                     if (search) setTimeout(() => search.focus(), 0);
                 }
@@ -295,6 +301,7 @@
                 @include('daisy-dev::demo.partials.test-popconfirm')
                 @include('daisy-dev::demo.partials.test-scroll-status')
                 @include('daisy-dev::demo.partials.test-notifications')
+                @include('daisy-dev::demo.partials.test-onboarding')
             </div>
         </section>
 
@@ -355,6 +362,7 @@
                 @include('daisy-dev::demo.partials.test-charts')
                 @include('daisy-dev::demo.partials.test-leaflet')
                 @include('daisy-dev::demo.partials.test-calendar')
+                @include('daisy-dev::demo.partials.test-calendar-full')
                 @include('daisy-dev::demo.partials.test-wysiwyg')
                 @include('daisy-dev::demo.partials.test-code-editor')
             </div>

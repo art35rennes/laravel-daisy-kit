@@ -80,6 +80,38 @@
                 </x-slot:actions>
             </x-daisy::ui.modal>
         </div>
+
+        <!-- Responsive + tailles + contenu long (scroll interne) -->
+        <div class="space-y-2">
+            <div class="flex flex-wrap gap-2">
+                <x-daisy::ui.button onclick="document.getElementById('demo-modal-resp-sm').showModal()">Responsive SM</x-daisy::ui.button>
+                <x-daisy::ui.button onclick="document.getElementById('demo-modal-resp-lg').showModal()">Responsive LG</x-daisy::ui.button>
+            </div>
+            <x-daisy::ui.modal id="demo-modal-resp-sm" title="Responsive SM" size="sm" :responsive="true" :scrollable="true">
+                <div class="space-y-4">
+                    @for($i=0; $i<20; $i++)
+                        <p>Ligne de contenu {{ $i+1 }} — démonstration de scroll interne sur mobile.</p>
+                    @endfor
+                </div>
+                <x-slot:actions>
+                    <form method="dialog">
+                        <x-daisy::ui.button>Fermer</x-daisy::ui.button>
+                    </form>
+                </x-slot:actions>
+            </x-daisy::ui.modal>
+            <x-daisy::ui.modal id="demo-modal-resp-lg" title="Responsive LG" size="lg" :responsive="true" :scrollable="true">
+                <div class="space-y-4">
+                    @for($i=0; $i<30; $i++)
+                        <p>Beaucoup de contenu {{ $i+1 }} — test de max-height et overflow-y.</p>
+                    @endfor
+                </div>
+                <x-slot:actions>
+                    <form method="dialog">
+                        <x-daisy::ui.button>Fermer</x-daisy::ui.button>
+                    </form>
+                </x-slot:actions>
+            </x-daisy::ui.modal>
+        </div>
     </div>
 </section>
 

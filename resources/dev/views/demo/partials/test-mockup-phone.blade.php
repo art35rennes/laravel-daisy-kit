@@ -6,7 +6,7 @@
         <x-daisy::ui.mockup-phone class="text-white grid place-content-center">It's Glowtime.</x-daisy::ui.mockup-phone>
 
         <!-- Avec couleur de bordure + wallpaper -->
-        <x-daisy::ui.mockup-phone borderColor="primary" wallpaper="{{ Vite::asset('resources/dev/img/divers/dummy-540x960-Floral.jpg') }}" />
+        <x-daisy::ui.mockup-phone borderColor="primary" wallpaper="/img/divers/dummy-540x960-Floral.jpg" />
 
         <!-- Sans camera + contenu custom -->
         <x-daisy::ui.mockup-phone :camera="false" displayClass="bg-base-100 grid place-content-center">

@@ -5,11 +5,11 @@
         <!-- Simple -->
         <x-daisy::ui.chat-bubble align="start" name="Alice" time="12:45">
             Salut !
-            <x-slot:avatar><img src="{{ Vite::asset('resources/dev/img/people/dummy-100x100-Rosa.jpg') }}" /></x-slot:avatar>
+            <x-slot:avatar><img src="/img/people/dummy-100x100-Rosa.jpg" /></x-slot:avatar>
         </x-daisy::ui.chat-bubble>
         <x-daisy::ui.chat-bubble align="end" name="Bob" time="12:46">
             Hello !
-            <x-slot:avatar><img src="{{ Vite::asset('resources/dev/img/people/dummy-100x100-Rosa.jpg') }}" /></x-slot:avatar>
+            <x-slot:avatar><img src="/img/people/dummy-100x100-Rosa.jpg" /></x-slot:avatar>
         </x-daisy::ui.chat-bubble>
 
         <!-- Couleurs -->

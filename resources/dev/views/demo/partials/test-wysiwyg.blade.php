@@ -2,13 +2,13 @@
     <h3 class="font-medium">WYSIWYG (Trix)</h3>
 
     <div class="grid md:grid-cols-2 gap-6">
-        <div class="space-y-2">
+        <div class="space-y-2 p-4 border border-base-300 rounded-box bg-base-100">
             <div class="label"><span class="label-text">Éditeur basique</span></div>
             <x-daisy::ui.wysiwyg name="content_basic" placeholder="Saisissez votre texte riche..." height="16rem" />
             <div class="text-xs opacity-70">Éditeur WYSIWYG standard avec toutes les fonctionnalités de base de Trix.</div>
         </div>
 
-        <div class="space-y-2">
+        <div class="space-y-2 p-4 border border-base-300 rounded-box bg-base-100">
             <div class="label"><span class="label-text">Éditeur désactivé</span></div>
             <x-daisy::ui.wysiwyg value="<p>Contenu en lecture seule</p>" :toolbar="false" disabled height="12rem" />
             <div class="text-xs opacity-70">Mode lecture seule avec barre d'outils masquée.</div>
@@ -16,14 +16,14 @@
     </div>
 
 
-    <div class="space-y-2">
+    <div class="space-y-2 p-4 border border-base-300 rounded-box bg-base-100">
         <div class="label"><span class="label-text">Avec valeur initiale</span></div>
         <x-daisy::ui.wysiwyg name="content_init" :value="'<h3>Titre</h3><p>Lorem ipsum <strong>dolor</strong> sit amet.</p>'" height="14rem" />
         <div class="text-xs opacity-70">Éditeur pré-rempli avec du contenu HTML existant.</div>
     </div>
 
 
-    <div class="space-y-2">
+    <div class="space-y-2 p-4 border border-base-300 rounded-box bg-base-100">
         <div class="label"><span class="label-text">Pièces jointes activées</span></div>
         <x-daisy::ui.wysiwyg name="content_attach" placeholder="Vous pouvez déposer des images/fichiers ici..." height="14rem" attachments />
         <div class="text-xs opacity-70">Glissez-déposez des fichiers directement dans l'éditeur. La gestion serveur de l'upload est à implémenter (exemples ci-dessous).</div>

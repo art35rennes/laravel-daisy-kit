@@ -6,7 +6,8 @@
             <div class="label"><span class="label-text">Basique · OSM provider par défaut</span></div>
             <x-daisy::ui.leaflet
                 class="rounded-box shadow"
-                height="320px"
+                aspect="16/9"
+                minHeight="220px"
                 :lat="48.117"
                 :lng="-1.678"
                 :zoom="12"
@@ -16,7 +17,8 @@
         <div class="space-y-2">
             <div class="label"><span class="label-text">Avec plugins · gestures, fullscreen, hash, scale, locate</span></div>
             <div class="grid gap-2">
-                <div class="grid grid-cols-2 gap-2">
+                <div class="text-xs opacity-70">Disposition des inputs: 1 colonne en mobile → 2 colonnes ≥ sm</div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <label class="form-control">
                         <div class="label"><span class="label-text">Hash</span></div>
                         <input id="lfHash" type="text" class="input input-bordered input-sm" readonly>
@@ -29,7 +31,7 @@
                         <div class="label"><span class="label-text">Zoom</span></div>
                         <input id="lfZoom" type="text" class="input input-bordered input-sm" readonly>
                     </label>
-                    <label class="form-control col-span-2">
+                    <label class="form-control sm:col-span-2">
                         <div class="label"><span class="label-text">Pointeur (lat,lng)</span></div>
                         <input id="lfPointer" type="text" class="input input-bordered input-sm" readonly>
                     </label>
@@ -37,7 +39,8 @@
                 <x-daisy::ui.leaflet
                     id="lfDemo2"
                     class="rounded-box shadow"
-                    height="320px"
+                    aspect="4/3"
+                    minHeight="220px"
                     :lat="48.117"
                     :lng="-1.678"
                     :zoom="13"
@@ -82,10 +85,23 @@
         </div>
 
         <div class="space-y-2 md:col-span-2">
+            <div class="label"><span class="label-text">Ratio adaptatif (auto) · 9:16 → 1:1 → 4:3 selon la largeur</span></div>
+            <x-daisy::ui.leaflet
+                class="rounded-box shadow"
+                aspect="auto"
+                minHeight="220px"
+                :lat="48.117"
+                :lng="-1.678"
+                :zoom="12"
+            />
+        </div>
+
+        <div class="space-y-2 md:col-span-2">
             <div class="label"><span class="label-text">Cluster + markers (fallback en simple markers si plugin absent)</span></div>
             <x-daisy::ui.leaflet
                 class="rounded-box shadow"
-                height="360px"
+                aspect="16/10"
+                minHeight="240px"
                 :lat="48.11"
                 :lng="-1.68"
                 :zoom="12"
