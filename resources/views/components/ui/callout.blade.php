@@ -12,6 +12,8 @@
     'inline' => false,
     // Déplacer l'icône dans le heading
     'iconInHeading' => false,
+    // Responsive: vertical par défaut, horizontal à partir du breakpoint donné
+    'horizontalAt' => 'sm',
 ])
 
 @php
@@ -33,6 +35,7 @@
     :iconInHeading="$iconInHeading"
     :heading="$heading"
     :text="$text"
+    :horizontalAt="$horizontalAt"
     {{ $attributes->merge(['class' => $classes]) }}>
     @if($text === null)
         {{ $slot }}

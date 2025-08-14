@@ -73,7 +73,7 @@
         <div class="text-sm">{!! $text !== null ? e($text) : $slot !!}</div>
     </div>
     @isset($actions)
-        <div class="flex items-center gap-2">{{ $actions }}</div>
+        <div class="flex items-center gap-2 flex-wrap justify-start sm:justify-end">{{ $actions }}</div>
     @endisset
     @isset($controls)
         <div class="ms-2">{{ $controls }}</div>

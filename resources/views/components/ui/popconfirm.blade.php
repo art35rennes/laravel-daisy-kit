@@ -74,7 +74,7 @@
         </x-daisy::ui.modal>
     </span>
 @else
-    <span {{ $rootAttrs->merge(['data-popconfirm' => true]) }}>
+    <span {{ $rootAttrs->merge(['data-popconfirm' => true, 'data-position' => $position]) }}>
         <span class="popconfirm-trigger cursor-pointer select-none inline-flex items-center" tabindex="0">
             {{ $trigger ?? $slot }}
         </span>

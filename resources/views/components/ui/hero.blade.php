@@ -37,9 +37,11 @@
   @endif
   <div class="{{ $contentClasses }}">
     @isset($figure)
-      <img class="max-w-sm rounded-lg shadow-2xl" src="" alt="" />
+      <div class="w-full max-w-sm">
+        {{ $figure }}
+      </div>
     @endisset
-    <div class="{{ $contentMax }}">
+    <div class="{{ $contentMax }} w-full">
       {{ $slot }}
     </div>
   </div>

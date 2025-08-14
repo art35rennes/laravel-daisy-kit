@@ -49,7 +49,7 @@
                         'left' => '-right-1 top-1/2 -translate-y-1/2 border-b-0 border-l-0',
                     ][$position] ?? 'left-1/2 -translate-x-1/2 -bottom-1 border-t-0 border-l-0';
                 @endphp
-                <span class="{{ $arrowBase }} {{ $arrowPos }}"></span>
+                <span class="popover-arrow {{ $arrowBase }} {{ $arrowPos }}"></span>
             @endif
 
             @if(!empty($title) || isset($header))
