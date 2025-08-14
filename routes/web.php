@@ -11,6 +11,28 @@ Route::get('/demo', function () {
     return view('daisy-dev::demo.index');
 })->name('demo');
 
+// Endpoint REST simple pour Calendar Full (démo)
+Route::get('/demo/api/calendar-events', function (\Illuminate\Http\Request $request) {
+    $start = new DateTime((string) $request->query('start', date('Y-m-01')));
+    $end = new DateTime((string) $request->query('end', date('Y-m-t')));
+    // Génère quelques évènements factices dans la plage demandée
+    $events = [];
+    $cur = clone $start;
+    while ($cur < $end) {
+        $day = (int)$cur->format('j');
+        if (in_array($day, [1,7,12,14,28], true)) {
+            $iso = $cur->format('Y-m-d');
+            if ($day === 1) $events[] = ['id'=>"a-$iso", 'title'=>'All Day Event', 'start'=>$iso, 'allDay'=>true];
+            if ($day === 12) $events[] = ['id'=>"m1-$iso", 'title'=>'Meeting', 'start'=>"$iso 10:30", 'end'=>"$iso 12:30"];
+            if ($day === 14) $events[] = ['id'=>"b-$iso", 'title'=>'Birthday Party', 'start'=>"$iso 07:00"];
+            if ($day === 28) $events[] = ['id'=>"g-$iso", 'title'=>'Click for Google', 'start'=>$iso, 'url'=>'https://google.com'];
+            if ($day === 7) $events[] = ['id'=>"long-$iso", 'title'=>'Long Event', 'start'=>$iso, 'end'=>$cur->modify('+7 day')->format('Y-m-d')];
+        }
+        $cur->modify('+1 day');
+    }
+    return response()->json($events);
+})->name('demo.calendar.events');
+
 // Endpoint REST pour lazy-loading du TreeView en démo
 Route::get('/demo/api/tree-children', function (\Illuminate\Http\Request $request) {
     $node = (string) $request->query('node', '');

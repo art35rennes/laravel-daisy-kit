@@ -17,67 +17,47 @@
   display: none !important;
 }
 
-/* Theming Trix to follow DaisyUI tokens */
-.trix-wrapper {
-  --trix-bg: hsl(var(--b1));
-  --trix-content: hsl(var(--bc));
-  --trix-muted: hsl(var(--bc) / 0.6);
-  --trix-border: hsl(var(--b3));
-  --trix-toolbar-bg: hsl(var(--b2));
-  --trix-toolbar-border: hsl(var(--b3));
-  --trix-button: hsl(var(--bc) / 0.8);
-  --trix-button-hover: hsl(var(--bc));
-  --trix-button-active-bg: hsl(var(--b3) / 0.3);
-  --trix-link: hsl(var(--p));
-  --trix-selection: hsl(var(--p) / 0.2);
+/* Minimal overrides pour rester quasi natif Trix */
+/* 1) Cacher l’icone d’attache quand attachments=0 (comportement du composant) */
+/* 2) Assurer que le popup de lien passe au-dessus des éléments environnants */
+.trix-wrapper .trix-dialog { z-index: 60; }
+
+/* Mobile nested scroll improvements */
+.overflow-x-auto,
+.overflow-y-auto,
+.overflow-auto {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
-.trix-wrapper trix-toolbar {
-  background-color: var(--trix-toolbar-bg);
-  border: 1px solid var(--trix-toolbar-border);
-  border-bottom: none;
-  border-top-left-radius: var(--rounded-box);
-  border-top-right-radius: var(--rounded-box);
+.overflow-x-auto {
+  touch-action: pan-x;
 }
 
-.trix-wrapper trix-toolbar .trix-button-group {
-  border-color: var(--trix-toolbar-border);
+.overflow-y-auto,
+.overflow-auto {
+  touch-action: pan-y;
 }
 
-.trix-wrapper trix-toolbar .trix-button {
-  color: var(--trix-button);
-}
-.trix-wrapper trix-toolbar .trix-button:hover {
-  color: var(--trix-button-hover);
-  background-color: var(--trix-button-active-bg);
-}
-.trix-wrapper trix-toolbar .trix-button.trix-active {
-  background-color: var(--trix-button-active-bg);
+/* Optional helper class if needed in templates */
+.scroll-touch {
+  -webkit-overflow-scrolling: touch;
 }
 
-.trix-wrapper trix-editor {
-  background-color: var(--trix-bg);
-  color: var(--trix-content);
-  border: 1px solid var(--trix-border);
-  border-bottom-left-radius: var(--rounded-box);
-  border-bottom-right-radius: var(--rounded-box);
+.overscroll-contain {
+  overscroll-behavior: contain;
 }
 
-.trix-wrapper trix-editor a { color: var(--trix-link); }
-.trix-wrapper trix-editor [data-trix-cursor-target] { color: var(--trix-content); }
-.trix-wrapper trix-editor ::selection { background: var(--trix-selection); }
-.trix-wrapper trix-editor ::-moz-selection { background: var(--trix-selection); }
-
-.trix-wrapper .trix-dialog {
-  background-color: var(--trix-bg);
-  color: var(--trix-content);
-  border-color: var(--trix-border);
+/* Leaflet controls compact mode */
+.leaflet-compact .leaflet-control-zoom a {
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
 }
-.trix-wrapper .trix-input--dialog {
-  background-color: var(--trix-bg);
-  color: var(--trix-content);
-  border-color: var(--trix-border);
+.leaflet-compact .leaflet-control-zoom {
+  margin: 6px;
 }
-
-.trix-wrapper .attachment__caption-editor { color: var(--trix-content); }
-.trix-wrapper .attachment__toolbar a { color: var(--trix-link); }
+.leaflet-compact .leaflet-control-container .leaflet-top, 
+.leaflet-compact .leaflet-control-container .leaflet-bottom {
+  padding: 6px;
+}

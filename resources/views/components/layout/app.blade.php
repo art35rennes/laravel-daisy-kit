@@ -20,8 +20,8 @@
     {{ $head ?? '' }}
     {{-- Place for per-page extra <head> content via named slot --}}
 </head>
-<body class="bg-base-100 text-base-content min-h-screen">
-    <div class="{{ $container ? 'container mx-auto p-6' : '' }}">
+<body class="bg-base-100 text-base-content min-h-screen overflow-x-hidden">
+    <div class="{{ $container ? 'container mx-auto px-4 sm:px-6 py-4 sm:py-6' : '' }}">
         {{ $slot }}
     </div>
     {{ $scripts ?? '' }}
