@@ -126,14 +126,24 @@ function positionPopover(pop, rect, placement, offset) {
     if (fitsBottom()) place = 'bottom'; else if (fitsRight()) place = 'right'; else if (fitsTop()) place = 'top'; else if (fitsLeft()) place = 'left'; else place = 'bottom';
   }
 
-  if (place === 'bottom') { top = y + h + offset; left = x + (w/2) - (pw/2); }
-  else if (place === 'top') { top = y - ph - offset; left = x + (w/2) - (pw/2); }
-  else if (place === 'right') { top = y + (h/2) - (ph/2); left = x + w + offset; }
-  else if (place === 'left') { top = y + (h/2) - (ph/2); left = x - pw - offset; }
+  // Augmenter l'offset pour éviter que le popover se superpose à l'élément
+  const safeOffset = Math.max(offset, 20);
+  
+  if (place === 'bottom') { top = y + h + safeOffset; left = x + (w/2) - (pw/2); }
+  else if (place === 'top') { top = y - ph - safeOffset; left = x + (w/2) - (pw/2); }
+  else if (place === 'right') { top = y + (h/2) - (ph/2); left = x + w + safeOffset; }
+  else if (place === 'left') { top = y + (h/2) - (ph/2); left = x - pw - safeOffset; }
 
   const pad = 8;
   left = clamp(left, window.scrollX + pad, vw - pw - pad);
   top = clamp(top, window.scrollY + pad, vh - ph - pad);
+  
+  // S'assurer que le popover ne se superpose pas à l'élément cible
+  if (place === 'bottom' && top < y + h + 10) top = y + h + 10;
+  if (place === 'top' && top + ph > y - 10) top = y - ph - 10;
+  if (place === 'right' && left < x + w + 10) left = x + w + 10;
+  if (place === 'left' && left + pw > x - 10) left = x - pw - 10;
+  
   panel.style.top = `${top}px`;
   panel.style.left = `${left}px`;
 
@@ -185,10 +195,17 @@ function updateSpotlightMask(spotlightLayer, rect, radius) {
 
 function ringHighlight(targetEl, enable) {
   if (!targetEl) return;
-  targetEl.classList.toggle('ring', !!enable);
-  targetEl.classList.toggle('ring-primary', !!enable);
-  targetEl.classList.toggle('ring-offset-2', !!enable);
-  targetEl.classList.toggle('ring-offset-base-100', !!enable);
+  if (enable) {
+    targetEl.classList.add('ring', 'ring-primary', 'ring-offset-2', 'ring-offset-base-100', 'animate-ping');
+    // Supprimer l'animation ping après 2 secondes pour un effet plus subtil
+    setTimeout(() => {
+      if (targetEl.classList.contains('ring')) {
+        targetEl.classList.remove('animate-ping');
+      }
+    }, 2000);
+  } else {
+    targetEl.classList.remove('ring', 'ring-primary', 'ring-offset-2', 'ring-offset-base-100', 'animate-ping');
+  }
 }
 
 function scrollIntoViewIfNeeded(targetEl) {
@@ -202,15 +219,21 @@ function setupOnboarding(root) {
   let current = -1;
   let timer = null;
   let activeTarget = null;
+  let overlay = null;
+  let dim = null;
+  let spotlight = null;
+  let popover = null;
 
-  const overlay = createOverlay();
-  const dim = createDimLayer(config.mask);
-  const spotlight = createSpotlightLayer();
-  const popover = createPopover();
-  overlay.appendChild(dim);
-  overlay.appendChild(spotlight);
-  document.body.appendChild(overlay);
-  document.body.appendChild(popover.panel);
+  function createElements() {
+    overlay = createOverlay();
+    dim = createDimLayer(config.mask);
+    spotlight = createSpotlightLayer();
+    popover = createPopover();
+    overlay.appendChild(dim);
+    overlay.appendChild(spotlight);
+    document.body.appendChild(overlay);
+    document.body.appendChild(popover.panel);
+  }
 
   function setOverlayVisible(visible) {
     overlay.style.pointerEvents = visible ? 'auto' : 'none';
@@ -222,6 +245,7 @@ function setupOnboarding(root) {
 
   function showStep(index) {
     clearTimer();
+    cleanupTarget(); // Nettoyer l'ancien target avant de passer au suivant
     if (index < 0 || index >= config.steps.length) return;
     const step = config.steps[index];
     const placement = step.placement || 'auto';
@@ -261,6 +285,10 @@ function setupOnboarding(root) {
   }
 
   function start() {
+    // Créer les éléments à chaque démarrage pour permettre un redémarrage
+    if (!overlay || !document.body.contains(overlay)) {
+      createElements();
+    }
     setOverlayVisible(true);
     current = 0;
     root.dispatchEvent(new CustomEvent('onboarding:start', { detail: { index: 0 }, bubbles: true }));
@@ -272,10 +300,16 @@ function setupOnboarding(root) {
     clearTimer();
     cleanupTarget();
     setOverlayVisible(false);
-    overlay.remove();
-    popover.panel.remove();
+    setTimeout(() => {
+      try {
+        overlay.remove();
+        popover.panel.remove();
+      } catch(_) {}
+    }, 200);
     root.dispatchEvent(new CustomEvent('onboarding:finish', { bubbles: true }));
     unbindWindow();
+    // Réinitialiser pour permettre un nouveau démarrage
+    current = -1;
   }
 
   function confirmAnd(fn) {
@@ -330,10 +364,16 @@ function setupOnboarding(root) {
       clearTimer();
       cleanupTarget();
       setOverlayVisible(false);
-      overlay.remove();
-      popover.panel.remove();
+      setTimeout(() => {
+        try {
+          overlay.remove();
+          popover.panel.remove();
+        } catch(_) {}
+      }, 200);
       root.dispatchEvent(new CustomEvent('onboarding:skip', { bubbles: true }));
       unbindWindow();
+      // Réinitialiser pour permettre un nouveau démarrage
+      current = -1;
     });
   }
 
