@@ -1,9 +1,9 @@
-<x-daisy::layout.sidebar-layout title="Sidebar Template" variant="wide" brand="DaisyKit" brandHref="#" :sections="[
+<x-daisy::layout.sidebar-layout title="Sidebar Template" variant="fit" brand="DaisyKit" brandHref="#" :showBrand="false" :sections="[
     ['label' => __('daisy::layout.menu'), 'items' => [
-        ['label' => 'Dashboard', 'href' => '#', 'icon' => 'house', 'active' => true],
+        ['label' => 'Dashboard', 'href' => '#', 'icon' => 'speedometer2', 'active' => true],
         ['label' => 'Projects', 'icon' => 'folder', 'children' => [
             ['label' => 'Alpha', 'href' => '#', 'icon' => 'alphabet'],
-            ['label' => 'Beta', 'href' => '#', 'icon' => 'beaker'],
+            ['label' => 'Beta', 'href' => '#', 'icon' => 'flask'],
         ]],
         ['label' => 'Billing', 'href' => '#', 'icon' => 'credit-card'],
     ]],

@@ -60,11 +60,51 @@ onReady(async () => {
      */
     const setCollapsed = (collapsed) => {
       aside.dataset.collapsed = collapsed ? '1' : '0';
-      if (wideClass) aside.classList.toggle(wideClass, !collapsed);
-      if (collapsedClass) aside.classList.toggle(collapsedClass, collapsed);
+      
+      // Gestion des classes de largeur selon la stratégie
+      const widthStrategy = aside.dataset.widthStrategy || 'wide';
+      
+      // Nettoyer d'abord toutes les classes de largeur existantes
+      ['w-20', 'w-64', 'w-fit', 'min-w-48', 'max-w-80', 'sidebar-auto', 'sidebar-fit', 'sidebar-adaptive'].forEach(cls => {
+        aside.classList.remove(cls);
+      });
+      
+      if (wideClass) {
+        wideClass.split(' ').forEach(cls => {
+          if (cls.trim()) aside.classList.remove(cls.trim());
+        });
+      }
+      
+      if (collapsed) {
+        // Mode collapsed : toujours utiliser w-20
+        aside.classList.add('w-20');
+      } else {
+        // Mode expanded : appliquer les classes selon la stratégie
+        if (wideClass) {
+          wideClass.split(' ').forEach(cls => {
+            if (cls.trim()) aside.classList.add(cls.trim());
+          });
+        }
+        
+        // Ajouter les classes spéciales selon la stratégie
+        switch (widthStrategy) {
+          case 'auto':
+            aside.classList.add('sidebar-auto', 'sidebar-adaptive');
+            break;
+          case 'fit':
+            aside.classList.add('sidebar-fit', 'sidebar-adaptive');
+            break;
+        }
+      }
+      
+      // Masquer/afficher les labels
       aside.querySelectorAll('.sidebar-label').forEach((el) => el.classList.toggle('hidden', collapsed));
+      
+      // Mettre à jour le texte du bouton
       const txt = aside.querySelector('.sidebar-label-toggle');
       if (txt) txt.textContent = collapsed ? 'Expand' : 'Collapse';
+      
+      // Sauvegarder l'état
       try { localStorage.setItem(storageKey, collapsed ? '1' : '0'); } catch (_) {}
       
       // Mise à jour de l'icône du bouton

@@ -61,3 +61,90 @@
 .leaflet-compact .leaflet-control-container .leaflet-bottom {
   padding: 6px;
 }
+
+/* === SIDEBAR ADAPTIVE SIZING === */
+
+/* Sidebar auto-width adaptation (legacy) */
+.sidebar-auto {
+  width: auto !important;
+  min-width: 14rem; /* min-w-56 */
+}
+
+/* Sidebar fit-to-content mode */
+.sidebar-fit {
+  width: fit-content !important;
+}
+
+/* Conteneur menu optimisé pour fit-content */
+.sidebar-fit-content {
+  width: fit-content;
+  white-space: nowrap;
+}
+
+.sidebar-fit-content .sidebar-label {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* Mode adaptatif général */
+.sidebar-adaptive {
+  transition: width 0.3s ease-in-out;
+}
+
+/* Responsive behavior pour fit mode */
+@media (max-width: 1024px) {
+  .sidebar-fit {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  
+  .sidebar-fit-content {
+    white-space: normal;
+  }
+}
+
+/* Optimisations pour différentes stratégies de largeur */
+[data-width-strategy="fit"] .menu li > a,
+[data-width-strategy="fit"] .menu li > summary {
+  padding-left: 0.75rem;
+  padding-right: 1rem;
+}
+
+[data-width-strategy="fit"] .menu li > a .sidebar-label,
+[data-width-strategy="fit"] .menu li > summary .sidebar-label {
+  margin-left: 0.5rem;
+}
+
+/* === SIDEBAR COLLAPSE/EXPAND === */
+
+/* État collapsed : forcer w-20 et masquer le contenu adaptatif */
+[data-collapsed="1"].sidebar-fit,
+[data-collapsed="1"].sidebar-auto {
+  width: 5rem !important; /* w-20 */
+  min-width: 5rem !important;
+  max-width: 5rem !important;
+}
+
+[data-collapsed="1"] .sidebar-fit-content {
+  width: auto;
+  white-space: normal;
+}
+
+/* Transition fluide lors du collapse/expand */
+[data-sidebar-fit] {
+  transition: width 0.2s ease-in-out, min-width 0.2s ease-in-out, max-width 0.2s ease-in-out;
+}
+
+/* Mode collapsed : optimiser l'affichage */
+[data-collapsed="1"] .menu li > a,
+[data-collapsed="1"] .menu li > summary {
+  justify-content: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+/* Assurer que les labels sont bien masqués en mode collapsed */
+[data-collapsed="1"] .sidebar-label {
+  display: none !important;
+}

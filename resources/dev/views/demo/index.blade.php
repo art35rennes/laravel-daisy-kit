@@ -340,6 +340,7 @@
                 @include('daisy-dev::demo.partials.test-join')
                 @include('daisy-dev::demo.partials.test-mask')
                 @include('daisy-dev::demo.partials.test-stack')
+                @include('daisy-dev::demo.partials.test-layouts')
             </div>
         </section>
 
