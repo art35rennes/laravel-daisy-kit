@@ -91,12 +91,7 @@ function createPopover() {
   btnSkip.className = 'btn btn-ghost btn-xs opacity-70';
   right.appendChild(btnSkip);
 
-  // Flèche façon popover du kit
-  const arrow = document.createElement('span');
-  arrow.className = 'hidden absolute w-3 h-3 rotate-45 bg-base-100 border border-base-200';
-  content.appendChild(arrow);
-
-  return { panel, content, header, body, footer, btnPrev, btnNext, btnFinish, btnSkip, arrow };
+  return { panel, content, header, body, footer, btnPrev, btnNext, btnFinish, btnSkip };
 }
 
 function getElementRect(el) {
@@ -146,48 +141,19 @@ function positionPopover(pop, rect, placement, offset) {
   
   panel.style.top = `${top}px`;
   panel.style.left = `${left}px`;
-
-  // Flèche positionnée comme dans le composant popover du kit
-  const arrow = pop.arrow;
-  if (arrow) {
-    arrow.classList.add('hidden');
-    arrow.style.top = '';
-    arrow.style.left = '';
-    arrow.style.right = '';
-    arrow.style.bottom = '';
-    arrow.classList.remove('border-t-0','border-l-0','border-r-0','border-b-0');
-    if (place === 'top') {
-      arrow.style.left = '50%';
-      arrow.style.transform = 'translateX(-50%) rotate(45deg)';
-      arrow.style.bottom = '-0.25rem';
-      arrow.classList.add('border-t-0','border-l-0');
-      arrow.classList.remove('hidden');
-    } else if (place === 'right') {
-      arrow.style.left = '-0.25rem';
-      arrow.style.top = '50%';
-      arrow.style.transform = 'translateY(-50%) rotate(45deg)';
-      arrow.classList.add('border-t-0','border-r-0');
-      arrow.classList.remove('hidden');
-    } else if (place === 'bottom') {
-      arrow.style.left = '50%';
-      arrow.style.transform = 'translateX(-50%) rotate(45deg)';
-      arrow.style.top = '-0.25rem';
-      arrow.classList.add('border-b-0','border-r-0');
-      arrow.classList.remove('hidden');
-    } else if (place === 'left') {
-      arrow.style.right = '-0.25rem';
-      arrow.style.top = '50%';
-      arrow.style.transform = 'translateY(-50%) rotate(45deg)';
-      arrow.classList.add('border-b-0','border-l-0');
-      arrow.classList.remove('hidden');
-    }
-  }
 }
 
 function updateSpotlightMask(spotlightLayer, rect, radius) {
+  if (!spotlightLayer) return;
+  
   const r = Math.max(0, radius);
   const x = rect.x, y = rect.y, w = rect.width, h = rect.height;
-  const path = `path('M0 0 H${document.documentElement.scrollWidth} V${document.documentElement.scrollHeight} H0 Z M${x - r} ${y - r} H${x + w + r} V${y + h + r} H${x - r} Z')`;
+  
+  // Utiliser des dimensions plus sûres pour éviter les excroissances
+  const docWidth = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth, window.innerWidth);
+  const docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight, window.innerHeight);
+  
+  const path = `path('M0 0 H${docWidth} V${docHeight} H0 Z M${x - r} ${y - r} H${x + w + r} V${y + h + r} H${x - r} Z')`;
   spotlightLayer.style.clipPath = path;
   spotlightLayer.style.WebkitClipPath = path;
   spotlightLayer.style.background = 'rgba(0,0,0,0.4)';
@@ -195,23 +161,24 @@ function updateSpotlightMask(spotlightLayer, rect, radius) {
 
 function ringHighlight(targetEl, enable, highlightedTargets = null) {
   if (!targetEl) return;
+  
   if (enable) {
-    targetEl.classList.add('ring', 'ring-primary', 'ring-offset-2', 'ring-offset-base-100', 'animate-ping');
+    // Ajouter le ring de mise en évidence
+    targetEl.classList.add('ring', 'ring-primary', 'ring-offset-2', 'ring-offset-base-100');
+    
     // Ajouter un z-index élevé pour s'assurer que l'élément est visible au-dessus du voile
     targetEl.style.position = 'relative';
     targetEl.style.zIndex = '80';
+    
     if (highlightedTargets) highlightedTargets.add(targetEl);
-    // Supprimer l'animation ping après 2 secondes pour un effet plus subtil
-    setTimeout(() => {
-      if (targetEl.classList.contains('ring')) {
-        targetEl.classList.remove('animate-ping');
-      }
-    }, 2000);
   } else {
-    targetEl.classList.remove('ring', 'ring-primary', 'ring-offset-2', 'ring-offset-base-100', 'animate-ping');
+    // Nettoyer le ring
+    targetEl.classList.remove('ring', 'ring-primary', 'ring-offset-2', 'ring-offset-base-100');
+    
     // Restaurer le style original
     targetEl.style.position = '';
     targetEl.style.zIndex = '';
+    
     if (highlightedTargets) highlightedTargets.delete(targetEl);
   }
 }
@@ -243,9 +210,21 @@ function setupOnboarding(root) {
     overlay.appendChild(spotlight);
     document.body.appendChild(overlay);
     document.body.appendChild(popover.panel);
+    
+    // Ajouter les event listeners après création du popover
+    setupEventListeners();
+  }
+  
+  function setupEventListeners() {
+    if (!popover) return;
+    popover.btnPrev.addEventListener('click', (e) => { e.preventDefault(); prev(); });
+    popover.btnNext.addEventListener('click', (e) => { e.preventDefault(); next(); });
+    popover.btnFinish.addEventListener('click', (e) => { e.preventDefault(); finish(); });
+    popover.btnSkip.addEventListener('click', (e) => { e.preventDefault(); if (config.allowSkip) skip(); });
   }
 
   function setOverlayVisible(visible) {
+    if (!overlay) return;
     overlay.style.pointerEvents = visible ? 'auto' : 'none';
     overlay.style.opacity = visible ? '1' : '0';
   }
@@ -449,6 +428,8 @@ function setupOnboarding(root) {
 
   function onResizeScroll() {
     if (current < 0 || current >= config.steps.length) return;
+    if (!spotlight || !popover) return; // Vérifier que les éléments existent
+    
     const step = config.steps[current];
     const target = step.target ? document.querySelector(step.target) : null;
     if (!target) return;
@@ -483,11 +464,6 @@ function setupOnboarding(root) {
       prev();
     }
   }
-
-  popover.btnPrev.addEventListener('click', (e) => { e.preventDefault(); prev(); });
-  popover.btnNext.addEventListener('click', (e) => { e.preventDefault(); next(); });
-  popover.btnFinish.addEventListener('click', (e) => { e.preventDefault(); finish(); });
-  popover.btnSkip.addEventListener('click', (e) => { e.preventDefault(); if (config.allowSkip) skip(); });
 
   // Nettoyer l'ancien onboarding s'il existe déjà
   if (root.__onboarding && typeof root.__onboarding.finish === 'function') {
