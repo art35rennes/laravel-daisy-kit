@@ -38,7 +38,7 @@
                 </x-slot:step_3>
                 <x-slot:step_4>
                     <div class="p-4 rounded-box bg-base-100 border">Résumé</div>
-                </x-slot:step_3>
+                </x-slot:step_4>
             </x-daisy::ui.stepper>
         </x-daisy::ui.fieldset>
     </div>
