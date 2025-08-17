@@ -8,7 +8,7 @@ Route::get('/', function () {
 
 // Page de démo réservée au dev (non publiée) via le namespace daisy-dev
 Route::get('/demo', function () {
-    return view('daisy-dev::demo.index');
+    return view('daisy-dev::demo.ui.index');
 })->name('demo');
 
 // Endpoint REST simple pour Calendar Full (démo)

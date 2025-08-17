@@ -6,58 +6,6 @@
             <p class="text-base-content/70">Choisissez un layout pour votre application</p>
         </div>
 
-        <!-- Navigation simple -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <x-daisy::ui.button 
-                variant="outline" 
-                color="primary"
-                size="lg"
-                href="{{ route('layouts.navbar') }}"
-                tag="a"
-                class="h-20 text-lg"
-            >
-                <x-daisy::ui.icon name="list" size="lg" class="mr-3" />
-                Navbar
-            </x-daisy::ui.button>
-
-            <x-daisy::ui.button 
-                variant="outline" 
-                color="success"
-                size="lg"
-                href="{{ route('layouts.sidebar') }}"
-                tag="a"
-                class="h-20 text-lg"
-            >
-                <x-daisy::ui.icon name="layers" size="lg" class="mr-3" />
-                Sidebar
-            </x-daisy::ui.button>
-
-            <x-daisy::ui.button 
-                variant="outline" 
-                color="warning"
-                size="lg"
-                href="{{ route('layouts.navbar-sidebar') }}"
-                tag="a"
-                class="h-20 text-lg"
-            >
-                <x-daisy::ui.icon name="grid-3x3" size="lg" class="mr-3" />
-                Navbar + Sidebar
-            </x-daisy::ui.button>
-
-            <x-daisy::ui.button 
-                variant="outline" 
-                color="accent"
-                size="lg"
-                href="{{ route('demo') }}"
-                tag="a"
-                class="h-20 text-lg"
-            >
-                <x-daisy::ui.icon name="puzzle" size="lg" class="mr-3" />
-                Tous les composants
-            </x-daisy::ui.button>
-        </div>
-
-        <!-- Description des templates -->
         <div class="mt-8 grid gap-6 md:grid-cols-3">
             <div class="card bg-base-100 shadow-sm">
                 <div class="card-body">

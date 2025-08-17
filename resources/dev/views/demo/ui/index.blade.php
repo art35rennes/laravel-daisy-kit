@@ -233,12 +233,12 @@
         <section>
             <h2 class="text-xl font-semibold">Components · Actions</h2>
             <div class="space-y-6">
-                @include('daisy-dev::demo.partials.test-buttons')
-                @include('daisy-dev::demo.partials.test-dropdown')
-                @include('daisy-dev::demo.partials.test-modal')
-                @include('daisy-dev::demo.partials.test-swap')
-                @include('daisy-dev::demo.partials.test-theme-controller')
-                @include('daisy-dev::demo.partials.test-login-buttons')
+                @include('daisy-dev::demo.ui.partials.test-buttons')
+                @include('daisy-dev::demo.ui.partials.test-dropdown')
+                @include('daisy-dev::demo.ui.partials.test-modal')
+                @include('daisy-dev::demo.ui.partials.test-swap')
+                @include('daisy-dev::demo.ui.partials.test-theme-controller')
+                @include('daisy-dev::demo.ui.partials.test-login-buttons')
             </div>
         </section>
 
@@ -246,25 +246,25 @@
         <section>
             <h2 class="text-xl font-semibold">Components · Data display</h2>
             <div class="space-y-6">
-                @include('daisy-dev::demo.partials.test-accordion')
-                @include('daisy-dev::demo.partials.test-avatars')
-                @include('daisy-dev::demo.partials.test-badges')
-                @include('daisy-dev::demo.partials.test-card')
-                @include('daisy-dev::demo.partials.test-carousel')
-                @include('daisy-dev::demo.partials.test-chat')
-                @include('daisy-dev::demo.partials.test-collapse')
-                @include('daisy-dev::demo.partials.test-countdown')
-                @include('daisy-dev::demo.partials.test-diff')
-                @include('daisy-dev::demo.partials.test-icons')
-                @include('daisy-dev::demo.partials.test-kbd')
-                @include('daisy-dev::demo.partials.test-list')
-                @include('daisy-dev::demo.partials.test-stat')
-                @include('daisy-dev::demo.partials.test-status')
-                @include('daisy-dev::demo.partials.test-table')
-                @include('daisy-dev::demo.partials.test-timeline')
-                @include('daisy-dev::demo.partials.test-lightbox')
-                @include('daisy-dev::demo.partials.test-media-gallery')
-                {{-- @include('daisy-dev::demo.partials.test-embeds') --}}
+                @include('daisy-dev::demo.ui.partials.test-accordion')
+                @include('daisy-dev::demo.ui.partials.test-avatars')
+                @include('daisy-dev::demo.ui.partials.test-badges')
+                @include('daisy-dev::demo.ui.partials.test-card')
+                @include('daisy-dev::demo.ui.partials.test-carousel')
+                @include('daisy-dev::demo.ui.partials.test-chat')
+                @include('daisy-dev::demo.ui.partials.test-collapse')
+                @include('daisy-dev::demo.ui.partials.test-countdown')
+                @include('daisy-dev::demo.ui.partials.test-diff')
+                @include('daisy-dev::demo.ui.partials.test-icons')
+                @include('daisy-dev::demo.ui.partials.test-kbd')
+                @include('daisy-dev::demo.ui.partials.test-list')
+                @include('daisy-dev::demo.ui.partials.test-stat')
+                @include('daisy-dev::demo.ui.partials.test-status')
+                @include('daisy-dev::demo.ui.partials.test-table')
+                @include('daisy-dev::demo.ui.partials.test-timeline')
+                @include('daisy-dev::demo.ui.partials.test-lightbox')
+                @include('daisy-dev::demo.ui.partials.test-media-gallery')
+                {{-- @include('daisy-dev::demo.ui.partials.test-embeds') --}}
             </div>
         </section>
 
@@ -272,17 +272,17 @@
         <section>
             <h2 class="text-xl font-semibold">Components · Navigation</h2>
             <div class="space-y-6">
-                @include('daisy-dev::demo.partials.test-breadcrumbs')
-                @include('daisy-dev::demo.partials.test-dock')
-                @include('daisy-dev::demo.partials.test-links')
-                @include('daisy-dev::demo.partials.test-menu')
-                @include('daisy-dev::demo.partials.test-navbar')
-                @include('daisy-dev::demo.partials.test-pagination')
-                @include('daisy-dev::demo.partials.test-steps')
-                @include('daisy-dev::demo.partials.test-stepper')
-                @include('daisy-dev::demo.partials.test-tabs')
-                @include('daisy-dev::demo.partials.test-scrollspy')
-                @include('daisy-dev::demo.partials.test-tree-view')
+                @include('daisy-dev::demo.ui.partials.test-breadcrumbs')
+                @include('daisy-dev::demo.ui.partials.test-dock')
+                @include('daisy-dev::demo.ui.partials.test-links')
+                @include('daisy-dev::demo.ui.partials.test-menu')
+                @include('daisy-dev::demo.ui.partials.test-navbar')
+                @include('daisy-dev::demo.ui.partials.test-pagination')
+                @include('daisy-dev::demo.ui.partials.test-steps')
+                @include('daisy-dev::demo.ui.partials.test-stepper')
+                @include('daisy-dev::demo.ui.partials.test-tabs')
+                @include('daisy-dev::demo.ui.partials.test-scrollspy')
+                @include('daisy-dev::demo.ui.partials.test-tree-view')
             </div>
         </section>
 
@@ -290,18 +290,18 @@
         <section>
             <h2 class="text-xl font-semibold">Components · Feedback</h2>
             <div class="space-y-6">
-                @include('daisy-dev::demo.partials.test-callout')
-                @include('daisy-dev::demo.partials.test-alert')
-                @include('daisy-dev::demo.partials.test-loading')
-                @include('daisy-dev::demo.partials.test-progress')
-                @include('daisy-dev::demo.partials.test-radial-progress')
-                @include('daisy-dev::demo.partials.test-skeleton')
-                @include('daisy-dev::demo.partials.test-tooltip')
-                @include('daisy-dev::demo.partials.test-popover')
-                @include('daisy-dev::demo.partials.test-popconfirm')
-                @include('daisy-dev::demo.partials.test-scroll-status')
-                @include('daisy-dev::demo.partials.test-notifications')
-                @include('daisy-dev::demo.partials.test-onboarding')
+                @include('daisy-dev::demo.ui.partials.test-callout')
+                @include('daisy-dev::demo.ui.partials.test-alert')
+                @include('daisy-dev::demo.ui.partials.test-loading')
+                @include('daisy-dev::demo.ui.partials.test-progress')
+                @include('daisy-dev::demo.ui.partials.test-radial-progress')
+                @include('daisy-dev::demo.ui.partials.test-skeleton')
+                @include('daisy-dev::demo.ui.partials.test-tooltip')
+                @include('daisy-dev::demo.ui.partials.test-popover')
+                @include('daisy-dev::demo.ui.partials.test-popconfirm')
+                @include('daisy-dev::demo.ui.partials.test-scroll-status')
+                @include('daisy-dev::demo.ui.partials.test-notifications')
+                @include('daisy-dev::demo.ui.partials.test-onboarding')
             </div>
         </section>
 
@@ -309,22 +309,22 @@
         <section>
             <h2 class="text-xl font-semibold">Components · Data input</h2>
             <div class="space-y-6">
-                @include('daisy-dev::demo.partials.test-checkbox')
-                @include('daisy-dev::demo.partials.test-fieldset')
-                @include('daisy-dev::demo.partials.test-file-input')
-                @include('daisy-dev::demo.partials.test-filter')
-                @include('daisy-dev::demo.partials.test-label')
-                @include('daisy-dev::demo.partials.test-radio')
-                @include('daisy-dev::demo.partials.test-range')
-                @include('daisy-dev::demo.partials.test-rating')
-                @include('daisy-dev::demo.partials.test-selects')
-                @include('daisy-dev::demo.partials.test-inputs')
-                @include('daisy-dev::demo.partials.test-textareas')
-                @include('daisy-dev::demo.partials.test-toggle')
-                @include('daisy-dev::demo.partials.test-validator')
-                @include('daisy-dev::demo.partials.test-color-picker')
-                @include('daisy-dev::demo.partials.test-input-mask')
-                @include('daisy-dev::demo.partials.test-transfer')
+                @include('daisy-dev::demo.ui.partials.test-checkbox')
+                @include('daisy-dev::demo.ui.partials.test-fieldset')
+                @include('daisy-dev::demo.ui.partials.test-file-input')
+                @include('daisy-dev::demo.ui.partials.test-filter')
+                @include('daisy-dev::demo.ui.partials.test-label')
+                @include('daisy-dev::demo.ui.partials.test-radio')
+                @include('daisy-dev::demo.ui.partials.test-range')
+                @include('daisy-dev::demo.ui.partials.test-rating')
+                @include('daisy-dev::demo.ui.partials.test-selects')
+                @include('daisy-dev::demo.ui.partials.test-inputs')
+                @include('daisy-dev::demo.ui.partials.test-textareas')
+                @include('daisy-dev::demo.ui.partials.test-toggle')
+                @include('daisy-dev::demo.ui.partials.test-validator')
+                @include('daisy-dev::demo.ui.partials.test-color-picker')
+                @include('daisy-dev::demo.ui.partials.test-input-mask')
+                @include('daisy-dev::demo.ui.partials.test-transfer')
             </div>
         </section>
 
@@ -332,15 +332,15 @@
         <section>
             <h2 class="text-xl font-semibold">Components · Layout</h2>
             <div class="space-y-6">
-                @include('daisy-dev::demo.partials.test-divider')
-                @include('daisy-dev::demo.partials.test-drawer')
-                @include('daisy-dev::demo.partials.test-footer')
-                @include('daisy-dev::demo.partials.test-hero')
-                @include('daisy-dev::demo.partials.test-indicator')
-                @include('daisy-dev::demo.partials.test-join')
-                @include('daisy-dev::demo.partials.test-mask')
-                @include('daisy-dev::demo.partials.test-stack')
-                @include('daisy-dev::demo.partials.test-layouts')
+                @include('daisy-dev::demo.ui.partials.test-divider')
+                @include('daisy-dev::demo.ui.partials.test-drawer')
+                @include('daisy-dev::demo.ui.partials.test-footer')
+                @include('daisy-dev::demo.ui.partials.test-hero')
+                @include('daisy-dev::demo.ui.partials.test-indicator')
+                @include('daisy-dev::demo.ui.partials.test-join')
+                @include('daisy-dev::demo.ui.partials.test-mask')
+                @include('daisy-dev::demo.ui.partials.test-stack')
+                @include('daisy-dev::demo.ui.partials.test-layouts')
             </div>
         </section>
 
@@ -348,10 +348,10 @@
         <section>
             <h2 class="text-xl font-semibold">Components · Mockup</h2>
             <div class="space-y-6">
-                @include('daisy-dev::demo.partials.test-mockup-browser')
-                @include('daisy-dev::demo.partials.test-mockup-code')
-                @include('daisy-dev::demo.partials.test-mockup-phone')
-                @include('daisy-dev::demo.partials.test-mockup-window')
+                @include('daisy-dev::demo.ui.partials.test-mockup-browser')
+                @include('daisy-dev::demo.ui.partials.test-mockup-code')
+                @include('daisy-dev::demo.ui.partials.test-mockup-phone')
+                @include('daisy-dev::demo.ui.partials.test-mockup-window')
             </div>
         </section>
 
@@ -360,12 +360,12 @@
         <section>
             <h2 class="text-xl font-semibold">Extensions · Dépendances externes</h2>
             <div class="space-y-6">
-                @include('daisy-dev::demo.partials.test-charts')
-                @include('daisy-dev::demo.partials.test-leaflet')
-                @include('daisy-dev::demo.partials.test-calendar')
-                {{-- @include('daisy-dev::demo.partials.test-calendar-full') --}}
-                @include('daisy-dev::demo.partials.test-wysiwyg')
-                @include('daisy-dev::demo.partials.test-code-editor')
+                @include('daisy-dev::demo.ui.partials.test-charts')
+                @include('daisy-dev::demo.ui.partials.test-leaflet')
+                @include('daisy-dev::demo.ui.partials.test-calendar')
+                {{-- @include('daisy-dev::demo.ui.partials.test-calendar-full') --}}
+                @include('daisy-dev::demo.ui.partials.test-wysiwyg')
+                @include('daisy-dev::demo.ui.partials.test-code-editor')
             </div>
         </section>
 
@@ -374,7 +374,7 @@
         <section>
             <h2 class="text-xl font-semibold">JavaScript · Runtime</h2>
             <div class="space-y-6">
-                @include('daisy-dev::demo.partials.test-js-modules')
+                @include('daisy-dev::demo.ui.partials.test-js-modules')
             </div>
         </section>
     </div>
