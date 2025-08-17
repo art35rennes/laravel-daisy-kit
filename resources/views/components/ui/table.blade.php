@@ -50,10 +50,20 @@
             <thead>
                 <tr>
                     @if($hasNumberCol)
-                        <th class="w-0"></th>
+                        <th class="w-0 @if($pinCols) sticky left-0 z-10 bg-base-100 @endif"></th>
                     @endif
-                    @foreach($headers as $h)
-                        <th>{{ $h }}</th>
+                    @foreach($headers as $hIndex => $h)
+                        @php
+                            if ($pinCols) {
+                                $baseOffset = $hasNumberCol ? 3 : 0;
+                                $adjustedIndex = $rowHeaders ? $hIndex : $hIndex + 1;
+                                $headerLeftOffset = ($baseOffset + ($adjustedIndex * 8)) . 'rem';
+                                if ($rowHeaders && $hIndex === 0) {
+                                    $headerLeftOffset = $baseOffset . 'rem';
+                                }
+                            }
+                        @endphp
+                        <th @if($pinCols) class="sticky z-10 bg-base-100 @if($rowHeaders && $hIndex === 0) border-r border-base-300 @endif" style="left: {{ $headerLeftOffset }}" @endif>{{ $h }}</th>
                     @endforeach
                 </tr>
             </thead>
@@ -63,7 +73,7 @@
                 @foreach($rows as $rIndex => $row)
                     <tr>
                         @if($hasNumberCol)
-                            <th class="w-0">
+                            <th class="w-0 @if($pinCols) sticky left-0 z-10 bg-base-100 @endif">
                                 <div class="flex items-center gap-2">
                                     @if($showRowNumbers)
                                         <span class="text-xs opacity-70" data-row-number>{{ is_null($total) ? ($offset + $rIndex) : ($offset + $rIndex) }}</span>
@@ -77,10 +87,22 @@
                             </th>
                         @endif
                         @foreach($row as $cellIndex => $cell)
+                            @php
+                                if ($pinCols) {
+                                    // Calcul de la position left selon l'index de la cellule
+                                    $baseOffset = $hasNumberCol ? 3 : 0; // Colonne de sélection
+                                    if ($rowHeaders && $cellIndex === 0) {
+                                        $leftOffset = $baseOffset . 'rem';
+                                    } else {
+                                        $adjustedIndex = $rowHeaders ? $cellIndex : $cellIndex + 1;
+                                        $leftOffset = ($baseOffset + ($adjustedIndex * 8)) . 'rem';
+                                    }
+                                }
+                            @endphp
                             @if($rowHeaders && $cellIndex === 0)
-                                <th>{!! $cell !!}</th>
+                                <th @if($pinCols) class="sticky z-10 bg-base-100 border-r border-base-300" style="left: {{ $leftOffset }}" @endif>{!! $cell !!}</th>
                             @else
-                                <td>{!! $cell !!}</td>
+                                <td @if($pinCols) class="sticky z-10 bg-base-100" style="left: {{ $leftOffset }}" @endif>{!! $cell !!}</td>
                             @endif
                         @endforeach
                     </tr>
@@ -90,10 +112,20 @@
                 <tfoot>
                     <tr>
                         @if($hasNumberCol)
-                            <th></th>
+                            <th class="@if($pinCols) sticky left-0 z-10 bg-base-100 @endif"></th>
                         @endif
-                        @foreach($footer as $f)
-                            <th>{!! $f !!}</th>
+                        @foreach($footer as $fIndex => $f)
+                            @php
+                                if ($pinCols) {
+                                    $baseOffset = $hasNumberCol ? 3 : 0;
+                                    $adjustedIndex = $rowHeaders ? $fIndex : $fIndex + 1;
+                                    $footerLeftOffset = ($baseOffset + ($adjustedIndex * 8)) . 'rem';
+                                    if ($rowHeaders && $fIndex === 0) {
+                                        $footerLeftOffset = $baseOffset . 'rem';
+                                    }
+                                }
+                            @endphp
+                            <th @if($pinCols) class="sticky z-10 bg-base-100 @if($rowHeaders && $fIndex === 0) border-r border-base-300 @endif" style="left: {{ $footerLeftOffset }}" @endif>{!! $f !!}</th>
                         @endforeach
                     </tr>
                 </tfoot>
