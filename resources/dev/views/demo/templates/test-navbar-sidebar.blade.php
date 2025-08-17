@@ -1,11 +1,11 @@
-<x-daisy::layout.navbar-sidebar-layout title="Navbar + Sidebar Template" brand="DaisyKit" :sections="[
+<x-daisy::layout.navbar-sidebar-layout title="Navbar + Sidebar Template" brand="DaisyKit" variant="fit" :showBrand="false" :sections="[
     ['label' => __('daisy::layout.menu'), 'items' => [
-        ['label' => 'Dashboard', 'href' => '#', 'icon' => 'home', 'active' => true],
-        ['label' => 'Management', 'icon' => 'cog-6-tooth', 'children' => [
-            ['label' => 'Users', 'href' => '#', 'icon' => 'user-circle'],
+        ['label' => 'Dashboard', 'href' => '#', 'icon' => 'speedometer2', 'active' => true],
+        ['label' => 'Management', 'icon' => 'gear', 'children' => [
+            ['label' => 'Users', 'href' => '#', 'icon' => 'people'],
             ['label' => 'Roles', 'href' => '#', 'icon' => 'key'],
         ]],
-        ['label' => 'Reports', 'href' => '#', 'icon' => 'chart-bar'],
+        ['label' => 'Reports', 'href' => '#', 'icon' => 'bar-chart'],
     ]],
 ]">
     <x-slot:brand>

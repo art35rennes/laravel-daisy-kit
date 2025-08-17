@@ -67,13 +67,18 @@
     $iconClass = $iconMap[$provider] ?? 'bi-box-arrow-in-right';
 @endphp
 
-<a href="{{ $href }}" class="inline-block">
-    <x-daisy::ui.button :variant="$variant" color="" :size="$size" class="gap-2 {{ $btnClasses }}">
-        <x-slot:icon>
-            <x-icon :name="$iconClass" class="h-4 w-4" />
-        </x-slot:icon>
-        {{ $text }}
-    </x-daisy::ui.button>
+<x-daisy::ui.button 
+    :variant="$variant" 
+    color="" 
+    :size="$size" 
+    class="gap-2 {{ $btnClasses }}"
+    href="{{ $href }}"
+    tag="a"
+>
+    <x-slot:icon>
+        <x-icon :name="$iconClass" class="h-4 w-4" />
+    </x-slot:icon>
+    {{ $text }}
     <span class="sr-only">{{ $text }}</span>
     {{ $slot }}
-</a>
+</x-daisy::ui.button>

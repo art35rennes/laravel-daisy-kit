@@ -111,7 +111,7 @@ Route::get('/demo/api/tree-search', function (\Illuminate\Http\Request $request)
 })->name('demo.tree.search');
 
 // Pages dédiées aux layouts/templates avancés
-Route::view('/templates', 'templates.index')->name('templates.index');
-Route::view('/templates/navbar', 'templates.navbar')->name('layouts.navbar');
-Route::view('/templates/sidebar', 'templates.sidebar')->name('layouts.sidebar');
-Route::view('/templates/navbar-sidebar', 'templates.navbar-sidebar')->name('layouts.navbar-sidebar');
+Route::view('/templates', 'daisy-dev::demo.templates.index')->name('templates.index');
+Route::view('/templates/navbar', 'daisy-dev::demo.templates.test-navbar')->name('layouts.navbar');
+Route::view('/templates/sidebar', 'daisy-dev::demo.templates.test-sidebar')->name('layouts.sidebar');
+Route::view('/templates/navbar-sidebar', 'daisy-dev::demo.templates.test-navbar-sidebar')->name('layouts.navbar-sidebar');
