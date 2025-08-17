@@ -1,7 +1,7 @@
 <!-- Color Picker -->
 <section class="space-y-4 bg-base-200 p-6 rounded-box">
     <h2 class="text-lg font-medium">Color Picker</h2>
-    <div class="grid md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Native -->
         <div class="space-y-2">
             <div class="text-sm opacity-70">Natif</div>
