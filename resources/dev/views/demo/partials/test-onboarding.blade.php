@@ -88,9 +88,9 @@
             <x-daisy::ui.onboarding id="manual-onboarding" :start="false" :steps="[
                 ['target' => '#onboarding-manual-btn', 'title' => 'Tour manuel', 'content' => 'Ce tour se fait entièrement à votre rythme. Utilisez les boutons ou les flèches du clavier.', 'placement' => 'bottom'],
                 ['target' => '#feature-1', 'title' => 'Première fonctionnalité', 'content' => 'Découvrez les fonctionnalités principales de l\'application. Prenez le temps d\'explorer.', 'placement' => 'top'],
-                ['target' => '#feature-2', 'title' => 'Configuration', 'content' => 'Personnalisez votre expérience avec les options de configuration disponibles.', 'placement' => 'top'],
-                ['target' => '#feature-3', 'title' => 'Analytiques', 'content' => 'Suivez vos performances avec le tableau de bord intégré.', 'placement' => 'top'],
-                ['target' => '#help-section', 'title' => 'Centre d\'aide', 'content' => 'N\'hésitez pas à consulter la documentation si vous avez des questions.', 'placement' => 'top'],
+                ['target' => '#feature-2', 'title' => 'Configuration', 'content' => 'Personnalisez votre expérience avec les options de configuration disponibles.', 'placement' => 'right'],
+                ['target' => '#feature-3', 'title' => 'Analytiques', 'content' => 'Suivez vos performances avec le tableau de bord intégré.', 'placement' => 'left'],
+                ['target' => '#help-section', 'title' => 'Centre d\'aide', 'content' => 'N\'hésitez pas à consulter la documentation si vous avez des questions.', 'placement' => 'bottom'],
             ]">
                 {{-- Deuxième onboarding sans minuteur --}}
             </x-daisy::ui.onboarding>
@@ -102,23 +102,64 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Premier onboarding (avec minuteur)
-    const btn = document.getElementById('onboarding-start-btn');
-    const ob = document.getElementById('demo-onboarding');
-    if (btn && ob) {
-        btn.addEventListener('click', () => {
-            ob.__onboarding?.start?.();
+    
+    function waitForOnboarding() {
+        return new Promise((resolve) => {
+            // Si DaisyOnboarding est déjà disponible, résoudre immédiatement
+            if (window.DaisyOnboarding && window.DaisyOnboarding.initAll) {
+                resolve();
+                return;
+            }
+            
+            // Sinon, attendre qu'il soit disponible (polling)
+            const checkInterval = setInterval(() => {
+                if (window.DaisyOnboarding && window.DaisyOnboarding.initAll) {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 50);
+            
+            // Timeout de sécurité (10 secondes)
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                resolve(); // Résoudre quand même pour éviter de bloquer
+            }, 10000);
         });
     }
+    
+    async function initOnboardingDemo() {
+        await waitForOnboarding();
+        
+        // Forcer l'initialisation si nécessaire
+        if (window.DaisyOnboarding && window.DaisyOnboarding.initAll) {
+            window.DaisyOnboarding.initAll();
+        }
+        
+        // Petit délai pour laisser l'initialisation se faire
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Premier onboarding (avec minuteur)
+        const btn = document.getElementById('onboarding-start-btn');
+        const ob = document.getElementById('demo-onboarding');
+        
+        if (btn && ob) {
+            btn.addEventListener('click', () => {
+                ob.__onboarding?.start?.();
+            });
+        }
 
-    // Deuxième onboarding (manuel)
-    const manualBtn = document.getElementById('onboarding-manual-btn');
-    const manualOb = document.getElementById('manual-onboarding');
-    if (manualBtn && manualOb) {
-        manualBtn.addEventListener('click', () => {
-            manualOb.__onboarding?.start?.();
-        });
+        // Deuxième onboarding (manuel)
+        const manualBtn = document.getElementById('onboarding-manual-btn');
+        const manualOb = document.getElementById('manual-onboarding');
+        
+        if (manualBtn && manualOb) {
+            manualBtn.addEventListener('click', () => {
+                manualOb.__onboarding?.start?.();
+            });
+        }
     }
+    
+    initOnboardingDemo();
 });
 </script>
 
