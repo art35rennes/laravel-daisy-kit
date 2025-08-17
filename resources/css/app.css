@@ -139,8 +139,8 @@
 /* Mode collapsed : optimiser l'affichage */
 [data-collapsed="1"] .menu li > a,
 [data-collapsed="1"] .menu li > summary {
-  justify-content: center;
-  padding-left: 0.5rem;
+  justify-content: flex-start;
+  padding-left: 0.75rem;
   padding-right: 0.5rem;
 }
 

@@ -1,4 +1,4 @@
-<x-daisy::layout.sidebar-layout title="Sidebar Template" variant="fit" brand="DaisyKit" brandHref="#" :showBrand="false" :sections="[
+<x-daisy::layout.sidebar-layout title="Sidebar Template" variant="fit" brand="DaisyKit" brandHref="#" :showBrand="true" :sections="[
     ['label' => __('daisy::layout.menu'), 'items' => [
         ['label' => 'Dashboard', 'href' => '#', 'icon' => 'speedometer2', 'active' => true],
         ['label' => 'Projects', 'icon' => 'folder', 'children' => [
