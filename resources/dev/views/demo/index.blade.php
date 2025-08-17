@@ -362,7 +362,7 @@
                 @include('daisy-dev::demo.partials.test-charts')
                 @include('daisy-dev::demo.partials.test-leaflet')
                 @include('daisy-dev::demo.partials.test-calendar')
-                @include('daisy-dev::demo.partials.test-calendar-full')
+                {{-- @include('daisy-dev::demo.partials.test-calendar-full') --}}
                 @include('daisy-dev::demo.partials.test-wysiwyg')
                 @include('daisy-dev::demo.partials.test-code-editor')
             </div>
