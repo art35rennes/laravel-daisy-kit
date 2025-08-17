@@ -91,6 +91,15 @@ onReady(async () => {
     await import('cally');
   });
 
+  // Color picker : chargement direct (pas de lazy loading)
+  await dynamicImportIf('[data-colorpicker="1"]', async () => {
+    await import('./color-picker');
+    // Initialisation explicite après l'import
+    if (window.DaisyColorPicker) {
+      window.DaisyColorPicker.initAll();
+    }
+  });
+
   // Radios "décochables" : permet de décocher un radio déjà coché si data-uncheckable="1"
   // Mémorisation de l'état AVANT le clic pour distinguer check vs uncheck
   document.addEventListener('mousedown', (e) => {
@@ -154,7 +163,6 @@ onReady(async () => {
   importWhenIdle('[data-stepper]', () => { mediumQueue(() => import('./stepper')); });
   importWhenIdle('[data-onboarding="1"]', () => { mediumQueue(() => import('./onboarding')); });
   importWhenIdle('[data-table-select]:not([data-table-select="none"])', () => { mediumQueue(() => import('./table')); });
-  importWhenIdle('[data-colorpicker="1"]', () => { mediumQueue(() => import('./color-picker')); });
   importWhenIdle('[data-fileinput="1"]', () => { mediumQueue(() => import('./file-input')); });
   importWhenIdle('input[data-inputmask="1"], input[data-obfuscate="1"]', () => { mediumQueue(() => import('./input-mask')); });
   importWhenIdle('[data-scrollstatus="1"]', () => { mediumQueue(() => import('./scroll-status')); });

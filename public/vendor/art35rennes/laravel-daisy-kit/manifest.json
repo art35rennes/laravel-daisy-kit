@@ -329,7 +329,7 @@
     "isDynamicEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-B16x9LgU.css",
+    "file": "assets/app-DQlVE9GN.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "names": [
@@ -337,12 +337,13 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-CpzgW2rU.js",
+    "file": "assets/app-CuJoPU2k.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "dynamicImports": [
       "node_modules/cally/dist/cally.js",
+      "resources/js/color-picker.js",
       "resources/js/treeview.js",
       "resources/js/scrollspy.js",
       "resources/js/popconfirm.js",
@@ -350,7 +351,6 @@
       "resources/js/stepper.js",
       "resources/js/onboarding.js",
       "resources/js/table.js",
-      "resources/js/color-picker.js",
       "resources/js/file-input.js",
       "resources/js/input-mask.js",
       "resources/js/scroll-status.js",
@@ -364,7 +364,7 @@
     ]
   },
   "resources/js/calendar-full/index.js": {
-    "file": "assets/index-iJJI4qwv.js",
+    "file": "assets/index-D4I4s269.js",
     "name": "index",
     "src": "resources/js/calendar-full/index.js",
     "isDynamicEntry": true,
@@ -373,7 +373,7 @@
     ]
   },
   "resources/js/chart/index.js": {
-    "file": "assets/index-DsNB3Glq.js",
+    "file": "assets/index-XTXydJFE.js",
     "name": "index",
     "src": "resources/js/chart/index.js",
     "isDynamicEntry": true,
@@ -391,7 +391,7 @@
     "isDynamicEntry": true
   },
   "resources/js/color-picker.js": {
-    "file": "assets/color-picker-BurO_-UN.js",
+    "file": "assets/color-picker-BYNeDt0N.js",
     "name": "color-picker",
     "src": "resources/js/color-picker.js",
     "isDynamicEntry": true
@@ -409,7 +409,7 @@
     "isDynamicEntry": true
   },
   "resources/js/lazy-editors.js": {
-    "file": "assets/lazy-editors-XtkwY_Hy.js",
+    "file": "assets/lazy-editors-DotjVjXx.js",
     "name": "lazy-editors",
     "src": "resources/js/lazy-editors.js",
     "isDynamicEntry": true,
@@ -422,7 +422,7 @@
     ]
   },
   "resources/js/leaflet/index.js": {
-    "file": "assets/index-BUreabbd.js",
+    "file": "assets/index-D6UXILJb.js",
     "name": "index",
     "src": "resources/js/leaflet/index.js",
     "isDynamicEntry": true,
@@ -460,7 +460,7 @@
     "isDynamicEntry": true
   },
   "resources/js/onboarding.js": {
-    "file": "assets/onboarding-DJgpnEjO.js",
+    "file": "assets/onboarding-CqANw4aG.js",
     "name": "onboarding",
     "src": "resources/js/onboarding.js",
     "isDynamicEntry": true,
