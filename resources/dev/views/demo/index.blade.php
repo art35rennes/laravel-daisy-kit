@@ -264,7 +264,7 @@
                 @include('daisy-dev::demo.partials.test-timeline')
                 @include('daisy-dev::demo.partials.test-lightbox')
                 @include('daisy-dev::demo.partials.test-media-gallery')
-                @include('daisy-dev::demo.partials.test-embeds')
+                {{-- @include('daisy-dev::demo.partials.test-embeds') --}}
             </div>
         </section>
 

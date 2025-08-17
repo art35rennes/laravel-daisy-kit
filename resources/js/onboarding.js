@@ -193,10 +193,14 @@ function updateSpotlightMask(spotlightLayer, rect, radius) {
   spotlightLayer.style.background = 'rgba(0,0,0,0.4)';
 }
 
-function ringHighlight(targetEl, enable) {
+function ringHighlight(targetEl, enable, highlightedTargets = null) {
   if (!targetEl) return;
   if (enable) {
     targetEl.classList.add('ring', 'ring-primary', 'ring-offset-2', 'ring-offset-base-100', 'animate-ping');
+    // Ajouter un z-index élevé pour s'assurer que l'élément est visible au-dessus du voile
+    targetEl.style.position = 'relative';
+    targetEl.style.zIndex = '80';
+    if (highlightedTargets) highlightedTargets.add(targetEl);
     // Supprimer l'animation ping après 2 secondes pour un effet plus subtil
     setTimeout(() => {
       if (targetEl.classList.contains('ring')) {
@@ -205,6 +209,10 @@ function ringHighlight(targetEl, enable) {
     }, 2000);
   } else {
     targetEl.classList.remove('ring', 'ring-primary', 'ring-offset-2', 'ring-offset-base-100', 'animate-ping');
+    // Restaurer le style original
+    targetEl.style.position = '';
+    targetEl.style.zIndex = '';
+    if (highlightedTargets) highlightedTargets.delete(targetEl);
   }
 }
 
@@ -219,10 +227,12 @@ function setupOnboarding(root) {
   let current = -1;
   let timer = null;
   let activeTarget = null;
+  let highlightedTargets = new Set(); // Suivre tous les éléments qui ont été highlightés
   let overlay = null;
   let dim = null;
   let spotlight = null;
   let popover = null;
+  let isRunning = false; // Éviter les conflits de démarrage multiple
 
   function createElements() {
     overlay = createOverlay();
@@ -241,7 +251,37 @@ function setupOnboarding(root) {
   }
 
   function clearTimer() { if (timer) { clearTimeout(timer); timer = null; } }
-  function cleanupTarget() { if (activeTarget) { ringHighlight(activeTarget, false); activeTarget = null; } }
+  
+  function cleanupTarget() { 
+    if (activeTarget) { 
+      ringHighlight(activeTarget, false, highlightedTargets); 
+      activeTarget = null; 
+    } 
+  }
+  
+  function cleanupAllTargets() {
+    // Nettoyer tous les éléments qui ont été highlightés
+    highlightedTargets.forEach(target => {
+      try {
+        ringHighlight(target, false, highlightedTargets);
+      } catch (e) {
+        // Ignorer les erreurs si l'élément n'existe plus dans le DOM
+        console.warn('Erreur lors du nettoyage d\'un target:', e);
+      }
+    });
+    highlightedTargets.clear();
+    activeTarget = null;
+  }
+  
+  function safeRemoveElement(element) {
+    try {
+      if (element && element.parentNode) {
+        element.remove();
+      }
+    } catch (e) {
+      console.warn('Erreur lors de la suppression d\'un élément:', e);
+    }
+  }
 
   function showStep(index) {
     clearTimer();
@@ -257,7 +297,7 @@ function setupOnboarding(root) {
     activeTarget = target;
     const rect = getElementRect(target);
     updateSpotlightMask(spotlight, rect, config.radius);
-    if (config.highlight) ringHighlight(target, true);
+    if (config.highlight) ringHighlight(target, true, highlightedTargets);
     if (config.highlight) scrollIntoViewIfNeeded(target);
 
     popover.header.textContent = step.title || '';
@@ -285,10 +325,21 @@ function setupOnboarding(root) {
   }
 
   function start() {
-    // Créer les éléments à chaque démarrage pour permettre un redémarrage
-    if (!overlay || !document.body.contains(overlay)) {
-      createElements();
+    // Éviter le démarrage multiple simultané
+    if (isRunning) return;
+    isRunning = true;
+    
+    // Nettoyer tout d'abord
+    cleanupAllTargets();
+    
+    // Supprimer les éléments existants s'ils existent déjà
+    safeRemoveElement(overlay);
+    if (popover && popover.panel) {
+      safeRemoveElement(popover.panel);
     }
+    
+    // Créer de nouveaux éléments à chaque démarrage pour permettre un redémarrage propre
+    createElements();
     setOverlayVisible(true);
     current = 0;
     root.dispatchEvent(new CustomEvent('onboarding:start', { detail: { index: 0 }, bubbles: true }));
@@ -298,13 +349,16 @@ function setupOnboarding(root) {
 
   function finish() {
     clearTimer();
-    cleanupTarget();
+    cleanupAllTargets(); // Nettoyer tous les targets, pas seulement l'actuel
     setOverlayVisible(false);
     setTimeout(() => {
-      try {
-        overlay.remove();
-        popover.panel.remove();
-      } catch(_) {}
+      safeRemoveElement(overlay);
+      if (popover && popover.panel) {
+        safeRemoveElement(popover.panel);
+      }
+      overlay = null;
+      popover = null;
+      isRunning = false; // Permettre un nouveau démarrage
     }, 200);
     root.dispatchEvent(new CustomEvent('onboarding:finish', { bubbles: true }));
     unbindWindow();
@@ -362,13 +416,16 @@ function setupOnboarding(root) {
   function skip() {
     confirmAnd(() => {
       clearTimer();
-      cleanupTarget();
+      cleanupAllTargets(); // Nettoyer tous les targets, pas seulement l'actuel
       setOverlayVisible(false);
       setTimeout(() => {
-        try {
-          overlay.remove();
-          popover.panel.remove();
-        } catch(_) {}
+        safeRemoveElement(overlay);
+        if (popover && popover.panel) {
+          safeRemoveElement(popover.panel);
+        }
+        overlay = null;
+        popover = null;
+        isRunning = false; // Permettre un nouveau démarrage
       }, 200);
       root.dispatchEvent(new CustomEvent('onboarding:skip', { bubbles: true }));
       unbindWindow();
@@ -432,6 +489,15 @@ function setupOnboarding(root) {
   popover.btnFinish.addEventListener('click', (e) => { e.preventDefault(); finish(); });
   popover.btnSkip.addEventListener('click', (e) => { e.preventDefault(); if (config.allowSkip) skip(); });
 
+  // Nettoyer l'ancien onboarding s'il existe déjà
+  if (root.__onboarding && typeof root.__onboarding.finish === 'function') {
+    try {
+      root.__onboarding.finish();
+    } catch (e) {
+      console.warn('Erreur lors du nettoyage de l\'ancien onboarding:', e);
+    }
+  }
+
   if (root.dataset.start === '1') setTimeout(start, 50);
 
   root.__onboarding = { start, next, prev, finish, skip };
@@ -439,7 +505,8 @@ function setupOnboarding(root) {
 
 function initAllOnboarding() {
   document.querySelectorAll('[data-onboarding="1"]').forEach((el) => {
-    if (!el.__onboarding) setupOnboarding(el);
+    // Toujours réinitialiser pour permettre les redémarrages
+    setupOnboarding(el);
   });
 }
 
