@@ -329,7 +329,7 @@
     "isDynamicEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-DmheGiEY.css",
+    "file": "assets/app-DrenOSfg.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "names": [
@@ -337,19 +337,20 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-Dv4JvHbV.js",
+    "file": "assets/app-B4OH-h25.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "dynamicImports": [
       "node_modules/cally/dist/cally.js",
+      "resources/js/color-picker.js",
       "resources/js/treeview.js",
       "resources/js/scrollspy.js",
       "resources/js/popconfirm.js",
       "resources/js/popover.js",
       "resources/js/stepper.js",
+      "resources/js/onboarding.js",
       "resources/js/table.js",
-      "resources/js/color-picker.js",
       "resources/js/file-input.js",
       "resources/js/input-mask.js",
       "resources/js/scroll-status.js",
@@ -358,11 +359,21 @@
       "resources/js/media-gallery.js",
       "resources/js/lazy-editors.js",
       "resources/js/chart/index.js",
-      "resources/js/leaflet/index.js"
+      "resources/js/leaflet/index.js",
+      "resources/js/calendar-full/index.js"
+    ]
+  },
+  "resources/js/calendar-full/index.js": {
+    "file": "assets/index-6NSVkMDi.js",
+    "name": "index",
+    "src": "resources/js/calendar-full/index.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
     ]
   },
   "resources/js/chart/index.js": {
-    "file": "assets/index-Co39wSuO.js",
+    "file": "assets/index-B_IPc5Fs.js",
     "name": "index",
     "src": "resources/js/chart/index.js",
     "isDynamicEntry": true,
@@ -380,7 +391,7 @@
     "isDynamicEntry": true
   },
   "resources/js/color-picker.js": {
-    "file": "assets/color-picker-BurO_-UN.js",
+    "file": "assets/color-picker-BYNeDt0N.js",
     "name": "color-picker",
     "src": "resources/js/color-picker.js",
     "isDynamicEntry": true
@@ -398,7 +409,7 @@
     "isDynamicEntry": true
   },
   "resources/js/lazy-editors.js": {
-    "file": "assets/lazy-editors-B-9Y2X4D.js",
+    "file": "assets/lazy-editors-CLaF2SG9.js",
     "name": "lazy-editors",
     "src": "resources/js/lazy-editors.js",
     "isDynamicEntry": true,
@@ -411,7 +422,7 @@
     ]
   },
   "resources/js/leaflet/index.js": {
-    "file": "assets/index-umrjrtR1.js",
+    "file": "assets/index-CUjt5xz-.js",
     "name": "index",
     "src": "resources/js/leaflet/index.js",
     "isDynamicEntry": true,
@@ -448,14 +459,26 @@
     "src": "resources/js/media-gallery.js",
     "isDynamicEntry": true
   },
+  "resources/js/onboarding.js": {
+    "file": "assets/onboarding-BZ-Qe97_.js",
+    "name": "onboarding",
+    "src": "resources/js/onboarding.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ],
+    "dynamicImports": [
+      "resources/js/popconfirm.js"
+    ]
+  },
   "resources/js/popconfirm.js": {
-    "file": "assets/popconfirm-Bk9x9G4s.js",
+    "file": "assets/popconfirm-CE6Gc8TV.js",
     "name": "popconfirm",
     "src": "resources/js/popconfirm.js",
     "isDynamicEntry": true
   },
   "resources/js/popover.js": {
-    "file": "assets/popover-BMWFD9LQ.js",
+    "file": "assets/popover-Cm4oUEEh.js",
     "name": "popover",
     "src": "resources/js/popover.js",
     "isDynamicEntry": true
@@ -473,7 +496,7 @@
     "isDynamicEntry": true
   },
   "resources/js/stepper.js": {
-    "file": "assets/stepper-CN2hgJ9N.js",
+    "file": "assets/stepper-W6mQP9T3.js",
     "name": "stepper",
     "src": "resources/js/stepper.js",
     "isDynamicEntry": true
@@ -485,7 +508,7 @@
     "isDynamicEntry": true
   },
   "resources/js/transfer.js": {
-    "file": "assets/transfer-CN9ASH4c.js",
+    "file": "assets/transfer-BtgJuRoJ.js",
     "name": "transfer",
     "src": "resources/js/transfer.js",
     "isDynamicEntry": true

@@ -11,6 +11,9 @@
     'active' => false,
     'noAnimation' => false,
     'disabled' => false,
+    'tag' => 'button',    // button | a
+    'href' => null,       // URL pour les liens
+    'target' => null,     // _blank, _self, etc.
 ])
 
 @php
@@ -69,22 +72,46 @@
     if ($disabled) $classes .= ' btn-disabled';
 @endphp
 
-<button type="{{ $type }}" @disabled($disabled) {{ $attributes->merge(['class' => $classes]) }}>
-    @isset($icon)
-        <span class="shrink-0">
-            {{ $icon }}
-        </span>
-    @endisset
+@if($tag === 'a')
+    <a 
+        @if($href) href="{{ $href }}" @endif
+        @if($target) target="{{ $target }}" @endif
+        {{ $attributes->merge(['class' => $classes]) }}
+    >
+        @isset($icon)
+            <span class="shrink-0">
+                {{ $icon }}
+            </span>
+        @endisset
 
-    @if(trim($slot) !== '')
-        <span>{{ $slot }}</span>
-    @endif
+        @if(trim($slot) !== '')
+            <span>{{ $slot }}</span>
+        @endif
 
-    @isset($iconRight)
-        <span class="shrink-0">
-            {{ $iconRight }}
-        </span>
-    @endisset
-</button>
+        @isset($iconRight)
+            <span class="shrink-0">
+                {{ $iconRight }}
+            </span>
+        @endisset
+    </a>
+@else
+    <button type="{{ $type }}" @disabled($disabled) {{ $attributes->merge(['class' => $classes]) }}>
+        @isset($icon)
+            <span class="shrink-0">
+                {{ $icon }}
+            </span>
+        @endisset
+
+        @if(trim($slot) !== '')
+            <span>{{ $slot }}</span>
+        @endif
+
+        @isset($iconRight)
+            <span class="shrink-0">
+                {{ $iconRight }}
+            </span>
+        @endisset
+    </button>
+@endif
 
 

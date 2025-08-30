@@ -21,14 +21,14 @@
         @endif
     </label>
 @else
-    @php($labelClass = 'label')
+    @php($labelClass = 'label break-words text-wrap whitespace-normal overflow-hidden')
     @if($srOnly)
         @php($labelClass .= ' sr-only')
     @endif
     <label @if($for) for="{{ $for }}" @endif {{ $attributes->merge(['class' => $labelClass]) }}>
-        <span class="label-text">{{ $slot->isNotEmpty() ? $slot : $value }}</span>
+        <span class="label-text break-words text-wrap whitespace-normal overflow-hidden">{{ $slot->isNotEmpty() ? $slot : $value }}</span>
         @if($alt)
-            <span class="label-text-alt">{{ $alt }}</span>
+            <span class="label-text-alt break-words text-wrap whitespace-normal overflow-hidden">{{ $alt }}</span>
         @endif
     </label>
 @endif

@@ -40,12 +40,69 @@ function setupPopover(root) {
   // Détermine le mode d'ouverture du popover ('click', 'hover', 'focus')
   const triggerMode = root.getAttribute('data-trigger') || 'click';
 
+  // Mappings de classes utilitaires par position
+  const POSITION_CLASSES = {
+    top: ['bottom-full', 'left-1/2', '-translate-x-1/2', 'mb-2'],
+    right: ['left-full', 'top-1/2', '-translate-y-1/2', 'ml-2'],
+    bottom: ['top-full', 'left-1/2', '-translate-x-1/2', 'mt-2'],
+    left: ['right-full', 'top-1/2', '-translate-y-1/2', 'mr-2'],
+  };
+
+  const ARROW_CLASSES = {
+    top: ['left-1/2', '-translate-x-1/2', '-bottom-1', 'border-t-0', 'border-l-0'],
+    right: ['-left-1', 'top-1/2', '-translate-y-1/2', 'border-t-0', 'border-r-0'],
+    bottom: ['left-1/2', '-translate-x-1/2', '-top-1', 'border-b-0', 'border-r-0'],
+    left: ['-right-1', 'top-1/2', '-translate-y-1/2', 'border-b-0', 'border-l-0'],
+  };
+
+  function applyPanelPosition(pos) {
+    Object.values(POSITION_CLASSES).forEach(list => list.forEach(cls => panel.classList.remove(cls)));
+    (POSITION_CLASSES[pos] || POSITION_CLASSES.top).forEach(cls => panel.classList.add(cls));
+    panel.dataset.currentPosition = pos;
+    const arrow = panel.querySelector('.popover-arrow');
+    if (arrow) {
+      Object.values(ARROW_CLASSES).forEach(list => list.forEach(cls => arrow.classList.remove(cls)));
+      (ARROW_CLASSES[pos] || ARROW_CLASSES.top).forEach(cls => arrow.classList.add(cls));
+    }
+  }
+
+  function isInViewport(rect, margin = 6) {
+    const w = window.innerWidth; const h = window.innerHeight;
+    return rect.left >= margin && rect.top >= margin && rect.right <= w - margin && rect.bottom <= h - margin;
+  }
+
+  function candidatesFor(pos) {
+    if (pos === 'auto') return ['bottom', 'top', 'right', 'left'];
+    switch (pos) {
+      case 'top': return ['top', 'bottom', 'right', 'left'];
+      case 'right': return ['right', 'left', 'top', 'bottom'];
+      case 'bottom': return ['bottom', 'top', 'right', 'left'];
+      case 'left': return ['left', 'right', 'top', 'bottom'];
+      default: return ['bottom', 'top', 'right', 'left'];
+    }
+  }
+
+  function adjustPlacement() {
+    const desired = root.getAttribute('data-position') || 'top';
+    const list = candidatesFor(desired);
+    let chosen = list[0];
+    // Essaye chaque position et vérifie le débordement
+    for (const pos of list) {
+      applyPanelPosition(pos);
+      const r = panel.getBoundingClientRect();
+      if (isInViewport(r)) { chosen = pos; break; }
+    }
+    applyPanelPosition(chosen);
+  }
+
   /**
    * Ouvre le popover (affiche le panneau) et ferme les autres popovers ouverts.
    */
   const open = () => {
     hideAllPopoversExcept(panel);
     panel.classList.remove('hidden');
+    // Ajuste la position si le panneau déborde (auto flip)
+    adjustPlacement();
   };
 
   /**

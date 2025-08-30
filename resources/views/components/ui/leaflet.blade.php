@@ -1,10 +1,9 @@
 @props([
     // Identifiant optionnel du conteneur de carte (auto-généré si null)
     'id' => null,
-    // Dimensions et style
+    // Style
     'class' => '',                 // classes utilitaires (DaisyUI/Tailwind)
     'style' => '',                 // styles inline additionnels
-    'height' => '400px',           // hauteur du conteneur carte
     // Vue initiale
     'lat' => 48.117266,            // latitude par défaut (Rennes)
     'lng' => -1.6777926,           // longitude par défaut (Rennes)
@@ -55,9 +54,10 @@
       import 'leaflet/dist/leaflet.css';
     ou via CDN si besoin temporaire.
   - Le composant émet un <script data-config> JSON lu par le module JS DaisyLeaflet.
+  - La carte s'adapte automatiquement à la taille de son parent.
 
   Exemple d'usage minimal
-  <x-daisy::ui.leaflet class="rounded-box shadow" height="480px" :zoom="13" :lat="48.11" :lng="-1.67" />
+  <x-daisy::ui.leaflet class="rounded-box shadow" :zoom="13" :lat="48.11" :lng="-1.67" />
 
   Activation de plugins
   <x-daisy::ui.leaflet :gestureHandling="true" :fullscreen="true" :hash="true" :scale="true"
@@ -69,8 +69,7 @@
 
 @php
     $mapId = $id ?: 'leaflet-'.\Illuminate\Support\Str::uuid()->toString();
-    $rootClasses = trim('relative w-full bg-base-200 '.$class);
-    $mapStyle = 'height: '.$height.';'.($style ? ' '.$style : '');
+    $rootClasses = trim('relative w-full h-full bg-base-200 '.$class);
 
     // Normalisation des options simples
     $scaleOptions = is_array($scale) ? $scale : ($scale ? ['metric' => true, 'imperial' => true] : []);
@@ -112,8 +111,8 @@
     ];
 @endphp
 
-<div {{ $attributes->merge(['class' => $rootClasses, 'data-leaflet' => '1']) }}>
-    <div id="{{ $mapId }}" class="w-full h-full" style="{{ $mapStyle }}"></div>
+<div {{ $attributes->merge(['class' => $rootClasses, 'data-leaflet' => '1', 'style' => $style]) }}>
+    <div id="{{ $mapId }}" class="w-full h-full"></div>
     <script type="application/json" data-config>@json($config)</script>
     {{ $slot }}
     {{-- Les barres d'outils/options personnalisées peuvent être passées via le slot --}}

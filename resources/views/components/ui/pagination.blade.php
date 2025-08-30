@@ -8,6 +8,9 @@
     'nextLabel' => '»',
     'equalPrevNext' => false,
     'outlinePrevNext' => false,
+    // Responsive
+    'responsive' => true,
+    'mobileLabel' => 'Page :current',
     // Améliorations de style
     'color' => null, // primary|secondary|accent|neutral|info|success|warning|error
     'outline' => false, // applique btn-outline aux boutons numérotés
@@ -26,6 +29,9 @@
         $btnColor = ' btn-'.$color;
     }
     $btnOutline = $outline ? ' btn-outline' : '';
+
+    // Label mobile (remplace :current et :total)
+    $mobileInfo = str_replace([':current', ':total'], [$current, $total], (string) $mobileLabel);
 
     // Build pages with ellipsis (null)
     $maxButtons = max(3, (int) $maxButtons);
@@ -56,11 +62,14 @@
         @if($edges)
             <button class="btn join-item{{ $btnSize }}{{ $btnColor }}{{ $btnOutline }}" @disabled($current === 1) aria-label="Previous">{{ $prevLabel }}</button>
         @endif
+        @if($responsive)
+            <span class="btn join-item{{ $btnSize }}{{ $btnColor }}{{ $btnOutline }} sm:hidden" aria-label="Page info">{{ $mobileInfo }}</span>
+        @endif
         @foreach($pages as $p)
             @if(is_null($p))
-                <button class="btn join-item{{ $btnSize }} btn-disabled">…</button>
+                <button class="btn join-item{{ $btnSize }} btn-disabled hidden sm:inline-flex">…</button>
             @else
-                <button class="btn join-item{{ $btnSize }}{{ $btnColor }}{{ $btnOutline }} {{ $p === $current ? 'btn-active' : '' }}">{{ $p }}</button>
+                <button class="btn join-item{{ $btnSize }}{{ $btnColor }}{{ $btnOutline }} {{ $p === $current ? 'btn-active' : '' }} hidden sm:inline-flex">{{ $p }}</button>
             @endif
         @endforeach
         @if($edges)

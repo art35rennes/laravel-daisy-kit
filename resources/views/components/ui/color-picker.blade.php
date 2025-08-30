@@ -45,13 +45,10 @@
                     <span class="w-4 h-4 rounded-box mr-2 inline-block align-middle border" data-colorchip style="background: {{ $value }}"></span>
                     <span data-colortext class="align-middle text-sm">{{ $value }}</span>
                 </div>
-                <div tabindex="0" class="dropdown-content bg-base-100 rounded-box shadow p-3 z-[1] w-72" data-colorpicker-panel></div>
+                <div tabindex="0" class="dropdown-content bg-base-100 rounded-box shadow p-3 z-[1] w-72 max-w-[calc(100vw-2rem)]" data-colorpicker-panel></div>
             </div>
         @else
-            <div class="w-72 rounded-box bg-base-100 shadow p-3" data-colorpicker-panel></div>
+            <div class="w-72 max-w-full rounded-box bg-base-100 shadow p-3" data-colorpicker-panel></div>
         @endif
     </div>
 @endif
-
-
-@include('daisy::components.partials.assets')

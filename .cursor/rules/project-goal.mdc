@@ -3,9 +3,9 @@ alwaysApply: true
 ---
 Ce projet Laravel est un package, pas une application. Toute génération de code doit respecter cette architecture de package.
 
-Avant de créer un nouveau composant, il est impératif de vérifier l'existence d'un composant équivalent dans `resources/views/components/ui/` et de privilégier sa réutilisation.
+Lors de la création d'un nouveau composant ou de la mise à jour d'un composant, il est impératif de vérifier l'existence d'un composant équivalent dans `resources/views/components/ui/` et de privilégier sa réutilisation lorsque possible.
 
-Pour les icônes, il faut utiliser en priorité le package `blade-ui-kit/blade-icons` (y compris les bibliothèques Lucide et Heroicons qui sont installées). Un SVG personnalisé ne doit être créé qu'en cas d'absence d'icône appropriée dans ces bibliothèques.
+Pour les icônes, il faut utiliser en priorité le package `blade-ui-kit/blade-icons` (y compris les bibliothèques davidhsianturi/blade-bootstrap-icons qui sont installées). Un SVG personnalisé ne doit être créé qu'en cas d'absence d'icône appropriée dans ces bibliothèques.
 
 La page de démonstration (`demo.blade.php`) doit être structurée en sections distinctes, une par composant. Chaque section doit présenter des exemples d'utilisation du composant, couvrant différentes variantes, tailles et états pour une démonstration exhaustive.
 

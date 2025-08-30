@@ -8,7 +8,7 @@
     'descClass' => null,
 ])
 
-<div {{ $attributes->merge(['class' => 'stat']) }}>
+<div {{ $attributes->merge(['class' => 'stat min-w-0']) }}>
     @isset($figure)
         <div class="stat-figure">{{ $figure }}</div>
     @endisset

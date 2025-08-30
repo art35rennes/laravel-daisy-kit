@@ -60,11 +60,51 @@ onReady(async () => {
      */
     const setCollapsed = (collapsed) => {
       aside.dataset.collapsed = collapsed ? '1' : '0';
-      if (wideClass) aside.classList.toggle(wideClass, !collapsed);
-      if (collapsedClass) aside.classList.toggle(collapsedClass, collapsed);
+      
+      // Gestion des classes de largeur selon la stratégie
+      const widthStrategy = aside.dataset.widthStrategy || 'wide';
+      
+      // Nettoyer d'abord toutes les classes de largeur existantes
+      ['w-20', 'w-64', 'w-fit', 'min-w-48', 'max-w-80', 'sidebar-auto', 'sidebar-fit', 'sidebar-adaptive'].forEach(cls => {
+        aside.classList.remove(cls);
+      });
+      
+      if (wideClass) {
+        wideClass.split(' ').forEach(cls => {
+          if (cls.trim()) aside.classList.remove(cls.trim());
+        });
+      }
+      
+      if (collapsed) {
+        // Mode collapsed : toujours utiliser w-20
+        aside.classList.add('w-20');
+      } else {
+        // Mode expanded : appliquer les classes selon la stratégie
+        if (wideClass) {
+          wideClass.split(' ').forEach(cls => {
+            if (cls.trim()) aside.classList.add(cls.trim());
+          });
+        }
+        
+        // Ajouter les classes spéciales selon la stratégie
+        switch (widthStrategy) {
+          case 'auto':
+            aside.classList.add('sidebar-auto', 'sidebar-adaptive');
+            break;
+          case 'fit':
+            aside.classList.add('sidebar-fit', 'sidebar-adaptive');
+            break;
+        }
+      }
+      
+      // Masquer/afficher les labels
       aside.querySelectorAll('.sidebar-label').forEach((el) => el.classList.toggle('hidden', collapsed));
+      
+      // Mettre à jour le texte du bouton
       const txt = aside.querySelector('.sidebar-label-toggle');
       if (txt) txt.textContent = collapsed ? 'Expand' : 'Collapse';
+      
+      // Sauvegarder l'état
       try { localStorage.setItem(storageKey, collapsed ? '1' : '0'); } catch (_) {}
       
       // Mise à jour de l'icône du bouton
@@ -89,6 +129,15 @@ onReady(async () => {
   // Importation du composant web Cally (calendrier) si nécessaire
   await dynamicImportIf('.cally, calendar-date, calendar-range, calendar-month, calendar-multi', async () => {
     await import('cally');
+  });
+
+  // Color picker : chargement direct (pas de lazy loading)
+  await dynamicImportIf('[data-colorpicker="1"]', async () => {
+    await import('./color-picker');
+    // Initialisation explicite après l'import
+    if (window.DaisyColorPicker) {
+      window.DaisyColorPicker.initAll();
+    }
   });
 
   // Radios "décochables" : permet de décocher un radio déjà coché si data-uncheckable="1"
@@ -152,8 +201,8 @@ onReady(async () => {
   importWhenIdle('[data-popconfirm], [data-popconfirm-modal]', () => { mediumQueue(() => import('./popconfirm')); });
   importWhenIdle('[data-popover]', () => { mediumQueue(() => import('./popover')); });
   importWhenIdle('[data-stepper]', () => { mediumQueue(() => import('./stepper')); });
+  importWhenIdle('[data-onboarding="1"]', () => { mediumQueue(() => import('./onboarding')); });
   importWhenIdle('[data-table-select]:not([data-table-select="none"])', () => { mediumQueue(() => import('./table')); });
-  importWhenIdle('[data-colorpicker="1"]', () => { mediumQueue(() => import('./color-picker')); });
   importWhenIdle('[data-fileinput="1"]', () => { mediumQueue(() => import('./file-input')); });
   importWhenIdle('input[data-inputmask="1"], input[data-obfuscate="1"]', () => { mediumQueue(() => import('./input-mask')); });
   importWhenIdle('[data-scrollstatus="1"]', () => { mediumQueue(() => import('./scroll-status')); });
@@ -172,4 +221,7 @@ onReady(async () => {
 
   // Leaflet: charge le module seulement si un composant data-leaflet est proche du viewport
   importWhenNearViewport('[data-leaflet="1"]', () => { heavyQueue(() => import('./leaflet')); }, { rootMargin: '800px 0px' });
+
+  // Calendar Full: composant interne (sans lib externe) – lazy près du viewport
+  importWhenNearViewport('[data-calendar-full="1"]', () => { heavyQueue(() => import('./calendar-full')); }, { rootMargin: '800px 0px' });
 });

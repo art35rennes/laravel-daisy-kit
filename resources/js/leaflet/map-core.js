@@ -80,6 +80,20 @@ export async function initMapFromConfig(root) {
     root.dispatchEvent(initEvt);
   } catch (_) {}
 
+  // Resize observer pour responsivité (changement de taille du conteneur)
+  try {
+    const ro = new ResizeObserver(() => {
+      try { map.invalidateSize({ animate: false }); } catch (_) {}
+    });
+    ro.observe(root);
+  } catch (_) {
+    // Fallback: listener sur window resize
+    try {
+      const handler = () => { try { map.invalidateSize({ animate: false }); } catch (_) {} };
+      window.addEventListener('resize', handler);
+    } catch (_) {}
+  }
+
   return map;
 }
 

@@ -17,6 +17,9 @@ return [
         'css' => 'vendor/daisy-kit/daisy-kit.css',
         'js'  => 'vendor/daisy-kit/daisy-kit.js',
     ],
+
+    // Configuration des icônes - préfixe par défaut
+    'icon_prefix' => 'bi',
 ];
 
 

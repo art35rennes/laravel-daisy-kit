@@ -25,28 +25,27 @@ function clamp(n, min, max) {
  * @returns {object} - Objet couleur {h, s, l, a}
  */
 function parseColor(str) {
-  if (!str) return { h: 270, s: 50, l: 50, a: 1 }; // Valeur par défaut
-  // Gestion du format hexadécimal (#rrggbb, #rgb, #rrggbbaa, #rgba)
+  if (!str) return { h: 270, s: 50, l: 50, a: 1 };
+  
   const hex = String(str).trim();
   if (hex.startsWith('#')) {
-    let r, g, b;
-    if (hex.length === 4 || hex.length === 5) { // #rgb ou #rgba
+    // Format hexadécimal simple
+    let r, g, b, a = 1;
+    if (hex.length === 4) { // #rgb
       r = parseInt(hex[1] + hex[1], 16); 
       g = parseInt(hex[2] + hex[2], 16); 
       b = parseInt(hex[3] + hex[3], 16);
-      const a = hex.length === 5 ? parseInt(hex[4] + hex[4], 16) / 255 : 1;
-      return rgbToHsl(r, g, b, a);
-    } else if (hex.length >= 7) { // #rrggbb ou #rrggbbaa
+    } else if (hex.length === 7) { // #rrggbb
       r = parseInt(hex.slice(1,3), 16); 
       g = parseInt(hex.slice(3,5), 16); 
       b = parseInt(hex.slice(5,7), 16);
-      const a = hex.length >= 9 ? parseInt(hex.slice(7,9), 16) / 255 : 1;
-      return rgbToHsl(r ?? 0, g ?? 0, b ?? 0, a);
+    } else {
+      return { h: 270, s: 50, l: 50, a: 1 }; // Fallback pour formats non supportés
     }
-    // Cas non standard, fallback
-    return rgbToHsl(r ?? 0, g ?? 0, b ?? 0, 1);
+    return rgbToHsl(r, g, b, a);
   }
-  // Fallback pour les chaînes CSS hsla()/rgba()
+  
+  // Fallback pour les chaînes CSS
   try { 
     return cssToHsl(hex); 
   } catch (_) { 
@@ -55,49 +54,59 @@ function parseColor(str) {
 }
 
 /**
- * Convertit un objet HSL(A) en string CSS hsla()
+ * Convertit un objet HSL(A) en string CSS hsla() (version optimisée)
  * @param {object} param0 - {h, s, l, a}
  * @returns {string}
  */
-function hslToCss({ h, s, l, a }) { 
-  return `hsla(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%, ${+a.toFixed(3)})`; 
+function hslToCss({ h, s, l, a }) {
+  // Utilisation de | 0 pour un arrondi rapide et + pour éviter .toFixed() si possible
+  const hVal = (h + 0.5) | 0;
+  const sVal = (s + 0.5) | 0;
+  const lVal = (l + 0.5) | 0;
+  const aVal = a === 1 ? 1 : Math.round(a * 1000) / 1000;
+  return `hsla(${hVal}, ${sVal}%, ${lVal}%, ${aVal})`;
 }
 
 /**
- * Convertit un objet HSL(A) en objet RGB(A)
+ * Convertit un objet HSL(A) en objet RGB(A) (version optimisée)
  * @param {object} param0 - {h, s, l, a}
  * @returns {object} - {r, g, b, a}
  */
 function hslToRgb({ h, s, l, a }) {
-  // h en [0,360], s,l en [0,100]
-  let _h = (h % 360 + 360) % 360; // Normalisation de la teinte
-  let _s = s / 100; 
-  let _l = l / 100;
+  // h en [0,360], s,l en [0,100] - optimisation des calculs
+  const _h = ((h % 360) + 360) % 360; // Normalisation de la teinte
+  const _s = s * 0.01; // Division par 100 optimisée
+  const _l = l * 0.01;
+  
   const c = (1 - Math.abs(2 * _l - 1)) * _s;
-  const x = c * (1 - Math.abs(((_h / 60) % 2) - 1));
-  const m = _l - c / 2;
-  let r1 = 0, g1 = 0, b1 = 0;
-  // Calcul des composantes RGB selon la plage de teinte
+  const x = c * (1 - Math.abs(((_h * 0.016666667) % 2) - 1)); // 0.016666667 = 1/60
+  const m = _l - c * 0.5;
+  
+  let r1, g1, b1;
+  // Optimisation des conditions avec des seuils précalculés
   if (_h < 60) { r1 = c; g1 = x; b1 = 0; }
   else if (_h < 120) { r1 = x; g1 = c; b1 = 0; }
   else if (_h < 180) { r1 = 0; g1 = c; b1 = x; }
   else if (_h < 240) { r1 = 0; g1 = x; b1 = c; }
   else if (_h < 300) { r1 = x; g1 = 0; b1 = c; }
   else { r1 = c; g1 = 0; b1 = x; }
-  // Conversion en [0,255]
-  const r = Math.round((r1 + m) * 255);
-  const g = Math.round((g1 + m) * 255);
-  const b = Math.round((b1 + m) * 255);
+  
+  // Conversion rapide en [0,255] avec arrondi optimisé
+  const r = ((r1 + m) * 255 + 0.5) | 0;
+  const g = ((g1 + m) * 255 + 0.5) | 0;
+  const b = ((b1 + m) * 255 + 0.5) | 0;
+  
   return { r, g, b, a };
 }
 
 /**
- * Convertit un objet RGBA en string CSS rgba()
+ * Convertit un objet RGBA en string CSS rgba() (version optimisée)
  * @param {object} param0 - {r, g, b, a}
  * @returns {string}
  */
-function rgbaToCss({ r, g, b, a }) { 
-  return `rgba(${r}, ${g}, ${b}, ${+a.toFixed(3)})`; 
+function rgbaToCss({ r, g, b, a }) {
+  const aVal = a === 1 ? 1 : Math.round(a * 1000) / 1000;
+  return `rgba(${r}, ${g}, ${b}, ${aVal})`;
 }
 
 /**
@@ -179,6 +188,41 @@ function rgbToHsl(r, g, b, a = 1) {
 }
 
 /**
+ * Utilitaire de debouncing pour optimiser les performances
+ * @param {Function} func - Fonction à débouncer
+ * @param {number} wait - Délai en ms
+ * @returns {Function}
+ */
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+/**
+ * Throttle pour limiter la fréquence d'exécution
+ * @param {Function} func - Fonction à throttler
+ * @param {number} limit - Délai minimum entre les exécutions
+ * @returns {Function}
+ */
+function throttle(func, limit) {
+  let inThrottle;
+  return function executedFunction(...args) {
+    if (!inThrottle) {
+      func.apply(this, args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  };
+}
+
+/**
  * Construit le panneau du color picker dans le DOM
  * @param {HTMLElement} root - Racine du color picker
  * @param {object} state - Etat courant {h, s, l, a, __format}
@@ -187,6 +231,14 @@ function buildPanel(root, state) {
   const panel = root.querySelector('[data-colorpicker-panel]');
   if (!panel) return;
   panel.innerHTML = ''; // Nettoyage du contenu
+  
+  // Ajustement responsive simple
+  if (!panel.closest('.dropdown-content')) {
+    // Mode inline : responsive via CSS avec fallback JS
+    const isMobile = window.innerWidth < 640;
+    panel.style.width = isMobile ? '100%' : '288px';
+    panel.style.maxWidth = '100%';
+  }
 
   // Format de sortie courant (hsla, rgba, hex)
   state.__format = state.__format || 'hsla'; // 'hsla' | 'rgba' | 'hex'
@@ -225,8 +277,11 @@ function buildPanel(root, state) {
     });
     // Changement de format : on met à jour l'affichage
     sel.addEventListener('change', () => { 
-      state.__format = sel.value; 
-      update(); 
+      state.__format = sel.value;
+      // Invalidation du cache pour forcer le recalcul des formats
+      lastState = null;
+      fastUpdate();
+      debouncedEvent();
     });
     selWrap.append(lab, sel); 
     panel.append(selWrap);
@@ -263,31 +318,40 @@ function buildPanel(root, state) {
     return rng;
   };
 
+  // Fonction de mise à jour optimisée pour les sliders (update immédiat + événement débounced)
+  const fastUpdate = () => {
+    updateDisplay(); // Mise à jour visuelle immédiate
+  };
+  
   // === Slider Teinte (Hue) ===
   if (root.dataset.showHue === 'true') {
     makeLabeledRange('Teinte (H)', 0, 360, state.h, null, (e) => {
       state.h = clamp(parseFloat(e.target.value), 0, 360); 
-      update();
+      fastUpdate();
+      debouncedEvent();
     });
   }
 
   // === Slider Saturation ===
   makeLabeledRange('Saturation (S)', 0, 100, Math.round(state.s), null, (e) => {
     state.s = clamp(parseFloat(e.target.value), 0, 100); 
-    update();
+    fastUpdate();
+    debouncedEvent();
   });
 
   // === Slider Luminance ===
   makeLabeledRange('Luminance (L)', 0, 100, Math.round(state.l), null, (e) => {
     state.l = clamp(parseFloat(e.target.value), 0, 100); 
-    update();
+    fastUpdate();
+    debouncedEvent();
   });
 
   // === Slider Alpha (transparence) ===
   if (root.dataset.showAlpha === 'true') {
     makeLabeledRange('Transparence (A)', 0, 1, state.a, 0.01, (e) => {
       state.a = clamp(parseFloat(e.target.value), 0, 1); 
-      update();
+      fastUpdate();
+      debouncedEvent();
     });
   }
 
@@ -307,15 +371,14 @@ function buildPanel(root, state) {
           const rowEl = document.createElement('div');
           rowEl.className = 'flex flex-wrap gap-2';
           (row || []).forEach((col) => {
-            // Bouton swatch
             const b = document.createElement('button');
             b.type = 'button';
-            b.className = 'w-5 h-5 rounded-box border';
+            b.className = 'w-5 h-5 rounded border hover:scale-110 transition-transform';
             b.style.background = col;
-            // Clic sur un swatch : applique la couleur
             b.addEventListener('click', () => { 
               Object.assign(state, parseColor(col)); 
-              update(); 
+              fastUpdate();
+              debouncedEvent();
             });
             rowEl.append(b);
           });
@@ -328,45 +391,78 @@ function buildPanel(root, state) {
     }
   }
 
+  // Cache des éléments DOM pour éviter les recherches répétitives
+  const chipOut = root.querySelector('[data-colorchip]');
+  const textOut = root.querySelector('[data-colortext]');
+  
+  // Cache des conversions pour éviter les recalculs
+  let lastState = null;
+  let cachedFormats = {};
+
   /**
-   * Met à jour l'affichage du color picker et déclenche l'événement de changement
+   * Met à jour l'affichage du color picker (version optimisée)
    */
-  function update() {
+  function updateDisplay() {
     const css = hslToCss(state);
     chip.style.background = css;
+    
+    // Mise à jour des sorties facultatives (utilisation du cache)
+    if (chipOut) chipOut.style.background = css;
+    
+    // Calcul des formats seulement si nécessaire
+    const stateKey = `${state.h}-${state.s}-${state.l}-${state.a}-${state.__format}`;
+    if (lastState !== stateKey) {
+      cachedFormats = {};
+      lastState = stateKey;
+      
+      // Calcul unique des conversions selon le format
+      if (state.__format === 'rgba') {
+        const { r, g, b, a } = hslToRgb(state);
+        cachedFormats.rgba = rgbaToCss({ r, g, b, a });
+      } else if (state.__format === 'hex') {
+        cachedFormats.hex = hslToHex(state);
+      }
+      cachedFormats.hsla = css;
+    }
+    
     // Mise à jour du champ texte selon le format sélectionné
     if (root.dataset.showInputs === 'true') {
-      let formatted = css;
-      if (state.__format === 'rgba') {
-        const { r, g, b, a } = hslToRgb(state);
-        formatted = rgbaToCss({ r, g, b, a });
-      } else if (state.__format === 'hex') {
-        formatted = hslToHex(state);
+      const formatted = cachedFormats[state.__format] || css;
+      if (text.value !== formatted) {
+        text.value = formatted;
       }
-      text.value = formatted;
     }
-    // Mise à jour des sorties facultatives (chip et texte)
-    const chipOut = root.querySelector('[data-colorchip]');
-    const textOut = root.querySelector('[data-colortext]');
-    if (chipOut) chipOut.style.background = css;
+    
+    // Mise à jour du texte de sortie
     if (textOut) {
-      let formatted = css;
-      if (state.__format === 'rgba') {
-        const { r, g, b, a } = hslToRgb(state);
-        formatted = rgbaToCss({ r, g, b, a });
-      } else if (state.__format === 'hex') {
-        formatted = hslToHex(state);
+      const formatted = cachedFormats[state.__format] || css;
+      if (textOut.textContent !== formatted) {
+        textOut.textContent = formatted;
       }
-      textOut.textContent = formatted;
     }
-    // Déclenche l'événement personnalisé 'colorpicker:change'
-    root.dispatchEvent(new CustomEvent('colorpicker:change', { detail: { value: css }, bubbles: true }));
   }
+
+  /**
+   * Met à jour et déclenche l'événement de changement (avec debouncing pour l'événement)
+   */
+  const debouncedEvent = debounce(() => {
+    const css = hslToCss(state);
+    root.dispatchEvent(new CustomEvent('colorpicker:change', { detail: { value: css }, bubbles: true }));
+  }, 50);
+
+  /**
+   * Fonction de mise à jour principale avec throttling pour l'affichage
+   */
+  const update = throttle(() => {
+    updateDisplay();
+    debouncedEvent();
+  }, 16); // ~60fps
 
   // Quand l'utilisateur modifie le champ texte, on tente de parser la couleur
   text.addEventListener('change', () => { 
     Object.assign(state, parseColor(text.value)); 
-    update(); 
+    fastUpdate();
+    debouncedEvent();
   });
 }
 
@@ -378,6 +474,7 @@ function initColorPicker(root) {
   if (!root || root.__cpInit) return; // Déjà initialisé
   root.__cpInit = true;
   if (root.dataset.disabled === 'true') return; // Désactivé
+  
   // Etat initial à partir de data-value ou couleur par défaut
   const state = parseColor(root.dataset.value || '#563d7c');
   buildPanel(root, state);
@@ -407,14 +504,28 @@ function initColorPicker(root) {
  * Initialise tous les color pickers présents dans le DOM
  */
 function initAllColorPickers() {
-  document.querySelectorAll('[data-colorpicker="1"]').forEach(initColorPicker);
+  const elements = document.querySelectorAll('[data-colorpicker="1"]');
+  elements.forEach(initColorPicker);
 }
 
 // Expose l'API globale DaisyColorPicker
 window.DaisyColorPicker = { 
   init: initColorPicker, 
-  initAll: initAllColorPickers 
+  initAll: initAllColorPickers
 };
 
-// Initialisation automatique à la fin du chargement du DOM
-document.addEventListener('DOMContentLoaded', initAllColorPickers);
+// Export pour les modules ES6
+export { initColorPicker, initAllColorPickers };
+
+// Initialisation automatique
+function autoInit() {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAllColorPickers);
+  } else {
+    // Si le DOM est déjà chargé, on attend un peu pour s'assurer que tous les éléments sont présents
+    setTimeout(initAllColorPickers, 0);
+  }
+}
+
+// Déclenche l'initialisation automatique
+autoInit();

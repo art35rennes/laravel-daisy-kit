@@ -48,9 +48,10 @@ function setCurrent(root, index) {
   root.dataset.current = String(i);
 
   // Met à jour l'état visuel et ARIA des entêtes (step-primary = étape atteinte)
-  steps.forEach((li, idx) => {
-    const sIdx = idx + 1;
-    const done = sIdx <= i;
+  steps.forEach((li) => {
+    const sIdx = parseInt(li.dataset.stepIndex || '0', 10) || 0;
+    const disabled = li.classList.contains('pointer-events-none');
+    const done = sIdx > 0 && sIdx <= i && !disabled;
     li.classList.toggle('step-primary', done);
     // aria-current sur l'étape active
     if (sIdx === i) li.setAttribute('aria-current', 'step');
