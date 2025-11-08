@@ -2,7 +2,7 @@
 
 namespace Art35rennes\DaisyKit;
 
-use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class DaisyKitServiceProvider extends ServiceProvider
@@ -51,6 +51,32 @@ class DaisyKitServiceProvider extends ServiceProvider
             __DIR__.'/../resources/js' => resource_path('vendor/daisy-kit/js'),
             __DIR__.'/../resources/css' => resource_path('vendor/daisy-kit/css'),
         ], 'daisy-src');
+
+        // Enregistrer (optionnellement) les routes de documentation publiques du package
+        $docsEnabled = (bool) config('daisy-kit.docs.enabled', false);
+        if ($docsEnabled) {
+            $prefix = (string) config('daisy-kit.docs.prefix', 'docs');
+            Route::middleware('web')->prefix($prefix)->group(function () {
+                // Accueil docs
+                Route::get('/', function () {
+                    return view('daisy-dev::docs.index');
+                })->name('daisy.docs.index');
+
+                // Page Templates
+                Route::get('/templates', function () {
+                    return view('daisy-dev::docs.templates.index');
+                })->name('daisy.docs.templates');
+
+                // Pages Composants /{category}/{component}
+                Route::get('/{category}/{component}', function (string $category, string $component) {
+                    $view = "daisy-dev::docs.components.$category.$component";
+                    if (view()->exists($view)) {
+                        return view($view, ['category' => $category, 'component' => $component]);
+                    }
+                    abort(404);
+                })->where(['category' => '[A-Za-z0-9\-_]+', 'component' => '[A-Za-z0-9\-_]+'])
+                    ->name('daisy.docs.component');
+            });
+        }
     }
 }
-
