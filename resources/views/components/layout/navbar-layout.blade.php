@@ -12,7 +12,7 @@
 ])
 
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="false">
-    <x-daisy::ui.navbar :bg="$navbarBg" :text="$navbarText" :shadow="$navbarShadow" :fixed="$navbarFixed" :fixedPosition="$navbarFixedPosition">
+    <x-daisy::ui.navigation.navbar :bg="$navbarBg" :text="$navbarText" :shadow="$navbarShadow" :fixed="$navbarFixed" :fixedPosition="$navbarFixedPosition">
         <x-slot:start>
             {{ $navbarStart ?? ($brand ?? null) }}
         </x-slot:start>
@@ -22,7 +22,7 @@
         <x-slot:end>
             {{ $navbarEnd ?? ($actions ?? null) }}
         </x-slot:end>
-    </x-daisy::ui.navbar>
+    </x-daisy::ui.navigation.navbar>
 
     <main class="{{ $container }} pt-24">
         {{ $slot }}

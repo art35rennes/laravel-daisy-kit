@@ -24,13 +24,13 @@
 
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="false">
     <div {{ $attributes->merge(['class' => 'min-h-screen']) }}>
-        <x-daisy::ui.drawer :id="$drawerId" :end="$end" :responsiveOpen="$responsiveOpen" :sideIsMenu="false" sideClass="w-auto" class="">
+        <x-daisy::ui.overlay.drawer :id="$drawerId" :end="$end" :responsiveOpen="$responsiveOpen" :sideIsMenu="false" sideClass="w-auto" class="">
             <x-slot:content>
                 @if(!$hasNavbar)
                     <div class="bg-base-100 px-4 h-14 flex items-center justify-between lg:justify-end">
                         <div class="flex items-center gap-2 lg:hidden">
                             <label for="{{ $drawerId }}" aria-label="open sidebar" class="btn btn-square btn-ghost">
-                                <x-daisy::ui.icon :name="$menuIcon" size="lg" />
+                                <x-daisy::ui.advanced.icon :name="$menuIcon" size="lg" />
                             </label>
                             @if($title)
                                 <div class="font-semibold">{{ __($title) }}</div>
@@ -46,7 +46,7 @@
                 </div>
             </x-slot:content>
             <x-slot:side>
-                <x-daisy::ui.sidebar 
+                <x-daisy::ui.navigation.sidebar 
                     :variant="$variant" 
                     :sideClass="$sideClass" 
                     :stickyAt="$stickyAt" 
@@ -58,7 +58,7 @@
                     class="h-full {{ $hasNavbar ? 'lg:h-[calc(100vh-4rem)]' : '' }}"
                 />
             </x-slot:side>
-        </x-daisy::ui.drawer>
+        </x-daisy::ui.overlay.drawer>
     </div>
 </x-daisy::layout.app>
 

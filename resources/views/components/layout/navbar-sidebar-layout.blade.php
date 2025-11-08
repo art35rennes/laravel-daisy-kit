@@ -26,10 +26,10 @@
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="false">
     <div class="min-h-screen">
         {{-- Navbar en haut --}}
-        <x-daisy::ui.navbar :bg="$navbarBg" :text="$navbarText" :shadow="$navbarShadow" :fixed="false">
+        <x-daisy::ui.navigation.navbar :bg="$navbarBg" :text="$navbarText" :shadow="$navbarShadow" :fixed="false">
             <x-slot:start>
                 <label for="{{ $drawerId }}" aria-label="open sidebar" class="btn btn-square btn-ghost lg:hidden">
-                    <x-daisy::ui.icon :name="$menuIcon" size="lg" />
+                    <x-daisy::ui.advanced.icon :name="$menuIcon" size="lg" />
                 </label>
                 {{ $brand ?? '' }}
             </x-slot:start>
@@ -39,7 +39,7 @@
             <x-slot:end>
                 {{ $actions ?? '' }}
             </x-slot:end>
-        </x-daisy::ui.navbar>
+        </x-daisy::ui.navigation.navbar>
 
         {{-- Utilise sidebar-layout avec hasNavbar=true --}}
         <x-daisy::layout.sidebar-layout 
