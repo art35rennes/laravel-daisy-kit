@@ -3,7 +3,7 @@
     <div class="grid md:grid-cols-2 gap-6">
         <div class="space-y-2">
             <div class="label"><span class="label-text">Bar · palette par défaut DaisyUI</span></div>
-            <x-daisy::ui.chart
+            <x-daisy::ui.advanced.chart
                 :labels="['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']"
                 :datasets="[
                     ['label' => 'Ventes', 'data' => [12, 19, 3, 5, 2, 3]],
@@ -15,7 +15,7 @@
 
         <div class="space-y-2">
             <div class="label"><span class="label-text">Line · couleurs override</span></div>
-            <x-daisy::ui.chart
+            <x-daisy::ui.advanced.chart
                 type="line"
                 :labels="['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']"
                 :datasets="[
@@ -29,7 +29,7 @@
 
         <div class="space-y-2">
             <div class="label"><span class="label-text">Doughnut · palette personnalisée</span></div>
-            <x-daisy::ui.chart
+            <x-daisy::ui.advanced.chart
                 type="doughnut"
                 :labels="['Chrome', 'Safari', 'Firefox', 'Edge']"
                 :datasets="[
@@ -42,7 +42,7 @@
 
         <div class="space-y-2">
             <div class="label"><span class="label-text">Radar · responsive</span></div>
-            <x-daisy::ui.chart
+            <x-daisy::ui.advanced.chart
                 type="radar"
                 :labels="['Perf', 'UX', 'SEO', 'Access', 'Security']"
                 :datasets="[
@@ -55,7 +55,7 @@
 
         <div class="space-y-2">
             <div class="label"><span class="label-text">Area · alias de Line avec fill</span></div>
-            <x-daisy::ui.chart
+            <x-daisy::ui.advanced.chart
                 type="area"
                 :labels="['Q1','Q2','Q3','Q4']"
                 :datasets="[
@@ -68,7 +68,7 @@
 
         <div class="space-y-2">
             <div class="label"><span class="label-text">Pie · basique</span></div>
-            <x-daisy::ui.chart
+            <x-daisy::ui.advanced.chart
                 type="pie"
                 :labels="['A', 'B', 'C']"
                 :datasets="[
@@ -80,7 +80,7 @@
 
         <div class="space-y-2">
             <div class="label"><span class="label-text">Polar Area · basique</span></div>
-            <x-daisy::ui.chart
+            <x-daisy::ui.advanced.chart
                 type="polarArea"
                 :labels="['North','South','East','West']"
                 :datasets="[
@@ -92,7 +92,7 @@
 
         <div class="space-y-2">
             <div class="label"><span class="label-text">Mixed · bar + line</span></div>
-            <x-daisy::ui.chart
+            <x-daisy::ui.advanced.chart
                 :labels="['Jan','Feb','Mar','Apr','May','Jun']"
                 :datasets="[
                     ['type' => 'bar', 'label' => 'Ventes', 'data' => [12, 19, 3, 5, 2, 3]],
@@ -104,7 +104,7 @@
 
         <div class="space-y-2">
             <div class="label"><span class="label-text">Scatter · dot chart</span></div>
-            <x-daisy::ui.chart
+            <x-daisy::ui.advanced.chart
                 type="scatter"
                 :labels="[]"
                 :datasets="[
@@ -127,7 +127,7 @@
 
         <div class="space-y-2">
             <div class="label"><span class="label-text">Bubble · tailles variables</span></div>
-            <x-daisy::ui.chart
+            <x-daisy::ui.advanced.chart
                 type="bubble"
                 :labels="[]"
                 :datasets="[

@@ -3,7 +3,7 @@
     <h2 class="text-lg font-medium">Table</h2>
     <div class="space-y-4">
         <!-- Basique -->
-        <x-daisy::ui.table :headers="['#','Name','Job','Favorite Color']"
+        <x-daisy::ui.data-display.table :headers="['#','Name','Job','Favorite Color']"
             :rows="[
                 ['1','Cy Ganderton','Quality Control Specialist','Blue'],
                 ['2','Hart Hagerty','Desktop Support Technician','Purple'],
@@ -13,7 +13,7 @@
         />
 
         <!-- Avec bordure et fond -->
-        <x-daisy::ui.table containerClass="rounded-box border border-base-content/5 bg-base-100"
+        <x-daisy::ui.data-display.table containerClass="rounded-box border border-base-content/5 bg-base-100"
             :headers="['#','Name','Job','Favorite Color']"
             :rows="[
                 ['1','Cy Ganderton','Quality Control Specialist','Blue'],
@@ -24,7 +24,7 @@
         />
 
         <!-- Zebra + tailles + pin -->
-        <x-daisy::ui.table zebra size="sm" :pinRows="true" :pinCols="true" overflowX overflowY
+        <x-daisy::ui.data-display.table zebra size="sm" :pinRows="true" :pinCols="true" overflowX overflowY
             :headers="['#','Name','Job','Company','Location','Last Login','Favorite Color','']"
             :rows="[
                 ['1','Cy Ganderton','Quality Control Specialist','Littel, Schaden and Vandervort','Canada','12/16/2020','Blue','1'],

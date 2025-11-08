@@ -6,16 +6,16 @@
         <div class="grid md:grid-cols-2 gap-6">
             <!-- Colonne gauche: JSON (60% haut) + Résultat (40% bas) -->
             <div class="grid gap-6" style="grid-template-rows: 60vh 40vh;">
-                <x-daisy::ui.code-editor id="jsonInput" language="json" :showToolbar="true" height="100%" value='{
+                <x-daisy::ui.advanced.code-editor id="jsonInput" language="json" :showToolbar="true" height="100%" value='{
   "products": [
     {"id": 1, "name": "Keyboard", "price": 49.9},
     {"id": 2, "name": "Mouse", "price": 29.9}
   ]
 }' />
-                <x-daisy::ui.code-editor id="jsonResult" language="json" :showToolbar="true" height="100%" readonly value='{}' />
+                <x-daisy::ui.advanced.code-editor id="jsonResult" language="json" :showToolbar="true" height="100%" readonly value='{}' />
             </div>
             <!-- Colonne droite: Expression / Script -->
-            <x-daisy::ui.code-editor id="jsonExpr" language="javascript" :showToolbar="true" height="100vh" value='// Expression / script
+            <x-daisy::ui.advanced.code-editor id="jsonExpr" language="javascript" :showToolbar="true" height="100vh" value='// Expression / script
 // Filtrer les produits > 40
 const data = JSON.parse(json);
 const expensive = data.products.filter(p => p.price > 40);

@@ -4,13 +4,13 @@
     <div class="grid md:grid-cols-2 gap-6">
         <div class="space-y-2 p-4 border border-base-300 rounded-box bg-base-100">
             <div class="label"><span class="label-text">Éditeur basique</span></div>
-            <x-daisy::ui.wysiwyg name="content_basic" placeholder="Saisissez votre texte riche..." height="16rem" />
+            <x-daisy::ui.advanced.wysiwyg name="content_basic" placeholder="Saisissez votre texte riche..." height="16rem" />
             <div class="text-xs opacity-70">Éditeur WYSIWYG standard avec toutes les fonctionnalités de base de Trix.</div>
         </div>
 
         <div class="space-y-2 p-4 border border-base-300 rounded-box bg-base-100">
             <div class="label"><span class="label-text">Éditeur désactivé</span></div>
-            <x-daisy::ui.wysiwyg value="<p>Contenu en lecture seule</p>" :toolbar="false" disabled height="12rem" />
+            <x-daisy::ui.advanced.wysiwyg value="<p>Contenu en lecture seule</p>" :toolbar="false" disabled height="12rem" />
             <div class="text-xs opacity-70">Mode lecture seule avec barre d'outils masquée.</div>
         </div>
     </div>
@@ -18,14 +18,14 @@
 
     <div class="space-y-2 p-4 border border-base-300 rounded-box bg-base-100">
         <div class="label"><span class="label-text">Avec valeur initiale</span></div>
-        <x-daisy::ui.wysiwyg name="content_init" :value="'<h3>Titre</h3><p>Lorem ipsum <strong>dolor</strong> sit amet.</p>'" height="14rem" />
+        <x-daisy::ui.advanced.wysiwyg name="content_init" :value="'<h3>Titre</h3><p>Lorem ipsum <strong>dolor</strong> sit amet.</p>'" height="14rem" />
         <div class="text-xs opacity-70">Éditeur pré-rempli avec du contenu HTML existant.</div>
     </div>
 
 
     <div class="space-y-2 p-4 border border-base-300 rounded-box bg-base-100">
         <div class="label"><span class="label-text">Pièces jointes activées</span></div>
-        <x-daisy::ui.wysiwyg name="content_attach" placeholder="Vous pouvez déposer des images/fichiers ici..." height="14rem" attachments />
+        <x-daisy::ui.advanced.wysiwyg name="content_attach" placeholder="Vous pouvez déposer des images/fichiers ici..." height="14rem" attachments />
         <div class="text-xs opacity-70">Glissez-déposez des fichiers directement dans l'éditeur. La gestion serveur de l'upload est à implémenter (exemples ci-dessous).</div>
     </div>
 
@@ -33,19 +33,19 @@
     @php
         $codeWysiwygBlade = <<<'BLADE'
 {{-- Éditeur WYSIWYG basique --}}
-<x-daisy::ui.wysiwyg 
+<x-daisy::ui.advanced.wysiwyg 
     name="content" 
     placeholder="Saisissez votre texte riche..." 
     height="16rem" />
 
 {{-- Éditeur avec valeur initiale --}}
-<x-daisy::ui.wysiwyg 
+<x-daisy::ui.advanced.wysiwyg 
     name="article_body" 
     :value="$article->body ?? ''"
     placeholder="Contenu de l'article..." />
 
 {{-- Éditeur avec pièces jointes activées --}}
-<x-daisy::ui.wysiwyg 
+<x-daisy::ui.advanced.wysiwyg 
     name="content_attach" 
     attachments 
     data-upload-url="{{ route('wysiwyg.upload') }}"
@@ -53,7 +53,7 @@
     height="20rem" />
 
 {{-- Éditeur en lecture seule --}}
-<x-daisy::ui.wysiwyg 
+<x-daisy::ui.advanced.wysiwyg 
     :value="$content"
     :toolbar="false"
     disabled
@@ -160,19 +160,19 @@ class WysiwygController extends Controller
 PHP;
     @endphp
 
-    <x-daisy::ui.collapse title="Exemples de code · Usage Blade" bordered bg>
-        <x-daisy::ui.code-editor language="html" :value="$codeWysiwygBlade" readonly height="280px" />
-    </x-daisy::ui.collapse>
+    <x-daisy::ui.advanced.collapse title="Exemples de code · Usage Blade" bordered bg>
+        <x-daisy::ui.advanced.code-editor language="html" :value="$codeWysiwygBlade" readonly height="280px" />
+    </x-daisy::ui.advanced.collapse>
 
 
-    <x-daisy::ui.collapse title="Exemples de code · JS Upload (client)" bordered bg>
-        <x-daisy::ui.code-editor language="javascript" :value="$codeWysiwygJs" readonly height="400px" />
-    </x-daisy::ui.collapse>
+    <x-daisy::ui.advanced.collapse title="Exemples de code · JS Upload (client)" bordered bg>
+        <x-daisy::ui.advanced.code-editor language="javascript" :value="$codeWysiwygJs" readonly height="400px" />
+    </x-daisy::ui.advanced.collapse>
 
 
-    <x-daisy::ui.collapse title="Exemples de code · Laravel (route + controller)" bordered bg>
-        <x-daisy::ui.code-editor language="php" :value="$codeWysiwygPhp" readonly height="350px" />
-    </x-daisy::ui.collapse>
+    <x-daisy::ui.advanced.collapse title="Exemples de code · Laravel (route + controller)" bordered bg>
+        <x-daisy::ui.advanced.code-editor language="php" :value="$codeWysiwygPhp" readonly height="350px" />
+    </x-daisy::ui.advanced.collapse>
 
 
 </div>

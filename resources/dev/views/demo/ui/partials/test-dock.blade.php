@@ -5,7 +5,7 @@
         <button id="showDockBtn" class="btn btn-primary btn-sm">Afficher le dock</button>
         <button id="hideDockBtn" class="btn btn-ghost btn-sm">Masquer le dock</button>
     </div>
-    <x-daisy::ui.dock id="onDemandDock" as="nav" label="Bottom navigation" mobile position="bottom" size="sm" class="hidden z-50 bg-neutral text-neutral-content">
+    <x-daisy::ui.utilities.dock id="onDemandDock" as="nav" label="Bottom navigation" mobile position="bottom" size="sm" class="hidden z-50 bg-neutral text-neutral-content">
         <button class="dock-item">
             <x-bi-house class="size-5" />
             <span class="dock-label">Accueil</span>
@@ -18,7 +18,7 @@
             <x-bi-x class="size-5" />
             <span class="dock-label">Fermer</span>
         </button>
-    </x-daisy::ui.dock>
+    </x-daisy::ui.utilities.dock>
     <script>
       document.addEventListener('DOMContentLoaded', () => {
         const dock = document.getElementById('onDemandDock');

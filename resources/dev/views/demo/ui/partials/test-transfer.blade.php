@@ -6,7 +6,7 @@
     <div class="grid md:grid-cols-2 gap-8 items-start">
         <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
             <h3 class="font-semibold text-primary">Basique</h3>
-            <x-daisy::ui.transfer :source="[
+            <x-daisy::ui.advanced.transfer :source="[
                 ['data' => 'Lorem ipsum'],
                 ['data' => 'Something special'],
                 ['data' => 'John Wick'],
@@ -21,7 +21,7 @@
 
         <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
             <h3 class="font-semibold text-primary">Disabled items</h3>
-            <x-daisy::ui.transfer :source="[
+            <x-daisy::ui.advanced.transfer :source="[
                 ['data' => 'Lorem ipsum'],
                 ['data' => 'Something special', 'disabled' => true],
                 ['data' => 'John Wick', 'disabled' => true],
@@ -41,7 +41,7 @@
 
         <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
             <h3 class="font-semibold text-primary">One way avec pagination</h3>
-            <x-daisy::ui.transfer :source="[
+            <x-daisy::ui.advanced.transfer :source="[
                 ['data' => 'Lorem ipsum', 'checked' => true],
                 ['data' => 'Something special', 'checked' => true],
                 ['data' => 'John Wick', 'checked' => true],
@@ -64,7 +64,7 @@
 
         <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
             <h3 class="font-semibold text-primary">Recherche avec textes personnalisés</h3>
-            <x-daisy::ui.transfer 
+            <x-daisy::ui.advanced.transfer 
                 titleSource="Utilisateurs disponibles"
                 titleTarget="Utilisateurs sélectionnés"
                 selectAllTextSource="Tous les utilisateurs"

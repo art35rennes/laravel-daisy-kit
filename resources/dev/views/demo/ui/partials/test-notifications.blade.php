@@ -7,7 +7,7 @@
         <button class="btn btn-warning btn-sm" onclick="window.triggerToast('warning','Attention','Connexion instable')">Attention</button>
         <button class="btn btn-error btn-sm" onclick="window.triggerToast('error','Erreur','Échec de l\'opération')">Erreur</button>
     </div>
-    <x-daisy::ui.toast id="toastContainer" position="end" vertical="bottom" class="z-50"></x-daisy::ui.toast>
+    <x-daisy::ui.feedback.toast id="toastContainer" position="end" vertical="bottom" class="z-50"></x-daisy::ui.feedback.toast>
 
     <script>
     // Définit window.triggerToast localement pour la page de démo

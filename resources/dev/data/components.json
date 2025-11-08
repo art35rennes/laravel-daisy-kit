@@ -1,0 +1,2030 @@
+{
+    "generated_at": "2025-11-08T10:42:00+00:00",
+    "components": [
+        {
+            "name": "accordion",
+            "view": "daisy::components.ui.advanced.accordion",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "items",
+                "title",
+                "content",
+                "checked",
+                "open",
+                "close",
+                "arrow",
+                "true",
+                "false",
+                "name",
+                "openIndex",
+                "bgClass",
+                "bordered",
+                "itemClass",
+                "titleClass",
+                "contentClass"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "calendar-cally",
+            "view": "daisy::components.ui.advanced.calendar-cally",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "mode",
+                "months",
+                "showPrevNext",
+                "monthsClass",
+                "value",
+                "min",
+                "max",
+                "locale",
+                "prevIcon",
+                "nextIcon"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "calendar-full",
+            "view": "daisy::components.ui.advanced.calendar-full",
+            "category": "advanced",
+            "tags": [
+                "advanced",
+                "js",
+                "async",
+                "lazy"
+            ],
+            "jsModule": "calendar-full",
+            "status": "active",
+            "props": [
+                "view",
+                "views",
+                "initialDate",
+                "events",
+                "eventsUrl",
+                "firstDay",
+                "hourStart",
+                "hourEnd",
+                "height",
+                "detail",
+                "module"
+            ],
+            "dataAttributes": [
+                "module",
+                "calendar-full",
+                "options",
+                "events",
+                "events-url"
+            ]
+        },
+        {
+            "name": "calendar-native",
+            "view": "daisy::components.ui.advanced.calendar-native",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "inputId",
+                "value",
+                "placeholder"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "calendar",
+            "view": "daisy::components.ui.advanced.calendar",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "provider",
+                "mode",
+                "months",
+                "showPrevNext",
+                "inputId",
+                "value",
+                "min",
+                "max",
+                "locale",
+                "placeholder"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "chart",
+            "view": "daisy::components.ui.advanced.chart",
+            "category": "advanced",
+            "tags": [
+                "advanced",
+                "js",
+                "async"
+            ],
+            "jsModule": "chart",
+            "status": "active",
+            "props": [
+                "type",
+                "labels",
+                "datasets",
+                "options",
+                "height",
+                "width",
+                "responsive",
+                "maintainAspectRatio",
+                "colors",
+                "palette",
+                "module"
+            ],
+            "dataAttributes": [
+                "module",
+                "chart"
+            ]
+        },
+        {
+            "name": "chat-bubble",
+            "view": "daisy::components.ui.advanced.chat-bubble",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "align",
+                "name",
+                "time",
+                "color"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "code-editor",
+            "view": "daisy::components.ui.advanced.code-editor",
+            "category": "advanced",
+            "tags": [
+                "advanced",
+                "js",
+                "async"
+            ],
+            "jsModule": "code-editor",
+            "status": "active",
+            "props": [
+                "language",
+                "value",
+                "readonly",
+                "showToolbar",
+                "showFoldAll",
+                "showUnfoldAll",
+                "showFormat",
+                "showCopy",
+                "height",
+                "width",
+                "fontSize",
+                "tabSize",
+                "theme",
+                "options",
+                "name",
+                "module"
+            ],
+            "dataAttributes": [
+                "module",
+                "language",
+                "readonly",
+                "theme",
+                "tab-size",
+                "action"
+            ]
+        },
+        {
+            "name": "collapse",
+            "view": "daisy::components.ui.advanced.collapse",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "title",
+                "arrow",
+                "true",
+                "false",
+                "open",
+                "disabled",
+                "method",
+                "force",
+                "bordered",
+                "bg",
+                "titleClass",
+                "contentClass"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "countdown",
+            "view": "daisy::components.ui.advanced.countdown",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "values",
+                "days",
+                "hours",
+                "min",
+                "sec",
+                "mode",
+                "size",
+                "labels"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "diff",
+            "view": "daisy::components.ui.advanced.diff",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "resizable",
+                "aspect",
+                "focusable",
+                "itemRole"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "fieldset",
+            "view": "daisy::components.ui.advanced.fieldset",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "legend",
+                "bg",
+                "bordered",
+                "rounded",
+                "padding",
+                "width"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "filter",
+            "view": "daisy::components.ui.advanced.filter",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "name",
+                "items",
+                "label",
+                "checked",
+                "useForm",
+                "resetLabel",
+                "allLabel"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "icon",
+            "view": "daisy::components.ui.advanced.icon",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "name",
+                "size",
+                "prefix"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "join",
+            "view": "daisy::components.ui.advanced.join",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "direction",
+                "horizontalAt",
+                "verticalAt"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "label",
+            "view": "daisy::components.ui.advanced.label",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "for",
+                "value",
+                "alt",
+                "srOnly",
+                "floating",
+                "span",
+                "spanPosition"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "link",
+            "view": "daisy::components.ui.advanced.link",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "href",
+                "color",
+                "true",
+                "false",
+                "underline",
+                "external"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "login-button",
+            "view": "daisy::components.ui.advanced.login-button",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "provider",
+                "label",
+                "size",
+                "variant",
+                "href"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "mask",
+            "view": "daisy::components.ui.advanced.mask",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "shape",
+                "src",
+                "alt",
+                "class",
+                "half"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "onboarding",
+            "view": "daisy::components.ui.advanced.onboarding",
+            "category": "advanced",
+            "tags": [
+                "advanced",
+                "js",
+                "async"
+            ],
+            "jsModule": "onboarding",
+            "status": "active",
+            "props": [
+                "start",
+                "allowSkip",
+                "keyboard",
+                "mask",
+                "highlight",
+                "interactive",
+                "offset",
+                "radius",
+                "prevText",
+                "nextText",
+                "finishText",
+                "skipText",
+                "confirmSkip",
+                "confirmText",
+                "confirmOkText",
+                "confirmCancelText",
+                "target",
+                "title",
+                "content",
+                "placement",
+                "auto",
+                "steps",
+                "module"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "rating",
+            "view": "daisy::components.ui.advanced.rating",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "name",
+                "count",
+                "value",
+                "half",
+                "shape",
+                "color",
+                "readOnly",
+                "size",
+                "clearable"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "scroll-status",
+            "view": "daisy::components.ui.advanced.scroll-status",
+            "category": "advanced",
+            "tags": [
+                "advanced",
+                "js",
+                "async"
+            ],
+            "jsModule": "scroll-status",
+            "status": "active",
+            "props": [
+                "global",
+                "color",
+                "height",
+                "offset",
+                "container",
+                "scroll",
+                "target",
+                "openOnce",
+                "class",
+                "module"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "scrollspy",
+            "view": "daisy::components.ui.advanced.scrollspy",
+            "category": "advanced",
+            "tags": [
+                "advanced",
+                "js",
+                "async"
+            ],
+            "jsModule": "scrollspy",
+            "status": "active",
+            "props": [
+                "container",
+                "id",
+                "label",
+                "items",
+                "autogen",
+                "smoothScroll",
+                "offset",
+                "rootMargin",
+                "threshold",
+                "sticky",
+                "stickyTop",
+                "navClass",
+                "activeClass",
+                "track",
+                "module"
+            ],
+            "dataAttributes": [
+                "module",
+                "scrollspy",
+                "container",
+                "track",
+                "root-margin",
+                "threshold",
+                "smooth",
+                "offset",
+                "active-class",
+                "autogen"
+            ]
+        },
+        {
+            "name": "swap",
+            "view": "daisy::components.ui.advanced.swap",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "rotate",
+                "flip",
+                "checked",
+                "active",
+                "useInput"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "theme-controller",
+            "view": "daisy::components.ui.advanced.theme-controller",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "themes",
+                "value",
+                "name",
+                "variant",
+                "size",
+                "ghost",
+                "label"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "transfer",
+            "view": "daisy::components.ui.advanced.transfer",
+            "category": "advanced",
+            "tags": [
+                "advanced",
+                "js",
+                "async",
+                "lazy"
+            ],
+            "jsModule": "transfer",
+            "status": "active",
+            "props": [
+                "source",
+                "data",
+                "disabled",
+                "checked",
+                "customId",
+                "target",
+                "oneWay",
+                "pagination",
+                "elementsPerPage",
+                "search",
+                "selectAll",
+                "noDataText",
+                "titleSource",
+                "titleTarget",
+                "selectAllTextSource",
+                "selectAllTextTarget",
+                "searchPlaceholderSource",
+                "searchPlaceholderTarget",
+                "toTargetButtonText",
+                "toSourceButtonText",
+                "toTargetArrow",
+                "toSourceArrow",
+                "class",
+                "buttonsColor",
+                "buttonsSize",
+                "buttonsVariant",
+                "buttonsMode",
+                "tooltip",
+                "true",
+                "tooltipPlacement",
+                "stackOn",
+                "listOverflow",
+                "listMaxHeight",
+                "module"
+            ],
+            "dataAttributes": [
+                "transfer-selectall",
+                "transfer-count",
+                "transfer-search",
+                "transfer-list",
+                "id",
+                "label",
+                "disabled",
+                "checked",
+                "transfer-pager",
+                "transfer-page",
+                "transfer-move",
+                "tip"
+            ]
+        },
+        {
+            "name": "tree-view",
+            "view": "daisy::components.ui.advanced.tree-view",
+            "category": "advanced",
+            "tags": [
+                "advanced",
+                "js",
+                "async",
+                "lazy"
+            ],
+            "jsModule": "treeview",
+            "status": "active",
+            "props": [
+                "id",
+                "label",
+                "children",
+                "lazy",
+                "expanded",
+                "selected",
+                "data",
+                "selection",
+                "persist",
+                "selectOnLabel",
+                "itemKey",
+                "labelKey",
+                "childrenKey",
+                "lazyKey",
+                "name",
+                "controlSize",
+                "disabled",
+                "return",
+                "lazyUrl",
+                "lazyParam",
+                "search",
+                "searchMin",
+                "searchDebounce",
+                "searchUrl",
+                "searchParam",
+                "searchPlaceholder",
+                "searchButton",
+                "searchAuto",
+                "module"
+            ],
+            "dataAttributes": [
+                "module",
+                "treeview",
+                "selection",
+                "persist",
+                "select-label",
+                "control-size",
+                "lazy-url",
+                "lazy-param",
+                "search-enabled",
+                "search-min",
+                "search-debounce",
+                "search-url",
+                "search-param",
+                "search-auto",
+                "tree-search-container",
+                "tree-search",
+                "tree-search-btn",
+                "return",
+                "disabled",
+                "radio-name"
+            ]
+        },
+        {
+            "name": "validator",
+            "view": "daisy::components.ui.advanced.validator",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "state",
+                "message",
+                "as",
+                "full",
+                "hintHidden"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "wysiwyg",
+            "view": "daisy::components.ui.advanced.wysiwyg",
+            "category": "advanced",
+            "tags": [
+                "advanced"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "name",
+                "value",
+                "placeholder",
+                "disabled",
+                "inputId",
+                "toolbar",
+                "height",
+                "attachments",
+                "false",
+                "true",
+                "lazy",
+                "lazyButtonLabel",
+                "module"
+            ],
+            "dataAttributes": [
+                "trix-attachments",
+                "trix-deferred"
+            ]
+        },
+        {
+            "name": "avatar",
+            "view": "daisy::components.ui.data-display.avatar",
+            "category": "data-display",
+            "tags": [
+                "data-display"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "src",
+                "alt",
+                "size",
+                "rounded",
+                "placeholder",
+                "status"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "badge",
+            "view": "daisy::components.ui.data-display.badge",
+            "category": "data-display",
+            "tags": [
+                "data-display"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "color",
+                "size",
+                "variant"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "kbd",
+            "view": "daisy::components.ui.data-display.kbd",
+            "category": "data-display",
+            "tags": [
+                "data-display"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "keys",
+                "size"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "progress",
+            "view": "daisy::components.ui.data-display.progress",
+            "category": "data-display",
+            "tags": [
+                "data-display"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "value",
+                "max",
+                "color"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "radial-progress",
+            "view": "daisy::components.ui.data-display.radial-progress",
+            "category": "data-display",
+            "tags": [
+                "data-display"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "value",
+                "size",
+                "thickness",
+                "color",
+                "showValue",
+                "min",
+                "max"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "stat",
+            "view": "daisy::components.ui.data-display.stat",
+            "category": "data-display",
+            "tags": [
+                "data-display"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "title",
+                "value",
+                "desc",
+                "titleClass",
+                "valueClass",
+                "descClass"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "status",
+            "view": "daisy::components.ui.data-display.status",
+            "category": "data-display",
+            "tags": [
+                "data-display"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "color",
+                "size",
+                "label",
+                "as"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "table",
+            "view": "daisy::components.ui.data-display.table",
+            "category": "data-display",
+            "tags": [
+                "data-display",
+                "js",
+                "async"
+            ],
+            "jsModule": "table",
+            "status": "active",
+            "props": [
+                "headers",
+                "rows",
+                "zebra",
+                "size",
+                "pinRows",
+                "pinCols",
+                "rowHeaders",
+                "footer",
+                "caption",
+                "containerClass",
+                "selection",
+                "total",
+                "offset",
+                "showRowNumbers",
+                "overflowX",
+                "overflowY",
+                "module"
+            ],
+            "dataAttributes": [
+                "module",
+                "table-select"
+            ]
+        },
+        {
+            "name": "timeline",
+            "view": "daisy::components.ui.data-display.timeline",
+            "category": "data-display",
+            "tags": [
+                "data-display"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "items",
+                "orientation",
+                "compact",
+                "snapIcon",
+                "boxOn"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "alert",
+            "view": "daisy::components.ui.feedback.alert",
+            "category": "feedback",
+            "tags": [
+                "feedback"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "color",
+                "variant",
+                "icon",
+                "title",
+                "heading",
+                "text",
+                "inline",
+                "iconInHeading",
+                "vertical",
+                "horizontal",
+                "horizontalAt"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "callout",
+            "view": "daisy::components.ui.feedback.callout",
+            "category": "feedback",
+            "tags": [
+                "feedback"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "variant",
+                "color",
+                "icon",
+                "heading",
+                "text",
+                "inline",
+                "iconInHeading",
+                "horizontalAt"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "loading",
+            "view": "daisy::components.ui.feedback.loading",
+            "category": "feedback",
+            "tags": [
+                "feedback"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "shape",
+                "size",
+                "color"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "skeleton",
+            "view": "daisy::components.ui.feedback.skeleton",
+            "category": "feedback",
+            "tags": [
+                "feedback"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "width",
+                "height",
+                "rounded"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "toast",
+            "view": "daisy::components.ui.feedback.toast",
+            "category": "feedback",
+            "tags": [
+                "feedback"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "position",
+                "horizontal",
+                "vertical"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "button",
+            "view": "daisy::components.ui.inputs.button",
+            "category": "inputs",
+            "tags": [
+                "inputs"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "type",
+                "variant",
+                "color",
+                "size",
+                "wide",
+                "block",
+                "circle",
+                "square",
+                "loading",
+                "active",
+                "noAnimation",
+                "disabled",
+                "tag",
+                "href",
+                "target"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "checkbox",
+            "view": "daisy::components.ui.inputs.checkbox",
+            "category": "inputs",
+            "tags": [
+                "inputs",
+                "form"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "color",
+                "size",
+                "checked",
+                "disabled",
+                "indeterminate"
+            ],
+            "dataAttributes": [
+                "indeterminate"
+            ]
+        },
+        {
+            "name": "color-picker",
+            "view": "daisy::components.ui.inputs.color-picker",
+            "category": "inputs",
+            "tags": [
+                "inputs",
+                "js",
+                "async"
+            ],
+            "jsModule": "color-picker",
+            "status": "active",
+            "props": [
+                "mode",
+                "value",
+                "disabled",
+                "dropdown",
+                "swatches",
+                "swatchesHeight",
+                "showPalette",
+                "showInputs",
+                "showFormatToggle",
+                "showAlpha",
+                "showHue",
+                "module"
+            ],
+            "dataAttributes": [
+                "module",
+                "colorpicker",
+                "value",
+                "disabled",
+                "dropdown",
+                "swatches",
+                "swatches-height",
+                "show-palette",
+                "show-inputs",
+                "show-format-toggle",
+                "show-alpha",
+                "show-hue"
+            ]
+        },
+        {
+            "name": "file-input",
+            "view": "daisy::components.ui.inputs.file-input",
+            "category": "inputs",
+            "tags": [
+                "inputs",
+                "js",
+                "async",
+                "form"
+            ],
+            "jsModule": "file-input",
+            "status": "active",
+            "props": [
+                "size",
+                "variant",
+                "color",
+                "multiple",
+                "disabled",
+                "dragdrop",
+                "preview",
+                "dropZoneClass",
+                "module"
+            ],
+            "dataAttributes": [
+                "module",
+                "fileinput",
+                "preview",
+                "multiple"
+            ]
+        },
+        {
+            "name": "input",
+            "view": "daisy::components.ui.inputs.input",
+            "category": "inputs",
+            "tags": [
+                "inputs",
+                "form"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "type",
+                "size",
+                "variant",
+                "color",
+                "disabled",
+                "obfuscate",
+                "obfuscateChar",
+                "obfuscateKeepEnd",
+                "inputMask",
+                "mask",
+                "maskCharPlaceholder",
+                "maskPlaceholder",
+                "inputPlaceholder",
+                "clearIncomplete",
+                "customMask",
+                "customValidator"
+            ],
+            "dataAttributes": [
+                "inputmask"
+            ]
+        },
+        {
+            "name": "radio",
+            "view": "daisy::components.ui.inputs.radio",
+            "category": "inputs",
+            "tags": [
+                "inputs",
+                "form"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "name",
+                "value",
+                "color",
+                "size",
+                "checked",
+                "disabled",
+                "uncheckable"
+            ],
+            "dataAttributes": [
+                "uncheckable"
+            ]
+        },
+        {
+            "name": "range",
+            "view": "daisy::components.ui.inputs.range",
+            "category": "inputs",
+            "tags": [
+                "inputs"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "min",
+                "max",
+                "step",
+                "value",
+                "color",
+                "size",
+                "bg",
+                "thumb",
+                "fill",
+                "noFill"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "select",
+            "view": "daisy::components.ui.inputs.select",
+            "category": "inputs",
+            "tags": [
+                "inputs",
+                "form"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "size",
+                "variant",
+                "color",
+                "disabled"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "textarea",
+            "view": "daisy::components.ui.inputs.textarea",
+            "category": "inputs",
+            "tags": [
+                "inputs",
+                "form"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "size",
+                "variant",
+                "color",
+                "disabled",
+                "rows"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "toggle",
+            "view": "daisy::components.ui.inputs.toggle",
+            "category": "inputs",
+            "tags": [
+                "inputs"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "color",
+                "size",
+                "checked",
+                "disabled",
+                "indeterminate"
+            ],
+            "dataAttributes": [
+                "indeterminate"
+            ]
+        },
+        {
+            "name": "card",
+            "view": "daisy::components.ui.layout.card",
+            "category": "layout",
+            "tags": [
+                "layout"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "title",
+                "imageUrl",
+                "bordered",
+                "compact",
+                "side",
+                "imageFull",
+                "color",
+                "dash",
+                "size",
+                "imageAlt",
+                "imageClass",
+                "figureClass"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "divider",
+            "view": "daisy::components.ui.layout.divider",
+            "category": "layout",
+            "tags": [
+                "layout"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "text",
+                "horizontal",
+                "horizontalAt",
+                "color",
+                "position"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "footer",
+            "view": "daisy::components.ui.layout.footer",
+            "category": "layout",
+            "tags": [
+                "layout"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "bg",
+                "text",
+                "padding",
+                "center",
+                "horizontal",
+                "horizontalAt"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "hero",
+            "view": "daisy::components.ui.layout.hero",
+            "category": "layout",
+            "tags": [
+                "layout"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "overlay",
+                "imageUrl",
+                "minH",
+                "fullScreen",
+                "row",
+                "reverse",
+                "text",
+                "bg",
+                "overlayClass",
+                "contentMax",
+                "contentClass"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "list-row",
+            "view": "daisy::components.ui.layout.list-row",
+            "category": "layout",
+            "tags": [
+                "layout"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [],
+            "dataAttributes": []
+        },
+        {
+            "name": "list",
+            "view": "daisy::components.ui.layout.list",
+            "category": "layout",
+            "tags": [
+                "layout"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "vertical",
+                "bg",
+                "rounded",
+                "shadow",
+                "title"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "stack",
+            "view": "daisy::components.ui.layout.stack",
+            "category": "layout",
+            "tags": [
+                "layout"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "class",
+                "alignV",
+                "alignH"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "carousel",
+            "view": "daisy::components.ui.media.carousel",
+            "category": "media",
+            "tags": [
+                "media"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "vertical",
+                "center",
+                "align"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "embed",
+            "view": "daisy::components.ui.media.embed",
+            "category": "media",
+            "tags": [
+                "media"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "tag",
+                "ratio",
+                "ratioPercent",
+                "wrapperClass",
+                "src",
+                "allow",
+                "allowfullscreen"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "leaflet",
+            "view": "daisy::components.ui.media.leaflet",
+            "category": "media",
+            "tags": [
+                "media",
+                "js",
+                "async"
+            ],
+            "jsModule": "leaflet",
+            "status": "active",
+            "props": [
+                "id",
+                "class",
+                "style",
+                "lat",
+                "lng",
+                "zoom",
+                "minZoom",
+                "maxZoom",
+                "provider",
+                "tileUrl",
+                "tileOptions",
+                "preferCanvas",
+                "gestureHandling",
+                "locateControl",
+                "fullscreen",
+                "hash",
+                "scale",
+                "cluster",
+                "clusterOptions",
+                "heatmap",
+                "miniMap",
+                "draw",
+                "measure",
+                "geocoder",
+                "routing",
+                "markers",
+                "geojson",
+                "module"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "lightbox",
+            "view": "daisy::components.ui.media.lightbox",
+            "category": "media",
+            "tags": [
+                "media",
+                "js",
+                "async"
+            ],
+            "jsModule": "lightbox",
+            "status": "active",
+            "props": [
+                "src",
+                "thumb",
+                "alt",
+                "caption",
+                "images",
+                "cols",
+                "gap",
+                "loop",
+                "keyboard",
+                "zoom",
+                "fullscreen",
+                "labelClose",
+                "labelPrev",
+                "labelNext",
+                "labelZoomIn",
+                "labelZoomOut",
+                "labelZoomReset",
+                "labelFullscreen",
+                "module"
+            ],
+            "dataAttributes": [
+                "module",
+                "lightbox",
+                "loop",
+                "keyboard",
+                "zoom",
+                "fullscreen",
+                "index"
+            ]
+        },
+        {
+            "name": "media-gallery",
+            "view": "daisy::components.ui.media.media-gallery",
+            "category": "media",
+            "tags": [
+                "media",
+                "js",
+                "async"
+            ],
+            "jsModule": "media-gallery",
+            "status": "active",
+            "props": [
+                "src",
+                "thumb",
+                "alt",
+                "images",
+                "activation",
+                "zoomEffect",
+                "autoHeight",
+                "position",
+                "thumbsPerRow",
+                "aspectClass",
+                "module"
+            ],
+            "dataAttributes": [
+                "module",
+                "media-gallery",
+                "activation",
+                "zoom",
+                "auto-height",
+                "position",
+                "index"
+            ]
+        },
+        {
+            "name": "breadcrumbs",
+            "view": "daisy::components.ui.navigation.breadcrumbs",
+            "category": "navigation",
+            "tags": [
+                "navigation"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "items",
+                "label",
+                "href",
+                "icon",
+                "size",
+                "as"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "menu",
+            "view": "daisy::components.ui.navigation.menu",
+            "category": "navigation",
+            "tags": [
+                "navigation"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "vertical",
+                "size",
+                "horizontalAt",
+                "bg",
+                "rounded",
+                "title"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "navbar",
+            "view": "daisy::components.ui.navigation.navbar",
+            "category": "navigation",
+            "tags": [
+                "navigation"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "bg",
+                "text",
+                "shadow",
+                "rounded",
+                "fixed",
+                "fixedPosition",
+                "centerHiddenBelow"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "pagination",
+            "view": "daisy::components.ui.navigation.pagination",
+            "category": "navigation",
+            "tags": [
+                "navigation"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "total",
+                "current",
+                "size",
+                "edges",
+                "maxButtons",
+                "prevLabel",
+                "nextLabel",
+                "equalPrevNext",
+                "outlinePrevNext",
+                "responsive",
+                "mobileLabel",
+                "color",
+                "outline"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "sidebar",
+            "view": "daisy::components.ui.navigation.sidebar",
+            "category": "navigation",
+            "tags": [
+                "navigation"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "variant",
+                "collapsed",
+                "collapsible",
+                "forceCollapsed",
+                "stickyAt",
+                "sideClass",
+                "minWidth",
+                "maxWidth",
+                "storageKey",
+                "brand",
+                "brandHref",
+                "showBrand",
+                "label",
+                "items",
+                "href",
+                "icon",
+                "active",
+                "children",
+                "sections",
+                "iconPrefix"
+            ],
+            "dataAttributes": [
+                "width-strategy",
+                "wide-class",
+                "collapsed-class",
+                "collapsed",
+                "storage-key"
+            ]
+        },
+        {
+            "name": "stepper",
+            "view": "daisy::components.ui.navigation.stepper",
+            "category": "navigation",
+            "tags": [
+                "navigation",
+                "js",
+                "async"
+            ],
+            "jsModule": "stepper",
+            "status": "active",
+            "props": [
+                "items",
+                "current",
+                "vertical",
+                "horizontal",
+                "horizontalAt",
+                "linear",
+                "allowClickNav",
+                "persist",
+                "showControls",
+                "prevText",
+                "nextText",
+                "finishText",
+                "controlsClass",
+                "module"
+            ],
+            "dataAttributes": [
+                "step-index"
+            ]
+        },
+        {
+            "name": "steps",
+            "view": "daisy::components.ui.navigation.steps",
+            "category": "navigation",
+            "tags": [
+                "navigation"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "items",
+                "current",
+                "vertical",
+                "horizontal",
+                "horizontalAt",
+                "color",
+                "allowClickNav",
+                "rootId"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "tabs",
+            "view": "daisy::components.ui.navigation.tabs",
+            "category": "navigation",
+            "tags": [
+                "navigation"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "label",
+                "active",
+                "disabled",
+                "href",
+                "content",
+                "items",
+                "variant",
+                "size",
+                "placement",
+                "radioName",
+                "contentClass"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "drawer",
+            "view": "daisy::components.ui.overlay.drawer",
+            "category": "overlay",
+            "tags": {
+                "0": "overlay",
+                "2": "aria",
+                "3": "a11y"
+            },
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "id",
+                "open",
+                "sideClass",
+                "end",
+                "responsiveOpen",
+                "sideIsMenu",
+                "fullHeight",
+                "contentClass"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "dropdown",
+            "view": "daisy::components.ui.overlay.dropdown",
+            "category": "overlay",
+            "tags": [
+                "overlay"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "label",
+                "end",
+                "hover",
+                "buttonClass",
+                "buttonCircle",
+                "type",
+                "contentClass",
+                "menuClass",
+                "cardClass",
+                "cardBodyClass"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "modal",
+            "view": "daisy::components.ui.overlay.modal",
+            "category": "overlay",
+            "tags": {
+                "0": "overlay",
+                "2": "aria",
+                "3": "a11y"
+            },
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "open",
+                "id",
+                "title",
+                "vertical",
+                "horizontal",
+                "backdrop",
+                "boxClass",
+                "responsive",
+                "size",
+                "scrollable",
+                "fixe",
+                "teleport"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "popconfirm",
+            "view": "daisy::components.ui.overlay.popconfirm",
+            "category": "overlay",
+            "tags": {
+                "0": "overlay",
+                "1": "js",
+                "2": "async",
+                "4": "aria",
+                "5": "a11y"
+            },
+            "jsModule": "popconfirm",
+            "status": "active",
+            "props": [
+                "mode",
+                "position",
+                "message",
+                "okText",
+                "cancelText",
+                "okClass",
+                "cancelClass",
+                "panelClass",
+                "id",
+                "title",
+                "module"
+            ],
+            "dataAttributes": [
+                "popconfirm-modal",
+                "popconfirm-action",
+                "popconfirm-modal-target"
+            ]
+        },
+        {
+            "name": "popover",
+            "view": "daisy::components.ui.overlay.popover",
+            "category": "overlay",
+            "tags": {
+                "0": "overlay",
+                "1": "js",
+                "2": "async",
+                "4": "aria",
+                "5": "a11y"
+            },
+            "jsModule": "popover",
+            "status": "active",
+            "props": [
+                "trigger",
+                "position",
+                "open",
+                "title",
+                "panelClass",
+                "arrow",
+                "module"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "tooltip",
+            "view": "daisy::components.ui.overlay.tooltip",
+            "category": "overlay",
+            "tags": [
+                "overlay"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "text",
+                "open",
+                "position",
+                "color",
+                "content"
+            ],
+            "dataAttributes": [
+                "tip"
+            ]
+        },
+        {
+            "name": "dock",
+            "view": "daisy::components.ui.utilities.dock",
+            "category": "utilities",
+            "tags": [
+                "utilities"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "mobile",
+                "position",
+                "size",
+                "as",
+                "label",
+                "fixed"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "indicator",
+            "view": "daisy::components.ui.utilities.indicator",
+            "category": "utilities",
+            "tags": [
+                "utilities"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "label",
+                "position",
+                "color",
+                "type",
+                "statusColor",
+                "itemClass"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "mockup-browser",
+            "view": "daisy::components.ui.utilities.mockup-browser",
+            "category": "utilities",
+            "tags": [
+                "utilities"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "url",
+                "bordered",
+                "bg",
+                "contentBg",
+                "showToolbar",
+                "inputClass"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "mockup-code",
+            "view": "daisy::components.ui.utilities.mockup-code",
+            "category": "utilities",
+            "tags": [
+                "utilities"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "warning",
+                "lines"
+            ],
+            "dataAttributes": [
+                "prefix"
+            ]
+        },
+        {
+            "name": "mockup-phone",
+            "view": "daisy::components.ui.utilities.mockup-phone",
+            "category": "utilities",
+            "tags": [
+                "utilities"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "camera",
+                "borderColor",
+                "wallpaper",
+                "displayClass"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "mockup-window",
+            "view": "daisy::components.ui.utilities.mockup-window",
+            "category": "utilities",
+            "tags": [
+                "utilities"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "bordered",
+                "bg",
+                "borderColor",
+                "contentBg",
+                "contentClass",
+                "contentTopBorder",
+                "contentTopBorderColor"
+            ],
+            "dataAttributes": []
+        }
+    ]
+}

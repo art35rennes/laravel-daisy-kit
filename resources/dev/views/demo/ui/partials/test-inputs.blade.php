@@ -4,29 +4,29 @@
     <div class="space-y-3">
         <div class="grid md:grid-cols-3 gap-3">
             <div class="form-control">
-                <x-daisy::ui.label for="email" value="Email" />
-                <x-daisy::ui.input id="email" type="email" placeholder="john@doe.dev" />
+                <x-daisy::ui.advanced.label for="email" value="Email" />
+                <x-daisy::ui.inputs.input id="email" type="email" placeholder="john@doe.dev" />
             </div>
             <div class="form-control">
-                <x-daisy::ui.label for="name" value="Name" />
-                <x-daisy::ui.input id="name" placeholder="Jane Doe" variant="ghost" />
+                <x-daisy::ui.advanced.label for="name" value="Name" />
+                <x-daisy::ui.inputs.input id="name" placeholder="Jane Doe" variant="ghost" />
             </div>
             <div class="form-control">
-                <x-daisy::ui.label for="password" value="Password" />
-                <x-daisy::ui.input id="password" type="password" color="primary" />
+                <x-daisy::ui.advanced.label for="password" value="Password" />
+                <x-daisy::ui.inputs.input id="password" type="password" color="primary" />
             </div>
         </div>
         <div class="grid grid-cols-5 gap-3">
-            <x-daisy::ui.input size="xs" placeholder="Xsmall" />
-            <x-daisy::ui.input size="sm" placeholder="Small" />
-            <x-daisy::ui.input size="md" placeholder="Medium" />
-            <x-daisy::ui.input size="lg" placeholder="Large" />
-            <x-daisy::ui.input size="xl" placeholder="Xlarge" />
+            <x-daisy::ui.inputs.input size="xs" placeholder="Xsmall" />
+            <x-daisy::ui.inputs.input size="sm" placeholder="Small" />
+            <x-daisy::ui.inputs.input size="md" placeholder="Medium" />
+            <x-daisy::ui.inputs.input size="lg" placeholder="Large" />
+            <x-daisy::ui.inputs.input size="xl" placeholder="Xlarge" />
         </div>
         <div class="grid md:grid-cols-3 gap-3">
-            <x-daisy::ui.input placeholder="Disabled" disabled />
-            <x-daisy::ui.input placeholder="Error" color="error" />
-            <x-daisy::ui.input placeholder="Success" color="success" />
+            <x-daisy::ui.inputs.input placeholder="Disabled" disabled />
+            <x-daisy::ui.inputs.input placeholder="Error" color="error" />
+            <x-daisy::ui.inputs.input placeholder="Success" color="success" />
         </div>
 
         <!-- Input-wrapper avec contenu (préfixe/suffixe) -->

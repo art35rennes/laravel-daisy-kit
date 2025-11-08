@@ -31,7 +31,7 @@
             </div>
         </div>
         <div>
-            <x-daisy::ui.scrollspy :items="[
+            <x-daisy::ui.advanced.scrollspy :items="[
                 ['id' => 'sec-1', 'label' => 'Section 1'],
                 ['id' => 'sec-2', 'label' => 'Section 2'],
                 ['id' => 'sec-3', 'label' => 'Section 3'],
@@ -63,7 +63,7 @@
             </div>
         </div>
         <div>
-            <x-daisy::ui.scrollspy container="#spyContainerAuto" :autogen="true" track="section" navClass="menu menu-sm bg-base-100 rounded-box p-2 w-full" />
+            <x-daisy::ui.advanced.scrollspy container="#spyContainerAuto" :autogen="true" track="section" navClass="menu menu-sm bg-base-100 rounded-box p-2 w-full" />
         </div>
     </div>
 </section>

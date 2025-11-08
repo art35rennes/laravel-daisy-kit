@@ -355,6 +355,50 @@
             </div>
         </section>
 
+        <!-- Catalogue auto (piloté par le manifeste) -->
+        <section>
+            <h2 class="text-xl font-semibold">Catalogue · Auto (manifeste)</h2>
+            @php
+                $manifestPath = base_path('resources/dev/data/components.json');
+                $components = [];
+                if (is_file($manifestPath)) {
+                    $json = json_decode(file_get_contents($manifestPath), true);
+                    $components = $json['components'] ?? [];
+                }
+                $byCategory = [];
+                foreach ($components as $c) {
+                    $cat = $c['category'] ?? 'other';
+                    $byCategory[$cat][] = $c;
+                }
+                ksort($byCategory);
+            @endphp
+            <div class="space-y-6">
+                @foreach($byCategory as $cat => $items)
+                    <div class="space-y-2">
+                        <div class="font-medium opacity-70">{{ ucfirst(str_replace('-', ' ', $cat)) }}</div>
+                        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            @foreach($items as $it)
+                                <div class="card bg-base-100 border border-base-300">
+                                    <div class="card-body p-4">
+                                        <div class="card-title text-base">{{ $it['name'] ?? '' }}</div>
+                                        <div class="text-xs opacity-70 break-all">{{ $it['view'] ?? '' }}</div>
+                                        <div class="mt-2 flex flex-wrap gap-1">
+                                            @foreach(($it['tags'] ?? []) as $tag)
+                                                <span class="badge badge-ghost badge-sm">{{ $tag }}</span>
+                                            @endforeach
+                                            @if(!empty($it['jsModule']))
+                                                <span class="badge badge-info badge-sm">js: {{ $it['jsModule'] }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+
 
         <!-- Extensions · Composants avec dépendances externes -->
         <section>

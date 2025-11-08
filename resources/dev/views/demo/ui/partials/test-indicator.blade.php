@@ -3,19 +3,19 @@
     <h2 class="text-lg font-medium">Indicator</h2>
     <div class="flex flex-wrap items-center gap-8">
         <!-- Status indicator -->
-        <x-daisy::ui.indicator type="status" statusColor="success">
+        <x-daisy::ui.utilities.indicator type="status" statusColor="success">
             <div class="bg-base-300 grid h-32 w-32 place-items-center rounded-box">content</div>
-        </x-daisy::ui.indicator>
+        </x-daisy::ui.utilities.indicator>
 
         <!-- Badge indicator -->
-        <x-daisy::ui.indicator label="New" color="primary">
+        <x-daisy::ui.utilities.indicator label="New" color="primary">
             <div class="bg-base-300 grid h-32 w-32 place-items-center rounded-box">content</div>
-        </x-daisy::ui.indicator>
+        </x-daisy::ui.utilities.indicator>
 
         <!-- Sur bouton -->
-        <x-daisy::ui.indicator label="12" color="secondary">
+        <x-daisy::ui.utilities.indicator label="12" color="secondary">
             <button class="btn">inbox</button>
-        </x-daisy::ui.indicator>
+        </x-daisy::ui.utilities.indicator>
 
         <!-- Avatar avec badge (image fiable) -->
         <div class="avatar indicator">

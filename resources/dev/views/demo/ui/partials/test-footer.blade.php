@@ -1,7 +1,7 @@
 <!-- Footer -->
 <section class="space-y-6 bg-base-200 p-6 rounded-box">
     <h2 class="text-lg font-medium">Footer</h2>
-    <x-daisy::ui.footer horizontal class="rounded-box">
+    <x-daisy::ui.layout.footer horizontal class="rounded-box">
         <nav>
             <h6 class="footer-title">Services</h6>
             <a class="link link-hover">Branding</a>
@@ -18,7 +18,7 @@
             <a class="link link-hover">Terms</a>
             <a class="link link-hover">Privacy</a>
         </nav>
-    </x-daisy::ui.footer>
+    </x-daisy::ui.layout.footer>
 </section>
 
 

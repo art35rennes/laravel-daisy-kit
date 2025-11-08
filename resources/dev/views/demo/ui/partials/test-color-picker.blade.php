@@ -5,13 +5,13 @@
         <!-- Native -->
         <div class="space-y-2">
             <div class="text-sm opacity-70">Natif</div>
-            <x-daisy::ui.color-picker mode="native" value="#563d7c" />
+            <x-daisy::ui.inputs.color-picker mode="native" value="#563d7c" />
         </div>
 
         <!-- Avancé (inline) -->
         <div class="space-y-2">
             <div class="text-sm opacity-70">Avancé (inline)</div>
-            <x-daisy::ui.color-picker 
+            <x-daisy::ui.inputs.color-picker 
                 mode="advanced" 
                 value="#457b9d"
                 :dropdown="false"
@@ -26,7 +26,7 @@
         <!-- Avancé (dropdown) -->
         <div class="space-y-2">
             <div class="text-sm opacity-70">Avancé (dropdown)</div>
-            <x-daisy::ui.color-picker 
+            <x-daisy::ui.inputs.color-picker 
                 mode="advanced" 
                 value="#22d3ee" 
                 :dropdown="true"

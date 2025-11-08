@@ -8,7 +8,7 @@
     <div class="grid md:grid-cols-2 gap-6 items-start">
         <div class="space-y-3">
             <div class="text-sm opacity-70">Sélection simple</div>
-            <x-daisy::ui.tree-view id="demoTreeSingle" selection="single" :persist="true" controlSize="xs" lazyUrl="/demo/api/tree-children" lazyParam="node" :search="true" :searchAuto="false" searchMin="1" searchDebounce="150" searchUrl="/demo/api/tree-search" searchParam="q" :data="[
+            <x-daisy::ui.advanced.tree-view id="demoTreeSingle" selection="single" :persist="true" controlSize="xs" lazyUrl="/demo/api/tree-children" lazyParam="node" :search="true" :searchAuto="false" searchMin="1" searchDebounce="150" searchUrl="/demo/api/tree-search" searchParam="q" :data="[
                 ['id' => 'root', 'label' => 'Racine', 'expanded' => true, 'children' => [
                     ['id' => 'a', 'label' => 'Dossier A', 'children' => [
                         ['id' => 'a1', 'label' => 'Fichier A1'],
@@ -23,7 +23,7 @@
 
         <div class="space-y-3">
             <div class="text-sm opacity-70">Sélection multiple</div>
-            <x-daisy::ui.tree-view id="demoTreeMulti" selection="multiple" :persist="true" controlSize="xs" lazyUrl="/demo/api/tree-children" lazyParam="node" :search="true" :searchAuto="true" searchMin="2" searchDebounce="250" :data="[
+            <x-daisy::ui.advanced.tree-view id="demoTreeMulti" selection="multiple" :persist="true" controlSize="xs" lazyUrl="/demo/api/tree-children" lazyParam="node" :search="true" :searchAuto="true" searchMin="2" searchDebounce="250" :data="[
                 [
                     'id' => '1',
                     'label' => 'Projet Alpha',

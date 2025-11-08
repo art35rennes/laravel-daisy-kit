@@ -12,11 +12,11 @@
         <a class="btn btn-ghost text-xl">App</a>
     </x-slot:brand>
     <x-slot:nav>
-        <x-daisy::ui.menu :vertical="false" class="px-1">
+        <x-daisy::ui.navigation.menu :vertical="false" class="px-1">
             <li><a>Overview</a></li>
             <li><a>Teams</a></li>
             <li><a>Docs</a></li>
-        </x-daisy::ui.menu>
+        </x-daisy::ui.navigation.menu>
     </x-slot:nav>
     <x-slot:actions>
         <button class="btn">{{ __('daisy::layout.profile') }}</button>

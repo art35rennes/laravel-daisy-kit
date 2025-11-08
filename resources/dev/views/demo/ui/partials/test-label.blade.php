@@ -3,7 +3,7 @@
     <h2 class="text-lg font-medium">Label</h2>
     <div class="space-y-6">
         <div class="flex items-center gap-4">
-            <x-daisy::ui.label for="demo-lbl" value="Label" alt="optionnel" />
+            <x-daisy::ui.advanced.label for="demo-lbl" value="Label" alt="optionnel" />
         </div>
 
         <!-- Label intégré dans input (prefix/suffix) -->
@@ -29,21 +29,21 @@
 
         <!-- Floating label -->
         <div class="grid md:grid-cols-5 gap-3">
-            <x-daisy::ui.label floating span="Extra Small">
+            <x-daisy::ui.advanced.label floating span="Extra Small">
                 <input type="text" placeholder="Extra Small" class="input input-xs" />
-            </x-daisy::ui.label>
-            <x-daisy::ui.label floating span="Small">
+            </x-daisy::ui.advanced.label>
+            <x-daisy::ui.advanced.label floating span="Small">
                 <input type="text" placeholder="Small" class="input input-sm" />
-            </x-daisy::ui.label>
-            <x-daisy::ui.label floating span="Medium">
+            </x-daisy::ui.advanced.label>
+            <x-daisy::ui.advanced.label floating span="Medium">
                 <input type="text" placeholder="Medium" class="input input-md" />
-            </x-daisy::ui.label>
-            <x-daisy::ui.label floating span="Large">
+            </x-daisy::ui.advanced.label>
+            <x-daisy::ui.advanced.label floating span="Large">
                 <input type="text" placeholder="Large" class="input input-lg" />
-            </x-daisy::ui.label>
-            <x-daisy::ui.label floating span="Extra Large">
+            </x-daisy::ui.advanced.label>
+            <x-daisy::ui.advanced.label floating span="Extra Large">
                 <input type="text" placeholder="Extra Large" class="input input-xl" />
-            </x-daisy::ui.label>
+            </x-daisy::ui.advanced.label>
         </div>
     </div>
 </section>

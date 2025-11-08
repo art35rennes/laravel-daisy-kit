@@ -3,26 +3,26 @@
     <h2 class="text-lg font-medium">Checkbox</h2>
     <div class="flex flex-wrap items-center gap-4">
         <label class="flex items-center gap-2">
-            <x-daisy::ui.checkbox />
+            <x-daisy::ui.inputs.checkbox />
             <span>Default</span>
         </label>
         <label class="flex items-center gap-2">
-            <x-daisy::ui.checkbox color="primary" :checked="true" />
+            <x-daisy::ui.inputs.checkbox color="primary" :checked="true" />
             <span>Primary checked</span>
         </label>
         <label class="flex items-center gap-2 opacity-70">
-            <x-daisy::ui.checkbox :disabled="true" />
+            <x-daisy::ui.inputs.checkbox :disabled="true" />
             <span>Disabled</span>
         </label>
-        <x-daisy::ui.checkbox size="xs" />
-        <x-daisy::ui.checkbox size="sm" />
-        <x-daisy::ui.checkbox size="md" />
-        <x-daisy::ui.checkbox size="lg" />
-        <x-daisy::ui.checkbox size="xl" />
+        <x-daisy::ui.inputs.checkbox size="xs" />
+        <x-daisy::ui.inputs.checkbox size="sm" />
+        <x-daisy::ui.inputs.checkbox size="md" />
+        <x-daisy::ui.inputs.checkbox size="lg" />
+        <x-daisy::ui.inputs.checkbox size="xl" />
 
         <!-- Indeterminate via JS -->
         <div class="flex items-center gap-2">
-            <x-daisy::ui.checkbox id="demo-indeterminate" :indeterminate="true" />
+            <x-daisy::ui.inputs.checkbox id="demo-indeterminate" :indeterminate="true" />
             <span>Indeterminate (JS)</span>
         </div>
     </div>

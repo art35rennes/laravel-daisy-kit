@@ -3,7 +3,7 @@
         <a class="btn btn-ghost text-xl">DaisyKit</a>
     </x-slot:brand>
     <x-slot:nav>
-        <x-daisy::ui.menu :vertical="false" class="px-1">
+        <x-daisy::ui.navigation.menu :vertical="false" class="px-1">
             <li><a>Overview</a></li>
             <li>
                 <details>
@@ -15,15 +15,15 @@
                 </details>
             </li>
             <li><a>Blog</a></li>
-        </x-daisy::ui.menu>
+        </x-daisy::ui.navigation.menu>
     </x-slot:nav>
     <x-slot:actions>
         <label class="input input-bordered flex items-center gap-2">
-            <x-daisy::ui.icon name="search" size="md" />
+            <x-daisy::ui.advanced.icon name="search" size="md" />
             <input type="text" class="grow" placeholder="{{ __('daisy::layout.search') }}" />
         </label>
         <button class="btn btn-ghost btn-circle">
-            <x-daisy::ui.icon name="bell" size="lg" />
+            <x-daisy::ui.advanced.icon name="bell" size="lg" />
         </button>
         <a class="btn" href="{{ route('templates.index') }}">Templates</a>
     </x-slot:actions>

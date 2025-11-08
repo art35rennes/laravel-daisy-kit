@@ -3,10 +3,10 @@
     <h2 class="text-lg font-medium">Theme Controller</h2>
     <div class="space-y-4">
         <!-- Boutons (join) -->
-        <x-daisy::ui.theme-controller class="flex flex-wrap gap-2" :themes="['light','dark','cupcake','emerald','retro','cyberpunk']" value="light" size="sm" />
+        <x-daisy::ui.advanced.theme-controller class="flex flex-wrap gap-2" :themes="['light','dark','cupcake','emerald','retro','cyberpunk']" value="light" size="sm" />
 
         <!-- Dropdown -->
-        <x-daisy::ui.theme-controller variant="dropdown" :themes="['light','dark','cupcake','emerald','retro','cyberpunk']" value="dark" label="Theme" />
+        <x-daisy::ui.advanced.theme-controller variant="dropdown" :themes="['light','dark','cupcake','emerald','retro','cyberpunk']" value="dark" label="Theme" />
 
         <!-- Toggle unique (synthwave) -->
         <label class="swap swap-rotate">

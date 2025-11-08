@@ -4,34 +4,34 @@
     <div class="space-y-3">
         <div class="flex items-center gap-6">
             <div class="flex items-center gap-2">
-                <x-daisy::ui.status color="success" label="online" />
+                <x-daisy::ui.data-display.status color="success" label="online" />
                 <span>En ligne</span>
             </div>
             <div class="flex items-center gap-2">
-                <x-daisy::ui.status color="warning" label="busy" />
+                <x-daisy::ui.data-display.status color="warning" label="busy" />
                 <span>Occupé</span>
             </div>
             <div class="flex items-center gap-2">
-                <x-daisy::ui.status color="error" label="offline" />
+                <x-daisy::ui.data-display.status color="error" label="offline" />
                 <span>Hors ligne</span>
             </div>
         </div>
         <div class="flex items-center gap-3">
-            <x-daisy::ui.status size="xs" />
-            <x-daisy::ui.status size="sm" />
-            <x-daisy::ui.status size="md" />
-            <x-daisy::ui.status size="lg" />
-            <x-daisy::ui.status size="xl" />
+            <x-daisy::ui.data-display.status size="xs" />
+            <x-daisy::ui.data-display.status size="sm" />
+            <x-daisy::ui.data-display.status size="md" />
+            <x-daisy::ui.data-display.status size="lg" />
+            <x-daisy::ui.data-display.status size="xl" />
         </div>
         <div class="flex items-center gap-6">
             <div class="inline-grid *:[grid-area:1/1]">
-                <x-daisy::ui.status color="error" class="animate-ping" as="div" />
-                <x-daisy::ui.status color="error" as="div" />
+                <x-daisy::ui.data-display.status color="error" class="animate-ping" as="div" />
+                <x-daisy::ui.data-display.status color="error" as="div" />
             </div>
             <span>Server is down</span>
         </div>
         <div class="flex items-center gap-3">
-            <x-daisy::ui.status color="info" class="animate-bounce" />
+            <x-daisy::ui.data-display.status color="info" class="animate-bounce" />
             <span>Unread messages</span>
         </div>
     </div>

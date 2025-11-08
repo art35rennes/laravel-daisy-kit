@@ -3,7 +3,7 @@
     <h2 class="text-lg font-medium">Timeline</h2>
     <div class="space-y-6">
         <!-- Texte des deux côtés + icône -->
-        <x-daisy::ui.timeline :items="[
+        <x-daisy::ui.data-display.timeline :items="[
             ['when' => '1984', 'title' => 'First Macintosh computer'],
             ['when' => '1998', 'title' => 'iMac'],
             ['when' => '2001', 'title' => 'iPod'],
@@ -12,7 +12,7 @@
         ]" />
 
         <!-- Avec contenu riche (startHtml / endHtml) -->
-        <x-daisy::ui.timeline :items="[
+        <x-daisy::ui.data-display.timeline :items="[
             [
                 'startHtml' => '<time class=\'font-mono italic\'>1984</time>',
                 'endHtml' => '<div class=\'timeline-box\'>First Macintosh computer</div>',

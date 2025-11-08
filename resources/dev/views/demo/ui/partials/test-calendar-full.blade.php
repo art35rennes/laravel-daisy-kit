@@ -5,7 +5,7 @@
         <!-- Données statiques -->
         <div class="bg-base-100 border border-base-300 shadow-lg rounded-box p-4">
             <div class="text-sm font-medium opacity-70 mb-2">Static events (month)</div>
-            <x-daisy::ui.calendar-full
+            <x-daisy::ui.advanced.calendar-full
                 view="month"
                 :events="[
                     ['id'=>1,'title'=>'All Day Event','start'=>date('Y-m-01'),'allDay'=>true],
@@ -21,7 +21,7 @@
         <!-- Chargement AJAX -->
         <div class="bg-base-100 border border-base-300 shadow-lg rounded-box p-4">
             <div class="text-sm font-medium opacity-70 mb-2">AJAX events (week)</div>
-            <x-daisy::ui.calendar-full view="week" eventsUrl="{{ route('demo.calendar.events') }}" />
+            <x-daisy::ui.advanced.calendar-full view="week" eventsUrl="{{ route('demo.calendar.events') }}" />
         </div>
     </div>
 </section>

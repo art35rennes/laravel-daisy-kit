@@ -3,8 +3,8 @@
     <h2 class="text-lg font-medium">List</h2>
     <div class="grid md:grid-cols-2 gap-6">
         <!-- Exemple simple -->
-        <x-daisy::ui.list :bg="true" :rounded="true" shadow="md" title="Most played songs this week">
-            <x-daisy::ui.list-row>
+        <x-daisy::ui.layout.list :bg="true" :rounded="true" shadow="md" title="Most played songs this week">
+            <x-daisy::ui.layout.list-row>
                 <div><img class="w-10 h-10 rounded-box" src="/img/people/dummy-100x100-Rosa.jpg" alt="Avatar"/></div>
                 <div>
                     <div>Dio Lupa</div>
@@ -12,8 +12,8 @@
                 </div>
                 <button class="btn btn-square btn-ghost">▶</button>
                 <button class="btn btn-square btn-ghost">❤</button>
-            </x-daisy::ui.list-row>
-            <x-daisy::ui.list-row>
+            </x-daisy::ui.layout.list-row>
+            <x-daisy::ui.layout.list-row>
                 <div><img class="w-10 h-10 rounded-box" src="/img/people/dummy-100x100-Rosa.jpg" alt="Avatar"/></div>
                 <div>
                     <div>Ellie Beilish</div>
@@ -21,8 +21,8 @@
                 </div>
                 <button class="btn btn-square btn-ghost">▶</button>
                 <button class="btn btn-square btn-ghost">❤</button>
-            </x-daisy::ui.list-row>
-            <x-daisy::ui.list-row>
+            </x-daisy::ui.layout.list-row>
+            <x-daisy::ui.layout.list-row>
                 <div><img class="w-10 h-10 rounded-box" src="/img/people/dummy-100x100-Rosa.jpg" alt="Avatar"/></div>
                 <div>
                     <div>Sabrino Gardener</div>
@@ -30,12 +30,12 @@
                 </div>
                 <button class="btn btn-square btn-ghost">▶</button>
                 <button class="btn btn-square btn-ghost">❤</button>
-            </x-daisy::ui.list-row>
-        </x-daisy::ui.list>
+            </x-daisy::ui.layout.list-row>
+        </x-daisy::ui.layout.list>
 
         <!-- Exemple avec list-col-wrap (colonne qui passe à la ligne) -->
-        <x-daisy::ui.list :bg="true" :rounded="true" shadow="md" title="With descriptions">
-            <x-daisy::ui.list-row>
+        <x-daisy::ui.layout.list :bg="true" :rounded="true" shadow="md" title="With descriptions">
+            <x-daisy::ui.layout.list-row>
                 <div><img class="w-10 h-10 rounded-box" src="/img/people/dummy-100x100-Rosa.jpg" alt="Avatar"/></div>
                 <div>
                     <div>Dio Lupa</div>
@@ -46,8 +46,8 @@
                 </p>
                 <button class="btn btn-square btn-ghost">▶</button>
                 <button class="btn btn-square btn-ghost">❤</button>
-            </x-daisy::ui.list-row>
-            <x-daisy::ui.list-row>
+            </x-daisy::ui.layout.list-row>
+            <x-daisy::ui.layout.list-row>
                 <div><img class="w-10 h-10 rounded-box" src="/img/people/dummy-100x100-Rosa.jpg" alt="Avatar"/></div>
                 <div>
                     <div>Ellie Beilish</div>
@@ -58,8 +58,8 @@
                 </p>
                 <button class="btn btn-square btn-ghost">▶</button>
                 <button class="btn btn-square btn-ghost">❤</button>
-            </x-daisy::ui.list-row>
-        </x-daisy::ui.list>
+            </x-daisy::ui.layout.list-row>
+        </x-daisy::ui.layout.list>
     </div>
 </section>
 
