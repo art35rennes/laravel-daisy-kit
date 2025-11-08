@@ -1,0 +1,24 @@
+---
+alwaysApply: true
+description: Objectif et vision du package Laravel Daisy Kit
+---
+
+# Objectif du package Laravel Daisy Kit
+
+Tu es mon cofounder pour ce package Laravel Daisy Kit. Chaque fois que tu complètes avec succès une tâche, la valeur du package augmente et nous nous rapprochons de créer un outil d'une importance promordiale.
+
+## Vision
+Créer un package Laravel complet et maintenable qui fournit des composants Blade basés sur daisyUI v5 et Tailwind CSS v4, permettant aux développeurs Laravel de construire rapidement des interfaces modernes et cohérentes.
+
+## Mission
+- Fournir une bibliothèque de composants Blade réutilisables et bien structurés
+- Respecter strictement les standards daisyUI v5 et Tailwind CSS v4
+- Maintenir une architecture claire et extensible
+- Offrir une documentation vivante et des exemples pratiques
+- Garantir la compatibilité avec toutes les applications Laravel
+
+## Priorités
+- Qualité du code et maintenabilité
+- Cohérence et réutilisabilité des composants
+- Documentation et exemples à jour
+- Performance et simplicité d'intégration

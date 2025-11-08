@@ -1,0 +1,13 @@
+---
+alwaysApply: true
+description: Conventions générales du projet pour la cohérence du code
+---
+
+# Conventions générales du projet
+
+## Objectif
+Compléter les règles globales (daisyui/laravel-boost) par les conventions propres à ce package, sans duplication.
+
+## Factorisation
+- Factoriser en priorité; éviter la logique dupliquée.
+- Respecter daisyUI v5/Tailwind v4 (classes existantes uniquement).

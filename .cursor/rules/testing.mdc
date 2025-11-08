@@ -1,0 +1,19 @@
+---
+alwaysApply: true
+description: Règles et conventions pour les tests avec Pest 4
+---
+
+# Règles de tests
+
+## Framework
+- Utiliser Pest 4 avec `--parallel` pour tous les tests.
+- Exécuter toujours en parallèle: `composer test` (alias `pest --parallel`).
+
+## Types de tests
+- **Feature (rendu Blade)** : valeurs par défaut, variantes, erreurs attendues.
+- **Browser (interactions)** : composants JS critiques; aucune erreur console.
+- Tests Browser : `tests/Browser/` pour les interactions JS critiques.
+- Tests de rendu : helper pour normaliser le HTML généré par les composants Blade.
+
+## Objectif
+- Objectif : ≥80% de couverture sur les composants critiques.

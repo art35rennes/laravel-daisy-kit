@@ -1,0 +1,86 @@
+name,view,category,tags,jsModule,status
+accordion,daisy::components.ui.advanced.accordion,advanced,advanced,,active
+calendar-cally,daisy::components.ui.advanced.calendar-cally,advanced,advanced,,active
+calendar-full,daisy::components.ui.advanced.calendar-full,advanced,"advanced, js, async, lazy",calendar-full,active
+calendar-native,daisy::components.ui.advanced.calendar-native,advanced,advanced,,active
+calendar,daisy::components.ui.advanced.calendar,advanced,advanced,,active
+chart,daisy::components.ui.advanced.chart,advanced,"advanced, js, async",chart,active
+chat-bubble,daisy::components.ui.advanced.chat-bubble,advanced,advanced,,active
+code-editor,daisy::components.ui.advanced.code-editor,advanced,"advanced, js, async",code-editor,active
+collapse,daisy::components.ui.advanced.collapse,advanced,advanced,,active
+countdown,daisy::components.ui.advanced.countdown,advanced,advanced,,active
+diff,daisy::components.ui.advanced.diff,advanced,advanced,,active
+fieldset,daisy::components.ui.advanced.fieldset,advanced,advanced,,active
+filter,daisy::components.ui.advanced.filter,advanced,advanced,,active
+icon,daisy::components.ui.advanced.icon,advanced,advanced,,active
+join,daisy::components.ui.advanced.join,advanced,advanced,,active
+label,daisy::components.ui.advanced.label,advanced,advanced,,active
+link,daisy::components.ui.advanced.link,advanced,advanced,,active
+login-button,daisy::components.ui.advanced.login-button,advanced,advanced,,active
+mask,daisy::components.ui.advanced.mask,advanced,advanced,,active
+onboarding,daisy::components.ui.advanced.onboarding,advanced,"advanced, js, async",onboarding,active
+rating,daisy::components.ui.advanced.rating,advanced,advanced,,active
+scroll-status,daisy::components.ui.advanced.scroll-status,advanced,"advanced, js, async",scroll-status,active
+scrollspy,daisy::components.ui.advanced.scrollspy,advanced,"advanced, js, async",scrollspy,active
+swap,daisy::components.ui.advanced.swap,advanced,advanced,,active
+theme-controller,daisy::components.ui.advanced.theme-controller,advanced,advanced,,active
+transfer,daisy::components.ui.advanced.transfer,advanced,"advanced, js, async, lazy",transfer,active
+tree-view,daisy::components.ui.advanced.tree-view,advanced,"advanced, js, async, lazy",treeview,active
+validator,daisy::components.ui.advanced.validator,advanced,advanced,,active
+wysiwyg,daisy::components.ui.advanced.wysiwyg,advanced,advanced,,active
+avatar,daisy::components.ui.data-display.avatar,data-display,data-display,,active
+badge,daisy::components.ui.data-display.badge,data-display,data-display,,active
+kbd,daisy::components.ui.data-display.kbd,data-display,data-display,,active
+progress,daisy::components.ui.data-display.progress,data-display,data-display,,active
+radial-progress,daisy::components.ui.data-display.radial-progress,data-display,data-display,,active
+stat,daisy::components.ui.data-display.stat,data-display,data-display,,active
+status,daisy::components.ui.data-display.status,data-display,data-display,,active
+table,daisy::components.ui.data-display.table,data-display,"data-display, js, async",table,active
+timeline,daisy::components.ui.data-display.timeline,data-display,data-display,,active
+alert,daisy::components.ui.feedback.alert,feedback,feedback,,active
+callout,daisy::components.ui.feedback.callout,feedback,feedback,,active
+loading,daisy::components.ui.feedback.loading,feedback,feedback,,active
+skeleton,daisy::components.ui.feedback.skeleton,feedback,feedback,,active
+toast,daisy::components.ui.feedback.toast,feedback,feedback,,active
+button,daisy::components.ui.inputs.button,inputs,inputs,,active
+checkbox,daisy::components.ui.inputs.checkbox,inputs,"inputs, form",,active
+color-picker,daisy::components.ui.inputs.color-picker,inputs,"inputs, js, async",color-picker,active
+file-input,daisy::components.ui.inputs.file-input,inputs,"inputs, js, async, form",file-input,active
+input,daisy::components.ui.inputs.input,inputs,"inputs, form",,active
+radio,daisy::components.ui.inputs.radio,inputs,"inputs, form",,active
+range,daisy::components.ui.inputs.range,inputs,inputs,,active
+select,daisy::components.ui.inputs.select,inputs,"inputs, form",,active
+textarea,daisy::components.ui.inputs.textarea,inputs,"inputs, form",,active
+toggle,daisy::components.ui.inputs.toggle,inputs,inputs,,active
+card,daisy::components.ui.layout.card,layout,layout,,active
+divider,daisy::components.ui.layout.divider,layout,layout,,active
+footer,daisy::components.ui.layout.footer,layout,layout,,active
+hero,daisy::components.ui.layout.hero,layout,layout,,active
+list-row,daisy::components.ui.layout.list-row,layout,layout,,active
+list,daisy::components.ui.layout.list,layout,layout,,active
+stack,daisy::components.ui.layout.stack,layout,layout,,active
+carousel,daisy::components.ui.media.carousel,media,media,,active
+embed,daisy::components.ui.media.embed,media,media,,active
+leaflet,daisy::components.ui.media.leaflet,media,"media, js, async",leaflet,active
+lightbox,daisy::components.ui.media.lightbox,media,"media, js, async",lightbox,active
+media-gallery,daisy::components.ui.media.media-gallery,media,"media, js, async",media-gallery,active
+breadcrumbs,daisy::components.ui.navigation.breadcrumbs,navigation,navigation,,active
+menu,daisy::components.ui.navigation.menu,navigation,navigation,,active
+navbar,daisy::components.ui.navigation.navbar,navigation,navigation,,active
+pagination,daisy::components.ui.navigation.pagination,navigation,navigation,,active
+sidebar,daisy::components.ui.navigation.sidebar,navigation,navigation,,active
+stepper,daisy::components.ui.navigation.stepper,navigation,"navigation, js, async",stepper,active
+steps,daisy::components.ui.navigation.steps,navigation,navigation,,active
+tabs,daisy::components.ui.navigation.tabs,navigation,navigation,,active
+drawer,daisy::components.ui.overlay.drawer,overlay,"overlay, aria, a11y",,active
+dropdown,daisy::components.ui.overlay.dropdown,overlay,overlay,,active
+modal,daisy::components.ui.overlay.modal,overlay,"overlay, aria, a11y",,active
+popconfirm,daisy::components.ui.overlay.popconfirm,overlay,"overlay, js, async, aria, a11y",popconfirm,active
+popover,daisy::components.ui.overlay.popover,overlay,"overlay, js, async, aria, a11y",popover,active
+tooltip,daisy::components.ui.overlay.tooltip,overlay,overlay,,active
+dock,daisy::components.ui.utilities.dock,utilities,utilities,,active
+indicator,daisy::components.ui.utilities.indicator,utilities,utilities,,active
+mockup-browser,daisy::components.ui.utilities.mockup-browser,utilities,utilities,,active
+mockup-code,daisy::components.ui.utilities.mockup-code,utilities,utilities,,active
+mockup-phone,daisy::components.ui.utilities.mockup-phone,utilities,utilities,,active
+mockup-window,daisy::components.ui.utilities.mockup-window,utilities,utilities,,active

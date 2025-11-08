@@ -1,0 +1,19 @@
+{
+    "calendar-full": "calendar-full",
+    "chart": "chart",
+    "code-editor": "code-editor",
+    "onboarding": "onboarding",
+    "scroll-status": "scroll-status",
+    "scrollspy": "scrollspy",
+    "transfer": "transfer",
+    "tree-view": "treeview",
+    "table": "table",
+    "color-picker": "color-picker",
+    "file-input": "file-input",
+    "leaflet": "leaflet",
+    "lightbox": "lightbox",
+    "media-gallery": "media-gallery",
+    "stepper": "stepper",
+    "popconfirm": "popconfirm",
+    "popover": "popover"
+}

@@ -1,0 +1,37 @@
+---
+alwaysApply: true
+description: Contexte et nature du package Laravel Daisy Kit
+---
+
+# Contexte du package Laravel Daisy Kit
+
+## Nature du projet
+- Ce dépôt est un **package Laravel**, et non une application. Toutes les évolutions doivent respecter la structure de package Laravel (aucune logique applicative, pas de migration/conflict avec l'application hôte).
+
+## Compatibilité
+- **Compatibilité DaisyUI v5 & Tailwind v4 :**  
+  - Toutes les classes et composants générés doivent être conformes à ces versions.
+  - N'ajoute pas de classes custom CSS ni de configuration Tailwind autre que ce qui existe dans le package hôte du projet.
+
+## Réutilisation des composants
+- Lors de la création ou la modification d'un composant UI, vérifie systématiquement la présence d'un composant similaire dans `resources/views/components/ui/` : privilégie la réutilisation plutôt que la duplication. Les layouts et partials doivent consommer les composants `ui/*` (pas de duplication d'implémentation).
+
+## Icônes
+- Utilise exclusivement le package [`blade-ui-kit/blade-icons`](https://blade-ui-kit.com/blade-icons#search) ainsi que ses collections installées (notamment `davidhsianturi/blade-bootstrap-icons`). N'ajoute jamais de SVG personnalisés dans le code source du package.
+
+## Documentation et démo
+- **Pages de démo/docs (`resources/dev/views/demo/*`)**  
+  - Catalogue vivant piloté par `resources/dev/data/components.json`.
+  - Navigation par catégories, aperçu, variations (tailles/états/couleurs), snippets Blade, interactions JS.
+  - Publier via tag `daisy-dev-views` pour servir de documentation.
+
+## Bonnes pratiques de maintenance
+- Privilégie la factorisation, l'utilisation des props Blade réactives, la clarté.
+- Props Blade plutôt que data-attributes (génération automatique de data-module et dataset).
+- Commentaires: PHPDoc/JSDoc utiles uniquement (rationale, invariants, edge cases). Éviter les évidences.
+
+## Publication
+- Démo/doc vivante sous `resources/dev/views/demo/*`, publiable via tag `daisy-dev-views`.
+- Sources front publiables via tag `daisy-src`.
+
+Respecte strictement ces règles pour garantir la cohérence, la maintenabilité et la facilité d'intégration du package dans tous les contextes Laravel.
