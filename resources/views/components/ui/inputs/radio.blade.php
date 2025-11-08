@@ -1,0 +1,33 @@
+@props([
+    'name' => null,
+    'value' => null,
+    'color' => null, // primary | secondary | accent | info | success | warning | error | neutral
+    'size' => null,  // xs | sm | md | lg | xl
+    'checked' => false,
+    'disabled' => false,
+    'uncheckable' => false, // permet de décocher un radio déjà coché
+])
+
+@php
+    $sizeMap = [
+        'xs' => 'radio-xs',
+        'sm' => 'radio-sm',
+        'md' => 'radio-md',
+        'lg' => 'radio-lg',
+        'xl' => 'radio-xl',
+    ];
+
+    $classes = 'radio';
+
+    if ($color) {
+        $classes .= ' radio-'.$color;
+    }
+
+    if ($size && isset($sizeMap[$size])) {
+        $classes .= ' '.$sizeMap[$size];
+    }
+@endphp
+
+<input type="radio" @if($name) name="{{ $name }}" @endif @if(!is_null($value)) value="{{ $value }}" @endif @checked($checked) @disabled($disabled) {{ $attributes->merge(['class' => $classes]) }} @if($uncheckable) data-uncheckable="1" @endif />
+
+
