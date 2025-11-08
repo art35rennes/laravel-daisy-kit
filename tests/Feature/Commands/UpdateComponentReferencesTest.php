@@ -1,6 +1,5 @@
 <?php
 
-use App\Console\Commands\UpdateComponentReferences;
 use Illuminate\Support\Facades\Artisan;
 
 it('runs in dry-run mode without errors', function () {
@@ -8,4 +7,3 @@ it('runs in dry-run mode without errors', function () {
 
     expect($exitCode)->toBe(0);
 });
-

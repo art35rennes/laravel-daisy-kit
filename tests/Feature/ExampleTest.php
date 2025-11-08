@@ -14,6 +14,7 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        $response->assertStatus(200);
+        // La page racine redirige désormais vers /docs quand la documentation publique est activée
+        $response->assertRedirect('/docs');
     }
 }

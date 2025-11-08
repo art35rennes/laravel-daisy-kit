@@ -65,41 +65,39 @@ class InventoryComponents extends Command
         // Utiliser glob récursif pour Windows
         $pattern = str_replace('\\', '/', $componentsPath).'/**/*.blade.php';
         $files = glob($pattern, GLOB_BRACE);
-        
+
         if (empty($files)) {
             // Essayer avec backslashes pour Windows
             $pattern = $componentsPath.'\**\*.blade.php';
             $files = glob($pattern, GLOB_BRACE);
         }
-        
-        $files = array_map(fn($path) => new \SplFileInfo($path), $files ?? []);
 
+        $files = array_map(fn ($path) => new \SplFileInfo($path), $files ?? []);
 
         foreach ($files as $file) {
             // Ignorer les partials
             if (str_contains($file->getPathname(), '/partials/')) {
                 continue;
             }
-            
+
             $name = basename($file->getPathname(), '.blade.php');
-            
+
             // Extraire le chemin relatif pour déterminer la catégorie depuis le chemin
-            $relativePath = str_replace($componentsPath.DIRECTORY_SEPARATOR, '', $file->getPathname());
-            $pathParts = explode(DIRECTORY_SEPARATOR, $relativePath);
-            
-            // Le chemin est de la forme: ui/{category}/{name}.blade.php ou ui/{name}.blade.php
-            // Si le composant est dans un sous-dossier de ui/, utiliser ce dossier comme catégorie
-            if (count($pathParts) > 2 && $pathParts[0] === 'ui') {
-                // Format: ui/{category}/{name}.blade.php
-                $category = $pathParts[1]; // La catégorie est le deuxième élément après 'ui'
-            } elseif (count($pathParts) === 2 && $pathParts[0] === 'ui') {
-                // Format: ui/{name}.blade.php (composant à la racine de ui/)
-                $category = $this->getCategory($name);
+            // Calcul fiable du chemin relatif par rapport à ui/
+            $fullPath = str_replace('\\', '/', $file->getPathname());
+            $basePath = rtrim(str_replace('\\', '/', $componentsPath), '/').'/';
+            $relativePath = Str::startsWith($fullPath, $basePath) ? substr($fullPath, strlen($basePath)) : $fullPath;
+            $pathParts = explode('/', $relativePath);
+
+            // Si le fichier est sous ui/{category}/{name}.blade.php, le premier segment est la catégorie
+            if (count($pathParts) >= 2) {
+                // Format: {category}/{name}.blade.php
+                $category = $pathParts[0];
             } else {
                 // Fallback: utiliser la méthode getCategory
                 $category = $this->getCategory($name);
             }
-            
+
             $content = File::get($file->getPathname());
 
             // Identifier le module JS
@@ -131,7 +129,7 @@ class InventoryComponents extends Command
             // Construire le chemin de vue
             // Tous les composants sont dans ui/{category}/ ou ui/, donc toujours inclure la catégorie
             $viewPath = "daisy::components.ui.{$category}.{$name}";
-            
+
             $components[] = [
                 'name' => $name,
                 'view' => $viewPath,
@@ -197,10 +195,10 @@ class InventoryComponents extends Command
         File::put($csvPath.'/js-deps.json', json_encode($jsDeps, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         $this->info('✓ '.count($components).' composants inventoriés');
-        $this->info("✓ Manifeste généré: resources/dev/data/components.json");
-        $this->info("✓ CSV généré: docs/inventory/components.csv");
-        $this->info("✓ Data-attributes: docs/inventory/data-attributes.csv");
-        $this->info("✓ Dépendances JS: docs/inventory/js-deps.json");
+        $this->info('✓ Manifeste généré: resources/dev/data/components.json');
+        $this->info('✓ CSV généré: docs/inventory/components.csv');
+        $this->info('✓ Data-attributes: docs/inventory/data-attributes.csv');
+        $this->info('✓ Dépendances JS: docs/inventory/js-deps.json');
 
         return Command::SUCCESS;
     }

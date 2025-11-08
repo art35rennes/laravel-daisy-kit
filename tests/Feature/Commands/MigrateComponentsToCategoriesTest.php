@@ -1,8 +1,6 @@
 <?php
 
-use App\Console\Commands\MigrateComponentsToCategories;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\File;
 
 it('runs successfully when manifest exists', function () {
     // S'assurer que le manifeste existe
@@ -20,7 +18,5 @@ it('handles dry-run option correctly', function () {
     $exitCode = Artisan::call('migrate:components-to-categories', ['--dry-run' => true]);
 
     expect($exitCode)->toBe(0);
-    
 
 });
-

@@ -514,7 +514,8 @@ window.DaisyColorPicker = {
   initAll: initAllColorPickers
 };
 
-// Export pour les modules ES6
+// Export pour le système data-module (kit/index.js)
+export default initColorPicker;
 export { initColorPicker, initAllColorPickers };
 
 // Initialisation automatique

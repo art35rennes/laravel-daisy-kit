@@ -18,7 +18,7 @@ it('renders chart with module override', function () {
     $html = View::make('daisy::components.ui.advanced.chart', [
         'type' => 'bar',
         'labels' => ['A', 'B'],
-        'datasets' => [['label' => 'X', 'data' => [1,2]]],
+        'datasets' => [['label' => 'X', 'data' => [1, 2]]],
         'module' => 'chart',
     ])->render();
 
@@ -29,8 +29,8 @@ it('renders chart with module override', function () {
 
 it('renders table with selection attribute', function () {
     $html = View::make('daisy::components.ui.data-display.table', [
-        'headers' => ['H1','H2'],
-        'rows' => [['R1C1','R1C2']],
+        'headers' => ['H1', 'H2'],
+        'rows' => [['R1C1', 'R1C2']],
         'selection' => 'single',
     ])->render();
 
@@ -49,5 +49,3 @@ it('renders calendar-full with eventsUrl', function () {
         ->toContain('data-module="calendar-full"')
         ->toContain('data-events-url="/api/events"');
 });
-
-

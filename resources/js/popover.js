@@ -39,6 +39,9 @@ function setupPopover(root) {
 
   // Détermine le mode d'ouverture du popover ('click', 'hover', 'focus')
   const triggerMode = root.getAttribute('data-trigger') || 'click';
+  const isCoarsePointer = (('maxTouchPoints' in navigator && navigator.maxTouchPoints > 0) ||
+    (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
+  let pinnedByClick = false;
 
   // Mappings de classes utilitaires par position
   const POSITION_CLASSES = {
@@ -95,14 +98,73 @@ function setupPopover(root) {
     applyPanelPosition(chosen);
   }
 
+  function clampIntoViewport() {
+    const margin = 8;
+    try {
+      panel.style.maxWidth = `${Math.max(0, window.innerWidth - margin * 2)}px`;
+    } catch (_) {}
+    const r = panel.getBoundingClientRect();
+    const pos = panel.dataset.currentPosition || (root.getAttribute('data-position') || 'top');
+    if (pos === 'top' || pos === 'bottom') {
+      let dx = 0;
+      if (r.left < margin) dx += (margin - r.left);
+      if (r.right > window.innerWidth - margin) dx -= (r.right - (window.innerWidth - margin));
+      if (dx !== 0) {
+        panel.style.left = `calc(50% + ${Math.round(dx)}px)`;
+      } else {
+        panel.style.left = '';
+      }
+      // Nettoyer styles non utilisés
+      panel.style.right = '';
+    } else if (pos === 'left' || pos === 'right') {
+      // Clamp vertical (déjà existant)
+      let dy = 0;
+      if (r.top < margin) dy += (margin - r.top);
+      if (r.bottom > window.innerHeight - margin) dy -= (r.bottom - (window.innerHeight - margin));
+      if (dy !== 0) {
+        panel.style.top = `calc(50% + ${Math.round(dy)}px)`;
+      } else {
+        panel.style.top = '';
+      }
+      // Clamp horizontal spécifique left/right
+      if (pos === 'right') {
+        const overflowRight = r.right - (window.innerWidth - margin);
+        if (overflowRight > 0) {
+          panel.style.left = `calc(100% - ${Math.round(overflowRight)}px)`;
+        } else {
+          panel.style.left = '';
+        }
+        panel.style.right = '';
+      } else if (pos === 'left') {
+        const overflowLeft = margin - r.left;
+        if (overflowLeft > 0) {
+          panel.style.right = `calc(100% - ${Math.round(overflowLeft)}px)`;
+        } else {
+          panel.style.right = '';
+        }
+        panel.style.left = '';
+      }
+    }
+  }
+
+  const positionNow = () => {
+    adjustPlacement();
+    clampIntoViewport();
+  };
+
   /**
    * Ouvre le popover (affiche le panneau) et ferme les autres popovers ouverts.
    */
+  let onReposition = null;
   const open = () => {
     hideAllPopoversExcept(panel);
     panel.classList.remove('hidden');
-    // Ajuste la position si le panneau déborde (auto flip)
-    adjustPlacement();
+    // Ajuste la position si le panneau déborde (auto flip) puis clamp dans le viewport
+    positionNow();
+    onReposition = () => positionNow();
+    window.addEventListener('resize', onReposition, { passive: true });
+    // Écoute les scroll pour repositionner (capture pour remonter la phase)
+    window.addEventListener('scroll', onReposition, true);
   };
 
   /**
@@ -110,6 +172,15 @@ function setupPopover(root) {
    */
   const close = () => {
     panel.classList.add('hidden');
+    if (onReposition) {
+      window.removeEventListener('resize', onReposition, { passive: true });
+      window.removeEventListener('scroll', onReposition, true);
+      onReposition = null;
+    }
+    panel.style.left = '';
+    panel.style.top = '';
+    panel.style.maxWidth = '';
+    panel.style.right = '';
   };
 
   /**
@@ -128,6 +199,7 @@ function setupPopover(root) {
   const onOutside = (e) => {
     if (!root.contains(e.target)) {
       close();
+      pinnedByClick = false;
       if (triggerMode === 'click') {
         document.removeEventListener('click', onOutside, { capture: true });
       }
@@ -153,10 +225,27 @@ function setupPopover(root) {
       open();
     };
     const leave = () => {
-      hoverTimeout = setTimeout(close, 120);
+      if (!pinnedByClick) {
+        hoverTimeout = setTimeout(close, 120);
+      }
     };
-    root.addEventListener('mouseenter', enter);
-    root.addEventListener('mouseleave', leave);
+    // Activer le vrai hover uniquement quand le pointeur n'est pas "coarse"
+    if (!isCoarsePointer) {
+      root.addEventListener('mouseenter', enter);
+      root.addEventListener('mouseleave', leave);
+    }
+    // Sur tous périphériques : clic pour épingler/désépingler
+    trigger.addEventListener('click', (e) => {
+      e.preventDefault();
+      pinnedByClick = !pinnedByClick;
+      if (pinnedByClick) {
+        open();
+        document.addEventListener('click', onOutside, { capture: true });
+      } else {
+        close();
+        document.removeEventListener('click', onOutside, { capture: true });
+      }
+    });
   } else if (triggerMode === 'focus') {
     // Mode focus : ouverture au focus, fermeture au blur
     trigger.addEventListener('focus', open);

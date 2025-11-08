@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\View;
-use Illuminate\Support\Str;
 use Illuminate\View\ComponentSlot;
 
 if (! function_exists('renderComponent')) {
@@ -25,4 +24,3 @@ if (! function_exists('renderComponent')) {
         return $html;
     }
 }
-

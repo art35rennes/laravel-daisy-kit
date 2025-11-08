@@ -63,3 +63,43 @@ it('renders a link component', function () {
         ->toContain('/test');
 });
 
+it('renders the grid layout with correct classes', function () {
+    $inner = '<div class="col-sm-12 col-xl-4">Col 1</div>';
+
+    $html = View::make('daisy::components.ui.layout.grid-layout', [
+        'gap' => 6,
+        'align' => 'start',
+        'slot' => new \Illuminate\Support\HtmlString($inner),
+    ])->render();
+
+    expect($html)
+        ->toContain('daisy-grid')
+        ->toContain('grid grid-cols-12')
+        ->toContain('gap-6')
+        ->toContain('items-start')
+        ->toContain('col-sm-12')
+        ->toContain('col-xl-4')
+        ->toContain('Col 1');
+});
+
+it('injects grid layout CSS utilities only once', function () {
+    $blade = <<<'BLADE'
+<x-daisy::ui.layout.grid-layout>
+  <div class="col-12">A</div>
+</x-daisy::ui.layout.grid-layout>
+<x-daisy::ui.layout.grid-layout>
+  <div class="col-12">B</div>
+</x-daisy::ui.layout.grid-layout>
+@stack('styles')
+BLADE;
+
+    $html = \Illuminate\Support\Facades\Blade::render($blade);
+
+    expect($html)
+        ->toContain('.col-12')
+        ->toContain('@media (min-width: 1280px)')
+        ->toContain('.offset-md-3');
+
+    $styleCount = substr_count($html, '<style>');
+    expect($styleCount)->toBe(1);
+});

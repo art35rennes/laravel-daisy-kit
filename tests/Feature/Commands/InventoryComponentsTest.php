@@ -1,6 +1,5 @@
 <?php
 
-use App\Console\Commands\InventoryComponents;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 
@@ -48,4 +47,3 @@ it('generates valid component manifest structure', function () {
             ->and($component['category'])->toBeString();
     }
 });
-

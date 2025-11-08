@@ -7,12 +7,12 @@ function loadComponentsManifest(): array
 {
     $root = dirname(__DIR__, 2);
     $path = $root.DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR.'dev'.DIRECTORY_SEPARATOR.'data'.DIRECTORY_SEPARATOR.'components.json';
-    if (!is_file($path)) {
+    if (! is_file($path)) {
         throw new RuntimeException("Manifeste introuvable: {$path}");
     }
 
     $json = json_decode((string) file_get_contents($path), true);
-    if (!is_array($json) || !isset($json['components']) || !is_array($json['components'])) {
+    if (! is_array($json) || ! isset($json['components']) || ! is_array($json['components'])) {
         throw new RuntimeException('Manifeste invalide: clé "components" manquante ou invalide');
     }
 
@@ -43,7 +43,7 @@ function dataset_js_components(): array
     $components = loadComponentsManifest();
     $dataset = [];
     foreach ($components as $comp) {
-        if (!empty($comp['jsModule'])) {
+        if (! empty($comp['jsModule'])) {
             $dataset[$comp['name']] = [$comp];
         }
     }
@@ -99,5 +99,3 @@ it('accepts module override and reflects data-module accordingly', function (arr
         expect(true)->toBeTrue(); // pas de contrainte si non applicable
     }
 })->with('js_components');
-
-

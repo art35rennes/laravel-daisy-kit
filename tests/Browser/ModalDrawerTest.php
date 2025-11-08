@@ -25,5 +25,3 @@ it('toggles drawer from demo page without console errors', function () {
 
     $page->assertNoConsoleLogs();
 });
-
-

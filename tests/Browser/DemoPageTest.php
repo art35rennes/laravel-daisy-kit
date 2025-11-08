@@ -9,4 +9,3 @@ it('loads the demo page without errors', function () {
         ->assertNoJavascriptErrors()
         ->assertNoConsoleLogs();
 });
-

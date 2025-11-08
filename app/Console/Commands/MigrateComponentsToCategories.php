@@ -41,6 +41,7 @@ class MigrateComponentsToCategories extends Command
             if (! File::exists($sourceFile)) {
                 $this->warn("  ⚠ Composant non trouvé: {$name}.blade.php");
                 $stats['skipped']++;
+
                 continue;
             }
 
@@ -50,6 +51,7 @@ class MigrateComponentsToCategories extends Command
             if (File::exists($targetFile)) {
                 $this->warn("  ⚠ Déjà déplacé: {$name} → {$category}/");
                 $stats['skipped']++;
+
                 continue;
             }
 
@@ -71,7 +73,7 @@ class MigrateComponentsToCategories extends Command
         }
 
         $this->newLine();
-        $this->info("Résumé:");
+        $this->info('Résumé:');
         $this->line("  - Déplacés: {$stats['moved']}");
         $this->line("  - Ignorés: {$stats['skipped']}");
         $this->line("  - Erreurs: {$stats['errors']}");

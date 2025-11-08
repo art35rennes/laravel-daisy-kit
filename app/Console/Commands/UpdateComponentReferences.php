@@ -77,6 +77,7 @@ class UpdateComponentReferences extends Command
                         if (! $category) {
                             return "x-daisy::ui.$path"; // composant inconnu, ne pas modifier
                         }
+
                         return "x-daisy::ui.$category.$component";
                     },
                     $content,
@@ -98,6 +99,7 @@ class UpdateComponentReferences extends Command
                         if (! $category) {
                             return "daisy::components.ui.$path";
                         }
+
                         return "daisy::components.ui.$category.$component";
                     },
                     $content,
@@ -121,7 +123,7 @@ class UpdateComponentReferences extends Command
         }
 
         $this->newLine();
-        $this->info("Résumé:");
+        $this->info('Résumé:');
         $this->line("  - Fichiers modifiés: {$stats['files']}");
         $this->line("  - Remplacements: {$stats['replacements']}");
 
