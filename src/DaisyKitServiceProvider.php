@@ -31,6 +31,11 @@ class DaisyKitServiceProvider extends ServiceProvider
             __DIR__.'/../resources/views/components' => resource_path('views/vendor/daisy/components'),
         ], 'daisy-views');
 
+        // Publication optionnelle des vues de démo/docs vivantes
+        $this->publishes([
+            __DIR__.'/../resources/dev/views' => resource_path('views/vendor/daisy-dev'),
+        ], 'daisy-dev-views');
+
         // Publication optionnelle des traductions
         $this->publishes([
             __DIR__.'/../resources/lang' => resource_path('lang/vendor/daisy'),
