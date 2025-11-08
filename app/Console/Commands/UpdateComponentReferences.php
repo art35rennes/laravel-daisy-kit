@@ -61,23 +61,50 @@ class UpdateComponentReferences extends Command
                 $originalContent = $content;
                 $fileReplacements = 0;
 
-                // Remplacer les références daisy::components.ui.{name}
-                foreach ($this->categoryMap as $component => $category) {
-                    $oldPattern = "daisy::components.ui.{$component}";
-                    $newPattern = "daisy::components.ui.{$category}.{$component}";
+                // 1) Normaliser les tags Blade: <x-daisy::ui.{component} ...> -> <x-daisy::ui.{category}.{component} ...>
+                //    Sans toucher les tags déjà catégorisés
+                $content = preg_replace_callback(
+                    '/x-daisy::ui\.([a-z0-9\-\.]+)(?=[\s>])/i',
+                    function ($m) {
+                        $path = $m[1]; // ex: "button" ou "inputs.button"
+                        if (str_contains($path, '.')) {
+                            return "x-daisy::ui.$path"; // déjà catégorisé
+                        }
+                        $component = $path;
+                        // Rechercher la catégorie depuis le mapping
+                        // $this est disponible via use
+                        $category = $this->categoryMap[$component] ?? null;
+                        if (! $category) {
+                            return "x-daisy::ui.$path"; // composant inconnu, ne pas modifier
+                        }
+                        return "x-daisy::ui.$category.$component";
+                    },
+                    $content,
+                    -1,
+                    $tagReplacements
+                );
+                $fileReplacements += $tagReplacements;
 
-                    // Pattern avec guillemets simples
-                    $content = str_replace("'{$oldPattern}'", "'{$newPattern}'", $content, $count1);
-                    // Pattern avec guillemets doubles
-                    $content = str_replace('"'.$oldPattern.'"', '"'.$newPattern.'"', $content, $count2);
-                    // Pattern dans @include
-                    $content = str_replace("@include('{$oldPattern}'", "@include('{$newPattern}'", $content, $count3);
-                    $content = str_replace('@include("'.$oldPattern.'"', '@include("'.$newPattern.'"', $content, $count4);
-                    // Pattern dans x-daisy::
-                    $content = str_replace("x-daisy::ui.{$component}", "x-daisy::ui.{$category}.{$component}", $content, $count5);
-
-                    $fileReplacements += $count1 + $count2 + $count3 + $count4 + $count5;
-                }
+                // 2) Normaliser les chemins de vues: daisy::components.ui.{component} -> daisy::components.ui.{category}.{component}
+                $content = preg_replace_callback(
+                    '/daisy::components\.ui\.([a-z0-9\-\.]+)/i',
+                    function ($m) {
+                        $path = $m[1]; // "button" ou "inputs.button"
+                        if (str_contains($path, '.')) {
+                            return "daisy::components.ui.$path"; // déjà catégorisé
+                        }
+                        $component = $path;
+                        $category = $this->categoryMap[$component] ?? null;
+                        if (! $category) {
+                            return "daisy::components.ui.$path";
+                        }
+                        return "daisy::components.ui.$category.$component";
+                    },
+                    $content,
+                    -1,
+                    $viewReplacements
+                );
+                $fileReplacements += $viewReplacements;
 
                 if ($content !== $originalContent) {
                     $stats['files']++;
