@@ -107,6 +107,10 @@ window.DaisyMediaGallery = {
   initAll: initAllMediaGalleries
 };
 
+// Export pour le système data-module (kit/index.js)
+export default initMediaGallery;
+export { initMediaGallery, initAllMediaGalleries };
+
 // Initialisation automatique (compatible import tardif)
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initAllMediaGalleries);

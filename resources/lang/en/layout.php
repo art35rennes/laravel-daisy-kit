@@ -7,5 +7,3 @@ return [
     'logout' => 'Logout',
     'menu' => 'Menu',
 ];
-
-

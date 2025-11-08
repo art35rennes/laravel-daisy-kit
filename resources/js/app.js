@@ -1,5 +1,6 @@
 // Importation des modules de base
 import './bootstrap';
+import './kit'; // Système de modules data-module
 import { importWhenIdle, importWhenNearViewport, createLimiter } from './utils/scheduler';
 
 /**

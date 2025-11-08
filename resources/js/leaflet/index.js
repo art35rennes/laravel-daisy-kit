@@ -39,13 +39,36 @@ window.DaisyLeaflet = {
         if (entry.isIntersecting) {
           const el = entry.target;
           obs.unobserve(el);
-          queue.push(() => initMapFromConfig(el));
+          // Évite double init si déjà traité via fallback
+          if (el.dataset.leafletInitialized === '1') return;
+          queue.push(async () => {
+            await initMapFromConfig(el);
+            try { el.dataset.leafletInitialized = '1'; } catch (_) {}
+          });
           runNext();
         }
       });
     }, { rootMargin: '400px 0px', threshold: 0.05 });
 
     roots.forEach((el) => obs.observe(el));
+
+    // Fallback: si l'observer ne déclenche pas (hauteur tardive, onglet/tabs, etc.),
+    // on initialise les éléments déjà visibles après un court délai.
+    // Cela évite un état "carré vide" sans erreurs.
+    setTimeout(() => {
+      roots.forEach((el) => {
+        if (el.dataset.leafletInitialized === '1') return;
+        const r = el.getBoundingClientRect();
+        const inViewport = r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < (window.innerHeight || document.documentElement.clientHeight);
+        if (inViewport) {
+          queue.push(async () => {
+            await initMapFromConfig(el);
+            try { el.dataset.leafletInitialized = '1'; } catch (_) {}
+          });
+          runNext();
+        }
+      });
+    }, 600);
   }
 
   if (document.readyState === 'loading') {

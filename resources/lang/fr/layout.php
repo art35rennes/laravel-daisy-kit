@@ -7,5 +7,3 @@ return [
     'logout' => 'Déconnexion',
     'menu' => 'Menu',
 ];
-
-

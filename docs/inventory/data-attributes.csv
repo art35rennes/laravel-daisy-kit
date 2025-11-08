@@ -1,5 +1,5 @@
 attribute,components
-module,"calendar-full, chart, code-editor, scrollspy, tree-view, table, color-picker, file-input, lightbox, media-gallery"
+module,"calendar-full, chart, code-editor, scrollspy, tree-view, table, color-picker, file-input, lightbox, media-gallery, sidebar"
 calendar-full,calendar-full
 options,calendar-full
 events,calendar-full
@@ -83,8 +83,11 @@ wide-class,sidebar
 collapsed-class,sidebar
 collapsed,sidebar
 storage-key,sidebar
+searchable,sidebar
 step-index,stepper
 popconfirm-modal,popconfirm
 popconfirm-action,popconfirm
 popconfirm-modal-target,popconfirm
+copy-target,mockup-code
+copy-text,mockup-code
 prefix,mockup-code

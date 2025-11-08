@@ -96,6 +96,10 @@ function initAllTables() {
 // Expose l'API globale DaisyTable pour usage externe
 window.DaisyTable = { init: initTable, initAll: initAllTables };
 
+// Export pour le système data-module (kit/index.js)
+export default initTable;
+export { initTable, initAllTables };
+
 // Initialisation automatique (compatible import tardif)
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initAllTables);

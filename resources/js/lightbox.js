@@ -342,6 +342,10 @@ window.DaisyLightbox = {
   reset: resetTransform
 };
 
+// Export pour le système data-module (kit/index.js)
+export default init;
+export { init, initAll };
+
 // Initialisation automatique (aussi si importé après DOMContentLoaded)
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initAll);

@@ -10,6 +10,38 @@ export * from './utils/aria.js';
 // Scanner et initialiser les modules
 const initialized = new WeakSet();
 
+// Précharger tous les modules disponibles pour que Vite puisse les résoudre
+const modulesGlob = import.meta.glob('../modules/*.js', { eager: false });
+const rootModulesGlob = import.meta.glob('../*.js', { eager: false });
+const folderModulesGlob = import.meta.glob('../*/index.js', { eager: false });
+
+// Créer un mapping nom du module -> fonction d'import
+function createModuleMap(globMap, extractName) {
+    const map = new Map();
+    for (const [path, importFn] of Object.entries(globMap)) {
+        const name = extractName(path);
+        if (name) {
+            map.set(name, importFn);
+        }
+    }
+    return map;
+}
+
+const modulesMap = createModuleMap(modulesGlob, (path) => {
+    const match = path.match(/\/modules\/([^/]+)\.js$/);
+    return match ? match[1] : null;
+});
+
+const rootModulesMap = createModuleMap(rootModulesGlob, (path) => {
+    const match = path.match(/\/([^/]+)\.js$/);
+    return match ? match[1] : null;
+});
+
+const folderModulesMap = createModuleMap(folderModulesGlob, (path) => {
+    const match = path.match(/\/([^/]+)\/index\.js$/);
+    return match ? match[1] : null;
+});
+
 /**
  * Initialise un élément avec son module JS
  */
@@ -26,14 +58,31 @@ async function initElement(element) {
     try {
         // Import dynamique du module avec fallback
         let module;
-        try {
-            module = await import(`../modules/${moduleName}.js`);
-        } catch (e1) {
+        let importFn = null;
+        
+        // Essayer d'abord dans modules/
+        if (modulesMap.has(moduleName)) {
+            importFn = modulesMap.get(moduleName);
+        } else if (rootModulesMap.has(moduleName)) {
+            // Essayer à la racine
+            importFn = rootModulesMap.get(moduleName);
+        } else if (folderModulesMap.has(moduleName)) {
+            // Essayer dans un dossier (ex: leaflet/index.js)
+            importFn = folderModulesMap.get(moduleName);
+        }
+        
+        if (importFn) {
+            module = await importFn();
+        } else {
+            // Fallback : import dynamique classique (peut ne pas fonctionner avec Vite)
             try {
-                module = await import(`../${moduleName}.js`);
-            } catch (e2) {
-                // Support des modules index.js dans des dossiers (ex: leaflet/index.js)
-                module = await import(`../${moduleName}/index.js`);
+                module = await import(`../modules/${moduleName}.js`);
+            } catch (e1) {
+                try {
+                    module = await import(`../${moduleName}.js`);
+                } catch (e2) {
+                    module = await import(`../${moduleName}/index.js`);
+                }
             }
         }
         

@@ -55,6 +55,7 @@ toggle,daisy::components.ui.inputs.toggle,inputs,inputs,,active
 card,daisy::components.ui.layout.card,layout,layout,,active
 divider,daisy::components.ui.layout.divider,layout,layout,,active
 footer,daisy::components.ui.layout.footer,layout,layout,,active
+grid-layout,daisy::components.ui.layout.grid-layout,layout,layout,,active
 hero,daisy::components.ui.layout.hero,layout,layout,,active
 list-row,daisy::components.ui.layout.list-row,layout,layout,,active
 list,daisy::components.ui.layout.list,layout,layout,,active

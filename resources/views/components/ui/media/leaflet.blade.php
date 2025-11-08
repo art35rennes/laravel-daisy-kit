@@ -113,7 +113,18 @@
     ];
 @endphp
 
-<div {{ $attributes->merge(['class' => $rootClasses, 'data-module' => ($module ?? 'leaflet'), 'data-leaflet' => '1', 'style' => $style]) }}>
+@php
+    // Appliquer une hauteur par défaut si aucune classe de hauteur n'est fournie par l'utilisateur.
+    $hasHeightClass = preg_match('/\b(?:h-(?:\\d+|full|screen)|min-h-|max-h-|aspect-(?:\\[|\\d+\\/\\d+))\\b/u', (string) $class) === 1;
+    $computedClasses = $rootClasses;
+    if (! $hasHeightClass) {
+        // Hauteur par défaut raisonnable pour rendre la carte visible sans configuration parent.
+        $computedClasses = str_replace(' h-full', '', $computedClasses);
+        $computedClasses = trim(str_replace('h-full', '', $computedClasses).' h-80');
+    }
+@endphp
+
+<div {{ $attributes->merge(['class' => $computedClasses, 'data-module' => ($module ?? 'leaflet'), 'data-leaflet' => '1', 'style' => $style]) }}>
     <div id="{{ $mapId }}" class="w-full h-full"></div>
     <script type="application/json" data-config>@json($config)</script>
     {{ $slot }}

@@ -15,11 +15,15 @@ return [
     // Chemins fallback vers un bundle statique publié (si use_vite = false)
     'bundle' => [
         'css' => 'vendor/daisy-kit/daisy-kit.css',
-        'js'  => 'vendor/daisy-kit/daisy-kit.js',
+        'js' => 'vendor/daisy-kit/daisy-kit.js',
     ],
 
     // Configuration des icônes - préfixe par défaut
     'icon_prefix' => 'bi',
+
+    // Documentation publique (activable comme Swagger)
+    'docs' => [
+        'enabled' => true, // Active les routes de documentation du package
+        'prefix' => 'docs', // Préfixe des routes publiées (/docs, /docs/{category}/{component}, /docs/templates)
+    ],
 ];
-
-

@@ -1,5 +1,5 @@
 {
-    "generated_at": "2025-11-08T10:42:00+00:00",
+    "generated_at": "2025-11-08T13:52:37+00:00",
     "components": [
         {
             "name": "accordion",
@@ -1343,6 +1343,23 @@
             "dataAttributes": []
         },
         {
+            "name": "grid-layout",
+            "view": "daisy::components.ui.layout.grid-layout",
+            "category": "layout",
+            "tags": [
+                "layout"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "gap",
+                "align",
+                "class",
+                "styleStack"
+            ],
+            "dataAttributes": []
+        },
+        {
             "name": "hero",
             "view": "daisy::components.ui.layout.hero",
             "category": "layout",
@@ -1680,14 +1697,18 @@
                 "active",
                 "children",
                 "sections",
-                "iconPrefix"
+                "iconPrefix",
+                "searchable",
+                "searchPlaceholder"
             ],
             "dataAttributes": [
                 "width-strategy",
                 "wide-class",
                 "collapsed-class",
                 "collapsed",
-                "storage-key"
+                "storage-key",
+                "module",
+                "searchable"
             ]
         },
         {
@@ -1983,9 +2004,13 @@
             "status": "active",
             "props": [
                 "warning",
-                "lines"
+                "lines",
+                "copy",
+                "copyId"
             ],
             "dataAttributes": [
+                "copy-target",
+                "copy-text",
                 "prefix"
             ]
         },

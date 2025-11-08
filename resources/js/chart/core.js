@@ -442,6 +442,9 @@ window.DaisyChart = {
   setGlobalPerformanceDefaults: (overrides) => { Object.assign(globalPerf, overrides || {}); },
 };
 
+// Export pour le système data-module (kit/index.js)
+export default init;
+
 // Initialisation automatique paresseuse lors de l'importation dynamique : initialise les graphiques quand ils deviennent visibles
 (function setupLazyChartInit() {
   /**

@@ -232,6 +232,10 @@ function initAll() {
 // Expose l'API globale
 window.DaisyScrollSpy = { init, initAll, refresh, dispose };
 
+// Export pour le système data-module (kit/index.js)
+export default init;
+export { init, initAll, refresh, dispose };
+
 // Initialisation automatique (compatible import tardif)
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initAll);

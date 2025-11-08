@@ -21,5 +21,3 @@ return [
     'add_event_modal' => 'Add an event',
     'edit_event_modal' => 'Edit an event',
 ];
-
-

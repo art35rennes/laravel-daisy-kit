@@ -247,7 +247,7 @@
     "isDynamicEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-C8QOUAD9.css",
+    "file": "assets/app-BHLyKoA-.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -256,7 +256,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-Dh2HAdEA.js",
+    "file": "assets/app-C64TR5x8.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -265,6 +265,48 @@
       "_vendor-CvUbgux-.js"
     ],
     "dynamicImports": [
+      "resources/js/modules/popover.js",
+      "resources/js/modules/sidebar.js",
+      "resources/js/code-editor.js",
+      "resources/js/color-picker.js",
+      "resources/js/file-input.js",
+      "resources/js/input-mask.js",
+      "resources/js/lazy-editors.js",
+      "resources/js/lightbox.js",
+      "resources/js/media-gallery.js",
+      "resources/js/onboarding.js",
+      "resources/js/popconfirm.js",
+      "resources/js/popover.js",
+      "resources/js/scroll-status.js",
+      "resources/js/scrollspy.js",
+      "resources/js/stepper.js",
+      "resources/js/table.js",
+      "resources/js/transfer.js",
+      "resources/js/treeview.js",
+      "resources/js/calendar-full/index.js",
+      "_chart-BQ4liYMZ.js",
+      "resources/js/leaflet/index.js",
+      "resources/js/modules/popover.js",
+      "resources/js/modules/sidebar.js",
+      "resources/js/code-editor.js",
+      "resources/js/color-picker.js",
+      "resources/js/file-input.js",
+      "resources/js/input-mask.js",
+      "resources/js/lazy-editors.js",
+      "resources/js/lightbox.js",
+      "resources/js/media-gallery.js",
+      "resources/js/onboarding.js",
+      "resources/js/popconfirm.js",
+      "resources/js/popover.js",
+      "resources/js/scroll-status.js",
+      "resources/js/scrollspy.js",
+      "resources/js/stepper.js",
+      "resources/js/table.js",
+      "resources/js/transfer.js",
+      "resources/js/treeview.js",
+      "resources/js/calendar-full/index.js",
+      "_chart-BQ4liYMZ.js",
+      "resources/js/leaflet/index.js",
       "node_modules/cally/dist/cally.js",
       "resources/js/color-picker.js",
       "resources/js/treeview.js",
@@ -287,7 +329,7 @@
     ]
   },
   "resources/js/calendar-full/index.js": {
-    "file": "assets/index-B0uzuu8j.js",
+    "file": "assets/index-MNTlFITX.js",
     "name": "index",
     "src": "resources/js/calendar-full/index.js",
     "isDynamicEntry": true,
@@ -298,7 +340,7 @@
     ]
   },
   "resources/js/code-editor.js": {
-    "file": "assets/code-editor-DAQlOSPJ.js",
+    "file": "assets/code-editor-DRKOPoDl.js",
     "name": "code-editor",
     "src": "resources/js/code-editor.js",
     "isDynamicEntry": true,
@@ -307,13 +349,13 @@
     ]
   },
   "resources/js/color-picker.js": {
-    "file": "assets/color-picker-BYNeDt0N.js",
+    "file": "assets/color-picker-DznSuWQU.js",
     "name": "color-picker",
     "src": "resources/js/color-picker.js",
     "isDynamicEntry": true
   },
   "resources/js/file-input.js": {
-    "file": "assets/file-input-L5G1WKX6.js",
+    "file": "assets/file-input-Yxhipini.js",
     "name": "file-input",
     "src": "resources/js/file-input.js",
     "isDynamicEntry": true
@@ -325,7 +367,7 @@
     "isDynamicEntry": true
   },
   "resources/js/lazy-editors.js": {
-    "file": "assets/lazy-editors-zKQ78g6t.js",
+    "file": "assets/lazy-editors-iq-Ry3l5.js",
     "name": "lazy-editors",
     "src": "resources/js/lazy-editors.js",
     "isDynamicEntry": true,
@@ -339,7 +381,7 @@
     ]
   },
   "resources/js/leaflet/index.js": {
-    "file": "assets/leaflet-core-fmSBa-08.js",
+    "file": "assets/leaflet-core-6ndyfX2U.js",
     "name": "leaflet-core",
     "src": "resources/js/leaflet/index.js",
     "isDynamicEntry": true,
@@ -378,19 +420,31 @@
     ]
   },
   "resources/js/lightbox.js": {
-    "file": "assets/lightbox-BWj8_Nbc.js",
+    "file": "assets/lightbox-DTOMq_Nr.js",
     "name": "lightbox",
     "src": "resources/js/lightbox.js",
     "isDynamicEntry": true
   },
   "resources/js/media-gallery.js": {
-    "file": "assets/media-gallery-BN1FUIXG.js",
+    "file": "assets/media-gallery-D5Hf9w-R.js",
     "name": "media-gallery",
     "src": "resources/js/media-gallery.js",
     "isDynamicEntry": true
   },
+  "resources/js/modules/popover.js": {
+    "file": "assets/popover-C32w8lvy.js",
+    "name": "popover",
+    "src": "resources/js/modules/popover.js",
+    "isDynamicEntry": true
+  },
+  "resources/js/modules/sidebar.js": {
+    "file": "assets/sidebar-BTutHn7l.js",
+    "name": "sidebar",
+    "src": "resources/js/modules/sidebar.js",
+    "isDynamicEntry": true
+  },
   "resources/js/onboarding.js": {
-    "file": "assets/onboarding-B8NLESee.js",
+    "file": "assets/onboarding-hmjk1CAs.js",
     "name": "onboarding",
     "src": "resources/js/onboarding.js",
     "isDynamicEntry": true,
@@ -403,13 +457,13 @@
     ]
   },
   "resources/js/popconfirm.js": {
-    "file": "assets/popconfirm-CE6Gc8TV.js",
+    "file": "assets/popconfirm-B7jHWdjF.js",
     "name": "popconfirm",
     "src": "resources/js/popconfirm.js",
     "isDynamicEntry": true
   },
   "resources/js/popover.js": {
-    "file": "assets/popover-Cm4oUEEh.js",
+    "file": "assets/popover-uPM3Xyqv.js",
     "name": "popover",
     "src": "resources/js/popover.js",
     "isDynamicEntry": true
@@ -421,7 +475,7 @@
     "isDynamicEntry": true
   },
   "resources/js/scrollspy.js": {
-    "file": "assets/scrollspy-BntuDwFa.js",
+    "file": "assets/scrollspy-JOeTI2bx.js",
     "name": "scrollspy",
     "src": "resources/js/scrollspy.js",
     "isDynamicEntry": true
@@ -433,7 +487,7 @@
     "isDynamicEntry": true
   },
   "resources/js/table.js": {
-    "file": "assets/table-D7eT4jFd.js",
+    "file": "assets/table-BfX8oKyS.js",
     "name": "table",
     "src": "resources/js/table.js",
     "isDynamicEntry": true
@@ -445,7 +499,7 @@
     "isDynamicEntry": true
   },
   "resources/js/treeview.js": {
-    "file": "assets/treeview-4tXs1-9d.js",
+    "file": "assets/treeview-ttTyp6ls.js",
     "name": "treeview",
     "src": "resources/js/treeview.js",
     "isDynamicEntry": true

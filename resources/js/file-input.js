@@ -215,6 +215,10 @@ function initAllFileInputs() {
 // Expose l'API globale pour usage externe (ex: Alpine, Livewire, etc.)
 window.DaisyFileInput = { init: initFileInput, initAll: initAllFileInputs };
 
+// Export pour le système data-module (kit/index.js)
+export default initFileInput;
+export { initFileInput, initAllFileInputs };
+
 // Initialisation automatique (compatible import tardif)
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initAllFileInputs);

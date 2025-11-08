@@ -36,6 +36,16 @@
                     </div>
                 </div>
             </div>
+
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title text-base">Grid Layout</h3>
+                    <p class="text-sm">Grille 12 colonnes responsive (classes Bootstrap-like).</p>
+                    <div class="card-actions justify-end">
+                        <a href="{{ route('layouts.grid-layout') }}" class="btn btn-primary btn-sm">Voir</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </x-daisy::layout.app>

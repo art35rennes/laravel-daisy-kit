@@ -31,6 +31,10 @@
     'sections' => [],
     // Icon configuration
     'iconPrefix' => 'bi',
+    // Activer la recherche/filtre dans la sidebar
+    'searchable' => false,
+    // Placeholder pour le champ de recherche
+    'searchPlaceholder' => 'Rechercher...',
 ])
 
 @php
@@ -100,6 +104,9 @@
     if ($isFit && !$effectiveCollapsed) {
         $baseClasses .= ' sidebar-fit';
     }
+    
+    // Activer le module JS si searchable est activé
+    $needsSearchModule = $searchable && !$effectiveCollapsed;
 @endphp
 
 <aside {{ $attributes->merge(['class' => trim($rootClasses.' '.$widthClass.' '.$baseClasses)]) }}
@@ -110,7 +117,8 @@
        data-collapsed="{{ $effectiveCollapsed ? '1' : '0' }}" 
        @if($isAuto) data-sidebar-auto @endif
        @if($isFit) data-sidebar-fit @endif
-       @if($storageKey) data-storage-key="{{ $storageKey }}" @endif>
+       @if($storageKey) data-storage-key="{{ $storageKey }}" @endif
+       @if($needsSearchModule) data-module="sidebar" data-searchable="true" @endif>
     @if($showBrand)
         <div class="px-4 py-3 border-b border-base-content/10 flex items-center gap-2">
             <a href="{{ $brandHref ?: '#' }}" class="flex items-center gap-2 flex-1">
@@ -121,7 +129,19 @@
             @endif
         </div>
     @endif
-    <ul class="{{ $menuContainerClass }}">
+    @if($searchable && !$effectiveCollapsed)
+        <div class="px-2 py-2 border-b border-base-content/10">
+            <label class="input input-sm">
+                <x-daisy::ui.advanced.icon name="search" :prefix="$iconPrefix" size="sm" class="opacity-50" />
+                <input type="search" 
+                       class="grow" 
+                       placeholder="{{ $searchPlaceholder }}"
+                       data-sidebar-search
+                       aria-label="Rechercher dans le menu">
+            </label>
+        </div>
+    @endif
+    <ul class="{{ $menuContainerClass }}" data-sidebar-menu>
         @forelse($sections as $section)
             @if(!empty($section['label']))
                 <li class="menu-title">{{ __($section['label']) }}</li>

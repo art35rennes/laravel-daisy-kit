@@ -319,6 +319,10 @@ window.DaisyCodeEditor = {
   copy: doCopy,
 };
 
+// Export pour le système data-module (kit/index.js)
+export default init;
+export { init, initAll };
+
 // Auto-initialisation (compatible import tardif)
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initAll);

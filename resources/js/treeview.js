@@ -961,6 +961,10 @@ window.DaisyTreeView = {
   getSelected(root) { return getSelected(root); },
 };
 
+// Export pour le système data-module (kit/index.js)
+export default init;
+export { init, initAll };
+
 // Initialisation automatique (compatible import tardif)
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initAll);
