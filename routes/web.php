@@ -132,6 +132,81 @@ Route::get('/demo/api/tree-search', function (\Illuminate\Http\Request $request)
     return response()->json(['paths' => $paths]);
 })->name('demo.tree.search');
 
+// Endpoint REST pour autocomplete des selects (démo)
+Route::get('/demo/api/select-options', function (\Illuminate\Http\Request $request) {
+    $q = strtolower((string) $request->query('q', ''));
+    // Données factices - mélange simple + contacts (avatar/sous-titre)
+    $pool = [
+        ['value' => 'alpha', 'label' => 'Alpha'],
+        ['value' => 'alpine', 'label' => 'Alpine'],
+        ['value' => 'beta', 'label' => 'Beta'],
+        ['value' => 'bravo', 'label' => 'Bravo'],
+        ['value' => 'charlie', 'label' => 'Charlie'],
+        ['value' => 'delta', 'label' => 'Delta'],
+        ['value' => 'echo', 'label' => 'Echo'],
+        ['value' => 'foxtrot', 'label' => 'Foxtrot'],
+        ['value' => 'golf', 'label' => 'Golf'],
+        ['value' => 'hotel', 'label' => 'Hotel'],
+        ['value' => 'india', 'label' => 'India'],
+        ['value' => 'juliet', 'label' => 'Juliet'],
+        ['value' => 'kilo', 'label' => 'Kilo'],
+        ['value' => 'lima', 'label' => 'Lima'],
+        ['value' => 'mike', 'label' => 'Mike'],
+        ['value' => 'november', 'label' => 'November'],
+        ['value' => 'oscar', 'label' => 'Oscar'],
+        ['value' => 'papa', 'label' => 'Papa'],
+        ['value' => 'quebec', 'label' => 'Quebec'],
+        ['value' => 'romeo', 'label' => 'Romeo'],
+        ['value' => 'sierra', 'label' => 'Sierra'],
+        ['value' => 'tango', 'label' => 'Tango'],
+        ['value' => 'uniform', 'label' => 'Uniform'],
+        ['value' => 'victor', 'label' => 'Victor'],
+        ['value' => 'whiskey', 'label' => 'Whiskey'],
+        ['value' => 'xray', 'label' => 'X-Ray'],
+        ['value' => 'yankee', 'label' => 'Yankee'],
+        ['value' => 'zulu', 'label' => 'Zulu'],
+    ];
+    $contacts = [
+        ['value' => 'c_john', 'label' => 'John Carter', 'subtitle' => 'john.carter@example.com', 'avatar' => '/img/people/people-1.jpg'],
+        ['value' => 'c_jane', 'label' => 'Jane Doe', 'subtitle' => 'jane.doe@example.com', 'avatar' => '/img/people/people-2.jpg'],
+        ['value' => 'c_alex', 'label' => 'Alex Martin', 'subtitle' => 'alex.martin@example.com', 'avatar' => '/img/people/people-3.jpg'],
+        ['value' => 'c_sara', 'label' => 'Sara Kim', 'subtitle' => 'sara.kim@example.com', 'avatar' => '/img/people/people-4.jpg'],
+        ['value' => 'c_luc', 'label' => 'Luc Bernard', 'subtitle' => 'luc.bernard@example.com', 'avatar' => '/img/people/people-5.jpg'],
+    ];
+
+    // Réponse groupée si la requête commence par "@"
+    if (str_starts_with((string) $request->query('q', ''), '@')) {
+        $groups = [
+            ['title' => 'Contacts', 'items' => $contacts],
+            ['title' => 'Mots', 'items' => array_slice($pool, 0, 8)],
+        ];
+
+        return response()->json([
+            'groups' => $groups,
+            'meta' => ['more' => 0],
+        ]);
+    }
+
+    // Réponse items + meta.more
+    $items = [];
+    foreach (array_merge($contacts, $pool) as $item) {
+        $label = strtolower((string) ($item['label'] ?? ''));
+        $value = strtolower((string) ($item['value'] ?? ''));
+        $subtitle = strtolower((string) ($item['subtitle'] ?? ''));
+        if ($q === '' || str_contains($label, $q) || str_contains($value, $q) || ($subtitle !== '' && str_contains($subtitle, $q))) {
+            $items[] = $item;
+        }
+    }
+    $limit = 10;
+    $more = max(0, count($items) - $limit);
+    $items = array_slice($items, 0, $limit);
+
+    return response()->json([
+        'items' => $items,
+        'meta' => ['more' => $more],
+    ]);
+})->name('demo.select.options');
+
 // Pages dédiées aux layouts/templates avancés
 Route::view('/templates', 'daisy-dev::demo.templates.index')->name('templates.index');
 Route::view('/templates/navbar', 'daisy-dev::demo.templates.test-navbar')->name('layouts.navbar');
