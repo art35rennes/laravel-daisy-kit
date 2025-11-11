@@ -1,12 +1,5 @@
 ---
 alwaysApply: true
-description: Règles de raisonnement et d'approche pour le développement et le debugging
 ---
-
-# Règles de raisonnement
-
-## Planification des changements complexes
-When planning a complex code change, think carefully and step-by-step about the change itself. The goal is for the implementation to be as simple as possible. There's no need to over-engineer and anticipate every edge case ever (unless you're writing tests).
-
-## Debugging
-When debugging a problem, make sure you have sufficient information to deeply understand the problem. Your fixes should take care of the problems at the root instead of lazily patching the symptoms or working around them.
+- When planning a complex code change, think carefully and step-by-step about the change itself. The goal is for the implementation to be as simple as possible. There's no need to over-engineer and anticipate every edge case ever (unless you're writing tests).
+- When debugging a problem, make sure you have sufficient information to deeply understand the problem. Your fixes should take care of the problems at the root instead of lazily patching the symptoms or working around them.

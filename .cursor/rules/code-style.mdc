@@ -1,28 +1,17 @@
 ---
 alwaysApply: true
-description: Règles de style de code pour garantir la cohérence et la lisibilité du code
 ---
-
-# Règles de style de code
-
-## Conventions générales
+- All code, comments, signatures, documentation, and tests must be written in English.
 - Always import namespaces.
 - Take inspiration from the codebase.
 - Avoid one letter or ambiguous variable names.
 - Don't create a variable if it's used only once.
 - Comments start with a capital letter and end with a period.
-- I like to not feel claustrophobic in my code. Use space between control structures.
-
-## Formatage
-- Run `php vendor/bin/pint --parallel` to format the code whenever you finish a change.
-
-## Génération de code
+- Use space between control structures for readability.
+- Run `php vendor/bin/pint --parallel` to format code whenever you finish a change.
 - Prefer generating code through Artisan commands to stay up to date with the latest changes.
-
-## Helpers vs Facades
 - Use helper functions instead of Facades if available. E.g., `session()` instead of `Session::get()`.
-
-## Tests
 - Use Real-Time Facades in tests to mock something pulled from the container.
-- When you write tests, run and fix them until they pass. (Use the `--parallel` option to speed up the process.)
-- In tests, fake OpenAI calls using `OpenAI::fake()` with `Responses CreateResponse::fake()` instead of mocking from scratch.
+- Always log via the `Log` facade or helper and favor structured context instead of concatenated strings.
+- Never log sensitive data (passwords, tokens, personally identifiable information).
+- Custom Artisan commands must follow Laravel naming and signature conventions.

@@ -1,37 +1,15 @@
 ---
 alwaysApply: true
-description: Contexte et nature du package Laravel Daisy Kit
 ---
-
-# Contexte du package Laravel Daisy Kit
-
-## Nature du projet
-- Ce dépôt est un **package Laravel**, et non une application. Toutes les évolutions doivent respecter la structure de package Laravel (aucune logique applicative, pas de migration/conflict avec l'application hôte).
-
-## Compatibilité
-- **Compatibilité DaisyUI v5 & Tailwind v4 :**  
-  - Toutes les classes et composants générés doivent être conformes à ces versions.
-  - N'ajoute pas de classes custom CSS ni de configuration Tailwind autre que ce qui existe dans le package hôte du projet.
-
-## Réutilisation des composants
-- Lors de la création ou la modification d'un composant UI, vérifie systématiquement la présence d'un composant similaire dans `resources/views/components/ui/` : privilégie la réutilisation plutôt que la duplication. Les layouts et partials doivent consommer les composants `ui/*` (pas de duplication d'implémentation).
-
-## Icônes
-- Utilise exclusivement le package [`blade-ui-kit/blade-icons`](https://blade-ui-kit.com/blade-icons#search) ainsi que ses collections installées (notamment `davidhsianturi/blade-bootstrap-icons`). N'ajoute jamais de SVG personnalisés dans le code source du package.
-
-## Documentation et démo
-- **Pages de démo/docs (`resources/dev/views/demo/*`)**  
-  - Catalogue vivant piloté par `resources/dev/data/components.json`.
-  - Navigation par catégories, aperçu, variations (tailles/états/couleurs), snippets Blade, interactions JS.
-  - Publier via tag `daisy-dev-views` pour servir de documentation.
-
-## Bonnes pratiques de maintenance
-- Privilégie la factorisation, l'utilisation des props Blade réactives, la clarté.
-- Props Blade plutôt que data-attributes (génération automatique de data-module et dataset).
-- Commentaires: PHPDoc/JSDoc utiles uniquement (rationale, invariants, edge cases). Éviter les évidences.
-
-## Publication
-- Démo/doc vivante sous `resources/dev/views/demo/*`, publiable via tag `daisy-dev-views`.
-- Sources front publiables via tag `daisy-src`.
-
-Respecte strictement ces règles pour garantir la cohérence, la maintenabilité et la facilité d'intégration du package dans tous les contextes Laravel.
+- This repository is a **Laravel package**, not an application. All evolutions must respect Laravel package structure (no application logic, no migrations/conflicts with the host application).
+- All classes and components must comply with daisyUI v5 and Tailwind CSS v4.
+- Never add custom CSS classes or Tailwind configuration beyond what exists in the host project package.
+- Blade namespace: `daisy::`.
+- Component structure: organize by categories in `resources/views/components/ui/{category}/` (inputs, navigation, layout, data-display, overlay, media, feedback, utilities, advanced, partials).
+- Layout and partials components must consume `ui/*` components (no implementation duplication).
+- When creating or modifying a UI component, systematically check for similar components in `resources/views/components/ui/`: prioritize reuse over duplication.
+- Use only `blade-ui-kit/blade-icons` and installed collections. Never add inline SVG in package source code.
+- Demo/docs pages under `resources/dev/views/demo/*`, publishable via `daisy-dev-views` tag for documentation.
+- Front sources publishable via `daisy-src` tag.
+- Prioritize factorization, reactive Blade props usage, clarity.
+- Comments: PHPDoc/JSDoc useful only (rationale, invariants, edge cases). Avoid obvious comments.

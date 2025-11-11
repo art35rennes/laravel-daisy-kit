@@ -1,25 +1,17 @@
 ---
 alwaysApply: true
-description: Organisation et structure des composants UI du package
 ---
-
-# Structure des composants
-
-## Organisation par catégories
-Structure par catégories dans `resources/views/components/ui/`:
-- `inputs/` : button, input, textarea, select, checkbox, radio, range, toggle, file-input, color-picker
-- `navigation/` : breadcrumbs, menu, pagination, navbar, sidebar, tabs, steps, stepper
-- `layout/` : card, hero, footer, divider, list, list-row, stack
-- `data-display/` : badge, avatar, kbd, table, stat, progress, radial-progress, status, timeline
-- `overlay/` : modal, drawer, dropdown, popover, popconfirm, tooltip
-- `media/` : carousel, lightbox, media-gallery, embed, leaflet
-- `feedback/` : alert, toast, loading, skeleton, callout
-- `utilities/` : mockup-*, indicator, dock
-- `advanced/` : calendar-*, chart, code-editor, filter, onboarding, scroll-*, transfer, tree-view, validator, login-button, wysiwyg
-- `partials/` : fragments réutilisables
-
-## Namespace Blade
-- Namespace Blade: `daisy::`.
-
-## Règles de composition
-- Les composants `layout/*` et `partials/*` doivent consommer les composants `ui/*` (pas de duplication d'implémentation).
+- Les composants doivent être organisés par catégories dans `resources/views/components/ui/` :
+  - `inputs/` : button, input, textarea, select, checkbox, radio, range, toggle, file-input, color-picker
+  - `navigation/` : breadcrumbs, menu, pagination, navbar, sidebar, tabs, steps, stepper
+  - `layout/` : card, hero, footer, divider, list, list-row, stack
+  - `data-display/` : badge, avatar, kbd, table, stat, progress, radial-progress, status, timeline
+  - `overlay/` : modal, drawer, dropdown, popover, popconfirm, tooltip
+  - `media/` : carousel, lightbox, media-gallery, embed, leaflet
+  - `feedback/` : alert, toast, loading, skeleton, callout
+  - `utilities/` : mockup-*, indicator, dock
+  - `advanced/` : calendar-*, chart, code-editor, filter, onboarding, scroll-*, transfer, tree-view, validator, login-button, wysiwyg
+  - `partials/` : fragments réutilisables
+- Une catégorie `templates/` est présente dans `resources/views/components/` et contient uniquement des pages ou ensembles de pages complètes prêtes à l'emploi (par exemple : authentification, CRUD, dashboards, etc.).
+- Le namespace Blade utilisé doit être `daisy::`.
+- Les composants de layout et partials consomment exclusivement des composants présents dans `ui/*` sans dupliquer leur implémentation.
