@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\View;
 
 it('renders login-split template', function () {
-    $html = View::make('daisy::components.templates.auth.login-split', [
+    $html = View::make('daisy::templates.auth.login-split', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'backgroundImage' => '/img/divers/divers-6.jpg',
     ])->render();
@@ -14,7 +14,7 @@ it('renders login-split template', function () {
 });
 
 it('renders login-simple template', function () {
-    $html = View::make('daisy::components.templates.auth.login-simple')->render();
+    $html = View::make('daisy::templates.auth.login-simple')->render();
 
     expect($html)
         ->toContain('max-w-md')
@@ -22,7 +22,7 @@ it('renders login-simple template', function () {
 });
 
 it('renders reset-password template', function () {
-    $html = View::make('daisy::components.templates.auth.reset-password')->render();
+    $html = View::make('daisy::templates.auth.reset-password')->render();
 
     expect($html)
         ->toContain(__('auth.reset_password'))
@@ -30,7 +30,7 @@ it('renders reset-password template', function () {
 });
 
 it('renders verify-email template', function () {
-    $html = View::make('daisy::components.templates.auth.verify-email')->render();
+    $html = View::make('daisy::templates.auth.verify-email')->render();
 
     expect($html)
         ->toContain(__('auth.verify_email'))
@@ -38,7 +38,7 @@ it('renders verify-email template', function () {
 });
 
 it('renders resend-verification template', function () {
-    $html = View::make('daisy::components.templates.auth.resend-verification')->render();
+    $html = View::make('daisy::templates.auth.resend-verification')->render();
 
     expect($html)
         ->toContain(__('auth.resend_verification'))
