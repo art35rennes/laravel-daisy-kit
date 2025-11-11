@@ -48,6 +48,53 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Auth Templates --}}
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title text-base">Auth • Login Split</h3>
+                    <p class="text-sm">Page de connexion en deux colonnes avec illustration/témoignage.</p>
+                    <div class="card-actions justify-end">
+                        <a href="{{ route('templates.auth.login-split') }}" class="btn btn-primary btn-sm">Voir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title text-base">Auth • Login Simple</h3>
+                    <p class="text-sm">Page de connexion simple et centrée.</p>
+                    <div class="card-actions justify-end">
+                        <a href="{{ route('templates.auth.login-simple') }}" class="btn btn-primary btn-sm">Voir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title text-base">Auth • Reset Password</h3>
+                    <p class="text-sm">Formulaire d’envoi de lien de réinitialisation.</p>
+                    <div class="card-actions justify-end">
+                        <a href="{{ route('templates.auth.reset-password') }}" class="btn btn-primary btn-sm">Voir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title text-base">Auth • Verify Email</h3>
+                    <p class="text-sm">Confirmation d’email avec bouton de renvoi.</p>
+                    <div class="card-actions justify-end">
+                        <a href="{{ route('templates.auth.verify-email') }}" class="btn btn-primary btn-sm">Voir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title text-base">Auth • Resend Verification</h3>
+                    <p class="text-sm">Formulaire pour renvoyer l’email de vérification.</p>
+                    <div class="card-actions justify-end">
+                        <a href="{{ route('templates.auth.resend-verification') }}" class="btn btn-primary btn-sm">Voir</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 </x-daisy::layout.docs>

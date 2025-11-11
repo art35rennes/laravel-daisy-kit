@@ -46,6 +46,16 @@
                     </div>
                 </div>
             </div>
+
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title text-base">CRUD Layout</h3>
+                    <p class="text-sm">Layout à 2 colonnes (catégorie / inputs) pour les formulaires CRUD, responsive.</p>
+                    <div class="card-actions justify-end">
+                        <a href="{{ route('layouts.crud-layout') }}" class="btn btn-primary btn-sm">Voir</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </x-daisy::layout.app>

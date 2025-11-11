@@ -1,5 +1,5 @@
 attribute,components
-module,"calendar-full, chart, code-editor, scrollspy, tree-view, table, color-picker, file-input, lightbox, media-gallery, sidebar"
+module,"calendar-full, chart, code-editor, scrollspy, tree-view, table, color-picker, file-input, lightbox, media-gallery, sidebar-navigation, sidebar"
 calendar-full,calendar-full
 options,calendar-full
 events,calendar-full
@@ -68,6 +68,7 @@ preview,file-input
 multiple,file-input
 inputmask,input
 uncheckable,radio
+role,select
 lightbox,lightbox
 loop,lightbox
 keyboard,lightbox
@@ -78,12 +79,12 @@ media-gallery,media-gallery
 activation,media-gallery
 auto-height,media-gallery
 position,media-gallery
+searchable,"sidebar-navigation, sidebar"
 width-strategy,sidebar
 wide-class,sidebar
 collapsed-class,sidebar
 collapsed,sidebar
 storage-key,sidebar
-searchable,sidebar
 step-index,stepper
 popconfirm-modal,popconfirm
 popconfirm-action,popconfirm

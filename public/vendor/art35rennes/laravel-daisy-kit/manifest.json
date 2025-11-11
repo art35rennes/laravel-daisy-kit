@@ -247,7 +247,7 @@
     "isDynamicEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-BHLyKoA-.css",
+    "file": "assets/app-Bwf5uS8a.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -256,7 +256,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-C64TR5x8.js",
+    "file": "assets/app-zhZt6pm-.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -266,6 +266,7 @@
     ],
     "dynamicImports": [
       "resources/js/modules/popover.js",
+      "resources/js/modules/select.js",
       "resources/js/modules/sidebar.js",
       "resources/js/code-editor.js",
       "resources/js/color-picker.js",
@@ -287,6 +288,7 @@
       "_chart-BQ4liYMZ.js",
       "resources/js/leaflet/index.js",
       "resources/js/modules/popover.js",
+      "resources/js/modules/select.js",
       "resources/js/modules/sidebar.js",
       "resources/js/code-editor.js",
       "resources/js/color-picker.js",
@@ -329,7 +331,7 @@
     ]
   },
   "resources/js/calendar-full/index.js": {
-    "file": "assets/index-MNTlFITX.js",
+    "file": "assets/index-DoiMLBH1.js",
     "name": "index",
     "src": "resources/js/calendar-full/index.js",
     "isDynamicEntry": true,
@@ -435,6 +437,12 @@
     "file": "assets/popover-C32w8lvy.js",
     "name": "popover",
     "src": "resources/js/modules/popover.js",
+    "isDynamicEntry": true
+  },
+  "resources/js/modules/select.js": {
+    "file": "assets/select-CgFWIf7r.js",
+    "name": "select",
+    "src": "resources/js/modules/select.js",
     "isDynamicEntry": true
   },
   "resources/js/modules/sidebar.js": {

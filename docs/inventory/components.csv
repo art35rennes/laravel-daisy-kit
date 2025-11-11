@@ -53,6 +53,8 @@ select,daisy::components.ui.inputs.select,inputs,"inputs, form",,active
 textarea,daisy::components.ui.inputs.textarea,inputs,"inputs, form",,active
 toggle,daisy::components.ui.inputs.toggle,inputs,inputs,,active
 card,daisy::components.ui.layout.card,layout,layout,,active
+crud-layout,daisy::components.ui.layout.crud-layout,layout,layout,,active
+crud-section,daisy::components.ui.layout.crud-section,layout,layout,,active
 divider,daisy::components.ui.layout.divider,layout,layout,,active
 footer,daisy::components.ui.layout.footer,layout,layout,,active
 grid-layout,daisy::components.ui.layout.grid-layout,layout,layout,,active
@@ -69,9 +71,11 @@ breadcrumbs,daisy::components.ui.navigation.breadcrumbs,navigation,navigation,,a
 menu,daisy::components.ui.navigation.menu,navigation,navigation,,active
 navbar,daisy::components.ui.navigation.navbar,navigation,navigation,,active
 pagination,daisy::components.ui.navigation.pagination,navigation,navigation,,active
+sidebar-navigation,daisy::components.ui.navigation.sidebar-navigation,navigation,navigation,,active
 sidebar,daisy::components.ui.navigation.sidebar,navigation,navigation,,active
 stepper,daisy::components.ui.navigation.stepper,navigation,"navigation, js, async",stepper,active
 steps,daisy::components.ui.navigation.steps,navigation,navigation,,active
+table-of-contents,daisy::components.ui.navigation.table-of-contents,navigation,navigation,,active
 tabs,daisy::components.ui.navigation.tabs,navigation,navigation,,active
 drawer,daisy::components.ui.overlay.drawer,overlay,"overlay, aria, a11y",,active
 dropdown,daisy::components.ui.overlay.dropdown,overlay,overlay,,active

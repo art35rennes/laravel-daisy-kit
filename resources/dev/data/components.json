@@ -1,5 +1,5 @@
 {
-    "generated_at": "2025-11-08T13:52:37+00:00",
+    "generated_at": "2025-11-11T11:17:54+00:00",
     "components": [
         {
             "name": "accordion",
@@ -1237,9 +1237,21 @@
                 "size",
                 "variant",
                 "color",
-                "disabled"
+                "disabled",
+                "search",
+                "autocomplete",
+                "endpoint",
+                "param",
+                "debounce",
+                "minChars",
+                "default",
+                "fetchOnEmpty",
+                "placeholder",
+                "module"
             ],
-            "dataAttributes": []
+            "dataAttributes": [
+                "role"
+            ]
         },
         {
             "name": "textarea",
@@ -1302,6 +1314,45 @@
                 "imageAlt",
                 "imageClass",
                 "figureClass"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "crud-layout",
+            "view": "daisy::components.ui.layout.crud-layout",
+            "category": "layout",
+            "tags": [
+                "layout"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "breakpoint",
+                "container",
+                "gap",
+                "categoryWidth",
+                "contentWidth"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "crud-section",
+            "view": "daisy::components.ui.layout.crud-section",
+            "category": "layout",
+            "tags": [
+                "layout"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "title",
+                "description",
+                "id",
+                "breakpoint",
+                "categoryWidth",
+                "contentWidth",
+                "gap",
+                "borderTop"
             ],
             "dataAttributes": []
         },
@@ -1669,6 +1720,28 @@
             "dataAttributes": []
         },
         {
+            "name": "sidebar-navigation",
+            "view": "daisy::components.ui.navigation.sidebar-navigation",
+            "category": "navigation",
+            "tags": [
+                "navigation"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "label",
+                "children",
+                "href",
+                "items",
+                "current",
+                "searchable"
+            ],
+            "dataAttributes": [
+                "module",
+                "searchable"
+            ]
+        },
+        {
             "name": "sidebar",
             "view": "daisy::components.ui.navigation.sidebar",
             "category": "navigation",
@@ -1760,6 +1833,21 @@
                 "color",
                 "allowClickNav",
                 "rootId"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "table-of-contents",
+            "view": "daisy::components.ui.navigation.table-of-contents",
+            "category": "navigation",
+            "tags": [
+                "navigation"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "sections",
+                "scrollSpy"
             ],
             "dataAttributes": []
         },
