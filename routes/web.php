@@ -207,17 +207,16 @@ Route::get('/demo/api/select-options', function (\Illuminate\Http\Request $reque
     ]);
 })->name('demo.select.options');
 
-// Pages dédiées aux layouts/templates avancés
-Route::view('/templates', 'daisy-dev::demo.templates.index')->name('templates.index');
-Route::view('/templates/navbar', 'daisy-dev::demo.templates.test-navbar')->name('layouts.navbar');
-Route::view('/templates/sidebar', 'daisy-dev::demo.templates.test-sidebar')->name('layouts.sidebar');
-Route::view('/templates/navbar-sidebar', 'daisy-dev::demo.templates.test-navbar-sidebar')->name('layouts.navbar-sidebar');
-Route::view('/templates/grid-layout', 'daisy-dev::demo.templates.test-grid-layout')->name('layouts.grid-layout');
-Route::view('/templates/crud-layout', 'daisy-dev::demo.templates.test-crud-layout')->name('layouts.crud-layout');
+// Routes pour les templates d'authentification
+Route::view('/templates/auth/login-simple', 'daisy::templates.auth.login-simple')->name('templates.auth.login-simple');
+Route::view('/templates/auth/login-split', 'daisy::templates.auth.login-split')->name('templates.auth.login-split');
+Route::view('/templates/auth/reset-password', 'daisy::templates.auth.reset-password')->name('templates.auth.reset-password');
+Route::view('/templates/auth/verify-email', 'daisy::templates.auth.verify-email')->name('templates.auth.verify-email');
+Route::view('/templates/auth/resend-verification', 'daisy::templates.auth.resend-verification')->name('templates.auth.resend-verification');
 
-// Templates d'authentification (pages de démonstration)
-Route::view('/templates/auth/login-split', 'daisy-dev::demo.templates.auth.login-split')->name('templates.auth.login-split');
-Route::view('/templates/auth/login-simple', 'daisy-dev::demo.templates.auth.login-simple')->name('templates.auth.login-simple');
-Route::view('/templates/auth/reset-password', 'daisy-dev::demo.templates.auth.reset-password')->name('templates.auth.reset-password');
-Route::view('/templates/auth/verify-email', 'daisy-dev::demo.templates.auth.verify-email')->name('templates.auth.verify-email');
-Route::view('/templates/auth/resend-verification', 'daisy-dev::demo.templates.auth.resend-verification')->name('templates.auth.resend-verification');
+// Routes pour les layouts
+Route::view('/templates/layouts/navbar', 'daisy-dev::demo.templates.test-navbar')->name('layouts.navbar');
+Route::view('/templates/layouts/sidebar', 'daisy-dev::demo.templates.test-sidebar')->name('layouts.sidebar');
+Route::view('/templates/layouts/navbar-sidebar', 'daisy-dev::demo.templates.test-navbar-sidebar')->name('layouts.navbar-sidebar');
+Route::view('/templates/layouts/grid-layout', 'daisy-dev::demo.templates.test-grid-layout')->name('layouts.grid-layout');
+Route::view('/templates/layouts/crud-layout', 'daisy-dev::demo.templates.test-crud-layout')->name('layouts.crud-layout');
