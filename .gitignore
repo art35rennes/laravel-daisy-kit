@@ -29,3 +29,4 @@ Homestead.json
 .phpactor.json
 auth.json
 /public/vendor/art35rennes/laravel-daisy-kit/assets
+storage/daisy-kit-vite.hot
