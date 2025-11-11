@@ -1,6 +1,7 @@
 @props([
     'items' => [],
     'current' => 1,
+    'stepsContents' => [],
     'vertical' => false,
     'horizontal' => false,
     'horizontalAt' => null,
@@ -102,11 +103,16 @@
                      id="{{ $rootId }}-panel-{{ $stepIndex }}"
                      aria-labelledby="{{ $rootId }}-header-{{ $stepIndex }}"
                  @endif
-                 role="region">
-                 
-                @if (isset(${'step_'.$stepIndex}))
+                 role="region"
+                 aria-hidden="{{ $stepIndex !== (int)$current ? 'true' : 'false' }}">
+                @php
+                    $hasExternalContent = is_array($stepsContents) && array_key_exists($stepIndex, $stepsContents);
+                @endphp
+                @if ($hasExternalContent)
+                    {!! $stepsContents[$stepIndex] instanceof \Illuminate\View\ComponentSlot ? $stepsContents[$stepIndex]->toHtml() : (string) $stepsContents[$stepIndex] !!}
+                @elseif (isset(${'step_'.$stepIndex}))
                     {{ ${'step_'.$stepIndex} }}
-                @else
+                @elseif ($slot->isNotEmpty())
                     {{ $slot }}
                 @endif
             </div>

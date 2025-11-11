@@ -17,7 +17,8 @@
         "davidhsianturi/blade-bootstrap-icons": "^2.1",
         "illuminate/support": "^12.0",
         "illuminate/view": "^12.0",
-        "laravel/framework": "^12.0"
+        "laravel/framework": "^12.0",
+        "laravel/tinker": "^2.10"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.16",

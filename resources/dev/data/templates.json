@@ -1,6 +1,18 @@
 {
-    "generated_at": "2025-01-27T00:00:00+00:00",
+    "generated_at": "2025-11-11T14:06:24+00:00",
     "templates": [
+        {
+            "name": "forgot-password",
+            "category": "auth",
+            "label": "Forgot Password",
+            "description": "Page de demande de réinitialisation de mot de passe.",
+            "route": "templates.auth.forgot-password",
+            "view": "daisy::templates.auth.forgot-password",
+            "tags": [
+                "auth",
+                "password"
+            ]
+        },
         {
             "name": "login-simple",
             "category": "auth",
@@ -8,7 +20,10 @@
             "description": "Page de connexion simple et centrée.",
             "route": "templates.auth.login-simple",
             "view": "daisy::templates.auth.login-simple",
-            "tags": ["auth", "login", "authentication"]
+            "tags": [
+                "auth",
+                "authentication"
+            ]
         },
         {
             "name": "login-split",
@@ -17,25 +32,34 @@
             "description": "Page de connexion en deux colonnes avec illustration/témoignage.",
             "route": "templates.auth.login-split",
             "view": "daisy::templates.auth.login-split",
-            "tags": ["auth", "login", "authentication"]
+            "tags": [
+                "auth",
+                "authentication"
+            ]
         },
         {
-            "name": "reset-password",
+            "name": "register-simple",
             "category": "auth",
-            "label": "Reset Password",
-            "description": "Formulaire d'envoi de lien de réinitialisation.",
-            "route": "templates.auth.reset-password",
-            "view": "daisy::templates.auth.reset-password",
-            "tags": ["auth", "password", "reset"]
+            "label": "Register Simple",
+            "description": "Page d'inscription simple et centrée.",
+            "route": "templates.auth.register-simple",
+            "view": "daisy::templates.auth.register-simple",
+            "tags": [
+                "auth",
+                "signup"
+            ]
         },
         {
-            "name": "verify-email",
+            "name": "register-split",
             "category": "auth",
-            "label": "Verify Email",
-            "description": "Confirmation d'email avec bouton de renvoi.",
-            "route": "templates.auth.verify-email",
-            "view": "daisy::templates.auth.verify-email",
-            "tags": ["auth", "email", "verification"]
+            "label": "Register Split",
+            "description": "Page d'inscription en deux colonnes avec illustration/témoignage.",
+            "route": "templates.auth.register-split",
+            "view": "daisy::templates.auth.register-split",
+            "tags": [
+                "auth",
+                "signup"
+            ]
         },
         {
             "name": "resend-verification",
@@ -44,67 +68,132 @@
             "description": "Formulaire pour renvoyer l'email de vérification.",
             "route": "templates.auth.resend-verification",
             "view": "daisy::templates.auth.resend-verification",
-            "tags": ["auth", "email", "verification"]
+            "tags": [
+                "auth"
+            ]
         },
         {
-            "name": "navbar",
-            "category": "layout",
-            "label": "Navbar Layout",
-            "description": "Barre de navigation en haut de page avec menu horizontal et actions.",
-            "route": "layouts.navbar",
-            "view": "daisy-dev::demo.templates.test-navbar",
-            "tags": ["layout", "navbar", "navigation"]
+            "name": "reset-password",
+            "category": "auth",
+            "label": "Reset Password",
+            "description": "Formulaire d'envoi de lien de réinitialisation.",
+            "route": "templates.auth.reset-password",
+            "view": "daisy::templates.auth.reset-password",
+            "tags": [
+                "auth",
+                "password"
+            ]
         },
         {
-            "name": "sidebar",
-            "category": "layout",
-            "label": "Sidebar Layout",
-            "description": "Barre latérale de navigation avec menu vertical et sous-menus.",
-            "route": "layouts.sidebar",
-            "view": "daisy-dev::demo.templates.test-sidebar",
-            "tags": ["layout", "sidebar", "navigation"]
+            "name": "two-factor",
+            "category": "auth",
+            "label": "Two Factor",
+            "description": "Page d'authentification à deux facteurs (2FA).",
+            "route": "templates.auth.two-factor",
+            "view": "daisy::templates.auth.two-factor",
+            "tags": [
+                "auth"
+            ]
         },
         {
-            "name": "navbar-sidebar",
-            "category": "layout",
-            "label": "Navbar + Sidebar",
-            "description": "Combinaison navbar et sidebar pour applications complexes.",
-            "route": "layouts.navbar-sidebar",
-            "view": "daisy-dev::demo.templates.test-navbar-sidebar",
-            "tags": ["layout", "navbar", "sidebar", "navigation"]
+            "name": "verify-email",
+            "category": "auth",
+            "label": "Verify Email",
+            "description": "Confirmation d'email avec bouton de renvoi.",
+            "route": "templates.auth.verify-email",
+            "view": "daisy::templates.auth.verify-email",
+            "tags": [
+                "auth"
+            ]
         },
         {
-            "name": "grid-layout",
-            "category": "layout",
-            "label": "Grid Layout",
-            "description": "Layout en grille responsive pour affichage de contenu structuré.",
-            "route": "layouts.grid-layout",
-            "view": "daisy-dev::demo.templates.test-grid-layout",
-            "tags": ["layout", "grid", "responsive"]
+            "name": "inline",
+            "category": "form",
+            "label": "Inline",
+            "description": "Template Inline.",
+            "route": "templates.form.inline",
+            "view": "daisy::form.inline",
+            "tags": [
+                "form"
+            ]
         },
         {
-            "name": "crud-layout",
-            "category": "layout",
-            "label": "CRUD Layout",
-            "description": "Layout complet pour interfaces CRUD avec tableaux et formulaires.",
-            "route": "layouts.crud-layout",
-            "view": "daisy-dev::demo.templates.test-crud-layout",
-            "tags": ["layout", "crud", "table", "form"]
+            "name": "with-tabs",
+            "category": "form",
+            "label": "With Tabs",
+            "description": "Template With Tabs.",
+            "route": "templates.form.with-tabs",
+            "view": "daisy::form.with-tabs",
+            "tags": [
+                "form",
+                "tabs"
+            ]
+        },
+        {
+            "name": "wizard",
+            "category": "form",
+            "label": "Wizard",
+            "description": "Template Wizard.",
+            "route": "templates.form.wizard",
+            "view": "daisy::form.wizard",
+            "tags": [
+                "form",
+                "wizard",
+                "multi-step"
+            ]
+        },
+        {
+            "name": "profile-edit",
+            "category": "profile",
+            "label": "Profile Edit",
+            "description": "Page d'édition de profil utilisateur avec formulaire complet.",
+            "route": "templates.profile.edit",
+            "view": "daisy::templates.profile-edit",
+            "tags": [
+                "profile",
+                "user"
+            ]
+        },
+        {
+            "name": "profile-settings",
+            "category": "profile",
+            "label": "Profile Settings",
+            "description": "Page de paramètres de profil avec onglets pour différentes sections.",
+            "route": "templates.profile.settings",
+            "view": "daisy::templates.profile-settings",
+            "tags": [
+                "profile",
+                "user"
+            ]
+        },
+        {
+            "name": "profile-view",
+            "category": "profile",
+            "label": "Profile View",
+            "description": "Page de visualisation de profil utilisateur avec statistiques et badges.",
+            "route": "templates.profile.view",
+            "view": "daisy::templates.profile-view",
+            "tags": [
+                "profile",
+                "user"
+            ]
         }
     ],
     "categories": [
         {
-            "id": "auth",
             "label": "Authentification",
             "description": "Templates pour les pages d'authentification et de gestion de compte.",
             "icon": "lock"
         },
         {
-            "id": "layout",
-            "label": "Layouts",
-            "description": "Templates de structure de page et de navigation.",
-            "icon": "layout"
+            "label": "Formulaires",
+            "description": "Templates de formulaires avec différentes organisations et structures.",
+            "icon": "file-text"
+        },
+        {
+            "label": "Profil utilisateur",
+            "description": "Templates pour la gestion et l'affichage des profils utilisateurs.",
+            "icon": "user"
         }
     ]
 }
-

@@ -20,4 +20,28 @@ return [
     'resend_verification' => 'Renvoyer l\'email de vérification',
     'logout' => 'Se déconnecter',
     'continue_with' => 'Continuer avec :provider',
+    // Register
+    'register' => 'Créer un compte',
+    'already_have_account' => 'Vous avez déjà un compte ?',
+    'sign_in' => 'Se connecter',
+    'accept_terms' => 'J\'accepte les',
+    'terms_link' => 'conditions d\'utilisation',
+    'privacy_link' => 'politique de confidentialité',
+    'and' => 'et la',
+    'name' => 'Nom',
+    'name_placeholder' => 'Votre nom',
+    'first_name' => 'Prénom',
+    'first_name_placeholder' => 'Votre prénom',
+    'password_confirmation' => 'Confirmation du mot de passe',
+    // Forgot password
+    'forgot_password_description' => 'Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.',
+    'remember_password' => 'Vous vous souvenez de votre mot de passe ?',
+    // Two-factor
+    'two_factor' => 'Authentification à deux facteurs',
+    'two_factor_description' => 'Entrez le code à 6 chiffres généré par votre application d\'authentification.',
+    'two_factor_instructions' => 'Ouvrez votre application d\'authentification et entrez le code à 6 chiffres affiché.',
+    'two_factor_code' => 'Code d\'authentification',
+    'two_factor_recovery' => 'Utiliser un code de récupération',
+    'two_factor_logout' => 'Se déconnecter',
+    'verify' => 'Vérifier',
 ];

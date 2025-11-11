@@ -2,6 +2,40 @@
 
 Composants Blade (DaisyUI v5 / Tailwind CSS v4) prêts à l'emploi pour Laravel, fournis en tant que package.
 
+## Mise à jour de la documentation (`/docs`)
+
+Pour mettre à jour la documentation après avoir ajouté, modifié ou supprimé des composants ou templates :
+
+1. **Générer l'inventaire des composants** :
+   ```bash
+   php artisan inventory:components
+   ```
+   Cette commande scanne tous les composants dans `resources/views/components/ui/` et génère :
+   - `resources/dev/data/components.json` : Manifeste JSON complet
+   - `docs/inventory/components.csv` : Inventaire CSV des composants
+   - `docs/inventory/data-attributes.csv` : Inventaire des data-attributes
+   - `docs/inventory/js-deps.json` : Dépendances JavaScript
+
+2. **Générer l'inventaire des templates** :
+   ```bash
+   php artisan inventory:templates
+   ```
+   Cette commande scanne tous les templates dans `resources/views/templates/` et génère :
+   - `resources/dev/data/templates.json` : Manifeste JSON des templates avec catégories et routes
+
+3. **Générer les pages de documentation** :
+   ```bash
+   php artisan docs:generate-pages
+   ```
+   Cette commande génère les pages de documentation dans `resources/dev/views/docs/components/{category}/{component}.blade.php` à partir du manifeste.
+
+   Pour forcer la régénération de toutes les pages (écrase les pages existantes) :
+   ```bash
+   php artisan docs:generate-pages --force
+   ```
+
+**Note** : Exécutez toujours `inventory:components` et `inventory:templates` avant `docs:generate-pages` pour garantir que les manifestes sont à jour.
+
 ## Installation
 
 1. Installer via Composer :

@@ -1,7 +1,7 @@
 # Lot 2 : Templates de profil utilisateur
 
 ## Vue d'ensemble
-Créer trois templates pour la gestion du profil utilisateur : édition, paramètres et affichage. Ces templates utilisent les fonctionnalités Laravel natives (Eloquent, validation, storage, etc.).
+Créer trois templates pour la gestion du profil utilisateur : édition, paramètres et affichage. Ces templates sont **agnostiques des modèles** : ils acceptent des données sous forme de tableaux ou d'objets génériques, permettant leur utilisation avec n'importe quel modèle (User, Customer, Member, etc.) ou même sans modèle.
 
 ## Templates à créer
 
@@ -15,8 +15,17 @@ Créer trois templates pour la gestion du profil utilisateur : édition, paramè
 @props([
     'title' => __('profile.edit_profile'),
     'theme' => null,
-    // User data (from Auth::user() or passed explicitly)
-    'user' => auth()->user(),
+    // Profile data (agnostic: array, object, or model)
+    // Accepts: ['name' => '', 'email' => '', 'avatar' => '', ...] or Model instance
+    'profile' => null, // Auto-detect: auth()->user() if available, or passed explicitly
+    // Data accessors (for model-agnostic access)
+    'nameKey' => 'name', // Key to access name (profile->name, profile['name'], etc.)
+    'emailKey' => 'email',
+    'avatarKey' => 'avatar',
+    'phoneKey' => 'phone',
+    'bioKey' => 'bio',
+    'locationKey' => 'location',
+    'websiteKey' => 'website',
     // Form
     'action' => Route::has('profile.update') ? route('profile.update') : '#',
     'method' => 'POST',
@@ -38,13 +47,20 @@ Créer trois templates pour la gestion du profil utilisateur : édition, paramè
 ```
 
 **Fonctionnalités Laravel** :
-- Utilise `auth()->user()` pour récupérer l'utilisateur connecté
+- **Agnostique des modèles** : Accepte des tableaux, objets ou modèles Eloquent
+- Utilise des accesseurs génériques pour accéder aux données (`data_get()` ou accesseurs personnalisés)
 - Utilise `Route::has()` et `route()` pour les URLs
 - Gère l'upload de fichier avec `enctype="multipart/form-data"`
 - Utilise `old()` pour pré-remplir les champs
 - Gère les erreurs de validation via `$errors`
 - Utilise `@method('PUT')` ou `@method('PATCH')` pour les routes RESTful
 - Utilise `Storage::url()` pour afficher l'avatar existant (si stocké dans storage)
+
+**Accès aux données** :
+Le template utilise `data_get($profile, $key, $default)` pour accéder aux données de manière agnostique :
+- Si `$profile` est un modèle : `data_get($profile, 'name')` → `$profile->name`
+- Si `$profile` est un tableau : `data_get($profile, 'name')` → `$profile['name']`
+- Si `$profile` est un objet : `data_get($profile, 'name')` → `$profile->name`
 
 **Composants UI utilisés** :
 - `x-daisy::layout.app` ou `x-daisy::layout.sidebar-layout` (selon le contexte)
@@ -99,8 +115,12 @@ Créer trois templates pour la gestion du profil utilisateur : édition, paramè
 @props([
     'title' => __('profile.settings'),
     'theme' => null,
-    // User data
-    'user' => auth()->user(),
+    // Profile data (agnostic: array, object, or model)
+    'profile' => null, // Auto-detect: auth()->user() if available, or passed explicitly
+    // Data accessors (for model-agnostic access)
+    'preferencesKey' => 'preferences', // Key to access preferences
+    'languageKey' => 'language',
+    'timezoneKey' => 'timezone',
     // Routes
     'action' => Route::has('profile.settings.update') ? route('profile.settings.update') : '#',
     'method' => 'POST',
@@ -113,11 +133,14 @@ Créer trois templates pour la gestion du profil utilisateur : édition, paramè
     'showPrivacy' => false,
     'showLanguage' => true,
     'showTheme' => true,
+    // Preferences data (can be passed separately or accessed from profile)
+    'preferences' => null, // ['language' => 'fr', 'timezone' => 'Europe/Paris', ...]
 ])
 ```
 
 **Fonctionnalités Laravel** :
-- Utilise `auth()->user()` pour les données utilisateur
+- **Agnostique des modèles** : Accepte des tableaux, objets ou modèles Eloquent
+- Utilise des accesseurs génériques pour accéder aux données (`data_get()` ou accesseurs personnalisés)
 - Utilise les sessions Laravel pour les préférences (langue, thème)
 - Utilise `config('app.locale')` pour la langue par défaut
 - Gère les préférences via des champs de formulaire
@@ -200,29 +223,42 @@ Créer trois templates pour la gestion du profil utilisateur : édition, paramè
 @props([
     'title' => __('profile.profile'),
     'theme' => null,
-    // User data
-    'user' => auth()->user(),
+    // Profile data (agnostic: array, object, or model)
+    'profile' => null, // Auto-detect: auth()->user() if available, or passed explicitly
+    // Data accessors (for model-agnostic access)
+    'nameKey' => 'name',
+    'emailKey' => 'email',
+    'avatarKey' => 'avatar',
+    'bioKey' => 'bio',
+    'locationKey' => 'location',
+    'websiteKey' => 'website',
+    'createdAtKey' => 'created_at', // For "member since"
+    'lastActiveKey' => 'last_active_at', // For "last active"
     // Routes
     'profileEditUrl' => Route::has('profile.edit') ? route('profile.edit') : '#',
     'profileSettingsUrl' => Route::has('profile.settings') ? route('profile.settings') : '#',
-    // Data (can be passed or computed)
+    // Data (can be passed or computed - agnostic format)
     'stats' => [], // ['label' => 'Posts', 'value' => 42, 'icon' => 'file-text']
     'badges' => [], // ['label' => 'Early Adopter', 'color' => 'primary', 'icon' => 'star']
-    'timeline' => [], // Events/activities
+    'timeline' => [], // Events/activities: ['date' => '2024-01-15', 'title' => '...', 'icon' => '...']
     'showStats' => true,
     'showBadges' => true,
     'showTimeline' => true,
     'showBio' => true,
     'showContact' => true,
-    'isOwnProfile' => null, // Auto-detect if user === auth()->user()
+    // Comparison function for isOwnProfile (agnostic)
+    'isOwnProfile' => null, // Auto-detect: compare profile with auth()->user() or use custom function
+    'compareProfile' => null, // Callable: function($profile) { return $profile->id === auth()->id(); }
 ])
 ```
 
 **Fonctionnalités Laravel** :
-- Utilise `auth()->user()` pour détecter si c'est le profil de l'utilisateur connecté
-- Peut utiliser des relations Eloquent pour les stats/timeline
+- **Agnostique des modèles** : Accepte des tableaux, objets ou modèles Eloquent
+- Utilise des accesseurs génériques pour accéder aux données (`data_get()` ou accesseurs personnalisés)
+- Détecte automatiquement si c'est le profil de l'utilisateur connecté (ou utilise une fonction de comparaison personnalisée)
+- Les stats, badges et timeline peuvent être passés en props (format agnostique) ou calculés dans le contrôleur
 - Utilise `Route::has()` et `route()` pour les URLs
-- Peut utiliser des accessors Eloquent pour formater les données
+- Les dates peuvent être formatées avec `Carbon` si disponibles, sinon affichées telles quelles
 
 **Composants UI utilisés** :
 - `x-daisy::layout.app` ou `x-daisy::layout.sidebar-layout`
@@ -309,10 +345,15 @@ Pour chaque template :
 
 ## Notes importantes
 
-- Tous les templates doivent utiliser `auth()->user()` pour récupérer l'utilisateur connecté
-- Les templates doivent gérer le cas où l'utilisateur n'est pas authentifié (redirection ou message)
+- **Agnosticité des modèles** : Les templates acceptent des données sous forme de tableaux, objets ou modèles Eloquent
+- Utilisation de `data_get()` pour accéder aux données de manière agnostique : `data_get($profile, 'name', '')`
+- Les templates peuvent fonctionner sans modèle : passer directement un tableau de données
+- Les templates peuvent fonctionner avec n'importe quel modèle : User, Customer, Member, etc.
+- Les templates doivent gérer le cas où le profil n'est pas fourni (affichage vide ou message)
 - Respecter les conventions Laravel pour les routes RESTful (`profile.edit`, `profile.update`, `profile.show`, etc.)
 - Les traductions doivent être ajoutées dans `resources/lang/fr/profile.php` et `resources/lang/en/profile.php`
 - Pour l'upload d'avatar, utiliser `Storage::disk('public')->put()` et `Storage::url()` pour l'affichage
-- Les stats, badges et timeline peuvent être passés en props ou calculés via des relations Eloquent dans le contrôleur
+- Les stats, badges et timeline doivent être passés en props dans un format agnostique (tableaux)
+- Exemple d'utilisation avec un modèle : `<x-daisy::templates.profile-edit :profile="$user" />`
+- Exemple d'utilisation sans modèle : `<x-daisy::templates.profile-edit :profile="['name' => 'John', 'email' => 'john@example.com']" />`
 

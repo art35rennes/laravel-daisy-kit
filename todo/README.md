@@ -59,26 +59,35 @@ Tous les templates doivent :
 
 1. **Respecter la philosophie Laravel** :
    - Utiliser `Route::has()` et `route()` pour les URLs
-   - Utiliser `auth()->user()` pour l'utilisateur connecté
+   - Utiliser `auth()->user()` pour l'utilisateur connecté (si disponible)
    - Utiliser `old()` pour pré-remplir les champs
    - Gérer les erreurs via `$errors`
    - Utiliser les sessions Laravel quand nécessaire
    - Utiliser `@csrf` pour la protection CSRF
 
-2. **Utiliser exclusivement les composants UI existants** :
+2. **Être agnostiques des modèles** :
+   - Accepter des données sous forme de tableaux, objets ou modèles Eloquent
+   - Utiliser `data_get()` pour accéder aux données de manière agnostique
+   - Permettre l'utilisation avec n'importe quel modèle (User, Customer, Member, etc.)
+   - Permettre l'utilisation sans modèle (données passées directement en props)
+   - Utiliser des accesseurs configurables via props (`nameKey`, `emailKey`, etc.)
+   - Les templates doivent s'adapter au contexte : avec ou sans modèle
+
+3. **Utiliser exclusivement les composants UI existants** :
    - Tous les composants doivent être dans `resources/views/components/ui/`
    - Aucun CSS personnalisé, uniquement Tailwind v4 + daisyUI v5
    - Réutiliser les composants existants au maximum
 
-3. **Respecter les conventions du package** :
+4. **Respecter les conventions du package** :
    - Namespace Blade : `daisy::`
    - Structure : `resources/views/templates/`
    - Traductions dans `resources/lang/fr/` et `resources/lang/en/`
 
-4. **Être testables** :
+5. **Être testables** :
    - Tests de rendu avec Pest
    - Tests de validation
    - Tests d'interactions (browser tests si nécessaire)
+   - Tests avec et sans modèles
 
 ## Composants/Wrappers nécessaires
 
@@ -142,10 +151,37 @@ Chaque template doit avoir :
 ## Notes importantes
 
 - Tous les templates doivent être **Laravel way** : utiliser les helpers, facades, et conventions Laravel
+- **Agnosticité des modèles** : Les templates acceptent des données sous forme de tableaux, objets ou modèles Eloquent
+- Utilisation de `data_get()` pour accéder aux données de manière agnostique : `data_get($profile, 'name', '')`
+- Les templates peuvent fonctionner sans modèle : passer directement des tableaux de données
+- Les templates peuvent fonctionner avec n'importe quel modèle : User, Customer, Member, Conversation, Message, Notification, etc.
 - Aucun CSS personnalisé : uniquement Tailwind v4 + daisyUI v5
 - Les templates doivent être **flexibles** : accepter différents formats de données
 - Les templates doivent être **accessibles** : respecter les standards d'accessibilité
 - Les templates doivent être **responsives** : fonctionner sur tous les écrans
+
+## Exemples d'utilisation agnostique
+
+### Avec un modèle Eloquent
+```blade
+<x-daisy::templates.profile-edit :profile="$user" />
+<x-daisy::templates.chat :conversation="$conversation" :messages="$messages" />
+```
+
+### Sans modèle (tableau)
+```blade
+<x-daisy::templates.profile-edit :profile="['name' => 'John', 'email' => 'john@example.com']" />
+<x-daisy::templates.chat :conversation="['id' => 1, 'name' => 'John']" :messages="[...]" />
+```
+
+### Avec accesseurs personnalisés
+```blade
+<x-daisy::templates.profile-edit 
+    :profile="$customer" 
+    nameKey="full_name"
+    emailKey="email_address"
+/>
+```
 
 ## Questions ou clarifications
 

@@ -1,7 +1,7 @@
 # Lot 4 : Templates de communication
 
 ## Vue d'ensemble
-Créer deux templates pour les fonctionnalités de communication : chat en temps réel et centre de notifications. Ces templates utilisent les fonctionnalités Laravel (Broadcasting, Events, Notifications, etc.).
+Créer deux templates pour les fonctionnalités de communication : chat en temps réel et centre de notifications. Ces templates sont **agnostiques des modèles** : ils acceptent des données sous forme de tableaux ou d'objets génériques, permettant leur utilisation avec n'importe quel modèle (Conversation, Message, Notification, etc.) ou même sans modèle.
 
 ## Templates à créer
 
@@ -15,10 +15,21 @@ Créer deux templates pour les fonctionnalités de communication : chat en temps
 @props([
     'title' => __('chat.messages'),
     'theme' => null,
-    // Current conversation
-    'conversation' => null, // Conversation model or array
-    'messages' => [], // Collection of messages
-    'currentUser' => auth()->user(),
+    // Current conversation (agnostic: array, object, or model)
+    'conversation' => null, // ['id' => 1, 'name' => 'John', 'avatar' => '...', ...] or Model
+    // Messages (agnostic: array of arrays or collection)
+    'messages' => [], // Collection of message data (see structure below)
+    // Current user (agnostic)
+    'currentUser' => null, // Auto-detect: auth()->user() if available, or passed explicitly
+    'currentUserId' => null, // ID to compare with messages (auto-detect from currentUser)
+    // Data accessors (for model-agnostic access)
+    'conversationIdKey' => 'id',
+    'conversationNameKey' => 'name',
+    'conversationAvatarKey' => 'avatar',
+    'messageIdKey' => 'id',
+    'messageUserIdKey' => 'user_id',
+    'messageContentKey' => 'content',
+    'messageCreatedAtKey' => 'created_at',
     // Routes
     'sendMessageUrl' => Route::has('chat.send') ? route('chat.send') : '#',
     'loadMessagesUrl' => Route::has('chat.messages') ? route('chat.messages') : '#',
@@ -35,13 +46,13 @@ Créer deux templates pour les fonctionnalités de communication : chat en temps
 ```
 
 **Fonctionnalités Laravel** :
-- Utilise `auth()->user()` pour l'utilisateur actuel
-- Utilise Laravel Broadcasting (Echo) pour les messages en temps réel
-- Utilise les Events Laravel pour les nouveaux messages
+- **Agnostique des modèles** : Accepte des tableaux, objets ou modèles Eloquent
+- Utilise des accesseurs génériques pour accéder aux données (`data_get()` ou accesseurs personnalisés)
+- Utilise Laravel Broadcasting (Echo) pour les messages en temps réel (si activé)
+- Utilise les Events Laravel pour les nouveaux messages (si activé)
 - Utilise les routes API pour charger les messages
 - Utilise `Route::has()` et `route()` pour les URLs
-- Peut utiliser des relations Eloquent (`conversation->messages`, `message->user`)
-- Utilise `Carbon` pour formater les dates
+- Les dates peuvent être formatées avec `Carbon` si disponibles, sinon affichées telles quelles
 - Utilise `Storage` pour les fichiers uploadés (si activé)
 
 **Composants UI utilisés** :
@@ -68,9 +79,10 @@ Créer deux templates pour les fonctionnalités de communication : chat en temps
     - Indicateur de frappe (si `showTypingIndicator`)
     - Zone de saisie avec boutons d'action
 
-**Exemple de structure de données** :
+**Exemple de structure de données (format agnostique)** :
 
 ```php
+// Format tableau (agnostique)
 $conversation = [
     'id' => 1,
     'name' => 'John Doe',
@@ -89,18 +101,29 @@ $messages = [
         'user_avatar' => '/img/people/people-1.jpg',
         'content' => 'Salut !',
         'created_at' => now()->subMinutes(10),
-        'isOwn' => false,
     ],
     [
         'id' => 2,
         'user_id' => auth()->id(),
-        'user_name' => auth()->user()->name,
-        'user_avatar' => auth()->user()->avatar,
+        'user_name' => 'Jane Doe',
+        'user_avatar' => '/img/people/people-2.jpg',
         'content' => 'Bonjour !',
         'created_at' => now()->subMinutes(5),
-        'isOwn' => true,
     ],
 ];
+
+// Le template détermine automatiquement si un message appartient à l'utilisateur actuel
+// en comparant message['user_id'] avec currentUserId
+```
+
+**Utilisation avec un modèle Eloquent** :
+```php
+// Le template peut aussi accepter des modèles
+$conversation = Conversation::with('participants')->find(1);
+$messages = Message::where('conversation_id', 1)->with('user')->latest()->get();
+
+// Le template utilisera data_get() pour accéder aux propriétés
+// data_get($message, 'user.name') fonctionne avec modèles et tableaux
 ```
 
 **JavaScript nécessaire** :
@@ -141,9 +164,15 @@ $messages = [
 @props([
     'title' => __('notifications.notifications'),
     'theme' => null,
-    // Notifications data
-    'notifications' => [], // Collection of notifications
-    'unreadCount' => null, // Auto-calculate if not provided
+    // Notifications data (agnostic: array of arrays or collection)
+    'notifications' => [], // Collection of notification data (see structure below)
+    'unreadCount' => null, // Auto-calculate if not provided (count where read_at is null)
+    // Data accessors (for model-agnostic access)
+    'notificationIdKey' => 'id',
+    'notificationTypeKey' => 'type',
+    'notificationDataKey' => 'data',
+    'notificationReadAtKey' => 'read_at',
+    'notificationCreatedAtKey' => 'created_at',
     // Routes
     'markAsReadUrl' => Route::has('notifications.read') ? route('notifications.read') : '#',
     'markAllAsReadUrl' => Route::has('notifications.read-all') ? route('notifications.read-all') : '#',
@@ -162,13 +191,15 @@ $messages = [
 ```
 
 **Fonctionnalités Laravel** :
-- Utilise Laravel Notifications (`auth()->user()->notifications`)
-- Utilise `auth()->user()->unreadNotifications` pour les non lues
+- **Agnostique des modèles** : Accepte des tableaux, objets ou modèles Eloquent
+- Utilise des accesseurs génériques pour accéder aux données (`data_get()` ou accesseurs personnalisés)
+- Peut utiliser Laravel Notifications (`auth()->user()->notifications`) si disponible
+- Peut utiliser `auth()->user()->unreadNotifications` pour les non lues si disponible
 - Utilise les routes RESTful pour les actions (read, delete)
-- Utilise Laravel Broadcasting pour les notifications en temps réel
-- Utilise `Carbon` pour formater les dates
-- Utilise la pagination Laravel (`$notifications->links()`)
-- Utilise les types de notifications Laravel (database, mail, etc.)
+- Peut utiliser Laravel Broadcasting pour les notifications en temps réel (si activé)
+- Les dates peuvent être formatées avec `Carbon` si disponibles, sinon affichées telles quelles
+- Peut utiliser la pagination Laravel (`$notifications->links()`) si c'est une collection paginée
+- Accepte n'importe quel format de notification (database, mail, custom, etc.)
 
 **Composants UI utilisés** :
 - `x-daisy::layout.app` ou layout approprié
@@ -202,33 +233,46 @@ $messages = [
 - Pagination en bas (si `pagination`)
 - État vide si aucune notification
 
-**Exemple de structure de données** :
+**Exemple de structure de données (format agnostique)** :
 
 ```php
+// Format tableau (agnostique)
 $notifications = [
     [
         'id' => 1,
-        'type' => 'App\Notifications\NewComment',
+        'type' => 'App\Notifications\NewComment', // ou simplement 'comment'
         'data' => [
             'message' => 'John a commenté votre post',
             'link' => '/posts/123',
             'user' => ['name' => 'John Doe', 'avatar' => '/img/people/people-1.jpg'],
         ],
-        'read_at' => null,
+        'read_at' => null, // null = non lue
         'created_at' => now()->subMinutes(5),
     ],
     [
         'id' => 2,
-        'type' => 'App\Notifications\NewLike',
+        'type' => 'App\Notifications\NewLike', // ou simplement 'like'
         'data' => [
             'message' => 'Jane a aimé votre post',
             'link' => '/posts/456',
             'user' => ['name' => 'Jane Smith', 'avatar' => '/img/people/people-2.jpg'],
         ],
-        'read_at' => now()->subHours(2),
+        'read_at' => now()->subHours(2), // date = lue
         'created_at' => now()->subHours(3),
     ],
 ];
+
+// Le template détermine automatiquement si une notification est lue
+// en vérifiant si read_at est null ou non
+```
+
+**Utilisation avec Laravel Notifications** :
+```php
+// Le template peut aussi accepter des notifications Laravel
+$notifications = auth()->user()->notifications()->paginate(20);
+
+// Le template utilisera data_get() pour accéder aux propriétés
+// data_get($notification, 'data.message') fonctionne avec modèles et tableaux
 ```
 
 **Actions disponibles** :
@@ -329,12 +373,16 @@ Pour chaque template :
 
 ## Notes importantes
 
+- **Agnosticité des modèles** : Les templates acceptent des données sous forme de tableaux, objets ou modèles Eloquent
+- Utilisation de `data_get()` pour accéder aux données de manière agnostique
+- Les templates peuvent fonctionner sans modèle : passer directement des tableaux de données
+- Les templates peuvent fonctionner avec n'importe quel modèle : Conversation, Message, Notification, etc.
 - **chat** : Nécessite Laravel Echo + Pusher/Ably pour le temps réel, ou polling AJAX en fallback
-- **notification-center** : Utilise le système de notifications Laravel (`database` driver recommandé)
+- **notification-center** : Peut utiliser le système de notifications Laravel (`database` driver) ou des données personnalisées
 - Les deux templates peuvent fonctionner sans WebSocket avec du polling AJAX
 - Les routes API doivent être définies dans `routes/api.php` ou `routes/web.php`
 - Les traductions doivent être ajoutées dans `resources/lang/fr/chat.php`, `resources/lang/fr/notifications.php` et leurs équivalents anglais
-- Pour le chat, utiliser les relations Eloquent (`conversation->messages()->with('user')->latest()->paginate()`)
-- Pour les notifications, utiliser `auth()->user()->notifications()->paginate()`
-- Les dates doivent être formatées avec `Carbon` (ex: `$message->created_at->diffForHumans()`)
+- Exemple d'utilisation avec un modèle : `<x-daisy::templates.chat :conversation="$conversation" :messages="$messages" />`
+- Exemple d'utilisation sans modèle : `<x-daisy::templates.chat :conversation="['id' => 1, 'name' => 'John']" :messages="[...]" />`
+- Les dates peuvent être formatées avec `Carbon` si disponibles, sinon affichées telles quelles
 

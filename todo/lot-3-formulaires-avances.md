@@ -60,7 +60,7 @@ Créer trois templates de formulaires avancés utilisant les composants UI exist
 **Exemple d'utilisation** :
 
 ```blade
-<x-daisy::templates.form-wizard
+<x-daisy::form.wizard
     title="Inscription"
     :steps="[
         ['label' => 'Informations', 'icon' => 'user'],
@@ -85,7 +85,7 @@ Créer trois templates de formulaires avancés utilisant les composants UI exist
     <x-slot:step_3>
         <p>Confirmez vos informations...</p>
     </x-slot:step_3>
-</x-daisy::templates.form-wizard>
+</x-daisy::form.wizard>
 ```
 
 **Logique backend recommandée** :
@@ -171,7 +171,7 @@ public function storeWizard(Request $request) {
 **Exemple d'utilisation** :
 
 ```blade
-<x-daisy::templates.form-inline
+<x-daisy::form.inline
     action="{{ route('users.search') }}"
     method="GET"
     submitText="Rechercher"
@@ -197,7 +197,7 @@ public function storeWizard(Request $request) {
         <x-daisy::ui.inputs.button type="submit" size="sm">Rechercher</x-daisy::ui.inputs.button>
         <x-daisy::ui.inputs.button type="reset" variant="ghost" size="sm">Réinitialiser</x-daisy::ui.inputs.button>
     </x-slot:actions>
-</x-daisy::templates.form-inline>
+</x-daisy::form.inline>
 ```
 
 **Traductions nécessaires** :
@@ -258,7 +258,7 @@ public function storeWizard(Request $request) {
 **Exemple d'utilisation** :
 
 ```blade
-<x-daisy::templates.form-with-tabs
+<x-daisy::form.with-tabs
     title="Modifier le profil"
     action="{{ route('profile.update') }}"
     method="POST"
@@ -302,7 +302,7 @@ public function storeWizard(Request $request) {
         <x-daisy::ui.inputs.button type="submit">Enregistrer</x-daisy::ui.inputs.button>
         <x-daisy::ui.inputs.button type="button" variant="ghost" onclick="window.history.back()">Annuler</x-daisy::ui.inputs.button>
     </x-slot:actions>
-</x-daisy::templates.form-with-tabs>
+</x-daisy::form.with-tabs>
 ```
 
 **Logique JavaScript nécessaire** :

@@ -76,7 +76,14 @@
             @endforeach>
             
             @if($stepData['icon'])
-                <span class="step-icon">{!! $stepData['icon'] !!}</span>
+                <span class="step-icon">
+                    @php $__icon = $stepData['icon']; @endphp
+                    @if(is_string($__icon) && !str_contains($__icon, '<'))
+                        <x-daisy::ui.advanced.icon :name="$__icon" size="sm" />
+                    @else
+                        {!! $__icon !!}
+                    @endif
+                </span>
             @endif
             
             {{ $stepData['label'] }}

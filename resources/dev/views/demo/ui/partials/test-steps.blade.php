@@ -13,9 +13,9 @@
 
         <!-- Icônes personnalisées + couleurs par étape -->
         <x-daisy::ui.navigation.steps :current="2" :items="[
-            ['label' => 'Step 1', 'icon' => '😕', 'color' => 'neutral'],
-            ['label' => 'Step 2', 'icon' => '😃', 'color' => 'neutral'],
-            ['label' => 'Step 3', 'icon' => '😍'],
+            ['label' => 'Step 1', 'icon' => 'x-circle', 'color' => 'neutral'],
+            ['label' => 'Step 2', 'icon' => 'check-circle', 'color' => 'neutral'],
+            ['label' => 'Step 3', 'icon' => 'heart-fill'],
         ]" />
     </div>
 </section>

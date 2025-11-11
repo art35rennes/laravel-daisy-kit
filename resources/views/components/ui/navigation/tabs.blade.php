@@ -52,9 +52,9 @@
                 $tabClasses = 'tab'.($isActive ? ' tab-active' : '').($isDisabled ? ' tab-disabled' : '');
             @endphp
             @if($href)
-                <a role="tab" href="{{ $href }}" class="{{ $tabClasses }}">{{ $label }}</a>
+                <a role="tab" href="{{ $href }}" class="{{ $tabClasses }}" aria-selected="{{ $isActive ? 'true' : 'false' }}">{!! $label !!}</a>
             @else
-                <button role="tab" class="{{ $tabClasses }}" @disabled($isDisabled)>{{ $label }}</button>
+                <button role="tab" class="{{ $tabClasses }}" @disabled($isDisabled) aria-selected="{{ $isActive ? 'true' : 'false' }}">{!! $label !!}</button>
             @endif
         @endforeach
     </div>
