@@ -1,7 +1,41 @@
-<x-daisy::layout.app title="DaisyUI Kit - Demo">
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1 class="text-xl sm:text-2xl font-semibold">DaisyUI Kit - Demo</h1>
-    </div>
+@php
+    $prefix = config('daisy-kit.docs.prefix', 'docs');
+@endphp
+<x-daisy::layout.app title="DaisyUI Kit - Demo" :container="false">
+    {{-- Navbar avec navigation Docs/Démo/Template --}}
+    <x-daisy::ui.navigation.navbar bg="base-100" shadow="sm" fixed="false" class="border-b border-base-200">
+        <x-slot:start>
+            <h1 class="text-lg font-semibold">DaisyUI Kit</h1>
+        </x-slot:start>
+        <x-slot:center>
+            <div class="join">
+                @if (Route::has('daisy.docs.index'))
+                    <a href="{{ route('daisy.docs.index') }}" class="btn btn-sm join-item btn-ghost">Docs</a>
+                @else
+                    <a href="/{{ $prefix }}" class="btn btn-sm join-item btn-ghost">Docs</a>
+                @endif
+                <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost btn-active">Démo</a>
+                @if (Route::has('daisy.docs.templates'))
+                    <a href="{{ route('daisy.docs.templates') }}" class="btn btn-sm join-item btn-ghost">Template</a>
+                @else
+                    <a href="/{{ $prefix }}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
+                @endif
+            </div>
+        </x-slot:center>
+        <x-slot:end>
+            <x-daisy::ui.advanced.theme-controller 
+                variant="dropdown" 
+                :themes="['light', 'dark', 'cupcake', 'bumblebee', 'emerald', 'corporate', 'synthwave', 'retro', 'cyberpunk', 'valentine', 'halloween', 'garden', 'forest', 'aqua', 'lofi', 'pastel', 'fantasy', 'wireframe', 'black', 'luxury', 'dracula', 'cmyk', 'autumn', 'business', 'acid', 'lemonade', 'night', 'coffee', 'winter']"
+                label="Theme"
+                size="sm"
+            />
+        </x-slot:end>
+    </x-daisy::ui.navigation.navbar>
+
+    <div class="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <h1 class="text-xl sm:text-2xl font-semibold">DaisyUI Kit - Demo</h1>
+        </div>
     
     <!-- Sélecteur de thème flottant -->
     <div id="themePicker" class="fixed top-4 right-4 z-50 hidden md:block">

@@ -24,7 +24,9 @@
             <nav class="flex items-center justify-between gap-4">
                 <div class="flex items-center gap-3">
                     <a href="{{ route('demo') }}" class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal">Demo</a>
-                    <a href="{{ route('templates.index') }}" class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal">Templates</a>
+                    @if (Route::has('daisy.docs.templates'))
+                        <a href="{{ route('daisy.docs.templates') }}" class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal">Templates</a>
+                    @endif
                 </div>
                 @if (Route::has('login'))
                 <div class="flex items-center gap-3">
