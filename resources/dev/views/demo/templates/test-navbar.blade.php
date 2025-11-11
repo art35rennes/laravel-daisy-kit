@@ -25,7 +25,14 @@
         <button class="btn btn-ghost btn-circle">
             <x-daisy::ui.advanced.icon name="bell" size="lg" />
         </button>
-        <a class="btn" href="{{ route('templates.index') }}">Templates</a>
+        @php
+            $prefix = config('daisy-kit.docs.prefix', 'docs');
+        @endphp
+        @if (Route::has('daisy.docs.templates'))
+            <a class="btn" href="{{ route('daisy.docs.templates') }}">Templates</a>
+        @else
+            <a class="btn" href="/{{ $prefix }}/templates">Templates</a>
+        @endif
     </x-slot:actions>
 
     <div class="grid gap-4 md:grid-cols-2">

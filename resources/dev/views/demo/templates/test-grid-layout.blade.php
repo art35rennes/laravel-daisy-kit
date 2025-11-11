@@ -1,6 +1,13 @@
+@php
+    $prefix = config('daisy-kit.docs.prefix', 'docs');
+@endphp
 <x-daisy::layout.navbar-layout title="Template · Grid Layout">
     <x-slot:navbarStart>
-        <a href="{{ route('templates.index') }}" class="btn btn-ghost btn-sm">Templates</a>
+        @if (Route::has('daisy.docs.templates'))
+            <a href="{{ route('daisy.docs.templates') }}" class="btn btn-ghost btn-sm">Templates</a>
+        @else
+            <a href="/{{ $prefix }}/templates" class="btn btn-ghost btn-sm">Templates</a>
+        @endif
     </x-slot:navbarStart>
 
     <div class="space-y-6">
