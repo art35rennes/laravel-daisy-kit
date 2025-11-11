@@ -77,6 +77,108 @@ class DocsHelper
         return is_array($data) ? $data : ['components' => []];
     }
 
+    /**
+     * Retourne tous les templates organisés par catégorie.
+     *
+     * @return array<string, array<string,mixed>>
+     */
+    public static function getTemplatesByCategory(): array
+    {
+        $manifest = self::readTemplatesManifest();
+        $grouped = [];
+        foreach ($manifest['templates'] ?? [] as $template) {
+            $category = (string) ($template['category'] ?? 'misc');
+            if (! isset($grouped[$category])) {
+                $grouped[$category] = [
+                    'category' => self::getCategoryInfo($category, $manifest),
+                    'templates' => [],
+                ];
+            }
+            $grouped[$category]['templates'][] = $template;
+        }
+        // Ordonner les catégories par ordre défini dans le manifest
+        $orderedCategories = array_column($manifest['categories'] ?? [], 'id');
+        $ordered = [];
+        foreach ($orderedCategories as $catId) {
+            if (isset($grouped[$catId])) {
+                $ordered[$catId] = $grouped[$catId];
+            }
+        }
+        // Ajouter les catégories non définies dans l'ordre
+        foreach ($grouped as $catId => $data) {
+            if (! isset($ordered[$catId])) {
+                $ordered[$catId] = $data;
+            }
+        }
+
+        return $ordered;
+    }
+
+    /**
+     * Retourne les informations d'une catégorie depuis le manifest.
+     *
+     * @return array<string,mixed>
+     */
+    public static function getCategoryInfo(string $categoryId, ?array $manifest = null): array
+    {
+        $manifest = $manifest ?? self::readTemplatesManifest();
+        foreach ($manifest['categories'] ?? [] as $cat) {
+            if (($cat['id'] ?? '') === $categoryId) {
+                return [
+                    'id' => $cat['id'],
+                    'label' => $cat['label'] ?? self::labelize($categoryId),
+                    'description' => $cat['description'] ?? '',
+                    'icon' => $cat['icon'] ?? null,
+                ];
+            }
+        }
+
+        return [
+            'id' => $categoryId,
+            'label' => self::labelize($categoryId),
+            'description' => '',
+            'icon' => null,
+        ];
+    }
+
+    /**
+     * Retourne toutes les catégories de templates.
+     *
+     * @return array<int, array<string,mixed>>
+     */
+    public static function getTemplateCategories(): array
+    {
+        $manifest = self::readTemplatesManifest();
+        $categories = [];
+        foreach ($manifest['categories'] ?? [] as $cat) {
+            $categories[] = [
+                'id' => $cat['id'] ?? '',
+                'label' => $cat['label'] ?? self::labelize($cat['id'] ?? ''),
+                'description' => $cat['description'] ?? '',
+                'icon' => $cat['icon'] ?? null,
+            ];
+        }
+
+        return $categories;
+    }
+
+    /**
+     * Lecture du fichier manifeste des templates.
+     *
+     * @return array<string,mixed>
+     */
+    private static function readTemplatesManifest(): array
+    {
+        $path = resource_path('dev/data/templates.json');
+        if (! File::exists($path)) {
+            return ['templates' => [], 'categories' => []];
+        }
+        $json = File::get($path);
+        $data = json_decode($json, true);
+
+        return is_array($data) ? $data : ['templates' => [], 'categories' => []];
+    }
+
     private static function labelize(string $slug): string
     {
         // Essayer d'abord la traduction

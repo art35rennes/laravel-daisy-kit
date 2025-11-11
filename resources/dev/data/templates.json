@@ -1,0 +1,110 @@
+{
+    "generated_at": "2025-01-27T00:00:00+00:00",
+    "templates": [
+        {
+            "name": "login-simple",
+            "category": "auth",
+            "label": "Login Simple",
+            "description": "Page de connexion simple et centrée.",
+            "route": "templates.auth.login-simple",
+            "view": "daisy::templates.auth.login-simple",
+            "tags": ["auth", "login", "authentication"]
+        },
+        {
+            "name": "login-split",
+            "category": "auth",
+            "label": "Login Split",
+            "description": "Page de connexion en deux colonnes avec illustration/témoignage.",
+            "route": "templates.auth.login-split",
+            "view": "daisy::templates.auth.login-split",
+            "tags": ["auth", "login", "authentication"]
+        },
+        {
+            "name": "reset-password",
+            "category": "auth",
+            "label": "Reset Password",
+            "description": "Formulaire d'envoi de lien de réinitialisation.",
+            "route": "templates.auth.reset-password",
+            "view": "daisy::templates.auth.reset-password",
+            "tags": ["auth", "password", "reset"]
+        },
+        {
+            "name": "verify-email",
+            "category": "auth",
+            "label": "Verify Email",
+            "description": "Confirmation d'email avec bouton de renvoi.",
+            "route": "templates.auth.verify-email",
+            "view": "daisy::templates.auth.verify-email",
+            "tags": ["auth", "email", "verification"]
+        },
+        {
+            "name": "resend-verification",
+            "category": "auth",
+            "label": "Resend Verification",
+            "description": "Formulaire pour renvoyer l'email de vérification.",
+            "route": "templates.auth.resend-verification",
+            "view": "daisy::templates.auth.resend-verification",
+            "tags": ["auth", "email", "verification"]
+        },
+        {
+            "name": "navbar",
+            "category": "layout",
+            "label": "Navbar Layout",
+            "description": "Barre de navigation en haut de page avec menu horizontal et actions.",
+            "route": "layouts.navbar",
+            "view": "daisy-dev::demo.templates.test-navbar",
+            "tags": ["layout", "navbar", "navigation"]
+        },
+        {
+            "name": "sidebar",
+            "category": "layout",
+            "label": "Sidebar Layout",
+            "description": "Barre latérale de navigation avec menu vertical et sous-menus.",
+            "route": "layouts.sidebar",
+            "view": "daisy-dev::demo.templates.test-sidebar",
+            "tags": ["layout", "sidebar", "navigation"]
+        },
+        {
+            "name": "navbar-sidebar",
+            "category": "layout",
+            "label": "Navbar + Sidebar",
+            "description": "Combinaison navbar et sidebar pour applications complexes.",
+            "route": "layouts.navbar-sidebar",
+            "view": "daisy-dev::demo.templates.test-navbar-sidebar",
+            "tags": ["layout", "navbar", "sidebar", "navigation"]
+        },
+        {
+            "name": "grid-layout",
+            "category": "layout",
+            "label": "Grid Layout",
+            "description": "Layout en grille responsive pour affichage de contenu structuré.",
+            "route": "layouts.grid-layout",
+            "view": "daisy-dev::demo.templates.test-grid-layout",
+            "tags": ["layout", "grid", "responsive"]
+        },
+        {
+            "name": "crud-layout",
+            "category": "layout",
+            "label": "CRUD Layout",
+            "description": "Layout complet pour interfaces CRUD avec tableaux et formulaires.",
+            "route": "layouts.crud-layout",
+            "view": "daisy-dev::demo.templates.test-crud-layout",
+            "tags": ["layout", "crud", "table", "form"]
+        }
+    ],
+    "categories": [
+        {
+            "id": "auth",
+            "label": "Authentification",
+            "description": "Templates pour les pages d'authentification et de gestion de compte.",
+            "icon": "lock"
+        },
+        {
+            "id": "layout",
+            "label": "Layouts",
+            "description": "Templates de structure de page et de navigation.",
+            "icon": "layout"
+        }
+    ]
+}
+
