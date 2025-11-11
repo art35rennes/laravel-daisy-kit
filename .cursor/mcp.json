@@ -10,10 +10,10 @@
         "herd": {
             "command": "php",
             "args": [
-                "C:/Users/arthu/.config/herd/bin/herd-mcp.phar"
+                "/Applications/Herd.app/Contents/Resources/herd-mcp.phar"
             ],
             "env": {
-                "SITE_PATH": "C:\\Users\\arthu\\Documents\\GitHub\\laravel-daisy-kit"
+                "SITE_PATH": "/Users/asicard/Documents/GitHub/laravel-daisy-kit"
             }
         }
     }
