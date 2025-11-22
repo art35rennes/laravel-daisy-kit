@@ -19,9 +19,9 @@ Templates d'authentification pour compléter la collection existante :
 **Fichier** : `lot-2-profil-utilisateur.md`
 
 Templates pour la gestion du profil utilisateur :
-- `profile-edit.blade.php`
-- `profile-settings.blade.php`
-- `profile-view.blade.php`
+- `profile/profile-edit.blade.php`
+- `profile/profile-settings.blade.php`
+- `profile/profile-view.blade.php`
 
 ### Lot 3 : Formulaires avancés
 **Fichier** : `lot-3-formulaires-avances.md`
@@ -164,19 +164,19 @@ Chaque template doit avoir :
 
 ### Avec un modèle Eloquent
 ```blade
-<x-daisy::templates.profile-edit :profile="$user" />
+<x-daisy::templates.profile.profile-edit :profile="$user" />
 <x-daisy::templates.chat :conversation="$conversation" :messages="$messages" />
 ```
 
 ### Sans modèle (tableau)
 ```blade
-<x-daisy::templates.profile-edit :profile="['name' => 'John', 'email' => 'john@example.com']" />
+<x-daisy::templates.profile.profile-edit :profile="['name' => 'John', 'email' => 'john@example.com']" />
 <x-daisy::templates.chat :conversation="['id' => 1, 'name' => 'John']" :messages="[...]" />
 ```
 
 ### Avec accesseurs personnalisés
 ```blade
-<x-daisy::templates.profile-edit 
+<x-daisy::templates.profile.profile-edit 
     :profile="$customer" 
     nameKey="full_name"
     emailKey="email_address"

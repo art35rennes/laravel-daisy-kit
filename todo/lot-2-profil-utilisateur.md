@@ -6,7 +6,7 @@ Créer trois templates pour la gestion du profil utilisateur : édition, paramè
 ## Templates à créer
 
 ### 1. profile-edit.blade.php
-**Fichier** : `resources/views/templates/profile-edit.blade.php`
+**Fichier** : `resources/views/templates/profile/profile-edit.blade.php`
 
 **Description** : Page d'édition du profil utilisateur avec upload d'avatar, formulaire de modification des informations personnelles.
 
@@ -106,7 +106,7 @@ Le template utilise `data_get($profile, $key, $default)` pour accéder aux donn�
 ---
 
 ### 2. profile-settings.blade.php
-**Fichier** : `resources/views/templates/profile-settings.blade.php`
+**Fichier** : `resources/views/templates/profile/profile-settings.blade.php`
 
 **Description** : Page de paramètres utilisateur (préférences, notifications, sécurité, etc.).
 
@@ -214,7 +214,7 @@ Le template utilise `data_get($profile, $key, $default)` pour accéder aux donn�
 ---
 
 ### 3. profile-view.blade.php
-**Fichier** : `resources/views/templates/profile-view.blade.php`
+**Fichier** : `resources/views/templates/profile/profile-view.blade.php`
 
 **Description** : Page d'affichage du profil utilisateur (lecture seule) avec timeline, badges, statistiques.
 
@@ -337,9 +337,9 @@ Pour chaque template :
 
 ## Ordre d'implémentation recommandé
 
-1. `profile-view.blade.php` (lecture seule, le plus simple)
-2. `profile-edit.blade.php` (formulaire classique)
-3. `profile-settings.blade.php` (le plus complexe avec tabs)
+1. `profile/profile-view.blade.php` (lecture seule, le plus simple)
+2. `profile/profile-edit.blade.php` (formulaire classique)
+3. `profile/profile-settings.blade.php` (le plus complexe avec tabs)
 
 ---
 
@@ -354,6 +354,6 @@ Pour chaque template :
 - Les traductions doivent être ajoutées dans `resources/lang/fr/profile.php` et `resources/lang/en/profile.php`
 - Pour l'upload d'avatar, utiliser `Storage::disk('public')->put()` et `Storage::url()` pour l'affichage
 - Les stats, badges et timeline doivent être passés en props dans un format agnostique (tableaux)
-- Exemple d'utilisation avec un modèle : `<x-daisy::templates.profile-edit :profile="$user" />`
-- Exemple d'utilisation sans modèle : `<x-daisy::templates.profile-edit :profile="['name' => 'John', 'email' => 'john@example.com']" />`
+- Exemple d'utilisation avec un modèle : `<x-daisy::templates.profile.profile-edit :profile="$user" />`
+- Exemple d'utilisation sans modèle : `<x-daisy::templates.profile.profile-edit :profile="['name' => 'John', 'email' => 'john@example.com']" />`
 
