@@ -11,7 +11,7 @@
     $props = DocsHelper::getComponentProps('inputs', 'button');
 @endphp
 
-<x-daisy::layout.docs title="Bouton" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
+<x-daisy::layout.docs title="Button" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
     <x-slot:navbar>
         <div class="join">
             <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
@@ -21,7 +21,7 @@
     </x-slot:navbar>
 
     <section id="intro">
-        <h1>Bouton</h1>
+        <h1>Button</h1>
         <p>Un composant d'action compatible daisyUI. Utilisez les props pour contrôler le style, la taille et l'état.</p>
     </section>
 

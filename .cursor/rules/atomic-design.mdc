@@ -1,0 +1,44 @@
+---
+alwaysApply: true
+---
+# Atomic Design - Principles
+
+This package follows Atomic Design principles to organize components into 5 hierarchical levels.
+
+## The 5 levels
+
+1. **ATOMS**: Basic elements with no dependencies on other UI components
+2. **MOLECULES**: Simple combinations of multiple atoms
+3. **ORGANISMS**: Complex combinations of molecules and/or atoms
+4. **TEMPLATES**: Page structures using organisms
+5. **PAGES**: Template instances with real content (outside this package)
+
+## Fundamental rules
+
+### Strict hierarchy
+- Atoms → depend on nothing
+- Molecules → depend only on atoms
+- Organisms → depend on molecules/atoms
+- Templates → depend on organisms/molecules/atoms
+
+### No duplication
+- If code is duplicated, extract a reusable component at the appropriate level
+
+### Logical placement
+- Components are placed by functional category, not by Atomic Design level
+- Example: a chat component (molecule or organism) goes in `communication/`, not in `advanced/`
+
+### Maximum reuse
+- Always check if a component exists before creating a new one
+- Prefer composition over duplication
+
+### Limited complexity
+- If a component exceeds ~150 lines or contains too much logic, decompose it
+
+## Quick check
+
+Before creating/modifying a component:
+1. What level? (atom/molecule/organism/template)
+2. Is there duplication? → Extract a component
+3. Logical placement? (functional category)
+4. Too complex? → Decompose

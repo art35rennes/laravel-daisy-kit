@@ -8,10 +8,10 @@
             ['id' => 'variants', 'label' => 'Variantes'],
             ['id' => 'api', 'label' => 'API'],
         ];
-    $props = DocsHelper::getComponentProps('communication', 'chat-bubble');
+    $props = DocsHelper::getComponentProps('feedback', 'empty-state');
 @endphp
 
-<x-daisy::layout.docs title="Chat Bubble" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
+<x-daisy::layout.docs title="Empty State" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
     <x-slot:navbar>
         <div class="join">
             <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
@@ -21,27 +21,23 @@
     </x-slot:navbar>
 
     <section id="intro">
-        <h1>Chat Bubble</h1>
-        <p>Bulle de conversation.</p>
+        <h1>Empty State</h1>
+        <p>Composant compatible daisyUI v5 et Tailwind CSS v4.</p>
     </section>
 
     <section id="base" class="mt-10">
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
-            <input type="radio" name="base-example-chat-bubble" class="tab" aria-label="Preview" checked />
+            <input type="radio" name="base-example-empty-state" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.communication.chat-bubble align="start" name="Alice" time="14:30">
-    Bonjour, comment allez-vous ?
-</x-daisy::ui.communication.chat-bubble>
+                    <x-daisy::ui.feedback.empty-state />
                 </div>
             </div>
-            <input type="radio" name="base-example-chat-bubble" class="tab" aria-label="Code" />
+            <input type="radio" name="base-example-empty-state" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.communication.chat-bubble align="start" name="Alice" time="14:30">
-    Bonjour, comment allez-vous ?
-</x-daisy::ui.communication.chat-bubble>';
+                    $baseCode = '<x-daisy::ui.feedback.empty-state />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 
@@ -61,18 +57,18 @@
     <section id="variants" class="mt-10">
         <h2>Variantes</h2>
         <div class="tabs tabs-box">
-            <input type="radio" name="variants-example-chat-bubble" class="tab" aria-label="Preview" checked />
+            <input type="radio" name="variants-example-empty-state" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose flex flex-wrap items-center gap-3">
-                    <x-daisy::ui.communication.chat-bubble color="primary">Primary</x-daisy::ui.communication.chat-bubble>
-                    <x-daisy::ui.communication.chat-bubble color="secondary">Secondary</x-daisy::ui.communication.chat-bubble>
+                    <x-daisy::ui.feedback.empty-state size="sm">Small</x-daisy::ui.feedback.empty-state>
+                    <x-daisy::ui.feedback.empty-state size="lg">Large</x-daisy::ui.feedback.empty-state>
                 </div>
             </div>
-            <input type="radio" name="variants-example-chat-bubble" class="tab" aria-label="Code" />
+            <input type="radio" name="variants-example-empty-state" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $variantsCode = '&lt;x-daisy::ui.communication.chat-bubble color=&quot;primary&quot;&gt;Primary&lt;/x-daisy::ui.communication.chat-bubble&gt;
-&lt;x-daisy::ui.communication.chat-bubble color=&quot;secondary&quot;&gt;Secondary&lt;/x-daisy::ui.communication.chat-bubble&gt;';
+                    $variantsCode = '&lt;x-daisy::ui.feedback.empty-state size=&quot;sm&quot;&gt;Small&lt;/x-daisy::ui.feedback.empty-state&gt;
+&lt;x-daisy::ui.feedback.empty-state size=&quot;lg&quot;&gt;Large&lt;/x-daisy::ui.feedback.empty-state&gt;';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

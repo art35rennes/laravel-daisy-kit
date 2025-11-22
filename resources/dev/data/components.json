@@ -1,5 +1,5 @@
 {
-    "generated_at": "2025-11-11T14:06:18+00:00",
+    "generated_at": "2025-11-22T20:49:25+00:00",
     "components": [
         {
             "name": "accordion",
@@ -156,10 +156,10 @@
         },
         {
             "name": "chat-bubble",
-            "view": "daisy::components.ui.advanced.chat-bubble",
-            "category": "advanced",
+            "view": "daisy::components.ui.communication.chat-bubble",
+            "category": "communication",
             "tags": [
-                "advanced"
+                "communication"
             ],
             "jsModule": null,
             "status": "active",
@@ -759,6 +759,279 @@
             ]
         },
         {
+            "name": "chat-header",
+            "view": "daisy::components.ui.communication.chat-header",
+            "category": "communication",
+            "tags": [
+                "communication"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "conversation",
+                "showBackButton",
+                "backUrl",
+                "conversationIdKey",
+                "conversationNameKey",
+                "conversationAvatarKey",
+                "conversationIsOnlineKey"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "chat-input",
+            "view": "daisy::components.ui.communication.chat-input",
+            "category": "communication",
+            "tags": [
+                "communication"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "sendMessageUrl",
+                "typingUrl",
+                "enableFileUpload",
+                "maxFileSize",
+                "multipleFiles",
+                "showFilePreview",
+                "acceptedFileTypes",
+                "placeholder",
+                "useWebSockets",
+                "autoReconnect",
+                "conversationIdKey"
+            ],
+            "dataAttributes": [
+                "module",
+                "send-message-url",
+                "typing-url",
+                "enable-file-upload",
+                "max-file-size",
+                "multiple-files",
+                "show-file-preview",
+                "use-websockets",
+                "auto-reconnect"
+            ]
+        },
+        {
+            "name": "chat-messages",
+            "view": "daisy::components.ui.communication.chat-messages",
+            "category": "communication",
+            "tags": [
+                "communication"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "messages",
+                "currentUserId",
+                "showTypingIndicator",
+                "typingUsers",
+                "loadMessagesUrl",
+                "useWebSockets",
+                "pollingInterval",
+                "autoReconnect",
+                "reconnectDelay",
+                "messageIdKey",
+                "messageUserIdKey",
+                "messageContentKey",
+                "messageCreatedAtKey",
+                "messageUserNameKey",
+                "messageUserAvatarKey",
+                "messageAttachmentKey",
+                "messageAttachmentsKey"
+            ],
+            "dataAttributes": [
+                "module",
+                "load-messages-url",
+                "current-user-id",
+                "use-websockets",
+                "polling-interval",
+                "auto-reconnect",
+                "reconnect-delay",
+                "message-id-key",
+                "message-user-id-key",
+                "message-content-key",
+                "message-created-at-key",
+                "message-user-name-key",
+                "message-user-avatar-key"
+            ]
+        },
+        {
+            "name": "chat-sidebar",
+            "view": "daisy::components.ui.communication.chat-sidebar",
+            "category": "communication",
+            "tags": [
+                "communication"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "conversations",
+                "currentConversationId",
+                "showUserList",
+                "onlineUsers",
+                "conversationsUrl",
+                "conversationIdKey",
+                "conversationNameKey",
+                "conversationAvatarKey",
+                "conversationLastMessageKey",
+                "conversationUnreadCountKey",
+                "conversationIsOnlineKey"
+            ],
+            "dataAttributes": [
+                "conversation-id"
+            ]
+        },
+        {
+            "name": "chat-widget",
+            "view": "daisy::components.ui.communication.chat-widget",
+            "category": "communication",
+            "tags": [
+                "communication"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "conversation",
+                "messages",
+                "currentUserId",
+                "position",
+                "minimized",
+                "showHeader",
+                "showInput",
+                "showBackButton",
+                "backUrl",
+                "showTypingIndicator",
+                "typingUsers",
+                "enableFileUpload",
+                "maxFileSize",
+                "placeholder",
+                "sendMessageUrl",
+                "typingUrl",
+                "loadMessagesUrl",
+                "useWebSockets",
+                "pollingInterval",
+                "autoReconnect",
+                "reconnectDelay",
+                "conversationIdKey",
+                "conversationNameKey",
+                "conversationAvatarKey",
+                "conversationIsOnlineKey",
+                "messageIdKey",
+                "messageUserIdKey",
+                "messageContentKey",
+                "messageCreatedAtKey",
+                "messageUserNameKey",
+                "messageUserAvatarKey"
+            ],
+            "dataAttributes": [
+                "module",
+                "position",
+                "minimized"
+            ]
+        },
+        {
+            "name": "notification-bell",
+            "view": "daisy::components.ui.communication.notification-bell",
+            "category": "communication",
+            "tags": [
+                "communication"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "notifications",
+                "unreadCount",
+                "position",
+                "showMarkAllRead",
+                "markAllAsReadUrl",
+                "viewAllUrl",
+                "groupByDate",
+                "showActions",
+                "notificationIdKey",
+                "notificationTypeKey",
+                "notificationDataKey",
+                "notificationReadAtKey",
+                "notificationCreatedAtKey"
+            ],
+            "dataAttributes": [
+                "action",
+                "url",
+                "key"
+            ]
+        },
+        {
+            "name": "notification-filters",
+            "view": "daisy::components.ui.communication.notification-filters",
+            "category": "communication",
+            "tags": [
+                "communication"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "types",
+                "currentFilter",
+                "onFilterChange"
+            ],
+            "dataAttributes": [
+                "filter-name",
+                "on-filter-change"
+            ]
+        },
+        {
+            "name": "notification-item",
+            "view": "daisy::components.ui.communication.notification-item",
+            "category": "communication",
+            "tags": [
+                "communication"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "notification",
+                "showActions",
+                "markAsReadUrl",
+                "deleteUrl",
+                "notificationIdKey",
+                "notificationTypeKey",
+                "notificationDataKey",
+                "notificationReadAtKey",
+                "notificationCreatedAtKey"
+            ],
+            "dataAttributes": [
+                "notification-id",
+                "read",
+                "action",
+                "url"
+            ]
+        },
+        {
+            "name": "notification-list",
+            "view": "daisy::components.ui.communication.notification-list",
+            "category": "communication",
+            "tags": [
+                "communication"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "notifications",
+                "groupByDate",
+                "showActions",
+                "notificationIdKey",
+                "notificationTypeKey",
+                "notificationDataKey",
+                "notificationReadAtKey",
+                "notificationCreatedAtKey",
+                "markAsReadUrl",
+                "deleteUrl"
+            ],
+            "dataAttributes": [
+                "key"
+            ]
+        },
+        {
             "name": "avatar",
             "view": "daisy::components.ui.data-display.avatar",
             "category": "data-display",
@@ -792,6 +1065,29 @@
                 "variant"
             ],
             "dataAttributes": []
+        },
+        {
+            "name": "file-preview",
+            "view": "daisy::components.ui.data-display.file-preview",
+            "category": "data-display",
+            "tags": [
+                "data-display"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "url",
+                "name",
+                "type",
+                "fileSize",
+                "thumbnail",
+                "downloadable",
+                "size"
+            ],
+            "dataAttributes": [
+                "url",
+                "filename"
+            ]
         },
         {
             "name": "kbd",
@@ -975,6 +1271,25 @@
                 "inline",
                 "iconInHeading",
                 "horizontalAt"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "empty-state",
+            "view": "daisy::components.ui.feedback.empty-state",
+            "category": "feedback",
+            "tags": [
+                "feedback"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "icon",
+                "title",
+                "message",
+                "actionLabel",
+                "actionUrl",
+                "size"
             ],
             "dataAttributes": []
         },
@@ -1798,6 +2113,7 @@
             "props": [
                 "items",
                 "current",
+                "stepsContents",
                 "vertical",
                 "horizontal",
                 "horizontalAt",

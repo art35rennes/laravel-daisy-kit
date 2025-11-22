@@ -92,11 +92,11 @@
 <section {{ $attributes->merge(['id' => $id, 'class' => $root]) }}>
     <div class="{{ $categoryClass }}">
         @if($title)
-            <h2 class="text-base font-medium">{{ __($title) }}</h2>
+            <h2 class="text-base font-medium">{{ $title }}</h2>
         @endif
         @if($description)
             <p class="text-sm text-base-content/70">
-                {{ __($description) }}
+                {{ $description }}
             </p>
         @endif
     </div>

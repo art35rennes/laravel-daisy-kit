@@ -1,17 +1,20 @@
 ---
 alwaysApply: true
 ---
-- Les composants doivent être organisés par catégories dans `resources/views/components/ui/` :
+- Components are organized by functional categories in `resources/views/components/ui/`:
   - `inputs/` : button, input, textarea, select, checkbox, radio, range, toggle, file-input, color-picker
   - `navigation/` : breadcrumbs, menu, pagination, navbar, sidebar, tabs, steps, stepper
-  - `layout/` : card, hero, footer, divider, list, list-row, stack
-  - `data-display/` : badge, avatar, kbd, table, stat, progress, radial-progress, status, timeline
+  - `layout/` : card, hero, footer, divider, list, list-row, stack, crud-layout, crud-section, grid-layout
+  - `data-display/` : badge, avatar, kbd, table, stat, progress, radial-progress, status, timeline, file-preview
   - `overlay/` : modal, drawer, dropdown, popover, popconfirm, tooltip
   - `media/` : carousel, lightbox, media-gallery, embed, leaflet
-  - `feedback/` : alert, toast, loading, skeleton, callout
+  - `feedback/` : alert, toast, loading, skeleton, callout, empty-state
+  - `communication/` : chat-*, notification-*, conversation-view
   - `utilities/` : mockup-*, indicator, dock
-  - `advanced/` : calendar-*, chart, code-editor, filter, onboarding, scroll-*, transfer, tree-view, validator, login-button, wysiwyg
-  - `partials/` : fragments réutilisables
-- Une catégorie `templates/` est présente dans `resources/views/components/` et contient uniquement des pages ou ensembles de pages complètes prêtes à l'emploi (par exemple : authentification, CRUD, dashboards, etc.).
-- Le namespace Blade utilisé doit être `daisy::`.
-- Les composants de layout et partials consomment exclusivement des composants présents dans `ui/*` sans dupliquer leur implémentation.
+  - `advanced/` : calendar-*, chart, code-editor, filter, onboarding, scroll-*, transfer, tree-view, validator, login-button, wysiwyg, accordion, collapse, countdown, diff, fieldset, join, label, link, mask, rating, swap, theme-controller
+  - `partials/` : reusable fragments
+- Components follow Atomic Design principles (see `atomic-design.mdc`)
+- The Blade namespace used must be `daisy::`
+- Layout and template components consume exclusively components present in `ui/*` without duplicating their implementation
+- No duplication: extract a reusable component if code is duplicated
+- Logical placement: functional category, not Atomic Design level

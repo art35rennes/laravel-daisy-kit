@@ -207,6 +207,82 @@ Route::get('/demo/api/select-options', function (\Illuminate\Http\Request $reque
     ]);
 })->name('demo.select.options');
 
+// Routes de démo pour le chat
+Route::post('/demo/api/chat/send', function (\Illuminate\Http\Request $request) {
+    $conversationId = $request->input('conversation_id', 1);
+    $content = $request->input('content', '');
+    $files = $request->file('files', []);
+    $file = $request->file('file');
+
+    // Simuler l'envoi d'un message
+    $message = [
+        'id' => rand(100, 999),
+        'user_id' => 1, // Utilisateur courant
+        'user_name' => 'Moi',
+        'user_avatar' => 'https://www.placeholderimage.eu/api/id/4/200/200',
+        'content' => $content,
+        'created_at' => now()->toDateTimeString(),
+    ];
+
+    // Gérer les fichiers
+    if ($file || ! empty($files)) {
+        $attachments = [];
+        $fileList = $file ? [$file] : $files;
+
+        foreach ($fileList as $index => $f) {
+            $attachments[] = [
+                'url' => 'https://www.placeholderimage.eu/api/id/'.(20 + $index).'/400/300',
+                'name' => $f->getClientOriginalName(),
+                'type' => str_starts_with($f->getMimeType(), 'image/') ? 'image' : 'other',
+                'size' => round($f->getSize() / 1024, 1).' KB',
+            ];
+        }
+
+        if (count($attachments) === 1) {
+            $message['attachment'] = $attachments[0];
+        } else {
+            $message['attachments'] = $attachments;
+        }
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => $message,
+    ]);
+})->name('demo.chat.send');
+
+Route::post('/demo/api/chat/typing', function (\Illuminate\Http\Request $request) {
+    // Simuler l'indicateur de frappe
+    return response()->json(['success' => true]);
+})->name('demo.chat.typing');
+
+Route::get('/demo/api/chat/messages/{conversationId}', function ($conversationId) {
+    // Retourner les messages de la conversation (pour le polling)
+    $messages = [
+        [
+            'id' => 1,
+            'user_id' => 2,
+            'user_name' => 'Alice Martin',
+            'user_avatar' => 'https://www.placeholderimage.eu/api/id/1/200/200',
+            'content' => 'Salut ! Comment allez-vous ?',
+            'created_at' => now()->subMinutes(30)->toDateTimeString(),
+        ],
+        [
+            'id' => 2,
+            'user_id' => 1,
+            'user_name' => 'Moi',
+            'user_avatar' => 'https://www.placeholderimage.eu/api/id/4/200/200',
+            'content' => 'Très bien, merci ! Et vous ?',
+            'created_at' => now()->subMinutes(25)->toDateTimeString(),
+        ],
+    ];
+
+    return response()->json([
+        'success' => true,
+        'data' => $messages,
+    ]);
+})->name('demo.chat.messages');
+
 // Routes pour les templates
 Route::prefix('templates')->name('templates.')->group(function () {
     // Templates d'authentification
@@ -227,6 +303,251 @@ Route::prefix('templates')->name('templates.')->group(function () {
         Route::view('/view', 'daisy::templates.profile.profile-view')->name('view');
         Route::view('/edit', 'daisy::templates.profile.profile-edit')->name('edit');
         Route::view('/settings', 'daisy::templates.profile.profile-settings')->name('settings');
+    });
+
+    // Templates de communication
+    Route::prefix('communication')->name('communication.')->group(function () {
+        Route::get('/chat', function () {
+            // Données de démo pour le template chat
+            $conversations = [
+                [
+                    'id' => 1,
+                    'name' => 'Alice Martin',
+                    'avatar' => 'https://www.placeholderimage.eu/api/id/1/200/200',
+                    'isOnline' => true,
+                    'lastMessage' => 'Salut, comment ça va ?',
+                    'unreadCount' => 2,
+                ],
+                [
+                    'id' => 2,
+                    'name' => 'Bob Dupont',
+                    'avatar' => 'https://www.placeholderimage.eu/api/id/2/200/200',
+                    'isOnline' => false,
+                    'lastMessage' => 'Merci pour votre aide !',
+                    'unreadCount' => 0,
+                ],
+                [
+                    'id' => 3,
+                    'name' => 'Charlie Bernard',
+                    'avatar' => 'https://www.placeholderimage.eu/api/id/3/200/200',
+                    'isOnline' => true,
+                    'lastMessage' => 'À bientôt !',
+                    'unreadCount' => 5,
+                ],
+            ];
+
+            $conversation = $conversations[0] ?? null;
+
+            $messages = $conversation ? [
+                [
+                    'id' => 1,
+                    'user_id' => 2,
+                    'user_name' => 'Alice Martin',
+                    'user_avatar' => 'https://www.placeholderimage.eu/api/id/1/200/200',
+                    'content' => 'Salut ! Comment allez-vous ?',
+                    'created_at' => now()->subMinutes(30)->toDateTimeString(),
+                ],
+                [
+                    'id' => 2,
+                    'user_id' => 1,
+                    'user_name' => 'Moi',
+                    'user_avatar' => 'https://www.placeholderimage.eu/api/id/4/200/200',
+                    'content' => 'Très bien, merci ! Et vous ?',
+                    'created_at' => now()->subMinutes(25)->toDateTimeString(),
+                ],
+                [
+                    'id' => 3,
+                    'user_id' => 2,
+                    'user_name' => 'Alice Martin',
+                    'user_avatar' => 'https://www.placeholderimage.eu/api/id/1/200/200',
+                    'content' => 'Parfait ! Je voulais vous parler du projet. Voici une image du prototype :',
+                    'attachment' => [
+                        'url' => 'https://www.placeholderimage.eu/api/id/10/800/600',
+                        'name' => 'prototype.jpg',
+                        'type' => 'image',
+                        'size' => '2.3 MB',
+                    ],
+                    'created_at' => now()->subMinutes(20)->toDateTimeString(),
+                ],
+                [
+                    'id' => 4,
+                    'user_id' => 1,
+                    'user_name' => 'Moi',
+                    'user_avatar' => 'https://www.placeholderimage.eu/api/id/4/200/200',
+                    'content' => 'D\'accord, je vous écoute.',
+                    'created_at' => now()->subMinutes(15)->toDateTimeString(),
+                ],
+                [
+                    'id' => 5,
+                    'user_id' => 2,
+                    'user_name' => 'Alice Martin',
+                    'user_avatar' => 'https://www.placeholderimage.eu/api/id/1/200/200',
+                    'content' => 'Et voici le document de spécifications :',
+                    'attachment' => [
+                        'url' => 'https://www.placeholderimage.eu/api/id/15/800/600',
+                        'name' => 'specifications.pdf',
+                        'type' => 'pdf',
+                        'size' => '1.8 MB',
+                    ],
+                    'created_at' => now()->subMinutes(10)->toDateTimeString(),
+                ],
+                [
+                    'id' => 6,
+                    'user_id' => 1,
+                    'user_name' => 'Moi',
+                    'user_avatar' => 'https://www.placeholderimage.eu/api/id/4/200/200',
+                    'content' => 'Merci ! Je vais le consulter.',
+                    'created_at' => now()->subMinutes(5)->toDateTimeString(),
+                ],
+                [
+                    'id' => 7,
+                    'user_id' => 2,
+                    'user_name' => 'Alice Martin',
+                    'user_avatar' => 'https://www.placeholderimage.eu/api/id/1/200/200',
+                    'content' => '',
+                    'attachments' => [
+                        [
+                            'url' => 'https://www.placeholderimage.eu/api/id/20/400/300',
+                            'name' => 'screenshot-1.png',
+                            'type' => 'image',
+                            'size' => '850 KB',
+                        ],
+                        [
+                            'url' => 'https://www.placeholderimage.eu/api/id/21/400/300',
+                            'name' => 'screenshot-2.png',
+                            'type' => 'image',
+                            'size' => '920 KB',
+                        ],
+                    ],
+                    'created_at' => now()->subMinutes(2)->toDateTimeString(),
+                ],
+            ] : [];
+
+            return view('daisy::templates.chat', [
+                'conversation' => $conversation,
+                'conversations' => $conversations,
+                'messages' => $messages,
+                'currentUserId' => 1,
+                'showSidebar' => true,
+                'enableFileUpload' => true,
+                'multipleFiles' => true,
+                'showFilePreview' => true,
+                'sendMessageUrl' => route('demo.chat.send'),
+                'typingUrl' => route('demo.chat.typing'),
+                'loadMessagesUrl' => route('demo.chat.messages', ['conversationId' => ':conversationId']),
+            ]);
+        })->name('chat');
+
+        Route::get('/notification-center', function () {
+            $now = now();
+
+            $notifications = [
+                [
+                    'id' => 1,
+                    'type' => 'project',
+                    'data' => [
+                        'message' => 'Sophie vous a assigné la résolution du ticket Phoenix-241.',
+                        'priority' => 'critical',
+                        'channel' => 'in_app',
+                        'tags' => ['Phoenix', 'Sprint 8'],
+                        'user' => [
+                            'name' => 'Sophie Trentin',
+                            'avatar' => 'https://www.placeholderimage.eu/api/id/5/200/200',
+                        ],
+                        'action' => [
+                            'label' => 'Ouvrir le ticket',
+                            'url' => '#',
+                            'icon' => 'bi-kanban',
+                        ],
+                        'due_at' => $now->copy()->addHours(6)->toIso8601String(),
+                    ],
+                    'created_at' => $now->copy()->subMinutes(15)->toIso8601String(),
+                    'read_at' => null,
+                ],
+                [
+                    'id' => 2,
+                    'type' => 'approval',
+                    'data' => [
+                        'message' => 'Le devis #4582 est en attente de validation financière.',
+                        'priority' => 'high',
+                        'channel' => 'email',
+                        'tags' => ['Finance'],
+                        'user' => [
+                            'name' => 'Clément Dubois',
+                            'avatar' => 'https://www.placeholderimage.eu/api/id/8/200/200',
+                        ],
+                        'action' => [
+                            'label' => 'Revoir le devis',
+                            'url' => '#',
+                            'icon' => 'bi-file-earmark-check',
+                        ],
+                        'due_at' => $now->copy()->addDay()->startOfDay()->toIso8601String(),
+                    ],
+                    'created_at' => $now->copy()->subHour()->toIso8601String(),
+                    'read_at' => null,
+                ],
+                [
+                    'id' => 3,
+                    'type' => 'mention',
+                    'data' => [
+                        'message' => 'Lucas vous a mentionné dans les retours UX de la release 4.2.',
+                        'priority' => 'medium',
+                        'channel' => 'push',
+                        'tags' => ['UX', 'Release'],
+                        'user' => [
+                            'name' => 'Lucas Perret',
+                            'avatar' => 'https://www.placeholderimage.eu/api/id/12/200/200',
+                        ],
+                        'action' => [
+                            'label' => 'Voir le fil',
+                            'url' => '#',
+                            'icon' => 'bi-chat-dots',
+                        ],
+                    ],
+                    'created_at' => $now->copy()->subHours(3)->toIso8601String(),
+                    'read_at' => null,
+                ],
+                [
+                    'id' => 4,
+                    'type' => 'report',
+                    'data' => [
+                        'message' => 'Rapport hebdo prêt : adoption produit +18 %.',
+                        'priority' => 'low',
+                        'channel' => 'email',
+                        'tags' => ['Reporting'],
+                        'user' => [
+                            'name' => 'Insights Bot',
+                            'avatar' => null,
+                        ],
+                        'action' => [
+                            'label' => 'Consulter le rapport',
+                            'url' => '#',
+                            'icon' => 'bi-graph-up',
+                        ],
+                    ],
+                    'created_at' => $now->copy()->subDay()->toIso8601String(),
+                    'read_at' => $now->copy()->subDay()->addMinutes(10)->toIso8601String(),
+                ],
+            ];
+
+            $types = [
+                ['label' => 'Projets', 'value' => 'project'],
+                ['label' => 'Approvals', 'value' => 'approval'],
+                ['label' => 'Mentions', 'value' => 'mention'],
+                ['label' => 'Rapports', 'value' => 'report'],
+            ];
+
+            return view('daisy::templates.notification-center', [
+                'notifications' => $notifications,
+                'unreadCount' => 3,
+                'types' => $types,
+                'currentFilter' => 'all',
+                'preferencesUrl' => '#',
+                'digestTime' => '08:00',
+                'userId' => 1,
+                'showFilters' => true,
+            ]);
+        })->name('notification-center');
     });
 
     // Templates de layouts

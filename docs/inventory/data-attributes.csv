@@ -1,5 +1,5 @@
 attribute,components
-module,"calendar-full, chart, code-editor, scrollspy, tree-view, table, color-picker, file-input, lightbox, media-gallery, sidebar-navigation, sidebar"
+module,"calendar-full, chart, code-editor, scrollspy, tree-view, chat-input, chat-messages, chat-widget, table, color-picker, file-input, lightbox, media-gallery, sidebar-navigation, sidebar"
 calendar-full,calendar-full
 options,calendar-full
 events,calendar-full
@@ -9,7 +9,7 @@ language,code-editor
 readonly,code-editor
 theme,code-editor
 tab-size,code-editor
-action,code-editor
+action,"code-editor, notification-bell, notification-item"
 scrollspy,scrollspy
 container,scrollspy
 track,scrollspy
@@ -51,6 +51,34 @@ return,tree-view
 radio-name,tree-view
 trix-attachments,wysiwyg
 trix-deferred,wysiwyg
+send-message-url,chat-input
+typing-url,chat-input
+enable-file-upload,chat-input
+max-file-size,chat-input
+multiple-files,chat-input
+show-file-preview,chat-input
+use-websockets,"chat-input, chat-messages"
+auto-reconnect,"chat-input, chat-messages"
+load-messages-url,chat-messages
+current-user-id,chat-messages
+polling-interval,chat-messages
+reconnect-delay,chat-messages
+message-id-key,chat-messages
+message-user-id-key,chat-messages
+message-content-key,chat-messages
+message-created-at-key,chat-messages
+message-user-name-key,chat-messages
+message-user-avatar-key,chat-messages
+conversation-id,chat-sidebar
+position,"chat-widget, media-gallery"
+minimized,chat-widget
+url,"notification-bell, notification-item, file-preview"
+key,"notification-bell, notification-list"
+filter-name,notification-filters
+on-filter-change,notification-filters
+notification-id,notification-item
+read,notification-item
+filename,file-preview
 table-select,table
 indeterminate,"checkbox, toggle"
 colorpicker,color-picker
@@ -78,7 +106,6 @@ index,"lightbox, media-gallery"
 media-gallery,media-gallery
 activation,media-gallery
 auto-height,media-gallery
-position,media-gallery
 searchable,"sidebar-navigation, sidebar"
 width-strategy,sidebar
 wide-class,sidebar

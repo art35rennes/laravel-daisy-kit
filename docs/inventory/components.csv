@@ -5,7 +5,7 @@ calendar-full,daisy::components.ui.advanced.calendar-full,advanced,"advanced, js
 calendar-native,daisy::components.ui.advanced.calendar-native,advanced,advanced,,active
 calendar,daisy::components.ui.advanced.calendar,advanced,advanced,,active
 chart,daisy::components.ui.advanced.chart,advanced,"advanced, js, async",chart,active
-chat-bubble,daisy::components.ui.advanced.chat-bubble,advanced,advanced,,active
+chat-bubble,daisy::components.ui.communication.chat-bubble,communication,communication,,active
 code-editor,daisy::components.ui.advanced.code-editor,advanced,"advanced, js, async",code-editor,active
 collapse,daisy::components.ui.advanced.collapse,advanced,advanced,,active
 countdown,daisy::components.ui.advanced.countdown,advanced,advanced,,active
@@ -28,8 +28,18 @@ transfer,daisy::components.ui.advanced.transfer,advanced,"advanced, js, async, l
 tree-view,daisy::components.ui.advanced.tree-view,advanced,"advanced, js, async, lazy",treeview,active
 validator,daisy::components.ui.advanced.validator,advanced,advanced,,active
 wysiwyg,daisy::components.ui.advanced.wysiwyg,advanced,advanced,,active
+chat-header,daisy::components.ui.communication.chat-header,communication,communication,,active
+chat-input,daisy::components.ui.communication.chat-input,communication,communication,,active
+chat-messages,daisy::components.ui.communication.chat-messages,communication,communication,,active
+chat-sidebar,daisy::components.ui.communication.chat-sidebar,communication,communication,,active
+chat-widget,daisy::components.ui.communication.chat-widget,communication,communication,,active
+notification-bell,daisy::components.ui.communication.notification-bell,communication,communication,,active
+notification-filters,daisy::components.ui.communication.notification-filters,communication,communication,,active
+notification-item,daisy::components.ui.communication.notification-item,communication,communication,,active
+notification-list,daisy::components.ui.communication.notification-list,communication,communication,,active
 avatar,daisy::components.ui.data-display.avatar,data-display,data-display,,active
 badge,daisy::components.ui.data-display.badge,data-display,data-display,,active
+file-preview,daisy::components.ui.data-display.file-preview,data-display,data-display,,active
 kbd,daisy::components.ui.data-display.kbd,data-display,data-display,,active
 progress,daisy::components.ui.data-display.progress,data-display,data-display,,active
 radial-progress,daisy::components.ui.data-display.radial-progress,data-display,data-display,,active
@@ -39,6 +49,7 @@ table,daisy::components.ui.data-display.table,data-display,"data-display, js, as
 timeline,daisy::components.ui.data-display.timeline,data-display,data-display,,active
 alert,daisy::components.ui.feedback.alert,feedback,feedback,,active
 callout,daisy::components.ui.feedback.callout,feedback,feedback,,active
+empty-state,daisy::components.ui.feedback.empty-state,feedback,feedback,,active
 loading,daisy::components.ui.feedback.loading,feedback,feedback,,active
 skeleton,daisy::components.ui.feedback.skeleton,feedback,feedback,,active
 toast,daisy::components.ui.feedback.toast,feedback,feedback,,active

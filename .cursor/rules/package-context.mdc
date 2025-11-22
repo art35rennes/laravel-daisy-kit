@@ -5,9 +5,11 @@ alwaysApply: true
 - All classes and components must comply with daisyUI v5 and Tailwind CSS v4.
 - Never add custom CSS classes or Tailwind configuration beyond what exists in the host project package.
 - Blade namespace: `daisy::`.
-- Component structure: organize by categories in `resources/views/components/ui/{category}/` (inputs, navigation, layout, data-display, overlay, media, feedback, utilities, advanced, partials).
-- Layout and partials components must consume `ui/*` components (no implementation duplication).
-- When creating or modifying a UI component, systematically check for similar components in `resources/views/components/ui/`: prioritize reuse over duplication.
+- Component structure: organize by functional categories in `resources/views/components/ui/{category}/` (inputs, navigation, layout, data-display, overlay, media, feedback, communication, utilities, advanced, partials).
+- Components follow Atomic Design principles (see `atomic-design.mdc`).
+- Layout and templates must consume `ui/*` components (no duplication).
+- When creating/modifying components: check for existing similar components, prioritize reuse, extract reusable components if duplication exists.
+- Placement: functional category, not Atomic Design level.
 - Use only `blade-ui-kit/blade-icons` and installed collections. Never add inline SVG in package source code.
 - Demo/docs pages under `resources/dev/views/demo/*`, publishable via `daisy-dev-views` tag for documentation.
 - Front sources publishable via `daisy-src` tag.

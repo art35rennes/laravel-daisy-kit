@@ -54,6 +54,11 @@ class InventoryTemplates extends Command
     {
         $this->info('Génération de l\'inventaire des templates...');
 
+        // S'assurer que les routes web sont chargées
+        if (file_exists(base_path('routes/web.php'))) {
+            require base_path('routes/web.php');
+        }
+
         $templatesPath = resource_path('views/templates');
         $templates = [];
         $categories = [];
@@ -163,14 +168,14 @@ class InventoryTemplates extends Command
     {
         // Si le template est à la racine avec un préfixe (form-*, profile-*), enlever le préfixe
         $routeName = $name;
-        if (empty($pathParts) && str_starts_with($name, $category.'-')) {
+        if (str_starts_with($name, $category.'-')) {
             $routeName = str_replace($category.'-', '', $name);
         }
 
         // Patterns de noms de routes possibles (ordre de priorité)
         $patterns = [
-            "templates.{$category}.{$routeName}", // Format standard : templates.form.wizard (sans préfixe)
-            "templates.{$category}.{$name}", // Format avec préfixe : templates.form.form-wizard (compatibilité)
+            "templates.{$category}.{$routeName}", // Format standard : templates.profile.edit (sans préfixe)
+            "templates.{$category}.{$name}", // Format avec préfixe : templates.profile.profile-edit (compatibilité)
         ];
 
         // Cas spéciaux pour les layouts (ancien format pour compatibilité)
@@ -179,9 +184,26 @@ class InventoryTemplates extends Command
             $patterns[] = "layouts.{$name}"; // Ancien format : layouts.navbar (compatibilité)
         }
 
+        // Vérifier les routes enregistrées directement
+        $routes = Route::getRoutes();
         foreach ($patterns as $pattern) {
-            if (Route::has($pattern)) {
-                return $pattern;
+            try {
+                // Essayer Route::has() d'abord
+                if (Route::has($pattern)) {
+                    return $pattern;
+                }
+            } catch (\Exception $e) {
+                // Ignorer les erreurs
+            }
+
+            try {
+                // Vérifier aussi directement dans la collection de routes
+                $route = $routes->getByName($pattern);
+                if ($route) {
+                    return $pattern;
+                }
+            } catch (\Exception $e) {
+                // Ignorer les erreurs
             }
         }
 
