@@ -13,7 +13,7 @@ it('renders a component page (button)', function () {
     Config::set('daisy-kit.docs.enabled', true);
     $res = $this->get('/docs/inputs/button');
     $res->assertSuccessful();
-    $res->assertSee('Bouton', false);
+    $res->assertSee('Button', false);
 });
 
 it('does not return 404 for any component documentation page', function () {

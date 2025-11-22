@@ -67,13 +67,33 @@ it('renders every component view from manifest', function (array $component) {
     ]);
 
     // Certains composants nécessitent des props minimales pour produire une sortie non vide.
-    if ($html === '' && ($component['name'] ?? null) === 'icon') {
-        $html = renderComponent($view, [
-            'name' => 'heart',
-            'prefix' => 'bi',
-            'slot' => '',
-            'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
-        ]);
+    if ($html === '') {
+        $name = $component['name'] ?? null;
+
+        if ($name === 'icon') {
+            $html = renderComponent($view, [
+                'name' => 'heart',
+                'prefix' => 'bi',
+                'slot' => '',
+                'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+            ]);
+        } elseif ($name === 'chat-header') {
+            $html = renderComponent($view, [
+                'conversation' => ['id' => 1, 'name' => 'Test', 'avatar' => null, 'isOnline' => false],
+                'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+            ]);
+        } elseif ($name === 'notification-item') {
+            $html = renderComponent($view, [
+                'notification' => [
+                    'id' => 1,
+                    'type' => 'test',
+                    'data' => ['message' => 'Test message'],
+                    'read_at' => null,
+                    'created_at' => now(),
+                ],
+                'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+            ]);
+        }
     }
 
     expect($html)->not->toBeEmpty("Empty output for view {$view}");
