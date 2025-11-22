@@ -8,7 +8,7 @@ beforeEach(function () {
 });
 
 it('renders profile-view template', function () {
-    $html = View::make('daisy::templates.profile-view', [
+    $html = View::make('daisy::templates.profile.profile-view', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe', 'email' => 'john@example.com'],
     ])->render();
@@ -20,7 +20,7 @@ it('renders profile-view template', function () {
 });
 
 it('renders profile-view template with stats', function () {
-    $html = View::make('daisy::templates.profile-view', [
+    $html = View::make('daisy::templates.profile.profile-view', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe'],
         'stats' => [
@@ -37,7 +37,7 @@ it('renders profile-view template with stats', function () {
 });
 
 it('renders profile-view template with badges', function () {
-    $html = View::make('daisy::templates.profile-view', [
+    $html = View::make('daisy::templates.profile.profile-view', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe'],
         'badges' => [
@@ -52,7 +52,7 @@ it('renders profile-view template with badges', function () {
 });
 
 it('renders profile-view template with timeline', function () {
-    $html = View::make('daisy::templates.profile-view', [
+    $html = View::make('daisy::templates.profile.profile-view', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe'],
         'timeline' => [
@@ -67,7 +67,7 @@ it('renders profile-view template with timeline', function () {
 });
 
 it('renders profile-edit template', function () {
-    $html = View::make('daisy::templates.profile-edit', [
+    $html = View::make('daisy::templates.profile.profile-edit', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe', 'email' => 'john@example.com'],
     ])->render();
@@ -80,7 +80,7 @@ it('renders profile-edit template', function () {
 });
 
 it('renders profile-edit template in readonly mode', function () {
-    $html = View::make('daisy::templates.profile-edit', [
+    $html = View::make('daisy::templates.profile.profile-edit', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe', 'email' => 'john@example.com'],
         'readonly' => true,
@@ -94,7 +94,7 @@ it('renders profile-edit template in readonly mode', function () {
 });
 
 it('renders profile-edit template with avatar section', function () {
-    $html = View::make('daisy::templates.profile-edit', [
+    $html = View::make('daisy::templates.profile.profile-edit', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe', 'avatar' => '/path/to/avatar.jpg'],
         'showAvatar' => true,
@@ -106,7 +106,7 @@ it('renders profile-edit template with avatar section', function () {
 });
 
 it('renders profile-edit template without optional fields', function () {
-    $html = View::make('daisy::templates.profile-edit', [
+    $html = View::make('daisy::templates.profile.profile-edit', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe'],
         'showPhone' => false,
@@ -121,7 +121,7 @@ it('renders profile-edit template without optional fields', function () {
 });
 
 it('renders profile-settings template', function () {
-    $html = View::make('daisy::templates.profile-settings', [
+    $html = View::make('daisy::templates.profile.profile-settings', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
     ])->render();
 
@@ -132,7 +132,7 @@ it('renders profile-settings template', function () {
 });
 
 it('renders profile-settings template in readonly mode', function () {
-    $html = View::make('daisy::templates.profile-settings', [
+    $html = View::make('daisy::templates.profile.profile-settings', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'readonly' => true,
     ])->render();
@@ -144,7 +144,7 @@ it('renders profile-settings template in readonly mode', function () {
 });
 
 it('renders profile-settings template with preferences tab', function () {
-    $html = View::make('daisy::templates.profile-settings', [
+    $html = View::make('daisy::templates.profile.profile-settings', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'showPreferences' => true,
     ])->render();
@@ -156,7 +156,7 @@ it('renders profile-settings template with preferences tab', function () {
 });
 
 it('renders profile-settings template with notifications tab', function () {
-    $html = View::make('daisy::templates.profile-settings', [
+    $html = View::make('daisy::templates.profile.profile-settings', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'showNotifications' => true,
     ])->render();
@@ -168,7 +168,7 @@ it('renders profile-settings template with notifications tab', function () {
 });
 
 it('renders profile-settings template with security tab', function () {
-    $html = View::make('daisy::templates.profile-settings', [
+    $html = View::make('daisy::templates.profile.profile-settings', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'showSecurity' => true,
     ])->render();
@@ -180,7 +180,7 @@ it('renders profile-settings template with security tab', function () {
 });
 
 it('renders profile-settings template with appearance tab', function () {
-    $html = View::make('daisy::templates.profile-settings', [
+    $html = View::make('daisy::templates.profile.profile-settings', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'showTheme' => true,
     ])->render();
@@ -191,7 +191,7 @@ it('renders profile-settings template with appearance tab', function () {
 });
 
 it('renders profile-settings template without privacy tab', function () {
-    $html = View::make('daisy::templates.profile-settings', [
+    $html = View::make('daisy::templates.profile.profile-settings', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'showPrivacy' => false,
     ])->render();
@@ -205,7 +205,7 @@ it('renders profile-view template with isOwnProfile detection', function () {
 
     auth()->loginUsingId(1);
 
-    $html = View::make('daisy::templates.profile-view', [
+    $html = View::make('daisy::templates.profile.profile-view', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'profile' => $user,
     ])->render();
@@ -218,7 +218,7 @@ it('renders profile-view template with isOwnProfile detection', function () {
 it('renders profile-edit template with old values', function () {
     request()->merge(['name' => 'Jane Doe']);
 
-    $html = View::make('daisy::templates.profile-edit', [
+    $html = View::make('daisy::templates.profile.profile-edit', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe'],
     ])->render();
@@ -229,7 +229,7 @@ it('renders profile-edit template with old values', function () {
 });
 
 it('renders profile-settings template with preferences data', function () {
-    $html = View::make('daisy::templates.profile-settings', [
+    $html = View::make('daisy::templates.profile.profile-settings', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'preferences' => [
             'language' => 'en',

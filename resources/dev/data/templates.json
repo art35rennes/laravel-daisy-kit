@@ -107,48 +107,12 @@
             ]
         },
         {
-            "name": "inline",
-            "category": "form",
-            "label": "Inline",
-            "description": "Template Inline.",
-            "route": "templates.form.inline",
-            "view": "daisy::form.inline",
-            "tags": [
-                "form"
-            ]
-        },
-        {
-            "name": "with-tabs",
-            "category": "form",
-            "label": "With Tabs",
-            "description": "Template With Tabs.",
-            "route": "templates.form.with-tabs",
-            "view": "daisy::form.with-tabs",
-            "tags": [
-                "form",
-                "tabs"
-            ]
-        },
-        {
-            "name": "wizard",
-            "category": "form",
-            "label": "Wizard",
-            "description": "Template Wizard.",
-            "route": "templates.form.wizard",
-            "view": "daisy::form.wizard",
-            "tags": [
-                "form",
-                "wizard",
-                "multi-step"
-            ]
-        },
-        {
             "name": "profile-edit",
             "category": "profile",
             "label": "Profile Edit",
             "description": "Page d'édition de profil utilisateur avec formulaire complet.",
             "route": "templates.profile.edit",
-            "view": "daisy::templates.profile-edit",
+            "view": "daisy::templates.profile.profile-edit",
             "tags": [
                 "profile",
                 "user"
@@ -160,7 +124,7 @@
             "label": "Profile Settings",
             "description": "Page de paramètres de profil avec onglets pour différentes sections.",
             "route": "templates.profile.settings",
-            "view": "daisy::templates.profile-settings",
+            "view": "daisy::templates.profile.profile-settings",
             "tags": [
                 "profile",
                 "user"
@@ -172,7 +136,7 @@
             "label": "Profile View",
             "description": "Page de visualisation de profil utilisateur avec statistiques et badges.",
             "route": "templates.profile.view",
-            "view": "daisy::templates.profile-view",
+            "view": "daisy::templates.profile.profile-view",
             "tags": [
                 "profile",
                 "user"
@@ -184,11 +148,6 @@
             "label": "Authentification",
             "description": "Templates pour les pages d'authentification et de gestion de compte.",
             "icon": "lock"
-        },
-        {
-            "label": "Formulaires",
-            "description": "Templates de formulaires avec différentes organisations et structures.",
-            "icon": "file-text"
         },
         {
             "label": "Profil utilisateur",
