@@ -132,6 +132,7 @@
 @endphp
 
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="true">
+    <x-daisy::ui.partials.theme-selector position="fixed" placement="top-right" />
     <section class="notification-center max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
         <header class="bg-base-100 rounded-box p-5 sm:p-8 shadow-lg space-y-8">
             <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">

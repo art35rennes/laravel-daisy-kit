@@ -90,6 +90,7 @@
 @endphp
 
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="true">
+    <x-daisy::ui.partials.theme-selector position="fixed" placement="top-right" />
     @isset($header)
         {{ $header }}
     @else

@@ -45,6 +45,7 @@
 ])
 
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="false">
+    <x-daisy::ui.partials.theme-selector position="fixed" placement="top-right" />
     @if($showSidebar && !empty($conversations))
         <x-daisy::ui.overlay.drawer id="chat-sidebar-drawer" :responsiveOpen="'lg'" :sideIsMenu="false" sideClass="w-80" :fullHeight="false">
             <x-slot:content>
