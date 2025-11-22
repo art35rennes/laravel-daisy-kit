@@ -558,4 +558,98 @@ Route::prefix('templates')->name('templates.')->group(function () {
         Route::view('/grid-layout', 'daisy-dev::demo.templates.test-grid-layout')->name('grid-layout');
         Route::view('/crud-layout', 'daisy-dev::demo.templates.test-crud-layout')->name('crud-layout');
     });
+
+    // Templates de documentation
+    Route::prefix('documentation')->name('documentation.')->group(function () {
+        Route::get('/changelog', function () {
+            $versions = [
+                [
+                    'version' => '2.0.0',
+                    'date' => '2024-01-15',
+                    'isCurrent' => true,
+                    'tagUrl' => 'https://github.com/user/repo/releases/tag/2.0.0',
+                    'compareUrl' => 'https://github.com/user/repo/compare/1.9.0...2.0.0',
+                    'items' => [
+                        [
+                            'type' => 'added',
+                            'category' => 'Features',
+                            'description' => 'Nouvelle fonctionnalité de recherche avancée',
+                            'breaking' => false,
+                            'issues' => [123, 456],
+                            'contributors' => ['user1', 'user2'],
+                        ],
+                        [
+                            'type' => 'changed',
+                            'category' => 'Performance',
+                            'description' => 'Amélioration des performances de chargement',
+                            'breaking' => false,
+                            'issues' => [789],
+                        ],
+                        [
+                            'type' => 'fixed',
+                            'category' => 'Bugfixes',
+                            'description' => 'Correction du bug de connexion',
+                            'breaking' => false,
+                            'issues' => [101],
+                        ],
+                        [
+                            'type' => 'removed',
+                            'category' => 'Deprecations',
+                            'description' => 'Suppression de l\'ancien système de cache',
+                            'breaking' => true,
+                            'migration' => true,
+                            'migrationGuide' => 'https://docs.example.com/migrations/cache',
+                        ],
+                        [
+                            'type' => 'security',
+                            'category' => 'Security',
+                            'description' => 'Mise à jour de sécurité critique',
+                            'breaking' => false,
+                            'cve' => 'CVE-2024-1234',
+                            'severity' => 'high',
+                        ],
+                    ],
+                ],
+                [
+                    'version' => '1.9.0',
+                    'date' => '2023-12-01',
+                    'isCurrent' => false,
+                    'items' => [
+                        [
+                            'type' => 'added',
+                            'description' => 'Nouvelle page de profil',
+                        ],
+                        [
+                            'type' => 'fixed',
+                            'description' => 'Correction de plusieurs bugs mineurs',
+                        ],
+                    ],
+                ],
+                [
+                    'version' => '1.8.0',
+                    'date' => '2023-11-15',
+                    'isCurrent' => false,
+                    'changes' => [
+                        'added' => [
+                            'Support des thèmes personnalisés',
+                        ],
+                        'fixed' => [
+                            'Correction de l\'affichage sur mobile',
+                        ],
+                    ],
+                ],
+            ];
+
+            return view('daisy::templates.changelog', [
+                'title' => 'Historique des versions',
+                'versions' => $versions,
+                'currentVersion' => '2.0.0',
+                'rssUrl' => '#',
+                'atomUrl' => '#',
+                'showFilters' => true,
+                'showSearch' => true,
+                'expandLatest' => true,
+            ]);
+        })->name('changelog');
+    });
 });

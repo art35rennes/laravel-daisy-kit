@@ -72,6 +72,16 @@ class DaisyKitServiceProvider extends ServiceProvider
                     return view('daisy-dev::docs.templates.index');
                 })->name('daisy.docs.templates');
 
+                // Pages Templates /templates/{template}
+                Route::get('/templates/{template}', function (string $template) {
+                    $view = "daisy-dev::docs.templates.$template";
+                    if (view()->exists($view)) {
+                        return view($view);
+                    }
+                    abort(404);
+                })->where(['template' => '[A-Za-z0-9\-_]+'])
+                    ->name('daisy.docs.template');
+
                 // Pages Composants /{category}/{component}
                 Route::get('/{category}/{component}', function (string $category, string $component) {
                     $view = "daisy-dev::docs.components.$category.$component";
