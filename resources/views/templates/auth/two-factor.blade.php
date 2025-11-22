@@ -34,19 +34,24 @@
             <form action="{{ $action }}" method="POST" class="space-y-4">
                 @csrf
                 {{-- Two-factor code --}}
-                <x-daisy::ui.partials.form-field name="code" :label="__('auth.two_factor_code')" :required="true">
-                    <x-daisy::ui.inputs.input
-                        name="code"
-                        type="text"
-                        pattern="[0-9]{6}"
-                        inputmode="numeric"
-                        maxlength="6"
-                        autocomplete="one-time-code"
-                        placeholder="000000"
-                        class="text-center text-2xl tracking-widest font-mono"
-                        :class="$errors->has('code') ? 'input-error' : ''"
-                    />
-                </x-daisy::ui.partials.form-field>
+                <div class="space-y-2">
+                    <label class="label">
+                        <span class="label-text">{{ __('auth.two_factor_code') }}</span>
+                        @if($errors->has('code'))
+                            <span class="label-text-alt text-error">{{ $errors->first('code') }}</span>
+                        @endif
+                    </label>
+                    <div data-module="otp-code" data-length="6" data-numeric-only="true" data-hidden-input-name="code" class="flex justify-center gap-3">
+                        @for($i = 0; $i < 6; $i++)
+                            <x-daisy::ui.inputs.input
+                                type="text"
+                                data-otp-digit
+                                class="w-14 h-16 text-center text-3xl font-mono font-semibold {{ $errors->has('code') ? 'input-error' : '' }}"
+                                aria-label="{{ __('auth.two_factor_code') }} {{ $i + 1 }}"
+                            />
+                        @endfor
+                    </div>
+                </div>
 
                 <x-daisy::ui.inputs.button type="submit" variant="solid" class="w-full">
                     {{ __('auth.verify') }}

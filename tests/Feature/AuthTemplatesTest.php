@@ -139,8 +139,12 @@ it('renders two-factor template', function () {
         ->toContain(__('auth.two_factor_description'))
         ->toContain(__('auth.two_factor_instructions'))
         ->toContain('form')
-        ->toContain('maxlength="6"')
-        ->toContain('pattern="[0-9]{6}"');
+        ->toContain('data-module="otp-code"')
+        ->toContain('data-otp-digit');
+
+    // Vérifier qu'il y a 6 inputs pour le code OTP en comptant les balises <input avec data-otp-digit
+    preg_match_all('/<input[^>]*data-otp-digit[^>]*>/i', $html, $matches);
+    expect(count($matches[0]))->toBe(6);
 });
 
 it('renders two-factor template without recovery link', function () {
