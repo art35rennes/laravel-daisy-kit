@@ -184,6 +184,11 @@ class InventoryTemplates extends Command
             $patterns[] = "layouts.{$name}"; // Ancien format : layouts.navbar (compatibilité)
         }
 
+        // Cas spéciaux pour la documentation/changelog
+        if ($category === 'changelog') {
+            $patterns[] = "templates.documentation.{$name}"; // Format : templates.documentation.changelog
+        }
+
         // Vérifier les routes enregistrées directement
         $routes = Route::getRoutes();
         foreach ($patterns as $pattern) {

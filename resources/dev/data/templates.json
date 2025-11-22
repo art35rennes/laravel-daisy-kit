@@ -1,5 +1,5 @@
 {
-    "generated_at": "2025-11-22T20:07:38+00:00",
+    "generated_at": "2025-11-22T21:42:58+00:00",
     "templates": [
         {
             "name": "forgot-password",
@@ -143,6 +143,19 @@
             ]
         },
         {
+            "name": "changelog",
+            "category": "changelog",
+            "label": "Changelog",
+            "description": "Page de changelog organisée par versions avec filtres, recherche et navigation.",
+            "route": "templates.documentation.changelog",
+            "view": "daisy::templates.changelog",
+            "tags": [
+                "changelog",
+                "documentation",
+                "version"
+            ]
+        },
+        {
             "name": "chat",
             "category": "communication",
             "label": "Chat",
@@ -158,7 +171,7 @@
             "name": "notification-center",
             "category": "communication",
             "label": "Notification Center",
-            "description": "Centre de notifications priorisé avec focus critiques, indicateurs et préférences de canaux.",
+            "description": "Centre de notifications avec filtres, marquage lu/non lu et actions.",
             "route": "templates.communication.notification-center",
             "view": "daisy::templates.notification-center",
             "tags": {
@@ -177,6 +190,11 @@
             "label": "Profil utilisateur",
             "description": "Templates pour la gestion et l'affichage des profils utilisateurs.",
             "icon": "user"
+        },
+        {
+            "label": "Documentation",
+            "description": "Templates de documentation et changelog pour afficher l'historique des versions.",
+            "icon": "file-text"
         },
         {
             "label": "Communication",

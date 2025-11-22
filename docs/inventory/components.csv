@@ -5,7 +5,6 @@ calendar-full,daisy::components.ui.advanced.calendar-full,advanced,"advanced, js
 calendar-native,daisy::components.ui.advanced.calendar-native,advanced,advanced,,active
 calendar,daisy::components.ui.advanced.calendar,advanced,advanced,,active
 chart,daisy::components.ui.advanced.chart,advanced,"advanced, js, async",chart,active
-chat-bubble,daisy::components.ui.communication.chat-bubble,communication,communication,,active
 code-editor,daisy::components.ui.advanced.code-editor,advanced,"advanced, js, async",code-editor,active
 collapse,daisy::components.ui.advanced.collapse,advanced,advanced,,active
 countdown,daisy::components.ui.advanced.countdown,advanced,advanced,,active
@@ -28,11 +27,13 @@ transfer,daisy::components.ui.advanced.transfer,advanced,"advanced, js, async, l
 tree-view,daisy::components.ui.advanced.tree-view,advanced,"advanced, js, async, lazy",treeview,active
 validator,daisy::components.ui.advanced.validator,advanced,advanced,,active
 wysiwyg,daisy::components.ui.advanced.wysiwyg,advanced,advanced,,active
+chat-bubble,daisy::components.ui.communication.chat-bubble,communication,communication,,active
 chat-header,daisy::components.ui.communication.chat-header,communication,communication,,active
 chat-input,daisy::components.ui.communication.chat-input,communication,communication,,active
 chat-messages,daisy::components.ui.communication.chat-messages,communication,communication,,active
 chat-sidebar,daisy::components.ui.communication.chat-sidebar,communication,communication,,active
 chat-widget,daisy::components.ui.communication.chat-widget,communication,communication,,active
+conversation-view,daisy::components.ui.communication.conversation-view,communication,communication,,active
 notification-bell,daisy::components.ui.communication.notification-bell,communication,communication,,active
 notification-filters,daisy::components.ui.communication.notification-filters,communication,communication,,active
 notification-item,daisy::components.ui.communication.notification-item,communication,communication,,active

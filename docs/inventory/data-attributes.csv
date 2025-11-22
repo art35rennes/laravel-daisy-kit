@@ -69,7 +69,7 @@ message-content-key,chat-messages
 message-created-at-key,chat-messages
 message-user-name-key,chat-messages
 message-user-avatar-key,chat-messages
-conversation-id,chat-sidebar
+conversation-id,"chat-sidebar, conversation-view"
 position,"chat-widget, media-gallery"
 minimized,chat-widget
 url,"notification-bell, notification-item, file-preview"

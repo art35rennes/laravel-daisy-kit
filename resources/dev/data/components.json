@@ -1,5 +1,5 @@
 {
-    "generated_at": "2025-11-22T20:49:25+00:00",
+    "generated_at": "2025-11-22T21:42:59+00:00",
     "components": [
         {
             "name": "accordion",
@@ -153,23 +153,6 @@
                 "module",
                 "chart"
             ]
-        },
-        {
-            "name": "chat-bubble",
-            "view": "daisy::components.ui.communication.chat-bubble",
-            "category": "communication",
-            "tags": [
-                "communication"
-            ],
-            "jsModule": null,
-            "status": "active",
-            "props": [
-                "align",
-                "name",
-                "time",
-                "color"
-            ],
-            "dataAttributes": []
         },
         {
             "name": "code-editor",
@@ -759,6 +742,23 @@
             ]
         },
         {
+            "name": "chat-bubble",
+            "view": "daisy::components.ui.communication.chat-bubble",
+            "category": "communication",
+            "tags": [
+                "communication"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "align",
+                "name",
+                "time",
+                "color"
+            ],
+            "dataAttributes": []
+        },
+        {
             "name": "chat-header",
             "view": "daisy::components.ui.communication.chat-header",
             "category": "communication",
@@ -928,6 +928,51 @@
                 "module",
                 "position",
                 "minimized"
+            ]
+        },
+        {
+            "name": "conversation-view",
+            "view": "daisy::components.ui.communication.conversation-view",
+            "category": "communication",
+            "tags": [
+                "communication"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "conversation",
+                "messages",
+                "currentUserId",
+                "showBackButton",
+                "backUrl",
+                "showTypingIndicator",
+                "typingUsers",
+                "enableFileUpload",
+                "maxFileSize",
+                "multipleFiles",
+                "showFilePreview",
+                "acceptedFileTypes",
+                "placeholder",
+                "sendMessageUrl",
+                "typingUrl",
+                "loadMessagesUrl",
+                "useWebSockets",
+                "pollingInterval",
+                "autoReconnect",
+                "reconnectDelay",
+                "conversationIdKey",
+                "conversationNameKey",
+                "conversationAvatarKey",
+                "conversationIsOnlineKey",
+                "messageIdKey",
+                "messageUserIdKey",
+                "messageContentKey",
+                "messageCreatedAtKey",
+                "messageUserNameKey",
+                "messageUserAvatarKey"
+            ],
+            "dataAttributes": [
+                "conversation-id"
             ]
         },
         {
