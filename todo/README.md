@@ -4,7 +4,7 @@ Ce dossier contient les spécifications détaillées pour l'implémentation des 
 
 ## Organisation
 
-Les spécifications sont organisées en 6 lots cohérents :
+Les spécifications sont organisées en 8 lots cohérents :
 
 ### Lot 1 : Authentification complémentaire
 **Fichier** : `lot-1-authentification.md`
@@ -53,6 +53,20 @@ Templates pour les erreurs et états de l'application :
 - `empty-state.blade.php` (template + composant UI)
 - `loading-state.blade.php`
 
+### Lot 7 : Conformité daisyUI et gestion des thèmes
+**Fichier** : `lot-7-conformite-daisyui-themes.md`
+
+Corrections de conformité pour que tous les composants respectent strictement les classes daisyUI v5 et s'adaptent correctement aux différents thèmes.
+
+### Lot 8 : Form Builder Avancé (No-Code / Low-Code)
+**Fichier** : `lot-8-form-builder.md`
+
+Constructeur visuel de formulaires avec :
+- Interface Drag & Drop (Palette, Canvas, Inspecteur)
+- Moteur de logique JSONata
+- Export JSON et génération de règles de validation Laravel
+- Architecture Registry pour éviter la duplication de composants
+
 ## Principes généraux
 
 Tous les templates doivent :
@@ -77,6 +91,7 @@ Tous les templates doivent :
    - Tous les composants doivent être dans `resources/views/components/ui/`
    - Aucun CSS personnalisé, uniquement Tailwind v4 + daisyUI v5
    - Réutiliser les composants existants au maximum
+   - **PRIORITÉ aux classes daisyUI** : Toujours utiliser les classes daisyUI en priorité avant les classes Tailwind spécifiques (voir lot 7)
 
 4. **Respecter les conventions du package** :
    - Namespace Blade : `daisy::`
@@ -126,6 +141,7 @@ Et leurs équivalents anglais dans `resources/lang/en/`.
 4. **Lot 3** : Formulaires avancés (amélioration UX)
 5. **Lot 5** : Changelog (documentation)
 6. **Lot 4** : Communication (le plus complexe, nécessite WebSocket/polling)
+7. **Lot 8** : Form Builder Avancé (gros morceau, module distinct)
 
 ## Tests
 
@@ -189,4 +205,3 @@ Si des clarifications sont nécessaires sur une spécification, consulter :
 1. Les templates existants dans `resources/views/templates/`
 2. Les composants UI dans `resources/views/components/ui/`
 3. Les règles du package dans `.cursor/rules/`
-

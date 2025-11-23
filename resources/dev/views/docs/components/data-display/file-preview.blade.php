@@ -23,6 +23,13 @@
     <section id="intro">
         <h1>File Preview</h1>
         <p>Composant compatible daisyUI v5 et Tailwind CSS v4.</p>
+        <div class="alert alert-info mt-4">
+            <p><strong>Comportement par défaut :</strong></p>
+            <ul class="list-disc list-inside mt-2 space-y-1">
+                <li>Les <strong>images</strong> s'ouvrent dans un <strong>modal</strong> par défaut</li>
+                <li>Les autres fichiers (PDF, documents, etc.) se <strong>téléchargent directement</strong></li>
+            </ul>
+        </div>
     </section>
 
     <section id="base" class="mt-10">
@@ -65,6 +72,83 @@
     <section id="variants" class="mt-10">
         <h2>Variantes</h2>
         <div class="space-y-6">
+            <div>
+                <h3 class="text-lg font-semibold mb-3">Mode d'ouverture</h3>
+                <div class="tabs tabs-box mb-6">
+                    <input type="radio" name="openmode-example-file-preview" class="tab" aria-label="Preview" checked />
+                    <div class="tab-content border-base-300 bg-base-100 p-6">
+                        <div class="not-prose space-y-4">
+                            <div>
+                                <p class="text-sm font-medium mb-2">Image (modal par défaut)</p>
+                                <x-daisy::ui.data-display.file-preview 
+                                    url="https://www.placeholderimage.eu/api/id/1/400/300"
+                                    name="photo.jpg"
+                                    type="image"
+                                />
+                                <p class="text-xs text-base-content/70 mt-2">Cliquez sur l'image pour l'ouvrir dans un modal</p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium mb-2">Image (nouvel onglet)</p>
+                                <x-daisy::ui.data-display.file-preview 
+                                    url="https://www.placeholderimage.eu/api/id/2/400/300"
+                                    name="photo2.jpg"
+                                    type="image"
+                                    openMode="blank"
+                                />
+                                <p class="text-xs text-base-content/70 mt-2">Cliquez sur l'image pour l'ouvrir dans un nouvel onglet</p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium mb-2">PDF (téléchargement direct par défaut)</p>
+                                <x-daisy::ui.data-display.file-preview 
+                                    url="https://example.com/document.pdf"
+                                    name="document.pdf"
+                                    type="pdf"
+                                    fileSize="2.5 MB"
+                                />
+                                <p class="text-xs text-base-content/70 mt-2">Cliquez n'importe où pour télécharger le fichier</p>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="radio" name="openmode-example-file-preview" class="tab" aria-label="Code" />
+                    <div class="tab-content border-base-300 bg-base-100 p-6">
+                        @php
+                            $openModeCode = '&lt;!-- Image avec modal (par défaut) --&gt;
+&lt;x-daisy::ui.data-display.file-preview 
+    url=&quot;https://example.com/image.jpg&quot;
+    name=&quot;photo.jpg&quot;
+    type=&quot;image&quot;
+/&gt;
+
+&lt;!-- Image avec nouvel onglet --&gt;
+&lt;x-daisy::ui.data-display.file-preview 
+    url=&quot;https://example.com/image.jpg&quot;
+    name=&quot;photo.jpg&quot;
+    type=&quot;image&quot;
+    openMode=&quot;blank&quot;
+/&gt;
+
+&lt;!-- PDF (téléchargement direct par défaut) --&gt;
+&lt;x-daisy::ui.data-display.file-preview 
+    url=&quot;https://example.com/document.pdf&quot;
+    name=&quot;document.pdf&quot;
+    type=&quot;pdf&quot;
+    fileSize=&quot;2.5 MB&quot;
+/&gt;';
+                        @endphp
+                        <x-daisy::ui.advanced.code-editor 
+                            language="blade" 
+                            :value="$openModeCode"
+                            :readonly="true"
+                            :showToolbar="false"
+                            :showFoldAll="false"
+                            :showUnfoldAll="false"
+                            :showFormat="false"
+                            :showCopy="true"
+                            height="300px"
+                        />
+                    </div>
+                </div>
+            </div>
             <div>
                 <h3 class="text-lg font-semibold mb-3">Types de fichiers</h3>
                 <div class="tabs tabs-box">

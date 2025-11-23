@@ -6,6 +6,7 @@
     'thumbnail' => null, // URL de la miniature pour les non-images
     'downloadable' => true,
     'size' => 'md', // xs|sm|md|lg|xl
+    'openMode' => null, // null|blank|modal - null = auto (modal pour images, blank pour autres)
 ])
 
 @php
@@ -35,6 +36,12 @@
     
     $type = $type ?? 'other';
     
+    // Détermination automatique du mode d'ouverture
+    // Si openMode n'est pas spécifié : modal pour les images, blank pour les autres
+    if ($openMode === null) {
+        $openMode = ($type === 'image') ? 'modal' : 'blank';
+    }
+    
     // Tailles pour les différents types
     $sizeMap = [
         'xs' => ['container' => 'max-w-32', 'image' => 'max-h-24', 'icon' => 'w-6 h-6'],
@@ -57,24 +64,42 @@
     ];
     
     $icon = $icons[$type] ?? $icons['other'];
+    
+    // ID unique pour le modal si mode modal
+    $modalId = $openMode === 'modal' ? 'file-preview-modal-'.\Illuminate\Support\Str::uuid() : null;
 @endphp
 
 <div {{ $attributes->merge(['class' => 'file-preview inline-block '.$sizes['container']]) }}>
     @if($type === 'image')
         <div class="relative rounded-box overflow-hidden border border-base-300 hover:border-primary transition-colors">
-            <a 
-                href="{{ $url }}" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="block"
-            >
-                <img 
-                    src="{{ $url }}" 
-                    alt="{{ $name ?? 'Image' }}"
-                    class="w-full h-auto {{ $sizes['image'] }} object-cover"
-                    loading="lazy"
-                />
-            </a>
+            @if($openMode === 'modal')
+                <button 
+                    type="button"
+                    onclick="document.getElementById('{{ $modalId }}').showModal()"
+                    class="block w-full cursor-pointer"
+                >
+                    <img 
+                        src="{{ $url }}" 
+                        alt="{{ $name ?? 'Image' }}"
+                        class="w-full h-auto {{ $sizes['image'] }} object-cover"
+                        loading="lazy"
+                    />
+                </button>
+            @else
+                <a 
+                    href="{{ $url }}" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="block"
+                >
+                    <img 
+                        src="{{ $url }}" 
+                        alt="{{ $name ?? 'Image' }}"
+                        class="w-full h-auto {{ $sizes['image'] }} object-cover"
+                        loading="lazy"
+                    />
+                </a>
+            @endif
             @if($downloadable)
                 <button 
                     type="button"
@@ -82,6 +107,7 @@
                     data-url="{{ $url }}"
                     data-filename="{{ $name ?? 'image' }}"
                     title="{{ __('Download') }}"
+                    onclick="event.stopPropagation();"
                 >
                     <x-icon name="bi-download" class="w-4 h-4" />
                 </button>
@@ -89,6 +115,40 @@
         </div>
         @if($name)
             <p class="text-xs text-base-content/70 mt-1 truncate">{{ $name }}</p>
+        @endif
+        
+        @if($openMode === 'modal' && $modalId)
+            <x-daisy::ui.overlay.modal 
+                :id="$modalId" 
+                :title="$name ?? 'Image'"
+                size="7xl"
+                :boxClass="'p-0'"
+            >
+                <div class="flex items-center justify-center bg-base-200">
+                    <img 
+                        src="{{ $url }}" 
+                        alt="{{ $name ?? 'Image' }}"
+                        class="max-w-full max-h-[calc(100svh-8rem)] object-contain"
+                    />
+                </div>
+                <x-slot:actions>
+                    @if($downloadable)
+                        <button 
+                            type="button"
+                            class="btn btn-primary file-download"
+                            data-url="{{ $url }}"
+                            data-filename="{{ $name ?? 'image' }}"
+                            title="{{ __('Download') }}"
+                        >
+                            <x-icon name="bi-download" class="w-4 h-4 mr-2" />
+                            {{ __('Download') }}
+                        </button>
+                    @endif
+                    <form method="dialog">
+                        <button type="submit" class="btn">{{ __('Close') }}</button>
+                    </form>
+                </x-slot:actions>
+            </x-daisy::ui.overlay.modal>
         @endif
     @elseif($type === 'video')
         <div class="rounded-box overflow-hidden border border-base-300 bg-base-200">
@@ -134,19 +194,21 @@
         {{-- PDF, Document, Other --}}
         <div class="rounded-box border border-base-300 bg-base-200 hover:bg-base-300 transition-colors p-3">
             <div class="flex items-center gap-3">
-                <a 
-                    href="{{ $url }}" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    class="flex-shrink-0"
+                <button 
+                    type="button"
+                    class="flex-shrink-0 file-download hover:opacity-80 transition-opacity cursor-pointer"
+                    data-url="{{ $url }}"
+                    data-filename="{{ $name ?? 'file' }}"
+                    title="{{ __('Download') }}"
                 >
                     <x-icon name="{{ $icon }}" class="{{ $sizes['icon'] }} text-primary" />
-                </a>
-                <a 
-                    href="{{ $url }}" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    class="flex-1 min-w-0"
+                </button>
+                <button 
+                    type="button"
+                    class="flex-1 min-w-0 text-left file-download hover:opacity-80 transition-opacity cursor-pointer"
+                    data-url="{{ $url }}"
+                    data-filename="{{ $name ?? 'file' }}"
+                    title="{{ __('Download') }}"
                 >
                     @if($name)
                         <p class="text-sm font-medium truncate">{{ $name }}</p>
@@ -154,7 +216,7 @@
                     @if($fileSize)
                         <p class="text-xs text-base-content/70">{{ $fileSize }}</p>
                     @endif
-                </a>
+                </button>
                 @if($downloadable)
                     <button 
                         type="button"

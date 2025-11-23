@@ -1,360 +1,169 @@
-# Lot 3 : Templates de formulaires avancés
+# Lot 3 · Plan de spécification – Templates de formulaires avancés
 
-## Vue d'ensemble
-Créer trois templates de formulaires avancés utilisant les composants UI existants (stepper, tabs) pour offrir des expériences utilisateur améliorées.
+## 1. Objectifs produit
+- **Fournir des expériences formulaires complètes** (navigation guidée, onglets contextuels, filtres riches) démontrant la valeur des composants existants.
+- **Garantir l’exploitabilité immédiate** dans une application Laravel : validation, persistance, protection CSRF, accessibilité.
+- **Livrer des artefacts testés** (Blade + Browser) avec documentation vivante et exemples connectés aux démos.
 
-## Templates à créer
+## 2. Périmètre fonctionnel
+| Livrable | Description synthétique | Valeur ajoutée attendue |
+|----------|------------------------|-------------------------|
+| `form-wizard.blade.php` | Assistant multi-étapes linéaire ou libre avec persistance session et résumé final. | Simplifier les onboarding longs, gérer les validations étape par étape et l’état utilisateur. |
+| `form-with-tabs.blade.php` | Formulaire segmenté en onglets avec badges d’erreurs et restauration automatique de l’onglet actif. | Structurer de gros formulaires en sections compréhensibles et fiables. |
+| `form-inline.blade.php` | Barre de filtres réactive avec tokens actifs, actions condensées et panel avancé optionnel. | Offrir un moteur de recherche/filtre prêt à l’emploi pour les listes et tableaux. |
+| **Composant CSRF Keeper** | Couple Blade + contrôleur dédié qui régénère le token CSRF à intervalles réguliers ou à la demande. | Éviter les échecs de soumission après mise en veille/longue inactivité côté navigateur. |
 
-### 1. form-wizard.blade.php
-**Fichier** : `resources/views/templates/form-wizard.blade.php`
+## 3. Exigences transverses
+1. **Utilisation exclusive** des composants `ui/*` existants (Atomic Design respecté).
+2. **Props documentées** via PHPDoc + README demo, slots nommés explicites.
+3. **Interop Laravel** : `@csrf`, `@method`, `old()`, `$errors`, `session()`, gestion GET/POST.
+4. **Accessibilité** : focus visible, aria-label cohérent, annonces d’erreurs.
+5. **Instrumentation JS** : chaque template exporte `data-module` + options dérivées des props.
+6. **Tests** : Blade + Browser, exécutés via `composer test` (`pest --parallel`).
 
-**Description** : Formulaire multi-étapes utilisant le composant `stepper` pour guider l'utilisateur à travers un processus complexe.
+## 4. Spécifications détaillées
 
-**Props** :
-```php
-@props([
-    'title' => __('form.wizard'),
-    'theme' => null,
-    // Form
-    'action' => '#',
-    'method' => 'POST',
-    // Stepper configuration
-    'steps' => [], // ['label' => 'Étape 1', 'icon' => 'user', 'disabled' => false]
-    'currentStep' => 1,
-    'linear' => true, // Empêche de passer à l'étape suivante sans valider
-    'allowClickNav' => false, // Empêche la navigation par clic sur les steps
-    'showControls' => true,
-    'prevText' => __('form.previous'),
-    'nextText' => __('form.next'),
-    'finishText' => __('form.finish'),
-    // Validation
-    'validateOnStep' => true, // Valider chaque étape avant de continuer
-    'validateOnSubmit' => true, // Valider tout le formulaire à la soumission
-])
-```
+### 4.1 Template · Wizard multi-étapes
+- **Chemin** : `resources/views/templates/form-wizard.blade.php`
+- **Props principales**
+    ```php
+    @props([
+        'title' => __('form.wizard.title'),
+        'action' => '#',
+        'method' => 'POST',
+        'steps' => [], // [['key' => 'profile', 'label' => 'Profil', 'icon' => 'user']]
+        'currentStep' => 1,
+        'linear' => true,
+        'allowClickNav' => false,
+        'showSummary' => true,
+        'prevText' => __('form.previous'),
+        'nextText' => __('form.next'),
+        'finishText' => __('form.finish'),
+        'resumeSlot' => 'summary',
+    ])
+    ```
+- **Slots requis** : `step_{key}` (contenu par étape), `summary`, `actions`, `aside` (optionnel).
+- **Comportements attendus**
+  - Persistance des saisies dans `session('wizard.data')` via helper `WizardPersistence`.
+  - Gestion des erreurs par étape (`$errors->getBag("wizard.step_{$key}")`).
+  - Résumé final affiché uniquement à la dernière étape.
+  - JS `form-wizard` : synchro stepper ↔ boutons, blocage en mode `linear`, écoute `filter-clear`.
+- **Tests**
+  - Feature : rendu par défaut, step bloquée, résumé, persistance session.
+  - Browser : navigation clavier, boutons `Précédent/Suivant`, rechargement du CSRF via CSRF Keeper.
 
-**Fonctionnalités Laravel** :
-- Utilise les sessions Laravel pour persister les données entre les étapes (`session()->put()`, `session()->get()`)
-- Utilise `old()` pour pré-remplir les champs après validation
-- Gère les erreurs de validation via `$errors`
-- Utilise `@csrf` pour la protection CSRF
-- Peut utiliser `FormRequest` pour la validation finale
-- Utilise `session()->flash()` pour les messages de succès
+### 4.2 Template · Formulaire à onglets
+- **Chemin** : `resources/views/templates/form-with-tabs.blade.php`
+- **Props principales**
+    ```php
+    @props([
+        'title' => __('form.tabs.title'),
+        'action' => '#',
+        'method' => 'POST',
+        'tabs' => [], // [['id' => 'general', 'label' => 'Général']]
+        'activeTab' => null,
+        'tabsStyle' => 'box', // box|border|lift
+        'tabsPlacement' => 'top', // top|bottom
+        'highlightErrors' => true,
+        'showErrorBadges' => true,
+        'persistActiveTabField' => '_active_tab',
+    ])
+    ```
+- **Slots requis** : `tab_{id}`, `tab_{id}_footer` (optionnel), `actions`.
+- **Comportements attendus**
+  - Script `form-tabs` : mise à jour du champ caché `persistActiveTabField`, restauration via `old()`.
+  - Helper `TabErrorBag` pour compter les erreurs par onglet (association champs ↔ tab id).
+  - Badge d’erreur (via `x-daisy::ui.data-display.badge`) avec le nombre d’erreurs pour chaque onglet impacté.
+- **Tests**
+  - Feature : onglet par défaut, restauration via `old`, badge erreur.
+  - Browser : clic onglet → champ caché mis à jour + conservation après validation échouée.
 
-**Composants UI utilisés** :
-- `x-daisy::layout.app` ou layout approprié
-- `x-daisy::ui.navigation.stepper` (composant principal pour la navigation)
-- `x-daisy::ui.partials.form-field` (champs de formulaire)
-- `x-daisy::ui.inputs.*` (tous les types d'inputs)
-- `x-daisy::ui.inputs.button` (boutons de navigation)
-- `x-daisy::ui.feedback.alert` (messages d'erreur/succès)
-- `x-daisy::ui.feedback.loading` (indicateur de chargement)
+### 4.3 Template · Formulaire inline / filtres
+- **Chemin** : `resources/views/templates/form-inline.blade.php`
+- **Props principales**
+    ```php
+    @props([
+        'action' => '#',
+        'method' => 'GET',
+        'size' => 'sm', // xs|sm|md
+        'collapseBelow' => 'md',
+        'showReset' => true,
+        'submitText' => __('form.search'),
+        'resetText' => __('form.reset'),
+        'activeFilters' => [], // [['label' => 'Statut', 'value' => 'Actif', 'param' => 'status']]
+        'showAdvanced' => false,
+        'advancedTitle' => __('form.advanced_filters'),
+    ])
+    ```
+- **Slots requis** : `filters`, `actions`, `active-filters`, `advanced`.
+- **Comportements attendus**
+  - Tokens actifs affichant les filtres courants avec bouton `×` renvoyant un event `filter-clear`.
+  - Passage automatique en layout vertical sous `collapseBelow`.
+  - Drawer `x-daisy::ui.overlay.drawer` ouvert via bouton “Filtres avancés” si `showAdvanced=true`.
+  - Gestion GET/POST : injection de `@csrf` et `@method` si nécessaire.
+- **Tests**
+  - Feature : rendu GET (sans CSRF), rendu POST (avec CSRF + méthode), tokens actifs.
+  ̀- Browser : suppression d’un filtre → redirection sans le paramètre, ouverture/fermeture du drawer.
 
-**Structure** :
-- En-tête avec titre
-- Composant `stepper` avec les étapes
-- Contenu de chaque étape dans des slots nommés (`step_1`, `step_2`, etc.)
-- Contrôles de navigation (Précédent, Suivant, Terminer)
-- Messages de validation par étape
+### 4.4 Composant CSRF Keeper (NOUVEAU)
+- **But** : éviter les échecs de soumission lorsque le navigateur met la page en veille et que le token CSRF expire.
+- **Livrables**
+  1. **Blade component** `resources/views/components/ui/utilities/csrf-keeper.blade.php`
+     - Props : `refreshInterval` (ms, par défaut 5 minutes), `endpoint` (route dédiée), `module` override.
+     - Rend un `<div data-module="csrf-keeper" data-refresh-interval="300000" data-endpoint="...">`.
+  2. **Contrôleur** `Daisy\Kit\Http\Controllers\CsrfTokenController`
+     - Méthode `__invoke()` retournant la nouvelle valeur de `csrf_token()` en JSON + header `X-CSRF-TOKEN`.
+     - Route incluse dans le package (groupe `daisy-kit.csrf-token`), publication documentée.
+  3. **JS module** `resources/js/modules/csrf-keeper.js`
+     - Rafraîchit le token à intervalle fixe ou lorsqu’un event `csrf-keeper:refresh` est dispatché.
+     - Met à jour le `<meta name="csrf-token">`, le cookie `_token` si défini, et notifie les listeners via event `csrf-keeper:updated`.
+  4. **Intégrations** : les trois templates incluent `x-daisy::ui.utilities.csrf-keeper` (avec possibilité de le désactiver via prop `autoRefreshCsrf=false`).
+- **Scénarios gérés**
+  - Mise en veille prolongée : rafraîchissement silencieux avant soumission.
+  - Expiration détectée (réponse 419) : relance immédiate d’un refresh + affichage d’une alerte via slot `csrfExpired`.
+  - Compatibilité avec installations existantes (route suffixée `.json`, middleware `web` requis).
+- **Tests**
+  - Feature : route du contrôleur retourne bien un JSON avec token.
+  - Browser : simulation d’un token expiré → module rafraîchit puis relance la requête réussie.
 
-**Exemple d'utilisation** :
+## 5. Livrables techniques complémentaires
+- **Helpers PHP**
+  - `WizardPersistence` : lecture/écriture/forget des données wizard en session.
+  - `TabErrorBag` : comptage des erreurs par onglet.
+- **Modules JS**
+  - `form-wizard.js`, `form-tabs.js`, `form-inline.js`, `csrf-keeper.js`.
+  - Tous enregistrés dans `resources/js/kit/index.js` avec options typées.
+- **Localisation**
+  - Fichiers `resources/lang/en/form.php` et `resources/lang/fr/form.php`.
+  - Clés supplémentaires : `csrf.refreshing`, `csrf.expired`, `advanced_filters`, `clear_filter`.
+- **Documentation**
+  - Page `resources/dev/views/docs/templates/forms.blade.php`.
+  - Ajout au changelog (`lot 3`).
 
-```blade
-<x-daisy::form.wizard
-    title="Inscription"
-    :steps="[
-        ['label' => 'Informations', 'icon' => 'user'],
-        ['label' => 'Contact', 'icon' => 'envelope'],
-        ['label' => 'Confirmation', 'icon' => 'check'],
-    ]"
-    action="{{ route('register') }}"
-    :currentStep="session('wizard_step', 1)"
->
-    <x-slot:step_1>
-        <x-daisy::ui.partials.form-field name="name" label="Nom" required>
-            <x-daisy::ui.inputs.input name="name" :value="old('name', session('wizard_data.name'))" />
-        </x-daisy::ui.partials.form-field>
-    </x-slot:step_1>
+## 6. Plan de tests
+| Suite | Cible | Fichiers | Points vérifiés |
+|-------|-------|----------|-----------------|
+| Feature | Wizard | `tests/Feature/FormWizardRenderingTest.php` | Props par défaut, persistance, résumé, autoRefresh CSRF activé. |
+| Feature | Tabs | `tests/Feature/FormTabsRenderingTest.php` | Onglet actif, badges erreurs. |
+| Feature | Inline | `tests/Feature/FormInlineRenderingTest.php` | GET/POST, tokens actifs, drawer. |
+| Feature | CSRF Keeper | `tests/Feature/CsrfKeeperControllerTest.php` | Refresh token JSON + headers. |
+| Browser | Wizard | `tests/Browser/FormWizardTest.php` | Navigation, refresh CSRF après veille simulée. |
+| Browser | Tabs | `tests/Browser/FormTabsTest.php` | Maintien onglet après validation. |
+| Browser | Inline | `tests/Browser/FormInlineFilterTest.php` | Suppression filtre, panel avancé, refresh token. |
 
-    <x-slot:step_2>
-        <x-daisy::ui.partials.form-field name="email" label="Email" required>
-            <x-daisy::ui.inputs.input name="email" type="email" :value="old('email', session('wizard_data.email'))" />
-        </x-daisy::ui.partials.form-field>
-    </x-slot:step_2>
+Tous les tests utilisent `composer test` (alias Pest parallèle). Les Browser tests reposent sur des routes demo (`routes/web.php`, groupe `demo.forms`).
 
-    <x-slot:step_3>
-        <p>Confirmez vos informations...</p>
-    </x-slot:step_3>
-</x-daisy::form.wizard>
-```
+## 7. Roadmap d’implémentation
+1. **CSRF Keeper** (base nécessaire aux trois templates).
+2. **Form Tabs** (structure de slots + helper TabErrorBag).
+3. **Form Inline** (tokens + drawer + intégration CSRF Keeper).
+4. **Form Wizard** (persistance session + résumé + usage combiné des briques précédentes).
+5. **Docs + Changelog + Traductions**.
 
-**Logique backend recommandée** :
-```php
-// Dans le contrôleur
-public function storeWizard(Request $request) {
-    $step = $request->input('step', 1);
-    
-    // Sauvegarder les données dans la session
-    $wizardData = session('wizard_data', []);
-    $wizardData = array_merge($wizardData, $request->except(['_token', 'step']));
-    session(['wizard_data' => $wizardData, 'wizard_step' => $step]);
-    
-    // Valider l'étape actuelle
-    $validator = $this->validateStep($step, $request);
-    if ($validator->fails()) {
-        return back()->withErrors($validator)->withInput();
-    }
-    
-    // Si dernière étape, traiter les données
-    if ($step === count($this->steps)) {
-        // Créer l'enregistrement
-        $user = User::create($wizardData);
-        session()->forget(['wizard_data', 'wizard_step']);
-        return redirect()->route('dashboard')->with('success', 'Inscription réussie !');
-    }
-    
-    // Passer à l'étape suivante
-    return redirect()->back()->with('step', $step + 1);
-}
-```
+## 8. Points de vigilance
+- Aucun composant inline SVG : uniquement Blade Icons existants.
+- Pas de CSS custom, respect strict Tailwind v4 + daisyUI v5.
+- Publication des routes/controllers derrière un flag de config si nécessaire.
+- Exposer une prop `csrfKeeper` sur chaque template pour permettre l’opt-out dans les projets qui gèrent déjà ce flux.
 
-**Traductions nécessaires** (à créer `resources/lang/fr/form.php`) :
-- `wizard" : "Assistant"
-- `previous" : "Précédent"
-- `next" : "Suivant"
-- `finish" : "Terminer"
-- `step" : "Étape"
-- `of" : "sur"
-- `complete_step_first" : "Veuillez compléter cette étape avant de continuer"
-
----
-
-### 2. form-inline.blade.php
-**Fichier** : `resources/views/templates/form-inline.blade.php`
-
-**Description** : Formulaire compact inline, idéal pour les recherches, filtres rapides, ou formulaires dans des tableaux.
-
-**Props** :
-```php
-@props([
-    'action' => '#',
-    'method' => 'GET', // GET par défaut pour les recherches/filtres
-    'inline' => true, // Layout inline (champs sur une ligne)
-    'compact' => true, // Taille compacte des inputs
-    'showLabels' => false, // Masquer les labels (placeholders uniquement)
-    'submitText' => __('form.search'),
-    'resetText' => __('form.reset'),
-    'showReset' => true,
-    'size' => 'sm', // xs, sm, md, lg
-])
-```
-
-**Fonctionnalités Laravel** :
-- Utilise `method="GET"` par défaut pour les recherches (pas de CSRF nécessaire)
-- Utilise `old()` pour pré-remplir les valeurs
-- Utilise `request()->query()` pour récupérer les paramètres GET
-- Gère les erreurs de validation si `method="POST"`
-
-**Composants UI utilisés** :
-- `x-daisy::ui.partials.form-field` (avec `showLabels` false)
-- `x-daisy::ui.inputs.input` (taille compacte)
-- `x-daisy::ui.inputs.select` (taille compacte)
-- `x-daisy::ui.inputs.button` (taille compacte)
-- `x-daisy::ui.advanced.join` (pour grouper les champs et boutons)
-
-**Structure** :
-- Layout flex horizontal
-- Champs alignés sur une ligne
-- Boutons de soumission et reset à droite
-- Responsive : passe en vertical sur mobile
-
-**Exemple d'utilisation** :
-
-```blade
-<x-daisy::form.inline
-    action="{{ route('users.search') }}"
-    method="GET"
-    submitText="Rechercher"
->
-    <x-daisy::ui.partials.form-field name="q" :showLabels="false" class="flex-1">
-        <x-daisy::ui.inputs.input
-            name="q"
-            placeholder="Rechercher un utilisateur..."
-            :value="request()->query('q')"
-            size="sm"
-        />
-    </x-daisy::ui.partials.form-field>
-
-    <x-daisy::ui.partials.form-field name="role" :showLabels="false">
-        <x-daisy::ui.inputs.select name="role" size="sm">
-            <option value="">Tous les rôles</option>
-            <option value="admin" {{ request()->query('role') === 'admin' ? 'selected' : '' }}>Admin</option>
-            <option value="user" {{ request()->query('role') === 'user' ? 'selected' : '' }}>Utilisateur</option>
-        </x-daisy::ui.inputs.select>
-    </x-daisy::ui.partials.form-field>
-
-    <x-slot:actions>
-        <x-daisy::ui.inputs.button type="submit" size="sm">Rechercher</x-daisy::ui.inputs.button>
-        <x-daisy::ui.inputs.button type="reset" variant="ghost" size="sm">Réinitialiser</x-daisy::ui.inputs.button>
-    </x-slot:actions>
-</x-daisy::form.inline>
-```
-
-**Traductions nécessaires** :
-- `search" : "Rechercher"
-- `reset" : "Réinitialiser"
-- `filter" : "Filtrer"
-
----
-
-### 3. form-with-tabs.blade.php
-**Fichier** : `resources/views/templates/form-with-tabs.blade.php`
-
-**Description** : Formulaire organisé en onglets pour regrouper logiquement les champs (ex: informations générales, adresse, préférences).
-
-**Props** :
-```php
-@props([
-    'title' => __('form.form'),
-    'theme' => null,
-    // Form
-    'action' => '#',
-    'method' => 'POST',
-    // Tabs configuration
-    'tabs' => [], // ['id' => 'general', 'label' => 'Général', 'icon' => 'info']
-    'activeTab' => null, // Auto-detect from old('_active_tab') or first tab
-    'tabsStyle' => 'box', // box, border, lift
-    'tabsPlacement' => 'top', // top, bottom
-    // Validation
-    'validateAllTabs' => false, // Afficher les erreurs de tous les onglets
-    'highlightErrors' => true, // Mettre en évidence les onglets avec erreurs
-])
-```
-
-**Fonctionnalités Laravel** :
-- Utilise `old('_active_tab')` pour restaurer l'onglet actif après validation
-- Utilise `old()` pour pré-remplir tous les champs
-- Gère les erreurs de validation et les affiche dans les onglets correspondants
-- Utilise `@csrf` pour la protection CSRF
-- Utilise `@method()` pour PUT/PATCH si nécessaire
-
-**Composants UI utilisés** :
-- `x-daisy::layout.app` ou layout approprié
-- `x-daisy::ui.navigation.tabs` (composant principal)
-- `x-daisy::ui.partials.form-field` (champs de formulaire)
-- `x-daisy::ui.inputs.*` (tous les types d'inputs)
-- `x-daisy::ui.inputs.button` (boutons de soumission)
-- `x-daisy::ui.data-display.badge` (badge d'erreur sur les onglets)
-- `x-daisy::ui.feedback.alert` (messages)
-
-**Structure** :
-- En-tête avec titre
-- Composant `tabs` avec les onglets
-- Contenu de chaque onglet dans des slots nommés (`tab_general`, `tab_address`, etc.)
-- Champ caché `_active_tab` pour persister l'onglet actif
-- Boutons de soumission en bas
-- Indicateurs d'erreur sur les onglets (badges)
-
-**Exemple d'utilisation** :
-
-```blade
-<x-daisy::form.with-tabs
-    title="Modifier le profil"
-    action="{{ route('profile.update') }}"
-    method="POST"
-    :tabs="[
-        ['id' => 'general', 'label' => 'Général', 'icon' => 'user'],
-        ['id' => 'address', 'label' => 'Adresse', 'icon' => 'map'],
-        ['id' => 'preferences', 'label' => 'Préférences', 'icon' => 'gear'],
-    ]"
-    :activeTab="old('_active_tab', 'general')"
-    tabsStyle="box"
->
-    <x-slot:tab_general>
-        <x-daisy::ui.partials.form-field name="name" label="Nom" required>
-            <x-daisy::ui.inputs.input name="name" :value="old('name', $user->name)" />
-        </x-daisy::ui.partials.form-field>
-        <x-daisy::ui.partials.form-field name="email" label="Email" required>
-            <x-daisy::ui.inputs.input name="email" type="email" :value="old('email', $user->email)" />
-        </x-daisy::ui.partials.form-field>
-    </x-slot:tab_general>
-
-    <x-slot:tab_address>
-        <x-daisy::ui.partials.form-field name="street" label="Rue">
-            <x-daisy::ui.inputs.input name="street" :value="old('street', $user->address->street ?? '')" />
-        </x-daisy::ui.partials.form-field>
-        <x-daisy::ui.partials.form-field name="city" label="Ville">
-            <x-daisy::ui.inputs.input name="city" :value="old('city', $user->address->city ?? '')" />
-        </x-daisy::ui.partials.form-field>
-    </x-slot:tab_address>
-
-    <x-slot:tab_preferences>
-        <x-daisy::ui.partials.form-field name="language" label="Langue">
-            <x-daisy::ui.inputs.select name="language">
-                <option value="fr" {{ old('language', $user->language) === 'fr' ? 'selected' : '' }}>Français</option>
-                <option value="en" {{ old('language', $user->language) === 'en' ? 'selected' : '' }}>English</option>
-            </x-daisy::ui.inputs.select>
-        </x-daisy::ui.partials.form-field>
-    </x-slot:tab_preferences>
-
-    <x-slot:actions>
-        <input type="hidden" name="_active_tab" value="{{ old('_active_tab', 'general') }}" id="active-tab-input">
-        <x-daisy::ui.inputs.button type="submit">Enregistrer</x-daisy::ui.inputs.button>
-        <x-daisy::ui.inputs.button type="button" variant="ghost" onclick="window.history.back()">Annuler</x-daisy::ui.inputs.button>
-    </x-slot:actions>
-</x-daisy::form.with-tabs>
-```
-
-**Logique JavaScript nécessaire** :
-- Sauvegarder l'onglet actif dans le champ caché `_active_tab` lors du changement d'onglet
-- Mettre en évidence les onglets avec erreurs (badge avec nombre d'erreurs)
-
-**Traductions nécessaires** :
-- `form" : "Formulaire"
-- `save" : "Enregistrer"
-- `cancel" : "Annuler"
-- `errors_in_tab" : ":count erreur(s) dans cet onglet"
-
----
-
-## Composants/Wrappers nécessaires
-
-### Aucun nouveau composant requis
-Tous les templates utilisent exclusivement les composants UI existants :
-- `stepper` existe déjà pour le wizard
-- `tabs` existe déjà pour le formulaire avec onglets
-- Tous les autres composants (inputs, form-field, etc.) existent
-
-**Note** : Le composant `stepper` gère déjà la navigation et la persistance via JavaScript. Pour le wizard, il faudra synchroniser avec les sessions Laravel côté backend.
-
----
-
-## Tests à prévoir
-
-Pour chaque template :
-1. **Test de rendu** : Vérifier le rendu avec les props par défaut
-2. **Test de navigation** (wizard/tabs) : Vérifier le changement d'étape/onglet
-3. **Test de validation** : Vérifier l'affichage des erreurs
-4. **Test de persistance** (wizard) : Vérifier la sauvegarde dans la session
-5. **Test responsive** : Vérifier l'affichage sur mobile (form-inline passe en vertical)
-6. **Test de soumission** : Vérifier la soumission du formulaire
-7. **Test d'erreurs par onglet** (form-with-tabs) : Vérifier les badges d'erreur sur les onglets
-
----
-
-## Ordre d'implémentation recommandé
-
-1. `form-inline.blade.php` (le plus simple)
-2. `form-with-tabs.blade.php` (modéré)
-3. `form-wizard.blade.php` (le plus complexe avec gestion de session)
-
----
-
-## Notes importantes
-
-- **form-wizard** : Nécessite une synchronisation entre le JavaScript du stepper et les sessions Laravel. Le stepper gère la navigation côté client, mais les données doivent être sauvegardées côté serveur à chaque étape.
-- **form-inline** : Par défaut en `method="GET"` pour les recherches/filtres (pas de CSRF nécessaire). Peut être changé en `POST` si nécessaire.
-- **form-with-tabs** : Utilise un champ caché `_active_tab` pour restaurer l'onglet actif après validation. Le JavaScript doit mettre à jour ce champ lors du changement d'onglet.
-- Tous les templates doivent respecter les conventions Laravel : `old()`, `$errors`, `@csrf`, `@method()`
-- Les traductions doivent être ajoutées dans `resources/lang/fr/form.php` et `resources/lang/en/form.php`
-
+Ce plan garantit un lot 3 centré sur des expériences formulaires abouties et robustes, tout en adressant le besoin supplémentaire de rafraîchissement automatique du CSRF pour éviter les échecs utilisateur après longue inactivité.

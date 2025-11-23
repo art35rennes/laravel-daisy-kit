@@ -43,6 +43,13 @@ daisyUI 5 provides class names for common UI components
 9. suggested - when designing , don't add a custom font unless it's necessary
 10. don't add `bg-base-100 text-base-content` to body unless it's necessary
 11. For design decisions, use Refactoring UI book best practices
+12. **PRIORITY RULE - Always use daisyUI classes first**: When styling components, ALWAYS check if daisyUI provides a class for the desired style before using Tailwind CSS utility classes. This ensures proper theme adaptation and consistency. Examples:
+    - Use `card-border` instead of `border border-base-300` for card borders
+    - Use `rounded-box` instead of `rounded-2xl`, `rounded-3xl` for container rounding
+    - Use `shadow` instead of `shadow-md`, `shadow-lg`, `shadow-sm` for shadows (daisyUI's shadow adapts to themes)
+    - Use component-specific daisyUI classes (like `card`, `alert`, `btn`) which automatically handle borders, shadows, and rounding according to the theme
+    - Only use Tailwind utility classes when daisyUI doesn't provide an equivalent class
+    - This priority ensures all components adapt correctly to different daisyUI themes (light, dark, synthwave, etc.)
 
 daisyUI 5 class names are one of the following categories. These type names are only for reference and are not used in the actual code
 - `component`: the required component class
