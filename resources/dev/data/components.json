@@ -1,5 +1,5 @@
 {
-    "generated_at": "2025-11-22T21:42:59+00:00",
+    "generated_at": "2025-11-23T11:30:37+00:00",
     "components": [
         {
             "name": "accordion",
@@ -742,6 +742,94 @@
             ]
         },
         {
+            "name": "changelog-change-item",
+            "view": "daisy::components.ui.changelog.changelog-change-item",
+            "category": "changelog",
+            "tags": [
+                "changelog"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "type",
+                "category",
+                "description",
+                "breaking",
+                "issues",
+                "number",
+                "url",
+                "contributors",
+                "image",
+                "migration",
+                "migrationGuide",
+                "cve",
+                "severity",
+                "issueBaseUrl"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "changelog-header",
+            "view": "daisy::components.ui.changelog.changelog-header",
+            "category": "changelog",
+            "tags": [
+                "changelog"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "title",
+                "currentVersion",
+                "rssUrl",
+                "atomUrl",
+                "showVersionBadge"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "changelog-toolbar",
+            "view": "daisy::components.ui.changelog.changelog-toolbar",
+            "category": "changelog",
+            "tags": [
+                "changelog"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "showSearch",
+                "showFilters",
+                "searchPlaceholder",
+                "filterName",
+                "filterItems"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "changelog-version-item",
+            "view": "daisy::components.ui.changelog.changelog-version-item",
+            "category": "changelog",
+            "tags": [
+                "changelog"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "version",
+                "date",
+                "isCurrent",
+                "yanked",
+                "tagUrl",
+                "compareUrl",
+                "items",
+                "changes",
+                "added",
+                "fixed"
+            ],
+            "dataAttributes": [
+                "version"
+            ]
+        },
+        {
             "name": "chat-bubble",
             "view": "daisy::components.ui.communication.chat-bubble",
             "category": "communication",
@@ -1127,7 +1215,8 @@
                 "fileSize",
                 "thumbnail",
                 "downloadable",
-                "size"
+                "size",
+                "openMode"
             ],
             "dataAttributes": [
                 "url",
@@ -1275,6 +1364,76 @@
             "dataAttributes": []
         },
         {
+            "name": "error-actions",
+            "view": "daisy::components.ui.errors.error-actions",
+            "category": "errors",
+            "tags": [
+                "errors"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "homeUrl",
+                "backUrl",
+                "showBack",
+                "showHome"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "error-content",
+            "view": "daisy::components.ui.errors.error-content",
+            "category": "errors",
+            "tags": [
+                "errors"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "statusCode",
+                "title",
+                "message",
+                "homeUrl",
+                "backUrl",
+                "showActions",
+                "showDetails",
+                "exception"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "error-header",
+            "view": "daisy::components.ui.errors.error-header",
+            "category": "errors",
+            "tags": [
+                "errors"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "statusCode",
+                "title"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "loading-state-content",
+            "view": "daisy::components.ui.errors.loading-state-content",
+            "category": "errors",
+            "tags": [
+                "errors"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "type",
+                "message",
+                "size",
+                "skeletonCount"
+            ],
+            "dataAttributes": []
+        },
+        {
             "name": "alert",
             "view": "daisy::components.ui.feedback.alert",
             "category": "feedback",
@@ -1334,6 +1493,22 @@
                 "message",
                 "actionLabel",
                 "actionUrl",
+                "size"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "loading-message",
+            "view": "daisy::components.ui.feedback.loading-message",
+            "category": "feedback",
+            "tags": [
+                "feedback"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "message",
+                "shape",
                 "size"
             ],
             "dataAttributes": []

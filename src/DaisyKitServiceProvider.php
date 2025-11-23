@@ -83,7 +83,18 @@ class DaisyKitServiceProvider extends ServiceProvider
                     ->name('daisy.docs.template');
 
                 // Pages Composants /{category}/{component}
+                // Cette route gère aussi les templates d'erreur via /errors/{template}
                 Route::get('/{category}/{component}', function (string $category, string $component) {
+                    // Si c'est une catégorie "errors" et que c'est un template, utiliser la route template
+                    $errorTemplates = ['empty-state', 'error', 'loading-state', 'maintenance'];
+                    if ($category === 'errors' && in_array($component, $errorTemplates, true)) {
+                        $view = "daisy-dev::docs.templates.$component";
+                        if (view()->exists($view)) {
+                            return view($view);
+                        }
+                    }
+
+                    // Sinon, chercher un composant
                     $view = "daisy-dev::docs.components.$category.$component";
                     if (view()->exists($view)) {
                         return view($view, ['category' => $category, 'component' => $component]);

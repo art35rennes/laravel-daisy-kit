@@ -51,6 +51,7 @@ return,tree-view
 radio-name,tree-view
 trix-attachments,wysiwyg
 trix-deferred,wysiwyg
+version,changelog-version-item
 send-message-url,chat-input
 typing-url,chat-input
 enable-file-upload,chat-input

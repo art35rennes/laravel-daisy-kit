@@ -27,6 +27,10 @@ transfer,daisy::components.ui.advanced.transfer,advanced,"advanced, js, async, l
 tree-view,daisy::components.ui.advanced.tree-view,advanced,"advanced, js, async, lazy",treeview,active
 validator,daisy::components.ui.advanced.validator,advanced,advanced,,active
 wysiwyg,daisy::components.ui.advanced.wysiwyg,advanced,advanced,,active
+changelog-change-item,daisy::components.ui.changelog.changelog-change-item,changelog,changelog,,active
+changelog-header,daisy::components.ui.changelog.changelog-header,changelog,changelog,,active
+changelog-toolbar,daisy::components.ui.changelog.changelog-toolbar,changelog,changelog,,active
+changelog-version-item,daisy::components.ui.changelog.changelog-version-item,changelog,changelog,,active
 chat-bubble,daisy::components.ui.communication.chat-bubble,communication,communication,,active
 chat-header,daisy::components.ui.communication.chat-header,communication,communication,,active
 chat-input,daisy::components.ui.communication.chat-input,communication,communication,,active
@@ -48,9 +52,14 @@ stat,daisy::components.ui.data-display.stat,data-display,data-display,,active
 status,daisy::components.ui.data-display.status,data-display,data-display,,active
 table,daisy::components.ui.data-display.table,data-display,"data-display, js, async",table,active
 timeline,daisy::components.ui.data-display.timeline,data-display,data-display,,active
+error-actions,daisy::components.ui.errors.error-actions,errors,errors,,active
+error-content,daisy::components.ui.errors.error-content,errors,errors,,active
+error-header,daisy::components.ui.errors.error-header,errors,errors,,active
+loading-state-content,daisy::components.ui.errors.loading-state-content,errors,errors,,active
 alert,daisy::components.ui.feedback.alert,feedback,feedback,,active
 callout,daisy::components.ui.feedback.callout,feedback,feedback,,active
 empty-state,daisy::components.ui.feedback.empty-state,feedback,feedback,,active
+loading-message,daisy::components.ui.feedback.loading-message,feedback,feedback,,active
 loading,daisy::components.ui.feedback.loading,feedback,feedback,,active
 skeleton,daisy::components.ui.feedback.skeleton,feedback,feedback,,active
 toast,daisy::components.ui.feedback.toast,feedback,feedback,,active

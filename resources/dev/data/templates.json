@@ -1,5 +1,5 @@
 {
-    "generated_at": "2025-11-22T21:42:58+00:00",
+    "generated_at": "2025-11-23T11:12:53+00:00",
     "templates": [
         {
             "name": "forgot-password",
@@ -168,6 +168,58 @@
             }
         },
         {
+            "name": "empty-state",
+            "category": "errors",
+            "label": "Empty State",
+            "description": "Template pour afficher un état vide (aucune donnée, aucun résultat).",
+            "route": null,
+            "view": "daisy::templates.empty-state",
+            "tags": [
+                "errors",
+                "error",
+                "state"
+            ]
+        },
+        {
+            "name": "error",
+            "category": "errors",
+            "label": "Error",
+            "description": "Template généralisé pour toutes les pages d'erreur HTTP (404, 500, 403, etc.).",
+            "route": null,
+            "view": "daisy::templates.error",
+            "tags": [
+                "errors",
+                "error",
+                "state"
+            ]
+        },
+        {
+            "name": "loading-state",
+            "category": "errors",
+            "label": "Loading State",
+            "description": "Template pour afficher un état de chargement avec indicateur visuel.",
+            "route": null,
+            "view": "daisy::templates.loading-state",
+            "tags": [
+                "errors",
+                "error",
+                "state"
+            ]
+        },
+        {
+            "name": "maintenance",
+            "category": "errors",
+            "label": "Maintenance",
+            "description": "Page de maintenance affichée quand l'application est en mode maintenance.",
+            "route": null,
+            "view": "daisy::templates.maintenance",
+            "tags": [
+                "errors",
+                "error",
+                "state"
+            ]
+        },
+        {
             "name": "notification-center",
             "category": "communication",
             "label": "Notification Center",
@@ -200,6 +252,11 @@
             "label": "Communication",
             "description": "Templates pour les fonctionnalités de communication (chat, notifications).",
             "icon": "message"
+        },
+        {
+            "label": "Erreurs et états",
+            "description": "Templates pour la gestion des erreurs HTTP et des états de l'application.",
+            "icon": "alert"
         }
     ]
 }

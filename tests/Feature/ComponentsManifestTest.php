@@ -1,14 +1,25 @@
 <?php
 
+use Illuminate\Support\Facades\Artisan;
+
 /**
  * Charge le manifeste des composants (resources/dev/data/components.json).
+ * Si le fichier est manquant, tente de le générer via la commande d'inventaire.
  */
 function loadComponentsManifest(): array
 {
     $root = dirname(__DIR__, 2);
     $path = $root.DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR.'dev'.DIRECTORY_SEPARATOR.'data'.DIRECTORY_SEPARATOR.'components.json';
+
     if (! is_file($path)) {
-        throw new RuntimeException("Manifeste introuvable: {$path}");
+        Artisan::call('inventory:components');
+
+        if (! is_file($path)) {
+            throw new RuntimeException(
+                "Manifeste introuvable: {$path}\n".
+                "Exécutez 'php artisan inventory:components' pour le générer avant de lancer les tests."
+            );
+        }
     }
 
     $json = json_decode((string) file_get_contents($path), true);
@@ -19,103 +30,76 @@ function loadComponentsManifest(): array
     return $json['components'];
 }
 
-/**
- * Dataset: tous les composants.
- */
-function dataset_all_components(): array
-{
+it('renders every component view from manifest', function () {
     $components = loadComponentsManifest();
 
-    // Dataset au format ['name' => ['component' => [...]]]
-    $dataset = [];
-    foreach ($components as $comp) {
-        $dataset[$comp['name']] = [$comp];
+    foreach ($components as $component) {
+        $view = $component['view'];
+
+        // Rendons une première fois avec des valeurs génériques
+        $html = renderComponent($view, [
+            // Beaucoup de composants ont des valeurs par défaut, on évite de forcer des props ici.
+            // Les composants d’inputs acceptent un slot simple sans props.
+            'slot' => 'sample',
+            'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        ]);
+
+        // Certains composants nécessitent des props minimales pour produire une sortie non vide.
+        if ($html === '') {
+            $name = $component['name'] ?? null;
+
+            if ($name === 'icon') {
+                $html = renderComponent($view, [
+                    'name' => 'heart',
+                    'prefix' => 'bi',
+                    'slot' => '',
+                    'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+                ]);
+            } elseif ($name === 'chat-header') {
+                $html = renderComponent($view, [
+                    'conversation' => ['id' => 1, 'name' => 'Test', 'avatar' => null, 'isOnline' => false],
+                    'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+                ]);
+            } elseif ($name === 'notification-item') {
+                $html = renderComponent($view, [
+                    'notification' => [
+                        'id' => 1,
+                        'type' => 'test',
+                        'data' => ['message' => 'Test message'],
+                        'read_at' => null,
+                        'created_at' => now(),
+                    ],
+                    'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+                ]);
+            }
+        }
+
+        expect($html)->not->toBeEmpty("Empty output for view {$view}");
     }
+});
 
-    return $dataset;
-}
-
-/**
- * Dataset: composants avec module JS (doivent exposer data-module et accepter la prop 'module').
- */
-function dataset_js_components(): array
-{
+it('accepts module override and reflects data-module accordingly', function () {
     $components = loadComponentsManifest();
-    $dataset = [];
-    foreach ($components as $comp) {
-        if (! empty($comp['jsModule'])) {
-            $dataset[$comp['name']] = [$comp];
+    $jsComponents = array_filter($components, fn ($comp) => ! empty($comp['jsModule']));
+
+    foreach ($jsComponents as $component) {
+        $view = $component['view'];
+
+        // Valeur d’override arbitraire, simple à rechercher
+        $override = '__override__';
+
+        $html = renderComponent($view, [
+            'module' => $override,
+            'slot' => 'sample',
+            'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        ]);
+
+        // Certains composants n'ajoutent data-module que selon certaines props (ex: file-input sans preview/dragdrop).
+        // On vérifie la cohérence uniquement si data-module est présent.
+        if (str_contains($html, 'data-module="')) {
+            expect($html)->toContain('data-module="'.$override.'"');
+        } else {
+            expect(true)->toBeTrue(); // pas de contrainte si non applicable
         }
     }
-
-    return $dataset;
-}
-
-// Déclarer des datasets nommés pour compatibilité avec l'exécution parallèle
-dataset('all_components', dataset_all_components());
-dataset('js_components', dataset_js_components());
-
-it('renders every component view from manifest', function (array $component) {
-    $view = $component['view'];
-
-    // Rendons une première fois avec des valeurs génériques
-    $html = renderComponent($view, [
-        // Beaucoup de composants ont des valeurs par défaut, on évite de forcer des props ici.
-        // Les composants d’inputs acceptent un slot simple sans props.
-        'slot' => 'sample',
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
-    ]);
-
-    // Certains composants nécessitent des props minimales pour produire une sortie non vide.
-    if ($html === '') {
-        $name = $component['name'] ?? null;
-
-        if ($name === 'icon') {
-            $html = renderComponent($view, [
-                'name' => 'heart',
-                'prefix' => 'bi',
-                'slot' => '',
-                'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
-            ]);
-        } elseif ($name === 'chat-header') {
-            $html = renderComponent($view, [
-                'conversation' => ['id' => 1, 'name' => 'Test', 'avatar' => null, 'isOnline' => false],
-                'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
-            ]);
-        } elseif ($name === 'notification-item') {
-            $html = renderComponent($view, [
-                'notification' => [
-                    'id' => 1,
-                    'type' => 'test',
-                    'data' => ['message' => 'Test message'],
-                    'read_at' => null,
-                    'created_at' => now(),
-                ],
-                'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
-            ]);
-        }
-    }
-
-    expect($html)->not->toBeEmpty("Empty output for view {$view}");
-})->with('all_components');
-
-it('accepts module override and reflects data-module accordingly', function (array $component) {
-    $view = $component['view'];
-
-    // Valeur d’override arbitraire, simple à rechercher
-    $override = '__override__';
-
-    $html = renderComponent($view, [
-        'module' => $override,
-        'slot' => 'sample',
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
-    ]);
-
-    // Certains composants n'ajoutent data-module que selon certaines props (ex: file-input sans preview/dragdrop).
-    // On vérifie la cohérence uniquement si data-module est présent.
-    if (str_contains($html, 'data-module="')) {
-        expect($html)->toContain('data-module="'.$override.'"');
-    } else {
-        expect(true)->toBeTrue(); // pas de contrainte si non applicable
-    }
-})->with('js_components');
+});
