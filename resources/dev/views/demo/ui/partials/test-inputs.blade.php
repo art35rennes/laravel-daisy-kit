@@ -12,8 +12,10 @@
                 <x-daisy::ui.inputs.input id="name" placeholder="Jane Doe" variant="ghost" />
             </div>
             <div class="form-control">
-                <x-daisy::ui.advanced.label for="password" value="Password" />
-                <x-daisy::ui.inputs.input id="password" type="password" color="primary" />
+                <form>
+                    <x-daisy::ui.advanced.label for="password" value="Password" />
+                    <x-daisy::ui.inputs.input id="password" type="password" color="primary" />
+                </form>
             </div>
         </div>
         <div class="grid grid-cols-5 gap-3">

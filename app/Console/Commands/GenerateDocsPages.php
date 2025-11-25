@@ -263,6 +263,7 @@ BLADE;
                 default => '<x-'.$componentTag.' />',
             },
             'utilities' => match ($name) {
+                'copyable' => '<p>Vous pouvez copier cette <x-'.$componentTag.'>valeur</x-'.$componentTag.'> directement dans votre presse-papier en cliquant dessus.</p>',
                 'mockup-browser' => '<x-'.$componentTag.' url="https://example.com">'."\n".'    <div class="p-4">Contenu de la page</div>'."\n".'</x-'.$componentTag.'>',
                 'mockup-code' => '<x-'.$componentTag.'>'."\n".'    <pre data-prefix="$"><code>php artisan serve</code></pre>'."\n".'</x-'.$componentTag.'>',
                 'mockup-phone' => '<x-'.$componentTag.'>'."\n".'    <div class="mockup-phone-display">'."\n".'        <div class="p-4">Application mobile</div>'."\n".'    </div>'."\n".'</x-'.$componentTag.'>',

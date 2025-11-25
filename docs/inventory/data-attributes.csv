@@ -1,5 +1,5 @@
 attribute,components
-module,"calendar-full, chart, code-editor, scrollspy, tree-view, chat-input, chat-messages, chat-widget, table, color-picker, file-input, lightbox, media-gallery, sidebar-navigation, sidebar"
+module,"calendar-full, chart, code-editor, scrollspy, tree-view, chat-input, chat-messages, chat-widget, table, color-picker, file-input, sign, lightbox, media-gallery, sidebar-navigation, sidebar"
 calendar-full,calendar-full
 options,calendar-full
 events,calendar-full
@@ -25,7 +25,7 @@ transfer-search,transfer
 transfer-list,transfer
 id,transfer
 label,transfer
-disabled,"transfer, tree-view, color-picker"
+disabled,"transfer, tree-view, color-picker, sign"
 checked,transfer
 transfer-pager,transfer
 transfer-page,transfer
@@ -98,6 +98,19 @@ multiple,file-input
 inputmask,input
 uncheckable,radio
 role,select
+sign,sign
+width,sign
+height,sign
+pen-color,sign
+min-width,sign
+max-width,sign
+velocity-filter-weight,sign
+responsive,sign
+show-actions,sign
+clear-label,sign
+download-label,sign
+download-format,sign
+download-filename,sign
 lightbox,lightbox
 loop,lightbox
 keyboard,lightbox

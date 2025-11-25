@@ -1,5 +1,5 @@
 {
-    "generated_at": "2025-11-23T11:32:49+00:00",
+    "generated_at": "2025-11-25T20:16:55+00:00",
     "templates": [
         {
             "name": "forgot-password",
@@ -8,10 +8,12 @@
             "description": "Page de demande de réinitialisation de mot de passe.",
             "route": "templates.auth.forgot-password",
             "view": "daisy::templates.auth.forgot-password",
+            "type": "reusable",
             "tags": [
                 "auth",
                 "password"
-            ]
+            ],
+            "component": "daisy::templates.auth.forgot-password"
         },
         {
             "name": "login-simple",
@@ -20,10 +22,12 @@
             "description": "Page de connexion simple et centrée.",
             "route": "templates.auth.login-simple",
             "view": "daisy::templates.auth.login-simple",
+            "type": "reusable",
             "tags": [
                 "auth",
                 "authentication"
-            ]
+            ],
+            "component": "daisy::templates.auth.login-simple"
         },
         {
             "name": "login-split",
@@ -32,10 +36,12 @@
             "description": "Page de connexion en deux colonnes avec illustration/témoignage.",
             "route": "templates.auth.login-split",
             "view": "daisy::templates.auth.login-split",
+            "type": "reusable",
             "tags": [
                 "auth",
                 "authentication"
-            ]
+            ],
+            "component": "daisy::templates.auth.login-split"
         },
         {
             "name": "register-simple",
@@ -44,10 +50,12 @@
             "description": "Page d'inscription simple et centrée.",
             "route": "templates.auth.register-simple",
             "view": "daisy::templates.auth.register-simple",
+            "type": "reusable",
             "tags": [
                 "auth",
                 "signup"
-            ]
+            ],
+            "component": "daisy::templates.auth.register-simple"
         },
         {
             "name": "register-split",
@@ -56,10 +64,12 @@
             "description": "Page d'inscription en deux colonnes avec illustration/témoignage.",
             "route": "templates.auth.register-split",
             "view": "daisy::templates.auth.register-split",
+            "type": "reusable",
             "tags": [
                 "auth",
                 "signup"
-            ]
+            ],
+            "component": "daisy::templates.auth.register-split"
         },
         {
             "name": "resend-verification",
@@ -68,9 +78,11 @@
             "description": "Formulaire pour renvoyer l'email de vérification.",
             "route": "templates.auth.resend-verification",
             "view": "daisy::templates.auth.resend-verification",
+            "type": "reusable",
             "tags": [
                 "auth"
-            ]
+            ],
+            "component": "daisy::templates.auth.resend-verification"
         },
         {
             "name": "reset-password",
@@ -79,10 +91,12 @@
             "description": "Formulaire d'envoi de lien de réinitialisation.",
             "route": "templates.auth.reset-password",
             "view": "daisy::templates.auth.reset-password",
+            "type": "reusable",
             "tags": [
                 "auth",
                 "password"
-            ]
+            ],
+            "component": "daisy::templates.auth.reset-password"
         },
         {
             "name": "two-factor",
@@ -91,9 +105,11 @@
             "description": "Page d'authentification à deux facteurs (2FA).",
             "route": "templates.auth.two-factor",
             "view": "daisy::templates.auth.two-factor",
+            "type": "reusable",
             "tags": [
                 "auth"
-            ]
+            ],
+            "component": "daisy::templates.auth.two-factor"
         },
         {
             "name": "verify-email",
@@ -102,8 +118,70 @@
             "description": "Confirmation d'email avec bouton de renvoi.",
             "route": "templates.auth.verify-email",
             "view": "daisy::templates.auth.verify-email",
+            "type": "reusable",
             "tags": [
                 "auth"
+            ],
+            "component": "daisy::templates.auth.verify-email"
+        },
+        {
+            "name": "footer",
+            "category": "layout",
+            "label": "Footer",
+            "description": "Template avec footer en bas de page, inclut colonnes de navigation, copyright et réseaux sociaux.",
+            "route": "templates.layouts.footer",
+            "view": "daisy::templates.layout.footer",
+            "type": "example",
+            "tags": [
+                "layout"
+            ]
+        },
+        {
+            "name": "grid",
+            "category": "layout",
+            "label": "Grid",
+            "description": "Template avec grille 12 colonnes responsive (classes Bootstrap-like) pour structurer le contenu.",
+            "route": "templates.layouts.grid",
+            "view": "daisy::templates.layout.grid",
+            "type": "example",
+            "tags": [
+                "layout"
+            ]
+        },
+        {
+            "name": "navbar-footer",
+            "category": "layout",
+            "label": "Navbar Footer",
+            "description": "Template combiné avec navbar en haut et footer en bas, idéal pour pages complètes.",
+            "route": "templates.layouts.navbar-footer",
+            "view": "daisy::templates.layout.navbar-footer",
+            "type": "example",
+            "tags": [
+                "layout"
+            ]
+        },
+        {
+            "name": "navbar-grid-footer",
+            "category": "layout",
+            "label": "Navbar Grid Footer",
+            "description": "Template complet avec navbar, grille responsive et footer, solution tout-en-un pour pages structurées.",
+            "route": "templates.layouts.navbar-grid-footer",
+            "view": "daisy::templates.layout.navbar-grid-footer",
+            "type": "example",
+            "tags": [
+                "layout"
+            ]
+        },
+        {
+            "name": "navbar",
+            "category": "layout",
+            "label": "Navbar",
+            "description": "Barre de navigation en haut de page avec menu horizontal et actions.",
+            "route": "templates.layouts.navbar",
+            "view": "daisy::templates.layout.navbar",
+            "type": "example",
+            "tags": [
+                "layout"
             ]
         },
         {
@@ -113,6 +191,7 @@
             "description": "Page d'édition de profil utilisateur avec formulaire complet.",
             "route": "templates.profile.edit",
             "view": "daisy::templates.profile.profile-edit",
+            "type": "example",
             "tags": [
                 "profile",
                 "user"
@@ -125,6 +204,7 @@
             "description": "Page de paramètres de profil avec onglets pour différentes sections.",
             "route": "templates.profile.settings",
             "view": "daisy::templates.profile.profile-settings",
+            "type": "example",
             "tags": [
                 "profile",
                 "user"
@@ -137,6 +217,7 @@
             "description": "Page de visualisation de profil utilisateur avec statistiques et badges.",
             "route": "templates.profile.view",
             "view": "daisy::templates.profile.profile-view",
+            "type": "example",
             "tags": [
                 "profile",
                 "user"
@@ -149,6 +230,7 @@
             "description": "Page de changelog organisée par versions avec filtres, recherche et navigation.",
             "route": "templates.documentation.changelog",
             "view": "daisy::templates.changelog",
+            "type": "example",
             "tags": [
                 "changelog",
                 "documentation",
@@ -162,6 +244,7 @@
             "description": "Interface de chat en temps réel avec sidebar des conversations et zone de messages.",
             "route": "templates.communication.chat",
             "view": "daisy::templates.chat",
+            "type": "example",
             "tags": {
                 "0": "communication",
                 "2": "realtime"
@@ -174,11 +257,13 @@
             "description": "Template pour afficher un état vide (aucune donnée, aucun résultat).",
             "route": null,
             "view": "daisy::templates.empty-state",
+            "type": "reusable",
             "tags": [
                 "errors",
                 "error",
                 "state"
-            ]
+            ],
+            "component": "daisy::templates.empty-state"
         },
         {
             "name": "error",
@@ -187,11 +272,13 @@
             "description": "Template généralisé pour toutes les pages d'erreur HTTP (404, 500, 403, etc.).",
             "route": null,
             "view": "daisy::templates.error",
+            "type": "reusable",
             "tags": [
                 "errors",
                 "error",
                 "state"
-            ]
+            ],
+            "component": "daisy::templates.error"
         },
         {
             "name": "loading-state",
@@ -200,11 +287,13 @@
             "description": "Template pour afficher un état de chargement avec indicateur visuel.",
             "route": null,
             "view": "daisy::templates.loading-state",
+            "type": "reusable",
             "tags": [
                 "errors",
                 "error",
                 "state"
-            ]
+            ],
+            "component": "daisy::templates.loading-state"
         },
         {
             "name": "maintenance",
@@ -213,11 +302,13 @@
             "description": "Page de maintenance affichée quand l'application est en mode maintenance.",
             "route": null,
             "view": "daisy::templates.maintenance",
+            "type": "reusable",
             "tags": [
                 "errors",
                 "error",
                 "state"
-            ]
+            ],
+            "component": "daisy::templates.maintenance"
         },
         {
             "name": "notification-center",
@@ -226,6 +317,7 @@
             "description": "Centre de notifications avec filtres, marquage lu/non lu et actions.",
             "route": "templates.communication.notification-center",
             "view": "daisy::templates.notification-center",
+            "type": "example",
             "tags": {
                 "0": "communication",
                 "2": "realtime"
@@ -237,6 +329,11 @@
             "label": "Authentification",
             "description": "Templates pour les pages d'authentification et de gestion de compte.",
             "icon": "lock"
+        },
+        {
+            "label": "Layouts",
+            "description": "Templates de structure de page et de navigation.",
+            "icon": "layout"
         },
         {
             "label": "Profil utilisateur",

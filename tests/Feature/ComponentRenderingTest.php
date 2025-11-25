@@ -103,3 +103,184 @@ BLADE;
     $styleCount = substr_count($html, '<style>');
     expect($styleCount)->toBe(1);
 });
+
+it('renders footer-layout component with columns', function () {
+    $html = View::make('daisy::components.ui.layout.footer-layout', [
+        'columns' => [
+            [
+                'title' => 'Services',
+                'links' => [
+                    ['label' => 'Branding', 'href' => '#'],
+                    ['label' => 'Design', 'href' => '#'],
+                ],
+            ],
+        ],
+        'copyrightText' => 'Mon Entreprise',
+        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+    ])->render();
+
+    expect($html)
+        ->toContain('footer')
+        ->toContain('Services')
+        ->toContain('Branding')
+        ->toContain('Design')
+        ->toContain('Mon Entreprise');
+});
+
+it('renders footer-layout with social links', function () {
+    $html = View::make('daisy::components.ui.layout.footer-layout', [
+        'socialLinks' => [
+            ['icon' => 'facebook', 'href' => '#', 'label' => 'Facebook'],
+            ['icon' => 'twitter', 'href' => '#', 'label' => 'Twitter'],
+        ],
+        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+    ])->render();
+
+    expect($html)
+        ->toContain('footer')
+        ->toContain('btn-circle');
+});
+
+it('renders footer-layout with newsletter', function () {
+    $html = View::make('daisy::components.ui.layout.footer-layout', [
+        'newsletter' => true,
+        'newsletterTitle' => 'Newsletter',
+        'newsletterDescription' => 'Restez informé',
+        'newsletterAction' => '/subscribe',
+        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+    ])->render();
+
+    expect($html)
+        ->toContain('Newsletter')
+        ->toContain('Restez informé')
+        ->toContain('/subscribe')
+        ->toContain('type="email"');
+});
+
+it('renders footer-layout with brand text and description', function () {
+    $html = View::make('daisy::components.ui.layout.footer-layout', [
+        'brandText' => 'Mon Entreprise',
+        'brandDescription' => 'Créons ensemble',
+        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+    ])->render();
+
+    expect($html)
+        ->toContain('Mon Entreprise')
+        ->toContain('Créons ensemble')
+        ->toContain('footer-title');
+});
+
+it('renders footer-layout with custom copyright year', function () {
+    $html = View::make('daisy::components.ui.layout.footer-layout', [
+        'copyrightYear' => 2023,
+        'copyrightText' => 'Mon Entreprise',
+        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+    ])->render();
+
+    expect($html)
+        ->toContain('© 2023')
+        ->toContain('Mon Entreprise');
+});
+
+it('renders footer-layout without divider when showDivider is false', function () {
+    $html = View::make('daisy::components.ui.layout.footer-layout', [
+        'showDivider' => false,
+        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+    ])->render();
+
+    expect($html)
+        ->not->toContain('divider');
+});
+
+it('renders a sign component', function () {
+    $html = View::make('daisy::components.ui.inputs.sign', [
+        'attributes' => new \Illuminate\View\ComponentAttributeBag(['name' => 'signature']),
+    ])->render();
+
+    expect($html)
+        ->toContain('data-sign="1"')
+        ->toContain('data-module="sign"')
+        ->toContain('data-sign-canvas')
+        ->toContain('name="signature"');
+});
+
+it('renders a sign component with custom dimensions', function () {
+    $html = View::make('daisy::components.ui.inputs.sign', [
+        'width' => 600,
+        'height' => 300,
+        'attributes' => new \Illuminate\View\ComponentAttributeBag(['name' => 'signature']),
+    ])->render();
+
+    expect($html)
+        ->toContain('data-width="600"')
+        ->toContain('data-height="300"');
+});
+
+it('renders a sign component without actions', function () {
+    $html = View::make('daisy::components.ui.inputs.sign', [
+        'showActions' => false,
+        'attributes' => new \Illuminate\View\ComponentAttributeBag(['name' => 'signature']),
+    ])->render();
+
+    expect($html)
+        ->toContain('data-show-actions="false"')
+        ->not->toContain('data-sign-clear')
+        ->not->toContain('data-sign-download');
+});
+
+it('renders a copyable component with default props', function () {
+    $html = View::make('daisy::components.ui.utilities.copyable', [
+        'slot' => 'Texte à copier',
+    ])->render();
+
+    expect($html)
+        ->toContain('copyable')
+        ->toContain('copyable-underline')
+        ->toContain('Texte à copier');
+});
+
+it('renders a copyable component without underline when explicitly disabled', function () {
+    $html = View::make('daisy::components.ui.utilities.copyable', [
+        'underline' => false,
+        'slot' => 'Texte non souligné',
+    ])->render();
+
+    expect($html)
+        ->toContain('copyable')
+        ->not->toContain('copyable-underline')
+        ->toContain('Texte non souligné');
+});
+
+it('renders a copyable component with value prop', function () {
+    $html = View::make('daisy::components.ui.utilities.copyable', [
+        'value' => 'Valeur à copier',
+        'slot' => 'Texte affiché',
+    ])->render();
+
+    expect($html)
+        ->toContain('data-copy-value="Valeur à copier"')
+        ->toContain('Texte affiché');
+});
+
+it('renders a copyable component with copyHtml enabled', function () {
+    $html = View::make('daisy::components.ui.utilities.copyable', [
+        'copyHtml' => true,
+        'slot' => '<strong>Texte HTML</strong>',
+    ])->render();
+
+    expect($html)
+        ->toContain('data-copy-html="true"');
+});
+
+it('renders a copyable component with display prop (option mode)', function () {
+    $html = View::make('daisy::components.ui.utilities.copyable', [
+        'value' => 'valeur-copiee',
+        'display' => 'Texte affiché',
+        'slot' => 'Slot ignoré',
+    ])->render();
+
+    expect($html)
+        ->toContain('data-copy-value="valeur-copiee"')
+        ->toContain('Texte affiché')
+        ->not->toContain('Slot ignoré');
+});

@@ -5,7 +5,6 @@
     $sections = [
             ['id' => 'intro', 'label' => 'Introduction'],
             ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'variants', 'label' => 'Variantes'],
             ['id' => 'api', 'label' => 'API'],
         ];
     $props = DocsHelper::getComponentProps('errors', 'error-header');
@@ -22,7 +21,7 @@
 
     <section id="intro">
         <h1>Error Header</h1>
-        <p>Composant molécule pour afficher l'en-tête d'une erreur avec le code d'erreur et le titre.</p>
+        <p>Composant compatible daisyUI v5 et Tailwind CSS v4.</p>
     </section>
 
     <section id="base" class="mt-10">
@@ -31,19 +30,13 @@
             <input type="radio" name="base-example-error-header" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.errors.error-header 
-                        statusCode="404" 
-                        title="Page non trouvée"
-                    />
+                    <x-daisy::ui.errors.error-header />
                 </div>
             </div>
             <input type="radio" name="base-example-error-header" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.errors.error-header 
-    statusCode="404" 
-    title="Page non trouvée"
-/>';
+                    $baseCode = '<x-daisy::ui.errors.error-header />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 
@@ -60,115 +53,27 @@
         </div>
     </section>
 
-    <section id="variants" class="mt-10">
-        <h2>Variantes</h2>
-        
-        <h3 class="mt-6">Erreur 500</h3>
-        <div class="tabs tabs-box">
-            <input type="radio" name="variants-500-error-header" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.errors.error-header 
-                        statusCode="500" 
-                        title="Erreur serveur"
-                    />
-                </div>
-            </div>
-            <input type="radio" name="variants-500-error-header" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
-                @php
-                    $code500 = '<x-daisy::ui.errors.error-header 
-    statusCode="500" 
-    title="Erreur serveur"
-/>';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$code500"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-
-        <h3 class="mt-6">Erreur 403</h3>
-        <div class="tabs tabs-box">
-            <input type="radio" name="variants-403-error-header" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.errors.error-header 
-                        statusCode="403" 
-                        title="Accès refusé"
-                    />
-                </div>
-            </div>
-            <input type="radio" name="variants-403-error-header" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
-                @php
-                    $code403 = '<x-daisy::ui.errors.error-header 
-    statusCode="403" 
-    title="Accès refusé"
-/>';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$code403"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
-
+    @if(!empty($props))
     <section id="api" class="mt-10">
         <h2>API</h2>
-        
-        <h3 class="mt-6">Props disponibles</h3>
         <div class="overflow-x-auto">
-            <table class="table table-zebra">
+            <table class="table table-sm">
                 <thead>
                     <tr>
                         <th>Prop</th>
-                        <th>Type</th>
-                        <th>Défaut</th>
                         <th>Description</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><code>statusCode</code></td>
-                        <td><code>int</code></td>
-                        <td><code>500</code></td>
-                        <td>Code d'erreur HTTP (404, 500, 403, etc.)</td>
-                    </tr>
-                    <tr>
-                        <td><code>title</code></td>
-                        <td><code>string|null</code></td>
-                        <td><code>null</code></td>
-                        <td>Titre de l'erreur. Si null, généré automatiquement selon le code.</td>
-                    </tr>
+                    @foreach($props as $prop)
+                        <tr>
+                            <td><code>{{ $prop }}</code></td>
+                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
         </div>
-
-        <h3 class="mt-6">Composants utilisés</h3>
-        <p class="text-sm text-base-content/70 mb-4">
-            Ce composant utilise les composants suivants (hiérarchie Atomic Design) :
-        </p>
-        
-        <ul class="list-disc list-inside space-y-2 text-sm">
-            <li><code>x-daisy::ui.data-display.badge</code> - Badge pour le code d'erreur</li>
-        </ul>
     </section>
+    @endif
 </x-daisy::layout.docs>
-

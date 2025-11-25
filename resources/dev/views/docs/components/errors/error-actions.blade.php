@@ -5,7 +5,6 @@
     $sections = [
             ['id' => 'intro', 'label' => 'Introduction'],
             ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'variants', 'label' => 'Variantes'],
             ['id' => 'api', 'label' => 'API'],
         ];
     $props = DocsHelper::getComponentProps('errors', 'error-actions');
@@ -22,7 +21,7 @@
 
     <section id="intro">
         <h1>Error Actions</h1>
-        <p>Composant molécule pour afficher les boutons d'action sur une page d'erreur (Accueil, Retour).</p>
+        <p>Composant compatible daisyUI v5 et Tailwind CSS v4.</p>
     </section>
 
     <section id="base" class="mt-10">
@@ -54,115 +53,27 @@
         </div>
     </section>
 
-    <section id="variants" class="mt-10">
-        <h2>Variantes</h2>
-        
-        <h3 class="mt-6">Sans bouton retour</h3>
-        <div class="tabs tabs-box">
-            <input type="radio" name="variants-no-back-error-actions" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.errors.error-actions :showBack="false" />
-                </div>
-            </div>
-            <input type="radio" name="variants-no-back-error-actions" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
-                @php
-                    $codeNoBack = '<x-daisy::ui.errors.error-actions :showBack="false" />';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$codeNoBack"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-
-        <h3 class="mt-6">Sans bouton accueil</h3>
-        <div class="tabs tabs-box">
-            <input type="radio" name="variants-no-home-error-actions" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.errors.error-actions :showHome="false" />
-                </div>
-            </div>
-            <input type="radio" name="variants-no-home-error-actions" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
-                @php
-                    $codeNoHome = '<x-daisy::ui.errors.error-actions :showHome="false" />';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$codeNoHome"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
-
+    @if(!empty($props))
     <section id="api" class="mt-10">
         <h2>API</h2>
-        
-        <h3 class="mt-6">Props disponibles</h3>
         <div class="overflow-x-auto">
-            <table class="table table-zebra">
+            <table class="table table-sm">
                 <thead>
                     <tr>
                         <th>Prop</th>
-                        <th>Type</th>
-                        <th>Défaut</th>
                         <th>Description</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><code>homeUrl</code></td>
-                        <td><code>string</code></td>
-                        <td><code>route('home') ou '/'</code></td>
-                        <td>URL de la page d'accueil pour le bouton "Accueil".</td>
-                    </tr>
-                    <tr>
-                        <td><code>backUrl</code></td>
-                        <td><code>string</code></td>
-                        <td><code>url()->previous()</code></td>
-                        <td>URL de retour pour le bouton "Retour".</td>
-                    </tr>
-                    <tr>
-                        <td><code>showBack</code></td>
-                        <td><code>bool</code></td>
-                        <td><code>true</code></td>
-                        <td>Afficher le bouton "Retour".</td>
-                    </tr>
-                    <tr>
-                        <td><code>showHome</code></td>
-                        <td><code>bool</code></td>
-                        <td><code>true</code></td>
-                        <td>Afficher le bouton "Accueil".</td>
-                    </tr>
+                    @foreach($props as $prop)
+                        <tr>
+                            <td><code>{{ $prop }}</code></td>
+                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
         </div>
-
-        <h3 class="mt-6">Composants utilisés</h3>
-        <p class="text-sm text-base-content/70 mb-4">
-            Ce composant utilise les composants suivants (hiérarchie Atomic Design) :
-        </p>
-        
-        <ul class="list-disc list-inside space-y-2 text-sm">
-            <li><code>x-daisy::ui.inputs.button</code> - Boutons d'action</li>
-        </ul>
     </section>
+    @endif
 </x-daisy::layout.docs>
-

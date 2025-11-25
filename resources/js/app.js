@@ -127,6 +127,11 @@ onReady(async () => {
     button.addEventListener('click', () => setCollapsed(aside.dataset.collapsed !== '1'));
   });
 
+  // Greffon copyable : chargement direct (léger, s'initialise automatiquement)
+  await dynamicImportIf('.copyable', async () => {
+    await import('./modules/copyable');
+  });
+
   // Importation du composant web Cally (calendrier) si nécessaire
   await dynamicImportIf('.cally, calendar-date, calendar-range, calendar-month, calendar-multi', async () => {
     await import('cally');
@@ -208,6 +213,7 @@ onReady(async () => {
   importWhenIdle('input[data-inputmask="1"], input[data-obfuscate="1"]', () => { mediumQueue(() => import('./input-mask')); });
   importWhenIdle('[data-scrollstatus="1"]', () => { mediumQueue(() => import('./scroll-status')); });
   importWhenIdle('[data-transfer="1"]', () => { mediumQueue(() => import('./transfer')); });
+  importWhenIdle('[data-sign="1"]', () => { mediumQueue(() => import('./modules/sign')); });
 
   // Modules lourds : chargement quand l'élément approche du viewport
   // Ces modules ont un impact performance important donc chargés un par un

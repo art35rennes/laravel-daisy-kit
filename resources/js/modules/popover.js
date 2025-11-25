@@ -68,7 +68,8 @@ export default function initPopover(root, options = {}) {
   }
 
   // Applique la position initiale depuis les options
-  applyPanelPosition(position);
+  const initialPosition = options.position || root.getAttribute('data-position') || 'top';
+  applyPanelPosition(initialPosition);
 
   function isInViewport(rect, margin = 6) {
     const w = window.innerWidth; const h = window.innerHeight;

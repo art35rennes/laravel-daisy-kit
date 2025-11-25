@@ -109,22 +109,25 @@
 - **But** : éviter les échecs de soumission lorsque le navigateur met la page en veille et que le token CSRF expire.
 - **Livrables**
   1. **Blade component** `resources/views/components/ui/utilities/csrf-keeper.blade.php`
-     - Props : `refreshInterval` (ms, par défaut 5 minutes), `endpoint` (route dédiée), `module` override.
-     - Rend un `<div data-module="csrf-keeper" data-refresh-interval="300000" data-endpoint="...">`.
+     - Props : `refreshInterval` (ms, optionnel, par défaut calculé depuis `config('session.lifetime')`), `refreshRatio` (ratio de sécurité, par défaut 0.8), `endpoint` (route dédiée), `module` override.
+     - Calcul automatique : `refreshInterval = config('session.lifetime') * 60 * 1000 * refreshRatio` (convertit minutes en ms et applique le ratio de sécurité).
+     - Exemple : si `session.lifetime = 120` minutes et `refreshRatio = 0.8`, alors `refreshInterval = 120 * 60 * 1000 * 0.8 = 5760000` ms (96 minutes).
+     - Rend un `<div data-module="csrf-keeper" data-refresh-interval="{calculated}" data-endpoint="...">`.
+     - Si `refreshInterval` est fourni explicitement, il prend priorité sur le calcul automatique.
   2. **Contrôleur** `Daisy\Kit\Http\Controllers\CsrfTokenController`
      - Méthode `__invoke()` retournant la nouvelle valeur de `csrf_token()` en JSON + header `X-CSRF-TOKEN`.
      - Route incluse dans le package (groupe `daisy-kit.csrf-token`), publication documentée.
   3. **JS module** `resources/js/modules/csrf-keeper.js`
-     - Rafraîchit le token à intervalle fixe ou lorsqu’un event `csrf-keeper:refresh` est dispatché.
+     - Rafraîchit le token à intervalle fixe (basé sur `data-refresh-interval`) ou lorsqu'un event `csrf-keeper:refresh` est dispatché.
      - Met à jour le `<meta name="csrf-token">`, le cookie `_token` si défini, et notifie les listeners via event `csrf-keeper:updated`.
   4. **Intégrations** : les trois templates incluent `x-daisy::ui.utilities.csrf-keeper` (avec possibilité de le désactiver via prop `autoRefreshCsrf=false`).
 - **Scénarios gérés**
-  - Mise en veille prolongée : rafraîchissement silencieux avant soumission.
-  - Expiration détectée (réponse 419) : relance immédiate d’un refresh + affichage d’une alerte via slot `csrfExpired`.
+  - Mise en veille prolongée : rafraîchissement silencieux avant soumission, indexé sur le lifetime de session configuré.
+  - Expiration détectée (réponse 419) : relance immédiate d'un refresh + affichage d'une alerte via slot `csrfExpired`.
   - Compatibilité avec installations existantes (route suffixée `.json`, middleware `web` requis).
 - **Tests**
-  - Feature : route du contrôleur retourne bien un JSON avec token.
-  - Browser : simulation d’un token expiré → module rafraîchit puis relance la requête réussie.
+  - Feature : route du contrôleur retourne bien un JSON avec token, calcul automatique du refresh interval depuis config.
+  - Browser : simulation d'un token expiré → module rafraîchit puis relance la requête réussie, vérification que le refresh se déclenche au bon intervalle.
 
 ## 5. Livrables techniques complémentaires
 - **Helpers PHP**
@@ -146,7 +149,7 @@
 | Feature | Wizard | `tests/Feature/FormWizardRenderingTest.php` | Props par défaut, persistance, résumé, autoRefresh CSRF activé. |
 | Feature | Tabs | `tests/Feature/FormTabsRenderingTest.php` | Onglet actif, badges erreurs. |
 | Feature | Inline | `tests/Feature/FormInlineRenderingTest.php` | GET/POST, tokens actifs, drawer. |
-| Feature | CSRF Keeper | `tests/Feature/CsrfKeeperControllerTest.php` | Refresh token JSON + headers. |
+| Feature | CSRF Keeper | `tests/Feature/CsrfKeeperControllerTest.php` | Refresh token JSON + headers, calcul automatique du refresh interval depuis `config('session.lifetime')`. |
 | Browser | Wizard | `tests/Browser/FormWizardTest.php` | Navigation, refresh CSRF après veille simulée. |
 | Browser | Tabs | `tests/Browser/FormTabsTest.php` | Maintien onglet après validation. |
 | Browser | Inline | `tests/Browser/FormInlineFilterTest.php` | Suppression filtre, panel avancé, refresh token. |

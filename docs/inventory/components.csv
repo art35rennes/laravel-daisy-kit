@@ -71,12 +71,14 @@ input,daisy::components.ui.inputs.input,inputs,"inputs, form",,active
 radio,daisy::components.ui.inputs.radio,inputs,"inputs, form",,active
 range,daisy::components.ui.inputs.range,inputs,inputs,,active
 select,daisy::components.ui.inputs.select,inputs,"inputs, form",,active
+sign,daisy::components.ui.inputs.sign,inputs,inputs,,active
 textarea,daisy::components.ui.inputs.textarea,inputs,"inputs, form",,active
 toggle,daisy::components.ui.inputs.toggle,inputs,inputs,,active
 card,daisy::components.ui.layout.card,layout,layout,,active
 crud-layout,daisy::components.ui.layout.crud-layout,layout,layout,,active
 crud-section,daisy::components.ui.layout.crud-section,layout,layout,,active
 divider,daisy::components.ui.layout.divider,layout,layout,,active
+footer-layout,daisy::components.ui.layout.footer-layout,layout,layout,,active
 footer,daisy::components.ui.layout.footer,layout,layout,,active
 grid-layout,daisy::components.ui.layout.grid-layout,layout,layout,,active
 hero,daisy::components.ui.layout.hero,layout,layout,,active
@@ -104,6 +106,7 @@ modal,daisy::components.ui.overlay.modal,overlay,"overlay, aria, a11y",,active
 popconfirm,daisy::components.ui.overlay.popconfirm,overlay,"overlay, js, async, aria, a11y",popconfirm,active
 popover,daisy::components.ui.overlay.popover,overlay,"overlay, js, async, aria, a11y",popover,active
 tooltip,daisy::components.ui.overlay.tooltip,overlay,overlay,,active
+copyable,daisy::components.ui.utilities.copyable,utilities,utilities,,active
 dock,daisy::components.ui.utilities.dock,utilities,utilities,,active
 indicator,daisy::components.ui.utilities.indicator,utilities,utilities,,active
 mockup-browser,daisy::components.ui.utilities.mockup-browser,utilities,utilities,,active

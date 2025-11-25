@@ -359,6 +359,7 @@
                 @include('daisy-dev::demo.ui.partials.test-color-picker')
                 @include('daisy-dev::demo.ui.partials.test-input-mask')
                 @include('daisy-dev::demo.ui.partials.test-transfer')
+                @include('daisy-dev::demo.ui.partials.test-sign')
             </div>
         </section>
 
@@ -371,6 +372,7 @@
                 @include('daisy-dev::demo.ui.partials.test-footer')
                 @include('daisy-dev::demo.ui.partials.test-hero')
                 @include('daisy-dev::demo.ui.partials.test-indicator')
+                @include('daisy-dev::demo.ui.partials.test-copyable')
                 @include('daisy-dev::demo.ui.partials.test-join')
                 @include('daisy-dev::demo.ui.partials.test-mask')
                 @include('daisy-dev::demo.ui.partials.test-stack')

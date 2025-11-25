@@ -1,5 +1,5 @@
 {
-    "generated_at": "2025-11-23T11:32:45+00:00",
+    "generated_at": "2025-11-25T20:16:55+00:00",
     "components": [
         {
             "name": "accordion",
@@ -1789,6 +1789,49 @@
             ]
         },
         {
+            "name": "sign",
+            "view": "daisy::components.ui.inputs.sign",
+            "category": "inputs",
+            "tags": [
+                "inputs"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "width",
+                "height",
+                "penColor",
+                "minWidth",
+                "maxWidth",
+                "velocityFilterWeight",
+                "responsive",
+                "disabled",
+                "showActions",
+                "clearLabel",
+                "downloadLabel",
+                "downloadFormat",
+                "downloadFilename",
+                "module"
+            ],
+            "dataAttributes": [
+                "module",
+                "sign",
+                "width",
+                "height",
+                "pen-color",
+                "min-width",
+                "max-width",
+                "velocity-filter-weight",
+                "responsive",
+                "disabled",
+                "show-actions",
+                "clear-label",
+                "download-label",
+                "download-format",
+                "download-filename"
+            ]
+        },
+        {
             "name": "textarea",
             "view": "daisy::components.ui.inputs.textarea",
             "category": "inputs",
@@ -1906,6 +1949,41 @@
                 "horizontalAt",
                 "color",
                 "position"
+            ],
+            "dataAttributes": []
+        },
+        {
+            "name": "footer-layout",
+            "view": "daisy::components.ui.layout.footer-layout",
+            "category": "layout",
+            "tags": [
+                "layout"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "bg",
+                "text",
+                "padding",
+                "center",
+                "horizontal",
+                "horizontalAt",
+                "gap",
+                "columns",
+                "logo",
+                "brandText",
+                "brandDescription",
+                "copyright",
+                "copyrightYear",
+                "copyrightText",
+                "socialLinks",
+                "newsletter",
+                "newsletterTitle",
+                "newsletterDescription",
+                "newsletterAction",
+                "newsletterMethod",
+                "showDivider",
+                "dividerColor"
             ],
             "dataAttributes": []
         },
@@ -2559,6 +2637,28 @@
             "dataAttributes": [
                 "tip"
             ]
+        },
+        {
+            "name": "copyable",
+            "view": "daisy::components.ui.utilities.copyable",
+            "category": "utilities",
+            "tags": [
+                "utilities"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "value",
+                "display",
+                "underline",
+                "copyHtml",
+                "iconPosition",
+                "iconSize",
+                "successMessage",
+                "errorMessage",
+                "tag"
+            ],
+            "dataAttributes": []
         },
         {
             "name": "dock",

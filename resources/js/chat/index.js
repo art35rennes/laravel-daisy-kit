@@ -570,6 +570,3 @@ export default function initChat(root, options = {}) {
     }
 }
 
-// Exports nommés pour les sous-modules (pour compatibilité)
-export { initChatMessages, initChatInput, initChatWidget };
-

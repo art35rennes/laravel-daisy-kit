@@ -44,8 +44,28 @@
                 @foreach($templates as $template)
                     <div class="card bg-base-100 shadow-sm">
                         <div class="card-body">
-                            <h3 class="card-title text-base">{{ $template['label'] }}</h3>
-                            <p class="text-sm">{{ $template['description'] }}</p>
+                            <div class="flex items-start justify-between gap-2 mb-2">
+                                <h3 class="card-title text-base break-words flex-1 min-w-0">{{ $template['label'] }}</h3>
+                                @if(isset($template['type']))
+                                    @if($template['type'] === 'reusable')
+                                        <span class="badge badge-success badge-sm">Réutilisable</span>
+                                    @else
+                                        <span class="badge badge-info badge-sm">Exemple</span>
+                                    @endif
+                                @endif
+                            </div>
+                            <p class="text-sm mb-4">{{ $template['description'] }}</p>
+                            @if(isset($template['type']))
+                                <div class="text-xs text-base-content/60 mb-3 break-words">
+                                    @if($template['type'] === 'reusable')
+                                        <p class="mb-1"><strong>Usage :</strong> Composant Blade ou vue</p>
+                                        <code class="text-xs break-words break-all">@if(isset($template['component']))&lt;x-daisy::{{ str_replace('daisy::', '', $template['component']) }}&gt;@endif</code>
+                                    @else
+                                        <p class="mb-1"><strong>Usage :</strong> Vue à copier/adapter</p>
+                                        <code class="text-xs break-words break-all">view('{{ $template['view'] }}')</code>
+                                    @endif
+                                </div>
+                            @endif
                             <div class="card-actions justify-end">
                                 @php
                                     $routeName = $template['route'] ?? null;
@@ -53,8 +73,6 @@
                                 @endphp
                                 @if($hasRoute)
                                     <a href="{{ route($routeName) }}" class="btn btn-primary btn-sm">Voir</a>
-                                @elseif(isset($template['view']))
-                                    <div class="badge badge-info badge-sm">Composant disponible</div>
                                 @endif
                             </div>
                         </div>

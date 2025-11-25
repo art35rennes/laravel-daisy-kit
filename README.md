@@ -6,6 +6,29 @@ Composants Blade (DaisyUI v5 / Tailwind CSS v4) prêts à l'emploi pour Laravel,
 
 Pour mettre à jour la documentation après avoir ajouté, modifié ou supprimé des composants ou templates :
 
+### Commande unique (recommandée)
+
+Exécutez simplement :
+```bash
+php artisan inventory:update
+```
+
+Cette commande exécute automatiquement toutes les étapes nécessaires dans le bon ordre :
+1. Nettoyage des caches Laravel (`optimize:clear`)
+2. Génération de l'inventaire des composants
+3. Génération de l'inventaire des templates
+4. Génération des pages de documentation
+5. Compilation des assets (`npm run build`)
+
+Pour forcer la régénération de toutes les pages de documentation (écrase les pages existantes) :
+```bash
+php artisan inventory:update --force
+```
+
+### Commandes individuelles
+
+Si vous préférez exécuter les commandes individuellement :
+
 1. **Générer l'inventaire des composants** :
    ```bash
    php artisan inventory:components
@@ -109,6 +132,58 @@ Le package fournit un layout prêt à l'emploi qui gère automatiquement les ass
     <x-daisy::ui.inputs.button color="primary">Cliquez-moi</x-daisy::ui.inputs.button>
 </x-daisy::layout.app>
 ```
+
+### Templates
+
+Le package fournit deux types de templates :
+
+#### Templates réutilisables (auth, errors)
+
+Les templates réutilisables sont des pages complètes, génériques et autonomes, utilisables directement comme composants Blade ou comme vues :
+
+**Composants Blade** :
+```blade
+<x-daisy::templates.auth.login-simple 
+    title="Connexion"
+    :action="route('login')"
+/>
+```
+
+**Vues** :
+```blade
+@include('daisy::templates.auth.login-simple', [
+    'title' => 'Connexion',
+    'action' => route('login'),
+])
+```
+
+**Templates réutilisables disponibles** :
+- `auth/*` : Pages d'authentification (login, register, forgot-password, etc.)
+- `error` : Page d'erreur HTTP générique (404, 500, etc.)
+- `empty-state` : Page d'état vide
+- `loading-state` : Page d'état de chargement
+- `maintenance` : Page de maintenance
+
+#### Templates d'exemple (layouts, communication)
+
+Les templates d'exemple sont des structures de pages à copier et adapter dans votre application. Ils ne sont pas utilisables comme composants Blade, mais uniquement comme vues :
+
+**Usage** :
+```blade
+{{-- Dans votre contrôleur --}}
+return view('daisy::templates.layout.grid', [
+    'title' => 'Ma page',
+    'gap' => 4,
+]);
+```
+
+**Recommandation** : Copiez le template dans votre application (`resources/views/`) et adaptez-le selon vos besoins.
+
+**Templates d'exemple disponibles** :
+- `layout/*` : Structures de page (navbar, footer, grid, etc.)
+- `communication/*` : Interfaces de communication (chat, notifications)
+- `profile/*` : Pages de profil utilisateur
+- `changelog` : Page de changelog
 
 ### Assets CSS/JS
 

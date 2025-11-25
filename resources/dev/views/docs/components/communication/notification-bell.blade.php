@@ -28,8 +28,8 @@
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-notification-bell" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6 overflow-visible">
-                <div class="not-prose flex justify-center">
+            <div class="tab-content border-base-300 bg-base-100 p-6">
+                <div class="not-prose">
                     <x-daisy::ui.communication.notification-bell />
                 </div>
             </div>

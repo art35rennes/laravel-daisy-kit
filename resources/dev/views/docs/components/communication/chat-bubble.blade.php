@@ -31,17 +31,13 @@
             <input type="radio" name="base-example-chat-bubble" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.communication.chat-bubble align="start" name="Alice" time="14:30">
-    Bonjour, comment allez-vous ?
-</x-daisy::ui.communication.chat-bubble>
+                    <x-daisy::ui.communication.chat-bubble />
                 </div>
             </div>
             <input type="radio" name="base-example-chat-bubble" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.communication.chat-bubble align="start" name="Alice" time="14:30">
-    Bonjour, comment allez-vous ?
-</x-daisy::ui.communication.chat-bubble>';
+                    $baseCode = '<x-daisy::ui.communication.chat-bubble />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 
@@ -112,4 +108,3 @@
     </section>
     @endif
 </x-daisy::layout.docs>
-

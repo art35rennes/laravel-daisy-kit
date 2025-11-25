@@ -35,6 +35,13 @@ This package follows Atomic Design principles to organize components into 5 hier
 ### Limited complexity
 - If a component exceeds ~150 lines or contains too much logic, decompose it
 
+
+#### Templates
+
+- A template should only depend on `x-daisy::layout.*` or `x-daisy::ui.*` components
+- A template must never include another template component (`x-daisy::templates.*` is forbidden)
+- Always clarify intent: stable reusable (with Blade alias) or example/reference (view only)
+
 ## Quick check
 
 Before creating/modifying a component:
@@ -42,3 +49,4 @@ Before creating/modifying a component:
 2. Is there duplication? → Extract a component
 3. Logical placement? (functional category)
 4. Too complex? → Decompose
+5. If template: Is it reusable or example? → Follow appropriate rules

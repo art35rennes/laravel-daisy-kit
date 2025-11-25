@@ -63,28 +63,21 @@ class InventoryTemplates extends Command
         $templates = [];
         $categories = [];
 
-        if (! File::isDirectory($templatesPath)) {
-            $this->error("Le dossier n'existe pas: {$templatesPath}");
+        $files = [];
 
-            return Command::FAILURE;
+        // Scanner uniquement les templates dans resources/views/templates/ (source canonique)
+        if (File::isDirectory($templatesPath)) {
+            $pattern = str_replace('\\', '/', $templatesPath).'/**/*.blade.php';
+            $templateFiles = glob($pattern, GLOB_BRACE) ?: [];
+            $rootPattern = str_replace('\\', '/', $templatesPath).'/*.blade.php';
+            $rootFiles = glob($rootPattern, GLOB_BRACE) ?: [];
+            $files = array_merge($files, $templateFiles, $rootFiles);
         }
 
-        // Scanner récursivement tous les fichiers .blade.php dans templates/
-        $pattern = str_replace('\\', '/', $templatesPath).'/**/*.blade.php';
-        $files = glob($pattern, GLOB_BRACE) ?: [];
-
-        // Scanner aussi les fichiers à la racine de templates/
-        $rootPattern = str_replace('\\', '/', $templatesPath).'/*.blade.php';
-        $rootFiles = glob($rootPattern, GLOB_BRACE) ?: [];
-        $files = array_merge($files, $rootFiles);
-
         if (empty($files)) {
-            // Essayer avec backslashes pour Windows
-            $pattern = $templatesPath.'\**\*.blade.php';
-            $files = glob($pattern, GLOB_BRACE) ?: [];
-            $rootPattern = $templatesPath.'\*.blade.php';
-            $rootFiles = glob($rootPattern, GLOB_BRACE) ?: [];
-            $files = array_merge($files, $rootFiles);
+            $this->error('Aucun template trouvé dans templates/');
+
+            return Command::FAILURE;
         }
 
         $files = array_map(fn ($path) => new \SplFileInfo($path), array_unique($files));
@@ -95,7 +88,9 @@ class InventoryTemplates extends Command
                 continue;
             }
 
-            $relativePath = str_replace([$templatesPath, '\\'], ['', '/'], $file->getPathname());
+            $filePath = $file->getPathname();
+
+            $relativePath = str_replace([$templatesPath, '\\'], ['', '/'], $filePath);
             $relativePath = ltrim($relativePath, '/');
             $pathParts = explode('/', $relativePath);
             $filename = str_replace('.blade.php', '', array_pop($pathParts));
@@ -111,9 +106,12 @@ class InventoryTemplates extends Command
             // Construire le nom du template (sans extension)
             $name = $filename;
 
-            // Construire le chemin de vue
+            // Construire le chemin de vue (toujours templates.*)
             $viewPath = 'daisy::templates.'.str_replace('/', '.', $relativePath);
             $viewPath = str_replace('.blade.php', '', $viewPath);
+
+            // Déterminer le type (réutilisable vs exemple)
+            $type = $this->detectTemplateType($category, $name);
 
             // Chercher la route correspondante
             // Pour les templates à la racine avec préfixe (form-*, profile-*), enlever le préfixe du nom de route
@@ -124,15 +122,23 @@ class InventoryTemplates extends Command
             $description = $this->extractDescription($content, $name, $category);
             $tags = $this->generateTags($name, $category);
 
-            $templates[] = [
+            $templateData = [
                 'name' => $name,
                 'category' => $category,
                 'label' => $this->labelize($name),
                 'description' => $description,
                 'route' => $routeName,
                 'view' => $viewPath,
+                'type' => $type,
                 'tags' => $tags,
             ];
+
+            // Ajouter le champ component uniquement pour les templates réutilisables
+            if ($type === 'reusable') {
+                $templateData['component'] = $viewPath;
+            }
+
+            $templates[] = $templateData;
 
             // Collecter les catégories uniques
             if (! isset($categories[$category])) {
@@ -251,6 +257,10 @@ class InventoryTemplates extends Command
                 'navbar-sidebar' => 'Combinaison navbar et sidebar pour applications complexes.',
                 'grid-layout' => 'Layout en grille responsive pour affichage de contenu structuré.',
                 'crud-layout' => 'Layout complet pour interfaces CRUD avec tableaux et formulaires.',
+                'footer' => 'Template avec footer en bas de page, inclut colonnes de navigation, copyright et réseaux sociaux.',
+                'grid' => 'Template avec grille 12 colonnes responsive (classes Bootstrap-like) pour structurer le contenu.',
+                'navbar-footer' => 'Template combiné avec navbar en haut et footer en bas, idéal pour pages complètes.',
+                'navbar-grid-footer' => 'Template complet avec navbar, grille responsive et footer, solution tout-en-un pour pages structurées.',
             ],
             'communication' => [
                 'chat' => 'Interface de chat en temps réel avec sidebar des conversations et zone de messages.',
@@ -344,5 +354,23 @@ class InventoryTemplates extends Command
         $slug = preg_replace('/\s+/', ' ', $slug ?? '') ?? '';
 
         return mb_convert_case(trim($slug), MB_CASE_TITLE, 'UTF-8');
+    }
+
+    /**
+     * Détermine si un template est réutilisable ou un exemple.
+     */
+    private function detectTemplateType(string $category, string $name): string
+    {
+        // Templates réutilisables : auth/*, error, empty-state, loading-state, maintenance
+        if ($category === 'auth') {
+            return 'reusable';
+        }
+
+        if (in_array($name, ['error', 'empty-state', 'loading-state', 'maintenance'])) {
+            return 'reusable';
+        }
+
+        // Tous les autres sont des exemples
+        return 'example';
     }
 }

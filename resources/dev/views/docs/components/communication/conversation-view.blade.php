@@ -21,7 +21,7 @@
 
     <section id="intro">
         <h1>Conversation View</h1>
-        <p>Vue complète de conversation avec header, messages et input.</p>
+        <p>Composant compatible daisyUI v5 et Tailwind CSS v4.</p>
     </section>
 
     <section id="base" class="mt-10">
@@ -30,19 +30,13 @@
             <input type="radio" name="base-example-conversation-view" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.communication.conversation-view
-                        :conversation="['id' => 1, 'name' => 'Alice', 'avatar' => null, 'isOnline' => true]"
-                        :messages="[]"
-                    />
+                    <x-daisy::ui.communication.conversation-view />
                 </div>
             </div>
             <input type="radio" name="base-example-conversation-view" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.communication.conversation-view
-    :conversation="[\'id\' => 1, \'name\' => \'Alice\', \'avatar\' => null, \'isOnline\' => true]"
-    :messages="[]"
-/>';
+                    $baseCode = '<x-daisy::ui.communication.conversation-view />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 
@@ -83,4 +77,3 @@
     </section>
     @endif
 </x-daisy::layout.docs>
-

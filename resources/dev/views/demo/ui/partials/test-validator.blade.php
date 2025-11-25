@@ -8,12 +8,14 @@
     </div>
 
     <!-- Mot de passe (pattern) -->
-    <div>
-        <input type="password" class="input validator" required placeholder="Password" minlength="8"
-            pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
-            title="Must be more than 8 characters, including number, lowercase letter, uppercase letter" />
-        <p class="validator-hint">Must be more than 8 characters, including<br/>number, lowercase, uppercase</p>
-    </div>
+    <form>
+        <div>
+            <input type="password" class="input validator" required placeholder="Password" minlength="8"
+                pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+                title="Must be more than 8 characters, including number, lowercase letter, uppercase letter" />
+            <p class="validator-hint">Must be more than 8 characters, including<br/>number, lowercase, uppercase</p>
+        </div>
+    </form>
 
     <!-- Username -->
     <div>

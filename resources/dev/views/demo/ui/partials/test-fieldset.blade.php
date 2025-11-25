@@ -27,13 +27,15 @@
         </x-daisy::ui.advanced.fieldset>
 
         <!-- Login -->
-        <x-daisy::ui.advanced.fieldset legend="Login" bg="base-200" :bordered="true" width="w-xs" padding="p-4">
-            <label class="label">Email</label>
-            <input type="email" class="input" placeholder="Email" />
-            <label class="label">Password</label>
-            <input type="password" class="input" placeholder="Password" />
-            <button class="btn btn-neutral mt-4">Login</button>
-        </x-daisy::ui.advanced.fieldset>
+        <form>
+            <x-daisy::ui.advanced.fieldset legend="Login" bg="base-200" :bordered="true" width="w-xs" padding="p-4">
+                <label class="label">Email</label>
+                <input type="email" class="input" placeholder="Email" />
+                <label class="label">Password</label>
+                <input type="password" class="input" placeholder="Password" />
+                <button class="btn btn-neutral mt-4">Login</button>
+            </x-daisy::ui.advanced.fieldset>
+        </form>
     </div>
 </section>
 

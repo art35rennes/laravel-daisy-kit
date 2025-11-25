@@ -1,20 +1,37 @@
 ---
 alwaysApply: true
 ---
-- Components are organized by functional categories in `resources/views/components/ui/`:
-  - `inputs/` : button, input, textarea, select, checkbox, radio, range, toggle, file-input, color-picker
-  - `navigation/` : breadcrumbs, menu, pagination, navbar, sidebar, tabs, steps, stepper
-  - `layout/` : card, hero, footer, divider, list, list-row, stack, crud-layout, crud-section, grid-layout
-  - `data-display/` : badge, avatar, kbd, table, stat, progress, radial-progress, status, timeline, file-preview
-  - `overlay/` : modal, drawer, dropdown, popover, popconfirm, tooltip
-  - `media/` : carousel, lightbox, media-gallery, embed, leaflet
-  - `feedback/` : alert, toast, loading, skeleton, callout, empty-state
-  - `communication/` : chat-*, notification-*, conversation-view
-  - `utilities/` : mockup-*, indicator, dock
-  - `advanced/` : calendar-*, chart, code-editor, filter, onboarding, scroll-*, transfer, tree-view, validator, login-button, wysiwyg, accordion, collapse, countdown, diff, fieldset, join, label, link, mask, rating, swap, theme-controller
-  - `partials/` : reusable fragments
-- Components follow Atomic Design principles (see `atomic-design.mdc`)
-- The Blade namespace used must be `daisy::`
-- Layout and template components consume exclusively components present in `ui/*` without duplicating their implementation
-- No duplication: extract a reusable component if code is duplicated
-- Logical placement: functional category, not Atomic Design level
+- All UI components are organized by functional category in `resources/views/components/ui/`:
+  - `inputs/`: button, input, textarea, select, checkbox, radio, range, toggle, file-input, color-picker
+  - `navigation/`: breadcrumbs, menu, pagination, navbar, sidebar, tabs, steps, stepper
+  - `layout/`: card, hero, footer, divider, list, list-row, stack, crud-layout, crud-section, grid-layout
+  - `data-display/`: badge, avatar, kbd, table, stat, progress, radial-progress, status, timeline, file-preview
+  - `overlay/`: modal, drawer, dropdown, popover, popconfirm, tooltip
+  - `media/`: carousel, lightbox, media-gallery, embed, leaflet
+  - `feedback/`: alert, toast, loading, skeleton, callout, empty-state
+  - `communication/`: chat-*, notification-*, conversation-view, inbox, message-list
+  - `utilities/`: mockup-*, indicator, dock, clipboard, copy-button
+  - `advanced/`: calendar-*, chart, code-editor, filter, onboarding, scroll-*, transfer, tree-view, validator, login-button, wysiwyg, accordion, collapse, countdown, diff, fieldset, join, label, link, mask, rating, swap, theme-controller
+  - `partials/`: reusable UI fragments
+
+- Components follow Atomic Design principles (see `atomic-design.mdc`).
+- Use the `daisy::` Blade namespace for all components.
+- Layouts and templates should only use `ui/*` components—no duplication is allowed. Extract a new component if code is reused.
+- Place components by functional purpose, not Atomic Design level.
+
+**Template structure**
+- Reusable templates (auth, errors): in both `templates/{category}/` and `components/templates/{category}/` (for Blade component aliases)
+- Example templates (layouts, profile, communication): in `templates/{category}/` only, not as components
+- See `atomic-design.mdc` for additional template rules.
+
+### Template placement and usage
+
+- All templates are in `resources/views/templates/{category}/{name}.blade.php`.
+- Types of templates:
+  - **Reusable/stable templates** (ex: `auth/*`, `error`, `empty-state`, `loading-state`, `maintenance`)
+    - Also registered as Blade components under `components/templates/{category}/{name}.blade.php`
+    - Usable as components (`<x-daisy::templates.auth.login-simple>`) and classic views
+    - API is stable, intended for direct re-use
+  - **Example templates** (ex: `layout/*`, `communication/*`, `changelog`, `profile/*`)
+    - Not Blade components; used only as views (`view('daisy::templates.layout.grid')`)
+    - Provided as reference; copy/adapt as needed
