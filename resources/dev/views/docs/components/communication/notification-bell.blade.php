@@ -30,13 +30,23 @@
             <input type="radio" name="base-example-notification-bell" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.communication.notification-bell />
+                    @php
+$notifications = [
+    ["id" => 1, "type" => "info", "data" => ["message" => "Nouveau message", "priority" => "normal", "user" => ["name" => "Alice"]], "read_at" => null, "created_at" => "2024-01-15 10:00:00"]
+];
+@endphp
+<x-daisy::ui.communication.notification-bell :notifications="$notifications" unreadCount="1" />
                 </div>
             </div>
             <input type="radio" name="base-example-notification-bell" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.communication.notification-bell />';
+                    $baseCode = '@php
+$notifications = [
+    ["id" => 1, "type" => "info", "data" => ["message" => "Nouveau message", "priority" => "normal", "user" => ["name" => "Alice"]], "read_at" => null, "created_at" => "2024-01-15 10:00:00"]
+];
+@endphp
+<x-daisy::ui.communication.notification-bell :notifications="$notifications" unreadCount="1" />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

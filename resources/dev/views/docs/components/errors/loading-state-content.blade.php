@@ -31,13 +31,13 @@
             <input type="radio" name="base-example-loading-state-content" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.errors.loading-state-content />
+                    <x-daisy::ui.errors.loading-state-content type="spinner" message="Chargement en cours..." />
                 </div>
             </div>
             <input type="radio" name="base-example-loading-state-content" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.errors.loading-state-content />';
+                    $baseCode = '<x-daisy::ui.errors.loading-state-content type="spinner" message="Chargement en cours..." />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

@@ -30,13 +30,19 @@
             <input type="radio" name="base-example-notification-filters" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.communication.notification-filters />
+                    @php
+$types = ["info", "warning", "error"];
+@endphp
+<x-daisy::ui.communication.notification-filters :types="$types" currentFilter="all" />
                 </div>
             </div>
             <input type="radio" name="base-example-notification-filters" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.communication.notification-filters />';
+                    $baseCode = '@php
+$types = ["info", "warning", "error"];
+@endphp
+<x-daisy::ui.communication.notification-filters :types="$types" currentFilter="all" />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

@@ -30,13 +30,33 @@
             <input type="radio" name="base-example-sidebar-navigation" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.navigation.sidebar-navigation />
+                    @php
+$items = [
+    ["label" => "Introduction", "href" => "/docs"],
+    ["label" => "Composants", "children" => [
+        ["label" => "Boutons", "href" => "/docs/inputs/button"],
+        ["label" => "Formulaires", "href" => "/docs/inputs/input"]
+    ]],
+    ["label" => "Templates", "href" => "/docs/templates"]
+];
+@endphp
+<x-daisy::ui.navigation.sidebar-navigation :items="$items" current="/docs/inputs/button" />
                 </div>
             </div>
             <input type="radio" name="base-example-sidebar-navigation" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.navigation.sidebar-navigation />';
+                    $baseCode = '@php
+$items = [
+    ["label" => "Introduction", "href" => "/docs"],
+    ["label" => "Composants", "children" => [
+        ["label" => "Boutons", "href" => "/docs/inputs/button"],
+        ["label" => "Formulaires", "href" => "/docs/inputs/input"]
+    ]],
+    ["label" => "Templates", "href" => "/docs/templates"]
+];
+@endphp
+<x-daisy::ui.navigation.sidebar-navigation :items="$items" current="/docs/inputs/button" />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

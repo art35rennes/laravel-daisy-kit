@@ -30,13 +30,27 @@
             <input type="radio" name="base-example-changelog-version-item" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.changelog.changelog-version-item />
+                    @php
+$items = [
+    ["type" => "added", "description" => "Nouvelle fonctionnalité"],
+    ["type" => "fixed", "description" => "Correction d'un bug"],
+    ["type" => "changed", "description" => "Amélioration des performances"]
+];
+@endphp
+<x-daisy::ui.changelog.changelog-version-item version="1.0.0" date="2024-01-15" :items="$items" />
                 </div>
             </div>
             <input type="radio" name="base-example-changelog-version-item" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.changelog.changelog-version-item />';
+                    $baseCode = '@php
+$items = [
+    ["type" => "added", "description" => "Nouvelle fonctionnalité"],
+    ["type" => "fixed", "description" => "Correction d\'un bug"],
+    ["type" => "changed", "description" => "Amélioration des performances"]
+];
+@endphp
+<x-daisy::ui.changelog.changelog-version-item version="1.0.0" date="2024-01-15" :items="$items" />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

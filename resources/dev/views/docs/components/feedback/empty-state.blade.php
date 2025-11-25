@@ -31,13 +31,13 @@
             <input type="radio" name="base-example-empty-state" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.feedback.empty-state />
+                    <x-daisy::ui.feedback.empty-state icon="bi-inbox" title="Aucun élément" message="Il n'y a rien à afficher pour le moment." />
                 </div>
             </div>
             <input type="radio" name="base-example-empty-state" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.feedback.empty-state />';
+                    $baseCode = '<x-daisy::ui.feedback.empty-state icon="bi-inbox" title="Aucun élément" message="Il n\'y a rien à afficher pour le moment." />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

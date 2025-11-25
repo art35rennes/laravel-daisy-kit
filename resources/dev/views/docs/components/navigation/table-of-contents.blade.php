@@ -30,13 +30,27 @@
             <input type="radio" name="base-example-table-of-contents" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.navigation.table-of-contents />
+                    @php
+$sections = [
+    ["id" => "intro", "label" => "Introduction"],
+    ["id" => "base", "label" => "Exemple de base"],
+    ["id" => "api", "label" => "API"]
+];
+@endphp
+<x-daisy::ui.navigation.table-of-contents :sections="$sections" />
                 </div>
             </div>
             <input type="radio" name="base-example-table-of-contents" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.navigation.table-of-contents />';
+                    $baseCode = '@php
+$sections = [
+    ["id" => "intro", "label" => "Introduction"],
+    ["id" => "base", "label" => "Exemple de base"],
+    ["id" => "api", "label" => "API"]
+];
+@endphp
+<x-daisy::ui.navigation.table-of-contents :sections="$sections" />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

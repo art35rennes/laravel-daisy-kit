@@ -30,13 +30,21 @@
             <input type="radio" name="base-example-conversation-view" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.communication.conversation-view />
+                    @php
+$conversation = ["id" => 1, "name" => "Alice", "avatar" => "https://i.pravatar.cc/150?img=12", "isOnline" => true];
+$messages = [["id" => 1, "user_id" => 2, "content" => "Bonjour !", "created_at" => "2024-01-15 14:30:00", "user_name" => "Alice"]];
+@endphp
+<x-daisy::ui.communication.conversation-view :conversation="$conversation" :messages="$messages" currentUserId="1" />
                 </div>
             </div>
             <input type="radio" name="base-example-conversation-view" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.communication.conversation-view />';
+                    $baseCode = '@php
+$conversation = ["id" => 1, "name" => "Alice", "avatar" => "https://i.pravatar.cc/150?img=12", "isOnline" => true];
+$messages = [["id" => 1, "user_id" => 2, "content" => "Bonjour !", "created_at" => "2024-01-15 14:30:00", "user_name" => "Alice"]];
+@endphp
+<x-daisy::ui.communication.conversation-view :conversation="$conversation" :messages="$messages" currentUserId="1" />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

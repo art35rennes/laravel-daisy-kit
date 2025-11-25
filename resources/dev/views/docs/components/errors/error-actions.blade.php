@@ -30,13 +30,13 @@
             <input type="radio" name="base-example-error-actions" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.errors.error-actions />
+                    <x-daisy::ui.errors.error-actions homeUrl="/" backUrl="/previous" />
                 </div>
             </div>
             <input type="radio" name="base-example-error-actions" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.errors.error-actions />';
+                    $baseCode = '<x-daisy::ui.errors.error-actions homeUrl="/" backUrl="/previous" />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

@@ -30,13 +30,29 @@
             <input type="radio" name="base-example-chat-header" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.communication.chat-header />
+                    @php
+$conversation = [
+    "id" => 1,
+    "name" => "Alice Martin",
+    "avatar" => "https://i.pravatar.cc/150?img=12",
+    "isOnline" => true
+];
+@endphp
+<x-daisy::ui.communication.chat-header :conversation="$conversation" />
                 </div>
             </div>
             <input type="radio" name="base-example-chat-header" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.communication.chat-header />';
+                    $baseCode = '@php
+$conversation = [
+    "id" => 1,
+    "name" => "Alice Martin",
+    "avatar" => "https://i.pravatar.cc/150?img=12",
+    "isOnline" => true
+];
+@endphp
+<x-daisy::ui.communication.chat-header :conversation="$conversation" />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

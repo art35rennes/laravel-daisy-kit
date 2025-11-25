@@ -30,13 +30,29 @@
             <input type="radio" name="base-example-crud-layout" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.layout.crud-layout />
+                    <x-daisy::ui.layout.crud-layout>
+    <x-daisy::ui.layout.crud-section title="Informations générales" description="Détails de base">
+        <x-daisy::ui.inputs.input name="name" placeholder="Nom" />
+        <x-daisy::ui.inputs.input name="email" placeholder="Email" />
+    </x-daisy::ui.layout.crud-section>
+    <x-slot:actions>
+        <x-daisy::ui.inputs.button>Enregistrer</x-daisy::ui.inputs.button>
+    </x-slot:actions>
+</x-daisy::ui.layout.crud-layout>
                 </div>
             </div>
             <input type="radio" name="base-example-crud-layout" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.layout.crud-layout />';
+                    $baseCode = '<x-daisy::ui.layout.crud-layout>
+    <x-daisy::ui.layout.crud-section title="Informations générales" description="Détails de base">
+        <x-daisy::ui.inputs.input name="name" placeholder="Nom" />
+        <x-daisy::ui.inputs.input name="email" placeholder="Email" />
+    </x-daisy::ui.layout.crud-section>
+    <x-slot:actions>
+        <x-daisy::ui.inputs.button>Enregistrer</x-daisy::ui.inputs.button>
+    </x-slot:actions>
+</x-daisy::ui.layout.crud-layout>';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

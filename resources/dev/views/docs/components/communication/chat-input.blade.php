@@ -30,13 +30,13 @@
             <input type="radio" name="base-example-chat-input" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.communication.chat-input />
+                    <x-daisy::ui.communication.chat-input placeholder="Tapez votre message..." />
                 </div>
             </div>
             <input type="radio" name="base-example-chat-input" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.communication.chat-input />';
+                    $baseCode = '<x-daisy::ui.communication.chat-input placeholder="Tapez votre message..." />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

@@ -30,13 +30,27 @@
             <input type="radio" name="base-example-footer-layout" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.layout.footer-layout />
+                    @php
+$columns = [
+    ["title" => "Produits", "links" => [["label" => "Fonctionnalités", "href" => "/features"], ["label" => "Tarifs", "href" => "/pricing"]]],
+    ["title" => "Support", "links" => [["label" => "Documentation", "href" => "/docs"], ["label" => "Contact", "href" => "/contact"]]]
+];
+$socialLinks = [["icon" => "bi-twitter", "href" => "#", "label" => "Twitter"], ["icon" => "bi-github", "href" => "#", "label" => "GitHub"]];
+@endphp
+<x-daisy::ui.layout.footer-layout :columns="$columns" brandText="Mon Entreprise" copyrightText="Tous droits réservés" :socialLinks="$socialLinks" />
                 </div>
             </div>
             <input type="radio" name="base-example-footer-layout" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.layout.footer-layout />';
+                    $baseCode = '@php
+$columns = [
+    ["title" => "Produits", "links" => [["label" => "Fonctionnalités", "href" => "/features"], ["label" => "Tarifs", "href" => "/pricing"]]],
+    ["title" => "Support", "links" => [["label" => "Documentation", "href" => "/docs"], ["label" => "Contact", "href" => "/contact"]]]
+];
+$socialLinks = [["icon" => "bi-twitter", "href" => "#", "label" => "Twitter"], ["icon" => "bi-github", "href" => "#", "label" => "GitHub"]];
+@endphp
+<x-daisy::ui.layout.footer-layout :columns="$columns" brandText="Mon Entreprise" copyrightText="Tous droits réservés" :socialLinks="$socialLinks" />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

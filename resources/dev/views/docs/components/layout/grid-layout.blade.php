@@ -30,13 +30,33 @@
             <input type="radio" name="base-example-grid-layout" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.layout.grid-layout />
+                    <x-daisy::ui.layout.grid-layout>
+    <div class="col-12 col-md-6 col-lg-4">
+        <x-daisy::ui.layout.card title="Colonne 1">Contenu 1</x-daisy::ui.layout.card>
+    </div>
+    <div class="col-12 col-md-6 col-lg-4">
+        <x-daisy::ui.layout.card title="Colonne 2">Contenu 2</x-daisy::ui.layout.card>
+    </div>
+    <div class="col-12 col-md-6 col-lg-4">
+        <x-daisy::ui.layout.card title="Colonne 3">Contenu 3</x-daisy::ui.layout.card>
+    </div>
+</x-daisy::ui.layout.grid-layout>
                 </div>
             </div>
             <input type="radio" name="base-example-grid-layout" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.layout.grid-layout />';
+                    $baseCode = '<x-daisy::ui.layout.grid-layout>
+    <div class="col-12 col-md-6 col-lg-4">
+        <x-daisy::ui.layout.card title="Colonne 1">Contenu 1</x-daisy::ui.layout.card>
+    </div>
+    <div class="col-12 col-md-6 col-lg-4">
+        <x-daisy::ui.layout.card title="Colonne 2">Contenu 2</x-daisy::ui.layout.card>
+    </div>
+    <div class="col-12 col-md-6 col-lg-4">
+        <x-daisy::ui.layout.card title="Colonne 3">Contenu 3</x-daisy::ui.layout.card>
+    </div>
+</x-daisy::ui.layout.grid-layout>';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

@@ -30,13 +30,25 @@
             <input type="radio" name="base-example-chat-sidebar" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.communication.chat-sidebar />
+                    @php
+$conversations = [
+    ["id" => 1, "name" => "Alice Martin", "avatar" => "https://i.pravatar.cc/150?img=12", "lastMessage" => "Dernier message", "unreadCount" => 2, "isOnline" => true],
+    ["id" => 2, "name" => "Bob Dupont", "avatar" => "https://i.pravatar.cc/150?img=13", "lastMessage" => "Salut !", "unreadCount" => 0, "isOnline" => false]
+];
+@endphp
+<x-daisy::ui.communication.chat-sidebar :conversations="$conversations" />
                 </div>
             </div>
             <input type="radio" name="base-example-chat-sidebar" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.communication.chat-sidebar />';
+                    $baseCode = '@php
+$conversations = [
+    ["id" => 1, "name" => "Alice Martin", "avatar" => "https://i.pravatar.cc/150?img=12", "lastMessage" => "Dernier message", "unreadCount" => 2, "isOnline" => true],
+    ["id" => 2, "name" => "Bob Dupont", "avatar" => "https://i.pravatar.cc/150?img=13", "lastMessage" => "Salut !", "unreadCount" => 0, "isOnline" => false]
+];
+@endphp
+<x-daisy::ui.communication.chat-sidebar :conversations="$conversations" />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

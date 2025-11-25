@@ -30,13 +30,25 @@
             <input type="radio" name="base-example-notification-list" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.communication.notification-list />
+                    @php
+$notifications = [
+    ["id" => 1, "type" => "info", "data" => ["message" => "Message 1"], "read_at" => null, "created_at" => "2024-01-15 10:00:00"],
+    ["id" => 2, "type" => "warning", "data" => ["message" => "Message 2"], "read_at" => "2024-01-15 09:00:00", "created_at" => "2024-01-15 08:00:00"]
+];
+@endphp
+<x-daisy::ui.communication.notification-list :notifications="$notifications" groupByDate="true" />
                 </div>
             </div>
             <input type="radio" name="base-example-notification-list" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.communication.notification-list />';
+                    $baseCode = '@php
+$notifications = [
+    ["id" => 1, "type" => "info", "data" => ["message" => "Message 1"], "read_at" => null, "created_at" => "2024-01-15 10:00:00"],
+    ["id" => 2, "type" => "warning", "data" => ["message" => "Message 2"], "read_at" => "2024-01-15 09:00:00", "created_at" => "2024-01-15 08:00:00"]
+];
+@endphp
+<x-daisy::ui.communication.notification-list :notifications="$notifications" groupByDate="true" />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

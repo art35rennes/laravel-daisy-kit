@@ -30,13 +30,31 @@
             <input type="radio" name="base-example-notification-item" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.communication.notification-item />
+                    @php
+$notification = [
+    "id" => 1,
+    "type" => "info",
+    "data" => ["message" => "Vous avez reçu un nouveau message", "priority" => "normal", "user" => ["name" => "Alice", "avatar" => "https://i.pravatar.cc/150?img=12"]],
+    "read_at" => null,
+    "created_at" => "2024-01-15 10:00:00"
+];
+@endphp
+<x-daisy::ui.communication.notification-item :notification="$notification" showActions="true" />
                 </div>
             </div>
             <input type="radio" name="base-example-notification-item" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.communication.notification-item />';
+                    $baseCode = '@php
+$notification = [
+    "id" => 1,
+    "type" => "info",
+    "data" => ["message" => "Vous avez reçu un nouveau message", "priority" => "normal", "user" => ["name" => "Alice", "avatar" => "https://i.pravatar.cc/150?img=12"]],
+    "read_at" => null,
+    "created_at" => "2024-01-15 10:00:00"
+];
+@endphp
+<x-daisy::ui.communication.notification-item :notification="$notification" showActions="true" />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 

@@ -30,13 +30,13 @@
             <input type="radio" name="base-example-error-header" class="tab" aria-label="Preview" checked />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 <div class="not-prose">
-                    <x-daisy::ui.errors.error-header />
+                    <x-daisy::ui.errors.error-header statusCode="500" />
                 </div>
             </div>
             <input type="radio" name="base-example-error-header" class="tab" aria-label="Code" />
             <div class="tab-content border-base-300 bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.errors.error-header />';
+                    $baseCode = '<x-daisy::ui.errors.error-header statusCode="500" />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 
