@@ -2,6 +2,7 @@
 alwaysApply: true
 ---
 - This repository is a **Laravel package**, not an application. All evolutions must respect Laravel package structure (no application logic, no migrations/conflicts with the host application).
+- Only compatibility with the current development version is required; no backward compatibility is necessary.
 - All classes and components must comply with daisyUI v5 and Tailwind CSS v4.
 - Never add custom CSS classes or Tailwind configuration beyond what exists in the host project package.
 - Blade namespace: `daisy::`.

@@ -12,6 +12,7 @@ const initialized = new WeakSet();
 
 // Précharger tous les modules disponibles pour que Vite puisse les résoudre
 const modulesGlob = import.meta.glob('../modules/*.js', { eager: false });
+const formsModulesGlob = import.meta.glob('../modules/forms/*.js', { eager: false });
 const rootModulesGlob = import.meta.glob('../*.js', { eager: false });
 const folderModulesGlob = import.meta.glob('../*/index.js', { eager: false });
 
@@ -42,6 +43,11 @@ const folderModulesMap = createModuleMap(folderModulesGlob, (path) => {
     return match ? match[1] : null;
 });
 
+const formsModulesMap = createModuleMap(formsModulesGlob, (path) => {
+    const match = path.match(/\/forms\/([^/]+)\.js$/);
+    return match ? match[1] : null;
+});
+
 /**
  * Initialise un élément avec son module JS
  */
@@ -63,6 +69,9 @@ async function initElement(element) {
         // Essayer d'abord dans modules/
         if (modulesMap.has(moduleName)) {
             importFn = modulesMap.get(moduleName);
+        } else if (formsModulesMap.has(moduleName)) {
+            // Essayer dans modules/forms/
+            importFn = formsModulesMap.get(moduleName);
         } else if (rootModulesMap.has(moduleName)) {
             // Essayer à la racine
             importFn = rootModulesMap.get(moduleName);
@@ -79,9 +88,13 @@ async function initElement(element) {
                 module = await import(`../modules/${moduleName}.js`);
             } catch (e1) {
                 try {
-                    module = await import(`../${moduleName}.js`);
+                    module = await import(`../modules/forms/${moduleName}.js`);
                 } catch (e2) {
-                    module = await import(`../${moduleName}/index.js`);
+                    try {
+                        module = await import(`../${moduleName}.js`);
+                    } catch (e3) {
+                        module = await import(`../${moduleName}/index.js`);
+                    }
                 }
             }
         }
