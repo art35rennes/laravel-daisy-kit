@@ -1,5 +1,5 @@
 {
-    "generated_at": "2025-11-28T20:58:07+00:00",
+    "generated_at": "2025-11-28T21:28:13+00:00",
     "components": [
         {
             "name": "accordion",
@@ -2553,6 +2553,7 @@
                 "vertical",
                 "horizontal",
                 "backdrop",
+                "closeButton",
                 "boxClass",
                 "responsive",
                 "size",

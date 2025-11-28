@@ -9,6 +9,8 @@
     'horizontal' => null,
     // Afficher le backdrop cliquable pour fermer (méthode dialog)
     'backdrop' => true,
+    // Afficher un bouton de fermeture (X) en haut à droite
+    'closeButton' => true,
     // Classes supplémentaires sur .modal-box (ex: max-w-xl)
     'boxClass' => '',
     // Responsive & taille
@@ -64,8 +66,24 @@
 
 <dialog {{ $dialogAttrs }} @if($id) id="{{ $id }}" @endif>
     <div class="modal-box {{ $boxResponsiveClasses }}{{ $scrollClasses }} {{ $boxClass }}">
-        @if($title)
-            <h3 class="text-lg font-bold mb-2">{{ $title }}</h3>
+        @if($title || $closeButton)
+            <div class="flex items-start justify-between gap-4 mb-4">
+                @if($title)
+                    <h3 class="text-lg font-bold">{{ $title }}</h3>
+                @else
+                    <div></div>
+                @endif
+                @if($closeButton)
+                    <button 
+                        type="button" 
+                        class="btn btn-sm btn-circle btn-ghost shrink-0" 
+                        onclick="document.getElementById('{{ $id }}').close()"
+                        aria-label="Close modal"
+                    >
+                        <x-bi-x class="size-5" />
+                    </button>
+                @endif
+            </div>
         @endif
         <div class="mb-4">{{ $slot }}</div>
         <div class="modal-action">
