@@ -29,13 +29,13 @@
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-loading" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose">
                     <x-daisy::ui.feedback.loading shape="spinner" />
                 </div>
             </div>
             <input type="radio" name="base-example-loading" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $baseCode = '<x-daisy::ui.feedback.loading shape="spinner" />';
                 @endphp
@@ -58,7 +58,7 @@
         <h2>Variantes</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="variants-example-loading" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose flex flex-wrap items-center gap-3">
                     <x-daisy::ui.feedback.loading color="primary">Primary</x-daisy::ui.feedback.loading>
                     <x-daisy::ui.feedback.loading color="secondary">Secondary</x-daisy::ui.feedback.loading>
@@ -67,7 +67,7 @@
                 </div>
             </div>
             <input type="radio" name="variants-example-loading" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $variantsCode = '&lt;x-daisy::ui.feedback.loading color=&quot;primary&quot;&gt;Primary&lt;/x-daisy::ui.feedback.loading&gt;
 &lt;x-daisy::ui.feedback.loading color=&quot;secondary&quot;&gt;Secondary&lt;/x-daisy::ui.feedback.loading&gt;

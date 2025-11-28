@@ -29,13 +29,13 @@
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-input" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose">
                     <x-daisy::ui.inputs.input type="text" name="email" placeholder="votre@email.com" />
                 </div>
             </div>
             <input type="radio" name="base-example-input" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $baseCode = '<x-daisy::ui.inputs.input type="text" name="email" placeholder="votre@email.com" />';
                 @endphp
@@ -58,7 +58,7 @@
         <h2>Variantes</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="variants-example-input" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose flex flex-wrap items-center gap-3">
                     <x-daisy::ui.inputs.input color="primary" placeholder="Primary" />
                     <x-daisy::ui.inputs.input color="secondary" placeholder="Secondary" />
@@ -69,7 +69,7 @@
                 </div>
             </div>
             <input type="radio" name="variants-example-input" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $variantsCode = '&lt;x-daisy::ui.inputs.input color=&quot;primary&quot; placeholder=&quot;Primary&quot; /&gt;
 &lt;x-daisy::ui.inputs.input color=&quot;secondary&quot; placeholder=&quot;Secondary&quot; /&gt;

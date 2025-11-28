@@ -15,7 +15,7 @@
 
 @php
     $id = $attributes->get('id') ?? 'chart-'.uniqid();
-    $containerClasses = trim('daisy-chart bg-base-100 border border-base-300 rounded-box p-3 '.($attributes->get('class') ?? ''));
+    $containerClasses = trim('daisy-chart bg-base-100 card-border rounded-box p-3 '.($attributes->get('class') ?? ''));
     // retire la classe du merge automatique pour l'ajouter proprement plus bas
     $attributes = $attributes->except('class');
 

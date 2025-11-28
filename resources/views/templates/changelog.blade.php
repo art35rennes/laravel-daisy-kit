@@ -58,7 +58,7 @@
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="true">
     <x-daisy::ui.partials.theme-selector position="fixed" placement="top-right" />
     <div class="changelog-container mx-auto max-w-5xl space-y-8 py-4">
-        <section class="rounded-4xl bg-base-100/90 p-8 shadow-sm">
+        <section class="rounded-box bg-base-100/90 p-8 shadow">
             <div class="flex flex-wrap items-start gap-6">
                 <div class="flex-1 min-w-0 space-y-3">
                     <p class="text-sm font-semibold uppercase tracking-wide text-primary">{{ __('changelog.changelog') }}</p>
@@ -96,7 +96,7 @@
             <x-daisy::ui.feedback.empty-state
                 :title="__('changelog.no_versions')"
                 :message="__('changelog.no_results')"
-                class="rounded-3xl border border-base-200 bg-base-100/80"
+                class="rounded-box card-border bg-base-100/80"
             />
         @else
             <div class="changelog-versions space-y-10" data-changelog-container>

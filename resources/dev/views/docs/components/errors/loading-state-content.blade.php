@@ -29,13 +29,13 @@
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-loading-state-content" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose">
                     <x-daisy::ui.errors.loading-state-content type="spinner" message="Chargement en cours..." />
                 </div>
             </div>
             <input type="radio" name="base-example-loading-state-content" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $baseCode = '<x-daisy::ui.errors.loading-state-content type="spinner" message="Chargement en cours..." />';
                 @endphp
@@ -58,14 +58,14 @@
         <h2>Variantes</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="variants-example-loading-state-content" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose flex flex-wrap items-center gap-3">
                     <x-daisy::ui.errors.loading-state-content size="sm">Small</x-daisy::ui.errors.loading-state-content>
                     <x-daisy::ui.errors.loading-state-content size="lg">Large</x-daisy::ui.errors.loading-state-content>
                 </div>
             </div>
             <input type="radio" name="variants-example-loading-state-content" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $variantsCode = '&lt;x-daisy::ui.errors.loading-state-content size=&quot;sm&quot;&gt;Small&lt;/x-daisy::ui.errors.loading-state-content&gt;
 &lt;x-daisy::ui.errors.loading-state-content size=&quot;lg&quot;&gt;Large&lt;/x-daisy::ui.errors.loading-state-content&gt;';

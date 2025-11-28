@@ -98,9 +98,22 @@ export default function init(element, options) {
         // Mettre à jour l'attribut data-current-step
         form.dataset.currentStep = step;
         
+        // Mettre à jour le stepper directement s'il existe
+        const stepper = form.querySelector('[data-stepper="true"]');
+        if (stepper) {
+            // Essayer d'utiliser l'API globale si disponible
+            if (window.DaisyStepper && typeof window.DaisyStepper.setCurrent === 'function') {
+                window.DaisyStepper.setCurrent(stepper, step);
+            } else {
+                // Sinon, mettre à jour manuellement l'attribut data-current
+                stepper.dataset.current = String(step);
+            }
+        }
+        
         // Déclencher un event pour que le stepper se mette à jour
         const event = new CustomEvent('wizard:step-change', {
             detail: { step, instanceId },
+            bubbles: true,
         });
         form.dispatchEvent(event);
     }
@@ -125,13 +138,17 @@ export default function init(element, options) {
     if (prevButton) {
         prevButton.addEventListener('click', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             goToPrevStep();
         });
+    } else {
+        console.warn(`[Form Wizard ${instanceId}] Previous button not found`);
     }
     
     if (nextButton) {
         nextButton.addEventListener('click', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             
             // Valider le formulaire avant de passer à l'étape suivante
             if (form.checkValidity()) {
@@ -141,6 +158,8 @@ export default function init(element, options) {
                 form.reportValidity();
             }
         });
+    } else {
+        console.warn(`[Form Wizard ${instanceId}] Next button not found`);
     }
     
     // Écouter les events filter-clear pour synchroniser avec d'autres composants

@@ -11,7 +11,7 @@
 @php
     $classes = 'fieldset';
     if ($bg) $classes .= ' bg-'.$bg;
-    if ($bordered) $classes .= ' border border-base-300';
+    if ($bordered) $classes .= ' card-border';
     if ($rounded) $classes .= ' rounded-box';
     if ($width) $classes .= ' '.$width;
     if ($padding) $classes .= ' '.$padding;

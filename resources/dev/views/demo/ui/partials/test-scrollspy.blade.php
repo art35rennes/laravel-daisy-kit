@@ -3,7 +3,7 @@
     <h2 class="text-lg font-medium">ScrollSpy</h2>
     <div class="grid md:grid-cols-3 gap-6 items-start">
         <div class="md:col-span-2">
-            <div id="spyContainer" class="h-80 overflow-y-auto bg-base-100 rounded-box border border-base-300 p-4 space-y-12">
+            <div id="spyContainer" class="h-80 overflow-y-auto bg-base-100 rounded-box card-border p-4 space-y-12">
                 <section id="sec-1">
                     <h3 class="text-lg font-semibold mb-2">Section 1</h3>
                     <p>
@@ -43,7 +43,7 @@
     <div class="divider">Auto-génération</div>
     <div class="grid md:grid-cols-3 gap-6 items-start">
         <div class="md:col-span-2">
-            <div id="spyContainerAuto" class="h-80 overflow-y-auto bg-base-100 rounded-box border border-base-300 p-4 space-y-12">
+            <div id="spyContainerAuto" class="h-80 overflow-y-auto bg-base-100 rounded-box card-border p-4 space-y-12">
                 <section>
                     <h3 class="text-lg font-semibold mb-2">Intro</h3>
                     <p>Présentation et principe général du composant ScrollSpy.</p>

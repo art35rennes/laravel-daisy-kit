@@ -75,7 +75,7 @@
     ];
 
     $gapValue = is_numeric($gap) ? (int) $gap : 8;
-    $root = 'grid grid-cols-1 '.$bp.' gap-'.$gapValue.($borderTop ? ' pt-8 mt-8 border-t border-base-200' : '');
+    $root = 'grid grid-cols-1 '.$bp.' gap-'.$gapValue.($borderTop ? ' pt-8 mt-8 border-t' : '');
 
     // Sélectionne les classes en fonction du breakpoint demandé.
     $bpKey = in_array($breakpoint, ['sm','md','lg','xl','2xl']) ? $breakpoint : 'lg';

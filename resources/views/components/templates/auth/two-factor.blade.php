@@ -27,7 +27,7 @@
                 <p class="text-base-content/70">{{ __('auth.two_factor_description') }}</p>
             </div>
 
-            <x-daisy::ui.feedback.alert color="info" class="shadow-sm">
+            <x-daisy::ui.feedback.alert color="info" class="shadow">
                 {{ __('auth.two_factor_instructions') }}
             </x-daisy::ui.feedback.alert>
 

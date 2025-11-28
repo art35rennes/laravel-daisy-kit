@@ -17,9 +17,9 @@
     $conversationsUrl = $conversationsUrl ?? (Route::has('chat.conversations') ? route('chat.conversations') : '#');
 @endphp
 
-<div {{ $attributes->merge(['class' => 'chat-sidebar flex flex-col h-full border-r border-base-300 bg-base-100']) }}>
+<div {{ $attributes->merge(['class' => 'chat-sidebar flex flex-col h-full border-r bg-base-100']) }}>
     {{-- Recherche --}}
-    <div class="p-3 sm:p-4 border-b border-base-300">
+    <div class="p-3 sm:p-4 border-b">
         <x-daisy::ui.inputs.input
             type="text"
             :placeholder="__('chat.search_conversations')"
@@ -87,7 +87,7 @@
 
     {{-- Liste des utilisateurs en ligne --}}
     @if($showUserList && !empty($onlineUsers))
-        <div class="p-3 sm:p-4 border-t border-base-300">
+        <div class="p-3 sm:p-4 border-t">
             <div class="text-xs font-semibold text-base-content opacity-70 mb-2">
                 {{ __('chat.users_online') }}
             </div>

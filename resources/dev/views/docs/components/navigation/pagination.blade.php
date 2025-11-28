@@ -29,13 +29,13 @@
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-pagination" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose">
                     <x-daisy::ui.navigation.pagination :total="42" :current="3" />
                 </div>
             </div>
             <input type="radio" name="base-example-pagination" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $baseCode = '<x-daisy::ui.navigation.pagination :total="42" :current="3" />';
                 @endphp
@@ -58,7 +58,7 @@
         <h2>Variantes</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="variants-example-pagination" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose flex flex-wrap items-center gap-3">
                     <x-daisy::ui.navigation.pagination color="primary">Primary</x-daisy::ui.navigation.pagination>
                     <x-daisy::ui.navigation.pagination color="secondary">Secondary</x-daisy::ui.navigation.pagination>
@@ -67,7 +67,7 @@
                 </div>
             </div>
             <input type="radio" name="variants-example-pagination" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $variantsCode = '&lt;x-daisy::ui.navigation.pagination color=&quot;primary&quot;&gt;Primary&lt;/x-daisy::ui.navigation.pagination&gt;
 &lt;x-daisy::ui.navigation.pagination color=&quot;secondary&quot;&gt;Secondary&lt;/x-daisy::ui.navigation.pagination&gt;

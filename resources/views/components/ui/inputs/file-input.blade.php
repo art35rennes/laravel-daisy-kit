@@ -8,7 +8,7 @@
     'dragdrop' => false,
     'preview' => false,
     // Taille max de la zone (classes)
-    'dropZoneClass' => 'border-2 border-dashed border-base-300 rounded-box p-4',
+    'dropZoneClass' => 'border border-dashed rounded-box p-4',
     // Surcharge du nom de module JS (optionnel)
     'module' => null,
 ])

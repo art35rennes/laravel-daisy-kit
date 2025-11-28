@@ -157,9 +157,9 @@ export function getBaseContentColor(contextEl) {
  * @returns {string} Couleur base-300 ou fallback
  */
 export function getBase300Color(contextEl) {
-  // DaisyUI: border-base-300
+  // DaisyUI: card-border
   const probe = createProbe(contextEl || document.body);
-  probe.className = 'border border-base-300';
+  probe.className = 'card-border';
   const style = getComputedStyle(probe);
   // Dans plusieurs navigateurs, la couleur de bordure est reflétée comme color quand pas de texte
   const borderColor = style.borderTopColor || style.color;

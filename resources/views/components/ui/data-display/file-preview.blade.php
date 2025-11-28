@@ -71,7 +71,7 @@
 
 <div {{ $attributes->merge(['class' => 'file-preview inline-block '.$sizes['container']]) }}>
     @if($type === 'image')
-        <div class="relative rounded-box overflow-hidden border border-base-300 hover:border-primary transition-colors">
+        <div class="relative rounded-box overflow-hidden card-border hover:border-primary transition-colors">
             @if($openMode === 'modal')
                 <button 
                     type="button"
@@ -151,7 +151,7 @@
             </x-daisy::ui.overlay.modal>
         @endif
     @elseif($type === 'video')
-        <div class="rounded-box overflow-hidden border border-base-300 bg-base-200">
+        <div class="rounded-box overflow-hidden card-border bg-base-200">
             <video 
                 src="{{ $url }}" 
                 controls
@@ -177,7 +177,7 @@
             </div>
         @endif
     @elseif($type === 'audio')
-        <div class="rounded-box border border-base-300 bg-base-200 p-3">
+        <div class="rounded-box card-border bg-base-200 p-3">
             <div class="flex items-center gap-3">
                 <x-icon name="{{ $icon }}" class="{{ $sizes['icon'] }} text-primary" />
                 <div class="flex-1 min-w-0">
@@ -192,7 +192,7 @@
         </div>
     @else
         {{-- PDF, Document, Other --}}
-        <div class="rounded-box border border-base-300 bg-base-200 hover:bg-base-300 transition-colors p-3">
+        <div class="rounded-box card-border bg-base-200 hover:bg-base-300 transition-colors p-3">
             <div class="flex items-center gap-3">
                 <button 
                     type="button"

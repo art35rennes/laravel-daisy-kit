@@ -29,13 +29,13 @@
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-login-button" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose">
                     <x-daisy::ui.advanced.login-button provider="github" label="Se connecter avec GitHub" />
                 </div>
             </div>
             <input type="radio" name="base-example-login-button" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $baseCode = '<x-daisy::ui.advanced.login-button provider="github" label="Se connecter avec GitHub" />';
                 @endphp
@@ -58,7 +58,7 @@
         <h2>Variantes</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="variants-example-login-button" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose flex flex-wrap items-center gap-3">
                     <x-daisy::ui.advanced.login-button variant="outline">Outline</x-daisy::ui.advanced.login-button>
                     <x-daisy::ui.advanced.login-button variant="ghost">Ghost</x-daisy::ui.advanced.login-button>
@@ -67,7 +67,7 @@
                 </div>
             </div>
             <input type="radio" name="variants-example-login-button" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $variantsCode = '&lt;x-daisy::ui.advanced.login-button variant=&quot;outline&quot;&gt;Outline&lt;/x-daisy::ui.advanced.login-button&gt;
 &lt;x-daisy::ui.advanced.login-button variant=&quot;ghost&quot;&gt;Ghost&lt;/x-daisy::ui.advanced.login-button&gt;

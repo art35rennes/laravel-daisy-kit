@@ -29,7 +29,7 @@
 function createPreview(file) {
   const wrap = document.createElement('div');
   // Style général du conteneur de prévisualisation
-  wrap.className = 'relative rounded-box overflow-hidden border border-base-300 bg-base-200/50 aspect-video';
+  wrap.className = 'relative rounded-box overflow-hidden card-border bg-base-200/50 aspect-video';
   const ext = (file.name || '').toLowerCase();
 
   // Prévisualisation pour les images

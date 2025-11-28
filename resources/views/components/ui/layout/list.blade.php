@@ -3,7 +3,7 @@
     // Styles utilitaires inspirés de la doc
     'bg' => false,          // ajoute bg-base-100
     'rounded' => false,     // ajoute rounded-box
-    'shadow' => null,       // null|sm|md|lg -> shadow-sm/md/lg
+    'shadow' => false,      // true -> shadow (classe daisyUI)
     'title' => null,        // texte en-tête (li spécifique)
 ])
 
@@ -12,7 +12,7 @@
     // Le composant est vertical par défaut. Un mode horizontal n'est pas prévu par DaisyUI pour list
     if ($bg) $classes .= ' bg-base-100';
     if ($rounded) $classes .= ' rounded-box';
-    if ($shadow) $classes .= ' shadow'.($shadow === 'sm' ? '-sm' : ($shadow === 'md' ? '-md' : ($shadow === 'lg' ? '-lg' : '')));
+    if ($shadow) $classes .= ' shadow';
 @endphp
 
 <ul {{ $attributes->merge(['class' => $classes]) }}>

@@ -28,20 +28,20 @@
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-stack" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose">
                     <x-daisy::ui.layout.stack>
-    <div class="bg-primary text-primary-content p-4 rounded">Carte 1</div>
-    <div class="bg-secondary text-secondary-content p-4 rounded">Carte 2</div>
+    <div class="bg-primary text-primary-content p-4 rounded-box">Carte 1</div>
+    <div class="bg-secondary text-secondary-content p-4 rounded-box">Carte 2</div>
 </x-daisy::ui.layout.stack>
                 </div>
             </div>
             <input type="radio" name="base-example-stack" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $baseCode = '<x-daisy::ui.layout.stack>
-    <div class="bg-primary text-primary-content p-4 rounded">Carte 1</div>
-    <div class="bg-secondary text-secondary-content p-4 rounded">Carte 2</div>
+    <div class="bg-primary text-primary-content p-4 rounded-box">Carte 1</div>
+    <div class="bg-secondary text-secondary-content p-4 rounded-box">Carte 2</div>
 </x-daisy::ui.layout.stack>';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 

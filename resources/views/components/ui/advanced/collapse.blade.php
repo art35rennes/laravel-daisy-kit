@@ -19,7 +19,7 @@
     $root .= $arrow ? ' collapse-arrow' : ' collapse-plus';
     if ($force === 'open') $root .= ' collapse-open';
     if ($force === 'close') $root .= ' collapse-close';
-    if ($bordered) $root .= ' border border-base-300';
+    if ($bordered) $root .= ' card-border';
     if ($bg) $root .= ' bg-base-100';
 @endphp
 @if($method === 'details')

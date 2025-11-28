@@ -3,7 +3,7 @@
 @endphp
 <x-daisy::layout.app title="DaisyUI Kit - Demo" :container="false">
     {{-- Navbar avec navigation Docs/Démo/Template --}}
-    <x-daisy::ui.navigation.navbar bg="base-100" shadow="sm" fixed="false" class="border-b border-base-200">
+    <x-daisy::ui.navigation.navbar bg="base-100" :shadow="true" fixed="false" class="border-b">
         <x-slot:start>
             <h1 class="text-lg font-semibold">DaisyUI Kit</h1>
         </x-slot:start>
@@ -39,7 +39,7 @@
     
     <!-- Sélecteur de thème flottant -->
     <div id="themePicker" class="fixed top-4 right-4 z-50 hidden md:block">
-        <div id="themePickerBox" class="bg-base-100 rounded-lg shadow-lg p-3 border border-base-300 w-56 sm:w-64 max-w-[calc(100vw-2rem)]">
+        <div id="themePickerBox" class="bg-base-100 rounded-box shadow p-3 card-border w-56 sm:w-64 max-w-[calc(100vw-2rem)]">
             <label class="form-control w-full">
                 <div class="label"><span class="label-text text-xs">Thème DaisyUI</span></div>
                 <select id="themeSelect" class="select select-bordered select-sm w-full">
@@ -142,7 +142,7 @@
     <!-- Floating Section Navigator (sans Alpine) -->
     <div id="sectionNav" class="fixed bottom-6 right-6 z-50 hidden md:block">
         <div id="sectionNavPanel" class="absolute bottom-16 right-0 hidden">
-            <div id="sectionNavBox" class="bg-base-200 rounded-box shadow-lg p-3 w-72 sm:w-80 max-w-[calc(100vw-2rem)]">
+            <div id="sectionNavBox" class="bg-base-200 rounded-box shadow p-3 w-72 sm:w-80 max-w-[calc(100vw-2rem)]">
                 <div class="font-semibold mb-2">Sections</div>
                 <div class="mb-2">
                     <label class="input input-bordered flex items-center gap-2 w-full">
@@ -153,7 +153,7 @@
                 <ul id="sectionNavList" class="menu"></ul>
             </div>
         </div>
-        <button id="sectionNavBtn" class="btn btn-primary btn-circle shadow-lg" aria-label="Open section navigator">
+        <button id="sectionNavBtn" class="btn btn-primary btn-circle shadow" aria-label="Open section navigator">
             <svg id="sectionNavIconOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
             <svg id="sectionNavIconClose" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5 hidden"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
@@ -415,7 +415,7 @@
                         <div class="font-medium opacity-70">{{ ucfirst(str_replace('-', ' ', $cat)) }}</div>
                         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             @foreach($items as $it)
-                                <div class="card bg-base-100 border border-base-300">
+                                <div class="card bg-base-100 card-border">
                                     <div class="card-body p-4">
                                         <div class="card-title text-base">{{ $it['name'] ?? '' }}</div>
                                         <div class="text-xs opacity-70 break-all">{{ $it['view'] ?? '' }}</div>

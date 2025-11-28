@@ -127,7 +127,7 @@
                     
                     {{-- Footer optionnel de l'onglet --}}
                     @if(isset(${'tab_'.$tabId.'_footer'}))
-                        <div class="mt-6 pt-6 border-t border-base-300">
+                        <div class="mt-6 pt-6 border-t">
                             {!! ${'tab_'.$tabId.'_footer'} !!}
                         </div>
                     @endif
@@ -137,7 +137,7 @@
         
         {{-- Actions du formulaire --}}
         @isset($actions)
-            <div class="flex items-center justify-end gap-3 pt-6 border-t border-base-300">
+            <div class="flex items-center justify-end gap-3 pt-6 border-t">
                 {!! $actions !!}
             </div>
         @endisset

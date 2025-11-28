@@ -29,7 +29,7 @@
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-steps" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose">
                     @php
 $items = [
@@ -42,7 +42,7 @@ $items = [
                 </div>
             </div>
             <input type="radio" name="base-example-steps" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $baseCode = '@php
 $items = [
@@ -72,14 +72,14 @@ $items = [
         <h2>Variantes</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="variants-example-steps" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose flex flex-wrap items-center gap-3">
                     <x-daisy::ui.navigation.steps color="primary">Primary</x-daisy::ui.navigation.steps>
                     <x-daisy::ui.navigation.steps color="secondary">Secondary</x-daisy::ui.navigation.steps>
                 </div>
             </div>
             <input type="radio" name="variants-example-steps" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $variantsCode = '&lt;x-daisy::ui.navigation.steps color=&quot;primary&quot;&gt;Primary&lt;/x-daisy::ui.navigation.steps&gt;
 &lt;x-daisy::ui.navigation.steps color=&quot;secondary&quot;&gt;Secondary&lt;/x-daisy::ui.navigation.steps&gt;';

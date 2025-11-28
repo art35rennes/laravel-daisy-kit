@@ -48,7 +48,7 @@ function createPopover() {
   panel.className = 'absolute z-[75]';
   const content = document.createElement('div');
   // Styles du popover du kit
-  content.className = 'relative rounded-box bg-base-100 shadow border border-base-200 p-4 w-80 max-w-[92vw]';
+  content.className = 'relative rounded-box bg-base-100 shadow card-border p-4 w-80 max-w-[92vw]';
   panel.appendChild(content);
 
   const header = document.createElement('div');
@@ -60,7 +60,7 @@ function createPopover() {
   content.appendChild(body);
 
   const footer = document.createElement('div');
-  footer.className = 'mt-3 pt-3 border-t border-base-200 flex items-center justify-between';
+  footer.className = 'mt-3 pt-3 border-t flex items-center justify-between';
   content.appendChild(footer);
 
   const left = document.createElement('div');
@@ -361,7 +361,7 @@ function setupOnboarding(root) {
     const panel = document.createElement('div');
     panel.className = 'popconfirm-panel absolute z-[80] top-0 left-0';
     panel.innerHTML = `
-      <div class="rounded-box bg-base-100 shadow border border-base-200 p-4 w-64">
+      <div class="rounded-box bg-base-100 shadow card-border p-4 w-64">
         <div class="text-sm mb-3">${c.text || ''}</div>
         <div class="flex justify-end gap-2">
           <button class="btn btn-ghost btn-sm" data-popconfirm-action="cancel">${c.cancel || 'Annuler'}</button>

@@ -42,7 +42,7 @@
 
             <div class="grid gap-6 md:grid-cols-3">
                 @foreach($templates as $template)
-                    <div class="card bg-base-100 shadow-sm">
+                    <div class="card bg-base-100 shadow">
                         <div class="card-body">
                             <div class="flex items-start justify-between gap-2 mb-2">
                                 <h3 class="card-title text-base break-words flex-1 min-w-0">{{ $template['label'] }}</h3>

@@ -134,13 +134,13 @@ class GenerateDocsPages extends Command
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-{$name}" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose">
                     {$baseExample}
                 </div>
             </div>
             <input type="radio" name="base-example-{$name}" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     \$baseCode = {$this->escapeBladeForPhp($baseExampleCode)};
                 @endphp
@@ -225,7 +225,7 @@ BLADE;
                 'divider' => '<x-'.$componentTag.'>OU</x-'.$componentTag.'>',
                 'list' => '<x-'.$componentTag.'>'."\n".'    <li class="list-row">'."\n".'        <span>Jean Dupont</span>'."\n".'        <span>jean@example.com</span>'."\n".'    </li>'."\n".'    <li class="list-row">'."\n".'        <span>Marie Martin</span>'."\n".'        <span>marie@example.com</span>'."\n".'    </li>'."\n".'</x-'.$componentTag.'>',
                 'list-row' => '<x-'.$componentTag.'>'."\n".'    <span>Nom</span>'."\n".'    <span>Valeur</span>'."\n".'</x-'.$componentTag.'>',
-                'stack' => '<x-'.$componentTag.'>'."\n".'    <div class="bg-primary text-primary-content p-4 rounded">Carte 1</div>'."\n".'    <div class="bg-secondary text-secondary-content p-4 rounded">Carte 2</div>'."\n".'</x-'.$componentTag.'>',
+                'stack' => '<x-'.$componentTag.'>'."\n".'    <div class="bg-primary text-primary-content p-4 rounded-box">Carte 1</div>'."\n".'    <div class="bg-secondary text-secondary-content p-4 rounded-box">Carte 2</div>'."\n".'</x-'.$componentTag.'>',
                 'crud-layout' => '<x-'.$componentTag.'>'."\n".'    <x-daisy::ui.layout.crud-section title="Informations générales" description="Détails de base">'."\n".'        <x-daisy::ui.inputs.input name="name" placeholder="Nom" />'."\n".'        <x-daisy::ui.inputs.input name="email" placeholder="Email" />'."\n".'    </x-daisy::ui.layout.crud-section>'."\n".'    <x-slot:actions>'."\n".'        <x-daisy::ui.inputs.button>Enregistrer</x-daisy::ui.inputs.button>'."\n".'    </x-slot:actions>'."\n".'</x-'.$componentTag.'>',
                 'crud-section' => '<x-'.$componentTag.' title="Informations" description="Détails du formulaire">'."\n".'    <x-daisy::ui.inputs.input name="name" placeholder="Nom" />'."\n".'    <x-daisy::ui.inputs.input name="email" placeholder="Email" />'."\n".'</x-'.$componentTag.'>',
                 'footer-layout' => '@php'."\n".'$columns = ['."\n".'    ["title" => "Produits", "links" => [["label" => "Fonctionnalités", "href" => "/features"], ["label" => "Tarifs", "href" => "/pricing"]]],'."\n".'    ["title" => "Support", "links" => [["label" => "Documentation", "href" => "/docs"], ["label" => "Contact", "href" => "/contact"]]]'."\n".'];'."\n".'$socialLinks = [["icon" => "bi-twitter", "href" => "#", "label" => "Twitter"], ["icon" => "bi-github", "href" => "#", "label" => "GitHub"]];'."\n".'@endphp'."\n".'<x-'.$componentTag.' :columns="$columns" brandText="Mon Entreprise" copyrightText="Tous droits réservés" :socialLinks="$socialLinks" />',
@@ -422,13 +422,13 @@ BLADE;
         <h2>Variantes</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="variants-example-{$name}" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose flex flex-wrap items-center gap-3">
 {$examplesHtml}
                 </div>
             </div>
             <input type="radio" name="variants-example-{$name}" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     \$variantsCode = {$this->escapeBladeForPhp($examplesCodeHtml)};
                 @endphp

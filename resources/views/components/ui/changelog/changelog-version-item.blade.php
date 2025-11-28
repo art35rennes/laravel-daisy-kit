@@ -70,7 +70,7 @@
     <div class="timeline-column flex flex-row md:flex-col items-center md:items-start gap-3 md:gap-0 text-sm text-base-content/70 md:text-left">
         <span class="font-medium md:mb-3">{{ $formattedDate }}</span>
         <div class="relative hidden md:block">
-            <span class="flex h-4 w-4 items-center justify-center rounded-full border-2 border-primary bg-base-100 text-primary">
+            <span class="flex h-4 w-4 items-center justify-center rounded-full border border-primary bg-base-100 text-primary">
                 <span class="h-1 w-1 rounded-full bg-primary"></span>
             </span>
             <span class="absolute left-1/2 top-4 h-full w-px -translate-x-1/2 bg-base-200"></span>
@@ -78,7 +78,7 @@
     </div>
 
     {{-- Contenu: prend toute la largeur sur mobile --}}
-    <div class="space-y-3 rounded-3xl border border-base-300 bg-base-100 p-4 md:p-6 shadow-md transition hover:shadow-lg">
+    <div class="space-y-3 rounded-box card-border bg-base-100 p-4 md:p-6 shadow transition hover:shadow">
         <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-start gap-4">
             <div class="flex-1 min-w-0">
                 <p class="text-xs uppercase tracking-wide text-base-content/60">{{ __('changelog.version') }}</p>

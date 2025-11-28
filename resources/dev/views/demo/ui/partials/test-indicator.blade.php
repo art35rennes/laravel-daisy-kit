@@ -20,7 +20,7 @@
         <!-- Avatar avec badge (image fiable) -->
         <div class="avatar indicator">
             <span class="indicator-item indicator-bottom indicator-end badge badge-secondary">Justice</span>
-            <div class="h-20 w-20 rounded-lg">
+            <div class="h-20 w-20 rounded-box">
                 <img alt="User avatar" src="/img/people/dummy-100x100-Rosa.jpg" />
             </div>
         </div>

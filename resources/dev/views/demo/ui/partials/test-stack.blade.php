@@ -32,14 +32,14 @@
         <!-- Alignements -->
         <div class="flex flex-col gap-4">
             <x-daisy::ui.layout.stack class="h-20 w-32" alignV="top">
-                <div class="card bg-base-200 text-center shadow-md"><div class="card-body">A</div></div>
+                <div class="card bg-base-200 text-center shadow"><div class="card-body">A</div></div>
                 <div class="card bg-base-200 text-center shadow"><div class="card-body">B</div></div>
-                <div class="card bg-base-200 text-center shadow-sm"><div class="card-body">C</div></div>
+                <div class="card bg-base-200 text-center shadow"><div class="card-body">C</div></div>
             </x-daisy::ui.layout.stack>
             <x-daisy::ui.layout.stack class="h-20 w-32" alignV="bottom" alignH="end">
-                <div class="card bg-base-200 text-center shadow-md"><div class="card-body">A</div></div>
+                <div class="card bg-base-200 text-center shadow"><div class="card-body">A</div></div>
                 <div class="card bg-base-200 text-center shadow"><div class="card-body">B</div></div>
-                <div class="card bg-base-200 text-center shadow-sm"><div class="card-body">C</div></div>
+                <div class="card bg-base-200 text-center shadow"><div class="card-body">C</div></div>
             </x-daisy::ui.layout.stack>
         </div>
     </div>

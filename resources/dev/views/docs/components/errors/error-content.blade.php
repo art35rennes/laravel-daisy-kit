@@ -28,13 +28,13 @@
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-error-content" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose">
                     <x-daisy::ui.errors.error-content statusCode="404" title="Page non trouvée" message="La page demandée n'existe pas." />
                 </div>
             </div>
             <input type="radio" name="base-example-error-content" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $baseCode = '<x-daisy::ui.errors.error-content statusCode="404" title="Page non trouvée" message="La page demandée n\'existe pas." />';
                 @endphp

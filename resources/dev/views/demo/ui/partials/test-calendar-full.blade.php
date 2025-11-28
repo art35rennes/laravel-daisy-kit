@@ -3,7 +3,7 @@
     <h2 class="text-lg font-medium">Calendar · Full</h2>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Données statiques -->
-        <div class="bg-base-100 border border-base-300 shadow-lg rounded-box p-4">
+        <div class="bg-base-100 card-border shadow rounded-box p-4">
             <div class="text-sm font-medium opacity-70 mb-2">Static events (month)</div>
             <x-daisy::ui.advanced.calendar-full
                 view="month"
@@ -19,7 +19,7 @@
         </div>
 
         <!-- Chargement AJAX -->
-        <div class="bg-base-100 border border-base-300 shadow-lg rounded-box p-4">
+        <div class="bg-base-100 card-border shadow rounded-box p-4">
             <div class="text-sm font-medium opacity-70 mb-2">AJAX events (week)</div>
             <x-daisy::ui.advanced.calendar-full view="week" eventsUrl="{{ route('demo.calendar.events') }}" />
         </div>

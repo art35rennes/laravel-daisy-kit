@@ -12,7 +12,7 @@
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="false">
     <div class="min-h-screen">
         {{-- Barre du haut (slot navbar) --}}
-        <x-daisy::ui.navigation.navbar :bg="'base-100'" :shadow="'sm'" :fixed="false" class="border-b border-base-200">
+        <x-daisy::ui.navigation.navbar :bg="'base-100'" :shadow="true" :fixed="false" class="border-b">
             <x-slot:start>
                 <label for="{{ $drawerId }}" aria-label="open sidebar" class="btn btn-square btn-ghost lg:hidden">
                     <x-daisy::ui.advanced.icon name="list" size="lg" />

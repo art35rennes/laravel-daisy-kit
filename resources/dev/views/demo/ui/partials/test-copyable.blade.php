@@ -70,7 +70,7 @@
     <div class="space-y-4">
         <h3 class="text-md font-medium">Copie HTML (pour éléments complexes)</h3>
         <x-daisy::ui.utilities.copyable copyHtml>
-            <div class="bg-base-100 p-4 rounded-box border border-base-300">
+            <div class="bg-base-100 p-4 rounded-box card-border">
                 <h4 class="font-bold text-lg mb-2">Exemple de template</h4>
                 <p class="text-sm text-base-content/70">Ce contenu HTML sera copié avec sa structure.</p>
                 <code class="block mt-2 p-2 bg-base-200 rounded text-xs">&lt;div&gt;Code HTML&lt;/div&gt;</code>

@@ -29,13 +29,13 @@
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-empty-state" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose">
                     <x-daisy::ui.feedback.empty-state icon="bi-inbox" title="Aucun élément" message="Il n'y a rien à afficher pour le moment." />
                 </div>
             </div>
             <input type="radio" name="base-example-empty-state" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $baseCode = '<x-daisy::ui.feedback.empty-state icon="bi-inbox" title="Aucun élément" message="Il n\'y a rien à afficher pour le moment." />';
                 @endphp
@@ -58,14 +58,14 @@
         <h2>Variantes</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="variants-example-empty-state" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose flex flex-wrap items-center gap-3">
                     <x-daisy::ui.feedback.empty-state size="sm">Small</x-daisy::ui.feedback.empty-state>
                     <x-daisy::ui.feedback.empty-state size="lg">Large</x-daisy::ui.feedback.empty-state>
                 </div>
             </div>
             <input type="radio" name="variants-example-empty-state" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $variantsCode = '&lt;x-daisy::ui.feedback.empty-state size=&quot;sm&quot;&gt;Small&lt;/x-daisy::ui.feedback.empty-state&gt;
 &lt;x-daisy::ui.feedback.empty-state size=&quot;lg&quot;&gt;Large&lt;/x-daisy::ui.feedback.empty-state&gt;';

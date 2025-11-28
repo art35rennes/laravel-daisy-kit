@@ -15,7 +15,7 @@
     if ($half) $wrapper .= ' rating-half';
     if (in_array($size, ['xs','sm','md','lg','xl'], true)) $wrapper .= ' rating-'.$size;
     $maskBase = 'mask mask-'.$shape;
-    $colorClass = $color ? ' bg-'.$color : ' bg-yellow-400';
+    $colorClass = $color ? ' bg-'.$color : ' bg-warning';
 @endphp
 
 <div {{ $attributes->merge(['class' => $wrapper]) }}>

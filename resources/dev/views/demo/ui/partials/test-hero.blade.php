@@ -12,7 +12,7 @@
         <!-- With figure -->
         <x-daisy::ui.layout.hero bg="base-200" :row="true">
             <x-slot:figure>
-                <img src="/img/business/dummy-600x450-Bull.jpg" class="w-full max-w-sm rounded-lg shadow-2xl" />
+                <img src="/img/business/dummy-600x450-Bull.jpg" class="w-full max-w-sm rounded-box shadow" />
             </x-slot:figure>
             <h1 class="text-5xl font-bold">Box Office News!</h1>
             <p class="py-6">Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi exercitationem quasi.</p>
@@ -22,7 +22,7 @@
         <!-- With figure reversed -->
         <x-daisy::ui.layout.hero bg="base-200" :row="true" :reverse="true">
             <x-slot:figure>
-                <img src="/img/food/dummy-600x450-AzukiBeans.jpg" class="w-full max-w-sm rounded-lg shadow-2xl" />
+                <img src="/img/food/dummy-600x450-AzukiBeans.jpg" class="w-full max-w-sm rounded-box shadow" />
             </x-slot:figure>
             <h1 class="text-5xl font-bold">Login now!</h1>
             <p class="py-6">Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi exercitationem quasi.</p>

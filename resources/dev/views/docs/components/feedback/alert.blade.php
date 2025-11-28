@@ -29,7 +29,7 @@
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-alert" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose">
                     <x-daisy::ui.feedback.alert color="success" title="Succès">
     Votre demande a été traitée avec succès.
@@ -37,7 +37,7 @@
                 </div>
             </div>
             <input type="radio" name="base-example-alert" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $baseCode = '<x-daisy::ui.feedback.alert color="success" title="Succès">
     Votre demande a été traitée avec succès.
@@ -62,7 +62,7 @@
         <h2>Variantes</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="variants-example-alert" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose flex flex-wrap items-center gap-3">
                     <x-daisy::ui.feedback.alert color="primary">Primary</x-daisy::ui.feedback.alert>
                     <x-daisy::ui.feedback.alert color="secondary">Secondary</x-daisy::ui.feedback.alert>
@@ -71,7 +71,7 @@
                 </div>
             </div>
             <input type="radio" name="variants-example-alert" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $variantsCode = '&lt;x-daisy::ui.feedback.alert color=&quot;primary&quot;&gt;Primary&lt;/x-daisy::ui.feedback.alert&gt;
 &lt;x-daisy::ui.feedback.alert color=&quot;secondary&quot;&gt;Secondary&lt;/x-daisy::ui.feedback.alert&gt;

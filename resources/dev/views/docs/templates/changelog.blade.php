@@ -227,35 +227,35 @@ $versions = [
         <h2>Fonctionnalités</h2>
 
         <div class="space-y-6 mt-6">
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100 shadow">
                 <div class="card-body">
                     <h3 class="card-title text-lg">Recherche et filtres</h3>
                     <p>Recherche en temps réel dans les changements et filtrage par type (Added, Changed, Fixed, Removed, Security).</p>
                 </div>
             </div>
 
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100 shadow">
                 <div class="card-body">
                     <h3 class="card-title text-lg">Métadonnées enrichies</h3>
                     <p>Support des issues/PR GitHub/GitLab, contributeurs, screenshots, migrations, CVE et niveaux de sévérité.</p>
                 </div>
             </div>
 
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100 shadow">
                 <div class="card-body">
                     <h3 class="card-title text-lg">Intégration Git</h3>
                     <p>Liens vers les tags Git et comparaisons entre versions.</p>
                 </div>
             </div>
 
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100 shadow">
                 <div class="card-body">
                     <h3 class="card-title text-lg">Groupement par mois</h3>
                     <p>Option pour grouper les versions par mois pour une meilleure organisation.</p>
                 </div>
             </div>
 
-            <div class="card bg-base-100 shadow-sm">
+            <div class="card bg-base-100 shadow">
                 <div class="card-body">
                     <h3 class="card-title text-lg">Expansion automatique</h3>
                     <p>La dernière version peut être automatiquement dépliée par défaut.</p>

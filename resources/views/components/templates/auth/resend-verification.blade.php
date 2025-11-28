@@ -24,7 +24,7 @@
             </div>
 
             @if($emailSent)
-                <x-daisy::ui.feedback.alert color="success" class="shadow-sm">
+                <x-daisy::ui.feedback.alert color="success" class="shadow">
                     {{ session('status') }}
                 </x-daisy::ui.feedback.alert>
             @endif

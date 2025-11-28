@@ -99,7 +99,7 @@
 
     <div class="space-y-6">
         {{-- Profile Header --}}
-        <div class="flex flex-col sm:flex-row gap-6 items-start sm:items-center pb-6 border-b border-base-200">
+        <div class="flex flex-col sm:flex-row gap-6 items-start sm:items-center pb-6 border-b">
             <x-daisy::ui.data-display.avatar
                 :src="$avatar"
                 :alt="$name"

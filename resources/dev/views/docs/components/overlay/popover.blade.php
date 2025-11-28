@@ -31,7 +31,7 @@
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-popover" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose">
                     <x-daisy::ui.overlay.popover title="Informations">
     <x-slot:trigger>
@@ -42,7 +42,7 @@
                 </div>
             </div>
             <input type="radio" name="base-example-popover" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $baseCode = '<x-daisy::ui.overlay.popover title="Informations">
     <x-slot:trigger>

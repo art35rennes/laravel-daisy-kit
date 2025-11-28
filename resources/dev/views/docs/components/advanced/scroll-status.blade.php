@@ -32,13 +32,13 @@
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-scroll-status" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose">
                     <x-daisy::ui.advanced.scroll-status />
                 </div>
             </div>
             <input type="radio" name="base-example-scroll-status" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $baseCode = '<x-daisy::ui.advanced.scroll-status />';
                 @endphp
@@ -61,14 +61,14 @@
         <h2>Variantes</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="variants-example-scroll-status" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose flex flex-wrap items-center gap-3">
                     <x-daisy::ui.advanced.scroll-status color="primary">Primary</x-daisy::ui.advanced.scroll-status>
                     <x-daisy::ui.advanced.scroll-status color="secondary">Secondary</x-daisy::ui.advanced.scroll-status>
                 </div>
             </div>
             <input type="radio" name="variants-example-scroll-status" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $variantsCode = '&lt;x-daisy::ui.advanced.scroll-status color=&quot;primary&quot;&gt;Primary&lt;/x-daisy::ui.advanced.scroll-status&gt;
 &lt;x-daisy::ui.advanced.scroll-status color=&quot;secondary&quot;&gt;Secondary&lt;/x-daisy::ui.advanced.scroll-status&gt;';

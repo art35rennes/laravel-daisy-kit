@@ -37,10 +37,10 @@
         {{ $triggerSlot ?? ($triggerContent ?? $slot) }}
     </span>
     <div class="popover-panel absolute z-50 {{ $panelPos }} {{ $panelHidden }}">
-        <div class="relative rounded-box bg-base-100 shadow border border-base-200 p-4 {{ $panelClass }}">
+        <div class="relative rounded-box bg-base-100 shadow card-border p-4 {{ $panelClass }}">
             @if($arrow)
                 @php
-                    $arrowBase = 'absolute w-3 h-3 rotate-45 bg-base-100 border border-base-200';
+                    $arrowBase = 'absolute w-3 h-3 rotate-45 bg-base-100 border';
                     $arrowPos = [
                         // Panel au-dessus du trigger → décale d'1px pour cacher la jonction
                         'top' => 'left-1/2 -translate-x-1/2 -bottom-1 border-t-0 border-l-0',
@@ -74,7 +74,7 @@
             </div>
 
             @isset($footer)
-                <div class="mt-3 pt-3 border-t border-base-200">
+                <div class="mt-3 pt-3 border-t">
                     {{ $footer }}
                 </div>
             @endisset

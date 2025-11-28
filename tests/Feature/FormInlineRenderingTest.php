@@ -10,11 +10,11 @@ it('renders form inline with GET method without csrf', function () {
 
     expect($html)
         ->toContain('method="GET"')
-        ->not->toContain('@csrf')
+        ->not->toContain('name="_token"')
         ->toContain('data-module="inline"');
 });
 
-it('renders form inline with POST method with csrf', function () {
+it('renders form inline with POST method with csrf and csrf keeper', function () {
     $view = view('daisy::templates.form-inline', [
         'action' => '/search',
         'method' => 'POST',
@@ -24,11 +24,14 @@ it('renders form inline with POST method with csrf', function () {
 
     expect($html)
         ->toContain('method="POST"')
+        // Token CSRF pour que le backend reçoive bien les données.
         ->toContain('name="_token"')
+        // Composant CSRF Keeper pour garder le formulaire valide après une longue inactivité.
+        ->toContain('csrf-keeper')
         ->toContain('data-module="inline"');
 });
 
-it('displays active filter tokens', function () {
+it('displays active filter tokens with clear buttons for backend params', function () {
     $view = view('daisy::templates.form-inline', [
         'activeFilters' => [
             ['label' => 'Statut', 'value' => 'Actif', 'param' => 'status'],
@@ -44,6 +47,9 @@ it('displays active filter tokens', function () {
         ->toContain('Actif')
         ->toContain('Type')
         ->toContain('Premium')
+        // Chaque token expose le paramètre de filtre utilisé côté backend.
+        ->toContain('data-filter-param="status"')
+        ->toContain('data-filter-param="type"')
         ->toContain('data-filter-clear');
 });
 

@@ -52,7 +52,7 @@
     </div>
 
     @if($hasChildren)
-        <ul role="group" class="pl-2 ml-4 border-l border-base-300 @if(!$expanded) hidden @endif" data-children="1">
+        <ul role="group" class="pl-2 ml-4 border-l @if(!$expanded) hidden @endif" data-children="1">
             @if(!$isLazy)
                 @foreach($children as $child)
                     @include('daisy::components.ui.partials.tree-node', [

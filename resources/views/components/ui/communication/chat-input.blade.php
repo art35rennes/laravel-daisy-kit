@@ -20,7 +20,7 @@
 @endphp
 
 <div 
-    {{ $attributes->merge(['class' => 'chat-input flex flex-col gap-2 p-3 sm:p-4 border-t border-base-300 bg-base-100']) }}
+    {{ $attributes->merge(['class' => 'chat-input flex flex-col gap-2 p-3 sm:p-4 border-t bg-base-100']) }}
     data-module="chat-input"
     data-send-message-url="{{ $sendMessageUrl }}"
     data-typing-url="{{ $typingUrl !== '#' ? $typingUrl : '' }}"
@@ -32,7 +32,7 @@
     data-auto-reconnect="{{ $autoReconnect ? 'true' : 'false' }}"
 >
     @if($enableFileUpload && $showFilePreview)
-        <div class="hidden flex flex-wrap gap-2 p-2 bg-base-200 rounded-box border border-base-300" data-file-previews></div>
+        <div class="hidden flex flex-wrap gap-2 p-2 bg-base-200 rounded-box card-border" data-file-previews></div>
     @endif
 
     <div class="flex items-end gap-2">

@@ -4,7 +4,7 @@
     <p class="opacity-70">Transférer des éléments entre deux listes.</p>
 
     <div class="grid md:grid-cols-2 gap-8 items-start">
-        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
+        <div class="space-y-4 card-border rounded-box p-6 bg-base-50">
             <h3 class="font-semibold text-primary">Basique</h3>
             <x-daisy::ui.advanced.transfer :source="[
                 ['data' => 'Lorem ipsum'],
@@ -19,7 +19,7 @@
             ]" buttonsSize="sm" />
         </div>
 
-        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
+        <div class="space-y-4 card-border rounded-box p-6 bg-base-50">
             <h3 class="font-semibold text-primary">Disabled items</h3>
             <x-daisy::ui.advanced.transfer :source="[
                 ['data' => 'Lorem ipsum'],
@@ -39,7 +39,7 @@
             ]" buttonsSize="sm" />
         </div>
 
-        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
+        <div class="space-y-4 card-border rounded-box p-6 bg-base-50">
             <h3 class="font-semibold text-primary">One way avec pagination</h3>
             <x-daisy::ui.advanced.transfer :source="[
                 ['data' => 'Lorem ipsum', 'checked' => true],
@@ -62,7 +62,7 @@
             ]" :oneWay="true" :pagination="true" :elementsPerPage="7" buttonsSize="sm" />
         </div>
 
-        <div class="space-y-4 border border-base-300 rounded-box p-6 bg-base-50">
+        <div class="space-y-4 card-border rounded-box p-6 bg-base-50">
             <h3 class="font-semibold text-primary">Recherche avec textes personnalisés</h3>
             <x-daisy::ui.advanced.transfer 
                 titleSource="Utilisateurs disponibles"

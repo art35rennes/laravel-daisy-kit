@@ -26,7 +26,7 @@
             </div>
 
             @if($status)
-                <x-daisy::ui.feedback.alert color="success" class="shadow-sm">
+                <x-daisy::ui.feedback.alert color="success" class="shadow">
                     {{ $status }}
                 </x-daisy::ui.feedback.alert>
             @endif

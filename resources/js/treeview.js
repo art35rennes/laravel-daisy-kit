@@ -281,7 +281,7 @@ function updateEllipsisMarkers(root) {
     li.setAttribute('data-search-ellipsis', '1');
     li.setAttribute('role', 'presentation');
     li.innerHTML = `
-      <div class="flex items-center gap-2 px-2 py-1 rounded opacity-60" data-node-header="1" style="padding-left: ${indentPx}px">
+      <div class="flex items-center gap-2 px-2 py-1 rounded-box opacity-60" data-node-header="1" style="padding-left: ${indentPx}px">
         <span class="inline-block w-6"></span>
         <span class="flex-1 select-none">…</span>
       </div>
@@ -745,7 +745,7 @@ function attachInteractions(root) {
       html += `    <span class="${labelClasses}" data-label="1">${label}</span>`;
       html += `  </div>`;
       if (hasChildren) {
-        html += `  <ul role="group" class="pl-2 ml-4 border-l border-base-300 hidden" data-children="1">`;
+        html += `  <ul role="group" class="pl-2 ml-4 border-l hidden" data-children="1">`;
         if (isLazy) {
           html += `    <li class="px-2 py-1 text-sm opacity-60 hidden" data-lazy-placeholder="1">Loading…</li>`;
         } else {

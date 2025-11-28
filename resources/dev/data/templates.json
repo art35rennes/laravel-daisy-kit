@@ -1,5 +1,5 @@
 {
-    "generated_at": "2025-11-25T22:08:39+00:00",
+    "generated_at": "2025-11-28T20:58:07+00:00",
     "templates": [
         {
             "name": "forgot-password",
@@ -377,7 +377,7 @@
         {
             "label": "Profil utilisateur",
             "description": "Templates pour la gestion et l'affichage des profils utilisateurs.",
-            "icon": "user"
+            "icon": "person"
         },
         {
             "label": "Documentation",

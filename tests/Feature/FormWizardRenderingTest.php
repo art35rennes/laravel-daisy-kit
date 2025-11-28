@@ -2,7 +2,7 @@
 
 use Art35rennes\DaisyKit\Helpers\WizardPersistence;
 
-it('renders form wizard with default props', function () {
+it('renders form wizard with default props and backend fields', function () {
     $view = view('daisy::templates.form-wizard', [
         'steps' => [
             ['key' => 'profile', 'label' => 'Profil'],
@@ -13,10 +13,12 @@ it('renders form wizard with default props', function () {
     $html = $view->render();
 
     expect($html)
-        ->toContain('form-wizard')
         ->toContain('Profil')
         ->toContain('Paramètres')
-        ->toContain('data-module="wizard"');
+        ->toContain('data-module="wizard"')
+        // Les champs cachés nécessaires au backend pour suivre l\'étape courante.
+        ->toContain('name="_wizard_step"')
+        ->toContain('name="_wizard_key" value="wizard"');
 });
 
 it('persists wizard data in session', function () {

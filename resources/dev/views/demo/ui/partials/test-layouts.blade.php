@@ -8,7 +8,7 @@
     
     <div class="grid gap-6 md:grid-cols-3">
         <!-- Layout Navbar -->
-        <div class="card bg-base-100 shadow-sm">
+        <div class="card bg-base-100 shadow">
             <div class="card-body">
                 <h3 class="card-title text-base">Navbar Layout</h3>
                 <p class="text-sm">Barre de navigation en haut de page</p>
@@ -23,7 +23,7 @@
         </div>
         
         <!-- Layout Sidebar -->
-        <div class="card bg-base-100 shadow-sm">
+        <div class="card bg-base-100 shadow">
             <div class="card-body">
                 <h3 class="card-title text-base">Sidebar Layout</h3>
                 <p class="text-sm">Barre latérale de navigation</p>
@@ -38,7 +38,7 @@
         </div>
         
         <!-- Layout Navbar + Sidebar -->
-        <div class="card bg-base-100 shadow-sm">
+        <div class="card bg-base-100 shadow">
             <div class="card-body">
                 <h3 class="card-title text-base">Navbar + Sidebar</h3>
                 <p class="text-sm">Combinaison navbar et sidebar</p>
@@ -53,7 +53,7 @@
         </div>
     </div>
     
-    <div class="bg-base-100 p-4 rounded-lg">
+    <div class="bg-base-100 p-4 rounded-box">
         <h4 class="font-medium mb-2">Exemple d'utilisation</h4>
         <pre class="text-xs bg-base-300 p-3 rounded overflow-x-auto"><code>&lt;x-daisy::layout.sidebar-layout 
     title="Mon Dashboard" 

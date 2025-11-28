@@ -32,7 +32,7 @@
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-table" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose">
                     @php
 $headers = ["Nom", "Email", "Rôle"];
@@ -45,7 +45,7 @@ $rows = [
                 </div>
             </div>
             <input type="radio" name="base-example-table" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $baseCode = '@php
 $headers = ["Nom", "Email", "Rôle"];
@@ -75,14 +75,14 @@ $rows = [
         <h2>Variantes</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="variants-example-table" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose flex flex-wrap items-center gap-3">
                     <x-daisy::ui.data-display.table size="sm">Small</x-daisy::ui.data-display.table>
                     <x-daisy::ui.data-display.table size="lg">Large</x-daisy::ui.data-display.table>
                 </div>
             </div>
             <input type="radio" name="variants-example-table" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $variantsCode = '&lt;x-daisy::ui.data-display.table size=&quot;sm&quot;&gt;Small&lt;/x-daisy::ui.data-display.table&gt;
 &lt;x-daisy::ui.data-display.table size=&quot;lg&quot;&gt;Large&lt;/x-daisy::ui.data-display.table&gt;';

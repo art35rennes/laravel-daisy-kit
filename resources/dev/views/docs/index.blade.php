@@ -29,7 +29,7 @@
         <h2>Catégories</h2>
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             @foreach($navItems as $cat)
-                <div class="card bg-base-100 shadow-sm">
+                <div class="card bg-base-100 shadow">
                     <div class="card-body">
                         <h3 class="card-title text-base">{{ $cat['label'] }}</h3>
                         <ul class="list mt-2">

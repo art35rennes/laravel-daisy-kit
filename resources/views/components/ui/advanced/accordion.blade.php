@@ -21,7 +21,7 @@
             $forcedState = '';
             if (!empty($item['open'])) $forcedState = ' collapse-open';
             if (!empty($item['close'])) $forcedState = ' collapse-close';
-            $borderClasses = $bordered ? ' border border-base-300' : '';
+            $borderClasses = $bordered ? ' card-border' : '';
         @endphp
         <div class="collapse{{ $collapseModifier }}{{ $forcedState }} join-item{{ $borderClasses }} {{ $itemClass }}">
             <input type="radio" name="{{ $name }}" @checked(($openIndex === $index) || (!is_null($item['checked'] ?? null) && $item['checked'])) />

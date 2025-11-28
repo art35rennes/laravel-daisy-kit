@@ -84,7 +84,7 @@
 <div {{ $attributes->merge(['class' => trim('w-full '.$class), 'data-module' => ($module ?? 'transfer')])->merge($wrapAttrs) }}>
     <div class="grid grid-cols-1 {{ $break }}:grid-cols-12 gap-4 items-stretch w-full">
         {{-- Source panel --}}
-        <div class="card bg-base-100 border border-base-300 h-full min-w-0 col-span-12 {{ $break }}:col-span-5">
+        <div class="card bg-base-100 card-border h-full min-w-0 col-span-12 {{ $break }}:col-span-5">
             <div class="card-body p-3 space-y-3">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
@@ -106,7 +106,7 @@
                     </div>
                 @endif
 
-                <ul class="menu menu-sm w-full bg-base-100 rounded-box border border-base-300 {{ $overflowClasses }}" data-transfer-list="source">
+                <ul class="menu menu-sm w-full bg-base-100 rounded-box card-border {{ $overflowClasses }}" data-transfer-list="source">
                     @foreach($source as $i => $it)
                         @php
                             $label = is_array($it) ? ($it['data'] ?? (string)$i) : (string)$it;
@@ -177,7 +177,7 @@
         </div>
 
         {{-- Target panel --}}
-        <div class="card bg-base-100 border border-base-300 h-full min-w-0 col-span-12 {{ $break }}:col-span-5">
+        <div class="card bg-base-100 card-border h-full min-w-0 col-span-12 {{ $break }}:col-span-5">
             <div class="card-body p-3 space-y-3">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
@@ -199,7 +199,7 @@
                     </div>
                 @endif
 
-                <ul class="menu menu-sm w-full bg-base-100 rounded-box border border-base-300 {{ $overflowClasses }}" data-transfer-list="target">
+                <ul class="menu menu-sm w-full bg-base-100 rounded-box card-border {{ $overflowClasses }}" data-transfer-list="target">
                     @foreach($target as $i => $it)
                         @php
                             $label = is_array($it) ? ($it['data'] ?? (string)$i) : (string)$it;

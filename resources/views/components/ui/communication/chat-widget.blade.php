@@ -59,7 +59,7 @@
         color="primary"
         size="lg"
         circle
-        class="shadow-lg chat-widget-toggle"
+        class="shadow chat-widget-toggle"
         data-widget-toggle
     >
         <x-icon name="bi-chat-dots" class="w-6 h-6" />
@@ -67,7 +67,7 @@
 
     {{-- Widget (quand ouvert) --}}
     <div 
-        class="chat-widget-panel hidden bg-base-100 rounded-box shadow-2xl flex flex-col w-[calc(100vw-2rem)] sm:w-96 h-[600px] max-h-[calc(100vh-2rem)]"
+        class="chat-widget-panel hidden bg-base-100 rounded-box shadow flex flex-col w-[calc(100vw-2rem)] sm:w-96 h-[600px] max-h-[calc(100vh-2rem)]"
         data-widget-panel
     >
         @if($showHeader)

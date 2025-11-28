@@ -28,7 +28,7 @@
         <h2>Exemple de base</h2>
         <div class="tabs tabs-box">
             <input type="radio" name="base-example-chat-widget" class="tab" aria-label="Preview" checked />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 <div class="not-prose">
                     @php
 $conversation = ["id" => 1, "name" => "Support", "avatar" => "https://i.pravatar.cc/150?img=12", "isOnline" => true];
@@ -38,7 +38,7 @@ $messages = [["id" => 1, "user_id" => 2, "content" => "Bonjour, comment puis-je 
                 </div>
             </div>
             <input type="radio" name="base-example-chat-widget" class="tab" aria-label="Code" />
-            <div class="tab-content border-base-300 bg-base-100 p-6">
+            <div class="tab-content bg-base-100 p-6">
                 @php
                     $baseCode = '@php
 $conversation = ["id" => 1, "name" => "Support", "avatar" => "https://i.pravatar.cc/150?img=12", "isOnline" => true];

@@ -134,7 +134,7 @@
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="true">
     <x-daisy::ui.partials.theme-selector position="fixed" placement="top-right" />
     <section class="notification-center max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
-        <header class="bg-base-100 rounded-box p-5 sm:p-8 shadow-lg space-y-8">
+        <header class="bg-base-100 rounded-box p-5 sm:p-8 shadow space-y-8">
             <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div class="min-w-0 space-y-3 flex-1">
                     <p class="text-xs uppercase tracking-wide text-primary font-semibold">
@@ -189,7 +189,7 @@
 
             <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 @foreach($statCards as $card)
-                    <div class="rounded-box border border-base-300/60 bg-base-200/40 p-4 shadow-sm">
+                    <div class="rounded-box card-border bg-base-200/40 p-4 shadow">
                         <div class="flex items-center justify-between text-sm text-base-content/70">
                             <span>{{ $card['label'] }}</span>
                             <x-icon :name="$card['icon']" class="w-5 h-5 {{ $card['iconColor'] }}" />
@@ -209,7 +209,7 @@
             <div class="space-y-8">
                 <x-daisy::ui.layout.card
                     :title="__('notifications.focus_section_title')"
-                    class="border border-error/30 bg-error/5 shadow-sm"
+                    class="card-border bg-error/5 shadow"
                 >
                     <p class="text-sm text-base-content/70">
                         {{ __('notifications.focus_section_description') }}
@@ -268,7 +268,7 @@
                 @endif
 
                 <div
-                    class="bg-base-100 rounded-box shadow-lg divide-y divide-base-200"
+                    class="bg-base-100 rounded-box shadow divide-y divide-base-200"
                     data-module="notifications"
                     data-use-websockets="{{ $useWebSockets ? 'true' : 'false' }}"
                     data-polling-interval="{{ $pollingInterval }}"

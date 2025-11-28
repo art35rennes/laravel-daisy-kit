@@ -20,7 +20,7 @@
 
 @php
     $id = $attributes->get('id') ?? 'code-'.uniqid();
-    $classes = 'bg-base-100 border border-base-300 rounded-box overflow-hidden';
+    $classes = 'bg-base-100 card-border rounded-box overflow-hidden';
     $toolbar = [
         'fold' => $showFoldAll,
         'unfold' => $showUnfoldAll,
@@ -31,7 +31,7 @@
 
 <div class="code-editor {{ $classes }}" id="{{ $id }}" data-module="{{ $module ?? 'code-editor' }}" data-language="{{ $language }}" data-readonly="{{ $readonly ? 'true' : 'false' }}" data-theme="{{ $theme ?? '' }}" data-tab-size="{{ (int)$tabSize }}" style="width: {{ $width }};">
     @if($showToolbar)
-        <div class="flex items-center justify-between gap-2 border-b border-base-300 px-2 py-1 bg-base-200">
+        <div class="flex items-center justify-between gap-2 border-b px-2 py-1 bg-base-200">
             <div class="text-xs opacity-70">{{ strtoupper($language) }}</div>
             <div class="flex items-center gap-1">
                 @if($toolbar['fold'])

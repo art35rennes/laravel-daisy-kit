@@ -20,7 +20,7 @@
     $isOnline = data_get($conversation, $conversationIsOnlineKey, false);
 @endphp
 
-<div {{ $attributes->merge(['class' => 'chat-header flex items-center gap-2 sm:gap-3 p-3 sm:p-4 border-b border-base-300 bg-base-100']) }}>
+<div {{ $attributes->merge(['class' => 'chat-header flex items-center gap-2 sm:gap-3 p-3 sm:p-4 border-b bg-base-100']) }}>
     {{-- Bouton pour ouvrir la sidebar en mobile --}}
     <label for="chat-sidebar-drawer" class="btn btn-ghost btn-sm btn-circle lg:hidden drawer-button">
         <x-icon name="bi-list" class="w-5 h-5" />

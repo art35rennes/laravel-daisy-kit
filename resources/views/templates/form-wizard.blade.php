@@ -92,7 +92,7 @@
         :linear="$linear"
         :allowClickNav="$allowClickNav"
         :stepsContents="$stepsContents"
-        module="form-wizard-stepper"
+        :showControls="false"
     />
     
     {{-- Résumé final (dernière étape) --}}
@@ -110,7 +110,7 @@
     @endif
     
     {{-- Actions de navigation --}}
-    <div class="flex items-center justify-between pt-6 border-t border-base-300">
+    <div class="flex items-center justify-between pt-6 border-t">
         <div>
             @if(!$isFirstStep)
                 <button 

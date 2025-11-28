@@ -58,7 +58,7 @@
     </x-slot:trigger>
 
     <div class="w-80 sm:w-96 max-w-[calc(100vw-2rem)] p-3 sm:p-4 space-y-4">
-        <div class="p-3 sm:p-4 border border-base-300 rounded-2xl flex items-center justify-between gap-2">
+        <div class="p-3 sm:p-4 card-border rounded-box flex items-center justify-between gap-2">
             <h3 class="font-semibold text-sm sm:text-base truncate">
                 {{ __('notifications.notifications') }}
             </h3>
@@ -77,7 +77,7 @@
             @endif
         </div>
 
-        <div class="max-h-96 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 bg-base-100 rounded-2xl border border-base-300">
+        <div class="max-h-96 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 bg-base-100 rounded-box card-border">
             @if(empty($notifications))
                 <x-daisy::ui.feedback.empty-state
                     icon="bi-bell"
@@ -100,7 +100,7 @@
         </div>
 
         @if($viewAllUrl !== '#')
-            <div class="p-3 sm:p-4 border border-base-300 rounded-2xl text-center">
+            <div class="p-3 sm:p-4 card-border rounded-box text-center">
                 <x-daisy::ui.inputs.button
                     tag="a"
                     :href="$viewAllUrl"

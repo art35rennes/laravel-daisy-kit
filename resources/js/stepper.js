@@ -213,6 +213,17 @@ function init(root) {
     // Déclenche un événement personnalisé pour signaler la fin du stepper
     root.dispatchEvent(new CustomEvent('stepper:finish', { bubbles: true }));
   });
+
+  // Synchronisation avec le wizard (si le stepper est dans un formulaire wizard)
+  const wizardForm = root.closest('form[data-module="wizard"]');
+  if (wizardForm) {
+    wizardForm.addEventListener('wizard:step-change', (e) => {
+      const step = e.detail?.step;
+      if (step && step !== getCurrent(root)) {
+        setCurrent(root, step);
+      }
+    });
+  }
 }
 
 /**

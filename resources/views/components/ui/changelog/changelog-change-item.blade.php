@@ -39,7 +39,7 @@
     }
 @endphp
 
-<div class="changelog-change-item rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm">
+<div class="changelog-change-item rounded-box card-border bg-base-100 p-4 shadow">
     {{-- Zone des badges/tags en haut --}}
     <div class="mb-3 flex flex-wrap items-center gap-2">
         <x-daisy::ui.data-display.badge :color="$typeColor" size="sm">
@@ -123,7 +123,7 @@
     </div>
 
     @if($image)
-        <div class="mt-3 rounded-xl border border-base-300 bg-base-100">
+        <div class="mt-3 rounded-box card-border bg-base-100">
             <x-daisy::ui.media.lightbox
                 :images="[['src' => $image, 'thumb' => $image, 'alt' => $description, 'caption' => __('changelog.view_screenshot')]]"
                 cols="grid-cols-1"

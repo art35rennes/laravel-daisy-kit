@@ -4,6 +4,7 @@
             $step_profile = view('daisy-dev::demo.templates.forms.partials.wizard-step-profile')->render();
             $step_contact = view('daisy-dev::demo.templates.forms.partials.wizard-step-contact')->render();
             $step_preferences = view('daisy-dev::demo.templates.forms.partials.wizard-step-preferences')->render();
+            $step_summary = view('daisy-dev::demo.templates.forms.partials.wizard-step-summary')->render();
             $summary = view('daisy-dev::demo.templates.forms.partials.wizard-summary')->render();
         @endphp
 

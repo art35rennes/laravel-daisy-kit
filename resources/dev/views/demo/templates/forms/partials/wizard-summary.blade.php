@@ -10,8 +10,32 @@
             <span id="summary-last-name">-</span>
         </div>
         <div class="flex justify-between">
+            <span class="font-medium">Date de naissance :</span>
+            <span id="summary-birthdate">-</span>
+        </div>
+        <div class="flex justify-between">
             <span class="font-medium">Email :</span>
             <span id="summary-email">-</span>
+        </div>
+        <div class="flex justify-between">
+            <span class="font-medium">Téléphone :</span>
+            <span id="summary-phone">-</span>
+        </div>
+        <div class="flex justify-between">
+            <span class="font-medium">Adresse :</span>
+            <span id="summary-address">-</span>
+        </div>
+        <div class="flex justify-between">
+            <span class="font-medium">Newsletter :</span>
+            <span id="summary-newsletter">-</span>
+        </div>
+        <div class="flex justify-between">
+            <span class="font-medium">Notifications :</span>
+            <span id="summary-notifications">-</span>
+        </div>
+        <div class="flex justify-between">
+            <span class="font-medium">Thème :</span>
+            <span id="summary-theme">-</span>
         </div>
     </div>
 </div>

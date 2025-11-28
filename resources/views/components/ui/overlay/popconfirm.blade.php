@@ -81,7 +81,7 @@
             {{ $trigger ?? $slot }}
         </span>
         <div class="popconfirm-panel {{ $panelClass }} absolute z-50 {{ $panelPos }} hidden">
-            <div class="rounded-box bg-base-100 shadow border border-base-200 p-4">
+            <div class="rounded-box bg-base-100 shadow card-border p-4">
                 <div class="flex items-start gap-3">
                     @isset($icon)
                         <span class="mt-1 shrink-0">{{ $icon }}</span>

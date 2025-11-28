@@ -54,7 +54,7 @@
     
     <div class="card card-border bg-base-100">
         <div class="card-body p-4">
-            <div class="relative w-full overflow-hidden rounded-box border border-base-300 bg-base-200" 
+            <div class="relative w-full overflow-hidden rounded-box card-border bg-base-200" 
                  data-sign-canvas-wrapper
                  style="max-width: 100%;">
                 <canvas data-sign-canvas 

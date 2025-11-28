@@ -14,7 +14,7 @@
 @php
     $classes = 'navbar bg-'.$bg;
     if ($text) $classes .= ' text-'.$text;
-    if ($shadow) $classes .= ' shadow'.($shadow === 'sm' ? '-sm' : ($shadow === 'md' ? '' : ($shadow === 'lg' ? '-lg' : '')));
+    if ($shadow) $classes .= ' shadow';
     if ($rounded) $classes .= ' rounded-box';
     if ($fixed) $classes .= ' fixed '.$fixedPosition.'-0 left-0 right-0 z-50';
 

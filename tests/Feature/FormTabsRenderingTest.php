@@ -4,7 +4,7 @@ use Art35rennes\DaisyKit\Helpers\TabErrorBag;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\MessageBag;
 
-it('renders form with tabs by default', function () {
+it('renders form with tabs by default and backend field for active tab', function () {
     \Illuminate\Support\Facades\View::share('errors', new \Illuminate\Support\MessageBag);
 
     $view = view('daisy::templates.form-with-tabs', [
@@ -18,9 +18,12 @@ it('renders form with tabs by default', function () {
 
     expect($html)
         ->toContain('form-tabs')
+        // Navigation
         ->toContain('Général')
         ->toContain('Avancé')
-        ->toContain('data-module="tabs"');
+        ->toContain('data-module="tabs"')
+        // Champ caché envoyé au backend pour savoir quel onglet est actif.
+        ->toContain('name="_active_tab"');
 });
 
 it('restores active tab from old input', function () {

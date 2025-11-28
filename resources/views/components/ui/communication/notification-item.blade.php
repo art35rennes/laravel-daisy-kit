@@ -90,7 +90,7 @@
 @endphp
 
 <div
-    {{ $attributes->merge(['class' => 'notification-item flex gap-3 p-4 border-b border-base-200 last:border-b-0 transition-colors' . ($isRead ? '' : ' bg-base-200/60')]) }}
+    {{ $attributes->merge(['class' => 'notification-item flex gap-3 p-4 border-b last:border-b-0 transition-colors' . ($isRead ? '' : ' bg-base-200/60')]) }}
     data-notification-id="{{ $id }}"
     data-read="{{ $isRead ? 'true' : 'false' }}"
 >

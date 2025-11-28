@@ -27,7 +27,7 @@
     ]);
 @endphp
 
-<div class="changelog-toolbar flex flex-col gap-4 rounded-3xl border border-base-300 bg-base-100 p-6 shadow-sm">
+<div class="changelog-toolbar flex flex-col gap-4 rounded-box card-border bg-base-100 p-6 shadow">
     @if($showSearch)
         <div class="relative">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/40">
