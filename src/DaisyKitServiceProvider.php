@@ -2,6 +2,7 @@
 
 namespace Art35rennes\DaisyKit;
 
+use Art35rennes\DaisyKit\Http\Controllers\CsrfTokenController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -56,6 +57,12 @@ class DaisyKitServiceProvider extends ServiceProvider
             __DIR__.'/../resources/js' => resource_path('vendor/daisy-kit/js'),
             __DIR__.'/../resources/css' => resource_path('vendor/daisy-kit/css'),
         ], 'daisy-src');
+
+        // Enregistrer la route pour le rafraîchissement du token CSRF
+        Route::middleware('web')->group(function () {
+            Route::get('/daisy-kit/csrf-token.json', [CsrfTokenController::class, '__invoke'])
+                ->name('daisy-kit.csrf-token');
+        });
 
         // Enregistrer (optionnellement) les routes de documentation publiques du package
         $docsEnabled = (bool) config('daisy-kit.docs.enabled', false);

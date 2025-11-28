@@ -1,5 +1,5 @@
 attribute,components
-module,"calendar-full, chart, code-editor, scrollspy, tree-view, chat-input, chat-messages, chat-widget, table, color-picker, file-input, sign, lightbox, media-gallery, sidebar-navigation, sidebar"
+module,"calendar-full, chart, code-editor, scrollspy, tree-view, chat-input, chat-messages, chat-widget, table, color-picker, file-input, sign, lightbox, media-gallery, sidebar-navigation, sidebar, csrf-keeper"
 calendar-full,calendar-full
 options,calendar-full
 events,calendar-full
@@ -130,6 +130,8 @@ step-index,stepper
 popconfirm-modal,popconfirm
 popconfirm-action,popconfirm
 popconfirm-modal-target,popconfirm
+refresh-interval,csrf-keeper
+endpoint,csrf-keeper
 copy-target,mockup-code
 copy-text,mockup-code
 prefix,mockup-code

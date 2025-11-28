@@ -251,7 +251,7 @@
     "isDynamicEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-DXQgVZEm.css",
+    "file": "assets/app-Cv7-2SN_.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -260,7 +260,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-hXrr426n.js",
+    "file": "assets/app-_vs2VY8f.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -273,12 +273,16 @@
       "resources/js/modules/chat-messages.js",
       "resources/js/modules/chat-widget.js",
       "resources/js/modules/copyable.js",
+      "resources/js/modules/csrf-keeper.js",
       "resources/js/modules/notifications.js",
       "resources/js/modules/otp-code.js",
       "resources/js/modules/popover.js",
       "resources/js/modules/select.js",
       "resources/js/modules/sidebar.js",
       "resources/js/modules/sign.js",
+      "resources/js/modules/forms/inline.js",
+      "resources/js/modules/forms/tabs.js",
+      "resources/js/modules/forms/wizard.js",
       "resources/js/code-editor.js",
       "resources/js/color-picker.js",
       "resources/js/file-input.js",
@@ -303,12 +307,16 @@
       "resources/js/modules/chat-messages.js",
       "resources/js/modules/chat-widget.js",
       "resources/js/modules/copyable.js",
+      "resources/js/modules/csrf-keeper.js",
       "resources/js/modules/notifications.js",
       "resources/js/modules/otp-code.js",
       "resources/js/modules/popover.js",
       "resources/js/modules/select.js",
       "resources/js/modules/sidebar.js",
       "resources/js/modules/sign.js",
+      "resources/js/modules/forms/inline.js",
+      "resources/js/modules/forms/tabs.js",
+      "resources/js/modules/forms/wizard.js",
       "resources/js/code-editor.js",
       "resources/js/color-picker.js",
       "resources/js/file-input.js",
@@ -353,7 +361,7 @@
     ]
   },
   "resources/js/calendar-full/index.js": {
-    "file": "assets/index-BtjNs3M6.js",
+    "file": "assets/index-D3fRk2lL.js",
     "name": "index",
     "src": "resources/js/calendar-full/index.js",
     "isDynamicEntry": true,
@@ -498,6 +506,30 @@
     "file": "assets/copyable-Dtg4eM9_.js",
     "name": "copyable",
     "src": "resources/js/modules/copyable.js",
+    "isDynamicEntry": true
+  },
+  "resources/js/modules/csrf-keeper.js": {
+    "file": "assets/csrf-keeper-DmJYALjz.js",
+    "name": "csrf-keeper",
+    "src": "resources/js/modules/csrf-keeper.js",
+    "isDynamicEntry": true
+  },
+  "resources/js/modules/forms/inline.js": {
+    "file": "assets/inline-BlHP2ece.js",
+    "name": "inline",
+    "src": "resources/js/modules/forms/inline.js",
+    "isDynamicEntry": true
+  },
+  "resources/js/modules/forms/tabs.js": {
+    "file": "assets/tabs-Dyh1PKIy.js",
+    "name": "tabs",
+    "src": "resources/js/modules/forms/tabs.js",
+    "isDynamicEntry": true
+  },
+  "resources/js/modules/forms/wizard.js": {
+    "file": "assets/wizard-K73TedB2.js",
+    "name": "wizard",
+    "src": "resources/js/modules/forms/wizard.js",
     "isDynamicEntry": true
   },
   "resources/js/modules/notifications.js": {

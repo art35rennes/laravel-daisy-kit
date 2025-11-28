@@ -107,6 +107,7 @@ popconfirm,daisy::components.ui.overlay.popconfirm,overlay,"overlay, js, async, 
 popover,daisy::components.ui.overlay.popover,overlay,"overlay, js, async, aria, a11y",popover,active
 tooltip,daisy::components.ui.overlay.tooltip,overlay,overlay,,active
 copyable,daisy::components.ui.utilities.copyable,utilities,utilities,,active
+csrf-keeper,daisy::components.ui.utilities.csrf-keeper,utilities,utilities,,active
 dock,daisy::components.ui.utilities.dock,utilities,utilities,,active
 indicator,daisy::components.ui.utilities.indicator,utilities,utilities,,active
 mockup-browser,daisy::components.ui.utilities.mockup-browser,utilities,utilities,,active

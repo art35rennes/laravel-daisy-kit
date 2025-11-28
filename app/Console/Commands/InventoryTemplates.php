@@ -26,7 +26,8 @@ class InventoryTemplates extends Command
         'profile' => [
             'label' => 'Profil utilisateur',
             'description' => 'Templates pour la gestion et l\'affichage des profils utilisateurs.',
-            'icon' => 'user',
+            // Icône par défaut pour la catégorie "form" (Bootstrap Icons)
+            'icon' => 'person',
         ],
         'layout' => [
             'label' => 'Layouts',
@@ -183,6 +184,19 @@ class InventoryTemplates extends Command
             "templates.{$category}.{$routeName}", // Format standard : templates.profile.edit (sans préfixe)
             "templates.{$category}.{$name}", // Format avec préfixe : templates.profile.profile-edit (compatibilité)
         ];
+
+        // Cas spéciaux pour les formulaires (routes au pluriel : templates.forms.*)
+        if ($category === 'form') {
+            // Mapping des noms de templates vers les noms de routes
+            $formRouteMapping = [
+                'form-wizard' => 'wizard',
+                'form-with-tabs' => 'tabs',
+                'form-inline' => 'inline',
+            ];
+            $mappedRouteName = $formRouteMapping[$name] ?? $routeName;
+            $patterns[] = "templates.forms.{$mappedRouteName}"; // Format : templates.forms.wizard
+            $patterns[] = "templates.form.{$mappedRouteName}"; // Format alternatif : templates.form.wizard (compatibilité)
+        }
 
         // Cas spéciaux pour les layouts (ancien format pour compatibilité)
         if ($category === 'layout') {

@@ -1,5 +1,5 @@
 {
-    "generated_at": "2025-11-25T21:22:04+00:00",
+    "generated_at": "2025-11-25T22:05:17+00:00",
     "components": [
         {
             "name": "accordion",
@@ -2659,6 +2659,27 @@
                 "tag"
             ],
             "dataAttributes": []
+        },
+        {
+            "name": "csrf-keeper",
+            "view": "daisy::components.ui.utilities.csrf-keeper",
+            "category": "utilities",
+            "tags": [
+                "utilities"
+            ],
+            "jsModule": null,
+            "status": "active",
+            "props": [
+                "refreshInterval",
+                "refreshRatio",
+                "endpoint",
+                "module"
+            ],
+            "dataAttributes": [
+                "module",
+                "refresh-interval",
+                "endpoint"
+            ]
         },
         {
             "name": "dock",

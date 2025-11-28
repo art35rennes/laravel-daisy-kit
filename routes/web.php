@@ -83,4 +83,11 @@ Route::prefix('templates')->name('templates.')->group(function () {
     Route::prefix('documentation')->name('documentation.')->group(function () {
         Route::get('/changelog', [TemplateController::class, 'changelog'])->name('changelog');
     });
+
+    // Templates de formulaires
+    Route::prefix('forms')->name('forms.')->group(function () {
+        Route::view('/wizard', 'daisy-dev::demo.templates.forms.form-wizard')->name('wizard');
+        Route::view('/tabs', 'daisy-dev::demo.templates.forms.form-with-tabs')->name('tabs');
+        Route::view('/inline', 'daisy-dev::demo.templates.forms.form-inline')->name('inline');
+    });
 });

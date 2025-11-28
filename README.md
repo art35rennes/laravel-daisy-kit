@@ -69,6 +69,127 @@ composer require art35rennes/laravel-daisy-kit
 
 2. Aucune étape manuelle : le Service Provider est auto-découvert par Laravel.
 
+## Architecture du projet
+
+### Arborescence
+
+Le package suit la structure standard d'un package Laravel avec une organisation claire des composants, templates, assets et code source :
+
+```
+laravel-daisy-kit/
+├── src/                          # Code source PHP du package
+│   ├── DaisyKitServiceProvider.php  # Service Provider principal
+│   ├── Helpers/                  # Classes utilitaires
+│   │   ├── TabErrorBag.php       # Gestion des erreurs par onglet
+│   │   ├── ThemeHelper.php       # Gestion des thèmes daisyUI
+│   │   └── WizardPersistence.php # Persistance des données de formulaire wizard
+│   └── Http/
+│       └── Controllers/          # Contrôleurs HTTP
+│           └── CsrfTokenController.php
+│
+├── resources/
+│   ├── views/
+│   │   ├── components/           # Composants Blade organisés par catégorie
+│   │   │   ├── layout/          # Layouts (app, docs, navbar, sidebar)
+│   │   │   ├── partials/        # Partiels réutilisables (assets, theme-selector)
+│   │   │   ├── templates/       # Templates réutilisables (auth, error, etc.)
+│   │   │   │   └── auth/        # Pages d'authentification
+│   │   │   └── ui/              # Composants UI par catégorie fonctionnelle
+│   │   │       ├── inputs/      # Boutons, inputs, selects, checkboxes, etc.
+│   │   │       ├── navigation/  # Breadcrumbs, menu, pagination, navbar, tabs, etc.
+│   │   │       ├── layout/      # Card, hero, footer, divider, list, stack, etc.
+│   │   │       ├── data-display/# Badge, avatar, table, stat, progress, timeline, etc.
+│   │   │       ├── overlay/     # Modal, drawer, dropdown, popover, tooltip, etc.
+│   │   │       ├── media/       # Carousel, lightbox, media-gallery, embed, leaflet
+│   │   │       ├── feedback/    # Alert, toast, loading, skeleton, callout
+│   │   │       ├── communication/# Chat, notifications, conversation-view
+│   │   │       ├── utilities/   # Mockups, indicator, dock, csrf-keeper
+│   │   │       ├── advanced/    # Calendar, chart, code-editor, filter, etc.
+│   │   │       ├── changelog/   # Composants de changelog
+│   │   │       └── partials/    # Fragments UI réutilisables
+│   │   │
+│   │   └── templates/           # Templates d'exemple (layouts, communication, etc.)
+│   │       ├── auth/            # Pages d'authentification (référence)
+│   │       ├── layout/         # Structures de page (navbar, footer, grid)
+│   │       ├── communication/  # Interfaces de communication
+│   │       ├── profile/        # Pages de profil utilisateur
+│   │       ├── form/           # Templates de formulaires (inline, tabs, wizard)
+│   │       └── *.blade.php     # Templates autonomes (changelog, error, etc.)
+│   │
+│   ├── js/                      # Code JavaScript du package
+│   │   ├── kit/                 # Core JavaScript (initialisation, utils)
+│   │   │   ├── index.js         # Point d'entrée principal
+│   │   │   └── utils/           # Utilitaires (aria, dom, events)
+│   │   ├── modules/             # Modules JavaScript par composant
+│   │   │   ├── forms/           # Modules pour formulaires (inline, tabs, wizard)
+│   │   │   ├── chat-*.js        # Modules de chat
+│   │   │   ├── select.js        # Module select amélioré
+│   │   │   ├── sidebar.js       # Module sidebar
+│   │   │   └── *.js             # Autres modules
+│   │   ├── calendar-full/       # Module calendrier complet
+│   │   ├── chart/               # Module graphiques
+│   │   ├── leaflet/             # Module cartes Leaflet
+│   │   └── *.js                 # Modules autonomes (lightbox, popover, etc.)
+│   │
+│   ├── css/
+│   │   └── app.css              # Styles CSS (Tailwind v4 + daisyUI v5)
+│   │
+│   ├── lang/                    # Fichiers de traduction
+│   │   ├── en/                  # Traductions anglaises
+│   │   └── fr/                  # Traductions françaises
+│   │
+│   └── dev/                     # Ressources de développement/documentation
+│       ├── data/                # Données générées (components.json, templates.json)
+│       ├── img/                 # Images de démonstration
+│       └── views/               # Pages de documentation/démo
+│           ├── demo/            # Pages de démonstration
+│           └── docs/            # Pages de documentation générées
+│
+├── app/                         # Application Laravel (pour tests/développement)
+│   ├── Console/Commands/       # Commandes Artisan personnalisées
+│   ├── Http/Controllers/       # Contrôleurs pour la documentation
+│   └── Helpers/                 # Helpers de développement
+│
+├── tests/                       # Tests Pest
+│   ├── Browser/                # Tests de navigateur (Pest v4)
+│   ├── Feature/                # Tests de fonctionnalités
+│   └── Unit/                   # Tests unitaires
+│
+├── config/
+│   └── daisy-kit.php           # Configuration du package
+│
+├── docs/                        # Documentation générée
+│   └── inventory/              # Inventaires (components.csv, data-attributes.csv)
+│
+└── routes/
+    └── web.php                 # Routes de documentation (si activées)
+```
+
+### Organisation des composants
+
+Les composants UI sont organisés selon le principe **Atomic Design** et regroupés par **catégorie fonctionnelle** :
+
+- **Atoms** : Éléments de base sans dépendances (inputs, badge, avatar, etc.)
+- **Molecules** : Combinaisons simples d'atomes (card, alert, etc.)
+- **Organisms** : Combinaisons complexes (navbar, sidebar, table, etc.)
+- **Templates** : Structures de page complètes (auth, layout, communication)
+
+### Flux de données
+
+1. **Composants Blade** (`resources/views/components/ui/`) → Exposés via le namespace `daisy::`
+2. **Templates** (`resources/views/templates/`) → Utilisables comme vues ou composants
+3. **JavaScript** (`resources/js/`) → Initialisé automatiquement via `data-module` attributes
+4. **CSS** (`resources/css/`) → Tailwind v4 + daisyUI v5 injectés automatiquement
+
+### Commandes Artisan
+
+Le package expose plusieurs commandes pour la gestion de la documentation :
+
+- `inventory:components` : Génère l'inventaire des composants
+- `inventory:templates` : Génère l'inventaire des templates
+- `inventory:update` : Met à jour toute la documentation
+- `docs:generate-pages` : Génère les pages de documentation
+
 ## Ce que le package expose
 
 ### Composants Blade

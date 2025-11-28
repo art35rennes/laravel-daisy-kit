@@ -4,7 +4,7 @@ Ce dossier contient les spécifications détaillées pour l'implémentation des 
 
 ## Organisation
 
-Les spécifications sont organisées en 8 lots cohérents :
+Les spécifications sont organisées en 9 lots cohérents :
 
 ### Lot 1 : Authentification complémentaire
 **Fichier** : `lot-1-authentification.md`
@@ -66,6 +66,16 @@ Constructeur visuel de formulaires avec :
 - Moteur de logique JSONata
 - Export JSON et génération de règles de validation Laravel
 - Architecture Registry pour éviter la duplication de composants
+
+### Lot 9 : Standardisation des templates & inventaire
+**Fichier** : `lot-9-standardisation-templates-et-inventaire.md`
+
+Standardisation de tous les templates (API Blade générique, props + slots, partials) et simplification de la commande d’inventaire des templates pour supprimer les cas particuliers et s’appuyer sur des conventions claires.
+
+### Lot 10 : Standardisation de la documentation
+**Fichier** : `lot-10-standardisation-documentation.md`
+
+Standardisation de la structure des pages de documentation pour les templates **et** les composants UI (une vue Blade dédiée par page de doc, index clairs, navigation cohérente), en s’appuyant si besoin sur les inventaires générés (templates, composants).
 
 ## Principes généraux
 
