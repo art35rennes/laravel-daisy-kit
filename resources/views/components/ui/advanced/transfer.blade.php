@@ -38,6 +38,7 @@
 ])
 
 @php
+    // Préparation des attributs data-* pour l'initialisation JavaScript du module transfer.
     $wrapAttrs = [
         'data-transfer' => '1',
         'data-one-way' => $oneWay ? 'true' : 'false',
@@ -50,17 +51,17 @@
         'data-list-overflow' => $listOverflow,
     ];
     
-    // Génération des textes par défaut
+    // Génération des textes par défaut pour les placeholders et boutons (si non fournis).
     $defaultSearchPlaceholderSource = $searchPlaceholderSource ?? 'Rechercher dans ' . $titleSource;
     $defaultSearchPlaceholderTarget = $searchPlaceholderTarget ?? 'Rechercher dans ' . $titleTarget;
     $defaultToTargetButtonText = $toTargetButtonText ?? $titleSource . ' ' . $toTargetArrow . ' ' . $titleTarget;
     $defaultToSourceButtonText = $toSourceButtonText ?? $titleTarget . ' ' . $toSourceArrow . ' ' . $titleSource;
 
-    // IDs uniques (stables) pour les cases "tout sélectionner"
+    // Génération d'IDs uniques pour les cases "tout sélectionner" (accessibilité et ciblage JS).
     $sourceSelectAllId = 'select-all-source-'.uniqid();
     $targetSelectAllId = 'select-all-target-'.uniqid();
 
-    // Classes boutons (couleur/taille/forme)
+    // Construction des classes CSS pour les boutons de transfert (couleur, taille, variant).
     $btnColor = in_array($buttonsColor, ['primary','secondary','accent','neutral','info','success','warning','error']) ? $buttonsColor : 'primary';
     $btnSize = in_array($buttonsSize, ['sm','md','lg']) ? $buttonsSize : 'md';
     $btnVariantClass = $buttonsVariant === 'outline' ? ' btn-outline' : ($buttonsVariant === 'ghost' ? ' btn-ghost' : '');
@@ -69,7 +70,7 @@
     $btnBase = 'btn btn-'.$btnColor.' btn-'.$btnSize.$btnVariantClass.($useIcon && !$useText ? ' btn-circle' : '');
     $tooltipClass = 'tooltip tooltip-'.(in_array($tooltipPlacement, ['top','right','bottom','left']) ? $tooltipPlacement : 'top');
 
-    // Classes overflow pour les UL
+    // Détermination des classes d'overflow pour les listes (scroll horizontal, vertical, ou les deux).
     $overflowClasses = match($listOverflow) {
         'x' => 'overflow-x-auto whitespace-nowrap',
         'both' => 'overflow-auto whitespace-nowrap '.$listMaxHeight,
@@ -77,15 +78,16 @@
         default => 'overflow-y-auto '.$listMaxHeight,
     };
 
-    // Breakpoint type Bootstrap (row/col) basé sur grid 12 colonnes
+    // Breakpoint Tailwind pour le passage en colonnes (responsive : stack vertical → horizontal).
     $break = in_array($stackOn, ['sm','md','lg','xl']) ? $stackOn : 'md';
 @endphp
 
 <div {{ $attributes->merge(['class' => trim('w-full '.$class), 'data-module' => ($module ?? 'transfer')])->merge($wrapAttrs) }}>
     <div class="grid grid-cols-1 {{ $break }}:grid-cols-12 gap-4 items-stretch w-full">
-        {{-- Source panel --}}
+        {{-- Panneau source : liste des éléments disponibles à transférer --}}
         <div class="card bg-base-100 card-border h-full min-w-0 col-span-12 {{ $break }}:col-span-5">
             <div class="card-body p-3 space-y-3">
+                {{-- En-tête avec titre et case "tout sélectionner" optionnelle --}}
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
                         @if($selectAll)
@@ -100,15 +102,18 @@
                     <span class="text-sm opacity-70" data-transfer-count="source"></span>
                 </div>
 
+                {{-- Champ de recherche optionnel --}}
                 @if($search)
                     <div class="join w-full">
                         <input type="text" class="input input-sm input-bordered join-item w-full" placeholder="{{ $defaultSearchPlaceholderSource }}" data-transfer-search="source" />
                     </div>
                 @endif
 
+                {{-- Liste des items avec checkboxes (structure répétée pour le panneau target) --}}
                 <ul class="menu menu-sm w-full bg-base-100 rounded-box card-border {{ $overflowClasses }}" data-transfer-list="source">
                     @foreach($source as $i => $it)
                         @php
+                            // Extraction des propriétés de l'item (support array ou string simple).
                             $label = is_array($it) ? ($it['data'] ?? (string)$i) : (string)$it;
                             $disabled = is_array($it) ? !empty($it['disabled']) : false;
                             $checked = is_array($it) ? !empty($it['checked']) : false;
@@ -123,6 +128,7 @@
                     @endforeach
                 </ul>
 
+                {{-- Pagination optionnelle --}}
                 @if($pagination)
                     <div class="join justify-center" data-transfer-pager="source">
                         <button type="button" class="btn btn-xs join-item" data-transfer-page="prev">«</button>
@@ -133,7 +139,7 @@
             </div>
         </div>
 
-        {{-- Transfer controls --}}
+        {{-- Contrôles de transfert : boutons pour déplacer les éléments entre source et target --}}
         <div class="col-span-12 {{ $break }}:col-span-2 flex flex-col justify-center items-center gap-3">
             @php 
                 $toTargetContent = '';
@@ -176,9 +182,10 @@
             @endif
         </div>
 
-        {{-- Target panel --}}
+        {{-- Panneau target : liste des éléments transférés (structure identique au panneau source) --}}
         <div class="card bg-base-100 card-border h-full min-w-0 col-span-12 {{ $break }}:col-span-5">
             <div class="card-body p-3 space-y-3">
+                {{-- En-tête avec titre et case "tout sélectionner" optionnelle --}}
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
                         @if($selectAll)
@@ -193,15 +200,18 @@
                     <span class="text-sm opacity-70" data-transfer-count="target"></span>
                 </div>
 
+                {{-- Champ de recherche optionnel --}}
                 @if($search)
                     <div class="join w-full">
                         <input type="text" class="input input-sm input-bordered join-item w-full" placeholder="{{ $defaultSearchPlaceholderTarget }}" data-transfer-search="target" />
                     </div>
                 @endif
 
+                {{-- Liste des items avec checkboxes --}}
                 <ul class="menu menu-sm w-full bg-base-100 rounded-box card-border {{ $overflowClasses }}" data-transfer-list="target">
                     @foreach($target as $i => $it)
                         @php
+                            // Extraction des propriétés de l'item (support array ou string simple).
                             $label = is_array($it) ? ($it['data'] ?? (string)$i) : (string)$it;
                             $disabled = is_array($it) ? !empty($it['disabled']) : false;
                             $checked = is_array($it) ? !empty($it['checked']) : false;
@@ -216,6 +226,7 @@
                     @endforeach
                 </ul>
 
+                {{-- Pagination optionnelle --}}
                 @if($pagination)
                     <div class="join justify-center" data-transfer-pager="target">
                         <button type="button" class="btn btn-xs join-item" data-transfer-page="prev">«</button>

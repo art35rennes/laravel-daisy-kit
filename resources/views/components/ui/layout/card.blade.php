@@ -17,6 +17,7 @@
 ])
 
 @php
+    // Construction des classes CSS selon les options (compact, side, imageFull, etc.).
     $root = 'card';
     if ($compact) $root .= ' card-compact';
     if ($side) $root .= ' card-side';
@@ -24,6 +25,7 @@
     if ($bordered) $root .= ' card-border';
     if ($dash) $root .= ' card-dash';
 
+    // Mapping des tailles vers les classes daisyUI.
     $sizeMap = [
         'xs' => 'card-xs',
         'sm' => 'card-sm',
@@ -35,20 +37,23 @@
         $root .= ' ' . $sizeMap[$size];
     }
 
+    // Couleur de fond : personnalisée ou base-100 par défaut.
     $bgClass = $color ? ' bg-'.$color : ' bg-base-100';
     $root .= $bgClass.' shadow';
 @endphp
 
 <div {{ $attributes->merge(['class' => $root]) }}>
+    {{-- Figure : image ou slot figure personnalisé (optionnel) --}}
     @if($imageUrl || isset($figure))
         @php
-            // Classes par défaut pour rendre le média plus résilient
+            // Classes par défaut pour rendre le média plus résilient selon le layout.
             $defaultImageClass = $imageFull
-                ? 'w-full h-full object-cover'
-                : ($side ? 'w-48 sm:w-64 object-cover' : 'w-full h-auto object-contain');
+                ? 'w-full h-full object-cover' // image-full : image en overlay sur la carte.
+                : ($side ? 'w-48 sm:w-64 object-cover' : 'w-full h-auto object-contain'); // side : image à côté, sinon image en haut.
 
             $finalImageClass = trim(($imageClass ?? '') ?: $defaultImageClass);
 
+            // Classes pour le figure : overflow-hidden pour image-full et side (évite les débordements).
             $defaultFigureClass = $imageFull
                 ? 'overflow-hidden'
                 : ($side ? 'overflow-hidden' : '');
@@ -64,11 +69,13 @@
         </figure>
     @endif
 
+    {{-- Corps de la carte : titre, contenu, actions --}}
     <div class="card-body">
         @if($title)
             <h2 class="card-title">{{ $title }}</h2>
         @endif
         <div>{{ $slot }}</div>
+        {{-- Actions : slot pour les boutons d'action (alignés à droite par défaut) --}}
         @isset($actions)
             <div class="card-actions justify-end">
                 {{ $actions }}

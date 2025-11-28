@@ -10,7 +10,7 @@
 ])
 
 @php
-    // Configuration des classes d'orientation
+    // Configuration des classes d'orientation : responsive (horizontalAt) > vertical > horizontal > défaut.
     $orientationClasses = match(true) {
         $horizontalAt => "steps-vertical {$horizontalAt}:steps-horizontal",
         $vertical => 'steps-vertical',
@@ -18,22 +18,26 @@
         default => '',
     };
 
+    // Validation de la couleur : doit être une couleur daisyUI valide.
     $validColors = ['neutral', 'primary', 'secondary', 'accent', 'info', 'success', 'warning', 'error'];
     $defaultColor = in_array($color, $validColors) ? $color : 'primary';
 
-    // Fonction helper pour extraire les propriétés d'un item
+    // Fonction helper pour extraire et normaliser les propriétés d'un item d'étape.
     $extractItemData = function($item, $index) use ($defaultColor, $current, $validColors, $allowClickNav, $rootId) {
+        // Extraction des propriétés de base (support array ou string simple).
         $data = [
             'label' => is_array($item) ? ($item['label'] ?? '') : (string) $item,
             'icon' => is_array($item) ? ($item['icon'] ?? null) : null,
             'disabled' => is_array($item) ? (bool) ($item['disabled'] ?? false) : false,
             'invalid' => is_array($item) ? (bool) ($item['invalid'] ?? false) : false,
+            // Index de l'étape : priorité à item.index, sinon calculé depuis l'index du tableau.
             'stepIndex' => is_array($item) ? ($item['index'] ?? ($index + 1)) : ($index + 1),
         ];
         
+        // Une étape est "done" si son index est <= current ET qu'elle n'est pas disabled.
         $data['isDone'] = ($data['stepIndex'] <= $current) && !$data['disabled'];
         
-        // Gestion des couleurs
+        // Gestion des couleurs : couleur explicite de l'item > couleur par défaut si done > aucune couleur.
         $itemColor = is_array($item) ? ($item['color'] ?? null) : null;
         if ($itemColor && in_array($itemColor, $validColors)) {
             $data['colorClass'] = "step-{$itemColor}";
@@ -43,14 +47,14 @@
             $data['colorClass'] = '';
         }
         
-        // Classes CSS
+        // Construction des classes CSS : step de base + couleur + états (error, disabled).
         $classes = ['step'];
         if ($data['colorClass']) $classes[] = $data['colorClass'];
         if ($data['invalid']) $classes[] = 'step-error';
         if ($data['disabled']) $classes[] = 'pointer-events-none opacity-50';
         $data['classes'] = implode(' ', $classes);
         
-        // Attributs d'accessibilité
+        // Attributs d'accessibilité : tabindex/role pour navigation clavier, id/aria-controls pour ARIA.
         $data['attributes'] = [];
         if ($allowClickNav && !$data['disabled']) {
             $data['attributes']['tabindex'] = '0';

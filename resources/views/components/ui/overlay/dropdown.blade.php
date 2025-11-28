@@ -18,15 +18,20 @@
 ])
 
 @php
+    // Construction des classes CSS selon les options (placement, hover).
     $root = 'dropdown';
+    // Placement : dropdown-end pour aligner à droite (défaut : gauche).
     if ($end) $root .= ' dropdown-end';
+    // Mode hover : ouverture au survol au lieu du clic (dropdown-hover).
     if ($hover) $root .= ' dropdown-hover';
 
-    // Déduction des classes de contenu selon le type si non fourni
+    // Déduction des classes de contenu selon le type si non fourni explicitement.
     $resolvedContentClass = $contentClass ?? ($type === 'card' ? $cardClass : $menuClass);
 @endphp
 
+{{-- Dropdown : menu déroulant ou carte (pattern daisyUI) --}}
 <div {{ $attributes->merge(['class' => $root]) }}>
+    {{-- Trigger : bouton qui ouvre le dropdown (clic ou hover selon configuration) --}}
     <div tabindex="0" role="button" class="{{ $buttonClass }}{{ $buttonCircle ? ' btn-circle' : '' }}">
         @isset($trigger)
             {{ $trigger }}
@@ -35,6 +40,7 @@
         @endisset
     </div>
     @if($type === 'card')
+        {{-- Type card : dropdown avec structure de carte (utile pour des contenus complexes) --}}
         <div tabindex="0" class="{{ $resolvedContentClass }}">
             <div class="{{ $cardBodyClass }}">
                 @isset($content)
@@ -45,6 +51,7 @@
             </div>
         </div>
     @else
+        {{-- Type menu (défaut) : dropdown avec structure de menu (liste d'items) --}}
         <ul tabindex="0" class="{{ $resolvedContentClass }}">
             @isset($content)
                 {{ $content }}

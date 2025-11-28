@@ -11,10 +11,13 @@
 ])
 
 @php
+    // Construction des classes CSS selon les options (background, rounded, orientation, taille).
     $classes = 'menu';
     if ($bg) $classes .= ' bg-base-100';
     if ($rounded) $classes .= ' rounded-box';
+    // Orientation : vertical par défaut, horizontal si explicitement désactivé ou via breakpoint.
     if (!$vertical) $classes .= ' menu-horizontal';
+    // Orientation responsive : devient horizontal à partir d'un breakpoint (ex: md:menu-horizontal).
     if ($horizontalAt && in_array($horizontalAt, ['sm','md','lg','xl'], true)) {
         $classes .= ' '.$horizontalAt.':menu-horizontal';
     }
@@ -22,8 +25,10 @@
 @endphp
 
 <ul {{ $attributes->merge(['class' => $classes]) }}>
+    {{-- Titre optionnel : affiché en tête du menu (utilise menu-title de daisyUI) --}}
     @if($title)
         <li class="menu-title">{{ $title }}</li>
     @endif
+    {{-- Contenu du menu : items passés via slot (liens, boutons, sous-menus, etc.) --}}
     {{ $slot }}
   </ul>

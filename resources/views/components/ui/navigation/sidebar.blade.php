@@ -38,74 +38,82 @@
 ])
 
 @php
+    // Détection des variantes de largeur (slim, auto, fit, wide).
     $isSlim = $variant === 'slim';
     $isAuto = $variant === 'auto';
     $isFit = $variant === 'fit';
+    // État de collapse effectif : forceCollapsed a priorité sur collapsed.
     $effectiveCollapsed = isset($forceCollapsed) ? (bool)$forceCollapsed : (bool)$collapsed;
     
     // === CONFIGURATION DES LARGEURS ===
+    // Détermination de la classe de largeur selon la variante et l'état collapsed.
     if ($sideClass) {
-        // Largeur personnalisée fournie
+        // Largeur personnalisée fournie explicitement (priorité absolue).
         $wideWidthClass = $sideClass;
         $widthStrategy = 'custom';
     } elseif ($isSlim) {
-        // Mode slim : icônes uniquement
+        // Mode slim : icônes uniquement (largeur minimale fixe).
         $wideWidthClass = 'w-20';
         $widthStrategy = 'slim';
     } elseif ($isFit) {
-        // Mode fit : optimisé avec min/max
+        // Mode fit : largeur adaptative avec contraintes min/max (optimisé pour le contenu).
         $wideWidthClass = 'w-fit ' . $minWidth . ' ' . $maxWidth;
         $widthStrategy = 'fit';
     } elseif ($isAuto) {
-        // Mode auto : largeur fixe pour le JavaScript
+        // Mode auto : largeur fixe initiale, ajustable dynamiquement par JavaScript.
         $wideWidthClass = 'w-64';
         $widthStrategy = 'auto';
     } else {
-        // Mode wide : largeur fixe standard
+        // Mode wide : largeur fixe standard (défaut).
         $wideWidthClass = 'w-64';
         $widthStrategy = 'wide';
     }
     
+    // Largeur en mode collapsed (toujours minimale, indépendamment de la variante).
     $collapsedWidthClass = 'w-20';
     $widthClass = $effectiveCollapsed ? $collapsedWidthClass : $wideWidthClass;
 
+    // Classes de base pour le conteneur sidebar.
     $rootClasses = 'bg-base-200 text-base-content';
-    // Gestion sticky/fixed selon breakpoint
+    // Gestion sticky/fixed selon breakpoint : positionnement relatif au viewport ou à la navbar.
     if ($stickyAt) {
-        // Détecter si on est dans un contexte avec navbar (hauteur réduite)
+        // Détection du contexte : sidebar dans un layout avec navbar (hauteur réduite).
         $customClass = $attributes->get('class', '');
         $hasReducedHeight = str_contains($customClass, 'h-[calc(100vh-4rem)]');
         
         if ($hasReducedHeight) {
-            // Dans le contexte navbar-sidebar, positionner sous la navbar
+            // Contexte navbar-sidebar : positionner sous la navbar (top-16 = 4rem).
             $rootClasses .= ' '.$stickyAt.':sticky '.$stickyAt.':top-16';
         } else {
-            // Contexte normal
+            // Contexte normal : sidebar pleine hauteur, collée en haut.
             $rootClasses .= ' '.$stickyAt.':sticky '.$stickyAt.':top-0 '.$stickyAt.':h-screen';
         }
     }
 
     // === CLASSES DE CONTENEUR ===
+    // Classes pour le conteneur du menu (utilise le composant menu de daisyUI).
     $menuContainerClass = 'menu p-2 flex-1';
     
-    // Optimisations pour le mode fit
+    // Optimisations spécifiques pour le mode fit (ajustement dynamique de la largeur).
     if ($isFit) {
         $menuContainerClass .= ' sidebar-fit-content';
     }
     
     // === CLASSES FINALES ===
+    // Classes de base pour la structure flexbox verticale.
     $baseClasses = 'min-h-full flex flex-col';
     
-    // Ajouter les classes pour modes adaptatifs
+    // Activation des classes adaptatives pour les modes auto/fit (ajustement JS dynamique).
     if (($isAuto || $isFit) && !$effectiveCollapsed) {
         $baseClasses .= ' sidebar-adaptive';
     }
     
+    // Classe spécifique pour le mode fit (largeur optimisée selon le contenu).
     if ($isFit && !$effectiveCollapsed) {
         $baseClasses .= ' sidebar-fit';
     }
     
-    // Activer le module JS si searchable est activé
+    // Activation du module JavaScript de recherche si searchable est activé et sidebar non collapsed.
     $needsSearchModule = $searchable && !$effectiveCollapsed;
 @endphp
 
@@ -141,17 +149,23 @@
             </label>
         </div>
     @endif
+    {{-- Menu de navigation : structure hiérarchique (sections > items > children) --}}
     <ul class="{{ $menuContainerClass }}" data-sidebar-menu>
         @forelse($sections as $section)
+            {{-- Titre de section optionnel --}}
             @if(!empty($section['label']))
                 <li class="menu-title">{{ __($section['label']) }}</li>
             @endif
+            {{-- Items de navigation : support des items simples et des items avec sous-menu --}}
             @foreach(($section['items'] ?? []) as $item)
                 @php
+                    // Détection de la présence d'enfants (sous-menu).
                     $hasChildren = !empty($item['children']);
+                    // Un item est actif s'il est marqué actif ou si un de ses enfants est actif.
                     $isActive = !empty($item['active']) || collect($item['children'] ?? [])->contains(fn($c) => !empty($c['active']));
                 @endphp
                 @if($hasChildren)
+                    {{-- Item avec sous-menu : utilise <details> pour le collapse natif --}}
                     <li>
                         <details {{ $isActive ? 'open' : '' }}>
                             <summary class="flex items-center gap-2">
@@ -175,6 +189,7 @@
                         </details>
                     </li>
                 @else
+                    {{-- Item simple : lien direct sans sous-menu --}}
                     <li>
                         <a href="{{ $item['href'] ?? '#' }}" class="flex items-center gap-2 {{ $isActive ? 'menu-active' : '' }}">
                             @if(!empty($item['icon']))
@@ -186,9 +201,11 @@
                 @endif
             @endforeach
         @empty
+            {{-- Slot par défaut si aucune section n'est fournie --}}
             {{ $slot }}
         @endforelse
     </ul>
+    {{-- Contrôle de collapse : bouton pour plier/déplier la sidebar (si autorisé et non forcé) --}}
     <div class="p-2 border-t border-base-content/10">
         @php $showToggle = $collapsible && !isset($forceCollapsed); @endphp
         @if($showToggle)

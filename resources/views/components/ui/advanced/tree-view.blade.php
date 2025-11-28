@@ -40,13 +40,16 @@
 ])
 
 @php
+    // Génération d'un ID unique pour l'arbre si non fourni.
     $treeId = $attributes->get('id') ?? ('tree-'.uniqid());
     $isMulti = $selection === 'multiple';
+    // Nom du groupe pour les radio buttons (sélection unique) : doit être unique par arbre.
     $groupName = $name ?? ($treeId.'-group');
-    // Classes par défaut (utilise menu de DaisyUI pour un style cohérent)
+    // Classes par défaut (utilise menu de DaisyUI pour un style cohérent).
     $baseClasses = 'menu menu-sm bg-base-100 rounded-box p-2';
 @endphp
 
+{{-- Conteneur principal : prépare les attributs data-* pour l'initialisation JavaScript --}}
 <div data-module="{{ $module ?? 'treeview' }}" data-treeview="1"
      data-selection="{{ $selection ?? '' }}"
      data-persist="{{ $persist ? 'true' : 'false' }}"
@@ -63,18 +66,21 @@
      id="{{ $treeId }}"
      class="w-full">
 
+    {{-- Champ de recherche optionnel : filtre les nœuds visibles dans l'arbre --}}
     @if($search)
         <div class="join w-full mb-2" data-tree-search-container="1">
             <input type="text"
                    class="input input-sm input-bordered join-item w-full"
                    placeholder="{{ $searchPlaceholder }}"
                    data-tree-search="1" />
+            {{-- Bouton de recherche optionnel (si recherche manuelle, pas automatique) --}}
             @if($searchButton && !$searchAuto)
                 <button type="button" class="btn btn-sm join-item" data-tree-search-btn="1">Rechercher</button>
             @endif
         </div>
     @endif
 
+    {{-- Liste racine de l'arbre : structure récursive gérée par le partial tree-node --}}
     <ul role="tree"
         aria-multiselectable="{{ $isMulti ? 'true' : 'false' }}"
         tabindex="0"
@@ -82,6 +88,7 @@
         data-disabled="{{ $disabled ? 'true' : 'false' }}"
          @if($selection === 'single') data-radio-name="{{ $groupName }}" @endif
         {{ $attributes->merge(['class' => $baseClasses]) }}>
+        {{-- Rendu récursif : chaque nœud racine déclenche le rendu de ses enfants via tree-node --}}
         @foreach(($data ?? []) as $node)
             @include('daisy::components.ui.partials.tree-node', [
                 'node' => $node,

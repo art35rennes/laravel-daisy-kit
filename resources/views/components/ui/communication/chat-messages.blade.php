@@ -49,6 +49,7 @@
     @else
         @foreach($messages as $message)
             @php
+                // Extraction des propriétés du message via data_get (support des clés personnalisables).
                 $messageId = data_get($message, $messageIdKey);
                 $messageUserId = data_get($message, $messageUserIdKey);
                 $messageContent = data_get($message, $messageContentKey, '');
@@ -56,23 +57,26 @@
                 $messageUserName = data_get($message, $messageUserNameKey, '');
                 $messageUserAvatar = data_get($message, $messageUserAvatarKey);
                 
-                // Récupération des pièces jointes
+                // Récupération des pièces jointes : support d'une pièce unique (attachment) ou multiple (attachments).
                 $attachment = data_get($message, $messageAttachmentKey);
                 $attachments = data_get($message, $messageAttachmentsKey, []);
+                // Normalisation : si une seule pièce est fournie, la convertir en tableau.
                 if ($attachment && !$attachments) {
                     $attachments = [$attachment];
                 }
                 
+                // Détermination de l'alignement : messages de l'utilisateur courant à droite (end), autres à gauche (start).
                 $isCurrentUser = $currentUserId && (string) $messageUserId === (string) $currentUserId;
                 $align = $isCurrentUser ? 'end' : 'start';
                 
-                // Formatage de la date
+                // Formatage de la date : conversion en Carbon si string, formatage en H:i (ex: "14:30").
                 $dateFormatted = null;
                 if ($messageCreatedAt) {
                     try {
                         $date = is_string($messageCreatedAt) ? \Carbon\Carbon::parse($messageCreatedAt) : $messageCreatedAt;
                         $dateFormatted = $date->format('H:i');
                     } catch (\Exception $e) {
+                        // Fallback : utiliser la valeur brute si le parsing échoue.
                         $dateFormatted = $messageCreatedAt;
                     }
                 }
