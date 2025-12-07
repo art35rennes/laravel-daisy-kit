@@ -1,116 +1,103 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'inputs';
+    $name = 'radio';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'variants', 'label' => 'Variantes'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('inputs', 'radio');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'variants', 'label' => 'Variantes'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Radio" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Bouton radio" 
+    category="inputs" 
+    name="radio"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Bouton radio" 
+            subtitle="Bouton radio compatible daisyUI."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Radio</h1>
-        <p>Bouton radio compatible daisyUI.</p>
-    </section>
-
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-radio" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.inputs.radio name="gender" value="male" label="Homme" />
-<x-daisy::ui.inputs.radio name="gender" value="female" label="Femme" />
-                </div>
+    <x-daisy::docs.sections.example name="radio">
+        <x-slot:preview>
+            <div class="space-y-2">
+                <x-daisy::ui.inputs.radio name="gender" value="male" label="Homme" />
+                <x-daisy::ui.inputs.radio name="gender" value="female" label="Femme" />
             </div>
-            <input type="radio" name="base-example-radio" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '<x-daisy::ui.inputs.radio name="gender" value="male" label="Homme" />
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = '<x-daisy::ui.inputs.radio name="gender" value="male" label="Homme" />
 <x-daisy::ui.inputs.radio name="gender" value="female" label="Femme" />';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="200px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    <section id="variants" class="mt-10">
-        <h2>Variantes</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="variants-example-radio" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose flex flex-wrap items-center gap-3">
-                    <x-daisy::ui.inputs.radio color="primary" placeholder="Primary" />
-                    <x-daisy::ui.inputs.radio color="secondary" placeholder="Secondary" />
-                    <x-daisy::ui.inputs.radio size="sm" placeholder="Small" />
-                    <x-daisy::ui.inputs.radio size="lg" placeholder="Large" />
+    <x-daisy::docs.sections.variants name="radio">
+        <x-slot:preview>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm font-semibold mb-2">Couleurs</p>
+                    <div class="space-y-2">
+                        <x-daisy::ui.inputs.radio name="r1" value="1" color="primary" label="Primary" />
+                        <x-daisy::ui.inputs.radio name="r2" value="2" color="secondary" label="Secondary" />
+                        <x-daisy::ui.inputs.radio name="r3" value="3" color="accent" label="Accent" />
+                        <x-daisy::ui.inputs.radio name="r4" value="4" color="success" label="Success" />
+                    </div>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold mb-2">Tailles</p>
+                    <div class="space-y-2">
+                        <x-daisy::ui.inputs.radio name="r5" value="1" size="xs" label="Extra Small" />
+                        <x-daisy::ui.inputs.radio name="r6" value="2" size="sm" label="Small" />
+                        <x-daisy::ui.inputs.radio name="r7" value="3" size="md" label="Medium" />
+                        <x-daisy::ui.inputs.radio name="r8" value="4" size="lg" label="Large" />
+                    </div>
                 </div>
             </div>
-            <input type="radio" name="variants-example-radio" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $variantsCode = '&lt;x-daisy::ui.inputs.radio color=&quot;primary&quot; placeholder=&quot;Primary&quot; /&gt;
-&lt;x-daisy::ui.inputs.radio color=&quot;secondary&quot; placeholder=&quot;Secondary&quot; /&gt;
-&lt;x-daisy::ui.inputs.radio size=&quot;sm&quot; placeholder=&quot;Small&quot; /&gt;
-&lt;x-daisy::ui.inputs.radio size=&quot;lg&quot; placeholder=&quot;Large&quot; /&gt;';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$variantsCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $variantsCode = '{{-- Couleurs --}}
+<x-daisy::ui.inputs.radio name="r1" value="1" color="primary" label="Primary" />
+<x-daisy::ui.inputs.radio name="r2" value="2" color="success" label="Success" />
+
+{{-- Tailles --}}
+<x-daisy::ui.inputs.radio name="r3" value="1" size="sm" label="Small" />
+<x-daisy::ui.inputs.radio name="r4" value="2" size="lg" label="Large" />';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$variantsCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="250px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.variants>
+
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

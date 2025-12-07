@@ -1,112 +1,115 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'data-display';
+    $name = 'kbd';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'variants', 'label' => 'Variantes'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('data-display', 'kbd');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'variants', 'label' => 'Variantes'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Kbd" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Raccourci clavier" 
+    category="data-display" 
+    name="kbd"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Raccourci clavier" 
+            subtitle="Affichage de raccourcis clavier."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Kbd</h1>
-        <p>Affichage de raccourcis clavier.</p>
-    </section>
-
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-kbd" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    @php $keys = ["Ctrl", "K"]; @endphp
+    <x-daisy::docs.sections.example name="kbd">
+        <x-slot:preview>
+            <div class="space-y-2">
+                @php $keys = ['Ctrl', 'K']; @endphp
+                <x-daisy::ui.data-display.kbd :keys="$keys" />
+                <x-daisy::ui.data-display.kbd>Esc</x-daisy::ui.data-display.kbd>
+            </div>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = <<<'CODE'
+@php $keys = ["Ctrl", "K"]; @endphp
 <x-daisy::ui.data-display.kbd :keys="$keys" />
-                </div>
-            </div>
-            <input type="radio" name="base-example-kbd" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '@php $keys = ["Ctrl", "K"]; @endphp
-<x-daisy::ui.data-display.kbd :keys="$keys" />';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
 
-    <section id="variants" class="mt-10">
-        <h2>Variantes</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="variants-example-kbd" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose flex flex-wrap items-center gap-3">
-                    <x-daisy::ui.data-display.kbd size="sm">Small</x-daisy::ui.data-display.kbd>
-                    <x-daisy::ui.data-display.kbd size="lg">Large</x-daisy::ui.data-display.kbd>
+{{-- Simple --}}
+<x-daisy::ui.data-display.kbd>Esc</x-daisy::ui.data-display.kbd>
+CODE;
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="200px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
+
+    <x-daisy::docs.sections.variants name="kbd">
+        <x-slot:preview>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm font-semibold mb-2">Tailles</p>
+                    <div class="flex flex-wrap items-center gap-3">
+                        @php $keys = ['Ctrl', 'K']; @endphp
+                        <x-daisy::ui.data-display.kbd :keys="$keys" size="xs" />
+                        <x-daisy::ui.data-display.kbd :keys="$keys" size="sm" />
+                        <x-daisy::ui.data-display.kbd :keys="$keys" size="md" />
+                        <x-daisy::ui.data-display.kbd :keys="$keys" size="lg" />
+                        <x-daisy::ui.data-display.kbd :keys="$keys" size="xl" />
+                    </div>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold mb-2">Combinaisons</p>
+                    <div class="flex flex-wrap items-center gap-3">
+                        @php $keys1 = ['Ctrl', 'Shift', 'P']; @endphp
+                        <x-daisy::ui.data-display.kbd :keys="$keys1" />
+                        @php $keys2 = ['Alt', 'F4']; @endphp
+                        <x-daisy::ui.data-display.kbd :keys="$keys2" />
+                    </div>
                 </div>
             </div>
-            <input type="radio" name="variants-example-kbd" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $variantsCode = '&lt;x-daisy::ui.data-display.kbd size=&quot;sm&quot;&gt;Small&lt;/x-daisy::ui.data-display.kbd&gt;
-&lt;x-daisy::ui.data-display.kbd size=&quot;lg&quot;&gt;Large&lt;/x-daisy::ui.data-display.kbd&gt;';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$variantsCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $variantsCode = <<<'CODE'
+@php $keys = ["Ctrl", "K"]; @endphp
+
+{{-- Tailles --}}
+<x-daisy::ui.data-display.kbd :keys="$keys" size="xs" />
+<x-daisy::ui.data-display.kbd :keys="$keys" size="lg" />
+
+{{-- Combinaisons --}}
+@php $keys = ["Ctrl", "Shift", "P"]; @endphp
+<x-daisy::ui.data-display.kbd :keys="$keys" />
+CODE;
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$variantsCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="250px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.variants>
+
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

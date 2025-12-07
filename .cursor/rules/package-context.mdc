@@ -12,7 +12,8 @@ alwaysApply: true
 - When creating/modifying components: check for existing similar components, prioritize reuse, extract reusable components if duplication exists.
 - Placement: functional category, not Atomic Design level.
 - Use only `blade-ui-kit/blade-icons` and installed collections. Never add inline SVG in package source code.
-- Demo/docs pages under `resources/dev/views/demo/*`, publishable via `daisy-dev-views` tag for documentation.
+- Demo pages: `resources/dev/views/demo/*`, publishable via `daisy-dev-views` tag.
+- Documentation pages: `resources/dev/views/docs/*` (see `documentation.mdc`).
 - Front sources publishable via `daisy-src` tag.
 - Prioritize factorization, reactive Blade props usage, clarity.
-- Comments: PHPDoc/JSDoc useful only (rationale, invariants, edge cases). Avoid obvious comments.
+- PHPDoc: See `documentation.mdc` for strict requirements.

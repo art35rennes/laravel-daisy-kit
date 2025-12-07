@@ -1,82 +1,123 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'advanced';
+    $name = 'code-editor';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('advanced', 'code-editor');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'variants', 'label' => 'Variantes'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Code Editor" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Éditeur de code" 
+    category="advanced" 
+    name="code-editor"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Éditeur de code" 
+            subtitle="Éditeur de code avec coloration syntaxique."
+            jsModule="code-editor"
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Code Editor</h1>
-        <p>Éditeur de code avec coloration syntaxique.</p>
-        <div class="alert alert-info mt-4">
-            <span>Ce composant nécessite le module JavaScript <code>code-editor</code>.</span>
-        </div>
-    </section>
+    <x-daisy::docs.sections.example name="code-editor">
+        <x-slot:preview>
+            <x-daisy::ui.advanced.code-editor 
+                language="php" 
+                value="<?php echo 'Hello World'; ?>" 
+                height="200px"
+            />
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = '<x-daisy::ui.advanced.code-editor 
+    language="php" 
+    value="<?php echo \'Hello World\'; ?>" 
+    height="200px"
+/>';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="200px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-code-editor" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.advanced.code-editor language="php" value="<?php echo \"Hello\"; ?>" />
+    <x-daisy::docs.sections.variants name="code-editor">
+        <x-slot:preview>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm font-semibold mb-2">Langages supportés</p>
+                    <div class="space-y-2">
+                        <x-daisy::ui.advanced.code-editor 
+                            language="javascript" 
+                            value="const hello = 'World';" 
+                            height="150px"
+                            :showToolbar="false"
+                        />
+                        <x-daisy::ui.advanced.code-editor 
+                            language="php" 
+                            value="<?php echo 'Hello'; ?>" 
+                            height="150px"
+                            :showToolbar="false"
+                        />
+                    </div>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold mb-2">Avec barre d'outils</p>
+                    <x-daisy::ui.advanced.code-editor 
+                        language="blade" 
+                        value="<x-component />" 
+                        height="150px"
+                        :showToolbar="true"
+                    />
                 </div>
             </div>
-            <input type="radio" name="base-example-code-editor" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '<x-daisy::ui.advanced.code-editor language="php" value="<?php echo \\"Hello\\"; ?>" />';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $variantsCode = '{{-- Langages supportés --}}
+<x-daisy::ui.advanced.code-editor 
+    language="javascript" 
+    value="const hello = \'World\';" 
+    height="150px"
+/>
 
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+{{-- Avec barre d\'outils --}}
+<x-daisy::ui.advanced.code-editor 
+    language="blade" 
+    value="<x-component />" 
+    height="150px"
+    :showToolbar="true"
+/>';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$variantsCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="300px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.variants>
+
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

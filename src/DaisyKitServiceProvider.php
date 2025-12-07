@@ -3,6 +3,7 @@
 namespace Art35rennes\DaisyKit;
 
 use Art35rennes\DaisyKit\Http\Controllers\CsrfTokenController;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -17,6 +18,8 @@ class DaisyKitServiceProvider extends ServiceProvider
     {
         // Charger les vues du package avec un namespace: x-daisy::ui.button
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'daisy');
+        // Exposer les templates comme composants anonymes pour éviter les doublons avec components/templates.
+        Blade::anonymousComponentPath(__DIR__.'/../resources/views/templates', 'daisy::templates');
 
         // Charger les vues de dev (pages de démo/templates) sans les publier par défaut
         $devViews = __DIR__.'/../resources/dev/views';

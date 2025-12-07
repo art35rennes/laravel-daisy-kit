@@ -11,6 +11,7 @@ it('renders docs index page', function () {
 
 it('renders a component page (button)', function () {
     Config::set('daisy-kit.docs.enabled', true);
+    Config::set('app.locale', 'en');
     $res = $this->get('/docs/inputs/button');
     $res->assertSuccessful();
     $res->assertSee('Button', false);

@@ -1,93 +1,75 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'changelog';
+    $name = 'changelog-version-item';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('changelog', 'changelog-version-item');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Changelog Version Item" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Changelog Version Item" 
+    category="changelog" 
+    name="changelog-version-item"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Changelog Version Item" 
+            subtitle="Élément de version dans un changelog avec date et liste de changements."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Changelog Version Item</h1>
-        <p>Composant compatible daisyUI v5 et Tailwind CSS v4.</p>
-    </section>
-
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-changelog-version-item" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    @php
+    <x-daisy::docs.sections.example name="changelog-version-item">
+        <x-slot:preview>
+            @php
+                $items = [
+                    ['type' => 'added', 'description' => 'Nouvelle fonctionnalité de recherche'],
+                    ['type' => 'fixed', 'description' => 'Correction d\'un bug dans le formulaire'],
+                    ['type' => 'changed', 'description' => 'Amélioration des performances de chargement'],
+                ];
+            @endphp
+            <x-daisy::ui.changelog.changelog-version-item 
+                version="1.0.0" 
+                date="2024-01-15" 
+                :items="$items" 
+            />
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = <<<'CODE'
+@php
 $items = [
-    ["type" => "added", "description" => "Nouvelle fonctionnalité"],
-    ["type" => "fixed", "description" => "Correction d'un bug"],
-    ["type" => "changed", "description" => "Amélioration des performances"]
+    ["type" => "added", "description" => "Nouvelle fonctionnalité de recherche"],
+    ["type" => "fixed", "description" => "Correction d'un bug dans le formulaire"],
+    ["type" => "changed", "description" => "Amélioration des performances de chargement"]
 ];
 @endphp
-<x-daisy::ui.changelog.changelog-version-item version="1.0.0" date="2024-01-15" :items="$items" />
-                </div>
-            </div>
-            <input type="radio" name="base-example-changelog-version-item" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '@php
-$items = [
-    ["type" => "added", "description" => "Nouvelle fonctionnalité"],
-    ["type" => "fixed", "description" => "Correction d\'un bug"],
-    ["type" => "changed", "description" => "Amélioration des performances"]
-];
-@endphp
-<x-daisy::ui.changelog.changelog-version-item version="1.0.0" date="2024-01-15" :items="$items" />';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+<x-daisy::ui.changelog.changelog-version-item 
+    version="1.0.0" 
+    date="2024-01-15" 
+    :items="$items" 
+/>
+CODE;
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="300px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

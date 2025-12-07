@@ -1,0 +1,41 @@
+---
+alwaysApply: true
+---
+# Documentation
+
+## Philosophy
+- Documentation pages are **manually written**, not auto-generated.
+- Use reusable documentation components for consistency.
+- Prefer explicit slots over attributes for clarity.
+
+## Structure
+- Documentation pages: `resources/dev/views/docs/components/{category}/{name}.blade.php`
+- Template docs: `resources/dev/views/docs/templates/{category}/{name}.blade.php`
+- Use `<x-daisy::docs.page>` as main wrapper with sections.
+- Use `<x-daisy::docs.sections.*>` components: `intro`, `example`, `variants`, `api`, `custom`.
+
+## Components Usage
+- `<x-daisy::docs.sections.example>` and `<x-daisy::docs.sections.variants>` require two explicit slots:
+  - `<x-slot:preview>`: rendered component preview
+  - `<x-slot:code>`: code editor with source code
+- Store code in PHP variables to avoid quote escaping issues.
+- Always provide both slots for complete examples.
+
+## Commands
+- `inventory:components`: generates `components.json` manifest
+- `inventory:templates`: generates `templates.json` manifest
+- `inventory:update`: runs both inventory commands
+- `docs:generate-pages`: generates minimal structure only (to be completed manually)
+
+## Best Practices
+- Write documentation manually for full control and clarity.
+- Use `DocsHelper::getComponentProps()` for API sections.
+- Keep examples simple and relevant.
+- Avoid code duplication between preview and code slots.
+
+## PHPDoc Requirements
+- **Mandatory** for all classes, methods, functions, and properties.
+- **Required tags**: `@param` (with type), `@return` (with type), `@throws` when applicable.
+- **Array shapes**: Use `@return array<int, array<string, mixed>>` for complex arrays.
+- **Conciseness**: Only document rationale, invariants, edge cases. Avoid obvious descriptions.
+- **No inline comments**: Prefer PHPDoc blocks over inline comments. Only use inline comments for very complex logic.

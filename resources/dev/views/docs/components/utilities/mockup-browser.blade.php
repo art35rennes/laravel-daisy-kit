@@ -1,83 +1,61 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'utilities';
+    $name = 'mockup-browser';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('utilities', 'mockup-browser');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Mockup Browser" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Maquette navigateur" 
+    category="utilities" 
+    name="mockup-browser"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Maquette navigateur" 
+            subtitle="Maquette de fenêtre de navigateur."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Mockup Browser</h1>
-        <p>Composant compatible daisyUI v5 et Tailwind CSS v4.</p>
-    </section>
-
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-mockup-browser" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.utilities.mockup-browser url="https://example.com">
-    <div class="p-4">Contenu de la page</div>
-</x-daisy::ui.utilities.mockup-browser>
+    <x-daisy::docs.sections.example name="mockup-browser">
+        <x-slot:preview>
+            <x-daisy::ui.utilities.mockup-browser url="https://example.com">
+                <div class="p-4">
+                    <h2 class="text-xl font-bold mb-2">Bienvenue</h2>
+                    <p>Contenu de la page dans la maquette.</p>
                 </div>
-            </div>
-            <input type="radio" name="base-example-mockup-browser" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '<x-daisy::ui.utilities.mockup-browser url="https://example.com">
-    <div class="p-4">Contenu de la page</div>
+            </x-daisy::ui.utilities.mockup-browser>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = '<x-daisy::ui.utilities.mockup-browser url="https://example.com">
+    <div class="p-4">
+        <h2 class="text-xl font-bold mb-2">Bienvenue</h2>
+        <p>Contenu de la page dans la maquette.</p>
+    </div>
 </x-daisy::ui.utilities.mockup-browser>';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="200px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

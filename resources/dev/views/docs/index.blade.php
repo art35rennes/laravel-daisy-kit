@@ -2,6 +2,7 @@
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
     $navItems = DocsHelper::getNavigationItems($prefix);
+    $componentsByCategory = DocsHelper::getComponentsByCategory($prefix);
     $sections = [
         ['id' => 'introduction', 'label' => 'Introduction'],
         ['id' => 'categories', 'label' => 'Catégories'],
@@ -23,22 +24,33 @@
         <div class="alert alert-info mt-4">
             <span>Activez ces routes dans la config pour les publier dans votre application (voir <code>daisy-kit.docs</code>).</span>
         </div>
+        <div class="mt-6 flex flex-wrap gap-3">
+            <a href="/{{ $prefix }}/components" class="btn btn-primary btn-sm">Composants</a>
+            <a href="/{{ $prefix }}/templates" class="btn btn-ghost btn-sm">Templates</a>
+        </div>
     </section>
 
     <section id="categories" class="mt-12">
         <h2>Catégories</h2>
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            @foreach($navItems as $cat)
+            @foreach($componentsByCategory as $categoryId => $category)
                 <div class="card bg-base-100 shadow">
                     <div class="card-body">
-                        <h3 class="card-title text-base">{{ $cat['label'] }}</h3>
-                        <ul class="list mt-2">
-                            @foreach(($cat['children'] ?? []) as $child)
-                                <li class="list-row">
-                                    <a class="link" href="{{ $child['href'] }}">{{ $child['label'] }}</a>
-                                </li>
-                            @endforeach
-                        </ul>
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                            <h3 class="card-title text-base">{{ $category['label'] ?? $categoryId }}</h3>
+                            <span class="badge badge-outline badge-sm">{{ count($category['components'] ?? []) }}</span>
+                        </div>
+                        @if(!empty($category['components'] ?? []))
+                            <ul class="list mt-2">
+                                @foreach(($category['components'] ?? []) as $component)
+                                    <li class="list-row">
+                                        <a class="link" href="{{ $component['href'] ?? '#' }}">{{ $component['name'] ?? '' }}</a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="text-sm text-base-content/60">Aucun composant</p>
+                        @endif
                     </div>
                 </div>
             @endforeach

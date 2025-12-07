@@ -1,99 +1,83 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'layout';
+    $name = 'grid-layout';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('layout', 'grid-layout');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Grid Layout" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Grid Layout" 
+    category="layout" 
+    name="grid-layout"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Grid Layout" 
+            subtitle="Layout en grille responsive pour organiser le contenu en colonnes."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Grid Layout</h1>
-        <p>Composant compatible daisyUI v5 et Tailwind CSS v4.</p>
-    </section>
-
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-grid-layout" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.layout.grid-layout>
-    <div class="col-12 col-md-6 col-lg-4">
-        <x-daisy::ui.layout.card title="Colonne 1">Contenu 1</x-daisy::ui.layout.card>
-    </div>
-    <div class="col-12 col-md-6 col-lg-4">
-        <x-daisy::ui.layout.card title="Colonne 2">Contenu 2</x-daisy::ui.layout.card>
-    </div>
-    <div class="col-12 col-md-6 col-lg-4">
-        <x-daisy::ui.layout.card title="Colonne 3">Contenu 3</x-daisy::ui.layout.card>
-    </div>
-</x-daisy::ui.layout.grid-layout>
+    <x-daisy::docs.sections.example name="grid-layout">
+        <x-slot:preview>
+            <x-daisy::ui.layout.grid-layout>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <x-daisy::ui.layout.card title="Colonne 1">
+                        <p>Contenu de la première colonne</p>
+                    </x-daisy::ui.layout.card>
                 </div>
-            </div>
-            <input type="radio" name="base-example-grid-layout" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '<x-daisy::ui.layout.grid-layout>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <x-daisy::ui.layout.card title="Colonne 2">
+                        <p>Contenu de la deuxième colonne</p>
+                    </x-daisy::ui.layout.card>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <x-daisy::ui.layout.card title="Colonne 3">
+                        <p>Contenu de la troisième colonne</p>
+                    </x-daisy::ui.layout.card>
+                </div>
+            </x-daisy::ui.layout.grid-layout>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = '<x-daisy::ui.layout.grid-layout>
     <div class="col-12 col-md-6 col-lg-4">
-        <x-daisy::ui.layout.card title="Colonne 1">Contenu 1</x-daisy::ui.layout.card>
+        <x-daisy::ui.layout.card title="Colonne 1">
+            <p>Contenu de la première colonne</p>
+        </x-daisy::ui.layout.card>
     </div>
     <div class="col-12 col-md-6 col-lg-4">
-        <x-daisy::ui.layout.card title="Colonne 2">Contenu 2</x-daisy::ui.layout.card>
+        <x-daisy::ui.layout.card title="Colonne 2">
+            <p>Contenu de la deuxième colonne</p>
+        </x-daisy::ui.layout.card>
     </div>
     <div class="col-12 col-md-6 col-lg-4">
-        <x-daisy::ui.layout.card title="Colonne 3">Contenu 3</x-daisy::ui.layout.card>
+        <x-daisy::ui.layout.card title="Colonne 3">
+            <p>Contenu de la troisième colonne</p>
+        </x-daisy::ui.layout.card>
     </div>
 </x-daisy::ui.layout.grid-layout>';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="300px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

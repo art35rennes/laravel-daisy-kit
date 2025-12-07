@@ -332,7 +332,7 @@ describe('Changelog Components Rendering', function () {
             expect($html)
                 ->toContain('changelog-container')
                 ->toContain('changelog-toolbar')
-                ->toContain('Get template');
+                ->toContain(__('changelog.cta_get_template'));
         });
 
         it('renders empty state when no versions', function () {

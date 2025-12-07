@@ -108,7 +108,7 @@ describe('Communication Components Browser Tests', function () {
 
     describe('Notification Center', function () {
         it('renders notification-center with module attribute', function () {
-            $html = view('daisy::templates.notification-center', [
+            $html = view('daisy::templates.communication.notification-center', [
                 'notifications' => [],
                 'unreadCount' => 0,
             ])->render();
@@ -121,7 +121,7 @@ describe('Communication Components Browser Tests', function () {
         });
 
         it('renders notification-center with WebSocket configuration', function () {
-            $html = view('daisy::templates.notification-center', [
+            $html = view('daisy::templates.communication.notification-center', [
                 'notifications' => [],
                 'unreadCount' => 0,
                 'useWebSockets' => true,
@@ -142,7 +142,7 @@ describe('Communication Components Browser Tests', function () {
                 'avatar' => '/img/avatar.jpg',
             ];
 
-            $html = view('daisy::templates.chat', [
+            $html = view('daisy::templates.communication.chat', [
                 'conversation' => $conversation,
                 'messages' => [],
                 'currentUserId' => 1,
@@ -161,7 +161,7 @@ describe('Communication Components Browser Tests', function () {
                 ['id' => 1, 'name' => 'John'],
             ];
 
-            $html = view('daisy::templates.chat', [
+            $html = view('daisy::templates.communication.chat', [
                 'conversations' => $conversations,
                 'showSidebar' => true,
             ])->render();
@@ -197,7 +197,7 @@ describe('Communication Components Browser Tests', function () {
 
     describe('Data Attributes', function () {
         it('passes correct data attributes to notification components', function () {
-            $html = view('daisy::templates.notification-center', [
+            $html = view('daisy::templates.communication.notification-center', [
                 'notifications' => [],
                 'unreadCount' => 0,
                 'useWebSockets' => false,

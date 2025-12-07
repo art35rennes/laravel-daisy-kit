@@ -9,6 +9,7 @@
     'items' => [],
     'current' => null,
     'searchable' => true,
+    'hideMarker' => true,
 ])
 
 @php
@@ -29,30 +30,38 @@
     };
 
     $renderItems = function (array $nodes, int $level = 0) use (&$renderItems, $isActive, $hasActive) {
-        echo '<ul class="menu '.($level === 0 ? 'menu-sm' : 'menu-xs').'">';
+        $html = '<ul class="menu '.($level === 0 ? 'menu-sm' : 'menu-xs').'">';
         foreach ($nodes as $node) {
             $label = (string)($node['label'] ?? '');
             $href = $node['href'] ?? null;
             $children = $node['children'] ?? [];
             $active = $isActive($href);
-            echo '<li>';
+            $html .= '<li>';
             if (!empty($children)) {
                 $open = $hasActive($node) ? ' open' : '';
-                echo "<details$open>";
-                echo '<summary class="opacity-70">'.e($label).'</summary>';
-                $renderItems($children, $level + 1);
-                echo '</details>';
+                $isOpen = !empty($open);
+                $html .= "<details$open>";
+                $html .= '<summary class="opacity-70 w-full flex justify-between items-center list-none [&::-webkit-details-marker]:hidden [&::marker]:hidden [&::-webkit-details-marker]:hidden">';
+                $html .= '<span>'.e($label).'</span>';
+                $rotateClass = $isOpen ? 'rotate-180' : '';
+                $html .= '<span class="shrink-0 transition-transform '.$rotateClass.'">';
+                $html .= view('daisy::components.ui.advanced.icon', ['name' => 'chevron-down', 'size' => 'xs'])->render();
+                $html .= '</span>';
+                $html .= '</summary>';
+                $html .= $renderItems($children, $level + 1);
+                $html .= '</details>';
             } else {
                 // Feuille sans enfants
                 if ($href) {
-                    echo '<a class="'.($active ? 'menu-active font-semibold' : '').'" href="'.e($href).'">'.e($label).'</a>';
+                    $html .= '<a class="'.($active ? 'menu-active font-semibold' : '').'" href="'.e($href).'">'.e($label).'</a>';
                 } else {
-                    echo '<span class="opacity-70">'.e($label).'</span>';
+                    $html .= '<span class="opacity-70">'.e($label).'</span>';
                 }
             }
-            echo '</li>';
+            $html .= '</li>';
         }
-        echo '</ul>';
+        $html .= '</ul>';
+        return $html;
     };
 @endphp
 
@@ -74,5 +83,28 @@
             {!! $renderItems($items, 0) !!}
         </div>
     </nav>
+    <style>
+        [data-sidebar-menu] details[open] > summary > span:last-child {
+            transform: rotate(180deg);
+        }
+    </style>
+    @if($hideMarker)
+        <style>
+            [data-sidebar-menu] details > summary {
+                list-style: none !important;
+                padding-left: 0 !important;
+            }
+            [data-sidebar-menu] details > summary::-webkit-details-marker,
+            [data-sidebar-menu] details > summary::marker,
+            [data-sidebar-menu] details > summary::before {
+                display: none !important;
+                content: '' !important;
+                width: 0 !important;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+        </style>
+    @endif
 </aside>
 

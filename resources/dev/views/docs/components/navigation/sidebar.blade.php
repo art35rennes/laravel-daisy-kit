@@ -1,124 +1,137 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'navigation';
+    $name = 'sidebar';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'variants', 'label' => 'Variantes'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('navigation', 'sidebar');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'variants', 'label' => 'Variantes'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Sidebar" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Barre latérale" 
+    category="navigation" 
+    name="sidebar"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Barre latérale" 
+            subtitle="Barre latérale de navigation."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Sidebar</h1>
-        <p>Barre latérale de navigation.</p>
-    </section>
+    <x-daisy::docs.sections.example name="sidebar">
+        <x-slot:preview>
+            @php
+                $items = [
+                    [
+                        'label' => 'Navigation',
+                        'items' => [
+                            ['label' => 'Dashboard', 'href' => '#', 'icon' => 'house'],
+                            ['label' => 'Utilisateurs', 'href' => '#', 'icon' => 'people'],
+                            ['label' => 'Paramètres', 'href' => '#', 'icon' => 'gear'],
+                        ],
+                    ],
+                ];
+            @endphp
+            <div class="h-64 border border-base-300 rounded-box overflow-hidden">
+                <x-daisy::ui.navigation.sidebar :items="$items" brand="Mon App" />
+            </div>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = '@php
+$items = [
+    [
+        "label" => "Navigation",
+        "items" => [
+            ["label" => "Dashboard", "href" => "#", "icon" => "house"],
+            ["label" => "Utilisateurs", "href" => "#", "icon" => "people"],
+            ["label" => "Paramètres", "href" => "#", "icon" => "gear"]
+        ]
+    ]
+];
+@endphp
+<x-daisy::ui.navigation.sidebar :items="$items" brand="Mon App" />';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="250px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-sidebar" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
+    <x-daisy::docs.sections.variants name="sidebar">
+        <x-slot:preview>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm font-semibold mb-2">Variants de largeur</p>
                     @php
-$items = [
-    ["label" => "Dashboard", "href" => "/", "icon" => "house"],
-    ["label" => "Utilisateurs", "href" => "/users", "icon" => "people"],
-    ["label" => "Paramètres", "href" => "/settings", "icon" => "gear"]
-];
-@endphp
-<x-daisy::ui.navigation.sidebar :items="$items" />
+                        $items = [
+                            [
+                                'label' => 'Menu',
+                                'items' => [
+                                    ['label' => 'Item 1', 'href' => '#', 'icon' => 'house'],
+                                ],
+                            ],
+                        ];
+                    @endphp
+                    <div class="space-y-2">
+                        <div class="h-32 border border-base-300 rounded-box overflow-hidden">
+                            <x-daisy::ui.navigation.sidebar :items="$items" variant="slim" brand="Slim" />
+                        </div>
+                        <div class="h-32 border border-base-300 rounded-box overflow-hidden">
+                            <x-daisy::ui.navigation.sidebar :items="$items" variant="wide" brand="Wide" />
+                        </div>
+                    </div>
                 </div>
             </div>
-            <input type="radio" name="base-example-sidebar" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '@php
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $variantsCode = '@php
 $items = [
-    ["label" => "Dashboard", "href" => "/", "icon" => "house"],
-    ["label" => "Utilisateurs", "href" => "/users", "icon" => "people"],
-    ["label" => "Paramètres", "href" => "/settings", "icon" => "gear"]
+    [
+        "label" => "Menu",
+        "items" => [
+            ["label" => "Item 1", "href" => "#", "icon" => "house"]
+        ]
+    ]
 ];
 @endphp
-<x-daisy::ui.navigation.sidebar :items="$items" />';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
 
-    <section id="variants" class="mt-10">
-        <h2>Variantes</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="variants-example-sidebar" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose flex flex-wrap items-center gap-3">
-                    <x-daisy::ui.navigation.sidebar variant="outline">Outline</x-daisy::ui.navigation.sidebar>
-                    <x-daisy::ui.navigation.sidebar variant="ghost">Ghost</x-daisy::ui.navigation.sidebar>
-                </div>
-            </div>
-            <input type="radio" name="variants-example-sidebar" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $variantsCode = '&lt;x-daisy::ui.navigation.sidebar variant=&quot;outline&quot;&gt;Outline&lt;/x-daisy::ui.navigation.sidebar&gt;
-&lt;x-daisy::ui.navigation.sidebar variant=&quot;ghost&quot;&gt;Ghost&lt;/x-daisy::ui.navigation.sidebar&gt;';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$variantsCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+{{-- Slim (icônes uniquement) --}}
+<x-daisy::ui.navigation.sidebar :items="$items" variant="slim" />
+
+{{-- Wide (largeur fixe) --}}
+<x-daisy::ui.navigation.sidebar :items="$items" variant="wide" />';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$variantsCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="300px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.variants>
+
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

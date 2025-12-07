@@ -7,7 +7,7 @@
 
 <x-daisy::layout.navbar-layout title="Formulaire à onglets">
     <div class="max-w-4xl mx-auto">
-        @include('daisy::templates.form-with-tabs', [
+        @include('daisy::templates.form.form-with-tabs', [
             'title' => 'Modifier le profil',
             'action' => '#',
             'method' => 'POST',

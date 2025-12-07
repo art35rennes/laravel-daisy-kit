@@ -1,95 +1,69 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'layout';
+    $name = 'crud-layout';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('layout', 'crud-layout');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Crud Layout" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="CRUD Layout" 
+    category="layout" 
+    name="crud-layout"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="CRUD Layout" 
+            subtitle="Layout structuré pour les formulaires CRUD avec sections et actions."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Crud Layout</h1>
-        <p>Composant compatible daisyUI v5 et Tailwind CSS v4.</p>
-    </section>
-
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-crud-layout" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.layout.crud-layout>
+    <x-daisy::docs.sections.example name="crud-layout">
+        <x-slot:preview>
+            <x-daisy::ui.layout.crud-layout>
+                <x-daisy::ui.layout.crud-section title="Informations générales" description="Détails de base">
+                    <x-daisy::ui.inputs.input name="name" placeholder="Nom" />
+                    <x-daisy::ui.inputs.input name="email" type="email" placeholder="Email" />
+                </x-daisy::ui.layout.crud-section>
+                <x-slot:actions>
+                    <x-daisy::ui.inputs.button>Enregistrer</x-daisy::ui.inputs.button>
+                    <x-daisy::ui.inputs.button variant="ghost">Annuler</x-daisy::ui.inputs.button>
+                </x-slot:actions>
+            </x-daisy::ui.layout.crud-layout>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = '<x-daisy::ui.layout.crud-layout>
     <x-daisy::ui.layout.crud-section title="Informations générales" description="Détails de base">
         <x-daisy::ui.inputs.input name="name" placeholder="Nom" />
-        <x-daisy::ui.inputs.input name="email" placeholder="Email" />
+        <x-daisy::ui.inputs.input name="email" type="email" placeholder="Email" />
     </x-daisy::ui.layout.crud-section>
     <x-slot:actions>
         <x-daisy::ui.inputs.button>Enregistrer</x-daisy::ui.inputs.button>
-    </x-slot:actions>
-</x-daisy::ui.layout.crud-layout>
-                </div>
-            </div>
-            <input type="radio" name="base-example-crud-layout" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '<x-daisy::ui.layout.crud-layout>
-    <x-daisy::ui.layout.crud-section title="Informations générales" description="Détails de base">
-        <x-daisy::ui.inputs.input name="name" placeholder="Nom" />
-        <x-daisy::ui.inputs.input name="email" placeholder="Email" />
-    </x-daisy::ui.layout.crud-section>
-    <x-slot:actions>
-        <x-daisy::ui.inputs.button>Enregistrer</x-daisy::ui.inputs.button>
+        <x-daisy::ui.inputs.button variant="ghost">Annuler</x-daisy::ui.inputs.button>
     </x-slot:actions>
 </x-daisy::ui.layout.crud-layout>';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="300px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

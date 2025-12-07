@@ -35,20 +35,98 @@ class DocsHelper
     }
 
     /**
-     * Retourne la liste de props pour un composant donné.
+     * Génère la navigation pour les templates à partir du manifest templates.json.
+     *
+     * @return array<int, array<string,mixed>>
+     */
+    public static function getTemplateNavigationItems(string $prefix = 'docs'): array
+    {
+        $manifest = self::readTemplatesManifest();
+        $templates = $manifest['templates'] ?? [];
+        $grouped = [];
+
+        foreach ($templates as $template) {
+            $category = (string) ($template['category'] ?? 'misc');
+            $name = (string) ($template['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+
+            $categoryInfo = self::getCategoryInfo($category, $manifest);
+            $grouped[$category]['label'] = $categoryInfo['label'] ?? self::labelize($category);
+            $grouped[$category]['children'] ??= [];
+            $grouped[$category]['children'][] = [
+                'label' => $template['label'] ?? self::labelize($name),
+                'href' => '/'.trim($prefix, '/').'/templates/'.$category.'/'.$name,
+            ];
+        }
+
+        // Ordonner selon l'ordre des catégories du manifest si présent
+        $orderedCategories = array_column($manifest['categories'] ?? [], 'id');
+        $ordered = [];
+        foreach ($orderedCategories as $catId) {
+            if (isset($grouped[$catId])) {
+                $ordered[$catId] = $grouped[$catId];
+            }
+        }
+        foreach ($grouped as $catId => $data) {
+            if (! isset($ordered[$catId])) {
+                $ordered[$catId] = $data;
+            }
+        }
+
+        return array_values($ordered);
+    }
+
+    /**
+     * Retourne la liste de props pour un composant donné (noms simples, pour compatibilité).
      *
      * @return array<int,string>
      */
     public static function getComponentProps(string $category, string $name): array
     {
+        $props = self::getComponentPropsDetailed($category, $name);
+
+        return array_column($props, 'name');
+    }
+
+    /**
+     * Retourne les props détaillées avec type, default, values, description.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getComponentPropsDetailed(string $category, string $name): array
+    {
+        return ComponentPropsParser::parseComponent($category, $name);
+    }
+
+    /**
+     * Retourne les composants groupés par catégorie avec leurs métadonnées.
+     *
+     * @return array<string, array<string,mixed>>
+     */
+    public static function getComponentsByCategory(string $prefix = 'docs'): array
+    {
         $manifest = self::readManifest();
-        foreach ($manifest['components'] ?? [] as $c) {
-            if (($c['category'] ?? '') === $category && ($c['name'] ?? '') === $name) {
-                return array_values($c['props'] ?? []);
+        $grouped = [];
+
+        foreach ($manifest['components'] ?? [] as $component) {
+            $category = (string) ($component['category'] ?? 'misc');
+            $name = (string) ($component['name'] ?? '');
+            if ($name === '') {
+                continue;
             }
+
+            $grouped[$category]['label'] = self::labelize($category);
+            $grouped[$category]['components'] ??= [];
+            $grouped[$category]['components'][] = array_merge($component, [
+                'href' => '/'.trim($prefix, '/').'/'.$category.'/'.$name,
+            ]);
         }
 
-        return [];
+        ksort($grouped);
+
+        return $grouped;
     }
 
     /**

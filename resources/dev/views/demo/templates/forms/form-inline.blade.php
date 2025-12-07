@@ -21,7 +21,7 @@
             <p class="text-base-content/70">Exemple de formulaire de filtres avec tokens actifs et panel avancé</p>
         </div>
 
-        @include('daisy::templates.form-inline', [
+        @include('daisy::templates.form.form-inline', [
             'action' => route('templates.forms.inline'),
             'method' => 'GET',
             'size' => 'sm',

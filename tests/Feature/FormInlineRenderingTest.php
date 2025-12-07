@@ -1,7 +1,7 @@
 <?php
 
 it('renders form inline with GET method without csrf', function () {
-    $view = view('daisy::templates.form-inline', [
+    $view = view('daisy::templates.form.form-inline', [
         'action' => '/search',
         'method' => 'GET',
     ]);
@@ -15,7 +15,7 @@ it('renders form inline with GET method without csrf', function () {
 });
 
 it('renders form inline with POST method with csrf and csrf keeper', function () {
-    $view = view('daisy::templates.form-inline', [
+    $view = view('daisy::templates.form.form-inline', [
         'action' => '/search',
         'method' => 'POST',
     ]);
@@ -32,7 +32,7 @@ it('renders form inline with POST method with csrf and csrf keeper', function ()
 });
 
 it('displays active filter tokens with clear buttons for backend params', function () {
-    $view = view('daisy::templates.form-inline', [
+    $view = view('daisy::templates.form.form-inline', [
         'activeFilters' => [
             ['label' => 'Statut', 'value' => 'Actif', 'param' => 'status'],
             ['label' => 'Type', 'value' => 'Premium', 'param' => 'type'],
@@ -54,7 +54,7 @@ it('displays active filter tokens with clear buttons for backend params', functi
 });
 
 it('shows advanced filters drawer when enabled', function () {
-    $view = view('daisy::templates.form-inline', [
+    $view = view('daisy::templates.form.form-inline', [
         'showAdvanced' => true,
         'advancedTitle' => 'Filtres avancés',
         'filters' => '<input type="text" name="search" />',

@@ -1,99 +1,76 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'overlay';
+    $name = 'drawer';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('overlay', 'drawer');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Drawer" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Tiroir" 
+    category="overlay" 
+    name="drawer"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Tiroir" 
+            subtitle="Tiroir latéral pour la navigation."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Drawer</h1>
-        <p>Tiroir latéral pour la navigation.</p>
-    </section>
-
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-drawer" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.overlay.drawer id="nav-drawer">
+    <x-daisy::docs.sections.example name="drawer">
+        <x-slot:preview>
+            <x-daisy::ui.overlay.drawer id="nav-drawer">
+                <x-slot:content>
+                    <label for="nav-drawer" class="btn btn-primary drawer-button">Ouvrir le tiroir</label>
+                    <h1 class="mt-4">Contenu principal</h1>
+                </x-slot:content>
+                <x-slot:side>
+                    <ul class="menu p-4 w-80 min-h-full bg-base-200">
+                        <li><a>Accueil</a></li>
+                        <li><a>Profil</a></li>
+                        <li><a>Paramètres</a></li>
+                    </ul>
+                </x-slot:side>
+            </x-daisy::ui.overlay.drawer>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = '<x-daisy::ui.overlay.drawer id="nav-drawer">
     <x-slot:content>
+        <label for="nav-drawer" class="btn btn-primary drawer-button">
+            Ouvrir le tiroir
+        </label>
         <h1>Contenu principal</h1>
     </x-slot:content>
     <x-slot:side>
-        <ul class="menu">
-            <li><a>Accueil</a></li>
-            <li><a>Profil</a></li>
-        </ul>
-    </x-slot:side>
-</x-daisy::ui.overlay.drawer>
-                </div>
-            </div>
-            <input type="radio" name="base-example-drawer" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '<x-daisy::ui.overlay.drawer id="nav-drawer">
-    <x-slot:content>
-        <h1>Contenu principal</h1>
-    </x-slot:content>
-    <x-slot:side>
-        <ul class="menu">
+        <ul class="menu p-4 w-80 min-h-full bg-base-200">
             <li><a>Accueil</a></li>
             <li><a>Profil</a></li>
         </ul>
     </x-slot:side>
 </x-daisy::ui.overlay.drawer>';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="250px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

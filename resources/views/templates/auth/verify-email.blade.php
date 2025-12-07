@@ -19,14 +19,14 @@
                 </div>
             @endisset
 
-            <h1 class="text-2xl font-semibold">{{ __($title) }}</h1>
-            <p class="text-base-content/80">{{ __($message) }}</p>
+            <h1 class="text-2xl font-semibold">@lang($title)</h1>
+            <p class="text-base-content/80">@lang($message)</p>
 
             <div class="flex items-center justify-center">
                 <form action="{{ $resendUrl }}" method="POST">
                     @csrf
                     <x-daisy::ui.inputs.button type="submit" variant="solid">
-                        {{ __($resendButtonText) }}
+                        @lang($resendButtonText)
                     </x-daisy::ui.inputs.button>
                 </form>
             </div>
@@ -35,7 +35,7 @@
                 <form action="{{ $logoutUrl }}" method="POST" class="pt-2">
                     @csrf
                     <x-daisy::ui.inputs.button type="submit" variant="link">
-                        {{ __($logoutText) }}
+                        @lang($logoutText)
                     </x-daisy::ui.inputs.button>
                 </form>
             @endif

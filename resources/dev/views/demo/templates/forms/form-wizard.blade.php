@@ -8,7 +8,7 @@
             $summary = view('daisy-dev::demo.templates.forms.partials.wizard-summary')->render();
         @endphp
 
-        @include('daisy::templates.form-wizard', [
+        @include('daisy::templates.form.form-wizard', [
             'title' => 'Création de compte',
             'action' => '#',
             'method' => 'POST',

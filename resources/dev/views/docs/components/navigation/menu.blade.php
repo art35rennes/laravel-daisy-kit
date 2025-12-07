@@ -1,118 +1,131 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'navigation';
+    $name = 'menu';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'variants', 'label' => 'Variantes'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('navigation', 'menu');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'variants', 'label' => 'Variantes'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Menu" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Menu" 
+    category="navigation" 
+    name="menu"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Menu" 
+            subtitle="Menu de navigation vertical ou horizontal."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Menu</h1>
-        <p>Menu de navigation vertical ou horizontal.</p>
-    </section>
-
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-menu" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.navigation.menu>
-    <li><a href="/dashboard">Tableau de bord</a></li>
-    <li><a href="/users">Utilisateurs</a></li>
-    <li><a href="/settings">Paramètres</a></li>
-</x-daisy::ui.navigation.menu>
-                </div>
-            </div>
-            <input type="radio" name="base-example-menu" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '<x-daisy::ui.navigation.menu>
+    <x-daisy::docs.sections.example name="menu">
+        <x-slot:preview>
+            <x-daisy::ui.navigation.menu>
+                <li><a href="/dashboard">Tableau de bord</a></li>
+                <li><a href="/users">Utilisateurs</a></li>
+                <li><a href="/settings">Paramètres</a></li>
+            </x-daisy::ui.navigation.menu>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = '<x-daisy::ui.navigation.menu>
     <li><a href="/dashboard">Tableau de bord</a></li>
     <li><a href="/users">Utilisateurs</a></li>
     <li><a href="/settings">Paramètres</a></li>
 </x-daisy::ui.navigation.menu>';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="200px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    <section id="variants" class="mt-10">
-        <h2>Variantes</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="variants-example-menu" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose flex flex-wrap items-center gap-3">
-                    <x-daisy::ui.navigation.menu size="sm">Small</x-daisy::ui.navigation.menu>
-                    <x-daisy::ui.navigation.menu size="lg">Large</x-daisy::ui.navigation.menu>
+    <x-daisy::docs.sections.variants name="menu">
+        <x-slot:preview>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm font-semibold mb-2">Vertical (par défaut)</p>
+                    <x-daisy::ui.navigation.menu class="bg-base-200 rounded-box w-56">
+                        <li><a>Item 1</a></li>
+                        <li><a>Item 2</a></li>
+                        <li><a>Item 3</a></li>
+                    </x-daisy::ui.navigation.menu>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold mb-2">Horizontal</p>
+                    <x-daisy::ui.navigation.menu horizontal class="bg-base-200 rounded-box">
+                        <li><a>Item 1</a></li>
+                        <li><a>Item 2</a></li>
+                        <li><a>Item 3</a></li>
+                    </x-daisy::ui.navigation.menu>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold mb-2">Tailles</p>
+                    <div class="space-y-2">
+                        <x-daisy::ui.navigation.menu size="xs" class="bg-base-200 rounded-box w-56">
+                            <li><a>Extra Small</a></li>
+                        </x-daisy::ui.navigation.menu>
+                        <x-daisy::ui.navigation.menu size="sm" class="bg-base-200 rounded-box w-56">
+                            <li><a>Small</a></li>
+                        </x-daisy::ui.navigation.menu>
+                        <x-daisy::ui.navigation.menu size="lg" class="bg-base-200 rounded-box w-56">
+                            <li><a>Large</a></li>
+                        </x-daisy::ui.navigation.menu>
+                    </div>
                 </div>
             </div>
-            <input type="radio" name="variants-example-menu" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $variantsCode = '&lt;x-daisy::ui.navigation.menu size=&quot;sm&quot;&gt;Small&lt;/x-daisy::ui.navigation.menu&gt;
-&lt;x-daisy::ui.navigation.menu size=&quot;lg&quot;&gt;Large&lt;/x-daisy::ui.navigation.menu&gt;';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$variantsCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $variantsCode = '{{-- Vertical (par défaut) --}}
+<x-daisy::ui.navigation.menu>
+    <li><a>Item 1</a></li>
+    <li><a>Item 2</a></li>
+</x-daisy::ui.navigation.menu>
+
+{{-- Horizontal --}}
+<x-daisy::ui.navigation.menu horizontal>
+    <li><a>Item 1</a></li>
+    <li><a>Item 2</a></li>
+</x-daisy::ui.navigation.menu>
+
+{{-- Tailles --}}
+<x-daisy::ui.navigation.menu size="sm">
+    <li><a>Small</a></li>
+</x-daisy::ui.navigation.menu>
+<x-daisy::ui.navigation.menu size="lg">
+    <li><a>Large</a></li>
+</x-daisy::ui.navigation.menu>';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$variantsCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="350px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.variants>
+
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

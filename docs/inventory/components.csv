@@ -91,6 +91,7 @@ leaflet,daisy::components.ui.media.leaflet,media,"media, js, async",leaflet,acti
 lightbox,daisy::components.ui.media.lightbox,media,"media, js, async",lightbox,active
 media-gallery,daisy::components.ui.media.media-gallery,media,"media, js, async",media-gallery,active
 breadcrumbs,daisy::components.ui.navigation.breadcrumbs,navigation,navigation,,active
+floating-menu,daisy::components.ui.navigation.floating-menu,navigation,navigation,,active
 menu,daisy::components.ui.navigation.menu,navigation,navigation,,active
 navbar,daisy::components.ui.navigation.navbar,navigation,navigation,,active
 pagination,daisy::components.ui.navigation.pagination,navigation,navigation,,active

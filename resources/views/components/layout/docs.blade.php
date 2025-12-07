@@ -38,7 +38,7 @@
         {{-- Layout principal : Drawer (sidebar gauche responsive) + contenu central + table des matières --}}
         <x-daisy::ui.overlay.drawer :id="$drawerId" :responsiveOpen="'lg'">
             <x-slot:content>
-                <div class="container mx-auto px-4 sm:px-6 pt-6 lg:pt-8">
+                <div class="container mx-auto px-4 sm:px-6 pt-6 lg:pt-8 pb-12">
                     <div class="grid grid-cols-12 gap-6">
                         {{-- Colonne principale : contenu de la documentation (article prose) --}}
                         <div class="col-span-12 lg:col-span-8 xl:col-span-9">
@@ -68,6 +68,11 @@
                 </div>
             </x-slot:side>
         </x-daisy::ui.overlay.drawer>
+
+        {{-- Footer simple avec le nom de l'app --}}
+        <x-daisy::ui.layout.footer :center="true" :bg="'base-200'">
+            <p class="text-sm">{{ config('app.name') }}</p>
+        </x-daisy::ui.layout.footer>
     </div>
 
     {{-- Script d'initialisation du thème : synchronise localStorage, attribut data-theme et contrôles UI --}}

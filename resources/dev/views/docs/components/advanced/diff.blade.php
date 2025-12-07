@@ -1,85 +1,111 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'advanced';
+    $name = 'diff';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('advanced', 'diff');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'variants', 'label' => 'Variantes'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Diff" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Différence" 
+    category="advanced" 
+    name="diff"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Différence" 
+            subtitle="Comparaison côte à côte de deux éléments avec redimensionnement."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Diff</h1>
-        <p>Comparaison côte à côte de deux éléments.</p>
-    </section>
+    <x-daisy::docs.sections.example name="diff">
+        <x-slot:preview>
+            <x-daisy::ui.advanced.diff class="aspect-video">
+                <div class="diff-item-1 bg-primary text-primary-content flex items-center justify-center">
+                    <p class="text-lg font-bold">Version avant</p>
+                </div>
+                <div class="diff-item-2 bg-secondary text-secondary-content flex items-center justify-center">
+                    <p class="text-lg font-bold">Version après</p>
+                </div>
+                <div class="diff-resizer"></div>
+            </x-daisy::ui.advanced.diff>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = '<x-daisy::ui.advanced.diff class="aspect-video">
+    <div class="diff-item-1 bg-primary text-primary-content flex items-center justify-center">
+        <p class="text-lg font-bold">Version avant</p>
+    </div>
+    <div class="diff-item-2 bg-secondary text-secondary-content flex items-center justify-center">
+        <p class="text-lg font-bold">Version après</p>
+    </div>
+    <div class="diff-resizer"></div>
+</x-daisy::ui.advanced.diff>';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="200px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-diff" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.advanced.diff>
-    <div class="diff-item-1">Version avant</div>
-    <div class="diff-item-2">Version après</div>
-</x-daisy::ui.advanced.diff>
+    <x-daisy::docs.sections.variants name="diff">
+        <x-slot:preview>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm font-semibold mb-2">Avec images</p>
+                    <x-daisy::ui.advanced.diff class="aspect-video">
+                        <div class="diff-item-1">
+                            <img src="https://picsum.photos/800/600?random=1" alt="Avant" class="w-full h-full object-cover" />
+                        </div>
+                        <div class="diff-item-2">
+                            <img src="https://picsum.photos/800/600?random=2" alt="Après" class="w-full h-full object-cover" />
+                        </div>
+                        <div class="diff-resizer"></div>
+                    </x-daisy::ui.advanced.diff>
                 </div>
             </div>
-            <input type="radio" name="base-example-diff" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '<x-daisy::ui.advanced.diff>
-    <div class="diff-item-1">Version avant</div>
-    <div class="diff-item-2">Version après</div>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $variantsCode = '<x-daisy::ui.advanced.diff class="aspect-video">
+    <div class="diff-item-1">
+        <img src="..." alt="Avant" class="w-full h-full object-cover" />
+    </div>
+    <div class="diff-item-2">
+        <img src="..." alt="Après" class="w-full h-full object-cover" />
+    </div>
+    <div class="diff-resizer"></div>
 </x-daisy::ui.advanced.diff>';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$variantsCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="250px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.variants>
 
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

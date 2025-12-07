@@ -19,8 +19,8 @@
             @endisset
 
             <div class="text-center space-y-1">
-                <h1 class="text-2xl font-semibold">{{ __($title) }}</h1>
-                <p class="text-base-content/70">{{ __($description) }}</p>
+                <h1 class="text-2xl font-semibold">@lang($title)</h1>
+                <p class="text-base-content/70">@lang($description)</p>
             </div>
 
             @if($emailSent)
@@ -44,7 +44,7 @@
                 </x-daisy::ui.partials.form-field>
 
                 <x-daisy::ui.inputs.button type="submit" variant="solid" class="w-full">
-                    {{ __($submitButtonText) }}
+                    @lang($submitButtonText)
                 </x-daisy::ui.inputs.button>
             </form>
         </div>

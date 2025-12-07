@@ -1,110 +1,104 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'data-display';
+    $name = 'progress';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'variants', 'label' => 'Variantes'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('data-display', 'progress');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'variants', 'label' => 'Variantes'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Progress" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Barre de progression" 
+    category="data-display" 
+    name="progress"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Barre de progression" 
+            subtitle="Barre de progression linéaire."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Progress</h1>
-        <p>Barre de progression linéaire.</p>
-    </section>
+    <x-daisy::docs.sections.example name="progress">
+        <x-slot:preview>
+            <x-daisy::ui.data-display.progress value="75" max="100" />
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = '<x-daisy::ui.data-display.progress value="75" max="100" />';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="200px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-progress" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.data-display.progress value="75" max="100" />
+    <x-daisy::docs.sections.variants name="progress">
+        <x-slot:preview>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm font-semibold mb-2">Couleurs</p>
+                    <div class="space-y-2">
+                        <x-daisy::ui.data-display.progress value="50" max="100" color="primary" />
+                        <x-daisy::ui.data-display.progress value="60" max="100" color="secondary" />
+                        <x-daisy::ui.data-display.progress value="70" max="100" color="accent" />
+                        <x-daisy::ui.data-display.progress value="80" max="100" color="success" />
+                        <x-daisy::ui.data-display.progress value="90" max="100" color="warning" />
+                        <x-daisy::ui.data-display.progress value="100" max="100" color="error" />
+                    </div>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold mb-2">Valeurs</p>
+                    <div class="space-y-2">
+                        <x-daisy::ui.data-display.progress value="0" max="100" />
+                        <x-daisy::ui.data-display.progress value="25" max="100" />
+                        <x-daisy::ui.data-display.progress value="50" max="100" />
+                        <x-daisy::ui.data-display.progress value="75" max="100" />
+                        <x-daisy::ui.data-display.progress value="100" max="100" />
+                    </div>
                 </div>
             </div>
-            <input type="radio" name="base-example-progress" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '<x-daisy::ui.data-display.progress value="75" max="100" />';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $variantsCode = '{{-- Couleurs --}}
+<x-daisy::ui.data-display.progress value="50" max="100" color="primary" />
+<x-daisy::ui.data-display.progress value="70" max="100" color="success" />
+<x-daisy::ui.data-display.progress value="90" max="100" color="error" />
 
-    <section id="variants" class="mt-10">
-        <h2>Variantes</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="variants-example-progress" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose flex flex-wrap items-center gap-3">
-                    <x-daisy::ui.data-display.progress color="primary">Primary</x-daisy::ui.data-display.progress>
-                    <x-daisy::ui.data-display.progress color="secondary">Secondary</x-daisy::ui.data-display.progress>
-                </div>
-            </div>
-            <input type="radio" name="variants-example-progress" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $variantsCode = '&lt;x-daisy::ui.data-display.progress color=&quot;primary&quot;&gt;Primary&lt;/x-daisy::ui.data-display.progress&gt;
-&lt;x-daisy::ui.data-display.progress color=&quot;secondary&quot;&gt;Secondary&lt;/x-daisy::ui.data-display.progress&gt;';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$variantsCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+{{-- Valeurs --}}
+<x-daisy::ui.data-display.progress value="25" max="100" />
+<x-daisy::ui.data-display.progress value="50" max="100" />
+<x-daisy::ui.data-display.progress value="100" max="100" />';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$variantsCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="300px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.variants>
+
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

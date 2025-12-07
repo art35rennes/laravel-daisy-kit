@@ -1,0 +1,21 @@
+@props([
+    'name',
+    'height' => '200px',
+])
+
+<section id="variants" class="mt-10">
+    <h2>Variantes</h2>
+    <div class="tabs tabs-box">
+        <input type="radio" name="variants-example-{{ $name }}" class="tab" aria-label="Preview" checked />
+        <div class="tab-content bg-base-100 p-6">
+            <div class="not-prose">
+                {{ $preview ?? '' }}
+            </div>
+        </div>
+        <input type="radio" name="variants-example-{{ $name }}" class="tab" aria-label="Code" />
+        <div class="tab-content bg-base-100 p-6">
+            {{ $code ?? '' }}
+        </div>
+    </div>
+</section>
+

@@ -1,118 +1,154 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'inputs';
+    $name = 'input';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'variants', 'label' => 'Variantes'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('inputs', 'input');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'variants', 'label' => 'Variantes'],
+        ['id' => 'types', 'label' => 'Types'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Input" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Champ de texte" 
+    category="inputs" 
+    name="input"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Champ de texte" 
+            subtitle="Champ de saisie de texte compatible daisyUI. Supporte différents types et styles."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Input</h1>
-        <p>Champ de saisie de texte compatible daisyUI. Supporte différents types et styles.</p>
-    </section>
+    <x-daisy::docs.sections.example name="input">
+        <x-slot:preview>
+            <x-daisy::ui.inputs.input type="text" name="email" placeholder="votre@email.com" />
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = '<x-daisy::ui.inputs.input type="text" name="email" placeholder="votre@email.com" />';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="200px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-input" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.inputs.input type="text" name="email" placeholder="votre@email.com" />
+    <x-daisy::docs.sections.variants name="input">
+        <x-slot:preview>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm font-semibold mb-2">Couleurs</p>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <x-daisy::ui.inputs.input color="primary" placeholder="Primary" />
+                        <x-daisy::ui.inputs.input color="secondary" placeholder="Secondary" />
+                        <x-daisy::ui.inputs.input color="accent" placeholder="Accent" />
+                        <x-daisy::ui.inputs.input color="info" placeholder="Info" />
+                        <x-daisy::ui.inputs.input color="success" placeholder="Success" />
+                        <x-daisy::ui.inputs.input color="warning" placeholder="Warning" />
+                        <x-daisy::ui.inputs.input color="error" placeholder="Error" />
+                    </div>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold mb-2">Styles</p>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <x-daisy::ui.inputs.input variant="ghost" placeholder="Ghost" />
+                        <x-daisy::ui.inputs.input disabled placeholder="Disabled" />
+                    </div>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold mb-2">Tailles</p>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <x-daisy::ui.inputs.input size="xs" placeholder="Extra Small" />
+                        <x-daisy::ui.inputs.input size="sm" placeholder="Small" />
+                        <x-daisy::ui.inputs.input size="md" placeholder="Medium" />
+                        <x-daisy::ui.inputs.input size="lg" placeholder="Large" />
+                        <x-daisy::ui.inputs.input size="xl" placeholder="Extra Large" />
+                    </div>
                 </div>
             </div>
-            <input type="radio" name="base-example-input" class="tab" aria-label="Code" />
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $variantsCode = '{{-- Couleurs --}}
+<x-daisy::ui.inputs.input color="primary" placeholder="Primary" />
+<x-daisy::ui.inputs.input color="error" placeholder="Error" />
+
+{{-- Styles --}}
+<x-daisy::ui.inputs.input variant="ghost" placeholder="Ghost" />
+<x-daisy::ui.inputs.input disabled placeholder="Disabled" />
+
+{{-- Tailles --}}
+<x-daisy::ui.inputs.input size="xs" placeholder="Extra Small" />
+<x-daisy::ui.inputs.input size="lg" placeholder="Large" />';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$variantsCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="300px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.variants>
+
+    <x-daisy::docs.sections.custom id="types" title="Types d'input">
+        <p class="text-sm text-base-content/70 mb-4">Le composant supporte tous les types HTML natifs.</p>
+        <div class="tabs tabs-box">
+            <input type="radio" name="types-example-input" class="tab" aria-label="Preview" checked />
+            <div class="tab-content bg-base-100 p-6">
+                <div class="space-y-4">
+                    <x-daisy::ui.inputs.input type="email" name="email" placeholder="email@example.com" />
+                    <x-daisy::ui.inputs.input type="password" name="password" placeholder="••••••••" />
+                    <x-daisy::ui.inputs.input type="number" name="age" placeholder="25" />
+                    <x-daisy::ui.inputs.input type="date" name="birthday" />
+                    <x-daisy::ui.inputs.input type="time" name="appointment" />
+                    <x-daisy::ui.inputs.input type="url" name="website" placeholder="https://example.com" />
+                    <x-daisy::ui.inputs.input type="tel" name="phone" placeholder="+33 6 12 34 56 78" />
+                </div>
+            </div>
+            <input type="radio" name="types-example-input" class="tab" aria-label="Code" />
             <div class="tab-content bg-base-100 p-6">
                 @php
-                    $baseCode = '<x-daisy::ui.inputs.input type="text" name="email" placeholder="votre@email.com" />';
+                    $typesCode = '<x-daisy::ui.inputs.input type="email" name="email" placeholder="email@example.com" />
+<x-daisy::ui.inputs.input type="password" name="password" placeholder="••••••••" />
+<x-daisy::ui.inputs.input type="number" name="age" placeholder="25" />
+<x-daisy::ui.inputs.input type="date" name="birthday" />
+<x-daisy::ui.inputs.input type="url" name="website" placeholder="https://example.com" />';
                 @endphp
                 <x-daisy::ui.advanced.code-editor 
                     language="blade" 
-                    :value="$baseCode"
+                    :value="$typesCode"
                     :readonly="true"
                     :showToolbar="false"
                     :showFoldAll="false"
                     :showUnfoldAll="false"
                     :showFormat="false"
                     :showCopy="true"
-                    height="200px"
+                    height="250px"
                 />
             </div>
         </div>
-    </section>
+    </x-daisy::docs.sections.custom>
 
-    <section id="variants" class="mt-10">
-        <h2>Variantes</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="variants-example-input" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose flex flex-wrap items-center gap-3">
-                    <x-daisy::ui.inputs.input color="primary" placeholder="Primary" />
-                    <x-daisy::ui.inputs.input color="secondary" placeholder="Secondary" />
-                    <x-daisy::ui.inputs.input variant="outline" placeholder="Outline" />
-                    <x-daisy::ui.inputs.input variant="ghost" placeholder="Ghost" />
-                    <x-daisy::ui.inputs.input size="sm" placeholder="Small" />
-                    <x-daisy::ui.inputs.input size="lg" placeholder="Large" />
-                </div>
-            </div>
-            <input type="radio" name="variants-example-input" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $variantsCode = '&lt;x-daisy::ui.inputs.input color=&quot;primary&quot; placeholder=&quot;Primary&quot; /&gt;
-&lt;x-daisy::ui.inputs.input color=&quot;secondary&quot; placeholder=&quot;Secondary&quot; /&gt;
-&lt;x-daisy::ui.inputs.input variant=&quot;outline&quot; placeholder=&quot;Outline&quot; /&gt;
-&lt;x-daisy::ui.inputs.input variant=&quot;ghost&quot; placeholder=&quot;Ghost&quot; /&gt;
-&lt;x-daisy::ui.inputs.input size=&quot;sm&quot; placeholder=&quot;Small&quot; /&gt;
-&lt;x-daisy::ui.inputs.input size=&quot;lg&quot; placeholder=&quot;Large&quot; /&gt;';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$variantsCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

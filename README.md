@@ -17,13 +17,6 @@ Cette commande exécute automatiquement toutes les étapes nécessaires dans le 
 1. Nettoyage des caches Laravel (`optimize:clear`)
 2. Génération de l'inventaire des composants
 3. Génération de l'inventaire des templates
-4. Génération des pages de documentation
-5. Compilation des assets (`npm run build`)
-
-Pour forcer la régénération de toutes les pages de documentation (écrase les pages existantes) :
-```bash
-php artisan inventory:update --force
-```
 
 ### Commandes individuelles
 
@@ -46,18 +39,31 @@ Si vous préférez exécuter les commandes individuellement :
    Cette commande scanne tous les templates dans `resources/views/templates/` et génère :
    - `resources/dev/data/templates.json` : Manifeste JSON des templates avec catégories et routes
 
-3. **Générer les pages de documentation** :
+3. **Générer une structure de base pour les pages de documentation** (optionnel) :
    ```bash
    php artisan docs:generate-pages
    ```
-   Cette commande génère les pages de documentation dans `resources/dev/views/docs/components/{category}/{component}.blade.php` à partir du manifeste.
+   Cette commande génère une structure minimale dans `resources/dev/views/docs/components/{category}/{component}.blade.php` à partir du manifeste.
+   
+   **Note importante** : Les pages générées sont des squelettes à compléter manuellement. Il est recommandé d'écrire les pages de documentation directement en utilisant les composants `<x-daisy::docs.page>` et `<x-daisy::docs.sections.*>` pour plus de contrôle et de flexibilité.
 
    Pour forcer la régénération de toutes les pages (écrase les pages existantes) :
    ```bash
    php artisan docs:generate-pages --force
    ```
 
-**Note** : Exécutez toujours `inventory:components` et `inventory:templates` avant `docs:generate-pages` pour garantir que les manifestes sont à jour.
+### Écriture manuelle des pages de documentation
+
+Les pages de documentation doivent être écrites manuellement en utilisant les composants de documentation :
+
+- `<x-daisy::docs.page>` : Composant principal de page
+- `<x-daisy::docs.sections.intro>` : Section introduction
+- `<x-daisy::docs.sections.example>` : Section exemple avec onglets Preview/Code
+- `<x-daisy::docs.sections.variants>` : Section variantes
+- `<x-daisy::docs.sections.api>` : Section API
+- `<x-daisy::docs.sections.custom>` : Section personnalisée
+
+Voir les pages existantes dans `resources/dev/views/docs/components/` pour des exemples.
 
 ## Installation
 

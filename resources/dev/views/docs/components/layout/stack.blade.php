@@ -1,85 +1,125 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'layout';
+    $name = 'stack';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('layout', 'stack');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'variants', 'label' => 'Variantes'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Stack" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Empilement" 
+    category="layout" 
+    name="stack"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Empilement" 
+            subtitle="Empilement d'éléments superposés."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Stack</h1>
-        <p>Empilement d'éléments superposés.</p>
-    </section>
-
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-stack" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.layout.stack>
+    <x-daisy::docs.sections.example name="stack">
+        <x-slot:preview>
+            <x-daisy::ui.layout.stack class="w-64">
+                <div class="bg-primary text-primary-content p-4 rounded-box">Carte 1</div>
+                <div class="bg-secondary text-secondary-content p-4 rounded-box">Carte 2</div>
+                <div class="bg-accent text-accent-content p-4 rounded-box">Carte 3</div>
+            </x-daisy::ui.layout.stack>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = '<x-daisy::ui.layout.stack class="w-64">
     <div class="bg-primary text-primary-content p-4 rounded-box">Carte 1</div>
     <div class="bg-secondary text-secondary-content p-4 rounded-box">Carte 2</div>
-</x-daisy::ui.layout.stack>
+    <div class="bg-accent text-accent-content p-4 rounded-box">Carte 3</div>
+</x-daisy::ui.layout.stack>';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="200px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
+
+    <x-daisy::docs.sections.variants name="stack">
+        <x-slot:preview>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm font-semibold mb-2">Alignements verticaux</p>
+                    <div class="flex gap-4">
+                        <x-daisy::ui.layout.stack alignV="top" class="w-32">
+                            <div class="bg-primary text-primary-content p-2 rounded-box text-xs">Top</div>
+                            <div class="bg-secondary text-secondary-content p-2 rounded-box text-xs">Top</div>
+                        </x-daisy::ui.layout.stack>
+                        <x-daisy::ui.layout.stack alignV="bottom" class="w-32">
+                            <div class="bg-primary text-primary-content p-2 rounded-box text-xs">Bottom</div>
+                            <div class="bg-secondary text-secondary-content p-2 rounded-box text-xs">Bottom</div>
+                        </x-daisy::ui.layout.stack>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold mb-2">Alignements horizontaux</p>
+                    <div class="flex gap-4">
+                        <x-daisy::ui.layout.stack alignH="start" class="w-32">
+                            <div class="bg-primary text-primary-content p-2 rounded-box text-xs">Start</div>
+                            <div class="bg-secondary text-secondary-content p-2 rounded-box text-xs">Start</div>
+                        </x-daisy::ui.layout.stack>
+                        <x-daisy::ui.layout.stack alignH="end" class="w-32">
+                            <div class="bg-primary text-primary-content p-2 rounded-box text-xs">End</div>
+                            <div class="bg-secondary text-secondary-content p-2 rounded-box text-xs">End</div>
+                        </x-daisy::ui.layout.stack>
+                    </div>
                 </div>
             </div>
-            <input type="radio" name="base-example-stack" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '<x-daisy::ui.layout.stack>
-    <div class="bg-primary text-primary-content p-4 rounded-box">Carte 1</div>
-    <div class="bg-secondary text-secondary-content p-4 rounded-box">Carte 2</div>
-</x-daisy::ui.layout.stack>';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $variantsCode = '{{-- Alignements verticaux --}}
+<x-daisy::ui.layout.stack alignV="top">
+    <div class="bg-primary p-2">Top</div>
+</x-daisy::ui.layout.stack>
 
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+<x-daisy::ui.layout.stack alignV="bottom">
+    <div class="bg-primary p-2">Bottom</div>
+</x-daisy::ui.layout.stack>
+
+{{-- Alignements horizontaux --}}
+<x-daisy::ui.layout.stack alignH="start">
+    <div class="bg-primary p-2">Start</div>
+</x-daisy::ui.layout.stack>
+
+<x-daisy::ui.layout.stack alignH="end">
+    <div class="bg-primary p-2">End</div>
+</x-daisy::ui.layout.stack>';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$variantsCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="300px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.variants>
+
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

@@ -7,7 +7,7 @@ use Illuminate\Support\MessageBag;
 it('renders form with tabs by default and backend field for active tab', function () {
     View::share('errors', new MessageBag);
 
-    $view = view('daisy::templates.form-with-tabs', [
+    $view = view('daisy::templates.form.form-with-tabs', [
         'tabs' => [
             ['id' => 'general', 'label' => 'Général'],
             ['id' => 'advanced', 'label' => 'Avancé'],
@@ -30,7 +30,7 @@ it('restores active tab from old input', function () {
     View::share('errors', new MessageBag);
     request()->merge(['_active_tab' => 'advanced']);
 
-    $view = view('daisy::templates.form-with-tabs', [
+    $view = view('daisy::templates.form.form-with-tabs', [
         'tabs' => [
             ['id' => 'general', 'label' => 'Général'],
             ['id' => 'advanced', 'label' => 'Avancé'],
@@ -51,7 +51,7 @@ it('shows error badges on tabs with errors', function () {
 
     View::share('errors', $errors);
 
-    $view = view('daisy::templates.form-with-tabs', [
+    $view = view('daisy::templates.form.form-with-tabs', [
         'tabs' => [
             ['id' => 'general', 'label' => 'Général'],
             ['id' => 'advanced', 'label' => 'Avancé'],

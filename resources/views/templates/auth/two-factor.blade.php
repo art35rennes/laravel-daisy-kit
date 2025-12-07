@@ -23,12 +23,12 @@
             @endisset
 
             <div class="text-center space-y-1">
-                <h1 class="text-2xl font-semibold">{{ __($title) }}</h1>
-                <p class="text-base-content/70">{{ __('auth.two_factor_description') }}</p>
+                <h1 class="text-2xl font-semibold">@lang($title)</h1>
+                <p class="text-base-content/70">@lang('auth.two_factor_description')</p>
             </div>
 
             <x-daisy::ui.feedback.alert color="info" class="shadow-sm">
-                {{ __('auth.two_factor_instructions') }}
+                @lang('auth.two_factor_instructions')
             </x-daisy::ui.feedback.alert>
 
             <form action="{{ $action }}" method="POST" class="space-y-4">
@@ -36,7 +36,7 @@
                 {{-- Two-factor code --}}
                 <div class="space-y-2">
                     <label class="label">
-                        <span class="label-text">{{ __('auth.two_factor_code') }}</span>
+                        <span class="label-text">@lang('auth.two_factor_code')</span>
                         @if($errors->has('code'))
                             <span class="label-text-alt text-error">{{ $errors->first('code') }}</span>
                         @endif
@@ -47,21 +47,21 @@
                                 type="text"
                                 data-otp-digit
                                 class="w-14 h-16 text-center text-3xl font-mono font-semibold {{ $errors->has('code') ? 'input-error' : '' }}"
-                                aria-label="{{ __('auth.two_factor_code') }} {{ $i + 1 }}"
+                                aria-label="@lang('auth.two_factor_code') {{ $i + 1 }}"
                             />
                         @endfor
                     </div>
                 </div>
 
                 <x-daisy::ui.inputs.button type="submit" variant="solid" class="w-full">
-                    {{ __('auth.verify') }}
+                    @lang('auth.verify')
                 </x-daisy::ui.inputs.button>
             </form>
 
             <div class="flex flex-col gap-2">
                 @if($showRecovery && $recoveryUrl !== '#')
                     <p class="text-center text-sm">
-                        <a href="{{ $recoveryUrl }}" class="link link-hover">{{ __('auth.two_factor_recovery') }}</a>
+                        <a href="{{ $recoveryUrl }}" class="link link-hover">@lang('auth.two_factor_recovery')</a>
                     </p>
                 @endif
 
@@ -69,7 +69,7 @@
                     <form action="{{ $logoutUrl }}" method="POST" class="text-center">
                         @csrf
                         <button type="submit" class="link link-hover text-sm">
-                            {{ __('auth.two_factor_logout') }}
+                            @lang('auth.two_factor_logout')
                         </button>
                     </form>
                 @endif

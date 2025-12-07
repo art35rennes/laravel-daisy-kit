@@ -1,82 +1,98 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'inputs';
+    $name = 'color-picker';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('inputs', 'color-picker');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'variants', 'label' => 'Variantes'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Color Picker" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Sélecteur de couleur" 
+    category="inputs" 
+    name="color-picker"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Sélecteur de couleur" 
+            subtitle="Sélecteur de couleur avec support JavaScript."
+            jsModule="color-picker"
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Color Picker</h1>
-        <p>Sélecteur de couleur avec support JavaScript.</p>
-        <div class="alert alert-info mt-4">
-            <span>Ce composant nécessite le module JavaScript <code>color-picker</code>.</span>
-        </div>
-    </section>
+    <x-daisy::docs.sections.example name="color-picker">
+        <x-slot:preview>
+            <x-daisy::ui.inputs.color-picker name="theme-color" value="#3b82f6" />
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = '<x-daisy::ui.inputs.color-picker name="theme-color" value="#3b82f6" />';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="200px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-color-picker" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.inputs.color-picker name="theme-color" value="#3b82f6" />
+    <x-daisy::docs.sections.variants name="color-picker">
+        <x-slot:preview>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm font-semibold mb-2">Couleurs prédéfinies</p>
+                    <div class="space-y-2">
+                        <x-daisy::ui.inputs.color-picker name="c1" value="#3b82f6" />
+                        <x-daisy::ui.inputs.color-picker name="c2" value="#10b981" />
+                        <x-daisy::ui.inputs.color-picker name="c3" value="#f59e0b" />
+                        <x-daisy::ui.inputs.color-picker name="c4" value="#ef4444" />
+                    </div>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold mb-2">Avec label</p>
+                    <div class="space-y-2">
+                        <x-daisy::ui.advanced.label for="color">Couleur du thème</x-daisy::ui.advanced.label>
+                        <x-daisy::ui.inputs.color-picker id="color" name="color" value="#8b5cf6" />
+                    </div>
                 </div>
             </div>
-            <input type="radio" name="base-example-color-picker" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '<x-daisy::ui.inputs.color-picker name="theme-color" value="#3b82f6" />';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $variantsCode = '{{-- Couleurs prédéfinies --}}
+<x-daisy::ui.inputs.color-picker name="c1" value="#3b82f6" />
+<x-daisy::ui.inputs.color-picker name="c2" value="#10b981" />
 
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+{{-- Avec label --}}
+<x-daisy::ui.advanced.label for="color">Couleur du thème</x-daisy::ui.advanced.label>
+<x-daisy::ui.inputs.color-picker id="color" name="color" value="#8b5cf6" />';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$variantsCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="250px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.variants>
+
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

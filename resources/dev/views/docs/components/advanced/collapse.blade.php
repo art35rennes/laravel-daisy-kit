@@ -1,83 +1,110 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'advanced';
+    $name = 'collapse';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('advanced', 'collapse');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'variants', 'label' => 'Variantes'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Collapse" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Repliable" 
+    category="advanced" 
+    name="collapse"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Repliable" 
+            subtitle="Contenu repliable."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Collapse</h1>
-        <p>Contenu repliable.</p>
-    </section>
-
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-collapse" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    <x-daisy::ui.advanced.collapse title="Cliquez pour développer">
-    <p>Contenu masqué qui s'affiche au clic.</p>
-</x-daisy::ui.advanced.collapse>
-                </div>
-            </div>
-            <input type="radio" name="base-example-collapse" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '<x-daisy::ui.advanced.collapse title="Cliquez pour développer">
+    <x-daisy::docs.sections.example name="collapse">
+        <x-slot:preview>
+            <x-daisy::ui.advanced.collapse title="Cliquez pour développer">
+                <p>Contenu masqué qui s'affiche au clic. Vous pouvez mettre n'importe quel contenu ici.</p>
+            </x-daisy::ui.advanced.collapse>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = '<x-daisy::ui.advanced.collapse title="Cliquez pour développer">
     <p>Contenu masqué qui s\'affiche au clic.</p>
 </x-daisy::ui.advanced.collapse>';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="200px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+    <x-daisy::docs.sections.variants name="collapse">
+        <x-slot:preview>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm font-semibold mb-2">Avec icône flèche</p>
+                    <x-daisy::ui.advanced.collapse title="Section avec flèche" icon="arrow">
+                        <p>Contenu avec icône flèche.</p>
+                    </x-daisy::ui.advanced.collapse>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold mb-2">Avec icône plus</p>
+                    <x-daisy::ui.advanced.collapse title="Section avec plus" icon="plus">
+                        <p>Contenu avec icône plus.</p>
+                    </x-daisy::ui.advanced.collapse>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold mb-2">Ouvert par défaut</p>
+                    <x-daisy::ui.advanced.collapse title="Section ouverte" open>
+                        <p>Cette section est ouverte par défaut.</p>
+                    </x-daisy::ui.advanced.collapse>
+                </div>
+            </div>
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $variantsCode = '{{-- Avec icône flèche --}}
+<x-daisy::ui.advanced.collapse title="Section avec flèche" icon="arrow">
+    <p>Contenu avec icône flèche.</p>
+</x-daisy::ui.advanced.collapse>
+
+{{-- Avec icône plus --}}
+<x-daisy::ui.advanced.collapse title="Section avec plus" icon="plus">
+    <p>Contenu avec icône plus.</p>
+</x-daisy::ui.advanced.collapse>
+
+{{-- Ouvert par défaut --}}
+<x-daisy::ui.advanced.collapse title="Section ouverte" open>
+    <p>Cette section est ouverte par défaut.</p>
+</x-daisy::ui.advanced.collapse>';
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$variantsCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="300px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.variants>
+
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

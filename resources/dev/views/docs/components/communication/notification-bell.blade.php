@@ -1,89 +1,81 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'communication';
+    $name = 'notification-bell';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('communication', 'notification-bell');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Notification Bell" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Notification Bell" 
+    category="communication" 
+    name="notification-bell"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Notification Bell" 
+            subtitle="Icône de cloche avec compteur de notifications non lues et liste déroulante."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Notification Bell</h1>
-        <p>Composant compatible daisyUI v5 et Tailwind CSS v4.</p>
-    </section>
-
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-notification-bell" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    @php
+    <x-daisy::docs.sections.example name="notification-bell">
+        <x-slot:preview>
+            @php
+                $notifications = [
+                    [
+                        'id' => 1, 
+                        'type' => 'info', 
+                        'data' => [
+                            'message' => 'Nouveau message', 
+                            'priority' => 'normal', 
+                            'user' => ['name' => 'Alice']
+                        ], 
+                        'read_at' => null, 
+                        'created_at' => '2024-01-15 10:00:00'
+                    ]
+                ];
+            @endphp
+            <x-daisy::ui.communication.notification-bell :notifications="$notifications" unreadCount="1" />
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = '@php
 $notifications = [
-    ["id" => 1, "type" => "info", "data" => ["message" => "Nouveau message", "priority" => "normal", "user" => ["name" => "Alice"]], "read_at" => null, "created_at" => "2024-01-15 10:00:00"]
-];
-@endphp
-<x-daisy::ui.communication.notification-bell :notifications="$notifications" unreadCount="1" />
-                </div>
-            </div>
-            <input type="radio" name="base-example-notification-bell" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '@php
-$notifications = [
-    ["id" => 1, "type" => "info", "data" => ["message" => "Nouveau message", "priority" => "normal", "user" => ["name" => "Alice"]], "read_at" => null, "created_at" => "2024-01-15 10:00:00"]
+    [
+        "id" => 1, 
+        "type" => "info", 
+        "data" => [
+            "message" => "Nouveau message", 
+            "priority" => "normal", 
+            "user" => ["name" => "Alice"]
+        ], 
+        "read_at" => null, 
+        "created_at" => "2024-01-15 10:00:00"
+    ]
 ];
 @endphp
 <x-daisy::ui.communication.notification-bell :notifications="$notifications" unreadCount="1" />';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="300px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

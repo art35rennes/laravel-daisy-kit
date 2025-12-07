@@ -1,7 +1,7 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $navItems = DocsHelper::getTemplateNavigationItems($prefix);
     $templatesByCategory = DocsHelper::getTemplatesByCategory();
     $sections = array_map(function ($categoryId) use ($templatesByCategory) {
         $category = $templatesByCategory[$categoryId]['category'] ?? null;
@@ -59,14 +59,19 @@
                                 <div class="text-xs text-base-content/60 mb-3 break-words">
                                     @if($template['type'] === 'reusable')
                                         <p class="mb-1"><strong>Usage :</strong> Composant Blade ou vue</p>
-                                        <code class="text-xs break-words break-all">@if(isset($template['component']))&lt;x-daisy::{{ str_replace('daisy::', '', $template['component']) }}&gt;@endif</code>
+                                        @if(isset($template['component']))
+                                            <code class="text-xs break-words break-all">&lt;x-daisy::{{ str_replace('daisy::', '', $template['component']) }}&gt;</code>
+                                        @endif
                                     @else
                                         <p class="mb-1"><strong>Usage :</strong> Vue à copier/adapter</p>
-                                        <code class="text-xs break-words break-all">view('{{ $template['view'] }}')</code>
+                                        <code class="text-xs break-words break-all">{{ "view('" . ($template['view'] ?? '') . "')" }}</code>
                                     @endif
                                 </div>
                             @endif
                             <div class="card-actions justify-end">
+                                <a href="/{{ $prefix }}/templates/{{ $categoryId }}/{{ $template['name'] }}" class="btn btn-ghost btn-sm">
+                                    Documentation
+                                </a>
                                 @php
                                     $routeName = $template['route'] ?? null;
                                     $hasRoute = $routeName && \Illuminate\Support\Facades\Route::has($routeName);

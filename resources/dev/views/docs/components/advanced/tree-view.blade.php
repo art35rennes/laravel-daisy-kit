@@ -1,88 +1,92 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'advanced';
+    $name = 'tree-view';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('advanced', 'tree-view');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Tree View" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Vue arborescente" 
+    category="advanced" 
+    name="tree-view"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Vue arborescente" 
+            subtitle="Vue arborescente hiérarchique pour afficher des structures de données imbriquées."
+            jsModule="treeview"
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Tree View</h1>
-        <p>Vue arborescente hiérarchique.</p>
-        <div class="alert alert-info mt-4">
-            <span>Ce composant nécessite le module JavaScript <code>treeview</code>.</span>
-        </div>
-    </section>
-
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-tree-view" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    @php
-$data = [["id" => 1, "label" => "Dossier", "children" => [["id" => 2, "label" => "Fichier"]]]];
+    <x-daisy::docs.sections.example name="tree-view">
+        <x-slot:preview>
+            @php
+                $data = [
+                    [
+                        'id' => 1, 
+                        'label' => 'Dossier racine', 
+                        'children' => [
+                            [
+                                'id' => 2, 
+                                'label' => 'Sous-dossier',
+                                'children' => [
+                                    ['id' => 3, 'label' => 'Fichier 1'],
+                                    ['id' => 4, 'label' => 'Fichier 2']
+                                ]
+                            ],
+                            ['id' => 5, 'label' => 'Fichier 3']
+                        ]
+                    ]
+                ];
+            @endphp
+            <x-daisy::ui.advanced.tree-view :data="$data" />
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = <<<'CODE'
+@php
+$data = [
+    [
+        "id" => 1, 
+        "label" => "Dossier racine", 
+        "children" => [
+            [
+                "id" => 2, 
+                "label" => "Sous-dossier",
+                "children" => [
+                    ["id" => 3, "label" => "Fichier 1"],
+                    ["id" => 4, "label" => "Fichier 2"]
+                ]
+            ],
+            ["id" => 5, "label" => "Fichier 3"]
+        ]
+    ]
+];
 @endphp
 <x-daisy::ui.advanced.tree-view :data="$data" />
-                </div>
-            </div>
-            <input type="radio" name="base-example-tree-view" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '@php
-$data = [["id" => 1, "label" => "Dossier", "children" => [["id" => 2, "label" => "Fichier"]]]];
-@endphp
-<x-daisy::ui.advanced.tree-view :data="$data" />';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+CODE;
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="300px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

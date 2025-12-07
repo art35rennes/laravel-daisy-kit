@@ -1,94 +1,68 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'advanced';
+    $name = 'calendar-full';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('advanced', 'calendar-full');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Calendar Full" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Calendrier complet" 
+    category="advanced" 
+    name="calendar-full"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Calendrier complet" 
+            subtitle="Calendrier complet avec gestion d'événements et affichage mensuel."
+            jsModule="calendar-full"
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Calendar Full</h1>
-        <p>Calendrier complet avec gestion d'événements.</p>
-        <div class="alert alert-info mt-4">
-            <span>Ce composant nécessite le module JavaScript <code>calendar-full</code>.</span>
-        </div>
-    </section>
-
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-calendar-full" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    @php
+    <x-daisy::docs.sections.example name="calendar-full">
+        <x-slot:preview>
+            @php
+                $events = [
+                    ['title' => 'Réunion', 'start' => '2024-01-15 10:00'],
+                    ['title' => 'Déjeuner', 'start' => '2024-01-15 12:30'],
+                    ['title' => 'Conférence', 'start' => '2024-01-20 14:00'],
+                ];
+            @endphp
+            <x-daisy::ui.advanced.calendar-full :events="$events" />
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = <<<'CODE'
+@php
 $events = [
     ["title" => "Réunion", "start" => "2024-01-15 10:00"],
-    ["title" => "Déjeuner", "start" => "2024-01-15 12:30"]
+    ["title" => "Déjeuner", "start" => "2024-01-15 12:30"],
+    ["title" => "Conférence", "start" => "2024-01-20 14:00"]
 ];
 @endphp
 <x-daisy::ui.advanced.calendar-full :events="$events" />
-                </div>
-            </div>
-            <input type="radio" name="base-example-calendar-full" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '@php
-$events = [
-    ["title" => "Réunion", "start" => "2024-01-15 10:00"],
-    ["title" => "Déjeuner", "start" => "2024-01-15 12:30"]
-];
-@endphp
-<x-daisy::ui.advanced.calendar-full :events="$events" />';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
+CODE;
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="250px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
 
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

@@ -75,7 +75,12 @@ Standardisation de tous les templates (API Blade générique, props + slots, par
 ### Lot 10 : Standardisation de la documentation
 **Fichier** : `lot-10-standardisation-documentation.md`
 
-Standardisation de la structure des pages de documentation pour les templates **et** les composants UI (une vue Blade dédiée par page de doc, index clairs, navigation cohérente), en s’appuyant si besoin sur les inventaires générés (templates, composants).
+Standardisation de la structure des pages de documentation pour les templates **et** les composants UI (une vue Blade dédiée par page de doc, index clairs, navigation cohérente), en s'appuyant si besoin sur les inventaires générés (templates, composants).
+
+### Lot 11 : Système dynamique sans manifests JSON
+**Fichier** : `lot-11-systeme-dynamique-sans-manifests.md`
+
+Élimination de la dépendance aux manifests JSON statiques au profit d'un système de scan dynamique avec cache Laravel intelligent. Intégration transparente avec `npm run dev` pour un workflow de développement optimisé. Migration progressive avec support du fallback vers les manifests JSON pour garantir la compatibilité.
 
 ## Principes généraux
 

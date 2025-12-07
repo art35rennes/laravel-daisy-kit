@@ -171,7 +171,7 @@
                 if (!container) return;
 
                 const searchInput = document.querySelector('[data-changelog-search]');
-                const filterInputs = document.querySelectorAll('input[name="changelog-filter"]');
+                const filterInputs = document.querySelectorAll('input[name=\"changelog-filter\"]');
 
                 function filterChangelog() {
                     const searchTerm = searchInput?.value.toLowerCase() || '';

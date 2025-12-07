@@ -1,274 +1,159 @@
 # Lot 8 : Form Builder Avancé (No-Code / Low-Code)
 
-Ce lot vise à créer un constructeur de formulaires visuel (WYSIWYG) inspiré de SurveyJS/GrapeJS, permettant de générer des formulaires dynamiques stockés en JSON, avec une validation côté serveur (Laravel) et une logique conditionnelle (JSONata).
+Ce lot vise à créer un constructeur de formulaires visuel (WYSIWYG) inspiré de SurveyJS/GrapeJS et des bonnes pratiques Vueform, pour générer des formulaires dynamiques stockés en JSON, avec validation côté serveur (Laravel) et logique conditionnelle (JSONata).
 
 ## Objectifs
-- **Interface Drag & Drop** : Palette de composants (inputs, layouts, etc.) vers une zone de canvas.
-- **Non-duplication** : Le builder doit "connaître" les composants DaisyKit existants sans dupliquer leur code HTML/CSS.
-- **Interopérabilité** : Export JSON de la configuration + Génération de règles de validation Laravel (`FormRequest` ou `Validator`).
-- **Logique dynamique** : Support de JSONata pour les événements (`onInit`, `onChange`, `onSubmit`) et la visibilité conditionnelle.
-- **Support des patterns de formulaires** (futur-proof) : prise en charge des modèles de haut niveau (wizard, tabs, inline, simple) via un schéma JSON extensible et un renderer qui réutilise les templates du Lot 3 s’ils sont présents (dépendance souple).
+- **Interface Drag & Drop** : Palette de composants (inputs, layouts, actions) vers un canvas hiérarchique.
+- **Non-duplication** : Le builder “connaît” les composants DaisyKit existants sans dupliquer markup ou styles.
+- **Interopérabilité** : Export JSON versionné + génération de règles Laravel (`FormRequest` / `Validator`).
+- **Logique dynamique** : JSONata pour `onInit`, `onChange`, `onSubmit`, `visibleIf`, `computed`.
+- **Patterns de formulaires** : `wizard | tabs | inline | simple`, avec fallback si les templates Lot 3 sont absents.
+- **Accessibilité et theming** : 100% daisyUI v5 / Tailwind v4, focus/aria, readonly cohérent.
+- **Canvas en grille** : utilisation d’un layout grid (12 colonnes par défaut, gaps configurables) pour un drag & drop précis (rendu type preview : étapes, arbre de sections, formulaire multi-colonnes).
 
-## Architecture Technique
+## 0. Principes directeurs
+- **Single source of truth** : le JSON schema porte props, logique, validation.
+- **Registries contractuels** : `ComponentRegistry`, `TemplateRegistry`, `LogicRegistry` exposent métadonnées typées (props, defaults, contraintes, slots attendus) consommées par Builder, Renderer, ValidationGenerator.
+- **Rendu déterministe** : `FormRenderer` centralise JSON → Blade (patterns + slots), sans duplication UI.
+- **Extensibilité douce** : nouveaux patterns ou composants ajoutables via registries sans toucher le cœur.
+- **Fallback garanti** : si Lot 3 indisponible, rendu “simple” cohérent et message de dégradation gracieux.
 
-### 0. Principes de compatibilité (Future-proof)
-- **Schéma versionné** : tout JSON exporté inclut `schemaVersion` et `template` (p.ex. `wizard|tabs|inline|simple`) pour permettre des évolutions sans casser l’existant.
-- **Dépendance souple avec le Lot 3** : si les templates avancés du Lot 3 sont installés, le renderer les utilise; sinon, il bascule en mode “simple” (fallback) ou rend une alerte de dégradation gracieuse.
-- **Registries extensibles** :
-  - `ComponentRegistry` pour les composants UI atomiques/moléculaires (inputs, layouts).
-  - `TemplateRegistry` pour les patterns de haut niveau (wizard, tabs, inline) décrits par métadonnées (props supportées, structure attendue, mapping vers des templates Blade).
-- **Rendu déterministe** : le mapping JSON → Blade est centralisé dans un `FormRenderer` qui orchestre le rendu (pattern + éléments) sans dupliquer les implementations UI.
+## 1. Schéma JSON (v1.0)
+- Champs requis : `schemaVersion`, `template` (`wizard|tabs|inline|simple`), `settings` (title/action/method), `pattern` (structure dépendante du template), `elements` (par section), `validation`, `logic`.
+- `logic` : `onInit`, `onChange[]`, `onSubmit`, `visibleIf`, `computed` (expressions JSONata stringifiées).
+- Defaults/contraintes : fournis par registries (ex : `wizard.props.linear=false`, `tabs.props.tabsStyle="box"`).
+- **Layout grid** :
+  - Chaque élément peut porter `layout` : `colSpan`, `rowSpan`, `order`, `row`, `col`, `breakpoints` (ex: `{ sm:6, md:6, lg:4, xl:4 }` sur 12 colonnes).
+  - Les sections (steps/tabs/simple) peuvent définir `grid` : `columns` (default 12), `gap` (ex: `4`), `rowGap`, `columnGap`, `align`, `justify`, `stackMobile` (true/false).
+  - Le renderer mappe ces infos vers les classes daisyUI/TW4 (`grid`, `grid-cols-12`, `gap-*`, `col-span-*`, responsive).
 
-### 1. Structure de Données (JSON Schema)
-Le formulaire est décrit par un objet JSON versionné, avec prise en charge des patterns (wizard, tabs, inline, simple).
+## 2. Contrats & registries (PHP)
+- `Contracts\ComponentDefinition` : `type`, `category`, `props` (nom, type, required, default, options, validation), `slots?`, `capabilities` (readonly static/disabled, supportsLogic?).
+- `Contracts\TemplatePattern` : `type`, `props`, `structure` (ex : `steps[].elements[]`), `slots`, `supports` (summary, errors mapping), `bladeMapping` (Lot 3) + `fallback`.
+- `Contracts\LogicHook` : points d’entrée (`onInit`, `onChange`, `onSubmit`, `visibleIf`, `computed`) et règles de validation d’expression.
+- `ComponentRegistry` : recense inputs/layouts/actions, dérive props/slots via `BuilderAware`.
+- `TemplateRegistry` : décrit wizard/tabs/inline/simple, props, slots, mapping Blade, fallback.
+- `LogicRegistry` : référence des hooks disponibles et leurs attentes (payload, contexte).
+- `FormSchemaToValidationRules` : transforme `validation` + contraintes des composants en règles Laravel (inclut required, types, min/max, patterns, optionnalité sous `visibleIf`).
 
-Exemple (wizard) :
-```json
-{
-  "schemaVersion": "1.0",
-  "template": "wizard",
-  "settings": { "title": "Inscription", "action": "/register", "method": "POST" },
-  "pattern": {
-    "type": "wizard",
-    "props": { "linear": true, "allowClickNav": false, "showSummary": true },
-    "steps": [
-      {
-        "key": "profile",
-        "label": "Profil",
-        "icon": "user",
-        "elements": [
-          {
-            "type": "daisy-input",
-            "name": "user_email",
-            "props": { "label": "Email", "type": "email", "required": true }
-          }
-        ]
-      },
-      { "key": "preferences", "label": "Préférences", "elements": [] }
-    ],
-    "summary": { "elements": [] }
-  },
-  "validation": { "user_email": "required|email" },
-  "logic": {
-    "onInit": "true",
-    "onChange": [],
-    "onSubmit": "true"
-  }
-}
-```
+## 3. Renderer (PHP)
+- `FormRenderer` :
+  - Sélection du template (override possible).
+  - Instanciation Blade (Lot 3 si présent, sinon fallback simple).
+  - Injection des slots/sections (`step_{key}`, `tab_{id}`…) et rendu via `ui/*`.
+  - Gestion `mode` et `readonlyStrategy` (fieldset disabled ou rendu statique par type).
+  - Export des meta-infos dataset pour le JS (module, mode, applyLogic).
 
-Exemple (tabs) :
-```json
-{
-  "schemaVersion": "1.0",
-  "template": "tabs",
-  "settings": { "title": "Profil", "action": "/profile", "method": "POST" },
-  "pattern": {
-    "type": "tabs",
-    "props": { "tabsStyle": "box", "tabsPlacement": "top", "highlightErrors": true },
-    "tabs": [
-      { "id": "general", "label": "Général", "elements": [] },
-      { "id": "security", "label": "Sécurité", "elements": [] }
-    ]
-  }
-}
-```
+## 4. Découpage Blade
+- `resources/views/components/ui/advanced/form-viewer.blade.php` : délègue à `FormRenderer`, slots `header/footer/actions`, modes `edit|readonly`.
+- `resources/views/components/ui/advanced/form-builder.blade.php` : layout 3 colonnes (palette/canvas/inspecteur), génère dataset (module, options, endpoints metadata).
+- Utilisation exclusive des composants `ui/*` existants (cards, tabs, steps, alerts, badges, inputs, buttons).
+- Canvas Blade : wrapper grid (`grid`, `grid-cols-12`, `gap-*`) avec dropzones par cellule (overlay) et rendu responsive (stack sur mobile).
 
-### 2. Backend : Registry & Validation
-Pour éviter la duplication, nous créerons un `ComponentRegistry` capable d'inspecter les composants Blade (via Attributs PHP ou fichiers de définition) pour exposer leurs props au Builder. Nous ajoutons un `TemplateRegistry` pour les patterns de haut niveau.
+## 5. Découpage JS
+- `resources/js/modules/form-builder/index.js` :
+  - Orchestration (palette, canvas hiérarchique, inspecteur).
+  - State + undo/redo, sélection contextuelle (pattern/section/élément).
+  - Appels metadata (registries) et persistance (save/load JSON).
+  - Prévisualisation “Run” (readonly/interactive) via FormRenderer côté Blade.
+  - Gestion du layout grid : calcul des positions/colSpan, validation des collisions, auto-stack sur mobile selon `stackMobile`.
+- `resources/js/modules/form-builder/dnd.js` :
+  - Abstraction SortableJS (init, reorder, cross-list), gestion handles, ghost, placeholders, events.
+  - Réutilisable pour d’autres usages (cf. lot générique infra DnD).
+  - Support drop sur cellules de grille (coordonnées, recalcul colSpan), highlighting des zones valides.
+- `resources/js/modules/form-builder/inspector.js` :
+  - Form rendering dynamique des props (types, defaults, validation immédiate).
+  - Éditeur d’expressions JSONata (validation syntaxique basique).
+  - Panneau “Layout” pour colSpan/rowSpan/ordre/breakpoints, avec aperçus rapides.
+- `resources/js/kit/logic-engine.js` :
+  - Wrapper JSONata sécurisé (try/catch, erreurs structurées).
+  - API : `evaluateVisibleIf`, `evaluateComputed`, `runHook`.
+  - Événements `form:*` (ready/change/submit/error), écoute `csrf-keeper:updated`.
+- `resources/js/modules/form-viewer.js` :
+  - Sync mode/readonly, applique logique si `applyLogic=true`.
+  - Émet `form-viewer:change|submit|error`.
 
-- **Interface `BuilderAware`** : Les composants Blade implémenteront cette interface pour définir leurs props éditables.
-- **ValidationGenerator** : Service convertissant le JSON Schema du form en tableau de règles Laravel (`['user_email' => 'required|email']`).
-- **TemplateRegistry** : Catalogue des patterns (`wizard`, `tabs`, `inline`, `simple`) décrivant:
-  - Props supportées et valeurs par défaut (ex: `linear`, `allowClickNav`, `tabsStyle`…).
-  - Structure attendue (ex: `steps[].elements[]`, `tabs[].elements[]`).
-  - Mapping vers les templates Blade du Lot 3 lorsque disponibles (ex: `resources/views/templates/form-wizard.blade.php`), sinon fallback “simple”.
-- **FormRenderer** : Service qui lit `template` et `pattern` puis:
-  - Instancie le template Blade correspondant (Lot 3 si présent).
-  - Injecte les éléments générés dans les slots attendus (`step_{key}`, `tab_{id}`, etc.).
-  - Rend les éléments via les composants `ui/*` existants (Atomic Design respecté).
+## 6. Infrastructure DnD générique (nouveau lot transversal)
+Objectif : factoriser les composants réutilisables autour de SortableJS pour d’autres usages.
+- **Blade utilitaires** (catégorie `ui/utilities/` ou `ui/advanced/` selon besoin) :
+  - `x-daisy::ui.utilities.dnd-area` : zone droppable, expose slots header/body/empty, états hover/disabled.
+  - `x-daisy::ui.utilities.dnd-item` : item draggable avec handle optionnel.
+  - `x-daisy::ui.utilities.dnd-placeholder` : placeholder stylé (daisyUI) pour insertion.
+- **JS** :
+  - `resources/js/modules/dnd-core.js` : initialisation SortableJS, options par défaut (animations, handles, accessibility), hooks d’événements (start/end/add/update/remove), utilitaires pour sérialisation d’ordre.
+  - Réutilisé par `form-builder/dnd.js` et tout autre module nécessitant du tri.
+  - Extensions grid : mapping cell → index, prévention collisions, gestion auto-insertion avec colSpan minimal.
+- **Props/slots génériques** : labels, icônes, disabled, messages vides, états “drop denied”.
 
-### 3. Frontend : Module JS `form-builder`
-- **Librairie DnD** : Utilisation de `SortableJS` pour gérer le drag-and-drop fluide entre la palette et le canvas.
-- **Moteur de Rendu** :
-    - *Canvas* : Rendu des composants via des appels AJAX (pour un rendu fidèle au pixel près) ou mapping JS (plus rapide).
-    - *Preview* : Mode lecture seule exécutant le formulaire final.
-- **Moteur Logique** : Intégration de la librairie `jsonata` (via npm) pour évaluer les expressions en temps réel.
-- **Palette étendue** :
-  - Catégorie “Form Templates” : `wizard`, `tabs`, `inline`, `simple`.
-  - Catégorie “Form Elements” : Inputs, Layouts, Buttons, Hidden.
-- **Édition hiérarchique** :
-  - Mode “Pattern” (choix et props globales).
-  - Mode “Section” (étapes/onglets : add/remove/reorder).
-  - Mode “Élément” (édition des props des inputs/layouts par section).
- - **Initialisation** :
-   - Enregistrement dans `resources/js/kit/index.js` (router `[data-module]`).
-   - Le composant Blade génère `data-module="form-builder"` et ses options via `data-*` (single source of truth).
+## 7. UX du builder (inspirations Vueform)
+- Palette avec recherche/filtre, catégories (templates, inputs, layout, actions, hidden).
+- Canvas hiérarchique : pattern → sections → éléments, avec reorder drag & drop et “click to add”.
+- Inspecteur contextuel : props dynamiques issues des registries, validation inline, defaults visibles.
+- Logic : éditeur JSONata, surlignage des erreurs, vue des dépendances.
+- Prévisualisation “Run” fidèle (reuse FormRenderer), modes edit/readonly.
+- Accessibilité : focus clair, aria-live pour erreurs, dropzones visibles, clavier (reorder via touches si possible).
+- Canvas “grid first” : aperçu multi-colonnes, highlighting des cellules, auto-alignement des champs, support des décors (icônes handle, badge de type) sans bloquer la grille.
 
-## Liste des Tâches
+## 8. Stack JS requise
+- `sortablejs` (DnD)
+- `jsonata` (logic engine)
+- (Optionnel) `ajv` (validation JSON Schema côté UI)
 
-### Phase 1 : Fondations & Registries
-- [ ] Créer l'interface PHP `BuilderAware` et le Trait associé.
-- [ ] Implémenter le `ComponentRegistry` (Inputs, Layouts).
-- [ ] Créer l’`TemplateRegistry` (wizard, tabs, inline, simple) avec métadonnées (props/structure/mapping Blade).
-- [ ] Créer un endpoint API pour récupérer la configuration des composants et des templates (props, types, valeurs par défaut).
- - [ ] Définir les contrats `Contracts\TemplatePattern` et `Contracts\ComponentDefinition` (lisibles par le Builder et le Renderer).
+## 9. Composant Form Viewer (Edit / Readonly)
+- Dépend du `FormRenderer`.
+- Modes :
+  - `edit` : champs interactifs, événements `form-viewer:*`.
+  - `readonly` : stratégie `disabled` (fieldset) ou `static` (texte par type).
+- Props clés : `schema`, `data`, `mode`, `readonlyStrategy`, `applyLogic`, `action`, `method`, `submitText`, `showActions`, `templateOverride`, `module`.
+- Slots : `header`, `footer`, `actions`.
+- Sécurité/CSRF : écoute `csrf-keeper:updated`, pas de PII en clair.
 
-### Phase 2 : UI du Builder (Blade + JS)
-- [ ] Créer le layout 3 colonnes :
-    - **Gauche** : Palette (Catégories : Form Templates, Inputs, Layout, Buttons, Hidden).
-    - **Centre** : Canvas (Zone de drop avec highlighting, structure hiérarchique pattern → sections → éléments).
-    - **Droite** : Inspecteur de propriétés (Pattern/Section/Élément).
-- [ ] Initialiser le module JS `form-builder.js`.
-- [ ] Implémenter le Drag & Drop (Palette → Canvas et tri dans Canvas).
-- [ ] Gérer la sélection (pattern/section/élément) et l’affichage des props associées.
- - [ ] Enregistrer `form-builder` dans `resources/js/kit/index.js` (scan `[data-module]`).
+## 10. Mutualisation
+- PHP : `FormRenderer`, `ComponentRegistry`, `TemplateRegistry`, `LogicRegistry`, `FormSchemaToValidationRules`.
+- JS : `logic-engine`, `dnd-core`, conventions `form:*`.
+- UI : utilisation stricte `ui/*`, i18n partagée `common.*`, `form.*`, `csrf.*`.
+- Fixtures communes : `resources/dev/data/forms/*.json` pour tests/démos.
 
-### Phase 3 : Logique & Données
-- [ ] Étendre le schéma JSON avec `schemaVersion`, `template`, `pattern`.
-- [ ] Implémenter la sauvegarde/chargement du JSON.
-- [ ] Intégrer `jsonata` pour évaluer les champs calculés ou la visibilité (`visibleIf`).
-- [ ] Ajouter l'édition des expressions JSONata dans l'inspecteur (avec validation syntaxique basique).
-- [ ] (Optionnel) Valider le schéma via `ajv` côté UI (cohérence structurelle).
- - [ ] Créer un module mutualisé `resources/js/kit/logic-engine.js` (wrapper JSONata, API commune pour Viewer/Preview).
- - [ ] Définir un bus d’événements et conventions (`form:*`) : `form:ready`, `form:change`, `form:submit`, `form:error`.
- - [ ] Ajouter des fixtures JSON partagées `resources/dev/data/forms/*.json` (wizard/tabs/inline/simple) pour tests/preview.
+## 11. Phases & livrables
+### Phase 1 : Fondations PHP
+- [ ] Contrats `ComponentDefinition`, `TemplatePattern`, `LogicHook`, interface `BuilderAware`.
+- [ ] Registries (component/template/logic) + `FormSchemaToValidationRules`.
+- [ ] Service `FormRenderer` (fallback simple).
+- [ ] Endpoint metadata (components + templates + logic).
 
-### Phase 4 : Intégration Laravel
-- [ ] Créer le service `FormSchemaToValidationRules`.
-- [ ] Créer un composant Blade `<x-daisy-form-renderer :schema="$json" />` capable de :
-    - Détecter `template` et lire `pattern`.
-    - Rendre via les templates du Lot 3 si présents (wizard/tabs/inline), sinon fallback “simple”.
-    - Injecter les éléments dans les slots (`step_{key}`, `tab_{id}`, etc.) et utiliser `ui/*`.
-- [ ] Tests : Vérifier que le JSON généré produit les bonnes règles de validation Laravel.
- - [ ] Mutualiser l’i18n : clés communes `common.submit`, `form.previous`, `form.next`, `form.finish`, `csrf.refreshing`, `csrf.expired`, `advanced_filters`, `clear_filter`.
+### Phase 2 : Infra DnD générique (nouveau lot)
+- [ ] Blade utilitaires `dnd-area`, `dnd-item`, `dnd-placeholder`.
+- [ ] Module JS `dnd-core.js` (SortableJS abstrait).
+- [ ] Intégration de base dans form-builder (palette/canvas).
 
-### Phase 5 : UX & Polish
-- [ ] Highlight des zones de drop (Dropzones).
-- [ ] "Click to add" (Ajout rapide en fin de formulaire).
-- [ ] Support du Undo/Redo.
-- [ ] Prévisualisation (Mode "Run").
-- [ ] Messages de dégradation gracieuce si un pattern avancé est sélectionné mais le Lot 3 n’est pas installé.
- - [ ] Audit accessibilité partagé (focus, aria, `fieldset[disabled]`) entre Viewer et Preview.
+### Phase 3 : UI Builder
+- [ ] Composant Blade `ui/advanced/form-builder`.
+- [ ] Modules JS `form-builder/index.js`, `form-builder/dnd.js`, `form-builder/inspector.js`.
+- [ ] Layout 3 colonnes, palette + canvas + inspecteur, sélection, undo/redo.
+- [ ] Preview “Run” (reuse FormRenderer).
+ - [ ] Canvas grid : dropzones cellule, gestion colSpan/rowSpan, stack mobile, validation de collisions.
 
-## Stack JS Requise
-- `sortablejs` (Drag & Drop)
-- `jsonata` (Logic engine)
-- (Optionnel) `ajv` (Validation JSON Schema côté UI)
+### Phase 4 : Logique & Données
+- [ ] `logic-engine.js`, gestion JSONata, events `form:*`.
+- [ ] Éditeur d’expressions, validation syntaxique, dépendances.
+- [ ] Sauvegarde/chargement JSON, fixtures.
 
-## Composant Form Viewer (Edit / Readonly)
+### Phase 5 : Form Viewer & intégration Laravel
+- [ ] Composant Blade `form-viewer`, module JS associé.
+- [ ] Tests : validation rules, rendu edit/readonly, selection template (Lot 3 présent/absent), logique appliquée.
 
-### But
-Afficher un formulaire généré depuis le JSON Schema du builder en deux modes:
-- `edit`: formulaire interactif (saisie utilisateur).
-- `readonly`: affichage non modifiable (désactivé ou rendu en texte statique).
+### Phase 6 : UX & Polish
+- [ ] Dropzones visibles, click-to-add, messages de dégradation, accessibilité (focus/aria), performances DnD.
+- [ ] Audit A11y partagé Viewer/Preview.
 
-Sans dupliquer la logique UI, le Viewer délègue le rendu au `FormRenderer`, qui lui-même utilise les composants `ui/*` et, si disponibles, les templates du Lot 3 (wizard, tabs, inline).
+## 12. Tests (Pest v4)
+- Feature : génération de règles, rendu template (wizard/tabs/inline/simple + fallback), modes readonly, valeurs initiales, showActions/readonlyStrategy, metadata endpoint.
+- Browser : DnD (sections/éléments), logique (visibleIf/computed), modes edit/readonly, absence d’erreurs console.
+- Logic : JSONata succès/erreurs, fallback simple si template absent.
 
-### Emplacement / Livrables
-1. **Blade component**: `resources/views/components/ui/advanced/form-viewer.blade.php`
-   - Namespace Blade: `x-daisy::ui.advanced.form-viewer`
-2. **JS module**: `resources/js/modules/form-viewer.js`
-   - `data-module="form-viewer"`
-3. **Intégration**: Utilise le `FormRenderer` pour le rendu, sans duplication.
-
-### Props (proposées)
-```php
-@props([
-  'schema' => null,                // array|JsonSerializable (requis)
-  'data' => [],                    // array de valeurs initiales (facultatif)
-  'mode' => 'edit',                // 'edit' | 'readonly'
-  'readonlyStrategy' => 'disabled',// 'disabled' | 'static' (disabled = champs désactivés, static = texte)
-  'applyLogic' => true,            // exécution des règles JSONata (visibleIf, computed, etc.)
-  'action' => '#',                 // POST/PUT/… si on souhaite un submit natif
-  'method' => 'POST',
-  'submitText' => __('common.submit'),
-  'showActions' => true,           // rend les boutons (submit/reset) si applicable
-  'templateOverride' => null,      // forcer un template ('wizard'|'tabs'|'inline'|'simple'), sinon détecté via schema
-  'module' => null,                // override data-module si nécessaire
-])
-```
-
-### Slots
-- `actions`: personnalisation des actions (ex: bouton submit secondaire, bouton annuler).
-- (Optionnel) `header`, `footer`: en-tête/pied personnalisés autour du rendu.
-
-### Comportements attendus
-- `edit`:
-  - Champs interactifs, événements émis à chaque modification (`form-viewer:change`).
-  - Soumission possible (si `action` défini) et/ou callback JS (`form-viewer:submit`).
-  - Respect de `applyLogic` (visibleIf, computed).
-- `readonly`:
-  - Si `readonlyStrategy=disabled`: tous les champs sont rendus et désactivés (`disabled`, `aria-disabled="true"`).
-  - Si `readonlyStrategy=static`: rendu en texte statique (par type de champ), adapté aux patterns (wizard/tabs).
-  - Aucune interaction/modification possible.
-- Rendu pattern:
-  - Le Viewer délègue au `FormRenderer` qui détecte `schema.template` (wizard|tabs|inline|simple).
-  - Si templates du Lot 3 présents: réutilisation des templates et de leurs slots.
-  - Sinon: fallback “simple” cohérent (liste verticale de champs).
-- Accessibilité:
-  - `fieldset[disabled]` pour désactiver en bloc si stratégie “disabled”.
-  - `aria-disabled` et focus management.
-- Sécurité/CSRF:
-  - Compatible avec le CSRF Keeper (écoute `csrf-keeper:updated`).
-  - Ne pas afficher de données sensibles en clair; ne jamais logguer de PII.
-
-### JS (form-viewer.js)
-- Dataset:
-  - `data-mode`, `data-readonly-strategy`, `data-apply-logic`.
-  - Synchronise le `mode` (lecture/écriture) avec l’état des champs.
-  - Émet:
-    - `form-viewer:change` (detail: `{ name, value, path }`).
-    - `form-viewer:submit` (detail: `{ values }`) si interception JS.
-    - `form-viewer:error` (detail: `{ message, field? }`).
-- Interop JSONata:
-  - Si `applyLogic=true`, évalue `visibleIf`/computed au change.
- - Initialisation:
-   - Enregistrement dans `resources/js/kit/index.js` (router `[data-module]`).
-   - Le Blade génère `data-module="form-viewer"` et options via dataset.
-
-## Mutualisation
-
-### Objectifs
-- Éviter toute duplication d’UI/markup : toujours réutiliser `resources/views/components/ui/*` et, pour les patterns, les templates du Lot 3.
-- Centraliser la logique partagée (PHP + JS) utilisable par le Builder, le Viewer/Renderer et les démos/tests.
-
-### PHP (mutualisé)
-- `FormRenderer` (service unique) : rendu déterministe à partir du JSON (détecte `template`, lit `pattern`, injecte les slots) — utilisé par Viewer, démos et tests.
-- `ComponentRegistry` : source unique de vérité des composants (props, types, défauts) — utilisé par Builder (palette/inspecteur), Renderer (vérification) et ValidationGenerator.
-- `TemplateRegistry` : métadonnées des patterns (props supportées, structure, mapping Blade Lot 3, fallback).
-- `FormSchemaToValidationRules` : génération des règles depuis le JSON — utilisée en tests et en runtime côté host app.
-
-### JS (mutualisé)
-- `resources/js/kit/logic-engine.js` : wrapper JSONata/évaluations (visibleIf, computed) — utilisé par Preview du Builder et Form Viewer.
-- Conventions d’événements `form:*` (préfixées) : `form:ready`, `form:change`, `form:submit`, `form:error` — évitent la fragmentation.
-- Initialisation standard via `resources/js/kit/index.js` (router `[data-module]`) pour `form-builder` et `form-viewer`.
-- Compatibilité CSRF Keeper : écoute `csrf-keeper:updated` pour re-synchroniser les requêtes si nécessaire.
-
-### UI/Accessibilité (mutualisé)
-- Utilisation exclusive des composants `ui/*` : `advanced.label`, `advanced.validator`, inputs/selects, etc. (PRIORITÉ daisyUI).
-- Stratégies `readonly` harmonisées : `fieldset[disabled]` ou rendu statique textuel cohérent par type.
-- i18n partagée : réutilisation des clés `common.*`, `form.*`, `csrf.*` (EN/FR).
-
-### Tests/Démos (mutualisé)
-- Fixtures JSON communes (`resources/dev/data/forms/*.json`) utilisées par:
-  - Tests Feature (rendu, validation).
-  - Tests Browser (interactions, erreurs console).
-  - Démos (prévisualisation builder/viewer).
-
-### Tests
-- Feature:
-  - Rendu `edit` vs `readonly` (disabled/static).
-  - Détection et rendu du template via `FormRenderer` (wizard/tabs/inline/simple).
-  - Respect des valeurs initiales (`data`) et options `showActions`, `readonlyStrategy`.
-- Browser:
-  - Mode `readonly` empêche la saisie (disabled) ou affiche statique (aucun focus interactif).
-  - Mode `edit` permet la saisie et déclenche `form-viewer:change`.
-  - Soumission (si `action`), vérification absence d’erreurs console.
-
-## Compatibilité & Évolutivité
-- Le Form Builder fonctionne de manière autonome (mode “simple”).
-- S’il détecte les templates du Lot 3, il active les patterns avancés (wizard, tabs, inline) et le rendu via ces templates.
-- Nouveaux patterns ajoutables via `TemplateRegistry` sans modifier le cœur du builder.
-- Schéma versionné (p.ex. `schemaVersion: "1.x"`), avec stratégie de migration documentée si nécessaire.
+## 13. Compatibilité & évolutivité
+- Fonctionne en mode “simple” autonome.
+- Active patterns avancés si Lot 3 présent.
+- Nouveaux patterns ajoutables via `TemplateRegistry`.
+- Schéma versionné (migration documentée si évolution).
 

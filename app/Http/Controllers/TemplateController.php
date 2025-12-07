@@ -122,7 +122,7 @@ class TemplateController extends Controller
             ],
         ] : [];
 
-        return view('daisy::templates.chat', [
+        return view('daisy::templates.communication.chat', [
             'conversation' => $conversation,
             'conversations' => $conversations,
             'messages' => $messages,
@@ -237,7 +237,7 @@ class TemplateController extends Controller
             ['label' => 'Rapports', 'value' => 'report'],
         ];
 
-        return view('daisy::templates.notification-center', [
+        return view('daisy::templates.communication.notification-center', [
             'notifications' => $notifications,
             'unreadCount' => 3,
             'types' => $types,

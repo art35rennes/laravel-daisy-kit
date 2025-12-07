@@ -1,91 +1,123 @@
 @php
     use App\Helpers\DocsHelper;
     $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getNavigationItems($prefix);
+    $category = 'advanced';
+    $name = 'accordion';
     $sections = [
-            ['id' => 'intro', 'label' => 'Introduction'],
-            ['id' => 'base', 'label' => 'Exemple de base'],
-            ['id' => 'api', 'label' => 'API'],
-        ];
-    $props = DocsHelper::getComponentProps('advanced', 'accordion');
+        ['id' => 'intro', 'label' => 'Introduction'],
+        ['id' => 'base', 'label' => 'Exemple de base'],
+        ['id' => 'variants', 'label' => 'Variantes'],
+        ['id' => 'api', 'label' => 'API'],
+    ];
+    $props = DocsHelper::getComponentProps($category, $name);
 @endphp
 
-<x-daisy::layout.docs title="Accordion" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
-    <x-slot:navbar>
-        <div class="join">
-            <a href="/{{$prefix}}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{$prefix}}/templates" class="btn btn-sm join-item btn-ghost">Template</a>
-        </div>
-    </x-slot:navbar>
+<x-daisy::docs.page 
+    title="Accordion" 
+    category="advanced" 
+    name="accordion"
+    type="component"
+    :sections="$sections"
+>
+    <x-slot:intro>
+        <x-daisy::docs.sections.intro 
+            title="Accordion" 
+            subtitle="Accordéon pour afficher/masquer du contenu."
+        />
+    </x-slot:intro>
 
-    <section id="intro">
-        <h1>Accordion</h1>
-        <p>Accordéon pour afficher/masquer du contenu.</p>
-    </section>
-
-    <section id="base" class="mt-10">
-        <h2>Exemple de base</h2>
-        <div class="tabs tabs-box">
-            <input type="radio" name="base-example-accordion" class="tab" aria-label="Preview" checked />
-            <div class="tab-content bg-base-100 p-6">
-                <div class="not-prose">
-                    @php
+    <x-daisy::docs.sections.example name="accordion">
+        <x-slot:preview>
+            @php
+                $items = [
+                    ['title' => 'Section 1', 'content' => 'Contenu de la première section'],
+                    ['title' => 'Section 2', 'content' => 'Contenu de la deuxième section'],
+                    ['title' => 'Section 3', 'content' => 'Contenu de la troisième section'],
+                ];
+            @endphp
+            <x-daisy::ui.advanced.accordion :items="$items" />
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $baseCode = <<<'CODE'
+@php
 $items = [
     ["title" => "Section 1", "content" => "Contenu de la première section"],
     ["title" => "Section 2", "content" => "Contenu de la deuxième section"]
 ];
 @endphp
 <x-daisy::ui.advanced.accordion :items="$items" />
+CODE;
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$baseCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="200px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.example>
+
+    <x-daisy::docs.sections.variants name="accordion">
+        <x-slot:preview>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm font-semibold mb-2">Avec icône flèche</p>
+                    @php
+                        $items = [
+                            ['title' => 'Section 1', 'content' => 'Contenu avec flèche'],
+                            ['title' => 'Section 2', 'content' => 'Contenu avec flèche'],
+                        ];
+                    @endphp
+                    <x-daisy::ui.advanced.accordion :items="$items" icon="arrow" />
+                </div>
+                <div>
+                    <p class="text-sm font-semibold mb-2">Avec icône plus</p>
+                    @php
+                        $items = [
+                            ['title' => 'Section 1', 'content' => 'Contenu avec plus'],
+                            ['title' => 'Section 2', 'content' => 'Contenu avec plus'],
+                        ];
+                    @endphp
+                    <x-daisy::ui.advanced.accordion :items="$items" icon="plus" />
                 </div>
             </div>
-            <input type="radio" name="base-example-accordion" class="tab" aria-label="Code" />
-            <div class="tab-content bg-base-100 p-6">
-                @php
-                    $baseCode = '@php
+        </x-slot:preview>
+        <x-slot:code>
+            @php
+                $variantsCode = <<<'CODE'
+@php
 $items = [
-    ["title" => "Section 1", "content" => "Contenu de la première section"],
-    ["title" => "Section 2", "content" => "Contenu de la deuxième section"]
+    ["title" => "Section 1", "content" => "Contenu"],
+    ["title" => "Section 2", "content" => "Contenu"]
 ];
 @endphp
-<x-daisy::ui.advanced.accordion :items="$items" />';
-                @endphp
-                <x-daisy::ui.advanced.code-editor 
-                    language="blade" 
-                    :value="$baseCode"
-                    :readonly="true"
-                    :showToolbar="false"
-                    :showFoldAll="false"
-                    :showUnfoldAll="false"
-                    :showFormat="false"
-                    :showCopy="true"
-                    height="200px"
-                />
-            </div>
-        </div>
-    </section>
 
-    @if(!empty($props))
-    <section id="api" class="mt-10">
-        <h2>API</h2>
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Prop</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($props as $prop)
-                        <tr>
-                            <td><code>{{ $prop }}</code></td>
-                            <td class="opacity-70">Voir les commentaires dans le composant Blade pour les valeurs et défauts.</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-    @endif
-</x-daisy::layout.docs>
+{{-- Avec icône flèche --}}
+<x-daisy::ui.advanced.accordion :items="$items" icon="arrow" />
+
+{{-- Avec icône plus --}}
+<x-daisy::ui.advanced.accordion :items="$items" icon="plus" />
+CODE;
+            @endphp
+            <x-daisy::ui.advanced.code-editor 
+                language="blade" 
+                :value="$variantsCode"
+                :readonly="true"
+                :showToolbar="false"
+                :showFoldAll="false"
+                :showUnfoldAll="false"
+                :showFormat="false"
+                :showCopy="true"
+                height="300px"
+            />
+        </x-slot:code>
+    </x-daisy::docs.sections.variants>
+
+    <x-daisy::docs.sections.api :category="$category" :name="$name" />
+</x-daisy::docs.page>

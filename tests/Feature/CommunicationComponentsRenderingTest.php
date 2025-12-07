@@ -342,14 +342,15 @@ describe('Communication Components Rendering', function () {
 
     describe('Notification Center Template', function () {
         it('renders notification-center template', function () {
-            $html = View::make('daisy::templates.notification-center', [
+            $html = View::make('daisy::templates.communication.notification-center', [
                 'notifications' => [],
                 'unreadCount' => 0,
             ])->render();
 
             expect($html)
-                ->toContain('Focus first')
-                ->toContain('data-mark-all-as-read-url');
+                ->toContain('notification-center')
+                ->toContain('data-mark-all-as-read-url')
+                ->toContain('data-module="notifications"');
         });
 
         it('renders notification-center with notifications', function () {
@@ -362,7 +363,7 @@ describe('Communication Components Rendering', function () {
                 ],
             ];
 
-            $html = View::make('daisy::templates.notification-center', [
+            $html = View::make('daisy::templates.communication.notification-center', [
                 'notifications' => $notifications,
                 'unreadCount' => 1,
             ])->render();
@@ -374,7 +375,7 @@ describe('Communication Components Rendering', function () {
 
     describe('Chat Template', function () {
         it('renders chat template without conversation', function () {
-            $html = View::make('daisy::templates.chat', [
+            $html = View::make('daisy::templates.communication.chat', [
                 'conversations' => [],
                 'messages' => [],
             ])->render();
@@ -390,7 +391,7 @@ describe('Communication Components Rendering', function () {
                 'avatar' => '/img/avatar.jpg',
             ];
 
-            $html = View::make('daisy::templates.chat', [
+            $html = View::make('daisy::templates.communication.chat', [
                 'conversation' => $conversation,
                 'messages' => [],
                 'currentUserId' => 1,
@@ -409,7 +410,7 @@ describe('Communication Components Rendering', function () {
                 ['id' => 1, 'name' => 'John'],
             ];
 
-            $html = View::make('daisy::templates.chat', [
+            $html = View::make('daisy::templates.communication.chat', [
                 'conversations' => $conversations,
                 'showSidebar' => true,
             ])->render();

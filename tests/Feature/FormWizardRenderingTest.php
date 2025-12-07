@@ -3,7 +3,7 @@
 use Art35rennes\DaisyKit\Helpers\WizardPersistence;
 
 it('renders form wizard with default props and backend fields', function () {
-    $view = view('daisy::templates.form-wizard', [
+    $view = view('daisy::templates.form.form-wizard', [
         'steps' => [
             ['key' => 'profile', 'label' => 'Profil'],
             ['key' => 'settings', 'label' => 'Paramètres'],
@@ -42,7 +42,7 @@ it('retrieves wizard current step from session', function () {
 });
 
 it('shows summary on last step when enabled', function () {
-    $view = view('daisy::templates.form-wizard', [
+    $view = view('daisy::templates.form.form-wizard', [
         'steps' => [
             ['key' => 'step1', 'label' => 'Step 1'],
             ['key' => 'step2', 'label' => 'Step 2'],
@@ -59,7 +59,7 @@ it('shows summary on last step when enabled', function () {
 });
 
 it('includes csrf keeper when autoRefreshCsrf is enabled', function () {
-    $view = view('daisy::templates.form-wizard', [
+    $view = view('daisy::templates.form.form-wizard', [
         'steps' => [
             ['key' => 'step1', 'label' => 'Step 1'],
         ],
