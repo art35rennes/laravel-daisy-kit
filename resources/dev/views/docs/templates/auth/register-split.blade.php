@@ -28,8 +28,8 @@
         <h2>Exemple</h2>
         <div class="mockup-code mt-4">
 <pre data-prefix=""><code>&lt;x-daisy::templates.auth.register-split
-    action="{{ route('register') }}"
-    loginUrl="{{ route('login') }}"
+    action="@{{ route('register') }}"
+    loginUrl="@{{ route('login') }}"
     backgroundImage="https://picsum.photos/1200/900"
     :showTestimonial="true"
     :testimonial="['quote' => 'Onboard en 2 min', 'author' => 'Alex', 'role' => 'Lead Dev', 'rating' => 5]"

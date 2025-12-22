@@ -46,20 +46,19 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$items = [
-    ["label" => "Introduction", "href" => "/docs"],
+                $baseCode = <<<'CODE'
+<x-daisy::ui.navigation.sidebar-navigation :items="[
+    ['label' => 'Introduction', 'href' => '/docs'],
     [
-        "label" => "Composants", 
-        "children" => [
-            ["label" => "Boutons", "href" => "/docs/inputs/button"],
-            ["label" => "Formulaires", "href" => "/docs/inputs/input"]
-        ]
+        'label' => 'Composants',
+        'children' => [
+            ['label' => 'Boutons', 'href' => '/docs/inputs/button'],
+            ['label' => 'Formulaires', 'href' => '/docs/inputs/input'],
+        ],
     ],
-    ["label" => "Templates", "href" => "/docs/templates"]
-];
-@endphp
-<x-daisy::ui.navigation.sidebar-navigation :items="$items" current="/docs/inputs/button" />';
+    ['label' => 'Templates', 'href' => '/docs/templates'],
+]" current="/docs/inputs/button" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

@@ -3,13 +3,13 @@
 use Illuminate\Support\Facades\Artisan;
 
 /**
- * Charge le manifeste des composants (resources/dev/data/components.json).
+ * Charge le cache fichier des composants (bootstrap/cache/daisy-components.php).
  * Si le fichier est manquant, tente de le générer via la commande d'inventaire.
  */
 function loadComponentsManifest(): array
 {
     $root = dirname(__DIR__, 2);
-    $path = $root.DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR.'dev'.DIRECTORY_SEPARATOR.'data'.DIRECTORY_SEPARATOR.'components.json';
+    $path = $root.DIRECTORY_SEPARATOR.'bootstrap'.DIRECTORY_SEPARATOR.'cache'.DIRECTORY_SEPARATOR.'daisy-components.php';
 
     if (! is_file($path)) {
         Artisan::call('inventory:components');
@@ -17,17 +17,17 @@ function loadComponentsManifest(): array
         if (! is_file($path)) {
             throw new RuntimeException(
                 "Manifeste introuvable: {$path}\n".
-                "Exécutez 'php artisan inventory:components' pour le générer avant de lancer les tests."
+                "Exécutez 'php artisan inventory:components' (ou 'php artisan inventory:cache:rebuild --components') pour le générer avant de lancer les tests."
             );
         }
     }
 
-    $json = json_decode((string) file_get_contents($path), true);
-    if (! is_array($json) || ! isset($json['components']) || ! is_array($json['components'])) {
-        throw new RuntimeException('Manifeste invalide: clé "components" manquante ou invalide');
+    $cache = require $path;
+    if (! is_array($cache) || ! isset($cache['components']) || ! is_array($cache['components'])) {
+        throw new RuntimeException('Cache invalide: clé "components" manquante ou invalide');
     }
 
-    return $json['components'];
+    return $cache['components'];
 }
 
 it('renders every component view from manifest', function () {

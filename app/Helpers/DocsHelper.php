@@ -2,7 +2,7 @@
 
 namespace App\Helpers;
 
-use Illuminate\Support\Facades\File;
+use RuntimeException;
 
 class DocsHelper
 {
@@ -145,14 +145,16 @@ class DocsHelper
      */
     private static function readManifest(): array
     {
-        $path = resource_path('dev/data/components.json');
-        if (! File::exists($path)) {
-            return ['components' => []];
+        try {
+            return ComponentScanner::readCached();
+        } catch (RuntimeException $exception) {
+            throw new RuntimeException(
+                "Components inventory cache is missing or invalid.\n".
+                "Run: php artisan inventory:cache:rebuild --components\n\n".
+                $exception->getMessage(),
+                previous: $exception
+            );
         }
-        $json = File::get($path);
-        $data = json_decode($json, true);
-
-        return is_array($data) ? $data : ['components' => []];
     }
 
     /**
@@ -247,14 +249,16 @@ class DocsHelper
      */
     private static function readTemplatesManifest(): array
     {
-        $path = resource_path('dev/data/templates.json');
-        if (! File::exists($path)) {
-            return ['templates' => [], 'categories' => []];
+        try {
+            return TemplateScanner::readCached();
+        } catch (RuntimeException $exception) {
+            throw new RuntimeException(
+                "Templates inventory cache is missing or invalid.\n".
+                "Run: php artisan inventory:cache:rebuild --templates\n\n".
+                $exception->getMessage(),
+                previous: $exception
+            );
         }
-        $json = File::get($path);
-        $data = json_decode($json, true);
-
-        return is_array($data) ? $data : ['templates' => [], 'categories' => []];
     }
 
     private static function labelize(string $slug): string

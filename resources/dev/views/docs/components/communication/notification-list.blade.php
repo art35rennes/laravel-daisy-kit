@@ -49,25 +49,27 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$notifications = [
-    [
-        "id" => 1, 
-        "type" => "info", 
-        "data" => ["message" => "Message 1"], 
-        "read_at" => null, 
-        "created_at" => "2024-01-15 10:00:00"
-    ],
-    [
-        "id" => 2, 
-        "type" => "warning", 
-        "data" => ["message" => "Message 2"], 
-        "read_at" => "2024-01-15 09:00:00", 
-        "created_at" => "2024-01-15 08:00:00"
-    ]
-];
-@endphp
-<x-daisy::ui.communication.notification-list :notifications="$notifications" :groupByDate="true" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.communication.notification-list
+    :notifications="[
+        [
+            'id' => 1,
+            'type' => 'info',
+            'data' => ['message' => 'Message 1'],
+            'read_at' => null,
+            'created_at' => '2024-01-15 10:00:00',
+        ],
+        [
+            'id' => 2,
+            'type' => 'warning',
+            'data' => ['message' => 'Message 2'],
+            'read_at' => '2024-01-15 09:00:00',
+            'created_at' => '2024-01-15 08:00:00',
+        ],
+    ]"
+    :groupByDate="true"
+/>
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

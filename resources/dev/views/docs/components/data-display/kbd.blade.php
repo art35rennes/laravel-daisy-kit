@@ -37,10 +37,8 @@
         <x-slot:code>
             @php
                 $baseCode = <<<'CODE'
-@php $keys = ["Ctrl", "K"]; @endphp
-<x-daisy::ui.data-display.kbd :keys="$keys" />
+<x-daisy::ui.data-display.kbd :keys="['Ctrl', 'K']" />
 
-{{-- Simple --}}
 <x-daisy::ui.data-display.kbd>Esc</x-daisy::ui.data-display.kbd>
 CODE;
             @endphp
@@ -86,15 +84,14 @@ CODE;
         <x-slot:code>
             @php
                 $variantsCode = <<<'CODE'
-@php $keys = ["Ctrl", "K"]; @endphp
+<x-daisy::ui.data-display.kbd :keys="['Ctrl', 'K']" size="xs" />
+<x-daisy::ui.data-display.kbd :keys="['Ctrl', 'K']" size="sm" />
+<x-daisy::ui.data-display.kbd :keys="['Ctrl', 'K']" size="md" />
+<x-daisy::ui.data-display.kbd :keys="['Ctrl', 'K']" size="lg" />
+<x-daisy::ui.data-display.kbd :keys="['Ctrl', 'K']" size="xl" />
 
-{{-- Tailles --}}
-<x-daisy::ui.data-display.kbd :keys="$keys" size="xs" />
-<x-daisy::ui.data-display.kbd :keys="$keys" size="lg" />
-
-{{-- Combinaisons --}}
-@php $keys = ["Ctrl", "Shift", "P"]; @endphp
-<x-daisy::ui.data-display.kbd :keys="$keys" />
+<x-daisy::ui.data-display.kbd :keys="['Ctrl', 'Shift', 'P']" />
+<x-daisy::ui.data-display.kbd :keys="['Alt', 'F4']" />
 CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 

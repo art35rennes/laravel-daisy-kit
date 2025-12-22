@@ -26,7 +26,7 @@
         <h2>Exemple</h2>
         <div class="mockup-code mt-4">
 <pre data-prefix=""><code>&lt;x-daisy::templates.auth.resend-verification
-    action="{{ route('verification.send') }}"
+    action="@{{ route('verification.send') }}"
     :emailSent="session('status') !== null"
     submitButtonText="{{ __('auth.resend_verification') }}"
 /&gt;</code></pre>

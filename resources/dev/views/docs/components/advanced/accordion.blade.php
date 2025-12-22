@@ -40,13 +40,10 @@
         <x-slot:code>
             @php
                 $baseCode = <<<'CODE'
-@php
-$items = [
-    ["title" => "Section 1", "content" => "Contenu de la première section"],
-    ["title" => "Section 2", "content" => "Contenu de la deuxième section"]
-];
-@endphp
-<x-daisy::ui.advanced.accordion :items="$items" />
+<x-daisy::ui.advanced.accordion :items="[
+    ['title' => 'Section 1', 'content' => 'Contenu de la première section'],
+    ['title' => 'Section 2', 'content' => 'Contenu de la deuxième section'],
+]" />
 CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
@@ -91,18 +88,15 @@ CODE;
         <x-slot:code>
             @php
                 $variantsCode = <<<'CODE'
-@php
-$items = [
-    ["title" => "Section 1", "content" => "Contenu"],
-    ["title" => "Section 2", "content" => "Contenu"]
-];
-@endphp
+<x-daisy::ui.advanced.accordion :items="[
+    ['title' => 'Section 1', 'content' => 'Contenu'],
+    ['title' => 'Section 2', 'content' => 'Contenu'],
+]" icon="arrow" />
 
-{{-- Avec icône flèche --}}
-<x-daisy::ui.advanced.accordion :items="$items" icon="arrow" />
-
-{{-- Avec icône plus --}}
-<x-daisy::ui.advanced.accordion :items="$items" icon="plus" />
+<x-daisy::ui.advanced.accordion :items="[
+    ['title' => 'Section 1', 'content' => 'Contenu'],
+    ['title' => 'Section 2', 'content' => 'Contenu'],
+]" icon="plus" />
 CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 

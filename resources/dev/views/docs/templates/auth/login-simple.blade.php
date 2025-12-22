@@ -28,11 +28,11 @@
         <h2>Exemple minimal</h2>
         <div class="mockup-code mt-4">
             <pre data-prefix=""><code>&lt;x-daisy::templates.auth.login-simple
-    action="{{ route('login') }}"
+    action="@{{ route('login') }}"
     :rememberMe="true"
     :rememberMeDays="30"
-    forgotPasswordUrl="{{ route('password.request') }}"
-    signupUrl="{{ route('register') }}"
+    forgotPasswordUrl="@{{ route('password.request') }}"
+    signupUrl="@{{ route('register') }}"
 /&gt;</code></pre>
         </div>
         <p class="mt-3 text-sm text-base-content/70">Slots disponibles : <code>logo</code> pour le bloc marque, <code>socialLogin</code> pour des boutons SSO.</p>

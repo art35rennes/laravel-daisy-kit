@@ -35,10 +35,14 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$values = ["days" => 5, "hours" => 12, "min" => 30, "sec" => 45];
-@endphp
-<x-daisy::ui.advanced.countdown :values="$values" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.advanced.countdown :values="[
+    'days' => 5,
+    'hours' => 12,
+    'min' => 30,
+    'sec' => 45,
+]" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 
@@ -75,16 +79,16 @@ $values = ["days" => 5, "hours" => 12, "min" => 30, "sec" => 45];
         </x-slot:preview>
         <x-slot:code>
             @php
-                $variantsCode = '@php
-$values = ["hours" => 12, "min" => 30];
-@endphp
-<x-daisy::ui.advanced.countdown :values="$values" />
+                $variantsCode = <<<'CODE'
+<x-daisy::ui.advanced.countdown :values="[
+    'hours' => 12,
+    'min' => 30,
+]" />
 
-{{-- Seulement secondes --}}
-@php
-$values = ["sec" => 59];
-@endphp
-<x-daisy::ui.advanced.countdown :values="$values" />';
+<x-daisy::ui.advanced.countdown :values="[
+    'sec' => 59,
+]" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

@@ -28,16 +28,17 @@
 
     <x-daisy::docs.sections.custom id="example" title="Exemple">
         <div class="mockup-code mt-4">
-            <pre data-prefix=""><code>{{ '<x-daisy::templates.form.form-simple
+            <pre data-prefix=""><code>&lt;x-daisy::templates.form.form-simple
     title="Contact"
     action="/contact"
     method="POST"
-    :elements="view(\'partials.contact-fields\')->render()"
+    :elements="view('partials.contact-fields')->render()"
     submitText="Envoyer"
-/>
-<x-slot:actions>
-    <x-daisy::ui.inputs.button type="submit" color="primary">Envoyer</x-daisy::ui.inputs.button>
-</x-slot:actions>' }}</code></pre>
+&gt;
+    &lt;x-slot:actions&gt;
+        &lt;x-daisy::ui.inputs.button type="submit" color="primary"&gt;Envoyer&lt;/x-daisy::ui.inputs.button&gt;
+    &lt;/x-slot:actions&gt;
+&lt;/x-daisy::templates.form.form-simple&gt;</code></pre>
         </div>
     </x-daisy::docs.sections.custom>
 

@@ -40,15 +40,15 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$headers = ["Nom", "Email", "Rôle"];
-$rows = [
-    ["Jean Dupont", "jean@example.com", "Admin"],
-    ["Marie Martin", "marie@example.com", "Utilisateur"],
-];
-@endphp
-
-<x-daisy::ui.data-display.table :headers="$headers" :rows="$rows" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.data-display.table
+    :headers="['Nom', 'Email', 'Rôle']"
+    :rows="[
+        ['Jean Dupont', 'jean@example.com', 'Admin'],
+        ['Marie Martin', 'marie@example.com', 'Utilisateur'],
+    ]"
+/>
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 
@@ -97,17 +97,34 @@ $rows = [
         </x-slot:preview>
         <x-slot:code>
             @php
-                $variantsCode = '@php
-$headers = ["Nom", "Email"];
-$rows = [["Jean", "jean@example.com"], ["Marie", "marie@example.com"]];
-@endphp
+                $variantsCode = <<<'CODE'
+<x-daisy::ui.data-display.table
+    :headers="['Nom', 'Email']"
+    :rows="[
+        ['Jean', 'jean@example.com'],
+        ['Marie', 'marie@example.com'],
+    ]"
+    zebra
+/>
 
-{{-- Styles --}}
-<x-daisy::ui.data-display.table :headers="$headers" :rows="$rows" zebra />
-<x-daisy::ui.data-display.table :headers="$headers" :rows="$rows" bordered />
+<x-daisy::ui.data-display.table
+    :headers="['Nom', 'Email']"
+    :rows="[
+        ['Jean', 'jean@example.com'],
+        ['Marie', 'marie@example.com'],
+    ]"
+    bordered
+/>
 
-{{-- Tailles --}}
-<x-daisy::ui.data-display.table :headers="$headers" :rows="$rows" size="sm" />';
+<x-daisy::ui.data-display.table
+    :headers="['Nom', 'Email']"
+    :rows="[
+        ['Jean', 'jean@example.com'],
+        ['Marie', 'marie@example.com'],
+    ]"
+    size="sm"
+/>
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

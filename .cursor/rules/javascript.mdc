@@ -1,11 +1,27 @@
 ---
 alwaysApply: true
 ---
+## JavaScript Architecture
+
+### Alpine.js (Preferred for Simple Interactions)
+- **Prefer Alpine.js** for simple, reactive UI interactions that can be expressed declaratively.
+- Use Alpine.js for: toggles, conditional rendering (`x-show`, `x-if`), loops (`x-for`), event handling (`@click`, `@submit`), form bindings (`x-model`), and simple state management.
+- Alpine.js directives can be used directly in Blade templates without additional JavaScript files.
+- Example: `<div x-data="{ open: false }" x-show="open">` for simple show/hide behavior.
+
+### Custom JavaScript Modules (For Complex Components)
 - Core JS: `resources/js/kit/index.js` (bootstrap, shared utils, `data-module` router).
 - Component modules: `resources/js/modules/{module}.js` (or `resources/js/{module}.js` / `{module}/index.js`).
 - Lazy initialization: scan `[data-module]` + `MutationObserver`; expose `window.DaisyKit.init()` / `reinit()`.
 - Standardize JS anchoring: `data-module="<module-name>"` automatically generated from Blade props.
 - Core JS scans `[data-module]` and routes to modules with options extracted from dataset.
+- Use custom modules for: complex state management, heavy DOM manipulation, third-party library integration, or when Alpine.js would become too verbose.
+
+### When to Use What
+- **Alpine.js**: Simple interactions, conditional rendering, form bindings, toggles, dropdowns (when not using daisyUI's built-in dropdown).
+- **Custom modules**: Complex components, third-party integrations (Chart.js, Leaflet, CodeMirror), heavy DOM manipulation, or when Alpine.js would require too much code.
+
+### Implementation Rules
 - Prefer Blade props (Laravel 12) over `data-*` in templates.
 - Automatically generate `data-module` and dataset options from props (single source of truth).
 - Components expose readable props (camelCase) that become `data-*` in kebab-case if a JS module is required.

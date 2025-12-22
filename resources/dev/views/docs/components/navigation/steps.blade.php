@@ -39,14 +39,13 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$items = [
-    ["label" => "Informations"],
-    ["label" => "Paiement", "current" => true],
-    ["label" => "Confirmation"]
-];
-@endphp
-<x-daisy::ui.navigation.steps :items="$items" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.navigation.steps :items="[
+    ['label' => 'Informations'],
+    ['label' => 'Paiement', 'current' => true],
+    ['label' => 'Confirmation'],
+]" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 
@@ -94,19 +93,22 @@ $items = [
         </x-slot:preview>
         <x-slot:code>
             @php
-                $variantsCode = '@php
-$items = [
-    ["label" => "Étape 1", "current" => true],
-    ["label" => "Étape 2"]
-];
-@endphp
+                $variantsCode = <<<'CODE'
+<x-daisy::ui.navigation.steps :items="[
+    ['label' => 'Étape 1', 'current' => true],
+    ['label' => 'Étape 2'],
+]" color="primary" />
+<x-daisy::ui.navigation.steps :items="[
+    ['label' => 'Étape 1', 'current' => true],
+    ['label' => 'Étape 2'],
+]" color="accent" />
 
-{{-- Couleurs --}}
-<x-daisy::ui.navigation.steps :items="$items" color="primary" />
-<x-daisy::ui.navigation.steps :items="$items" color="accent" />
-
-{{-- Vertical --}}
-<x-daisy::ui.navigation.steps :items="$items" vertical />';
+<x-daisy::ui.navigation.steps :items="[
+    ['label' => 'Étape 1', 'current' => true],
+    ['label' => 'Étape 2'],
+    ['label' => 'Étape 3'],
+]" vertical />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

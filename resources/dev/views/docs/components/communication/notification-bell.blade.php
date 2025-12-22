@@ -46,22 +46,24 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$notifications = [
-    [
-        "id" => 1, 
-        "type" => "info", 
-        "data" => [
-            "message" => "Nouveau message", 
-            "priority" => "normal", 
-            "user" => ["name" => "Alice"]
-        ], 
-        "read_at" => null, 
-        "created_at" => "2024-01-15 10:00:00"
-    ]
-];
-@endphp
-<x-daisy::ui.communication.notification-bell :notifications="$notifications" unreadCount="1" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.communication.notification-bell
+    :notifications="[
+        [
+            'id' => 1,
+            'type' => 'info',
+            'data' => [
+                'message' => 'Nouveau message',
+                'priority' => 'normal',
+                'user' => ['name' => 'Alice'],
+            ],
+            'read_at' => null,
+            'created_at' => '2024-01-15 10:00:00',
+        ],
+    ]"
+    unreadCount="1"
+/>
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

@@ -64,34 +64,33 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$groups = [
-    [
-        "items" => [
-            ["icon" => "pencil", "label" => "Edit", "active" => false],
-            ["icon" => "eye", "label" => "Preview", "active" => true],
-            ["icon" => "code-slash", "label" => "Code", "active" => false],
-        ]
-    ],
-    [
-        "items" => [
-            ["icon" => "phone", "label" => "Mobile", "active" => false],
-            ["icon" => "tablet", "label" => "Tablet", "active" => false],
-            ["icon" => "laptop", "label" => "Desktop", "active" => false],
-        ]
-    ],
-    [
-        "items" => [
-            ["icon" => "sun", "label" => "Light", "active" => false],
-            ["icon" => "moon", "label" => "Dark", "active" => false],
-        ]
-    ],
-];
-@endphp
-<x-daisy::ui.navigation.floating-menu 
+                $baseCode = <<<'CODE'
+<x-daisy::ui.navigation.floating-menu
     position="left"
-    :groups="$groups"
-/>';
+    :groups="[
+        [
+            'items' => [
+                ['icon' => 'pencil', 'label' => 'Edit', 'active' => false],
+                ['icon' => 'eye', 'label' => 'Preview', 'active' => true],
+                ['icon' => 'code-slash', 'label' => 'Code', 'active' => false],
+            ],
+        ],
+        [
+            'items' => [
+                ['icon' => 'phone', 'label' => 'Mobile', 'active' => false],
+                ['icon' => 'tablet', 'label' => 'Tablet', 'active' => false],
+                ['icon' => 'laptop', 'label' => 'Desktop', 'active' => false],
+            ],
+        ],
+        [
+            'items' => [
+                ['icon' => 'sun', 'label' => 'Light', 'active' => false],
+                ['icon' => 'moon', 'label' => 'Dark', 'active' => false],
+            ],
+        ],
+    ]"
+/>
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

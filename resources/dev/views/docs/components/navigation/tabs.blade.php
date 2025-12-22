@@ -39,14 +39,13 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$items = [
-    ["label" => "Profil", "active" => true],
-    ["label" => "Sécurité"],
-    ["label" => "Notifications"]
-];
-@endphp
-<x-daisy::ui.navigation.tabs :items="$items" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.navigation.tabs :items="[
+    ['label' => 'Profil', 'active' => true],
+    ['label' => 'Sécurité'],
+    ['label' => 'Notifications'],
+]" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 
@@ -80,17 +79,20 @@ $items = [
         </x-slot:preview>
         <x-slot:code>
             @php
-                $variantsCode = '@php
-$items = [
-    ["label" => "Tab 1", "active" => true],
-    ["label" => "Tab 2"]
-];
-@endphp
-
-{{-- Styles --}}
-<x-daisy::ui.navigation.tabs :items="$items" variant="box" />
-<x-daisy::ui.navigation.tabs :items="$items" variant="bordered" />
-<x-daisy::ui.navigation.tabs :items="$items" variant="lifted" />';
+                $variantsCode = <<<'CODE'
+<x-daisy::ui.navigation.tabs :items="[
+    ['label' => 'Tab 1', 'active' => true],
+    ['label' => 'Tab 2'],
+]" variant="box" />
+<x-daisy::ui.navigation.tabs :items="[
+    ['label' => 'Tab 1', 'active' => true],
+    ['label' => 'Tab 2'],
+]" variant="bordered" />
+<x-daisy::ui.navigation.tabs :items="[
+    ['label' => 'Tab 1', 'active' => true],
+    ['label' => 'Tab 2'],
+]" variant="lifted" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

@@ -42,14 +42,11 @@
         <x-slot:code>
             @php
                 $baseCode = <<<'CODE'
-@php
-$items = [
-    ["label" => "Section 1", "href" => "#section1"],
-    ["label" => "Section 2", "href" => "#section2"],
-    ["label" => "Section 3", "href" => "#section3"]
-];
-@endphp
-<x-daisy::ui.advanced.scrollspy :items="$items" />
+<x-daisy::ui.advanced.scrollspy :items="[
+    ['label' => 'Section 1', 'href' => '#section1'],
+    ['label' => 'Section 2', 'href' => '#section2'],
+    ['label' => 'Section 3', 'href' => '#section3'],
+]" />
 CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 

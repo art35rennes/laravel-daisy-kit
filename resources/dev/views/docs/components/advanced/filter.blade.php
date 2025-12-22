@@ -39,14 +39,13 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$items = [
-    ["label" => "Tous", "value" => "all"],
-    ["label" => "Actifs", "value" => "active"],
-    ["label" => "Archivés", "value" => "archived"]
-];
-@endphp
-<x-daisy::ui.advanced.filter name="status" :items="$items" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.advanced.filter name="status" :items="[
+    ['label' => 'Tous', 'value' => 'all'],
+    ['label' => 'Actifs', 'value' => 'active'],
+    ['label' => 'Archivés', 'value' => 'archived'],
+]" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 
@@ -91,25 +90,19 @@ $items = [
         </x-slot:preview>
         <x-slot:code>
             @php
-                $variantsCode = '{{-- Filtre par statut --}}
-@php
-$statusItems = [
-    ["label" => "Tous", "value" => "all"],
-    ["label" => "Actifs", "value" => "active"],
-    ["label" => "Inactifs", "value" => "inactive"]
-];
-@endphp
-<x-daisy::ui.advanced.filter name="status" :items="$statusItems" />
+                $variantsCode = <<<'CODE'
+<x-daisy::ui.advanced.filter name="status-filter" :items="[
+    ['label' => 'Tous', 'value' => 'all'],
+    ['label' => 'Actifs', 'value' => 'active'],
+    ['label' => 'Inactifs', 'value' => 'inactive'],
+]" />
 
-{{-- Filtre par catégorie --}}
-@php
-$categoryItems = [
-    ["label" => "Toutes", "value" => "all"],
-    ["label" => "Produits", "value" => "products"],
-    ["label" => "Services", "value" => "services"]
-];
-@endphp
-<x-daisy::ui.advanced.filter name="category" :items="$categoryItems" />';
+<x-daisy::ui.advanced.filter name="category-filter" :items="[
+    ['label' => 'Toutes', 'value' => 'all'],
+    ['label' => 'Produits', 'value' => 'products'],
+    ['label' => 'Services', 'value' => 'services'],
+]" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

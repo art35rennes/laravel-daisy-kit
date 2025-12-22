@@ -30,8 +30,8 @@
     :stats="[['label' =&gt; 'Projects', 'value' =&gt; 12, 'icon' =&gt; 'bi-kanban']]"
     :badges="[['label' =&gt; 'Pro', 'color' =&gt; 'primary', 'icon' =&gt; 'bi-award']]"
     :timeline="[['date' =&gt; now(), 'title' =&gt; 'Inscription', 'icon' =&gt; 'bi-check']]]"
-    profileEditUrl="{{ route('profile.edit') }}"
-    profileSettingsUrl="{{ route('profile.settings') }}"
+    profileEditUrl="@{{ route('profile.edit') }}"
+    profileSettingsUrl="@{{ route('profile.settings') }}"
 /&gt;</code></pre>
         </div>
     </section>

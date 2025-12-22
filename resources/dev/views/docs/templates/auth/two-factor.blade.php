@@ -26,9 +26,9 @@
         <h2>Exemple</h2>
         <div class="mockup-code mt-4">
 <pre data-prefix=""><code>&lt;x-daisy::templates.auth.two-factor
-    action="{{ route('two-factor.login') }}"
-    recoveryUrl="{{ route('two-factor.recovery') }}"
-    logoutUrl="{{ route('logout') }}"
+    action="@{{ route('two-factor.login') }}"
+    recoveryUrl="@{{ route('two-factor.recovery') }}"
+    logoutUrl="@{{ route('logout') }}"
     :showRecovery="true"
     :showLogout="true"
 /&gt;</code></pre>

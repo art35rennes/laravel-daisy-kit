@@ -28,9 +28,9 @@
         <h2>Exemple</h2>
         <div class="mockup-code mt-4">
 <pre data-prefix=""><code>&lt;x-daisy::templates.auth.login-split
-    action="{{ route('login') }}"
-    forgotPasswordUrl="{{ route('password.request') }}"
-    signupUrl="{{ route('register') }}"
+    action="@{{ route('login') }}"
+    forgotPasswordUrl="@{{ route('password.request') }}"
+    signupUrl="@{{ route('register') }}"
     backgroundImage="https://picsum.photos/1200/900"
     :showTestimonial="true"
     :testimonial="['quote' => 'Support réactif', 'author' => 'Jane', 'role' => 'CTO', 'rating' => 5]"

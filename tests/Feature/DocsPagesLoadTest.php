@@ -10,7 +10,7 @@ beforeEach(function () {
 
 it('loads the docs index page without errors', function () {
     $response = $this->get("/{$this->prefix}");
-    
+
     $response->assertSuccessful();
     $response->assertSee('Documentation', false);
     $response->assertDontSee('syntax error', false);
@@ -20,7 +20,7 @@ it('loads the docs index page without errors', function () {
 
 it('loads the templates index page without errors', function () {
     $response = $this->get("/{$this->prefix}/templates");
-    
+
     $response->assertSuccessful();
     $response->assertSee('Templates', false);
     $response->assertDontSee('syntax error', false);
@@ -28,84 +28,80 @@ it('loads the templates index page without errors', function () {
     $response->assertDontSee('Parse error', false);
 });
 
-// Dataset pour les pages de composants
-$componentPages = function () {
-    $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $componentsByCategory = DocsHelper::getComponentsByCategory($prefix);
+it('loads all component documentation pages without errors', function () {
+    $componentsByCategory = DocsHelper::getComponentsByCategory($this->prefix);
     $pages = [];
-    
-    foreach ($componentsByCategory as $categoryId => $category) {
+
+    foreach ($componentsByCategory as $category) {
         foreach ($category['components'] ?? [] as $component) {
             $href = $component['href'] ?? '';
             if (empty($href)) {
                 continue;
             }
-            
+
             $path = parse_url($href, PHP_URL_PATH);
             if ($path === null) {
                 continue;
             }
-            
+
             $pages[] = $path;
         }
     }
-    
-    return $pages;
-};
 
-// Dataset pour les pages de templates
-$templatePages = function () {
-    $prefix = config('daisy-kit.docs.prefix', 'docs');
-    $navItems = DocsHelper::getTemplateNavigationItems($prefix);
+    expect($pages)->not->toBeEmpty();
+
+    foreach ($pages as $path) {
+        $response = $this->get($path);
+
+        $response->assertSuccessful();
+
+        $content = $response->getContent();
+
+        // Verify there are no PHP errors shown in the rendered HTML.
+        expect($content)
+            ->not->toContain('syntax error', false)
+            ->not->toContain('unexpected identifier', false)
+            ->not->toContain('Parse error', false)
+            ->not->toContain('Fatal error', false)
+            ->not->toContain('Call to undefined', false);
+    }
+})->group('docs');
+
+it('loads all template documentation pages without errors', function () {
+    $navItems = DocsHelper::getTemplateNavigationItems($this->prefix);
     $pages = [];
-    
+
     foreach ($navItems as $category) {
         foreach ($category['children'] ?? [] as $template) {
             $href = $template['href'] ?? '';
             if (empty($href)) {
                 continue;
             }
-            
+
             $path = parse_url($href, PHP_URL_PATH);
             if ($path === null) {
                 continue;
             }
-            
+
             $pages[] = $path;
         }
     }
-    
-    return $pages;
-};
 
-it('loads component documentation page without errors', function (string $path) {
-    $response = $this->get($path);
-    
-    $response->assertSuccessful();
-    
-    $content = $response->getContent();
-    
-    // Vérifier qu'il n'y a pas d'erreurs de syntaxe PHP
-    expect($content)
-        ->not->toContain('syntax error', false)
-        ->not->toContain('unexpected identifier', false)
-        ->not->toContain('Parse error', false)
-        ->not->toContain('Fatal error', false)
-        ->not->toContain('Call to undefined', false);
-})->with($componentPages)->group('docs');
+    expect($pages)->not->toBeEmpty();
 
-it('loads template documentation page without errors', function (string $path) {
-    $response = $this->get($path);
-    
-    $response->assertSuccessful();
-    
-    $content = $response->getContent();
-    
-    // Vérifier qu'il n'y a pas d'erreurs de syntaxe PHP
-    expect($content)
-        ->not->toContain('syntax error', false)
-        ->not->toContain('unexpected identifier', false)
-        ->not->toContain('Parse error', false)
-        ->not->toContain('Fatal error', false)
-        ->not->toContain('Call to undefined', false);
-})->with($templatePages)->group('docs');
+    foreach ($pages as $path) {
+        $response = $this->get($path);
+
+        $response->assertSuccessful();
+
+        $content = $response->getContent();
+
+        // Verify there are no PHP errors shown in the rendered HTML.
+        expect($content)
+            ->not->toContain('syntax error', false)
+            ->not->toContain('unexpected identifier', false)
+            ->not->toContain('Parse error', false)
+            ->not->toContain('Fatal error', false)
+            ->not->toContain('Call to undefined', false);
+    }
+})->group('docs');

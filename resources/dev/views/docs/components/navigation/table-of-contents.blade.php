@@ -39,15 +39,14 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$sections = [
-    ["id" => "intro", "label" => "Introduction"],
-    ["id" => "base", "label" => "Exemple de base"],
-    ["id" => "variants", "label" => "Variantes"],
-    ["id" => "api", "label" => "API"]
-];
-@endphp
-<x-daisy::ui.navigation.table-of-contents :sections="$sections" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.navigation.table-of-contents :sections="[
+    ['id' => 'intro', 'label' => 'Introduction'],
+    ['id' => 'base', 'label' => 'Exemple de base'],
+    ['id' => 'variants', 'label' => 'Variantes'],
+    ['id' => 'api', 'label' => 'API'],
+]" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

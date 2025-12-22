@@ -29,7 +29,7 @@
     <x-daisy::docs.sections.example name="sidebar">
         <x-slot:preview>
             @php
-                $items = [
+                $sidebarSections = [
                     [
                         'label' => 'Navigation',
                         'items' => [
@@ -41,24 +41,23 @@
                 ];
             @endphp
             <div class="h-64 border border-base-300 rounded-box overflow-hidden">
-                <x-daisy::ui.navigation.sidebar :items="$items" brand="Mon App" />
+                <x-daisy::ui.navigation.sidebar :sections="$sidebarSections" brand="Mon App" />
             </div>
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$items = [
+                $baseCode = <<<'CODE'
+<x-daisy::ui.navigation.sidebar :sections="[
     [
-        "label" => "Navigation",
-        "items" => [
-            ["label" => "Dashboard", "href" => "#", "icon" => "house"],
-            ["label" => "Utilisateurs", "href" => "#", "icon" => "people"],
-            ["label" => "Paramètres", "href" => "#", "icon" => "gear"]
-        ]
-    ]
-];
-@endphp
-<x-daisy::ui.navigation.sidebar :items="$items" brand="Mon App" />';
+        'label' => 'Navigation',
+        'items' => [
+            ['label' => 'Dashboard', 'href' => '#', 'icon' => 'house'],
+            ['label' => 'Utilisateurs', 'href' => '#', 'icon' => 'people'],
+            ['label' => 'Paramètres', 'href' => '#', 'icon' => 'gear'],
+        ],
+    ],
+]" brand="Mon App" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 
@@ -80,7 +79,7 @@ $items = [
                 <div>
                     <p class="text-sm font-semibold mb-2">Variants de largeur</p>
                     @php
-                        $items = [
+                        $sidebarSections = [
                             [
                                 'label' => 'Menu',
                                 'items' => [
@@ -91,10 +90,10 @@ $items = [
                     @endphp
                     <div class="space-y-2">
                         <div class="h-32 border border-base-300 rounded-box overflow-hidden">
-                            <x-daisy::ui.navigation.sidebar :items="$items" variant="slim" brand="Slim" />
+                            <x-daisy::ui.navigation.sidebar :sections="$sidebarSections" variant="slim" brand="Slim" />
                         </div>
                         <div class="h-32 border border-base-300 rounded-box overflow-hidden">
-                            <x-daisy::ui.navigation.sidebar :items="$items" variant="wide" brand="Wide" />
+                            <x-daisy::ui.navigation.sidebar :sections="$sidebarSections" variant="wide" brand="Wide" />
                         </div>
                     </div>
                 </div>
@@ -102,22 +101,25 @@ $items = [
         </x-slot:preview>
         <x-slot:code>
             @php
-                $variantsCode = '@php
-$items = [
+                $variantsCode = <<<'CODE'
+<x-daisy::ui.navigation.sidebar :sections="[
     [
-        "label" => "Menu",
-        "items" => [
-            ["label" => "Item 1", "href" => "#", "icon" => "house"]
-        ]
-    ]
-];
-@endphp
+        'label' => 'Menu',
+        'items' => [
+            ['label' => 'Item 1', 'href' => '#', 'icon' => 'house'],
+        ],
+    ],
+]" variant="slim" />
 
-{{-- Slim (icônes uniquement) --}}
-<x-daisy::ui.navigation.sidebar :items="$items" variant="slim" />
-
-{{-- Wide (largeur fixe) --}}
-<x-daisy::ui.navigation.sidebar :items="$items" variant="wide" />';
+<x-daisy::ui.navigation.sidebar :sections="[
+    [
+        'label' => 'Menu',
+        'items' => [
+            ['label' => 'Item 1', 'href' => '#', 'icon' => 'house'],
+        ],
+    ],
+]" variant="wide" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

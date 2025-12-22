@@ -41,14 +41,13 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$steps = [
-    ["title" => "Bienvenue", "content" => "Bienvenue dans notre application !"],
-    ["title" => "Première étape", "content" => "Voici comment commencer."],
-    ["title" => "Terminé", "content" => "Vous êtes prêt à utiliser l\'application."]
-];
-@endphp
-<x-daisy::ui.advanced.onboarding :steps="$steps" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.advanced.onboarding :steps="[
+    ['title' => 'Bienvenue', 'content' => 'Bienvenue dans notre application !'],
+    ['title' => 'Première étape', 'content' => 'Voici comment commencer.'],
+    ['title' => 'Terminé', 'content' => 'Vous êtes prêt à utiliser l\'application.'],
+]" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

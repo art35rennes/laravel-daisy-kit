@@ -43,17 +43,14 @@
         <x-slot:code>
             @php
                 $baseCode = <<<'CODE'
-@php
-$items = [
-    ["type" => "added", "description" => "Nouvelle fonctionnalité de recherche"],
-    ["type" => "fixed", "description" => "Correction d'un bug dans le formulaire"],
-    ["type" => "changed", "description" => "Amélioration des performances de chargement"]
-];
-@endphp
-<x-daisy::ui.changelog.changelog-version-item 
-    version="1.0.0" 
-    date="2024-01-15" 
-    :items="$items" 
+<x-daisy::ui.changelog.changelog-version-item
+    version="1.0.0"
+    date="2024-01-15"
+    :items="[
+        ['type' => 'added', 'description' => 'Nouvelle fonctionnalité de recherche'],
+        ['type' => 'fixed', 'description' => 'Correction d\'un bug dans le formulaire'],
+        ['type' => 'changed', 'description' => 'Amélioration des performances de chargement'],
+    ]"
 />
 CODE;
             @endphp

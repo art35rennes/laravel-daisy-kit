@@ -26,8 +26,8 @@
         <h2>Exemple</h2>
         <div class="mockup-code mt-4">
 <pre data-prefix=""><code>&lt;x-daisy::templates.auth.register-simple
-    action="{{ route('register') }}"
-    loginUrl="{{ route('login') }}"
+    action="@{{ route('register') }}"
+    loginUrl="@{{ route('login') }}"
     :passwordConfirmation="true"
     termsUrl="/terms"
     privacyUrl="/privacy"

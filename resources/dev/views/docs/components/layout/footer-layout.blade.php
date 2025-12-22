@@ -58,34 +58,32 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$columns = [
-    [
-        "title" => "Produits", 
-        "links" => [
-            ["label" => "Fonctionnalités", "href" => "/features"], 
-            ["label" => "Tarifs", "href" => "/pricing"]
-        ]
-    ],
-    [
-        "title" => "Support", 
-        "links" => [
-            ["label" => "Documentation", "href" => "/docs"], 
-            ["label" => "Contact", "href" => "/contact"]
-        ]
-    ]
-];
-$socialLinks = [
-    ["icon" => "bi-twitter", "href" => "#", "label" => "Twitter"], 
-    ["icon" => "bi-github", "href" => "#", "label" => "GitHub"]
-];
-@endphp
-<x-daisy::ui.layout.footer-layout 
-    :columns="$columns" 
-    brandText="Mon Entreprise" 
-    copyrightText="Tous droits réservés" 
-    :socialLinks="$socialLinks" 
-/>';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.layout.footer-layout
+    :columns="[
+        [
+            'title' => 'Produits',
+            'links' => [
+                ['label' => 'Fonctionnalités', 'href' => '/features'],
+                ['label' => 'Tarifs', 'href' => '/pricing'],
+            ],
+        ],
+        [
+            'title' => 'Support',
+            'links' => [
+                ['label' => 'Documentation', 'href' => '/docs'],
+                ['label' => 'Contact', 'href' => '/contact'],
+            ],
+        ],
+    ]"
+    brandText="Mon Entreprise"
+    copyrightText="Tous droits réservés"
+    :socialLinks="[
+        ['icon' => 'bi-twitter', 'href' => '#', 'label' => 'Twitter'],
+        ['icon' => 'bi-github', 'href' => '#', 'label' => 'GitHub'],
+    ]"
+/>
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

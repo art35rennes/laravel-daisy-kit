@@ -82,6 +82,51 @@ Standardisation de la structure des pages de documentation pour les templates **
 
 Élimination de la dépendance aux manifests JSON statiques au profit d'un système de scan dynamique avec cache Laravel intelligent. Intégration transparente avec `npm run dev` pour un workflow de développement optimisé. Migration progressive avec support du fallback vers les manifests JSON pour garantir la compatibilité.
 
+### Lot 12 : Fondations Alpine (bootstrap, helpers, conventions)
+**Fichier** : `lot-12-alpine-bootstrap.md`
+
+Mise en place d’Alpine.js comme moteur d’interactions principal du package (init, helpers, conventions). Décision: **Option B + core** (Alpine fourni par le build Vite de l’app hôte via `daisy-src`).
+
+### Lot 13 : Comportements globaux vers Alpine (quick wins)
+**Fichier** : `lot-13-alpine-global-behaviors.md`
+
+Migration des comportements globaux (checkbox indeterminate, radios décochables, sidebar collapse/persist) depuis `resources/js/app.js` vers Alpine au niveau des composants Blade.
+
+### Lot 14 : Forms vers Alpine (wizard / tabs / inline)
+**Fichier** : `lot-14-alpine-forms-wizard-tabs-inline.md`
+
+Remplacement des modules `resources/js/modules/forms/*` par Alpine dans les templates de formulaires avancés, avec mise à jour des tests Feature.
+
+### Lot 15 : Modules “UI pure” vers Alpine
+**Fichier** : `lot-15-alpine-ui-modules.md`
+
+Migration vers Alpine des modules à forte valeur UI (sidebar search, select search/autocomplete, otp-code, copyable, csrf-keeper) et stabilisation des tests Browser associés.
+
+### Lot 16 : Popover / Popconfirm / Notifications vers Alpine
+**Fichier** : `lot-16-alpine-popover-popconfirm-notifications.md`
+
+Migration des composants sensibles à l’accessibilité (popover, popconfirm) et du centre de notifications, en s’appuyant sur les Browser tests existants.
+
+### Lot 17 : Chat vers Alpine (complexe)
+**Fichier** : `lot-17-alpine-chat.md`
+
+Migration des composants de chat vers une architecture Alpine (state orchestration) tout en conservant robustesse et tests.
+
+### Lot 18 : Composants lourds (Alpine orchestrateur + wrappers libs)
+**Fichier** : `lot-18-alpine-heavy-components.md`
+
+Alpine pilote l’UX et l’état, tandis que les modules JS restent comme adapters pour les libs tierces (Chart.js, Leaflet, CodeMirror, etc.) et les cas perf critiques.
+
+### Lot 19 : Lazyloading JS dev-only (exclu du package publié)
+**Fichier** : `lot-19-dev-only-lazyloading-exclusion.md`
+
+Le lazyloading JS reste un outil de démo/dev (`daisy-dev::`) et est exclu du tag `daisy-src` publié pour les apps hôtes.
+
+### Lot 20 : Nettoyage final (Alpine dominant)
+**Fichier** : `lot-20-alpine-cleanup.md`
+
+Suppression du code mort (modules inutiles, wiring `data-module`, handlers globaux) et stabilisation du socle Alpine “core”.
+
 ## Principes généraux
 
 Tous les templates doivent :

@@ -396,11 +396,11 @@
         <section>
             <h2 class="text-xl font-semibold">Catalogue · Auto (manifeste)</h2>
             @php
-                $manifestPath = base_path('resources/dev/data/components.json');
                 $components = [];
-                if (is_file($manifestPath)) {
-                    $json = json_decode(file_get_contents($manifestPath), true);
-                    $components = $json['components'] ?? [];
+                try {
+                    $components = \App\Helpers\ComponentScanner::readCached()['components'] ?? [];
+                } catch (\Throwable $e) {
+                    $components = [];
                 }
                 $byCategory = [];
                 foreach ($components as $c) {
@@ -409,6 +409,11 @@
                 }
                 ksort($byCategory);
             @endphp
+            @if(empty($components))
+                <div role="alert" class="alert alert-warning">
+                    <span>Inventaire non disponible. Lancez <code class="kbd kbd-sm">php artisan inventory:cache:rebuild --components</code>.</span>
+                </div>
+            @endif
             <div class="space-y-6">
                 @foreach($byCategory as $cat => $items)
                     <div class="space-y-2">

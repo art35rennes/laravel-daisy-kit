@@ -27,7 +27,7 @@
         <div class="mockup-code mt-4">
 <pre data-prefix=""><code>&lt;x-daisy::templates.profile.profile-settings
     :profile="auth()->user()"
-    action="{{ route('profile.settings.update') }}"
+    action="@{{ route('profile.settings.update') }}"
     :preferences="['language' =&gt; 'fr', 'timezone' =&gt; 'Europe/Paris', 'notify_email' =&gt; true]"
     :showPrivacy="true"
 /&gt;</code></pre>

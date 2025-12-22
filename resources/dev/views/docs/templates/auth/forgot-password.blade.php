@@ -26,8 +26,8 @@
         <h2>Exemple</h2>
         <div class="mockup-code mt-4">
 <pre data-prefix=""><code>&lt;x-daisy::templates.auth.forgot-password
-    action="{{ route('password.email') }}"
-    loginUrl="{{ route('login') }}"
+    action="@{{ route('password.email') }}"
+    loginUrl="@{{ route('login') }}"
     :status="session('status')"
 /&gt;</code></pre>
         </div>

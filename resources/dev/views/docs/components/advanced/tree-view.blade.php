@@ -52,26 +52,23 @@
         <x-slot:code>
             @php
                 $baseCode = <<<'CODE'
-@php
-$data = [
+<x-daisy::ui.advanced.tree-view :data="[
     [
-        "id" => 1, 
-        "label" => "Dossier racine", 
-        "children" => [
+        'id' => 1,
+        'label' => 'Dossier racine',
+        'children' => [
             [
-                "id" => 2, 
-                "label" => "Sous-dossier",
-                "children" => [
-                    ["id" => 3, "label" => "Fichier 1"],
-                    ["id" => 4, "label" => "Fichier 2"]
-                ]
+                'id' => 2,
+                'label' => 'Sous-dossier',
+                'children' => [
+                    ['id' => 3, 'label' => 'Fichier 1'],
+                    ['id' => 4, 'label' => 'Fichier 2'],
+                ],
             ],
-            ["id" => 5, "label" => "Fichier 3"]
-        ]
-    ]
-];
-@endphp
-<x-daisy::ui.advanced.tree-view :data="$data" />
+            ['id' => 5, 'label' => 'Fichier 3'],
+        ],
+    ],
+]" />
 CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 

@@ -39,15 +39,14 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$conversation = [
-    "id" => 1,
-    "name" => "Alice Martin",
-    "avatar" => "https://i.pravatar.cc/150?img=12",
-    "isOnline" => true
-];
-@endphp
-<x-daisy::ui.communication.chat-header :conversation="$conversation" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.communication.chat-header :conversation="[
+    'id' => 1,
+    'name' => 'Alice Martin',
+    'avatar' => 'https://i.pravatar.cc/150?img=12',
+    'isOnline' => true,
+]" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

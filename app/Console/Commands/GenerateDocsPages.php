@@ -2,8 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Helpers\ComponentScanner;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Artisan;
 
 class GenerateDocsPages extends Command
 {
@@ -13,16 +14,12 @@ class GenerateDocsPages extends Command
 
     public function handle(): int
     {
-        $manifestPath = resource_path('dev/data/components.json');
-        if (! File::exists($manifestPath)) {
-            $this->error('Le fichier components.json n\'existe pas. Exécutez d\'abord inventory:components.');
-
-            return Command::FAILURE;
+        try {
+            $components = ComponentScanner::readCached()['components'] ?? [];
+        } catch (\Throwable) {
+            Artisan::call('inventory:components');
+            $components = ComponentScanner::readCached()['components'] ?? [];
         }
-
-        $json = File::get($manifestPath);
-        $data = json_decode($json, true);
-        $components = $data['components'] ?? [];
 
         if (empty($components)) {
             $this->error('Aucun composant trouvé dans le manifeste.');
@@ -98,7 +95,7 @@ class GenerateDocsPages extends Command
         }
         $sectionsPhp .= '        ]';
 
-        $propsPhp = "[]";
+        $propsPhp = '[]';
         if (! empty($props)) {
             $propsPhp = "DocsHelper::getComponentProps('{$category}', '{$name}')";
         }

@@ -50,24 +50,26 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$conversation = [
-    "id" => 1, 
-    "name" => "Alice", 
-    "avatar" => "https://i.pravatar.cc/150?img=12", 
-    "isOnline" => true
-];
-$messages = [
-    [
-        "id" => 1, 
-        "user_id" => 2, 
-        "content" => "Bonjour !", 
-        "created_at" => "2024-01-15 14:30:00", 
-        "user_name" => "Alice"
-    ]
-];
-@endphp
-<x-daisy::ui.communication.conversation-view :conversation="$conversation" :messages="$messages" currentUserId="1" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.communication.conversation-view
+    :conversation="[
+        'id' => 1,
+        'name' => 'Alice',
+        'avatar' => 'https://i.pravatar.cc/150?img=12',
+        'isOnline' => true,
+    ]"
+    :messages="[
+        [
+            'id' => 1,
+            'user_id' => 2,
+            'content' => 'Bonjour !',
+            'created_at' => '2024-01-15 14:30:00',
+            'user_name' => 'Alice',
+        ],
+    ]"
+    currentUserId="1"
+/>
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

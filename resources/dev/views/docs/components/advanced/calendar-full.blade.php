@@ -40,14 +40,11 @@
         <x-slot:code>
             @php
                 $baseCode = <<<'CODE'
-@php
-$events = [
-    ["title" => "Réunion", "start" => "2024-01-15 10:00"],
-    ["title" => "Déjeuner", "start" => "2024-01-15 12:30"],
-    ["title" => "Conférence", "start" => "2024-01-20 14:00"]
-];
-@endphp
-<x-daisy::ui.advanced.calendar-full :events="$events" />
+<x-daisy::ui.advanced.calendar-full :events="[
+    ['title' => 'Réunion', 'start' => '2024-01-15 10:00'],
+    ['title' => 'Déjeuner', 'start' => '2024-01-15 12:30'],
+    ['title' => 'Conférence', 'start' => '2024-01-20 14:00'],
+]" />
 CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 

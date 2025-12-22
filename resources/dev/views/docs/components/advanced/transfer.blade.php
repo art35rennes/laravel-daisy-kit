@@ -41,15 +41,12 @@
         <x-slot:code>
             @php
                 $baseCode = <<<'CODE'
-@php
-$source = [
-    ["id" => 1, "label" => "Item 1"],
-    ["id" => 2, "label" => "Item 2"],
-    ["id" => 3, "label" => "Item 3"],
-    ["id" => 4, "label" => "Item 4"]
-];
-@endphp
-<x-daisy::ui.advanced.transfer :source="$source" />
+<x-daisy::ui.advanced.transfer :source="[
+    ['id' => 1, 'label' => 'Item 1'],
+    ['id' => 2, 'label' => 'Item 2'],
+    ['id' => 3, 'label' => 'Item 3'],
+    ['id' => 4, 'label' => 'Item 4'],
+]" />
 CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 

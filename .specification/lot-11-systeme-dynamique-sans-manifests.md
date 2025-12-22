@@ -1,11 +1,11 @@
-# Lot 11 · Plan de spécification – Système dynamique sans manifests JSON
+# Lot 11 · Plan de spécification – Inventaire dynamique sans manifests JSON (cache fichier, sans DB)
 
 ## 1. Objectifs produit
 
 - **Éliminer la dépendance aux manifests JSON statiques** pour la documentation et la navigation, en faveur d'un système de scan dynamique avec cache intelligent.
 - **Simplifier le workflow de développement** en automatisant la régénération des inventaires lors des modifications de fichiers.
 - **Améliorer la maintenabilité** en centralisant la logique de scan dans une classe réutilisable, éliminant la duplication entre commandes Artisan et helpers.
-- **Garantir les performances** grâce à un système de cache Laravel avec invalidation intelligente basée sur les timestamps des fichiers.
+- **Garantir les performances** grâce à un cache **fichier** (PHP) avec invalidation intelligente basée sur les timestamps des fichiers, **sans jamais dépendre d'un driver de cache DB**.
 
 **Note importante** : Ce lot concerne uniquement les **outils de développement** du package. Les scanners, helpers et commandes sont dans `app/` car ils font partie de l'application de développement/test du package, **non publiés** avec le package final. Ils sont utilisés uniquement pour générer la documentation et les inventaires pendant le développement.
 
@@ -14,37 +14,35 @@
 | Axe | Description synthétique | Valeur ajoutée |
 |-----|-------------------------|----------------|
 | Scanner dynamique centralisé | Classe `ComponentScanner` et `TemplateScanner` qui scannent les fichiers directement depuis le système de fichiers. | Source unique de vérité, pas de désynchronisation possible. |
-| Cache Laravel avec invalidation | Utilisation du cache Laravel avec tags et invalidation basée sur les timestamps des fichiers. | Performances optimales sans régénération manuelle. |
+| Cache fichier avec invalidation | Utilisation d'un cache **fichier PHP** (chargé via `require`) avec invalidation basée sur les `filemtime()`. | Performances optimales sans régénération manuelle. |
 | Intégration npm run dev | Watch automatique des fichiers Blade qui régénère les caches à la volée. | Workflow transparent pour le développeur. |
-| Migration progressive | Support des deux systèmes (manifests JSON + cache) pendant la transition, avec fallback automatique. | Aucun breaking change, migration en douceur. |
 | Refactor de DocsHelper | `DocsHelper` utilise désormais les scanners avec cache au lieu de lire les manifests JSON. | Code simplifié, logique centralisée. |
 
-## 3. Exigences transverses
+## 3. Exigences transverses (phase dev, sans rétrocompatibilité)
 
 1. **Performance garantie**
    - Le scan ne doit jamais être exécuté à chaque requête HTTP.
-   - Utilisation obligatoire du cache Laravel avec TTL approprié (1 heure par défaut).
+   - Utilisation obligatoire d'un cache **fichier** (PHP) lisible via `require`, sans TTL (invalidation par changement des fichiers).
    - Invalidation automatique basée sur les timestamps des fichiers modifiés.
-   - Support des tags de cache pour invalidation sélective.
+   - Pas de tags de cache Laravel (les tags dépendent des stores et peuvent impliquer Redis / DB).
+   - Ne pas utiliser `Cache::` / `cache()` pour stocker l'inventaire (risque de driver `database`). Le seul cache Laravel toléré ici est `php artisan view:cache` (cache des vues compilées).
 
 2. **Robustesse et résilience**
-   - Fallback automatique vers les manifests JSON si le cache est vide et que les fichiers n'existent pas.
+   - Pas de fallback vers des manifests JSON (suppression du mode legacy).
    - Gestion gracieuse des erreurs (fichiers manquants, permissions, etc.).
    - Logging des erreurs critiques sans bloquer l'application.
 
-3. **Compatibilité et migration**
-   - Support des deux systèmes pendant la transition (manifests JSON + cache dynamique).
-   - Les commandes `inventory:*` continuent de fonctionner pour générer les manifests JSON (utiles pour les tests, CI/CD, etc.).
-   - Migration progressive : le système détecte automatiquement la présence des manifests et les utilise en fallback.
+3. **Pas de rétrocompatibilité**
+   - Les manifests JSON `resources/dev/data/*.json` sont supprimés du flux “source de vérité”.
+   - Les points d'entrée (Docs, navigation) lisent uniquement l'inventaire via le cache fichier (ou un scan forcé en commande).
 
 4. **Intégration transparente**
-   - Aucun changement dans l'API publique de `DocsHelper`.
-   - Les vues de documentation continuent de fonctionner sans modification.
-   - Les tests existants continuent de fonctionner (avec génération automatique des manifests si nécessaire).
+   - L'API publique de `DocsHelper` peut évoluer si nécessaire (phase dev), mais le résultat fonctionnel (navigation/docs) doit rester identique.
+   - Les vues de documentation continuent de fonctionner sans dépendre de JSON.
 
 5. **Développement local optimisé**
    - Watch automatique des fichiers Blade via `npm run dev`.
-   - Régénération du cache uniquement quand nécessaire (fichiers modifiés).
+   - Régénération du cache uniquement quand nécessaire (fichiers modifiés) via une commande Artisan.
    - Debounce pour éviter les scans multiples lors de sauvegardes rapides.
 
 ## 4. Spécifications détaillées
@@ -60,8 +58,8 @@
 **Responsabilités** :
 - Scanner récursivement `resources/views/components/ui/**/*.blade.php`
 - Extraire les métadonnées (nom, catégorie, props, data-attributes, module JS)
-- Générer la structure de données identique à celle des manifests JSON actuels
-- Gérer le cache avec invalidation intelligente
+- Générer une structure de données stable (tableaux PHP) consommée par `DocsHelper`
+- Gérer un **cache fichier PHP** avec invalidation intelligente (hash des mtimes)
 
 **Signature principale** :
 
@@ -69,29 +67,29 @@
 class ComponentScanner
 {
     /**
-     * Scanne les composants et retourne les métadonnées.
-     * Utilise le cache Laravel avec invalidation basée sur les timestamps.
+     * Retourne l'inventaire des composants depuis un cache fichier PHP.
+     * Si le cache est manquant ou invalide, une exception est levée (pas de scan implicite en HTTP).
      *
-     * @return array{components: array<int, array<string, mixed>>, generated_at: string}
+     * @return array{components: array<int, array<string, mixed>>, generated_at: string, files_hash: string}
      */
-    public static function scan(): array;
+    public static function readCached(): array;
     
     /**
-     * Force la régénération du cache (ignore le cache existant).
+     * Reconstruit le cache fichier PHP (scan + écriture), en ignorants les caches existants.
      *
-     * @return array{components: array<int, array<string, mixed>>, generated_at: string}
+     * @return array{components: array<int, array<string, mixed>>, generated_at: string, files_hash: string}
      */
-    public static function scanFresh(): array;
+    public static function rebuildCache(): array;
     
     /**
-     * Vérifie si le cache est valide en comparant les timestamps des fichiers.
+     * Vérifie si le cache fichier est valide en comparant le hash des mtimes.
      *
      * @return bool
      */
     public static function isCacheValid(): bool;
     
     /**
-     * Invalide le cache (utile pour les tests ou après modifications manuelles).
+     * Supprime le cache fichier (utile pour les tests ou après modifications manuelles).
      *
      * @return void
      */
@@ -99,16 +97,16 @@ class ComponentScanner
 }
 ```
 
-**Stratégie de cache** :
-- Clé de cache : `daisy.components.manifest`
-- Tags : `['daisy', 'components', 'manifest']`
-- TTL : 3600 secondes (1 heure)
-- Invalidation : Comparaison des timestamps des fichiers avec le timestamp stocké dans le cache
+**Stratégie de cache (sans DB)** :
+- Supporté uniquement via **fichier PHP** (ex: `bootstrap/cache/daisy-components.php` ou `storage/framework/cache/daisy-components.php`)
+- Chargement par `require $path` (OPcache-friendly)
+- Pas de TTL : on régénère uniquement si le hash des mtimes change
 
 **Algorithme d'invalidation** :
-1. Stocker dans le cache : `['data' => [...], 'files_hash' => md5(serialize($fileTimestamps))]`
-2. À chaque lecture, comparer le hash actuel avec celui du cache
-3. Si différent, régénérer automatiquement
+1. Construire la liste de fichiers et leurs `filemtime()`
+2. Calculer `files_hash = md5(json_encode($fileMtimes))`
+3. Écrire un fichier PHP qui retourne `['components' => [...], 'generated_at' => ..., 'files_hash' => ...]`
+4. Lors d'un rebuild, comparer le `files_hash` courant avec celui du cache existant et ne réécrire que si différent
 
 #### 4.1.2 Classe `TemplateScanner`
 
@@ -119,8 +117,8 @@ class ComponentScanner
 **Responsabilités** :
 - Scanner récursivement `resources/views/templates/**/*.blade.php`
 - Extraire les métadonnées (nom, catégorie, annotations, type, route)
-- Générer la structure de données identique à celle des manifests JSON actuels
-- Gérer le cache avec invalidation intelligente
+- Générer une structure de données stable (tableaux PHP) consommée par `DocsHelper`
+- Gérer un **cache fichier PHP** avec invalidation intelligente (hash des mtimes)
 
 **Signature principale** :
 
@@ -128,29 +126,29 @@ class ComponentScanner
 class TemplateScanner
 {
     /**
-     * Scanne les templates et retourne les métadonnées.
-     * Utilise le cache Laravel avec invalidation basée sur les timestamps.
+     * Retourne l'inventaire des templates depuis un cache fichier PHP.
+     * Si le cache est manquant ou invalide, une exception est levée (pas de scan implicite en HTTP).
      *
-     * @return array{templates: array<int, array<string, mixed>>, categories: array<int, array<string, mixed>>, generated_at: string}
+     * @return array{templates: array<int, array<string, mixed>>, categories: array<int, array<string, mixed>>, generated_at: string, files_hash: string}
      */
-    public static function scan(): array;
+    public static function readCached(): array;
     
     /**
-     * Force la régénération du cache (ignore le cache existant).
+     * Reconstruit le cache fichier PHP (scan + écriture), en ignorant les caches existants.
      *
-     * @return array{templates: array<int, array<string, mixed>>, categories: array<int, array<string, mixed>>, generated_at: string}
+     * @return array{templates: array<int, array<string, mixed>>, categories: array<int, array<string, mixed>>, generated_at: string, files_hash: string}
      */
-    public static function scanFresh(): array;
+    public static function rebuildCache(): array;
     
     /**
-     * Vérifie si le cache est valide en comparant les timestamps des fichiers.
+     * Vérifie si le cache fichier est valide en comparant le hash des mtimes.
      *
      * @return bool
      */
     public static function isCacheValid(): bool;
     
     /**
-     * Invalide le cache (utile pour les tests ou après modifications manuelles).
+     * Supprime le cache fichier (utile pour les tests ou après modifications manuelles).
      *
      * @return void
      */
@@ -158,11 +156,9 @@ class TemplateScanner
 }
 ```
 
-**Stratégie de cache** :
-- Clé de cache : `daisy.templates.manifest`
-- Tags : `['daisy', 'templates', 'manifest']`
-- TTL : 3600 secondes (1 heure)
-- Invalidation : Identique à `ComponentScanner`
+**Stratégie de cache (sans DB)** :
+- Supporté uniquement via **fichier PHP** (ex: `bootstrap/cache/daisy-templates.php` ou `storage/framework/cache/daisy-templates.php`)
+- Même logique d'invalidation que `ComponentScanner`
 
 #### 4.1.3 Logique de scan partagée
 
@@ -179,16 +175,11 @@ class TemplateScanner
 
 ### 4.2. Refactor de `DocsHelper`
 
-#### 4.2.1 Migration progressive
+#### 4.2.1 Simplification (sans rétrocompatibilité)
 
-**Phase 1** : Support des deux systèmes (manifests JSON + cache)
-- `DocsHelper` essaie d'abord le cache dynamique
-- Si le cache est vide, fallback vers les manifests JSON
-- Si les manifests n'existent pas, scan à la volée et mise en cache
-
-**Phase 2** : Migration complète vers le cache
-- Suppression du support des manifests JSON (après validation en production)
-- `DocsHelper` utilise uniquement les scanners avec cache
+- `DocsHelper` lit uniquement l'inventaire depuis les caches fichiers construits par les commandes (pas de JSON).
+- En contexte HTTP, **pas de scan implicite** : si le cache est absent, on affiche une erreur actionnable (“lancez la commande X”).
+- En contexte CLI (commandes), les scanners reconstruisent le cache.
 
 **Méthodes modifiées** :
 
@@ -196,64 +187,30 @@ class TemplateScanner
 class DocsHelper
 {
     /**
-     * Lit le manifeste des composants (cache dynamique ou fallback JSON).
+     * Lit l'inventaire des composants depuis le cache fichier.
      *
      * @return array<string, mixed>
      */
     private static function readManifest(): array
     {
-        // Essayer le cache dynamique
-        $cached = ComponentScanner::scan();
-        if (!empty($cached['components'])) {
-            return $cached;
-        }
-        
-        // Fallback vers manifests JSON (compatibilité)
-        $path = resource_path('dev/data/components.json');
-        if (File::exists($path)) {
-            $json = File::get($path);
-            $data = json_decode($json, true);
-            if (is_array($data) && !empty($data['components'])) {
-                return $data;
-            }
-        }
-        
-        // Dernier recours : scan à la volée
-        return ComponentScanner::scanFresh();
+        return ComponentScanner::readCached();
     }
     
     /**
-     * Lit le manifeste des templates (cache dynamique ou fallback JSON).
+     * Lit l'inventaire des templates depuis le cache fichier.
      *
      * @return array<string, mixed>
      */
     private static function readTemplatesManifest(): array
     {
-        // Essayer le cache dynamique
-        $cached = TemplateScanner::scan();
-        if (!empty($cached['templates'])) {
-            return $cached;
-        }
-        
-        // Fallback vers manifests JSON (compatibilité)
-        $path = resource_path('dev/data/templates.json');
-        if (File::exists($path)) {
-            $json = File::get($path);
-            $data = json_decode($json, true);
-            if (is_array($data) && !empty($data['templates'])) {
-                return $data;
-            }
-        }
-        
-        // Dernier recours : scan à la volée
-        return TemplateScanner::scanFresh();
+        return TemplateScanner::readCached();
     }
 }
 ```
 
 ### 4.3. Intégration avec `npm run dev`
 
-#### 4.3.1 Script de watch Node.js
+#### 4.3.1 Script de watch Node.js (dev)
 
 **Fichier** : `scripts/watch-inventory.js`
 
@@ -261,7 +218,7 @@ class DocsHelper
 - Watch des fichiers Blade dans `resources/views/components/ui/**/*.blade.php`
 - Watch des fichiers Blade dans `resources/views/templates/**/*.blade.php`
 - Debounce de 1 seconde pour éviter les scans multiples
-- Exécution de `php artisan inventory:cache:refresh` (nouvelle commande)
+- Exécution de `php artisan inventory:cache:rebuild` (nouvelle commande)
 - Logging clair des actions (start, change, success, error)
 
 **Implémentation** :
@@ -287,7 +244,7 @@ function runInventoryRefresh() {
   isRunning = true;
   console.log('🔄 Mise à jour du cache des inventaires...');
   
-  const proc = spawn('php', ['artisan', 'inventory:cache:refresh'], {
+  const proc = spawn('php', ['artisan', 'inventory:cache:rebuild'], {
     stdio: 'inherit',
     shell: true,
   });
@@ -353,7 +310,7 @@ console.log('👀 Surveillance des composants et templates activée...');
 }
 ```
 
-#### 4.3.3 Nouvelle commande Artisan `inventory:cache:refresh`
+#### 4.3.3 Nouvelle commande Artisan `inventory:cache:rebuild`
 
 **Localisation** : `app/Console/Commands/InventoryCacheRefresh.php`  
 **Namespace** : `App\Console\Commands\`  
@@ -369,9 +326,9 @@ console.log('👀 Surveillance des composants et templates activée...');
 ```php
 class InventoryCacheRefresh extends Command
 {
-    protected $signature = 'inventory:cache:refresh {--components : Refresh only components cache} {--templates : Refresh only templates cache}';
+    protected $signature = 'inventory:cache:rebuild {--components : Rebuild only components cache} {--templates : Rebuild only templates cache}';
     
-    protected $description = 'Rafraîchit le cache des inventaires (composants et/ou templates)';
+    protected $description = 'Reconstruit le cache fichier des inventaires (composants et/ou templates)';
     
     public function handle(): int
     {
@@ -381,14 +338,14 @@ class InventoryCacheRefresh extends Command
         if ($refreshComponents) {
             $this->info('Rafraîchissement du cache des composants...');
             ComponentScanner::clearCache();
-            ComponentScanner::scanFresh();
+            ComponentScanner::rebuildCache();
             $this->info('✓ Cache des composants rafraîchi');
         }
         
         if ($refreshTemplates) {
             $this->info('Rafraîchissement du cache des templates...');
             TemplateScanner::clearCache();
-            TemplateScanner::scanFresh();
+            TemplateScanner::rebuildCache();
             $this->info('✓ Cache des templates rafraîchi');
         }
         
@@ -397,19 +354,12 @@ class InventoryCacheRefresh extends Command
 }
 ```
 
-### 4.4. Compatibilité avec les commandes existantes
+### 4.4. Commandes et flux (sans JSON)
 
-#### 4.4.1 Commandes `inventory:*` conservées
+- Les commandes `inventory:*` sont réorientées pour **générer/reconstruire le cache fichier PHP** (plus de JSON comme livrable).
+- La commande dédiée `inventory:cache:rebuild` devient le point d'entrée standard pour le watch.
 
-Les commandes `inventory:components`, `inventory:templates` et `inventory:update` sont **conservées** pour :
-- Génération des manifests JSON pour les tests
-- CI/CD et scripts automatisés
-- Debug et inspection manuelle
-- Compatibilité avec les outils existants
-
-**Modification** : Ces commandes peuvent optionnellement rafraîchir le cache après génération des manifests.
-
-#### 4.4.2 Nouvelle commande `inventory:cache:clear`
+#### 4.4.1 Nouvelle commande `inventory:cache:clear`
 
 **Localisation** : `app/Console/Commands/InventoryCacheClear.php`  
 **Namespace** : `App\Console\Commands\`  
@@ -424,14 +374,14 @@ Les commandes `inventory:components`, `inventory:templates` et `inventory:update
 #### 4.5.1 Stratégie de gestion d'erreurs
 
 - **Fichiers manquants** : Retourner un tableau vide avec logging warning
-- **Permissions insuffisantes** : Logging error + fallback vers manifests JSON
+- **Permissions insuffisantes** : Logging error + message actionnable (“corrigez les droits / relancez la commande”)
 - **Erreurs de parsing** : Logging error + continuer avec les autres fichiers
-- **Cache corrompu** : Détection automatique + régénération silencieuse
+- **Cache corrompu** : Détection automatique + suppression + rebuild en CLI (pas en HTTP)
 
 #### 4.5.2 Logging
 
 - **Niveau INFO** : Scan initié, cache régénéré, fichiers détectés
-- **Niveau WARNING** : Fichiers ignorés, fallback vers manifests
+- **Niveau WARNING** : Fichiers ignorés, cache absent/invalide, incohérences mineures
 - **Niveau ERROR** : Erreurs critiques (permissions, corruption)
 
 ## 5. Livrables techniques
@@ -459,25 +409,22 @@ Les commandes `inventory:components`, `inventory:templates` et `inventory:update
 ### 5.2. Modifications des classes existantes
 
 1. **`app/Helpers/DocsHelper.php`**
-   - Migration vers les scanners avec cache
-   - Support du fallback vers manifests JSON
-   - Aucun changement dans l'API publique
+   - Lecture via caches fichiers générés par `ComponentScanner` / `TemplateScanner`
+   - Suppression du support JSON
 
 2. **`app/Console/Commands/InventoryComponents.php`**
-   - Option `--refresh-cache` pour rafraîchir le cache après génération
-   - Conservation de la génération des manifests JSON
+   - Reconstruit le cache fichier des composants (et peut afficher un résumé)
 
 3. **`app/Console/Commands/InventoryTemplates.php`**
-   - Option `--refresh-cache` pour rafraîchir le cache après génération
-   - Conservation de la génération des manifests JSON
+   - Reconstruit le cache fichier des templates (et peut afficher un résumé)
 
 ### 5.3. Nouvelles commandes Artisan (outils de développement)
 
 **Important** : Ces commandes sont dans `app/Console/Commands/` car elles font partie de l'application de développement/test du package. Elles ne sont **pas publiées** avec le package final et sont utilisées uniquement pendant le développement.
 
-1. **`app/Console/Commands/InventoryCacheRefresh.php`** (`App\Console\Commands\InventoryCacheRefresh`)
-   - Rafraîchissement du cache des inventaires
-   - Signature : `inventory:cache:refresh`
+1. **`app/Console/Commands/InventoryCacheRebuild.php`** (`App\Console\Commands\InventoryCacheRebuild`)
+   - Reconstruction du cache fichier des inventaires
+   - Signature : `inventory:cache:rebuild`
 
 2. **`app/Console/Commands/InventoryCacheClear.php`** (`App\Console\Commands\InventoryCacheClear`)
    - Nettoyage des caches (sans régénération)
@@ -498,20 +445,20 @@ Les commandes `inventory:components`, `inventory:templates` et `inventory:update
 1. **`tests/Unit/ComponentScannerTest.php`**
    - Test du scan des composants
    - Test du cache et de l'invalidation
-   - Test du fallback vers manifests JSON
+   - Test de l'écriture/lecture du cache fichier PHP
 
 2. **`tests/Unit/TemplateScannerTest.php`**
    - Test du scan des templates
    - Test du cache et de l'invalidation
-   - Test du fallback vers manifests JSON
+   - Test de l'écriture/lecture du cache fichier PHP
 
 3. **`tests/Feature/InventoryCacheTest.php`**
    - Test des commandes de cache
    - Test de l'intégration avec les scanners
 
 4. **Mise à jour des tests existants**
-   - `tests/Feature/ComponentsManifestTest.php` : Support du cache
-   - `tests/Feature/Commands/InventoryUpdateTest.php` : Test du refresh cache
+   - `tests/Feature/ComponentsManifestTest.php` : remplacer le JSON par le cache fichier
+   - `tests/Feature/Commands/InventoryUpdateTest.php` : tester le rebuild cache
 
 ## 6. Plan de tests
 
@@ -519,8 +466,8 @@ Les commandes `inventory:components`, `inventory:templates` et `inventory:update
 |-------|-------|----------|-----------------|
 | Unit | ComponentScanner | `tests/Unit/ComponentScannerTest.php` | Scan correct, cache valide, invalidation, extraction métadonnées |
 | Unit | TemplateScanner | `tests/Unit/TemplateScannerTest.php` | Scan correct, cache valide, invalidation, extraction annotations |
-| Feature | DocsHelper | `tests/Feature/DocsHelperTest.php` | Fallback manifests, utilisation cache, API inchangée |
-| Feature | Commandes cache | `tests/Feature/InventoryCacheTest.php` | Refresh, clear, intégration scanners |
+| Feature | DocsHelper | `tests/Feature/DocsHelperTest.php` | Lecture cache fichier, erreurs actionnables si cache absent, API stable côté docs |
+| Feature | Commandes cache | `tests/Feature/InventoryCacheTest.php` | Rebuild, clear, intégration scanners |
 | Browser | Documentation | `tests/Browser/DocsNavigationTest.php` | Navigation fonctionne avec cache, pas de régression |
 | Integration | npm run dev | Tests manuels | Watch fonctionne, cache régénéré automatiquement |
 
@@ -534,16 +481,16 @@ Les commandes `inventory:components`, `inventory:templates` et `inventory:update
    - Tests unitaires complets
 
 2. **Créer les commandes Artisan**
-   - `inventory:cache:refresh`
+   - `inventory:cache:rebuild`
    - `inventory:cache:clear`
    - Tests des commandes
 
-### Phase 2 : Migration DocsHelper (Semaine 1-2)
+### Phase 2 : Refactor DocsHelper (Semaine 1-2)
 
 3. **Refactor de `DocsHelper`**
-   - Migration vers les scanners avec fallback
-   - Tests de compatibilité
-   - Validation que l'API publique reste inchangée
+   - Bascule vers lecture du cache fichier (suppression JSON)
+   - Tests de rendu/docs
+   - Validation que la navigation/docs restent identiques
 
 4. **Tests d'intégration**
    - Vérifier que toutes les pages de documentation fonctionnent
@@ -567,7 +514,7 @@ Les commandes `inventory:components`, `inventory:templates` et `inventory:update
 7. **Tests complets**
    - Suite complète de tests
    - Tests de performance
-   - Tests de compatibilité
+   - Tests de non-régression docs/navigation
 
 8. **Documentation**
    - Mise à jour du README
@@ -596,17 +543,15 @@ Les commandes `inventory:components`, `inventory:templates` et `inventory:update
 
 ### 8.1. Performance
 
-- **Cache obligatoire** : Ne jamais scanner sans cache en production
-- **TTL approprié** : 1 heure par défaut, ajustable via config
+- **Cache obligatoire** : Ne jamais scanner sans cache en HTTP
+- **Pas de TTL** : invalidation par changement de fichiers (hash/mtime)
 - **Invalidation intelligente** : Basée sur les timestamps, pas sur le temps écoulé
-- **Tags de cache** : Utiliser les tags Laravel pour invalidation sélective
+- **Pas de Cache store** : éviter toute dépendance à un driver (notamment `database`)
 
 ### 8.2. Compatibilité
 
-- **Fallback automatique** : Toujours supporter les manifests JSON en fallback
-- **API publique inchangée** : `DocsHelper` doit conserver la même API
-- **Tests existants** : Tous les tests doivent continuer de fonctionner
-- **Migration progressive** : Support des deux systèmes pendant la transition
+- **Pas de fallback** : suppression du JSON
+- **Mises à jour associées** : tests et docs adaptés au nouveau flux
 
 ### 8.3. Robustesse
 
@@ -642,17 +587,14 @@ Les commandes `inventory:components`, `inventory:templates` et `inventory:update
 
 ### 11.1. Format du cache
 
-Le cache stocke la structure suivante :
+Le cache fichier (PHP) retourne la structure suivante :
 
 ```php
-[
-    'data' => [
-        'components' => [...], // ou 'templates' => [...], 'categories' => [...]
-        'generated_at' => '2024-01-01T00:00:00Z',
-    ],
-    'files_hash' => 'abc123...', // Hash des timestamps des fichiers
-    'cached_at' => 1704067200, // Timestamp Unix
-]
+return [
+    'components' => [...], // ou 'templates' => [...], 'categories' => [...]
+    'generated_at' => '2024-01-01T00:00:00Z',
+    'files_hash' => 'abc123...', // Hash des filemtime() des fichiers sources
+];
 ```
 
 ### 11.2. Algorithme d'invalidation
@@ -683,7 +625,7 @@ Le cache stocke la structure suivante :
   - `app/Console/Commands/` → Commandes Artisan de développement
   - `app/Http/Controllers/` → Contrôleurs pour la documentation/démo
 - `resources/dev/` → Ressources de développement
-  - `resources/dev/data/` → Données générées (manifests JSON, cache)
+- `bootstrap/cache/` (ou `storage/framework/cache/`) → Caches fichiers PHP des inventaires (dev uniquement)
   - `resources/dev/views/` → Pages de documentation/démo
 - `scripts/` → Scripts Node.js de développement (watch, etc.)
 

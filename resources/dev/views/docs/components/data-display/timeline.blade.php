@@ -39,14 +39,13 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$items = [
-    ["label" => "Commande créée", "time" => "10:00"],
-    ["label" => "En préparation", "time" => "11:30", "current" => true],
-    ["label" => "Expédiée", "time" => null]
-];
-@endphp
-<x-daisy::ui.data-display.timeline :items="$items" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.data-display.timeline :items="[
+    ['label' => 'Commande créée', 'time' => '10:00'],
+    ['label' => 'En préparation', 'time' => '11:30', 'current' => true],
+    ['label' => 'Expédiée', 'time' => null],
+]" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 
@@ -94,19 +93,22 @@ $items = [
         </x-slot:preview>
         <x-slot:code>
             @php
-                $variantsCode = '@php
-$items = [
-    ["label" => "Étape 1", "current" => true],
-    ["label" => "Étape 2"]
-];
-@endphp
+                $variantsCode = <<<'CODE'
+<x-daisy::ui.data-display.timeline :items="[
+    ['label' => 'Étape 1', 'current' => true],
+    ['label' => 'Étape 2'],
+]" color="primary" />
+<x-daisy::ui.data-display.timeline :items="[
+    ['label' => 'Étape 1', 'current' => true],
+    ['label' => 'Étape 2'],
+]" color="success" />
 
-{{-- Couleurs --}}
-<x-daisy::ui.data-display.timeline :items="$items" color="primary" />
-<x-daisy::ui.data-display.timeline :items="$items" color="success" />
-
-{{-- Horizontal --}}
-<x-daisy::ui.data-display.timeline :items="$items" horizontal />';
+<x-daisy::ui.data-display.timeline :items="[
+    ['label' => 'Étape 1', 'current' => true],
+    ['label' => 'Étape 2'],
+    ['label' => 'Étape 3'],
+]" horizontal />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

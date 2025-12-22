@@ -32,10 +32,9 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$themes = ["light", "dark"];
-@endphp
-<x-daisy::ui.advanced.theme-controller :themes="$themes" value="light" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.advanced.theme-controller :themes="['light', 'dark']" value="light" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 
@@ -75,18 +74,14 @@ $themes = ["light", "dark"];
         </x-slot:preview>
         <x-slot:code>
             @php
-                $variantsCode = '@php
-$themes = ["light", "dark", "cupcake", "synthwave"];
-@endphp
+                $variantsCode = <<<'CODE'
+<x-daisy::ui.advanced.theme-controller :themes="['light', 'dark', 'cupcake', 'synthwave']" value="light" />
 
-{{-- Plusieurs thèmes --}}
-<x-daisy::ui.advanced.theme-controller :themes="$themes" value="light" />
-
-{{-- Avec label --}}
 <div class="flex items-center gap-2">
     <span class="text-sm">Thème :</span>
-    <x-daisy::ui.advanced.theme-controller :themes="$themes" value="light" />
-</div>';
+    <x-daisy::ui.advanced.theme-controller :themes="['light', 'dark']" value="light" />
+</div>
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

@@ -26,8 +26,8 @@
         <h2>Exemple</h2>
         <div class="mockup-code mt-4">
 <pre data-prefix=""><code>&lt;x-daisy::templates.auth.verify-email
-    resendUrl="{{ route('verification.send') }}"
-    logoutUrl="{{ route('logout') }}"
+    resendUrl="@{{ route('verification.send') }}"
+    logoutUrl="@{{ route('logout') }}"
     :showLogout="true"
     resendButtonText="{{ __('auth.resend_verification') }}"
 /&gt;</code></pre>

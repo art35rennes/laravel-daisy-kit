@@ -39,14 +39,13 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$items = [
-    ["title" => "Étape 1", "content" => "Contenu de l\'étape 1"],
-    ["title" => "Étape 2", "content" => "Contenu de l\'étape 2"],
-    ["title" => "Étape 3", "content" => "Contenu de l\'étape 3"]
-];
-@endphp
-<x-daisy::ui.navigation.stepper :items="$items" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.navigation.stepper :items="[
+    ['title' => 'Étape 1', 'content' => 'Contenu de l\'étape 1'],
+    ['title' => 'Étape 2', 'content' => 'Contenu de l\'étape 2'],
+    ['title' => 'Étape 3', 'content' => 'Contenu de l\'étape 3'],
+]" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

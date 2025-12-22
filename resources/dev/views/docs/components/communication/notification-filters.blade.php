@@ -34,10 +34,9 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$types = ["info", "warning", "error", "success"];
-@endphp
-<x-daisy::ui.communication.notification-filters :types="$types" currentFilter="all" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.communication.notification-filters :types="['info', 'warning', 'error', 'success']" currentFilter="all" />
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

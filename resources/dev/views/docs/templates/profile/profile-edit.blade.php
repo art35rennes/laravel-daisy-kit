@@ -27,10 +27,10 @@
         <div class="mockup-code mt-4">
 <pre data-prefix=""><code>&lt;x-daisy::templates.profile.profile-edit
     :profile="auth()->user()"
-    action="{{ route('profile.update') }}"
+    action="@{{ route('profile.update') }}"
     method="POST"
-    profileViewUrl="{{ route('profile.show') }}"
-    profileSettingsUrl="{{ route('profile.settings') }}"
+    profileViewUrl="@{{ route('profile.show') }}"
+    profileSettingsUrl="@{{ route('profile.settings') }}"
     :showPhone="true"
     :showLocation="true"
     :showWebsite="true"

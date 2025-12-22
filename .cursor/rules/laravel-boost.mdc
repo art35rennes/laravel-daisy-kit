@@ -11,6 +11,7 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 ## Foundational Context
 This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
 
+### Backend
 - php - 8.4.14
 - laravel/framework (LARAVEL) - v12
 - laravel/prompts (PROMPTS) - v0
@@ -18,7 +19,12 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - laravel/pint (PINT) - v1
 - pestphp/pest (PEST) - v4
 - phpunit/phpunit (PHPUNIT) - v12
+
+### Frontend
 - tailwindcss (TAILWINDCSS) - v4
+- daisyui - v5.4.7
+- alpinejs - v3.15.3
+- vite - v7.0.4
 
 ## Conventions
 - You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, naming.
@@ -34,6 +40,14 @@ This application is a Laravel application and its main Laravel ecosystems packag
 
 ## Frontend Bundling
 - If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `npm run build`, `npm run dev`, or `composer run dev`. Ask them.
+
+## Alpine.js
+- Alpine.js is available and should be preferred for simple, reactive UI interactions when appropriate.
+- Use Alpine.js for: toggles, dropdowns, modals, tabs, form interactions, and other lightweight reactive behaviors.
+- Prefer Alpine.js over vanilla JavaScript when the interaction can be expressed declaratively with Alpine directives.
+- Use the `data-module` system for complex components that require custom JavaScript modules.
+- Alpine.js directives (`x-data`, `x-show`, `x-if`, `x-for`, `x-on`, etc.) can be used directly in Blade templates.
+- When Alpine.js is more appropriate than a custom JS module, use it. When a component needs complex logic, state management, or heavy DOM manipulation, use the `data-module` system instead.
 
 ## Replies
 - Be concise in your explanations - focus on what's important rather than explaining obvious details.

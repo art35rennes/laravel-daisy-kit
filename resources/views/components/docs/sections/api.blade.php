@@ -49,8 +49,12 @@
                                             <code class="text-xs">{{ $prop['default'] ? 'true' : 'false' }}</code>
                                         @elseif(is_string($prop['default']))
                                             <code class="text-xs">"{{ $prop['default'] }}"</code>
-                                        @else
+                                        @elseif(is_array($prop['default']))
+                                            <code class="text-xs">[{{ json_encode($prop['default'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}]</code>
+                                        @elseif(is_numeric($prop['default']))
                                             <code class="text-xs">{{ $prop['default'] }}</code>
+                                        @else
+                                            <code class="text-xs">{{ json_encode($prop['default'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}</code>
                                         @endif
                                     @else
                                         <span class="text-xs text-base-content/50">—</span>
@@ -60,7 +64,13 @@
                                     @if(!empty($prop['values']))
                                         <div class="flex flex-wrap gap-1">
                                             @foreach($prop['values'] as $value)
-                                                <code class="text-xs bg-base-200 px-1 rounded">{{ $value }}</code>
+                                                <code class="text-xs bg-base-200 px-1 rounded">
+                                                    @if(is_array($value))
+                                                        {{ json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}
+                                                    @else
+                                                        {{ $value }}
+                                                    @endif
+                                                </code>
                                             @endforeach
                                         </div>
                                     @else

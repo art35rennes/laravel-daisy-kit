@@ -82,14 +82,14 @@ class DaisyKitServiceProvider extends ServiceProvider
                     return view('daisy-dev::docs.templates.index');
                 })->name('daisy.docs.templates');
 
-                // Pages Templates /templates/{template}
-                Route::get('/templates/{template}', function (string $template) {
-                    $view = "daisy-dev::docs.templates.$template";
+                // Pages Templates /templates/{category}/{template}
+                Route::get('/templates/{category}/{template}', function (string $category, string $template) {
+                    $view = "daisy-dev::docs.templates.$category.$template";
                     if (view()->exists($view)) {
                         return view($view);
                     }
                     abort(404);
-                })->where(['template' => '[A-Za-z0-9\-_]+'])
+                })->where(['category' => '[A-Za-z0-9\-_]+', 'template' => '[A-Za-z0-9\-_]+'])
                     ->name('daisy.docs.template');
 
                 // Pages Composants /{category}/{component}
@@ -98,7 +98,7 @@ class DaisyKitServiceProvider extends ServiceProvider
                     // Si c'est une catégorie "errors" et que c'est un template, utiliser la route template
                     $errorTemplates = ['empty-state', 'error', 'loading-state', 'maintenance'];
                     if ($category === 'errors' && in_array($component, $errorTemplates, true)) {
-                        $view = "daisy-dev::docs.templates.$component";
+                        $view = "daisy-dev::docs.templates.errors.$component";
                         if (view()->exists($view)) {
                             return view($view);
                         }

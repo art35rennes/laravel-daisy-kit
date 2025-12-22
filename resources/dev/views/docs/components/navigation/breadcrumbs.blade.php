@@ -40,14 +40,11 @@
         <x-slot:code>
             @php
                 $baseCode = <<<'CODE'
-@php
-$items = [
-    ["label" => "Accueil", "href" => "/"],
-    ["label" => "Produits", "href" => "/products"],
-    ["label" => "Détails"]
-];
-@endphp
-<x-daisy::ui.navigation.breadcrumbs :items="$items" />
+<x-daisy::ui.navigation.breadcrumbs :items="[
+    ['label' => 'Accueil', 'href' => '/'],
+    ['label' => 'Produits', 'href' => '/products'],
+    ['label' => 'Détails'],
+]" />
 CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
@@ -82,13 +79,10 @@ CODE;
         <x-slot:code>
             @php
                 $variantsCode = <<<'CODE'
-@php
-$items = [
-    ["label" => "Accueil", "href" => "/"],
-    ["label" => "Page actuelle"]
-];
-@endphp
-<x-daisy::ui.navigation.breadcrumbs :items="$items" />
+<x-daisy::ui.navigation.breadcrumbs :items="[
+    ['label' => 'Accueil', 'href' => '/'],
+    ['label' => 'Page actuelle'],
+]" />
 CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 

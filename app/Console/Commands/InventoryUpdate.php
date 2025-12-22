@@ -22,26 +22,26 @@ class InventoryUpdate extends Command
         $this->info('✓ Caches nettoyés');
         $this->newLine();
 
-        // 1. Générer l'inventaire des composants
-        $this->info('1. Génération de l\'inventaire des composants...');
-        $result = Artisan::call('inventory:components');
+        // 1. Générer/reconstruire les caches d'inventaire
+        $this->info('1. Reconstruction du cache des inventaires...');
+        $result = Artisan::call('inventory:cache:rebuild');
         if ($result !== Command::SUCCESS) {
-            $this->error('Erreur lors de la génération de l\'inventaire des composants.');
+            $this->error('Erreur lors de la reconstruction du cache des inventaires.');
 
             return Command::FAILURE;
         }
-        $this->info('✓ Inventaire des composants généré');
+        $this->info('✓ Cache des inventaires reconstruit');
         $this->newLine();
 
-        // 2. Générer l'inventaire des templates
-        $this->info('2. Génération de l\'inventaire des templates...');
-        $result = Artisan::call('inventory:templates');
+        // 2. Régénérer les artefacts dev (CSV, etc.) via la commande composants
+        $this->info('2. Génération des artefacts dev (CSV, js-deps)...');
+        $result = Artisan::call('inventory:components');
         if ($result !== Command::SUCCESS) {
-            $this->error('Erreur lors de la génération de l\'inventaire des templates.');
+            $this->error('Erreur lors de la génération des artefacts dev.');
 
             return Command::FAILURE;
         }
-        $this->info('✓ Inventaire des templates généré');
+        $this->info('✓ Artefacts dev générés');
         $this->newLine();
 
         $this->info('✓ Mise à jour de l\'inventaire terminée avec succès !');

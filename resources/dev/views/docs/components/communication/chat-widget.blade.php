@@ -55,29 +55,27 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$conversation = [
-    "id" => 1, 
-    "name" => "Support", 
-    "avatar" => "https://i.pravatar.cc/150?img=12", 
-    "isOnline" => true
-];
-$messages = [
-    [
-        "id" => 1, 
-        "user_id" => 2, 
-        "content" => "Bonjour, comment puis-je vous aider ?", 
-        "created_at" => "2024-01-15 14:30:00", 
-        "user_name" => "Support"
-    ]
-];
-@endphp
-<x-daisy::ui.communication.chat-widget 
-    :conversation="$conversation" 
-    :messages="$messages" 
-    currentUserId="1" 
-    position="bottom-right" 
-/>';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.communication.chat-widget
+    :conversation="[
+        'id' => 1,
+        'name' => 'Support',
+        'avatar' => 'https://i.pravatar.cc/150?img=12',
+        'isOnline' => true,
+    ]"
+    :messages="[
+        [
+            'id' => 1,
+            'user_id' => 2,
+            'content' => 'Bonjour, comment puis-je vous aider ?',
+            'created_at' => '2024-01-15 14:30:00',
+            'user_name' => 'Support',
+        ],
+    ]"
+    currentUserId="1"
+    position="bottom-right"
+/>
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

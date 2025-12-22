@@ -39,13 +39,15 @@
         </x-slot:preview>
         <x-slot:code>
             @php
-                $baseCode = '@php
-$labels = ["Jan", "Fév", "Mar", "Avr", "Mai"];
-$datasets = [
-    ["label" => "Ventes", "data" => [100, 200, 150, 300, 250]]
-];
-@endphp
-<x-daisy::ui.advanced.chart type="line" :labels="$labels" :datasets="$datasets" />';
+                $baseCode = <<<'CODE'
+<x-daisy::ui.advanced.chart
+    type="line"
+    :labels="['Jan', 'Fév', 'Mar', 'Avr', 'Mai']"
+    :datasets="[
+        ['label' => 'Ventes', 'data' => [100, 200, 150, 300, 250]],
+    ]"
+/>
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 
@@ -84,19 +86,23 @@ $datasets = [
         </x-slot:preview>
         <x-slot:code>
             @php
-                $variantsCode = '{{-- Graphique en barres --}}
-@php
-$labels = ["Jan", "Fév", "Mar"];
-$datasets = [["label" => "Ventes", "data" => [100, 200, 150]]];
-@endphp
-<x-daisy::ui.advanced.chart type="bar" :labels="$labels" :datasets="$datasets" />
+                $variantsCode = <<<'CODE'
+<x-daisy::ui.advanced.chart
+    type="bar"
+    :labels="['Jan', 'Fév', 'Mar']"
+    :datasets="[
+        ['label' => 'Ventes', 'data' => [100, 200, 150]],
+    ]"
+/>
 
-{{-- Graphique circulaire --}}
-@php
-$labels = ["Rouge", "Vert", "Bleu"];
-$datasets = [["data" => [30, 40, 30]]];
-@endphp
-<x-daisy::ui.advanced.chart type="pie" :labels="$labels" :datasets="$datasets" />';
+<x-daisy::ui.advanced.chart
+    type="pie"
+    :labels="['Rouge', 'Vert', 'Bleu']"
+    :datasets="[
+        ['data' => [30, 40, 30]],
+    ]"
+/>
+CODE;
             @endphp
             <x-daisy::ui.advanced.code-editor 
                 language="blade" 

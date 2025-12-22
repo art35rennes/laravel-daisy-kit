@@ -26,8 +26,8 @@
         <h2>Exemple</h2>
         <div class="mockup-code mt-4">
 <pre data-prefix=""><code>&lt;x-daisy::templates.auth.reset-password
-    action="{{ route('password.email') }}"
-    backToLoginUrl="{{ route('login') }}"
+    action="@{{ route('password.email') }}"
+    backToLoginUrl="@{{ route('login') }}"
     submitButtonText="{{ __('auth.send_reset_link') }}"
     :emailSent="session('status') !== null"
 /&gt;</code></pre>
