@@ -139,6 +139,11 @@ class DocsHelper
         try {
             return ComponentScanner::readCached();
         } catch (RuntimeException $exception) {
+            // Si le cache n'existe pas ou n'est pas valide, le régénérer automatiquement
+            if (! ComponentScanner::isCacheValid()) {
+                return ComponentScanner::rebuildCache();
+            }
+
             throw new RuntimeException(
                 "Components inventory cache is missing or invalid.\n".
                 "Run: php artisan inventory:cache:rebuild --components\n\n".

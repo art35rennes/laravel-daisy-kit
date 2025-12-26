@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      - name: Build inventory cache
+        run: php artisan inventory:update
+
       - name: Lint (Pint)
         run: composer lint
 
