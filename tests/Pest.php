@@ -18,6 +18,10 @@ pest()->extend(Tests\TestCase::class)
 pest()->extend(Tests\TestCase::class)
     ->in('Browser');
 
+// Unit tests in this repository rely on Laravel helpers like base_path()/resource_path().
+pest()->extend(Tests\TestCase::class)
+    ->in('Unit');
+
 /*
 |--------------------------------------------------------------------------
 | Expectations

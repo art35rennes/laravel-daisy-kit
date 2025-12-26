@@ -1,10 +1,10 @@
 {
-  "_chart-C6V-1fTr.js": {
-    "file": "assets/chart-C6V-1fTr.js",
+  "_chart-C9J3LcjI.js": {
+    "file": "assets/chart-C9J3LcjI.js",
     "name": "chart",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-lP5RbwAX.js"
+      "_vendor-BntzRIVP.js"
     ]
   },
   "_events-Uoh0sXeK.js": {
@@ -23,8 +23,8 @@
     "file": "assets/leaflet-cluster-k-SYLBed.css",
     "src": "_leaflet-cluster-k-SYLBed.css"
   },
-  "_leaflet-draw-D4NJMolw.js": {
-    "file": "assets/leaflet-draw-D4NJMolw.js",
+  "_leaflet-draw-Db-VUL-N.js": {
+    "file": "assets/leaflet-draw-Db-VUL-N.js",
     "name": "leaflet-draw",
     "isDynamicEntry": true,
     "css": [
@@ -92,13 +92,13 @@
     "file": "assets/leaflet-vendor-BEr8z9BQ.css",
     "src": "_leaflet-vendor-BEr8z9BQ.css"
   },
-  "_leaflet-vendor-D32bikUn.js": {
-    "file": "assets/leaflet-vendor-D32bikUn.js",
+  "_leaflet-vendor-L-TsJvsB.js": {
+    "file": "assets/leaflet-vendor-L-TsJvsB.js",
     "name": "leaflet-vendor",
     "isDynamicEntry": true,
     "imports": [
       "_leaflet-cluster-DOkbfhdy.js",
-      "_vendor-lP5RbwAX.js"
+      "_vendor-BntzRIVP.js"
     ],
     "css": [
       "assets/leaflet-vendor-BEr8z9BQ.css"
@@ -118,8 +118,8 @@
       "assets/marker-icon-hN30_KVU.png"
     ]
   },
-  "_vendor-lP5RbwAX.js": {
-    "file": "assets/vendor-lP5RbwAX.js",
+  "_vendor-BntzRIVP.js": {
+    "file": "assets/vendor-BntzRIVP.js",
     "name": "vendor"
   },
   "node_modules/cally/dist/cally.js": {
@@ -251,7 +251,7 @@
     "isDynamicEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-CsuTUCqm.css",
+    "file": "assets/app-B8p03agg.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -260,13 +260,13 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-eGJ9Oasf.js",
+    "file": "assets/app-C1902Zbw.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "imports": [
-      "_chart-C6V-1fTr.js",
-      "_vendor-lP5RbwAX.js"
+      "_chart-C9J3LcjI.js",
+      "_vendor-BntzRIVP.js"
     ],
     "dynamicImports": [
       "resources/js/modules/chat-input.js",
@@ -274,6 +274,7 @@
       "resources/js/modules/chat-widget.js",
       "resources/js/modules/copyable.js",
       "resources/js/modules/csrf-keeper.js",
+      "resources/js/modules/menu-filter.js",
       "resources/js/modules/notifications.js",
       "resources/js/modules/otp-code.js",
       "resources/js/modules/popover.js",
@@ -300,7 +301,7 @@
       "resources/js/transfer.js",
       "resources/js/treeview.js",
       "resources/js/calendar-full/index.js",
-      "_chart-C6V-1fTr.js",
+      "_chart-C9J3LcjI.js",
       "resources/js/chat/index.js",
       "resources/js/leaflet/index.js",
       "resources/js/modules/chat-input.js",
@@ -308,6 +309,7 @@
       "resources/js/modules/chat-widget.js",
       "resources/js/modules/copyable.js",
       "resources/js/modules/csrf-keeper.js",
+      "resources/js/modules/menu-filter.js",
       "resources/js/modules/notifications.js",
       "resources/js/modules/otp-code.js",
       "resources/js/modules/popover.js",
@@ -334,7 +336,7 @@
       "resources/js/transfer.js",
       "resources/js/treeview.js",
       "resources/js/calendar-full/index.js",
-      "_chart-C6V-1fTr.js",
+      "_chart-C9J3LcjI.js",
       "resources/js/chat/index.js",
       "resources/js/leaflet/index.js",
       "resources/js/modules/copyable.js",
@@ -355,20 +357,20 @@
       "resources/js/lightbox.js",
       "resources/js/media-gallery.js",
       "resources/js/lazy-editors.js",
-      "_chart-C6V-1fTr.js",
+      "_chart-C9J3LcjI.js",
       "resources/js/leaflet/index.js",
       "resources/js/calendar-full/index.js"
     ]
   },
   "resources/js/calendar-full/index.js": {
-    "file": "assets/index-CK7OltLI.js",
+    "file": "assets/index-CNJs_WZ1.js",
     "name": "index",
     "src": "resources/js/calendar-full/index.js",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_chart-C6V-1fTr.js",
-      "_vendor-lP5RbwAX.js"
+      "_chart-C9J3LcjI.js",
+      "_vendor-BntzRIVP.js"
     ]
   },
   "resources/js/chat/index.js": {
@@ -381,12 +383,12 @@
     ]
   },
   "resources/js/code-editor.js": {
-    "file": "assets/code-editor-C2yxeCXh.js",
+    "file": "assets/code-editor-BKKVtuS_.js",
     "name": "code-editor",
     "src": "resources/js/code-editor.js",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-lP5RbwAX.js"
+      "_vendor-BntzRIVP.js"
     ]
   },
   "resources/js/color-picker.js": {
@@ -408,13 +410,13 @@
     "isDynamicEntry": true
   },
   "resources/js/lazy-editors.js": {
-    "file": "assets/lazy-editors-WcHr4oGz.js",
+    "file": "assets/lazy-editors-BICwOwRW.js",
     "name": "lazy-editors",
     "src": "resources/js/lazy-editors.js",
     "isDynamicEntry": true,
     "imports": [
-      "_chart-C6V-1fTr.js",
-      "_vendor-lP5RbwAX.js"
+      "_chart-C9J3LcjI.js",
+      "_vendor-BntzRIVP.js"
     ],
     "dynamicImports": [
       "resources/js/code-editor.js",
@@ -422,42 +424,42 @@
     ]
   },
   "resources/js/leaflet/index.js": {
-    "file": "assets/leaflet-core-DZMz4BcA.js",
+    "file": "assets/leaflet-core-BzNQnidN.js",
     "name": "leaflet-core",
     "src": "resources/js/leaflet/index.js",
     "isDynamicEntry": true,
     "imports": [
-      "_chart-C6V-1fTr.js",
-      "_vendor-lP5RbwAX.js"
+      "_chart-C9J3LcjI.js",
+      "_vendor-BntzRIVP.js"
     ],
     "dynamicImports": [
-      "_leaflet-vendor-D32bikUn.js",
-      "_leaflet-vendor-D32bikUn.js",
-      "_leaflet-vendor-D32bikUn.js",
-      "_leaflet-vendor-D32bikUn.js",
-      "_leaflet-vendor-D32bikUn.js",
-      "_leaflet-vendor-D32bikUn.js",
-      "_leaflet-vendor-D32bikUn.js",
-      "_leaflet-vendor-D32bikUn.js",
-      "_leaflet-vendor-D32bikUn.js",
+      "_leaflet-vendor-L-TsJvsB.js",
+      "_leaflet-vendor-L-TsJvsB.js",
+      "_leaflet-vendor-L-TsJvsB.js",
+      "_leaflet-vendor-L-TsJvsB.js",
+      "_leaflet-vendor-L-TsJvsB.js",
+      "_leaflet-vendor-L-TsJvsB.js",
+      "_leaflet-vendor-L-TsJvsB.js",
+      "_leaflet-vendor-L-TsJvsB.js",
+      "_leaflet-vendor-L-TsJvsB.js",
       "_leaflet-measure-Bkcv6wH2.js",
       "_leaflet-measure-Bkcv6wH2.js",
-      "_leaflet-draw-D4NJMolw.js",
-      "_leaflet-draw-D4NJMolw.js",
+      "_leaflet-draw-Db-VUL-N.js",
+      "_leaflet-draw-Db-VUL-N.js",
       "_leaflet-cluster-DOkbfhdy.js",
       "_leaflet-cluster-DOkbfhdy.js",
       "_leaflet-cluster-DOkbfhdy.js",
-      "_leaflet-vendor-D32bikUn.js",
-      "_leaflet-vendor-D32bikUn.js",
-      "_leaflet-vendor-D32bikUn.js",
-      "_leaflet-vendor-D32bikUn.js",
-      "_leaflet-vendor-D32bikUn.js",
-      "_leaflet-vendor-D32bikUn.js",
+      "_leaflet-vendor-L-TsJvsB.js",
+      "_leaflet-vendor-L-TsJvsB.js",
+      "_leaflet-vendor-L-TsJvsB.js",
+      "_leaflet-vendor-L-TsJvsB.js",
+      "_leaflet-vendor-L-TsJvsB.js",
+      "_leaflet-vendor-L-TsJvsB.js",
       "_leaflet-routing-BgoLrNjF.js",
       "_leaflet-routing-BgoLrNjF.js",
-      "_leaflet-vendor-D32bikUn.js",
-      "_leaflet-vendor-D32bikUn.js",
-      "_leaflet-vendor-D32bikUn.js"
+      "_leaflet-vendor-L-TsJvsB.js",
+      "_leaflet-vendor-L-TsJvsB.js",
+      "_leaflet-vendor-L-TsJvsB.js"
     ]
   },
   "resources/js/lightbox.js": {
@@ -532,6 +534,12 @@
     "src": "resources/js/modules/forms/wizard.js",
     "isDynamicEntry": true
   },
+  "resources/js/modules/menu-filter.js": {
+    "file": "assets/menu-filter-lpZW_8vG.js",
+    "name": "menu-filter",
+    "src": "resources/js/modules/menu-filter.js",
+    "isDynamicEntry": true
+  },
   "resources/js/modules/notifications.js": {
     "file": "assets/notifications-B7SVKFfe.js",
     "name": "notifications",
@@ -560,28 +568,28 @@
     "isDynamicEntry": true
   },
   "resources/js/modules/sidebar.js": {
-    "file": "assets/sidebar-BTutHn7l.js",
+    "file": "assets/sidebar-CjUYjR58.js",
     "name": "sidebar",
     "src": "resources/js/modules/sidebar.js",
     "isDynamicEntry": true
   },
   "resources/js/modules/sign.js": {
-    "file": "assets/sign-DmyY3sA6.js",
+    "file": "assets/sign-2S68OxRe.js",
     "name": "sign",
     "src": "resources/js/modules/sign.js",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-lP5RbwAX.js"
+      "_vendor-BntzRIVP.js"
     ]
   },
   "resources/js/onboarding.js": {
-    "file": "assets/onboarding-52GI-znB.js",
+    "file": "assets/onboarding-C0Em-ej1.js",
     "name": "onboarding",
     "src": "resources/js/onboarding.js",
     "isDynamicEntry": true,
     "imports": [
-      "_chart-C6V-1fTr.js",
-      "_vendor-lP5RbwAX.js"
+      "_chart-C9J3LcjI.js",
+      "_vendor-BntzRIVP.js"
     ],
     "dynamicImports": [
       "resources/js/popconfirm.js"

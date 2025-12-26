@@ -1,11 +1,11 @@
 name,view,category,tags,jsModule,status
 accordion,daisy::components.ui.advanced.accordion,advanced,"advanced, lazy",,active
 calendar-cally,daisy::components.ui.advanced.calendar-cally,advanced,"advanced, lazy",,active
-calendar-full,daisy::components.ui.advanced.calendar-full,advanced,"advanced, lazy",,active
+calendar-full,daisy::components.ui.advanced.calendar-full,advanced,"advanced, js, async, lazy",calendar-full,active
 calendar-native,daisy::components.ui.advanced.calendar-native,advanced,"advanced, lazy",,active
 calendar,daisy::components.ui.advanced.calendar,advanced,"advanced, lazy",,active
-chart,daisy::components.ui.advanced.chart,advanced,"advanced, lazy",,active
-code-editor,daisy::components.ui.advanced.code-editor,advanced,"advanced, lazy",,active
+chart,daisy::components.ui.advanced.chart,advanced,"advanced, js, async, lazy",chart,active
+code-editor,daisy::components.ui.advanced.code-editor,advanced,"advanced, js, async, lazy",code-editor,active
 collapse,daisy::components.ui.advanced.collapse,advanced,"advanced, lazy",,active
 countdown,daisy::components.ui.advanced.countdown,advanced,"advanced, lazy",,active
 diff,daisy::components.ui.advanced.diff,advanced,"advanced, lazy",,active
@@ -20,11 +20,11 @@ mask,daisy::components.ui.advanced.mask,advanced,"advanced, lazy",,active
 onboarding,daisy::components.ui.advanced.onboarding,advanced,"advanced, js, async, lazy",onboarding,active
 rating,daisy::components.ui.advanced.rating,advanced,"advanced, lazy",,active
 scroll-status,daisy::components.ui.advanced.scroll-status,advanced,"advanced, js, async, lazy",scroll-status,active
-scrollspy,daisy::components.ui.advanced.scrollspy,advanced,"advanced, lazy",,active
+scrollspy,daisy::components.ui.advanced.scrollspy,advanced,"advanced, js, async, lazy",scrollspy,active
 swap,daisy::components.ui.advanced.swap,advanced,"advanced, lazy",,active
 theme-controller,daisy::components.ui.advanced.theme-controller,advanced,"advanced, lazy",,active
 transfer,daisy::components.ui.advanced.transfer,advanced,"advanced, js, async, lazy",transfer,active
-tree-view,daisy::components.ui.advanced.tree-view,advanced,"advanced, lazy",,active
+tree-view,daisy::components.ui.advanced.tree-view,advanced,"advanced, js, async, lazy",treeview,active
 validator,daisy::components.ui.advanced.validator,advanced,"advanced, lazy",,active
 wysiwyg,daisy::components.ui.advanced.wysiwyg,advanced,"advanced, js, async, lazy",lazy-editors,active
 changelog-change-item,daisy::components.ui.changelog.changelog-change-item,changelog,changelog,,active
@@ -33,10 +33,10 @@ changelog-toolbar,daisy::components.ui.changelog.changelog-toolbar,changelog,cha
 changelog-version-item,daisy::components.ui.changelog.changelog-version-item,changelog,changelog,,active
 chat-bubble,daisy::components.ui.communication.chat-bubble,communication,"communication, lazy",,active
 chat-header,daisy::components.ui.communication.chat-header,communication,"communication, lazy",,active
-chat-input,daisy::components.ui.communication.chat-input,communication,"communication, js, async, lazy",chat-input,active
-chat-messages,daisy::components.ui.communication.chat-messages,communication,"communication, js, async, lazy",chat-messages,active
+chat-input,daisy::components.ui.communication.chat-input,communication,"communication, lazy",,active
+chat-messages,daisy::components.ui.communication.chat-messages,communication,"communication, lazy",,active
 chat-sidebar,daisy::components.ui.communication.chat-sidebar,communication,"communication, lazy",,active
-chat-widget,daisy::components.ui.communication.chat-widget,communication,"communication, js, async, lazy",chat-widget,active
+chat-widget,daisy::components.ui.communication.chat-widget,communication,"communication, lazy",,active
 conversation-view,daisy::components.ui.communication.conversation-view,communication,"communication, lazy",,active
 notification-bell,daisy::components.ui.communication.notification-bell,communication,"communication, lazy",,active
 notification-filters,daisy::components.ui.communication.notification-filters,communication,"communication, lazy",,active
@@ -50,7 +50,7 @@ progress,daisy::components.ui.data-display.progress,data-display,"data-display, 
 radial-progress,daisy::components.ui.data-display.radial-progress,data-display,"data-display, lazy",,active
 stat,daisy::components.ui.data-display.stat,data-display,"data-display, lazy",,active
 status,daisy::components.ui.data-display.status,data-display,"data-display, lazy",,active
-table,daisy::components.ui.data-display.table,data-display,"data-display, lazy",,active
+table,daisy::components.ui.data-display.table,data-display,"data-display, js, async, lazy",table,active
 timeline,daisy::components.ui.data-display.timeline,data-display,"data-display, lazy",,active
 error-actions,daisy::components.ui.errors.error-actions,errors,errors,,active
 error-content,daisy::components.ui.errors.error-content,errors,errors,,active
@@ -65,13 +65,13 @@ skeleton,daisy::components.ui.feedback.skeleton,feedback,feedback,,active
 toast,daisy::components.ui.feedback.toast,feedback,feedback,,active
 button,daisy::components.ui.inputs.button,inputs,"inputs, form",,active
 checkbox,daisy::components.ui.inputs.checkbox,inputs,"inputs, form",,active
-color-picker,daisy::components.ui.inputs.color-picker,inputs,"inputs, form",,active
-file-input,daisy::components.ui.inputs.file-input,inputs,"inputs, form",,active
+color-picker,daisy::components.ui.inputs.color-picker,inputs,"inputs, js, async, form",color-picker,active
+file-input,daisy::components.ui.inputs.file-input,inputs,"inputs, js, async, form",file-input,active
 input,daisy::components.ui.inputs.input,inputs,"inputs, form",,active
 radio,daisy::components.ui.inputs.radio,inputs,"inputs, form",,active
 range,daisy::components.ui.inputs.range,inputs,"inputs, form",,active
 select,daisy::components.ui.inputs.select,inputs,"inputs, form",,active
-sign,daisy::components.ui.inputs.sign,inputs,"inputs, form",,active
+sign,daisy::components.ui.inputs.sign,inputs,"inputs, js, async, form",sign,active
 textarea,daisy::components.ui.inputs.textarea,inputs,"inputs, form",,active
 toggle,daisy::components.ui.inputs.toggle,inputs,"inputs, form",,active
 card,daisy::components.ui.layout.card,layout,layout,,active
@@ -88,15 +88,15 @@ stack,daisy::components.ui.layout.stack,layout,layout,,active
 carousel,daisy::components.ui.media.carousel,media,media,,active
 embed,daisy::components.ui.media.embed,media,media,,active
 leaflet,daisy::components.ui.media.leaflet,media,"media, js, async",leaflet,active
-lightbox,daisy::components.ui.media.lightbox,media,media,,active
-media-gallery,daisy::components.ui.media.media-gallery,media,media,,active
+lightbox,daisy::components.ui.media.lightbox,media,"media, js, async",lightbox,active
+media-gallery,daisy::components.ui.media.media-gallery,media,"media, js, async",media-gallery,active
 breadcrumbs,daisy::components.ui.navigation.breadcrumbs,navigation,navigation,,active
 floating-menu,daisy::components.ui.navigation.floating-menu,navigation,navigation,,active
-menu,daisy::components.ui.navigation.menu,navigation,navigation,,active
+menu,daisy::components.ui.navigation.menu,navigation,"navigation, js, async",menu-filter,active
 navbar,daisy::components.ui.navigation.navbar,navigation,navigation,,active
 pagination,daisy::components.ui.navigation.pagination,navigation,navigation,,active
-sidebar-navigation,daisy::components.ui.navigation.sidebar-navigation,navigation,"navigation, js, async",sidebar,active
-sidebar,daisy::components.ui.navigation.sidebar,navigation,"navigation, js, async",sidebar,active
+sidebar-navigation,daisy::components.ui.navigation.sidebar-navigation,navigation,navigation,,active
+sidebar,daisy::components.ui.navigation.sidebar,navigation,"navigation, js, async",menu-filter,active
 stepper,daisy::components.ui.navigation.stepper,navigation,"navigation, js, async",stepper,active
 steps,daisy::components.ui.navigation.steps,navigation,navigation,,active
 table-of-contents,daisy::components.ui.navigation.table-of-contents,navigation,navigation,,active

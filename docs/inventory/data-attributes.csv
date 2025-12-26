@@ -1,5 +1,5 @@
 attribute,components
-module,"calendar-full, chart, code-editor, scrollspy, tree-view, chat-input, chat-messages, chat-widget, table, color-picker, file-input, sign, lightbox, media-gallery, sidebar-navigation, sidebar, csrf-keeper"
+module,"calendar-full, chart, code-editor, scrollspy, tree-view, chat-input, chat-messages, chat-widget, table, color-picker, file-input, sign, lightbox, media-gallery, menu, sidebar-navigation, sidebar, csrf-keeper"
 calendar-full,calendar-full
 options,calendar-full
 events,calendar-full
@@ -120,7 +120,6 @@ index,"lightbox, media-gallery"
 media-gallery,media-gallery
 activation,media-gallery
 auto-height,media-gallery
-searchable,"sidebar-navigation, sidebar"
 width-strategy,sidebar
 wide-class,sidebar
 collapsed-class,sidebar

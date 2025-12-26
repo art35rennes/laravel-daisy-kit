@@ -1,11 +1,17 @@
 <?php
 
+use App\Helpers\ComponentScanner;
 use App\Helpers\DocsHelper;
 use Illuminate\Support\Facades\Config;
 
 beforeEach(function () {
     Config::set('daisy-kit.docs.enabled', true);
     $this->prefix = config('daisy-kit.docs.prefix', 'docs');
+
+    // Générer le cache des composants si nécessaire
+    if (! ComponentScanner::isCacheValid()) {
+        ComponentScanner::rebuildCache();
+    }
 });
 
 it('loads the docs index page without errors', function () {

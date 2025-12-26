@@ -27,7 +27,7 @@ Si vous préférez exécuter les commandes individuellement :
    php artisan inventory:components
    ```
    Cette commande scanne tous les composants dans `resources/views/components/ui/` et génère :
-   - `resources/dev/data/components.json` : Manifeste JSON complet
+   - `bootstrap/cache/daisy-components.php` : Cache fichier PHP (inventaire des composants)
    - `docs/inventory/components.csv` : Inventaire CSV des composants
    - `docs/inventory/data-attributes.csv` : Inventaire des data-attributes
    - `docs/inventory/js-deps.json` : Dépendances JavaScript
@@ -37,7 +37,7 @@ Si vous préférez exécuter les commandes individuellement :
    php artisan inventory:templates
    ```
    Cette commande scanne tous les templates dans `resources/views/templates/` et génère :
-   - `resources/dev/data/templates.json` : Manifeste JSON des templates avec catégories et routes
+   - `bootstrap/cache/daisy-templates.php` : Cache fichier PHP (inventaire des templates)
 
 3. **Générer une structure de base pour les pages de documentation** (optionnel) :
    ```bash
@@ -145,7 +145,6 @@ laravel-daisy-kit/
 │   │   └── fr/                  # Traductions françaises
 │   │
 │   └── dev/                     # Ressources de développement/documentation
-│       ├── data/                # Données générées (components.json, templates.json)
 │       ├── img/                 # Images de démonstration
 │       └── views/               # Pages de documentation/démo
 │           ├── demo/            # Pages de démonstration
