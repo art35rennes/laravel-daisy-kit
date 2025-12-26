@@ -3,6 +3,8 @@
     'arrow' => true, // true => collapse-arrow, false => collapse-plus
     'open' => false,
     'disabled' => false,
+    // Compact mode reduces paddings/min-height to fit in dense UIs (like sidebars).
+    'compact' => false,
     // Méthode d'interaction: checkbox | focus | details
     'method' => 'checkbox',
     // Forcer l'état visuel: null | open | close (non supporté sur details)
@@ -23,6 +25,13 @@
     if ($force === 'close') $root .= ' collapse-close';
     if ($bordered) $root .= ' card-border';
     if ($bg) $root .= ' bg-base-100';
+
+    if ($compact) {
+        // Mode compact : réduit drastiquement les paddings et min-height pour une UI dense (sidebar).
+        // Utilise !important pour override les styles daisyUI par défaut.
+        $titleClass = trim($titleClass.' !min-h-0 !py-1.5 !px-2 !text-sm');
+        $contentClass = trim($contentClass.' !px-2 !pb-1.5 !pt-0');
+    }
 @endphp
 {{-- Trois méthodes d'interaction supportées : details (HTML natif), focus (clavier), checkbox (défaut) --}}
 @if($method === 'details')

@@ -12,6 +12,8 @@
     'autoReconnect' => true,
     // Data accessors
     'conversationIdKey' => 'id',
+    // Module override
+    'module' => 'chat-input',
 ])
 
 @php
@@ -21,7 +23,7 @@
 
 <div 
     {{ $attributes->merge(['class' => 'chat-input flex flex-col gap-2 p-3 sm:p-4 border-t bg-base-100']) }}
-    data-module="chat-input"
+    data-module="{{ $module }}"
     data-send-message-url="{{ $sendMessageUrl }}"
     data-typing-url="{{ $typingUrl !== '#' ? $typingUrl : '' }}"
     data-enable-file-upload="{{ $enableFileUpload ? 'true' : 'false' }}"

@@ -18,6 +18,8 @@
     'messageUserAvatarKey' => 'user_avatar',
     'messageAttachmentKey' => 'attachment',
     'messageAttachmentsKey' => 'attachments',
+    // Module override
+    'module' => 'chat-messages',
 ])
 
 @php
@@ -26,7 +28,7 @@
 
 <div 
     {{ $attributes->merge(['class' => 'chat-messages flex flex-col overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4']) }}
-    data-module="chat-messages"
+    data-module="{{ $module }}"
     data-load-messages-url="{{ $loadMessagesUrl }}"
     data-current-user-id="{{ $currentUserId }}"
     data-use-websockets="{{ $useWebSockets ? 'true' : 'false' }}"

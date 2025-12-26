@@ -34,6 +34,8 @@
     'messageCreatedAtKey' => 'created_at',
     'messageUserNameKey' => 'user_name',
     'messageUserAvatarKey' => 'user_avatar',
+    // Module override
+    'module' => 'chat-widget',
 ])
 
 @php
@@ -48,7 +50,7 @@
 
 <div 
     class="chat-widget fixed {{ $positionClass }} z-50"
-    data-module="chat-widget"
+    data-module="{{ $module }}"
     data-position="{{ $position }}"
     data-minimized="{{ $minimized ? 'true' : 'false' }}"
 >
