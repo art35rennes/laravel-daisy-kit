@@ -15,11 +15,11 @@
 
 <x-daisy::layout.docs title="Templates" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
     <x-slot:navbar>
-        <div class="join">
-            <a href="/{{ $prefix }}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{ $prefix }}/templates" class="btn btn-sm join-item btn-ghost btn-active">Template</a>
-        </div>
+        <x-daisy::ui.navigation.menu :vertical="false" :bg="false" :rounded="false" size="sm">
+            <li><a href="/{{ $prefix }}">Docs</a></li>
+            <li><a href="{{ route('demo') }}">Démo</a></li>
+            <li><a href="/{{ $prefix }}/templates" class="menu-active">Templates</a></li>
+        </x-daisy::ui.navigation.menu>
     </x-slot:navbar>
 
     <section id="templates">

@@ -10,6 +10,10 @@
         ['id' => 'api', 'label' => 'API'],
     ];
     $props = DocsHelper::getComponentProps($category, $name);
+
+    // Never embed raw PHP open/close tags in docs Blade files (can crash parsers).
+    $phpHelloWorld = '<' . "?php echo 'Hello World'; ?" . '>';
+    $phpHello = '<' . "?php echo 'Hello'; ?" . '>';
 @endphp
 
 <x-daisy::docs.page 
@@ -31,7 +35,7 @@
         <x-slot:preview>
             <x-daisy::ui.advanced.code-editor 
                 language="php" 
-                value="<?php echo 'Hello World'; ?>" 
+                :value="$phpHelloWorld"
                 height="200px"
             />
         </x-slot:preview>
@@ -39,7 +43,7 @@
             @php
                 $baseCode = '<x-daisy::ui.advanced.code-editor 
     language="php" 
-    value="<?php echo \'Hello World\'; ?>" 
+    value="<' . "?php echo \\'Hello World\\'; ?" . '>"
     height="200px"
 />';
             @endphp
@@ -71,7 +75,7 @@
                         />
                         <x-daisy::ui.advanced.code-editor 
                             language="php" 
-                            value="<?php echo 'Hello'; ?>" 
+                            :value="$phpHello"
                             height="150px"
                             :showToolbar="false"
                         />

@@ -8,7 +8,7 @@
                 <li>
                     <details>
                         <summary>Parent</summary>
-                        <ul class="menu-dropdown">
+                        <ul>
                             <li><a>Submenu 1</a></li>
                             <li><a>Submenu 2</a></li>
                         </ul>
@@ -29,6 +29,84 @@
             <li><a>Item 2</a></li>
             <li><a>Item 3</a></li>
         </x-daisy::ui.navigation.menu>
+        
+        <div>
+            <h3 class="text-sm font-semibold mb-2">Menu avec sous-menus imbriqués</h3>
+            <x-daisy::ui.navigation.menu class="bg-base-100 rounded-box w-56">
+                <li><a>Item 1</a></li>
+                <li>
+                    <details open>
+                        <summary>Parent item</summary>
+                        <ul>
+                            <li><a>Submenu 1</a></li>
+                            <li><a>Submenu 2</a></li>
+                            <li>
+                                <details>
+                                    <summary>Nested parent</summary>
+                                    <ul>
+                                        <li><a>Nested item 1</a></li>
+                                        <li><a>Nested item 2</a></li>
+                                    </ul>
+                                </details>
+                            </li>
+                        </ul>
+                    </details>
+                </li>
+                <li><a>Item 3</a></li>
+            </x-daisy::ui.navigation.menu>
+        </div>
+
+        <div>
+            <h3 class="text-sm font-semibold mb-2">Menu avec icônes</h3>
+            <x-daisy::ui.navigation.menu class="bg-base-100 rounded-box w-56">
+                <li>
+                    <a>
+                        <x-daisy::ui.advanced.icon name="house" size="sm" />
+                        Accueil
+                    </a>
+                </li>
+                <li>
+                    <a>
+                        <x-daisy::ui.advanced.icon name="file-text" size="sm" />
+                        Documents
+                    </a>
+                </li>
+                <li>
+                    <a>
+                        <x-daisy::ui.advanced.icon name="gear" size="sm" />
+                        Paramètres
+                    </a>
+                </li>
+            </x-daisy::ui.navigation.menu>
+        </div>
+
+        <div>
+            <h3 class="text-sm font-semibold mb-2">Menu avec filtrage</h3>
+            <x-daisy::ui.navigation.menu filterable filterPlaceholder="Rechercher..." class="bg-base-100 rounded-box w-56">
+                <li><a>Accueil</a></li>
+                <li>
+                    <details>
+                        <summary>Navigation</summary>
+                        <ul>
+                            <li><a>Page 1</a></li>
+                            <li><a>Page 2</a></li>
+                            <li><a>Page 3</a></li>
+                        </ul>
+                    </details>
+                </li>
+                <li>
+                    <details>
+                        <summary>Paramètres</summary>
+                        <ul>
+                            <li><a>Général</a></li>
+                            <li><a>Sécurité</a></li>
+                            <li><a>Notifications</a></li>
+                        </ul>
+                    </details>
+                </li>
+                <li><a>Contact</a></li>
+            </x-daisy::ui.navigation.menu>
+        </div>
     </div>
 </section>
 

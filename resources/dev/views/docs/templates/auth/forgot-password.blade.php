@@ -6,11 +6,11 @@
 
 <x-daisy::layout.docs title="Mot de passe oublié" :sidebarItems="$navItems" :currentRoute="request()->path()">
     <x-slot:navbar>
-        <div class="join">
-            <a href="/{{ $prefix }}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{ $prefix }}/templates" class="btn btn-sm join-item btn-ghost btn-active">Templates</a>
-        </div>
+        <x-daisy::ui.overlay.dropdown label="Templates" buttonClass="btn btn-sm btn-ghost" end>
+            <li><a href="/{{ $prefix }}">Docs</a></li>
+            <li><a href="{{ route('demo') }}">Démo</a></li>
+            <li><a href="/{{ $prefix }}/templates" class="menu-active">Templates</a></li>
+        </x-daisy::ui.overlay.dropdown>
     </x-slot:navbar>
 
     <section id="intro">

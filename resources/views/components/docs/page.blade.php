@@ -22,11 +22,17 @@
 
 <x-daisy::layout.docs :title="$title" :sidebarItems="$navItems" :sections="$sections" :currentRoute="request()->path()">
     <x-slot:navbar>
-        <div class="join">
-            <a href="/{{ $prefix }}" class="btn btn-sm join-item btn-ghost">Docs</a>
-            <a href="{{ route('demo') }}" class="btn btn-sm join-item btn-ghost">Démo</a>
-            <a href="/{{ $prefix }}/templates" class="btn btn-sm join-item btn-ghost {{ $type === 'template' ? 'btn-active' : '' }}">Template</a>
-        </div>
+        @php
+            $currentPath = request()->path();
+            $isDocs = str_starts_with($currentPath, $prefix) && !str_contains($currentPath, 'templates');
+            $isTemplates = str_contains($currentPath, 'templates');
+            $isDemo = str_contains($currentPath, 'demo');
+        @endphp
+        <x-daisy::ui.navigation.menu :vertical="false" :bg="false" :rounded="false" size="sm">
+            <li><a href="/{{ $prefix }}" class="{{ $isDocs && !$isTemplates ? 'menu-active' : '' }}">Docs</a></li>
+            <li><a href="{{ route('demo') }}" class="{{ $isDemo ? 'menu-active' : '' }}">Démo</a></li>
+            <li><a href="/{{ $prefix }}/templates" class="{{ $isTemplates ? 'menu-active' : '' }}">Templates</a></li>
+        </x-daisy::ui.navigation.menu>
     </x-slot:navbar>
 
     {{ $intro ?? '' }}
