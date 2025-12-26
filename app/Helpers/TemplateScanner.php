@@ -196,29 +196,40 @@ class TemplateScanner extends AbstractScanner
         $annotations = [];
 
         if (preg_match('/@template-label\s+(.*)/i', $content, $matches)) {
-            $annotations['label'] = trim($matches[1]);
+            $annotations['label'] = self::sanitizeAnnotationValue($matches[1]);
         }
 
         if (preg_match('/@template-description\s+(.*)/i', $content, $matches)) {
-            $annotations['description'] = trim($matches[1]);
+            $annotations['description'] = self::sanitizeAnnotationValue($matches[1]);
         }
 
         if (preg_match('/@template-tags\s+(.*)/i', $content, $matches)) {
-            $tags = array_filter(array_map('trim', preg_split('/[,;]+/', $matches[1] ?? '')));
+            $value = self::sanitizeAnnotationValue($matches[1] ?? '');
+            $tags = array_filter(array_map('trim', preg_split('/[,;]+/', $value)));
             if (! empty($tags)) {
                 $annotations['tags'] = $tags;
             }
         }
 
         if (preg_match('/@template-type\s+(reusable|example)/i', $content, $matches)) {
-            $annotations['type'] = strtolower(trim($matches[1]));
+            $annotations['type'] = strtolower(self::sanitizeAnnotationValue($matches[1]));
         }
 
         if (preg_match('/@template-route\s+(.*)/i', $content, $matches)) {
-            $annotations['route'] = trim($matches[1]);
+            $annotations['route'] = self::sanitizeAnnotationValue($matches[1]);
         }
 
         return $annotations;
+    }
+
+    private static function sanitizeAnnotationValue(string $value): string
+    {
+        $value = trim($value);
+
+        // Support annotations written inside Blade / HTML comments.
+        $value = preg_replace('/\s*(--}}|-->)+\s*$/', '', $value) ?? $value;
+
+        return trim($value);
     }
 
     private static function resolveType(string $category, ?string $annotationType): string

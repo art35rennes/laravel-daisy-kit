@@ -231,8 +231,11 @@ class ComponentScanner extends AbstractScanner
         // 1) Literal HTML attribute: data-module="stepper"
         if (preg_match('/\bdata-module\s*=\s*["\']([^"\']+)["\']/', $content, $matches) === 1) {
             $value = trim($matches[1]);
+            if ($value !== '' && ! str_contains($value, '{{')) {
+                return $value;
+            }
 
-            return $value !== '' && ! str_contains($value, '{{') ? $value : null;
+            // If it contains Blade syntax, continue to the next strategies.
         }
 
         // 2) Blade default: data-module="{{ $module ?? 'treeview' }}"

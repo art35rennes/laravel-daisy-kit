@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Helpers\ComponentScanner;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 
 class GenerateDocsPages extends Command
 {

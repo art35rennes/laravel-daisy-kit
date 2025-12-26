@@ -35,7 +35,7 @@ class DocsHelper
     }
 
     /**
-     * Génère la navigation pour les templates à partir du manifest templates.json.
+     * Génère la navigation pour les templates à partir du cache fichier (templates inventory).
      *
      * @return array<int, array<string,mixed>>
      */
@@ -127,15 +127,6 @@ class DocsHelper
         ksort($grouped);
 
         return $grouped;
-    }
-
-    /**
-     * Formate un extrait de code pour affichage.
-     */
-    public static function formatCodeExample(string $code): string
-    {
-        // Pour l'instant, retourne tel quel (placeholder pour éventuelles transformations)
-        return trim($code);
     }
 
     /**

@@ -55,7 +55,13 @@ class AddTranslation extends Command
             return Command::FAILURE;
         }
 
-        $this->info("Vérification des traductions existantes...");
+        // Si --force est utilisé, supprimer la locale cible avant la vérification
+        // pour éviter que la vérification échoue à cause d'une locale incomplète
+        if ($this->option('force') && File::isDirectory($targetPath)) {
+            File::deleteDirectory($targetPath);
+        }
+
+        $this->info('Vérification des traductions existantes...');
 
         $checkExitCode = Artisan::call('translations:check', [
             '--path' => $langPath,
@@ -171,7 +177,7 @@ class AddTranslation extends Command
     /**
      * Crée un tableau de traductions vides avec la même structure que la référence.
      *
-     * @param array<string, mixed> $referenceTranslations
+     * @param  array<string, mixed>  $referenceTranslations
      * @return array<string, mixed>
      */
     private function createEmptyTranslations(array $referenceTranslations): array
@@ -192,7 +198,7 @@ class AddTranslation extends Command
     /**
      * Écrit un fichier de traduction avec le format PHP approprié.
      *
-     * @param array<string, mixed> $translations
+     * @param  array<string, mixed>  $translations
      */
     private function writeTranslationFile(string $filePath, array $translations): bool
     {
@@ -211,7 +217,7 @@ class AddTranslation extends Command
     /**
      * Convertit un tableau en chaîne PHP formatée.
      *
-     * @param array<string, mixed> $array
+     * @param  array<string, mixed>  $array
      */
     private function arrayToPhpString(array $array): string
     {
@@ -220,8 +226,6 @@ class AddTranslation extends Command
 
     /**
      * Demande à l'utilisateur de choisir une locale via interaction.
-     *
-     * @return string|null
      */
     private function askForLocale(string $langPath, string $referenceLocale): ?string
     {
@@ -310,4 +314,3 @@ class AddTranslation extends Command
             ->sortKeys();
     }
 }
-
