@@ -113,8 +113,8 @@
         $baseClasses .= ' sidebar-fit';
     }
     
-    // Activation du module JavaScript de recherche si searchable est activé et sidebar non collapsed.
-    $needsSearchModule = $searchable && !$effectiveCollapsed;
+    // Activation du module JavaScript de filtrage si searchable est activé et sidebar non collapsed.
+    $needsFilterModule = $searchable && !$effectiveCollapsed;
 @endphp
 
 <aside {{ $attributes->merge(['class' => trim($rootClasses.' '.$widthClass.' '.$baseClasses)]) }}
@@ -125,8 +125,7 @@
        data-collapsed="{{ $effectiveCollapsed ? '1' : '0' }}" 
        @if($isAuto) data-sidebar-auto @endif
        @if($isFit) data-sidebar-fit @endif
-       @if($storageKey) data-storage-key="{{ $storageKey }}" @endif
-       @if($needsSearchModule) data-module="sidebar" data-searchable="true" @endif>
+       @if($storageKey) data-storage-key="{{ $storageKey }}" @endif>
     @if($showBrand)
         <div class="px-4 py-3 border-b border-base-content/10 flex items-center gap-2">
             <a href="{{ $brandHref ?: '#' }}" class="flex items-center gap-2 flex-1">
@@ -138,19 +137,19 @@
         </div>
     @endif
     @if($searchable && !$effectiveCollapsed)
-        <div class="px-2 py-2 border-b border-base-content/10">
+        <div class="px-2 py-2 border-b border-base-content/10" data-module="menu-filter">
             <label class="input input-sm">
                 <x-daisy::ui.advanced.icon name="search" :prefix="$iconPrefix" size="sm" class="opacity-50" />
                 <input type="search" 
                        class="grow" 
                        placeholder="{{ $searchPlaceholder }}"
-                       data-sidebar-search
+                       data-menu-filter-input
                        aria-label="Rechercher dans le menu">
             </label>
         </div>
     @endif
     {{-- Menu de navigation : structure hiérarchique (sections > items > children) --}}
-    <ul class="{{ $menuContainerClass }}" data-sidebar-menu>
+    <ul class="{{ $menuContainerClass }}" @if($needsFilterModule) data-menu-filter-target @else data-sidebar-menu @endif>
         @forelse($sections as $section)
             {{-- Titre de section optionnel --}}
             @if(!empty($section['label']))

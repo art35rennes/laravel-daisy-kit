@@ -8,6 +8,9 @@
     'rounded' => true,
     // Titre optionnel en tête
     'title' => null,
+    // Filtrage
+    'filterable' => false,
+    'filterPlaceholder' => 'Rechercher...',
 ])
 
 @php
@@ -22,13 +25,35 @@
         $classes .= ' '.$horizontalAt.':menu-horizontal';
     }
     if ($size) $classes .= ' menu-'.$size;
+
+    // Générer un ID unique pour le filtre si activé
+    $filterId = $filterable ? 'menu-filter-'.uniqid() : null;
 @endphp
 
-<ul {{ $attributes->merge(['class' => $classes]) }}>
-    {{-- Titre optionnel : affiché en tête du menu (utilise menu-title de daisyUI) --}}
-    @if($title)
-        <li class="menu-title">{{ $title }}</li>
-    @endif
-    {{-- Contenu du menu : items passés via slot (liens, boutons, sous-menus, etc.) --}}
-    {{ $slot }}
-  </ul>
+@if($filterable)
+    <div data-module="menu-filter" class="mb-4">
+        <input 
+            type="text" 
+            data-menu-filter-input
+            placeholder="{{ $filterPlaceholder }}"
+            class="input input-sm w-full"
+        />
+        <ul {{ $attributes->merge(['class' => $classes, 'data-menu-filter-target' => true]) }}>
+            {{-- Titre optionnel : affiché en tête du menu (utilise menu-title de daisyUI) --}}
+            @if($title)
+                <li class="menu-title">{{ $title }}</li>
+            @endif
+            {{-- Contenu du menu : items passés via slot (liens, boutons, sous-menus, etc.) --}}
+            {{ $slot }}
+        </ul>
+    </div>
+@else
+    <ul {{ $attributes->merge(['class' => $classes]) }}>
+        {{-- Titre optionnel : affiché en tête du menu (utilise menu-title de daisyUI) --}}
+        @if($title)
+            <li class="menu-title">{{ $title }}</li>
+        @endif
+        {{-- Contenu du menu : items passés via slot (liens, boutons, sous-menus, etc.) --}}
+        {{ $slot }}
+    </ul>
+@endif

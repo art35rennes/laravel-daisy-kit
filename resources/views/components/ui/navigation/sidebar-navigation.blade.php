@@ -8,103 +8,123 @@
      */
     'items' => [],
     'current' => null,
+    // Activer le filtrage du menu
     'searchable' => true,
-    'hideMarker' => true,
+    // Placeholder pour le champ de recherche
+    'searchPlaceholder' => 'Rechercher...',
+    // Module override
+    'module' => 'menu-filter',
 ])
 
 @php
-    $isActive = function (?string $href) use ($current): bool {
-        if (!$href) return false;
-        $cur = '/'.ltrim((string)($current ?? request()->path()), '/');
-        return str_starts_with($cur, $href);
-    };
+    $currentPath = '/'.ltrim((string) ($current ?? request()->path()), '/');
 
-    $hasActive = function (array $node) use (&$hasActive, $isActive): bool {
-        if (!empty($node['href']) && $isActive($node['href'])) {
+    $isActive = function (?string $href) use ($currentPath): bool {
+        if (!$href) {
+            return false;
+        }
+
+        // Normaliser les chemins (supprimer les slashes finaux)
+        $normalizedHref = rtrim($href, '/');
+        $normalizedCurrent = rtrim($currentPath, '/');
+
+        // Match exact
+        if ($normalizedCurrent === $normalizedHref) {
             return true;
         }
-        foreach (($node['children'] ?? []) as $child) {
-            if ($hasActive($child)) return true;
+
+        // Match avec sous-chemin : vérifier que le href est un préfixe exact (suivi de / ou fin de chaîne)
+        if (str_starts_with($normalizedCurrent, $normalizedHref)) {
+            $nextChar = substr($normalizedCurrent, strlen($normalizedHref), 1);
+            // Le caractère suivant doit être '/' ou la fin de la chaîne
+            return $nextChar === '' || $nextChar === '/';
         }
+
         return false;
     };
 
-    $renderItems = function (array $nodes, int $level = 0) use (&$renderItems, $isActive, $hasActive) {
-        $html = '<ul class="menu '.($level === 0 ? 'menu-sm' : 'menu-xs').'">';
-        foreach ($nodes as $node) {
-            $label = (string)($node['label'] ?? '');
-            $href = $node['href'] ?? null;
-            $children = $node['children'] ?? [];
-            $active = $isActive($href);
-            $html .= '<li>';
-            if (!empty($children)) {
-                $open = $hasActive($node) ? ' open' : '';
-                $isOpen = !empty($open);
-                $html .= "<details$open>";
-                $html .= '<summary class="opacity-70 w-full flex justify-between items-center list-none [&::-webkit-details-marker]:hidden [&::marker]:hidden [&::-webkit-details-marker]:hidden">';
-                $html .= '<span>'.e($label).'</span>';
-                $rotateClass = $isOpen ? 'rotate-180' : '';
-                $html .= '<span class="shrink-0 transition-transform '.$rotateClass.'">';
-                $html .= view('daisy::components.ui.advanced.icon', ['name' => 'chevron-down', 'size' => 'xs'])->render();
-                $html .= '</span>';
-                $html .= '</summary>';
-                $html .= $renderItems($children, $level + 1);
-                $html .= '</details>';
-            } else {
-                // Feuille sans enfants
-                if ($href) {
-                    $html .= '<a class="'.($active ? 'menu-active font-semibold' : '').'" href="'.e($href).'">'.e($label).'</a>';
-                } else {
-                    $html .= '<span class="opacity-70">'.e($label).'</span>';
-                }
-            }
-            $html .= '</li>';
+    $hasActive = function (array $node) use (&$hasActive, $isActive): bool {
+        $href = $node['href'] ?? null;
+        if (is_string($href) && $isActive($href)) {
+            return true;
         }
-        $html .= '</ul>';
-        return $html;
+
+        foreach (($node['children'] ?? []) as $child) {
+            if (is_array($child) && $hasActive($child)) {
+                return true;
+            }
+        }
+
+        return false;
     };
 @endphp
 
-<aside data-module="sidebar" data-searchable="{{ $searchable ? 'true' : 'false' }}" class="w-full">
+<nav aria-label="Navigation de la documentation" class="w-full">
     @if($searchable)
-        <div class="px-2 py-2 border-b border-base-content/10 mb-2">
-            <label class="input input-sm">
-                <x-daisy::ui.advanced.icon name="search" size="sm" class="opacity-50" />
-                <input type="search" 
-                       class="grow" 
-                       placeholder="Rechercher..."
-                       data-sidebar-search
-                       aria-label="Rechercher dans le menu">
-            </label>
+        <div class="mb-4" data-module="{{ $module }}">
+            <input 
+                type="text" 
+                data-menu-filter-input
+                placeholder="{{ $searchPlaceholder }}"
+                class="input input-sm w-full"
+                aria-label="Rechercher dans le menu"
+            />
         </div>
     @endif
-    <nav aria-label="Navigation de la documentation">
-        <div data-sidebar-menu>
-            {!! $renderItems($items, 0) !!}
-        </div>
-    </nav>
-    <style>
-        [data-sidebar-menu] details[open] > summary > span:last-child {
-            transform: rotate(180deg);
-        }
-    </style>
-    @if($hideMarker)
-        <style>
-            [data-sidebar-menu] details > summary {
-                list-style: none !important;
-                padding-left: 0 !important;
-            }
-            [data-sidebar-menu] details > summary::-webkit-details-marker,
-            [data-sidebar-menu] details > summary::marker,
-            [data-sidebar-menu] details > summary::before {
-                display: none !important;
-                content: '' !important;
-                width: 0 !important;
-                height: 0 !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-        </style>
-    @endif
-</aside>
+    @php
+        $menuAttributes = $searchable ? ['data-menu-filter-target' => ''] : [];
+    @endphp
+    <x-daisy::ui.navigation.menu 
+        :bg="false" 
+        :rounded="false" 
+        size="sm" 
+        class="w-full"
+        :attributes="new \Illuminate\View\ComponentAttributeBag($menuAttributes)"
+    >
+        @foreach($items as $node)
+            @php
+                $label = (string) ($node['label'] ?? '');
+                $href = isset($node['href']) && is_string($node['href']) ? $node['href'] : null;
+                $children = is_array($node['children'] ?? null) ? $node['children'] : [];
+                $nodeHasChildren = !empty($children);
+
+                $nodeIsActive = $isActive($href);
+                $nodeHasActive = $nodeHasChildren ? $hasActive($node) : $nodeIsActive;
+            @endphp
+
+            @if($nodeHasChildren)
+                <li class="w-full">
+                    <details {{ $nodeHasActive ? 'open' : '' }} class="w-full">
+                        <summary class="text-sm font-medium opacity-70 w-full cursor-pointer py-1.5 px-2">{{ $label }}</summary>
+                        <x-daisy::ui.navigation.menu :bg="false" :rounded="false" size="xs" class="pl-2 w-full mt-1">
+                            @foreach($children as $child)
+                                @php
+                                    $childLabel = (string) ($child['label'] ?? '');
+                                    $childHref = isset($child['href']) && is_string($child['href']) ? $child['href'] : null;
+                                    $childIsActive = $isActive($childHref);
+                                @endphp
+
+                                <li class="w-full">
+                                    @if($childHref)
+                                        <a href="{{ $childHref }}" class="block w-full {{ $childIsActive ? 'menu-active font-semibold' : '' }}">{{ $childLabel }}</a>
+                                    @else
+                                        <span class="block w-full opacity-70">{{ $childLabel }}</span>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </x-daisy::ui.navigation.menu>
+                    </details>
+                </li>
+            @else
+                <li class="w-full">
+                    @if($href)
+                        <a href="{{ $href }}" class="block w-full {{ $nodeIsActive ? 'menu-active font-semibold' : '' }}">{{ $label }}</a>
+                    @else
+                        <span class="block w-full opacity-70">{{ $label }}</span>
+                    @endif
+                </li>
+            @endif
+        @endforeach
+    </x-daisy::ui.navigation.menu>
+</nav>
 
