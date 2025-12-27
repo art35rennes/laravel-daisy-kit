@@ -29,3 +29,153 @@ alwaysApply: true
 - Booleans are rendered (`true`/`false`) or omitted when not relevant; objects/arrays are JSON-stringified.
 - JS modules read options via the rendered dataset.
 - Never embed custom CSS; only Tailwind v4 + daisyUI v5.
+
+## JavaScript Documentation & Comments
+
+### JSDoc Requirements (Mandatory)
+- **All functions, methods, classes, and exported constants must have JSDoc comments.**
+- **Required tags**: `@param` (with type and description), `@returns` (with type and description), `@throws` when applicable.
+- **Optional but recommended**: `@example` for complex functions, `@since` for version tracking, `@see` for related functions.
+- **Type annotations**: Use JSDoc types (`{string}`, `{Object}`, `{Function}`, `{Promise<void>}`, etc.).
+- **Array shapes**: Use `@param {Array<{value: string, label: string}>} options` for complex arrays.
+- **Object shapes**: Use `@param {Object} options` with `@param {string} options.key` for nested properties.
+
+### Comment Style
+- **Comments start with a capital letter and end with a period.**
+- Use `//` for single-line comments, `/** */` for JSDoc blocks.
+- Prefer JSDoc blocks over inline comments for function documentation.
+- Inline comments should explain **why**, not **what** (the code should be self-explanatory).
+
+### When to Comment
+- **Always comment**: Complex algorithms, non-obvious logic, edge cases, performance optimizations, workarounds.
+- **Explain the "why"**: Document business logic, design decisions, and non-obvious implementations.
+- **Document invariants**: Preconditions, postconditions, and assumptions.
+- **Avoid obvious comments**: Don't comment what the code clearly shows (e.g., `// Increment counter` before `counter++`).
+
+### Algorithm Documentation
+- **Complex algorithms** must include:
+  - High-level description of the approach
+  - Step-by-step explanation in comments
+  - Edge cases and their handling
+  - Performance considerations if relevant
+- **Example structure**:
+  ```javascript
+  /**
+   * Filters menu items based on search term with fuzzy matching.
+   * 
+   * Algorithm:
+   * 1. Normalize search term and labels (remove accents, lowercase)
+   * 2. For each menu item:
+   *    - Check if label matches search term
+   *    - If item has children, recursively check children
+   *    - If any child matches, keep parent visible and expand it
+   * 3. Hide items that don't match and have no matching children
+   * 
+   * @param {string} term - Search term to filter by
+   * @param {HTMLElement} menu - Menu container element
+   * @returns {void}
+   */
+  function filterMenu(term, menu) {
+      // Step 1: Normalize search term
+      const normalizedTerm = normalizeText(term);
+      
+      // Step 2: Iterate through menu items
+      // ...
+  }
+  ```
+
+### Helper Functions Documentation
+- **Alpine.js helpers** must include:
+  - Purpose and use case
+  - Parameters with types and defaults
+  - Return value structure
+  - Example usage in Blade templates
+  - Any side effects or dependencies
+- **Example**:
+  ```javascript
+  /**
+   * Crée une fonction Alpine pour gérer un formulaire wizard.
+   * 
+   * Gère la navigation entre étapes, la persistance des données dans sessionStorage,
+   * et la validation en mode linéaire.
+   * 
+   * @param {Object} options - Options de configuration
+   * @param {number} options.currentStep - Étape courante (défaut: 1)
+   * @param {number} options.totalSteps - Nombre total d'étapes
+   * @param {string} options.wizardKey - Clé unique du wizard pour la persistance
+   * @param {string} options.instanceId - ID unique de l'instance
+   * @param {boolean} options.isLinear - Mode linéaire (empêche de sauter des étapes)
+   * @returns {Function} Fonction Alpine pour x-data qui retourne un objet avec la logique du wizard
+   * 
+   * @example
+   * // Dans un template Blade:
+   * x-data="window.DaisyAlpine.formWizard({
+   *     currentStep: 1,
+   *     totalSteps: 3,
+   *     wizardKey: 'profile',
+   *     instanceId: 'wizard-1',
+   *     isLinear: true
+   * })"
+   */
+  export function formWizard(options) {
+      // Implementation...
+  }
+  ```
+
+### Inline Comments Guidelines
+- **Use inline comments for**:
+  - Complex conditionals: explain the logic, not just restate it
+  - Performance optimizations: explain why this approach is faster
+  - Workarounds: explain the bug/limitation being worked around
+  - Non-obvious code: explain why this seemingly odd code is necessary
+- **Avoid inline comments for**:
+  - Obvious operations: `counter++`, `array.push(item)`
+  - Self-documenting code: prefer better variable names
+  - Redundant explanations: don't restate what the code clearly shows
+
+### Code Organization Comments
+- Use section comments to group related code:
+  ```javascript
+  // ============================================================================
+  // Initialization
+  // ============================================================================
+  
+  // ============================================================================
+  // Event Handlers
+  // ============================================================================
+  
+  // ============================================================================
+  // Helper Methods
+  // ============================================================================
+  ```
+
+### Error Handling Documentation
+- **Always document**:
+  - What errors can occur
+  - How errors are handled
+  - What side effects occur on error
+  - Example:
+  ```javascript
+  /**
+   * @throws {Error} If localStorage is unavailable (private browsing mode)
+   * @throws {SyntaxError} If stored data is corrupted JSON
+   */
+  function restoreFromStorage(key) {
+      try {
+          // Implementation
+      } catch (e) {
+          // Log error but don't break the app
+          console.warn('[Storage] Failed to restore:', e);
+      }
+  }
+  ```
+
+### Examples in Documentation
+- **Always provide examples** for:
+  - Public API functions (helpers, utilities)
+  - Complex functions with multiple parameters
+  - Functions with non-obvious return values
+- **Examples should be**:
+  - Realistic and practical
+  - Copy-pasteable when possible
+  - Show both simple and advanced usage
