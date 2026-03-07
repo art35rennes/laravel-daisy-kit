@@ -16,6 +16,14 @@ class DaisyKitServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $packageRoot = realpath(__DIR__.'/..');
+        $appRoot = realpath(base_path());
+        $isPackageDevApp = $packageRoot !== false && $appRoot !== false && $packageRoot === $appRoot;
+
+        $configuredThemeSelector = config('daisy-kit.dev.show_theme_selector');
+        $showThemeSelector = is_bool($configuredThemeSelector) ? $configuredThemeSelector : $isPackageDevApp;
+        config(['daisy-kit.dev.show_theme_selector' => $showThemeSelector]);
+
         // Charger les vues du package avec un namespace: x-daisy::ui.button
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'daisy');
         // Exposer les templates comme composants anonymes pour éviter les doublons avec components/templates.

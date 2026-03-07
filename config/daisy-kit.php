@@ -27,6 +27,15 @@ return [
         'prefix' => 'docs', // Préfixe des routes publiées (/docs, /docs/{category}/{component}, /docs/templates)
     ],
 
+    // Options de développement du package.
+    // `show_theme_selector`:
+    // - null  => auto (visible seulement dans l'app Laravel interne du package)
+    // - true  => force l'affichage
+    // - false => force le masquage
+    'dev' => [
+        'show_theme_selector' => null,
+    ],
+
     // Configuration des thèmes daisyUI
     'themes' => [
         // Thèmes intégrés daisyUI activés par défaut
