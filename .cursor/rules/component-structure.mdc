@@ -20,18 +20,14 @@ alwaysApply: true
 - Place components by functional purpose, not Atomic Design level.
 
 **Template structure**
-- Reusable templates (auth, errors): in both `templates/{category}/` and `components/templates/{category}/` (for Blade component aliases)
-- Example templates (layouts, profile, communication): in `templates/{category}/` only, not as components
+- Reusable/stable templates: `resources/views/templates/{category}/{name}.blade.php`
+- Templates also exposed as Blade components when a component alias is part of the public API: `resources/views/components/templates/{category}/{name}.blade.php`
+- No documentation-only or example-only templates belong in this repository
 - See `atomic-design.mdc` for additional template rules.
 
 ### Template placement and usage
 
 - All templates are in `resources/views/templates/{category}/{name}.blade.php`.
-- Types of templates:
-  - **Reusable/stable templates** (ex: `auth/*`, `error`, `empty-state`, `loading-state`, `maintenance`)
-    - Also registered as Blade components under `components/templates/{category}/{name}.blade.php`
-    - Usable as components (`<x-daisy::templates.auth.login-simple>`) and classic views
-    - API is stable, intended for direct re-use
-  - **Example templates** (ex: `layout/*`, `communication/*`, `changelog`, `profile/*`)
-    - Not Blade components; used only as views (`view('daisy::templates.layout.grid')`)
-    - Provided as reference; copy/adapt as needed
+- Templates are package assets meant to be consumed from a host application.
+- If a template is intended for direct Blade component usage, mirror it under `components/templates/{category}/`.
+- If a template is intended to be rendered via `view('daisy::templates...')`, keep it only under `templates/`.

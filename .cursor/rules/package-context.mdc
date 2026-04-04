@@ -2,18 +2,20 @@
 alwaysApply: true
 ---
 - This repository is a **Laravel package**, not an application. All evolutions must respect Laravel package structure (no application logic, no migrations/conflicts with the host application).
-- Only compatibility with the current development version is required; no backward compatibility is necessary.
+- Preserve the public package surface unless a deliberate breaking change is requested and documented.
 - All classes and components must comply with daisyUI v5 and Tailwind CSS v4.
-- Never add custom CSS classes or Tailwind configuration beyond what exists in the host project package.
+- Keep the host contract explicit: config keys, publish tags, Blade namespace, route names, and asset behavior must be documented and testable.
 - Blade namespace: `daisy::`.
 - Component structure: organize by functional categories in `resources/views/components/ui/{category}/` (inputs, navigation, layout, data-display, overlay, media, feedback, communication, utilities, advanced, partials).
 - Components follow Atomic Design principles (see `atomic-design.mdc`).
 - Layout and templates must consume `ui/*` components (no duplication).
 - When creating/modifying components: check for existing similar components, prioritize reuse, extract reusable components if duplication exists.
 - Placement: functional category, not Atomic Design level.
-- Use only `blade-ui-kit/blade-icons` and installed collections. Never add inline SVG in package source code.
-- Demo pages: `resources/dev/views/demo/*`, publishable via `daisy-dev-views` tag.
-- Documentation pages: `resources/dev/views/docs/*` (see `documentation.mdc`).
-- Front sources publishable via `daisy-src` tag.
+- Prefer `blade-ui-kit/blade-icons` and installed icon collections for reusable icons. Inline SVG is acceptable only when it is a deliberate, stable package asset and not host-app-specific decoration.
+- Do not add demo pages, docs pages, inventory tooling, or application navigation into this repository.
+- Front assets are exposed through explicit publish tags:
+  - `daisy-assets` for built distributable assets
+  - `daisy-assets-source` for raw sources when a host explicitly wants to rebuild them
+  - `daisy-config`, `daisy-views`, `daisy-templates`, `daisy-lang` for package resources
 - Prioritize factorization, reactive Blade props usage, clarity.
 - PHPDoc: See `documentation.mdc` for strict requirements.

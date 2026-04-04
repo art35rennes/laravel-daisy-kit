@@ -452,19 +452,37 @@ function setCheckboxState(checkbox, state) {
   }
 }
 
+function isLazyNodeUnresolved(li) {
+  if (!li || !li.hasAttribute('data-lazy-node')) return false;
+  const group = li.__group || li.querySelector(':scope > ul[role="group"]');
+  if (!group) return true;
+  const hasRenderedChildren = !!group.querySelector(':scope > li[role="treeitem"]');
+  return !hasRenderedChildren;
+}
+
 // Met à jour le tri-état des ancêtres d'un nœud après modification d'une case
 function updateAncestorsTriState(root, li) {
   let parent = li.parentElement?.closest('li[role="treeitem"]');
   while (parent) {
-    const children = parent.querySelector(':scope > ul[role="group"]');
-    const boxes = children ? Array.from(children.querySelectorAll(':scope > li input[type="checkbox"]')) : [];
-    const numChecked = boxes.filter((b) => b.checked).length;
-    const numIndet = boxes.filter((b) => b.indeterminate).length;
     const parentBox = parent.querySelector(':scope input[type="checkbox"]');
-    if (boxes.length === 0) {
+    const childLis = parent.__childrenLis || Array.from(parent.querySelectorAll(':scope > ul[role="group"] > li[role="treeitem"]'));
+    const childStates = childLis
+      .map((child) => {
+        const box = child.__cb || child.querySelector(':scope input[type="checkbox"]');
+        if (!box) return null;
+        if (isLazyNodeUnresolved(child)) {
+          return box.checked ? 'checked' : (box.indeterminate ? 'mixed' : 'unchecked');
+        }
+        if (box.indeterminate) return 'mixed';
+        return box.checked ? 'checked' : 'unchecked';
+      })
+      .filter(Boolean);
+    const numChecked = childStates.filter((state) => state === 'checked').length;
+    const numIndet = childStates.filter((state) => state === 'mixed').length;
+    if (childStates.length === 0) {
       // Si pas d'enfants, on considère le parent comme décoché
       setCheckboxState(parentBox, 'unchecked');
-    } else if (numChecked === boxes.length && numIndet === 0) {
+    } else if (numChecked === childStates.length && numIndet === 0) {
       setCheckboxState(parentBox, 'checked');
     } else if (numChecked === 0 && numIndet === 0) {
       setCheckboxState(parentBox, 'unchecked');
@@ -494,15 +512,24 @@ function updateNodeTriState(li) {
   const group = li.__group || li.querySelector(':scope > ul[role="group"]');
   const parentBox = li.__cb || li.querySelector(':scope input[type="checkbox"]');
   if (!group || !parentBox) return;
+  if (isLazyNodeUnresolved(li)) return;
   // On récupère toutes les cases enfants
-  const boxes = (li.__childrenLis || Array.from(group.querySelectorAll(':scope > li input[type="checkbox"]')))
-    .map((child) => child.__cb || child.querySelector(':scope input[type="checkbox"]'))
+  const childStates = (li.__childrenLis || Array.from(group.querySelectorAll(':scope > li[role="treeitem"]')))
+    .map((child) => {
+      const box = child.__cb || child.querySelector(':scope input[type="checkbox"]');
+      if (!box) return null;
+      if (isLazyNodeUnresolved(child)) {
+        return box.checked ? 'checked' : (box.indeterminate ? 'mixed' : 'unchecked');
+      }
+      if (box.indeterminate) return 'mixed';
+      return box.checked ? 'checked' : 'unchecked';
+    })
     .filter(Boolean);
-  const numChecked = boxes.filter((b) => b.checked).length;
-  const numIndet = boxes.filter((b) => b.indeterminate).length;
-  if (boxes.length === 0) {
+  const numChecked = childStates.filter((state) => state === 'checked').length;
+  const numIndet = childStates.filter((state) => state === 'mixed').length;
+  if (childStates.length === 0) {
     setCheckboxState(parentBox, 'unchecked');
-  } else if (numChecked === boxes.length && numIndet === 0) {
+  } else if (numChecked === childStates.length && numIndet === 0) {
     setCheckboxState(parentBox, 'checked');
   } else if (numChecked === 0 && numIndet === 0) {
     setCheckboxState(parentBox, 'unchecked');
@@ -792,6 +819,14 @@ function attachInteractions(root) {
         const html = (items || []).map((it) => renderNode(it, baseLevel, parentDisabled)).join('');
         group.innerHTML = '';
         group.insertAdjacentHTML('afterbegin', html);
+        root.__indexStale = true;
+        ensureIndex(root);
+        const parentBox = li.querySelector(':scope input[type="checkbox"]');
+        if (parentBox && !parentBox.indeterminate) {
+          setDescendantsState(li, parentBox.checked);
+        }
+        updateSubtreeTriState(li);
+        updateAncestorsTriState(root, li);
         // Marque le parent comme ouvert et synchronise l'icône
         li.setAttribute('aria-expanded', 'true');
         const btn = li.querySelector('[data-toggle]');

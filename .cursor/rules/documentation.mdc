@@ -4,34 +4,19 @@ alwaysApply: true
 # Documentation
 
 ## Philosophy
-- Documentation pages are **manually written**, not auto-generated.
-- Use reusable documentation components for consistency.
-- Prefer explicit slots over attributes for clarity.
+- This repository does not contain documentation pages or demo application pages.
+- Package documentation belongs in `README.md` and in explicit API-facing comments or tests.
+- Do not recreate `resources/dev` or any documentation-only Blade layer in this repository.
 
 ## Structure
-- Documentation pages: `resources/dev/views/docs/components/{category}/{name}.blade.php`
-- Template docs: `resources/dev/views/docs/templates/{category}/{name}.blade.php`
-- Use `<x-daisy::docs.page>` as main wrapper with sections.
-- Use `<x-daisy::docs.sections.*>` components: `intro`, `example`, `variants`, `api`, `custom`.
-
-## Components Usage
-- `<x-daisy::docs.sections.example>` and `<x-daisy::docs.sections.variants>` require two explicit slots:
-  - `<x-slot:preview>`: rendered component preview
-  - `<x-slot:code>`: code editor with source code
-- Store code in PHP variables to avoid quote escaping issues.
-- Always provide both slots for complete examples.
-
-## Commands
-- `inventory:components`: generates `components.json` manifest
-- `inventory:templates`: generates `templates.json` manifest
-- `inventory:update`: runs both inventory commands
-- `docs:generate-pages`: generates minimal structure only (to be completed manually)
+- User-facing package docs: `README.md`
+- Package behavior proof: `tests/Feature` and `tests/Unit`
+- Internal rationale: concise PHPDoc where it materially helps maintenance
 
 ## Best Practices
-- Write documentation manually for full control and clarity.
-- Use `DocsHelper::getComponentProps()` for API sections.
-- Keep examples simple and relevant.
-- Avoid code duplication between preview and code slots.
+- Document integration contracts explicitly: publish tags, config keys, Blade namespace, expected host responsibilities.
+- If a behavior is subtle, prefer a focused test plus a short README note.
+- Do not add documentation files unless the user explicitly asks for them.
 
 ## PHPDoc Requirements
 - **Mandatory** for all classes, methods, functions, and properties.

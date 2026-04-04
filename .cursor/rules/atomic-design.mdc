@@ -3,15 +3,15 @@ alwaysApply: true
 ---
 # Atomic Design - Principles
 
-This package follows Atomic Design principles to organize components into 5 hierarchical levels.
+This package follows Atomic Design principles to organize reusable UI building blocks and templates.
 
 ## The 5 levels
 
 1. **ATOMS**: Basic elements with no dependencies on other UI components
 2. **MOLECULES**: Simple combinations of multiple atoms
 3. **ORGANISMS**: Complex combinations of molecules and/or atoms
-4. **TEMPLATES**: Page structures using organisms
-5. **PAGES**: Template instances with real content (outside this package)
+4. **TEMPLATES**: Reusable page structures using organisms
+5. **PAGES**: Concrete page instances with business content (outside this package)
 
 ## Fundamental rules
 
@@ -38,9 +38,9 @@ This package follows Atomic Design principles to organize components into 5 hier
 
 #### Templates
 
-- A template should only depend on `x-daisy::layout.*` or `x-daisy::ui.*` components
+- A template should only depend on `x-daisy::layout.*`, `x-daisy::ui.*`, or plain Blade/Laravel primitives when unavoidable
 - A template must never include another template component (`x-daisy::templates.*` is forbidden)
-- Always clarify intent: stable reusable (with Blade alias) or example/reference (view only)
+- Templates in this package are reusable package assets, not documentation examples
 
 ## Quick check
 
