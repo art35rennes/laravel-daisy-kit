@@ -1,0 +1,1 @@
+function r(e,t={}){e.querySelector("[data-sidebar-search]")&&console.warn('[DaisyKit] sidebar.js: Le filtrage est maintenant géré par menu-filter. Utilisez data-module="menu-filter" sur le conteneur du filtre.')}export{r as default,r as initSidebar};

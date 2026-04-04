@@ -7,7 +7,7 @@
 
 export default function init(element, options) {
     const refreshInterval = parseInt(element.dataset.refreshInterval, 10) || 5760000; // 96 minutes par défaut
-    const endpoint = element.dataset.endpoint || '/daisy-kit/csrf-token.json';
+    const endpoint = element.dataset.endpoint || null;
     
     let intervalId = null;
     let isRefreshing = false;
@@ -16,6 +16,10 @@ export default function init(element, options) {
      * Rafraîchit le token CSRF.
      */
     async function refreshToken() {
+        if (!endpoint) {
+            return;
+        }
+
         if (isRefreshing) {
             return;
         }
@@ -109,14 +113,13 @@ export default function init(element, options) {
     });
 
     // Démarrer le rafraîchissement automatique
-    startAutoRefresh();
-
-    // Rafraîchir immédiatement au chargement
-    refreshToken();
+    if (endpoint) {
+        startAutoRefresh();
+        refreshToken();
+    }
 
     // Nettoyer à la destruction
     return () => {
         stopAutoRefresh();
     };
 }
-

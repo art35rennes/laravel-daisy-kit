@@ -1,18 +1,22 @@
 @pushOnce('styles')
     @if(config('daisy-kit.auto_assets'))
         @php
-            $cssEntry = 'resources/css/app.css';
-            $vendorCss = resource_path('vendor/daisy-kit/css/app.css');
-            if (is_file($vendorCss)) { $cssEntry = 'resources/vendor/daisy-kit/css/app.css'; }
+            $assetManager = \Art35rennes\DaisyKit\Support\PackageAsset::class;
+            $cssEntry = $assetManager::sourceEntry('css');
+            $hasManifest = $assetManager::hasManifest();
+            $hasPublishedSource = $assetManager::hasPublishedSource('css');
+            $buildDirectory = $assetManager::buildDirectory();
         @endphp
         @if(config('daisy-kit.use_vite'))
-            @if(config('daisy-kit.vite_build_directory'))
-                @vite($cssEntry, config('daisy-kit.vite_build_directory'))
-            @else
+            @if($hasManifest)
+                @vite($cssEntry, $buildDirectory)
+            @elseif($hasPublishedSource)
                 @vite($cssEntry)
+            @else
+                {!! $assetManager::stylesheetTags($cssEntry) !!}
             @endif
         @else
-            <link rel="stylesheet" href="{{ asset(config('daisy-kit.bundle.css')) }}">
+            {!! $assetManager::stylesheetTags($cssEntry) !!}
         @endif
     @endif
 @endPushOnce
@@ -20,20 +24,23 @@
 @pushOnce('scripts')
     @if(config('daisy-kit.auto_assets'))
         @php
-            $jsEntry = 'resources/js/app.js';
-            $vendorJs = resource_path('vendor/daisy-kit/js/app.js');
-            if (is_file($vendorJs)) { $jsEntry = 'resources/vendor/daisy-kit/js/app.js'; }
+            $assetManager = \Art35rennes\DaisyKit\Support\PackageAsset::class;
+            $jsEntry = $assetManager::sourceEntry('js');
+            $hasManifest = $assetManager::hasManifest();
+            $hasPublishedSource = $assetManager::hasPublishedSource('js');
+            $buildDirectory = $assetManager::buildDirectory();
         @endphp
         @if(config('daisy-kit.use_vite'))
-            @if(config('daisy-kit.vite_build_directory'))
-                @vite($jsEntry, config('daisy-kit.vite_build_directory'))
-            @else
+            @if($hasManifest)
+                @vite($jsEntry, $buildDirectory)
+            @elseif($hasPublishedSource)
                 @vite($jsEntry)
+            @else
+                {!! $assetManager::scriptTags($jsEntry) !!}
             @endif
         @else
-            <script src="{{ asset(config('daisy-kit.bundle.js')) }}" defer></script>
+            {!! $assetManager::scriptTags($jsEntry) !!}
         @endif
     @endif
 @endPushOnce
-
 

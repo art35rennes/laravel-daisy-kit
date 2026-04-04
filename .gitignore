@@ -28,5 +28,10 @@ Homestead.json
 .env.production
 .phpactor.json
 auth.json
-/public/vendor/art35rennes/laravel-daisy-kit/assets
-storage/daisy-kit-vite.hot
+/tests/Fixtures/laravel/bootstrap/cache/*.php
+/tests/Fixtures/laravel/storage/framework/cache/*
+/tests/Fixtures/laravel/storage/framework/sessions/*
+/tests/Fixtures/laravel/storage/framework/testing/*
+/tests/Fixtures/laravel/storage/framework/views/*
+/storage
+/.vite

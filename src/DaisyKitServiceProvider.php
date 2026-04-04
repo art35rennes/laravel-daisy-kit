@@ -16,24 +16,10 @@ class DaisyKitServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $packageRoot = realpath(__DIR__.'/..');
-        $appRoot = realpath(base_path());
-        $isPackageDevApp = $packageRoot !== false && $appRoot !== false && $packageRoot === $appRoot;
-
-        $configuredThemeSelector = config('daisy-kit.dev.show_theme_selector');
-        $showThemeSelector = is_bool($configuredThemeSelector) ? $configuredThemeSelector : $isPackageDevApp;
-        config(['daisy-kit.dev.show_theme_selector' => $showThemeSelector]);
-
         // Charger les vues du package avec un namespace: x-daisy::ui.button
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'daisy');
         // Exposer les templates comme composants anonymes pour éviter les doublons avec components/templates.
         Blade::anonymousComponentPath(__DIR__.'/../resources/views/templates', 'daisy::templates');
-
-        // Charger les vues de dev (pages de démo/templates) sans les publier par défaut
-        $devViews = __DIR__.'/../resources/dev/views';
-        if (is_dir($devViews)) {
-            $this->loadViewsFrom($devViews, 'daisy-dev');
-        }
 
         // Charger les traductions du package: __('daisy::calendar.today')
         $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'daisy');
@@ -48,11 +34,6 @@ class DaisyKitServiceProvider extends ServiceProvider
             __DIR__.'/../resources/views/templates' => resource_path('views/vendor/daisy/templates'),
         ], 'daisy-templates');
 
-        // Publication optionnelle des vues de démo/docs vivantes
-        $this->publishes([
-            __DIR__.'/../resources/dev/views' => resource_path('views/vendor/daisy-dev'),
-        ], 'daisy-dev-views');
-
         // Publication optionnelle des traductions
         $this->publishes([
             __DIR__.'/../resources/lang' => resource_path('lang/vendor/daisy'),
@@ -63,63 +44,28 @@ class DaisyKitServiceProvider extends ServiceProvider
             __DIR__.'/../config/daisy-kit.php' => config_path('daisy-kit.php'),
         ], 'daisy-config');
 
-        // Publication optionnelle des sources d'assets (pour intégration dans le build du projet hôte)
+        // Publication optionnelle des sources d'assets (pour intégration manuelle dans le build du projet hôte)
+        $this->publishes([
+            __DIR__.'/../resources/js' => resource_path('vendor/daisy-kit/js'),
+            __DIR__.'/../resources/css' => resource_path('vendor/daisy-kit/css'),
+        ], 'daisy-assets-source');
+
+        if (is_dir(__DIR__.'/../public/vendor/art35rennes/laravel-daisy-kit')) {
+            $this->publishes([
+                __DIR__.'/../public/vendor/art35rennes/laravel-daisy-kit' => public_path('vendor/art35rennes/laravel-daisy-kit'),
+            ], 'daisy-assets');
+        }
+
+        // Alias conservé pour compatibilité.
         $this->publishes([
             __DIR__.'/../resources/js' => resource_path('vendor/daisy-kit/js'),
             __DIR__.'/../resources/css' => resource_path('vendor/daisy-kit/css'),
         ], 'daisy-src');
 
-        // Enregistrer la route pour le rafraîchissement du token CSRF
-        Route::middleware('web')->group(function () {
-            Route::get('/daisy-kit/csrf-token.json', [CsrfTokenController::class, '__invoke'])
-                ->name('daisy-kit.csrf-token');
-        });
-
-        // Enregistrer (optionnellement) les routes de documentation publiques du package
-        $docsEnabled = (bool) config('daisy-kit.docs.enabled', false);
-        if ($docsEnabled) {
-            $prefix = (string) config('daisy-kit.docs.prefix', 'docs');
-            Route::middleware('web')->prefix($prefix)->group(function () {
-                // Accueil docs
-                Route::get('/', function () {
-                    return view('daisy-dev::docs.index');
-                })->name('daisy.docs.index');
-
-                // Page Templates
-                Route::get('/templates', function () {
-                    return view('daisy-dev::docs.templates.index');
-                })->name('daisy.docs.templates');
-
-                // Pages Templates /templates/{category}/{template}
-                Route::get('/templates/{category}/{template}', function (string $category, string $template) {
-                    $view = "daisy-dev::docs.templates.$category.$template";
-                    if (view()->exists($view)) {
-                        return view($view);
-                    }
-                    abort(404);
-                })->where(['category' => '[A-Za-z0-9\-_]+', 'template' => '[A-Za-z0-9\-_]+'])
-                    ->name('daisy.docs.template');
-
-                // Pages Composants /{category}/{component}
-                // Cette route gère aussi les templates d'erreur via /errors/{template}
-                Route::get('/{category}/{component}', function (string $category, string $component) {
-                    // Si c'est une catégorie "errors" et que c'est un template, utiliser la route template
-                    $errorTemplates = ['empty-state', 'error', 'loading-state', 'maintenance'];
-                    if ($category === 'errors' && in_array($component, $errorTemplates, true)) {
-                        $view = "daisy-dev::docs.templates.errors.$component";
-                        if (view()->exists($view)) {
-                            return view($view);
-                        }
-                    }
-
-                    // Sinon, chercher un composant
-                    $view = "daisy-dev::docs.components.$category.$component";
-                    if (view()->exists($view)) {
-                        return view($view, ['category' => $category, 'component' => $component]);
-                    }
-                    abort(404);
-                })->where(['category' => '[A-Za-z0-9\-_]+', 'component' => '[A-Za-z0-9\-_]+'])
-                    ->name('daisy.docs.component');
+        if ((bool) config('daisy-kit.csrf_refresh.enabled', true)) {
+            Route::middleware((array) config('daisy-kit.csrf_refresh.middleware', ['web']))->group(function () {
+                Route::get((string) config('daisy-kit.csrf_refresh.path', 'daisy-kit/csrf-token.json'), [CsrfTokenController::class, '__invoke'])
+                    ->name((string) config('daisy-kit.csrf_refresh.name', 'daisy-kit.csrf-token'));
             });
         }
     }

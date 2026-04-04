@@ -18,10 +18,16 @@
     
     // Déterminer l'endpoint
     if ($endpoint === null) {
-        try {
-            $endpoint = route('daisy-kit.csrf-token');
-        } catch (\Exception $e) {
-            $endpoint = '/daisy-kit/csrf-token.json';
+        $routeEnabled = (bool) config('daisy-kit.csrf_refresh.enabled', true);
+
+        if ($routeEnabled) {
+            $routeName = (string) config('daisy-kit.csrf_refresh.name', 'daisy-kit.csrf-token');
+
+            try {
+                $endpoint = route($routeName);
+            } catch (\Exception $e) {
+                $endpoint = '/'.ltrim((string) config('daisy-kit.csrf_refresh.path', 'daisy-kit/csrf-token.json'), '/');
+            }
         }
     }
 @endphp
@@ -29,7 +35,6 @@
 <div 
     data-module="{{ $module }}"
     data-refresh-interval="{{ $refreshInterval }}"
-    data-endpoint="{{ $endpoint }}"
+    @if(filled($endpoint)) data-endpoint="{{ $endpoint }}" @endif
     {{ $attributes }}
 ></div>
-

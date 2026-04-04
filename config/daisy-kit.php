@@ -5,36 +5,39 @@ return [
     // Par défaut true pour la démo et l'intégration rapide. Désactivez-le dans l'app hôte si vous gérez les imports manuellement.
     'auto_assets' => true,
 
-    // Utiliser Vite (manifest) ou un bundle statique dans public/vendor
+    // Utiliser Vite (manifest) ou des balises assets générées à partir du manifest publié.
     'use_vite' => true,
 
-    // BuildDirectory dédié si vous bâtissez le package séparément :
-    // l'app hôte doit ajouter une instance du plugin Vite avec ce buildDirectory et les inputs du package.
+    // Répertoire public contenant le manifest Vite et les assets buildés publiés par le package.
     'vite_build_directory' => 'vendor/art35rennes/laravel-daisy-kit',
 
-    // Chemins fallback vers un bundle statique publié (si use_vite = false)
+    // Dernier fallback si aucun manifest publié n'est disponible.
     'bundle' => [
         'css' => 'vendor/daisy-kit/daisy-kit.css',
         'js' => 'vendor/daisy-kit/daisy-kit.js',
     ],
 
+    // Contrat d'exposition de la route de rafraîchissement du token CSRF.
+    'csrf_refresh' => [
+        'enabled' => true,
+        'path' => 'daisy-kit/csrf-token.json',
+        'name' => 'daisy-kit.csrf-token',
+        'middleware' => ['web'],
+    ],
+
     // Configuration des icônes - préfixe par défaut
     'icon_prefix' => 'bi',
 
-    // Documentation publique (activable comme Swagger)
-    'docs' => [
-        'enabled' => true, // Active les routes de documentation du package
-        'prefix' => 'docs', // Préfixe des routes publiées (/docs, /docs/{category}/{component}, /docs/templates)
+    // Options de développement du package.
+    // L'application hôte peut l'activer explicitement pour afficher le sélecteur
+    // de thème dans les templates ou les pages d'intégration.
+    'dev' => [
+        'show_theme_selector' => false,
     ],
 
-    // Options de développement du package.
-    // `show_theme_selector`:
-    // - null  => auto (visible seulement dans l'app Laravel interne du package)
-    // - true  => force l'affichage
-    // - false => force le masquage
-    'dev' => [
-        'show_theme_selector' => null,
-    ],
+    // Certaines props acceptent volontairement du HTML de confiance (HtmlString / SVG / slots riches).
+    // N'y injectez jamais de contenu utilisateur brut sans assainissement préalable côté application hôte.
+    'trusted_html' => false,
 
     // Configuration des thèmes daisyUI
     'themes' => [

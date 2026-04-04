@@ -30,6 +30,22 @@ if (! function_exists('renderComponent')) {
     }
 }
 
+if (! function_exists('packagePath')) {
+    /**
+     * Retourne un chemin absolu dans le package.
+     */
+    function packagePath(string $path = ''): string
+    {
+        $root = dirname(__DIR__);
+
+        if ($path === '') {
+            return $root;
+        }
+
+        return $root.DIRECTORY_SEPARATOR.ltrim($path, DIRECTORY_SEPARATOR);
+    }
+}
+
 if (! function_exists('langPath')) {
     /**
      * Retourne le chemin du répertoire de langues pour les tests.
