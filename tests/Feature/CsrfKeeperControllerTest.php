@@ -3,6 +3,8 @@
 use Art35rennes\DaisyKit\Http\Controllers\CsrfTokenController;
 use Illuminate\Support\Facades\Config;
 
+covers(CsrfTokenController::class);
+
 it('returns json response with csrf token', function () {
     // Initialiser la session pour que csrf_token() fonctionne
     session()->start();

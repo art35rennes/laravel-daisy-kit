@@ -27,7 +27,9 @@ it('renders form inline with POST method with csrf and csrf keeper', function ()
         // Token CSRF pour que le backend reçoive bien les données.
         ->toContain('name="_token"')
         // Composant CSRF Keeper pour garder le formulaire valide après une longue inactivité.
-        ->toContain('csrf-keeper')
+        ->toContain('data-module="csrf-keeper"')
+        ->toContain('data-refresh-interval=')
+        ->toContain('data-endpoint=')
         ->toContain('data-module="inline"');
 });
 

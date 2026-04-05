@@ -223,16 +223,17 @@ it('renders profile-view template with isOwnProfile detection', function () {
 });
 
 it('renders profile-edit template with old values', function () {
-    request()->merge(['name' => 'Jane Doe']);
+    session()->start();
+    request()->setLaravelSession(app('session.store'));
+    session()->flashInput(['name' => 'Jane Doe']);
 
     $html = View::make('daisy::templates.profile.profile-edit', [
         'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe'],
     ])->render();
 
-    // Old values should be used if available
-    expect($html)
-        ->toContain('form');
+    expect((bool) preg_match('/<input[^>]*name="name"[^>]*value="Jane Doe"|<input[^>]*value="Jane Doe"[^>]*name="name"/', $html))
+        ->toBeTrue();
 });
 
 it('renders profile-settings template with preferences data', function () {
