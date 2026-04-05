@@ -13,15 +13,16 @@ const initialized = new WeakSet();
 // Précharger tous les modules disponibles pour que Vite puisse les résoudre
 const modulesGlob = import.meta.glob('../modules/*.js', { eager: false });
 const formsModulesGlob = import.meta.glob('../modules/forms/*.js', { eager: false });
-const rootModulesGlob = import.meta.glob('../*.js', { eager: false });
-const folderModulesGlob = import.meta.glob('../*/index.js', { eager: false });
+const rootModulesGlob = import.meta.glob(['../*.js', '!../app.js', '!../bootstrap.js'], { eager: false });
+const folderModulesGlob = import.meta.glob(['../*/index.js', '!../kit/index.js'], { eager: false });
+const reservedModuleNames = new Set(['app', 'bootstrap', 'kit']);
 
 // Créer un mapping nom du module -> fonction d'import
 function createModuleMap(globMap, extractName) {
     const map = new Map();
     for (const [path, importFn] of Object.entries(globMap)) {
         const name = extractName(path);
-        if (name) {
+        if (name && !reservedModuleNames.has(name)) {
             map.set(name, importFn);
         }
     }
@@ -83,20 +84,7 @@ async function initElement(element) {
         if (importFn) {
             module = await importFn();
         } else {
-            // Fallback : import dynamique classique (peut ne pas fonctionner avec Vite)
-            try {
-                module = await import(`../modules/${moduleName}.js`);
-            } catch (e1) {
-                try {
-                    module = await import(`../modules/forms/${moduleName}.js`);
-                } catch (e2) {
-                    try {
-                        module = await import(`../${moduleName}.js`);
-                    } catch (e3) {
-                        module = await import(`../${moduleName}/index.js`);
-                    }
-                }
-            }
+            throw new Error(`Unknown module "${moduleName}"`);
         }
         
         // Extraire les options depuis les data-attributes
@@ -190,4 +178,3 @@ if (typeof window !== 'undefined') {
         reinit,
     };
 }
-

@@ -10,11 +10,32 @@
 
 import { initMapFromConfig, initAllLeafletMaps } from './map-core';
 
+async function init(root) {
+  if (!(root instanceof Element)) {
+    return initAllLeafletMaps();
+  }
+
+  if (root.dataset.leafletInitialized === '1') {
+    return null;
+  }
+
+  const map = await initMapFromConfig(root);
+  if (map) {
+    try { root.dataset.leafletInitialized = '1'; } catch (_) {}
+  }
+
+  return map;
+}
+
 // API globale (utile pour debug ou usages avancés)
 window.DaisyLeaflet = {
-  init: initMapFromConfig,
+  init,
   initAll: initAllLeafletMaps,
 };
+
+// Export pour le système data-module (kit/index.js)
+export default init;
+export { initMapFromConfig, initAllLeafletMaps, init };
 
 // Initialisation paresseuse à l'apparition dans le viewport
 (function setupLazyInit() {
@@ -42,8 +63,7 @@ window.DaisyLeaflet = {
           // Évite double init si déjà traité via fallback
           if (el.dataset.leafletInitialized === '1') return;
           queue.push(async () => {
-            await initMapFromConfig(el);
-            try { el.dataset.leafletInitialized = '1'; } catch (_) {}
+            await init(el);
           });
           runNext();
         }
@@ -62,8 +82,7 @@ window.DaisyLeaflet = {
         const inViewport = r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < (window.innerHeight || document.documentElement.clientHeight);
         if (inViewport) {
           queue.push(async () => {
-            await initMapFromConfig(el);
-            try { el.dataset.leafletInitialized = '1'; } catch (_) {}
+            await init(el);
           });
           runNext();
         }
@@ -77,5 +96,4 @@ window.DaisyLeaflet = {
     Promise.resolve().then(observe);
   }
 })();
-
 

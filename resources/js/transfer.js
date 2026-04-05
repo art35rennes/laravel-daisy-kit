@@ -48,6 +48,54 @@ function parseItems(listEl) {
   return items;
 }
 
+function setCheckboxState(checkbox, state) {
+  if (!checkbox) return;
+  if (state === 'checked') {
+    checkbox.checked = true;
+    checkbox.indeterminate = false;
+    checkbox.setAttribute('aria-checked', 'true');
+  } else if (state === 'mixed') {
+    checkbox.checked = false;
+    checkbox.indeterminate = true;
+    checkbox.setAttribute('aria-checked', 'mixed');
+  } else {
+    checkbox.checked = false;
+    checkbox.indeterminate = false;
+    checkbox.setAttribute('aria-checked', 'false');
+  }
+}
+
+function getAggregateState(items) {
+  if (!Array.isArray(items) || items.length === 0) return 'unchecked';
+  const checkedCount = items.filter((it) => it.checked).length;
+  if (checkedCount === 0) return 'unchecked';
+  if (checkedCount === items.length) return 'checked';
+  return 'mixed';
+}
+
+function getScopedItems(items, state) {
+  let scoped = Array.isArray(items) ? [...items] : [];
+  if (state?.searchTerm) {
+    const q = state.searchTerm.toLowerCase();
+    scoped = scoped.filter((it) => it.label.toLowerCase().includes(q));
+  }
+  if (state?.pagination) {
+    const page = Math.max(1, state.page || 1);
+    const perPage = Math.max(1, state.perPage || scoped.length || 1);
+    const start = (page - 1) * perPage;
+    scoped = scoped.slice(start, start + perPage);
+  }
+  return scoped;
+}
+
+function syncSelectAllCheckbox(checkbox, items, state) {
+  if (!checkbox) return;
+  const scopedItems = getScopedItems(items, state);
+  const enabledCount = scopedItems.filter((it) => !it.disabled).length;
+  checkbox.disabled = enabledCount === 0;
+  setCheckboxState(checkbox, getAggregateState(scopedItems));
+}
+
 /**
  * (Ré)rend une liste selon la recherche, la pagination, et met à jour les cases à cocher.
  * @param {HTMLElement} listEl - Élément UL/OL cible à remplir
@@ -96,7 +144,10 @@ function renderList(listEl, items, opts) {
       cb.checked = !!it.checked;
       cb.disabled = !!it.disabled;
       // Synchronisation de l'état checked de l'objet métier lors du changement
-      cb.addEventListener('change', () => { it.checked = cb.checked; });
+      cb.addEventListener('change', () => {
+        it.checked = cb.checked;
+        if (typeof opts.onItemChange === 'function') opts.onItemChange(it, cb);
+      });
       // Ajout du texte du label
       const span = document.createElement('span');
       span.className = 'font-medium truncate';
@@ -189,14 +240,24 @@ function initTransfer(root) {
    * Émet l'événement 'listChange' à chaque modification.
    */
   function renderAll() {
+    stateSource.page = Math.min(Math.max(1, stateSource.page), Math.max(1, Math.ceil((stateSource.searchTerm ? itemsSource.filter((it) => it.label.toLowerCase().includes(stateSource.searchTerm.toLowerCase())).length : itemsSource.length) / stateSource.perPage) || 1));
+    stateTarget.page = Math.min(Math.max(1, stateTarget.page), Math.max(1, Math.ceil((stateTarget.searchTerm ? itemsTarget.filter((it) => it.label.toLowerCase().includes(stateTarget.searchTerm.toLowerCase())).length : itemsTarget.length) / stateTarget.perPage) || 1));
     // Rendu de la liste source
-    const s = renderList(listSource, itemsSource, stateSource);
+    const s = renderList(listSource, itemsSource, {
+      ...stateSource,
+      onItemChange: () => renderAll(),
+    });
     stateSource.pages = s.pages;
     if (stateSource._updatePagerInfo) stateSource._updatePagerInfo();
     // Rendu de la liste cible
-    const t = renderList(listTarget, itemsTarget, stateTarget);
+    const t = renderList(listTarget, itemsTarget, {
+      ...stateTarget,
+      onItemChange: () => renderAll(),
+    });
     stateTarget.pages = t.pages;
     if (stateTarget._updatePagerInfo) stateTarget._updatePagerInfo();
+    syncSelectAllCheckbox(selAllSource, itemsSource, stateSource);
+    syncSelectAllCheckbox(selAllTarget, itemsTarget, stateTarget);
     // Met à jour les compteurs (sélectionnés / total)
     try {
       const cSrc = root.querySelector('[data-transfer-count="source"]');
@@ -219,9 +280,9 @@ function initTransfer(root) {
    * @param {Array} toItems - Liste cible (où on ajoute)
    * @returns {Array|undefined} - Nouvelle liste source (sans les éléments déplacés)
    */
-  function moveSelected(fromItems, toItems) {
+  function moveSelected(fromItems, toItems, state) {
     // On sélectionne les éléments cochés et non désactivés
-    const moving = fromItems.filter((it) => it.checked && !it.disabled);
+    const moving = getScopedItems(fromItems, state).filter((it) => it.checked && !it.disabled);
     if (!moving.length) return;
     // On décoche les éléments déplacés
     moving.forEach((m) => { m.checked = false; });
@@ -253,19 +314,36 @@ function initTransfer(root) {
     });
   }
 
+  function rememberMixedState(input) {
+    if (!(input instanceof HTMLInputElement)) return;
+    if (!input.matches('[data-transfer-selectall]')) return;
+    input.dataset.wasIndeterminate = input.indeterminate ? '1' : '0';
+  }
+
+  root.addEventListener('mousedown', (e) => {
+    rememberMixedState(e.target);
+  }, { capture: true });
+
+  root.addEventListener('keydown', (e) => {
+    if (e.key !== ' ' && e.key !== 'Enter') return;
+    rememberMixedState(e.target);
+  }, { capture: true });
+
   // Gestion du "tout sélectionner" sur la source
   if (selectAll && selAllSource) {
     selAllSource.addEventListener('change', () => {
-      const want = selAllSource.checked;
-      itemsSource.forEach((it) => { if (!it.disabled) it.checked = want; });
+      const want = selAllSource.dataset.wasIndeterminate === '1' ? false : selAllSource.checked;
+      delete selAllSource.dataset.wasIndeterminate;
+      getScopedItems(itemsSource, stateSource).forEach((it) => { if (!it.disabled) it.checked = want; });
       renderAll();
     });
   }
   // Gestion du "tout sélectionner" sur la cible
   if (selectAll && selAllTarget) {
     selAllTarget.addEventListener('change', () => {
-      const want = selAllTarget.checked;
-      itemsTarget.forEach((it) => { if (!it.disabled) it.checked = want; });
+      const want = selAllTarget.dataset.wasIndeterminate === '1' ? false : selAllTarget.checked;
+      delete selAllTarget.dataset.wasIndeterminate;
+      getScopedItems(itemsTarget, stateTarget).forEach((it) => { if (!it.disabled) it.checked = want; });
       renderAll();
     });
   }
@@ -273,7 +351,7 @@ function initTransfer(root) {
   // Gestion du transfert source -> cible
   if (btnToTarget) {
     btnToTarget.addEventListener('click', () => {
-      const keep = moveSelected(itemsSource, itemsTarget);
+      const keep = moveSelected(itemsSource, itemsTarget, stateSource);
       if (keep) itemsSource = keep;
       renderAll();
     });
@@ -281,7 +359,7 @@ function initTransfer(root) {
   // Gestion du transfert cible -> source (si mode bidirectionnel)
   if (btnToSource && !oneWay) {
     btnToSource.addEventListener('click', () => {
-      const keep = moveSelected(itemsTarget, itemsSource);
+      const keep = moveSelected(itemsTarget, itemsSource, stateTarget);
       if (keep) itemsTarget = keep;
       renderAll();
     });

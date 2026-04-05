@@ -93,7 +93,10 @@
                         @if($selectAll)
                             <label class="label cursor-pointer gap-2">
                                 <input type="checkbox" class="checkbox checkbox-sm" data-transfer-selectall="source" id="{{ $sourceSelectAllId }}">
-                                <span class="font-semibold">{{ $titleSource }}</span>
+                                <span class="flex flex-col leading-tight">
+                                    <span class="font-semibold">{{ $titleSource }}</span>
+                                    <span class="text-xs opacity-70">{{ $selectAllTextSource }}</span>
+                                </span>
                             </label>
                         @else
                             <h3 class="font-semibold">{{ $titleSource }}</h3>
@@ -191,7 +194,10 @@
                         @if($selectAll)
                             <label class="label cursor-pointer gap-2">
                                 <input type="checkbox" class="checkbox checkbox-sm" data-transfer-selectall="target" id="{{ $targetSelectAllId }}">
-                                <span class="font-semibold">{{ $titleTarget }}</span>
+                                <span class="flex flex-col leading-tight">
+                                    <span class="font-semibold">{{ $titleTarget }}</span>
+                                    <span class="text-xs opacity-70">{{ $selectAllTextTarget }}</span>
+                                </span>
                             </label>
                         @else
                             <h3 class="font-semibold">{{ $titleTarget }}</h3>

@@ -262,7 +262,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-rVWgvmt7.js",
+    "file": "assets/app-CIiCN4IB.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -271,41 +271,6 @@
       "_vendor-pbZnJK6P.js"
     ],
     "dynamicImports": [
-      "resources/js/modules/chat-input.js",
-      "resources/js/modules/chat-messages.js",
-      "resources/js/modules/chat-widget.js",
-      "resources/js/modules/copyable.js",
-      "resources/js/modules/csrf-keeper.js",
-      "resources/js/modules/menu-filter.js",
-      "resources/js/modules/notifications.js",
-      "resources/js/modules/otp-code.js",
-      "resources/js/modules/popover.js",
-      "resources/js/modules/select.js",
-      "resources/js/modules/sidebar.js",
-      "resources/js/modules/sign.js",
-      "resources/js/modules/forms/inline.js",
-      "resources/js/modules/forms/tabs.js",
-      "resources/js/modules/forms/wizard.js",
-      "resources/js/code-editor.js",
-      "resources/js/color-picker.js",
-      "resources/js/file-input.js",
-      "resources/js/input-mask.js",
-      "resources/js/lazy-editors.js",
-      "resources/js/lightbox.js",
-      "resources/js/media-gallery.js",
-      "resources/js/onboarding.js",
-      "resources/js/popconfirm.js",
-      "resources/js/popover.js",
-      "resources/js/scroll-status.js",
-      "resources/js/scrollspy.js",
-      "resources/js/stepper.js",
-      "resources/js/table.js",
-      "resources/js/transfer.js",
-      "resources/js/treeview.js",
-      "resources/js/calendar-full/index.js",
-      "_chart-DkC_7JRR.js",
-      "resources/js/chat/index.js",
-      "resources/js/leaflet/index.js",
       "resources/js/modules/chat-input.js",
       "resources/js/modules/chat-messages.js",
       "resources/js/modules/chat-widget.js",
@@ -365,7 +330,7 @@
     ]
   },
   "resources/js/calendar-full/index.js": {
-    "file": "assets/index-sU3zRyoS.js",
+    "file": "assets/index-_XdGdbve.js",
     "name": "index",
     "src": "resources/js/calendar-full/index.js",
     "isDynamicEntry": true,
@@ -426,7 +391,7 @@
     ]
   },
   "resources/js/leaflet/index.js": {
-    "file": "assets/leaflet-core-Bw5OaLTN.js",
+    "file": "assets/leaflet-core-C8BmiT0V.js",
     "name": "leaflet-core",
     "src": "resources/js/leaflet/index.js",
     "isDynamicEntry": true,
@@ -634,7 +599,7 @@
     "isDynamicEntry": true
   },
   "resources/js/transfer.js": {
-    "file": "assets/transfer-BtgJuRoJ.js",
+    "file": "assets/transfer-CWPeiSv_.js",
     "name": "transfer",
     "src": "resources/js/transfer.js",
     "isDynamicEntry": true
