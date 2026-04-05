@@ -23,12 +23,12 @@
 @php
     // Génération automatique du titre si non fourni
     if ($title === null) {
-        $title = __('errors.'.$statusCode.'_title', ['default' => __('errors.error_title', ['code' => $statusCode])]);
+        $title = __('daisy::errors.'.$statusCode.'_title', ['default' => __('daisy::errors.error_title', ['code' => $statusCode])]);
     }
     
     // Génération automatique du message si non fourni
     if ($message === null) {
-        $message = __('errors.'.$statusCode.'_message', ['default' => __('errors.error_message', ['code' => $statusCode])]);
+        $message = __('daisy::errors.'.$statusCode.'_message', ['default' => __('daisy::errors.error_message', ['code' => $statusCode])]);
     }
 @endphp
 
@@ -43,7 +43,7 @@
                 >
                     <div class="text-center">
                         <div class="text-6xl mb-4">⚠️</div>
-                        <p class="text-base-content/70">{{ __('errors.error_occurred') }}</p>
+                        <p class="text-base-content/70">{{ __('daisy::errors.error_occurred') }}</p>
                     </div>
                 </x-daisy::ui.layout.hero>
             @endif

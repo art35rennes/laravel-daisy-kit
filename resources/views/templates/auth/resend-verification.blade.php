@@ -1,10 +1,10 @@
 @props([
-    'title' => __('auth.resend_verification'),
+    'title' => __('daisy::auth.resend_verification'),
     'theme' => null,
-    'description' => __('auth.resend_verification'),
+    'description' => __('daisy::auth.resend_verification'),
     'action' => \Illuminate\Support\Facades\Route::has('verification.send') ? route('verification.send') : '#',
     'method' => 'POST',
-    'submitButtonText' => __('auth.resend_verification'),
+    'submitButtonText' => __('daisy::auth.resend_verification'),
     'emailSent' => (bool) session('status'),
 ])
 
@@ -32,7 +32,7 @@
             <form action="{{ $action }}" method="POST" class="space-y-4">
                 @csrf
                 {{-- Optional email for unauthenticated flows --}}
-                <x-daisy::ui.partials.form-field name="email" :label="__('auth.email')">
+                <x-daisy::ui.partials.form-field name="email" :label="__('daisy::auth.email')">
                         <x-daisy::ui.inputs.input
                             name="email"
                             type="email"

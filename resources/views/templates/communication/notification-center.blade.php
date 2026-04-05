@@ -1,5 +1,5 @@
 @props([
-    'title' => __('notifications.notifications'),
+    'title' => __('daisy::notifications.notifications'),
     'theme' => null,
     'notifications' => [],
     'unreadCount' => null,
@@ -101,28 +101,28 @@
 
     $statCards = [
         [
-            'label' => __('notifications.critical_alerts'),
+            'label' => __('daisy::notifications.critical_alerts'),
             'value' => $criticalNotifications->count(),
             'count' => $criticalNotifications->count(),
             'icon' => 'bi-exclamation-triangle',
             'iconColor' => 'text-error',
         ],
         [
-            'label' => __('notifications.actionable_notifications'),
+            'label' => __('daisy::notifications.actionable_notifications'),
             'value' => $actionableCount,
             'count' => $actionableCount,
             'icon' => 'bi-lightning-charge',
             'iconColor' => 'text-warning',
         ],
         [
-            'label' => __('notifications.upcoming_followups'),
+            'label' => __('daisy::notifications.upcoming_followups'),
             'value' => $dueSoonCount,
             'count' => $dueSoonCount,
             'icon' => 'bi-calendar-event',
             'iconColor' => 'text-info',
         ],
         [
-            'label' => __('notifications.mentions'),
+            'label' => __('daisy::notifications.mentions'),
             'value' => $mentionCount,
             'count' => $mentionCount,
             'icon' => 'bi-at',
@@ -138,7 +138,7 @@
             <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div class="min-w-0 space-y-3 flex-1">
                     <p class="text-xs uppercase tracking-wide text-primary font-semibold">
-                        {{ __('notifications.control_room') }}
+                        {{ __('daisy::notifications.control_room') }}
                     </p>
                     <div class="flex flex-wrap items-center gap-3">
                         <h1 class="text-3xl font-semibold tracking-tight">{{ $title }}</h1>
@@ -148,13 +148,13 @@
                                     {{ $unreadCount }}
                                 </x-daisy::ui.data-display.badge>
                                 <span class="text-sm text-base-content/70">
-                                    {{ trans_choice('notifications.unread_count', $unreadCount, ['count' => $unreadCount]) }}
+                                    {{ trans_choice('daisy::notifications.unread_count', $unreadCount, ['count' => $unreadCount]) }}
                                 </span>
                             </div>
                         @endif
                     </div>
                     <p class="text-sm text-base-content/70">
-                        {{ __('notifications.center_helper') }}
+                        {{ __('daisy::notifications.center_helper') }}
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-2 shrink-0">
@@ -167,7 +167,7 @@
                     >
                         <span class="flex items-center gap-2">
                             <x-icon name="bi-gear" class="w-4 h-4" />
-                            {{ __('notifications.notification_preferences') }}
+                            {{ __('daisy::notifications.notification_preferences') }}
                         </span>
                     </x-daisy::ui.inputs.button>
                     @if($unreadCount > 0 && $showMarkAllRead && $markAllAsReadUrl !== '#')
@@ -180,7 +180,7 @@
                         >
                             <span class="flex items-center gap-2">
                                 <x-icon name="bi-check2-all" class="w-4 h-4" />
-                                {{ __('notifications.mark_all_as_read') }}
+                                {{ __('daisy::notifications.mark_all_as_read') }}
                             </span>
                         </x-daisy::ui.inputs.button>
                     @endif
@@ -198,7 +198,7 @@
                             {{ $card['value'] }}
                         </div>
                         <p class="mt-1 text-xs text-base-content/60">
-                            {{ trans_choice('notifications.channel_score', $card['count'], ['count' => $card['count']]) }}
+                            {{ trans_choice('daisy::notifications.channel_score', $card['count'], ['count' => $card['count']]) }}
                         </p>
                     </div>
                 @endforeach
@@ -208,18 +208,18 @@
         <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
             <div class="space-y-8">
                 <x-daisy::ui.layout.card
-                    :title="__('notifications.focus_section_title')"
+                    :title="__('daisy::notifications.focus_section_title')"
                     class="card-border bg-error/5 shadow"
                 >
                     <p class="text-sm text-base-content/70">
-                        {{ __('notifications.focus_section_description') }}
+                        {{ __('daisy::notifications.focus_section_description') }}
                     </p>
                     <div class="mt-4 space-y-4">
                         @forelse($focusNotifications as $focusNotification)
                             @php
                                 $focusData = data_get($focusNotification, $notificationDataKey, []);
                                 $focusLink = data_get($focusData, 'action.url', data_get($focusData, 'link', '#'));
-                                $focusMessage = data_get($focusData, 'message', __('notifications.new_notification'));
+                                $focusMessage = data_get($focusData, 'message', __('daisy::notifications.new_notification'));
                                 $focusCreatedAt = data_get($focusNotification, $notificationCreatedAtKey);
                                 $focusDate = null;
 
@@ -248,13 +248,13 @@
                                         tag="a"
                                         :href="$focusLink"
                                     >
-                                        {{ __('notifications.cta_view_details') }}
+                                        {{ __('daisy::notifications.cta_view_details') }}
                                     </x-daisy::ui.inputs.button>
                                 @endif
                             </div>
                         @empty
                             <p class="text-sm text-base-content/70">
-                                {{ __('notifications.empty_focus') }}
+                                {{ __('daisy::notifications.empty_focus') }}
                             </p>
                         @endforelse
                     </div>
@@ -305,14 +305,14 @@
             </div>
 
             <div class="space-y-4">
-                <x-daisy::ui.layout.card :title="__('notifications.channel_preferences')">
+                <x-daisy::ui.layout.card :title="__('daisy::notifications.channel_preferences')">
                     <p class="text-sm text-base-content/70">
-                        {{ __('notifications.channel_preferences_helper') }}
+                        {{ __('daisy::notifications.channel_preferences_helper') }}
                     </p>
                     <div class="mt-4 space-y-3">
                         @forelse($channelBreakdown->take(4) as $channel => $meta)
                             @php
-                                $channelKey = 'notifications.channel_' . \Illuminate\Support\Str::slug($channel, '_');
+                                $channelKey = 'daisy::notifications.channel_' . \Illuminate\Support\Str::slug($channel, '_');
                                 $channelLabel = __($channelKey);
                                 if ($channelLabel === $channelKey) {
                                     $channelLabel = \Illuminate\Support\Str::headline($channel);
@@ -333,17 +333,17 @@
                                     <span class="text-sm font-medium">{{ $channelLabel }}</span>
                                 </div>
                                 <div class="text-xs text-base-content/70 text-right">
-                                    <div>{{ trans_choice('notifications.channel_score', $meta['count'], ['count' => $meta['count']]) }}</div>
+                                    <div>{{ trans_choice('daisy::notifications.channel_score', $meta['count'], ['count' => $meta['count']]) }}</div>
                                     @if($meta['unread'] > 0)
                                         <div class="text-error mt-0.5">
-                                            {{ trans_choice('notifications.unread_count', $meta['unread'], ['count' => $meta['unread']]) }}
+                                            {{ trans_choice('daisy::notifications.unread_count', $meta['unread'], ['count' => $meta['unread']]) }}
                                         </div>
                                     @endif
                                 </div>
                             </div>
                         @empty
                             <p class="text-sm text-base-content/60">
-                                {{ __('notifications.empty_channels') }}
+                                {{ __('daisy::notifications.empty_channels') }}
                             </p>
                         @endforelse
                     </div>
@@ -356,14 +356,14 @@
                             :href="$preferencesUrl"
                             :disabled="!$preferencesUrl"
                         >
-                            {{ __('notifications.notification_preferences') }}
+                            {{ __('daisy::notifications.notification_preferences') }}
                         </x-daisy::ui.inputs.button>
                     </x-slot:actions>
                 </x-daisy::ui.layout.card>
 
-                <x-daisy::ui.layout.card :title="__('notifications.daily_digest')">
+                <x-daisy::ui.layout.card :title="__('daisy::notifications.daily_digest')">
                     <p class="text-sm text-base-content/70">
-                        {{ __('notifications.daily_digest_helper', ['time' => $digestTime]) }}
+                        {{ __('daisy::notifications.daily_digest_helper', ['time' => $digestTime]) }}
                     </p>
                     <x-slot:actions>
                         <x-daisy::ui.inputs.button
@@ -374,7 +374,7 @@
                             :href="$preferencesUrl"
                             :disabled="!$preferencesUrl"
                         >
-                            {{ __('notifications.set_digest') }}
+                            {{ __('daisy::notifications.set_digest') }}
                         </x-daisy::ui.inputs.button>
                     </x-slot:actions>
                 </x-daisy::ui.layout.card>
@@ -382,5 +382,4 @@
         </div>
     </section>
 </x-daisy::layout.app>
-
 

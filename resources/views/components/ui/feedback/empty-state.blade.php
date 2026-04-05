@@ -1,6 +1,6 @@
 @props([
     'icon' => 'bi-inbox', // Blade icon name
-    'title' => __('common.empty'),
+    'title' => __('daisy::common.empty'),
     'message' => null,
     'actionLabel' => null,
     'actionUrl' => null,

@@ -6,7 +6,7 @@
     'multipleFiles' => false,
     'showFilePreview' => true,
     'acceptedFileTypes' => 'image/*,application/pdf,.doc,.docx',
-    'placeholder' => __('chat.type_message'),
+    'placeholder' => __('daisy::chat.type_message'),
     // Options REST/WebSocket
     'useWebSockets' => false,
     'autoReconnect' => true,

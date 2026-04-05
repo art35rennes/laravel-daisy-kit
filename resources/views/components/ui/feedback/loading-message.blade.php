@@ -1,5 +1,5 @@
 @props([
-    'message' => __('common.loading'),
+    'message' => __('daisy::common.loading'),
     'shape' => 'spinner',
     'size' => 'lg',
 ])

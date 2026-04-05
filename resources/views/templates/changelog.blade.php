@@ -1,5 +1,5 @@
 @props([
-    'title' => __('changelog.changelog'),
+    'title' => __('daisy::changelog.changelog'),
     'theme' => null,
     // Changelog data
     'versions' => [], // Array of version data
@@ -61,16 +61,16 @@
         <section class="rounded-box bg-base-100/90 p-8 shadow">
             <div class="flex flex-wrap items-start gap-6">
                 <div class="flex-1 min-w-0 space-y-3">
-                    <p class="text-sm font-semibold uppercase tracking-wide text-primary">{{ __('changelog.changelog') }}</p>
+                    <p class="text-sm font-semibold uppercase tracking-wide text-primary">{{ __('daisy::changelog.changelog') }}</p>
                     <h1 class="text-4xl font-semibold text-base-content">{{ $title }}</h1>
                     <p class="text-base text-base-content/70">
-                        {{ __('changelog.intro_description') }}
+                        {{ __('daisy::changelog.intro_description') }}
                     </p>
                 </div>
                 <div class="flex flex-col items-end gap-3">
                     @if($showVersionBadge && $currentVersion)
                         <x-daisy::ui.data-display.badge color="primary" size="lg">
-                            {{ __('changelog.current_version') }} {{ $currentVersion }}
+                            {{ __('daisy::changelog.current_version') }} {{ $currentVersion }}
                         </x-daisy::ui.data-display.badge>
                     @endif
                     <x-daisy::ui.inputs.button
@@ -79,7 +79,7 @@
                         color="primary"
                         class="btn-wide"
                     >
-                        {{ __('changelog.cta_get_template') }}
+                        {{ __('daisy::changelog.cta_get_template') }}
                     </x-daisy::ui.inputs.button>
                 </div>
             </div>
@@ -94,8 +94,8 @@
 
         @if(empty($normalizedVersions))
             <x-daisy::ui.feedback.empty-state
-                :title="__('changelog.no_versions')"
-                :message="__('changelog.no_results')"
+                :title="__('daisy::changelog.no_versions')"
+                :message="__('daisy::changelog.no_results')"
                 class="rounded-box card-border bg-base-100/80"
             />
         @else
@@ -190,7 +190,7 @@
 
                             const matchesSearch = !searchTerm || description.includes(searchTerm);
                             const matchesFilter = !selectedFilter ||
-                                selectedFilter === @json(__('changelog.all_types')).toLowerCase() ||
+                                selectedFilter === @json(__('daisy::changelog.all_types')).toLowerCase() ||
                                 typeBadge.includes(selectedFilter);
 
                             if (matchesSearch && matchesFilter) {
@@ -214,7 +214,7 @@
                         if (!noResults) {
                             const message = document.createElement('div');
                             message.className = 'changelog-no-results text-center py-8 text-base-content/70';
-                            message.innerText = @json(__('changelog.no_results'));
+                            message.innerText = @json(__('daisy::changelog.no_results'));
                             container.appendChild(message);
                         }
                     } else if (noResults) {

@@ -1,5 +1,5 @@
 @props([
-    'title' => __('changelog.changelog'),
+    'title' => __('daisy::changelog.changelog'),
     'currentVersion' => null,
     'rssUrl' => null,
     'atomUrl' => null,
@@ -12,7 +12,7 @@
             <h1 class="text-3xl font-bold">{{ $title }}</h1>
             @if($showVersionBadge && $currentVersion)
                 <x-daisy::ui.data-display.badge color="primary" size="lg">
-                    {{ __('changelog.current_version') }}: {{ $currentVersion }}
+                    {{ __('daisy::changelog.current_version') }}: {{ $currentVersion }}
                 </x-daisy::ui.data-display.badge>
             @endif
         </div>
@@ -23,7 +23,7 @@
                     <a href="{{ $rssUrl }}" target="_blank" rel="noopener noreferrer" class="link link-primary text-sm">
                         <span class="flex items-center gap-1">
                             <x-daisy::ui.advanced.icon name="rss" size="sm" />
-                            {{ __('changelog.rss_feed') }}
+                            {{ __('daisy::changelog.rss_feed') }}
                         </span>
                     </a>
                 @endif
@@ -32,7 +32,7 @@
                     <a href="{{ $atomUrl }}" target="_blank" rel="noopener noreferrer" class="link link-primary text-sm">
                         <span class="flex items-center gap-1">
                             <x-daisy::ui.advanced.icon name="rss" size="sm" />
-                            {{ __('changelog.atom_feed') }}
+                            {{ __('daisy::changelog.atom_feed') }}
                         </span>
                     </a>
                 @endif

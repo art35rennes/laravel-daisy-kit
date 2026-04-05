@@ -1,6 +1,6 @@
 @props([
     'type' => 'spinner', // spinner, skeleton, progress
-    'message' => __('common.loading'),
+    'message' => __('daisy::common.loading'),
     'size' => 'lg',
     'skeletonCount' => 3,
 ])

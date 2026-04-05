@@ -55,14 +55,14 @@
     @if(empty($notifications))
         <x-daisy::ui.feedback.empty-state
             icon="bi-bell"
-            :title="__('notifications.no_notifications')"
+            :title="__('daisy::notifications.no_notifications')"
         />
     @else
         @if($groupByDate)
             @foreach($groupedNotifications as $dateKey => $group)
                 @if($dateKey !== 'all')
                     <div class="divider divider-start text-xs opacity-60 px-4">
-                        {{ __('notifications.' . $dateKey) }}
+                        {{ __('daisy::notifications.' . $dateKey) }}
                     </div>
                 @endif
                 @foreach($group as $notification)

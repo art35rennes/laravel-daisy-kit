@@ -12,7 +12,7 @@
     'multipleFiles' => false,
     'showFilePreview' => true,
     'acceptedFileTypes' => 'image/*,application/pdf,.doc,.docx',
-    'placeholder' => __('chat.type_message'),
+    'placeholder' => __('daisy::chat.type_message'),
     // Routes
     'sendMessageUrl' => null,
     'typingUrl' => null,
@@ -83,7 +83,7 @@
         <div class="flex-1 flex items-center justify-center">
             <x-daisy::ui.feedback.empty-state
                 icon="bi-chat-dots"
-                :title="__('chat.select_conversation')"
+                :title="__('daisy::chat.select_conversation')"
                 size="md"
             />
         </div>

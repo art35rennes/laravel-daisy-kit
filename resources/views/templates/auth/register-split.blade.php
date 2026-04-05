@@ -1,5 +1,5 @@
 @props([
-    'title' => __('auth.register'),
+    'title' => __('daisy::auth.register'),
     'theme' => null,
     // Form (identique à register-simple)
     'action' => \Illuminate\Support\Facades\Route::has('register') ? route('register') : '#',
@@ -37,37 +37,37 @@
                     <div class="flex flex-col sm:flex-row gap-3">
                         {{ $socialLogin }}
                     </div>
-                    <div class="divider my-6">{{ __('auth.or') }}</div>
+                    <div class="divider my-6">{{ __('daisy::auth.or') }}</div>
                 @endif
 
                 <form action="{{ $action }}" method="POST" class="space-y-4">
                     @csrf
                     {{-- Name (optional) --}}
-                    <x-daisy::ui.partials.form-field name="name" :label="__('auth.name')" :required="false">
+                    <x-daisy::ui.partials.form-field name="name" :label="__('daisy::auth.name')" :required="false">
                         <x-daisy::ui.inputs.input
                             name="name"
                             type="text"
                             :value="old('name')"
                             autocomplete="name"
-                            placeholder="{{ __('auth.name_placeholder') }}"
+                            placeholder="{{ __('daisy::auth.name_placeholder') }}"
                             :class="$errors->has('name') ? 'input-error' : ''"
                         />
                     </x-daisy::ui.partials.form-field>
 
                     {{-- First name (optional) --}}
-                    <x-daisy::ui.partials.form-field name="first_name" :label="__('auth.first_name')" :required="false">
+                    <x-daisy::ui.partials.form-field name="first_name" :label="__('daisy::auth.first_name')" :required="false">
                         <x-daisy::ui.inputs.input
                             name="first_name"
                             type="text"
                             :value="old('first_name')"
                             autocomplete="given-name"
-                            placeholder="{{ __('auth.first_name_placeholder') }}"
+                            placeholder="{{ __('daisy::auth.first_name_placeholder') }}"
                             :class="$errors->has('first_name') ? 'input-error' : ''"
                         />
                     </x-daisy::ui.partials.form-field>
 
                     {{-- Email --}}
-                    <x-daisy::ui.partials.form-field name="email" :label="__('auth.email')" :required="true">
+                    <x-daisy::ui.partials.form-field name="email" :label="__('daisy::auth.email')" :required="true">
                         <x-daisy::ui.inputs.input
                             name="email"
                             type="email"
@@ -79,7 +79,7 @@
                     </x-daisy::ui.partials.form-field>
 
                     {{-- Password --}}
-                    <x-daisy::ui.partials.form-field name="password" :label="__('auth.password')" :required="true">
+                    <x-daisy::ui.partials.form-field name="password" :label="__('daisy::auth.password')" :required="true">
                         <x-daisy::ui.inputs.input
                             name="password"
                             type="password"
@@ -91,7 +91,7 @@
 
                     {{-- Password confirmation --}}
                     @if($passwordConfirmation)
-                        <x-daisy::ui.partials.form-field name="password_confirmation" :label="__('auth.password_confirmation')" :required="true">
+                        <x-daisy::ui.partials.form-field name="password_confirmation" :label="__('daisy::auth.password_confirmation')" :required="true">
                             <x-daisy::ui.inputs.input
                                 name="password_confirmation"
                                 type="password"
@@ -108,13 +108,13 @@
                             <div class="flex items-start gap-3">
                                 <x-daisy::ui.inputs.checkbox name="terms" id="terms" :checked="old('terms')" />
                                 <label for="terms" class="text-sm cursor-pointer">
-                                    {{ __('auth.accept_terms') }}
+                                    {{ __('daisy::auth.accept_terms') }}
                                     @if($termsUrl)
-                                        <a href="{{ $termsUrl }}" class="link link-hover" target="_blank">{{ __('auth.terms_link') }}</a>
+                                        <a href="{{ $termsUrl }}" class="link link-hover" target="_blank">{{ __('daisy::auth.terms_link') }}</a>
                                     @endif
                                     @if($privacyUrl)
-                                        {{ __('auth.and') }}
-                                        <a href="{{ $privacyUrl }}" class="link link-hover" target="_blank">{{ __('auth.privacy_link') }}</a>
+                                        {{ __('daisy::auth.and') }}
+                                        <a href="{{ $privacyUrl }}" class="link link-hover" target="_blank">{{ __('daisy::auth.privacy_link') }}</a>
                                     @endif
                                 </label>
                             </div>
@@ -125,16 +125,16 @@
                     @endif
 
                     <x-daisy::ui.inputs.button type="submit" variant="solid" class="w-full">
-                        {{ __('auth.register') }}
+                        {{ __('daisy::auth.register') }}
                     </x-daisy::ui.inputs.button>
                 </form>
 
                 <p class="text-sm text-base-content/70">
-                    {{ __('auth.already_have_account') }}
+                    {{ __('daisy::auth.already_have_account') }}
                     @if($loginUrl !== '#')
-                        <a href="{{ $loginUrl }}" class="link link-hover">{{ __('auth.sign_in') }}</a>
+                        <a href="{{ $loginUrl }}" class="link link-hover">{{ __('daisy::auth.sign_in') }}</a>
                     @else
-                        <span class="opacity-70">{{ __('auth.sign_in') }}</span>
+                        <span class="opacity-70">{{ __('daisy::auth.sign_in') }}</span>
                     @endif
                 </p>
             </div>

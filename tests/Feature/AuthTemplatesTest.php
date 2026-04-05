@@ -30,7 +30,9 @@ it('renders reset-password template', function () {
     $html = View::make('daisy::templates.auth.reset-password')->render();
 
     expect($html)
-        ->toContain(__('auth.reset_password'))
+        ->toContain('Reset password')
+        ->toContain(__('daisy::auth.reset_password'))
+        ->not->toContain('daisy::auth.reset_password')
         ->toContain('form');
 });
 
@@ -38,15 +40,17 @@ it('renders verify-email template', function () {
     $html = View::make('daisy::templates.auth.verify-email')->render();
 
     expect($html)
-        ->toContain(__('auth.verify_email'))
-        ->toContain(__('auth.resend_verification'));
+        ->toContain('Verify your email')
+        ->toContain(__('daisy::auth.verify_email'))
+        ->not->toContain('daisy::auth.verify_email')
+        ->toContain(__('daisy::auth.resend_verification'));
 });
 
 it('renders resend-verification template', function () {
     $html = View::make('daisy::templates.auth.resend-verification')->render();
 
     expect($html)
-        ->toContain(__('auth.resend_verification'))
+        ->toContain(__('daisy::auth.resend_verification'))
         ->toContain('form');
 });
 
@@ -54,8 +58,8 @@ it('renders forgot-password template', function () {
     $html = View::make('daisy::templates.auth.forgot-password')->render();
 
     expect($html)
-        ->toContain(__('auth.forgot_password'))
-        ->toContain(__('auth.forgot_password_description'))
+        ->toContain(__('daisy::auth.forgot_password'))
+        ->toContain(__('daisy::auth.forgot_password_description'))
         ->toContain('form');
 });
 
@@ -73,7 +77,7 @@ it('renders register-simple template', function () {
     $html = View::make('daisy::templates.auth.register-simple')->render();
 
     expect($html)
-        ->toContain(__('auth.register'))
+        ->toContain(__('daisy::auth.register'))
         ->toContain('form')
         ->toContain('name')
         ->toContain('email')
@@ -104,7 +108,7 @@ it('renders register-split template', function () {
     ])->render();
 
     expect($html)
-        ->toContain(__('auth.register'))
+        ->toContain(__('daisy::auth.register'))
         ->toContain('min-h-screen')
         ->toContain('grid-cols-1')
         ->toContain('lg:grid-cols-2')
@@ -135,9 +139,10 @@ it('renders two-factor template', function () {
     $html = View::make('daisy::templates.auth.two-factor')->render();
 
     expect($html)
-        ->toContain(__('auth.two_factor'))
-        ->toContain(__('auth.two_factor_description'))
-        ->toContain(__('auth.two_factor_instructions'))
+        ->toContain('Two-factor authentication')
+        ->toContain(__('daisy::auth.two_factor'))
+        ->toContain(__('daisy::auth.two_factor_description'))
+        ->toContain(__('daisy::auth.two_factor_instructions'))
         ->toContain('form')
         ->toContain('data-module="otp-code"')
         ->toContain('data-otp-digit');
@@ -153,7 +158,7 @@ it('renders two-factor template without recovery link', function () {
     ])->render();
 
     expect($html)
-        ->not->toContain(__('auth.two_factor_recovery'));
+        ->not->toContain(__('daisy::auth.two_factor_recovery'));
 });
 
 it('renders two-factor template without logout link', function () {
@@ -162,5 +167,5 @@ it('renders two-factor template without logout link', function () {
     ])->render();
 
     expect($html)
-        ->not->toContain(__('auth.two_factor_logout'));
+        ->not->toContain(__('daisy::auth.two_factor_logout'));
 });

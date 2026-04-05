@@ -16,7 +16,9 @@ it('renders profile-view template', function () {
     expect($html)
         ->toContain('John Doe')
         ->toContain('john@example.com')
-        ->toContain(__('profile.profile'));
+        ->toContain('Profile')
+        ->not->toContain('daisy::profile.profile')
+        ->toContain(__('daisy::profile.profile'));
 });
 
 it('renders profile-view template with stats', function () {
@@ -73,7 +75,7 @@ it('renders profile-edit template', function () {
     ])->render();
 
     expect($html)
-        ->toContain(__('profile.edit_profile'))
+        ->toContain(__('daisy::profile.edit_profile'))
         ->toContain('form')
         ->toContain('name')
         ->toContain('email');
@@ -87,7 +89,7 @@ it('renders profile-edit template in readonly mode', function () {
     ])->render();
 
     expect($html)
-        ->toContain(__('profile.edit_profile'))
+        ->toContain(__('daisy::profile.edit_profile'))
         ->not->toContain('<form')
         ->toContain('John Doe')
         ->toContain('john@example.com');
@@ -101,8 +103,8 @@ it('renders profile-edit template with avatar section', function () {
     ])->render();
 
     expect($html)
-        ->toContain(__('profile.avatar'))
-        ->toContain(__('profile.upload_avatar'));
+        ->toContain(__('daisy::profile.avatar'))
+        ->toContain(__('daisy::profile.upload_avatar'));
 });
 
 it('renders profile-edit template without optional fields', function () {
@@ -126,9 +128,9 @@ it('renders profile-settings template', function () {
     ])->render();
 
     expect($html)
-        ->toContain(__('profile.settings'))
+        ->toContain(__('daisy::profile.settings'))
         ->toContain('form')
-        ->toContain(__('profile.preferences'));
+        ->toContain(__('daisy::profile.preferences'));
 });
 
 it('renders profile-settings template in readonly mode', function () {
@@ -138,9 +140,9 @@ it('renders profile-settings template in readonly mode', function () {
     ])->render();
 
     expect($html)
-        ->toContain(__('profile.settings'))
+        ->toContain(__('daisy::profile.settings'))
         ->not->toContain('form')
-        ->toContain(__('profile.preferences'));
+        ->toContain(__('daisy::profile.preferences'));
 });
 
 it('renders profile-settings template with preferences tab', function () {
@@ -150,9 +152,11 @@ it('renders profile-settings template with preferences tab', function () {
     ])->render();
 
     expect($html)
-        ->toContain(__('profile.preferences'))
-        ->toContain(__('profile.language'))
-        ->toContain(__('profile.timezone'));
+        ->toContain('Preferences')
+        ->toContain('Language')
+        ->toContain(__('daisy::profile.preferences'))
+        ->toContain(__('daisy::profile.language'))
+        ->toContain(__('daisy::profile.timezone'));
 });
 
 it('renders profile-settings template with notifications tab', function () {
@@ -162,7 +166,7 @@ it('renders profile-settings template with notifications tab', function () {
     ])->render();
 
     expect($html)
-        ->toContain(__('profile.notifications'))
+        ->toContain(__('daisy::profile.notifications'))
         ->toContain('notify_email')
         ->toContain('notify_push');
 });
@@ -174,9 +178,9 @@ it('renders profile-settings template with security tab', function () {
     ])->render();
 
     expect($html)
-        ->toContain(__('profile.security'))
-        ->toContain(__('profile.change_password'))
-        ->toContain(__('profile.two_factor_auth'));
+        ->toContain(__('daisy::profile.security'))
+        ->toContain(__('daisy::profile.change_password'))
+        ->toContain(__('daisy::profile.two_factor_auth'));
 });
 
 it('renders profile-settings template with appearance tab', function () {
@@ -186,8 +190,8 @@ it('renders profile-settings template with appearance tab', function () {
     ])->render();
 
     expect($html)
-        ->toContain(__('profile.appearance'))
-        ->toContain(__('profile.theme'));
+        ->toContain(__('daisy::profile.appearance'))
+        ->toContain(__('daisy::profile.theme'));
 });
 
 it('renders profile-settings template without privacy tab', function () {
@@ -197,7 +201,7 @@ it('renders profile-settings template without privacy tab', function () {
     ])->render();
 
     expect($html)
-        ->not->toContain(__('profile.privacy'));
+        ->not->toContain(__('daisy::profile.privacy'));
 });
 
 it('renders profile-view template with isOwnProfile detection', function () {
@@ -214,8 +218,8 @@ it('renders profile-view template with isOwnProfile detection', function () {
     ])->render();
 
     expect($html)
-        ->toContain(__('profile.edit_profile'))
-        ->toContain(__('profile.settings'));
+        ->toContain(__('daisy::profile.edit_profile'))
+        ->toContain(__('daisy::profile.settings'));
 });
 
 it('renders profile-edit template with old values', function () {

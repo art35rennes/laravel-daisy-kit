@@ -1,12 +1,12 @@
 @props([
-    'title' => __('auth.verify_email'),
+    'title' => __('daisy::auth.verify_email'),
     'theme' => null,
-    'message' => __('auth.verification_sent'),
+    'message' => __('daisy::auth.verification_sent'),
     'resendUrl' => \Illuminate\Support\Facades\Route::has('verification.send') ? route('verification.send') : '#',
     'logoutUrl' => \Illuminate\Support\Facades\Route::has('logout') ? route('logout') : '#',
     'showLogout' => true,
-    'resendButtonText' => __('auth.resend_verification'),
-    'logoutText' => __('auth.logout'),
+    'resendButtonText' => __('daisy::auth.resend_verification'),
+    'logoutText' => __('daisy::auth.logout'),
 ])
 
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="true">

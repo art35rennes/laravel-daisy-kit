@@ -23,7 +23,7 @@
         'security' => 'error',
     ];
     $typeColor = $typeColorMap[$type] ?? 'neutral';
-    $typeLabel = __('changelog.'.$type);
+    $typeLabel = __('daisy::changelog.'.$type);
 
     // Formatage des issues
     $formattedIssues = [];
@@ -48,19 +48,19 @@
 
         @if($breaking)
             <x-daisy::ui.data-display.badge color="error" size="xs" variant="soft">
-                {{ __('changelog.breaking_change') }}
+                {{ __('daisy::changelog.breaking_change') }}
             </x-daisy::ui.data-display.badge>
         @endif
 
         @if($migration)
             <x-daisy::ui.data-display.badge color="warning" size="xs" variant="soft">
-                {{ __('changelog.migration_required') }}
+                {{ __('daisy::changelog.migration_required') }}
             </x-daisy::ui.data-display.badge>
         @endif
 
         @if($cve)
             <x-daisy::ui.data-display.badge color="error" size="xs">
-                {{ __('changelog.cve') }}: {{ $cve }}
+                {{ __('daisy::changelog.cve') }}: {{ $cve }}
             </x-daisy::ui.data-display.badge>
         @endif
 
@@ -72,7 +72,7 @@
                     'low' => 'info',
                 ];
                 $severityColor = $severityColorMap[$severity] ?? 'neutral';
-                $severityLabel = __('changelog.severity_'.$severity);
+                $severityLabel = __('daisy::changelog.severity_'.$severity);
             @endphp
             <x-daisy::ui.data-display.badge :color="$severityColor" size="xs" variant="soft">
                 {{ $severityLabel }}
@@ -88,7 +88,7 @@
 
         @if($category)
             <p class="mt-1 text-xs text-base-content/60">
-                {{ __('changelog.category_'.strtolower($category)) ?? $category }}
+                {{ __('daisy::changelog.category_'.strtolower($category)) ?? $category }}
             </p>
         @endif
     </div>
@@ -96,7 +96,7 @@
     <div class="mt-3 space-y-2 text-sm text-base-content/80">
         @if(!empty($formattedIssues))
             <div class="flex flex-wrap items-center gap-2">
-                <span class="text-xs uppercase tracking-wide text-base-content/50">{{ __('changelog.issues') }}</span>
+                <span class="text-xs uppercase tracking-wide text-base-content/50">{{ __('daisy::changelog.issues') }}</span>
                 @foreach($formattedIssues as $issue)
                     <a href="{{ $issue['url'] }}" target="_blank" rel="noopener noreferrer" class="link link-primary text-xs font-semibold">
                         #{{ $issue['number'] }}
@@ -107,16 +107,16 @@
 
         @if($migration && $migrationGuide)
             <div class="flex items-center gap-2 text-xs">
-                <span class="uppercase tracking-wide text-base-content/50">{{ __('changelog.migration_guide') }}</span>
+                <span class="uppercase tracking-wide text-base-content/50">{{ __('daisy::changelog.migration_guide') }}</span>
                 <a href="{{ $migrationGuide }}" target="_blank" rel="noopener noreferrer" class="link link-warning font-semibold">
-                    {{ __('changelog.view_migration_guide') }}
+                    {{ __('daisy::changelog.view_migration_guide') }}
                 </a>
             </div>
         @endif
 
         @if(!empty($contributors))
             <div class="flex flex-wrap items-center gap-2 text-xs">
-                <span class="uppercase tracking-wide text-base-content/50">{{ __('changelog.contributors') }}</span>
+                <span class="uppercase tracking-wide text-base-content/50">{{ __('daisy::changelog.contributors') }}</span>
                 <span>{{ implode(', ', $contributors) }}</span>
             </div>
         @endif
@@ -125,7 +125,7 @@
     @if($image)
         <div class="mt-3 rounded-box card-border bg-base-100">
             <x-daisy::ui.media.lightbox
-                :images="[['src' => $image, 'thumb' => $image, 'alt' => $description, 'caption' => __('changelog.view_screenshot')]]"
+                :images="[['src' => $image, 'thumb' => $image, 'alt' => $description, 'caption' => __('daisy::changelog.view_screenshot')]]"
                 cols="grid-cols-1"
                 gap="gap-0"
             />

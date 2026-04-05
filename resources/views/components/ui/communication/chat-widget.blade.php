@@ -13,7 +13,7 @@
     'typingUsers' => [],
     'enableFileUpload' => false,
     'maxFileSize' => 5120,
-    'placeholder' => __('chat.type_message'),
+    'placeholder' => __('daisy::chat.type_message'),
     // Routes
     'sendMessageUrl' => null,
     'typingUrl' => null,
@@ -124,7 +124,7 @@
             circle
             class="absolute top-2 right-2"
             data-widget-minimize
-            title="{{ __('chat.minimize') }}"
+            title="{{ __('daisy::chat.minimize') }}"
         >
             <x-icon name="bi-x" class="w-4 h-4" />
         </x-daisy::ui.inputs.button>

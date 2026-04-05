@@ -1,5 +1,5 @@
 @props([
-    'title' => __('profile.edit_profile'),
+    'title' => __('daisy::profile.edit_profile'),
     'theme' => null,
     // Profile data (agnostic: array, object, or model)
     'profile' => null, // Auto-detect: auth()->user() if available, or passed explicitly
@@ -61,8 +61,8 @@
 
     // Build breadcrumbs
     $breadcrumbs = [
-        ['label' => __('profile.profile'), 'href' => $profileViewUrl !== '#' ? $profileViewUrl : null],
-        ['label' => __('profile.edit_profile'), 'href' => null],
+        ['label' => __('daisy::profile.profile'), 'href' => $profileViewUrl !== '#' ? $profileViewUrl : null],
+        ['label' => __('daisy::profile.edit_profile'), 'href' => null],
     ];
 
     // Determine HTTP method for form
@@ -101,8 +101,8 @@
             <x-daisy::ui.layout.crud-layout>
                 @if($showAvatar)
                     <x-daisy::ui.layout.crud-section
-                        :title="__('profile.avatar')"
-                        :description="__('profile.current_avatar')"
+                        :title="__('daisy::profile.avatar')"
+                        :description="__('daisy::profile.current_avatar')"
                     >
                         @if($avatar)
                             <x-daisy::ui.data-display.avatar
@@ -112,55 +112,55 @@
                                 :placeholder="mb_substr($name ?? 'A', 0, 1)"
                             />
                         @else
-                            <p class="text-base-content/50 italic">{{ __('profile.no_avatar') }}</p>
+                            <p class="text-base-content/50 italic">{{ __('daisy::profile.no_avatar') }}</p>
                         @endif
                     </x-daisy::ui.layout.crud-section>
                 @endif
 
                 <x-daisy::ui.layout.crud-section
-                    :title="__('profile.profile_information')"
-                    :description="__('profile.profile_information_description')"
+                    :title="__('daisy::profile.profile_information')"
+                    :description="__('daisy::profile.profile_information_description')"
                     :borderTop="$showAvatar"
                 >
                     <dl class="space-y-4">
                         @if($showName)
                             <div>
-                                <dt class="text-sm font-medium text-base-content/70">{{ __('profile.name') }}</dt>
+                                <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.name') }}</dt>
                                 <dd class="mt-1 text-sm text-base-content">{{ $name ?? '-' }}</dd>
                             </div>
                         @endif
 
                         @if($showEmail)
                             <div>
-                                <dt class="text-sm font-medium text-base-content/70">{{ __('profile.email') }}</dt>
+                                <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.email') }}</dt>
                                 <dd class="mt-1 text-sm text-base-content">{{ $email ?? '-' }}</dd>
                             </div>
                         @endif
 
                         @if($showPhone && $phone)
                             <div>
-                                <dt class="text-sm font-medium text-base-content/70">{{ __('profile.phone') }}</dt>
+                                <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.phone') }}</dt>
                                 <dd class="mt-1 text-sm text-base-content">{{ $phone }}</dd>
                             </div>
                         @endif
 
                         @if($showBio && $bio)
                             <div>
-                                <dt class="text-sm font-medium text-base-content/70">{{ __('profile.bio') }}</dt>
+                                <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.bio') }}</dt>
                                 <dd class="mt-1 text-sm text-base-content whitespace-pre-line">{{ $bio }}</dd>
                             </div>
                         @endif
 
                         @if($showLocation && $location)
                             <div>
-                                <dt class="text-sm font-medium text-base-content/70">{{ __('profile.location') }}</dt>
+                                <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.location') }}</dt>
                                 <dd class="mt-1 text-sm text-base-content">{{ $location }}</dd>
                             </div>
                         @endif
 
                         @if($showWebsite && $website)
                             <div>
-                                <dt class="text-sm font-medium text-base-content/70">{{ __('profile.website') }}</dt>
+                                <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.website') }}</dt>
                                 <dd class="mt-1 text-sm text-base-content">
                                     <a href="{{ $website }}" target="_blank" rel="noopener noreferrer" class="link link-hover">
                                         {{ $website }}
@@ -182,8 +182,8 @@
                 <x-daisy::ui.layout.crud-layout>
                     @if($showAvatar)
                         <x-daisy::ui.layout.crud-section
-                            :title="__('profile.avatar')"
-                            :description="__('profile.upload_avatar')"
+                            :title="__('daisy::profile.avatar')"
+                            :description="__('daisy::profile.upload_avatar')"
                         >
                             @if($avatar)
                                 <div class="mb-4">
@@ -193,46 +193,46 @@
                                         size="lg"
                                         :placeholder="mb_substr($name ?? 'A', 0, 1)"
                                     />
-                                    <p class="text-xs text-base-content/70 mt-2">{{ __('profile.current_avatar') }}</p>
+                                    <p class="text-xs text-base-content/70 mt-2">{{ __('daisy::profile.current_avatar') }}</p>
                                 </div>
                             @endif
 
-                            <x-daisy::ui.partials.form-field name="avatar" :label="__('profile.upload_avatar')" :required="false">
+                            <x-daisy::ui.partials.form-field name="avatar" :label="__('daisy::profile.upload_avatar')" :required="false">
                                 <x-daisy::ui.inputs.file-input
                                     name="avatar"
                                     accept="{{ implode(',', $avatarAcceptedTypes) }}"
                                     :class="$errors->has('avatar') ? 'file-input-error' : ''"
                                 />
                                 <x-slot:hint>
-                                    {{ __('profile.avatar_max_size', ['size' => $avatarMaxSize]) }}
+                                    {{ __('daisy::profile.avatar_max_size', ['size' => $avatarMaxSize]) }}
                                     <br>
-                                    {{ __('profile.avatar_accepted_types', ['types' => implode(', ', array_map(fn($t) => strtoupper(str_replace('image/', '', $t)), $avatarAcceptedTypes))]) }}
+                                    {{ __('daisy::profile.avatar_accepted_types', ['types' => implode(', ', array_map(fn($t) => strtoupper(str_replace('image/', '', $t)), $avatarAcceptedTypes))]) }}
                                 </x-slot:hint>
                             </x-daisy::ui.partials.form-field>
                         </x-daisy::ui.layout.crud-section>
                     @endif
 
                     <x-daisy::ui.layout.crud-section
-                        :title="__('profile.profile_information')"
-                        :description="__('profile.profile_information_description')"
+                        :title="__('daisy::profile.profile_information')"
+                        :description="__('daisy::profile.profile_information_description')"
                         :borderTop="$showAvatar"
                     >
                         <div class="space-y-4">
                             @if($showName)
-                                <x-daisy::ui.partials.form-field name="name" :label="__('profile.name')" :required="true">
+                                <x-daisy::ui.partials.form-field name="name" :label="__('daisy::profile.name')" :required="true">
                                     <x-daisy::ui.inputs.input
                                         name="name"
                                         type="text"
                                         :value="old('name', $name)"
                                         autocomplete="name"
-                                        placeholder="{{ __('profile.name') }}"
+                                        placeholder="{{ __('daisy::profile.name') }}"
                                         :class="$errors->has('name') ? 'input-error' : ''"
                                     />
                                 </x-daisy::ui.partials.form-field>
                             @endif
 
                             @if($showEmail)
-                                <x-daisy::ui.partials.form-field name="email" :label="__('profile.email')" :required="true">
+                                <x-daisy::ui.partials.form-field name="email" :label="__('daisy::profile.email')" :required="true">
                                     <x-daisy::ui.inputs.input
                                         name="email"
                                         type="email"
@@ -245,7 +245,7 @@
                             @endif
 
                             @if($showPhone)
-                                <x-daisy::ui.partials.form-field name="phone" :label="__('profile.phone')" :required="false">
+                                <x-daisy::ui.partials.form-field name="phone" :label="__('daisy::profile.phone')" :required="false">
                                     <x-daisy::ui.inputs.input
                                         name="phone"
                                         type="tel"
@@ -258,31 +258,31 @@
                             @endif
 
                             @if($showBio)
-                                <x-daisy::ui.partials.form-field name="bio" :label="__('profile.bio')" :required="false">
+                                <x-daisy::ui.partials.form-field name="bio" :label="__('daisy::profile.bio')" :required="false">
                                     <x-daisy::ui.inputs.textarea
                                         name="bio"
                                         rows="4"
-                                        placeholder="{{ __('profile.bio') }}"
+                                        placeholder="{{ __('daisy::profile.bio') }}"
                                         :class="$errors->has('bio') ? 'textarea-error' : ''"
                                     >{{ old('bio', $bio) }}</x-daisy::ui.inputs.textarea>
                                 </x-daisy::ui.partials.form-field>
                             @endif
 
                             @if($showLocation)
-                                <x-daisy::ui.partials.form-field name="location" :label="__('profile.location')" :required="false">
+                                <x-daisy::ui.partials.form-field name="location" :label="__('daisy::profile.location')" :required="false">
                                     <x-daisy::ui.inputs.input
                                         name="location"
                                         type="text"
                                         :value="old('location', $location)"
                                         autocomplete="address-level2"
-                                        placeholder="{{ __('profile.location') }}"
+                                        placeholder="{{ __('daisy::profile.location') }}"
                                         :class="$errors->has('location') ? 'input-error' : ''"
                                     />
                                 </x-daisy::ui.partials.form-field>
                             @endif
 
                             @if($showWebsite)
-                                <x-daisy::ui.partials.form-field name="website" :label="__('profile.website')" :required="false">
+                                <x-daisy::ui.partials.form-field name="website" :label="__('daisy::profile.website')" :required="false">
                                     <x-daisy::ui.inputs.input
                                         name="website"
                                         type="url"
@@ -299,11 +299,11 @@
                     <x-slot:actions>
                         @if($profileViewUrl !== '#')
                             <x-daisy::ui.inputs.button tag="a" :href="$profileViewUrl" variant="outline">
-                                {{ __('profile.cancel') }}
+                                {{ __('daisy::profile.cancel') }}
                             </x-daisy::ui.inputs.button>
                         @endif
                         <x-daisy::ui.inputs.button type="submit" variant="solid">
-                            {{ __('profile.save') }}
+                            {{ __('daisy::profile.save') }}
                         </x-daisy::ui.inputs.button>
                     </x-slot:actions>
                 </x-daisy::ui.layout.crud-layout>

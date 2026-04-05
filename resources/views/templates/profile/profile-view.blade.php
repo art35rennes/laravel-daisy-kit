@@ -1,5 +1,5 @@
 @props([
-    'title' => __('profile.profile'),
+    'title' => __('daisy::profile.profile'),
     'theme' => null,
     // Profile data (agnostic: array, object, or model)
     'profile' => null, // Auto-detect: auth()->user() if available, or passed explicitly
@@ -85,7 +85,7 @@
 
     // Build breadcrumbs
     $breadcrumbs = [
-        ['label' => __('profile.profile'), 'href' => null],
+        ['label' => __('daisy::profile.profile'), 'href' => null],
     ];
 @endphp
 
@@ -108,21 +108,21 @@
             />
 
             <div class="flex-1 space-y-2">
-                <h1 class="text-3xl font-bold">{{ $name ?? __('profile.profile') }}</h1>
+                <h1 class="text-3xl font-bold">{{ $name ?? __('daisy::profile.profile') }}</h1>
                 @if($email)
                     <p class="text-base-content/70">{{ $email }}</p>
                 @endif
                 @if($bio && $showBio)
                     <p class="text-base-content/80">{{ $bio }}</p>
                 @elseif($showBio)
-                    <p class="text-base-content/50 italic">{{ __('profile.no_bio') }}</p>
+                    <p class="text-base-content/50 italic">{{ __('daisy::profile.no_bio') }}</p>
                 @endif
                 <div class="flex flex-wrap gap-4 text-sm text-base-content/60">
                     @if($createdAt)
-                        <span>{{ __('profile.member_since') }}: {{ $createdAt }}</span>
+                        <span>{{ __('daisy::profile.member_since') }}: {{ $createdAt }}</span>
                     @endif
                     @if($lastActive)
-                        <span>{{ __('profile.last_active') }}: {{ $lastActive }}</span>
+                        <span>{{ __('daisy::profile.last_active') }}: {{ $lastActive }}</span>
                     @endif
                 </div>
             </div>
@@ -131,12 +131,12 @@
                 <div class="flex gap-2">
                     @if($profileEditUrl !== '#')
                         <x-daisy::ui.inputs.button :href="$profileEditUrl" variant="outline">
-                            {{ __('profile.edit_profile') }}
+                            {{ __('daisy::profile.edit_profile') }}
                         </x-daisy::ui.inputs.button>
                     @endif
                     @if($profileSettingsUrl !== '#')
                         <x-daisy::ui.inputs.button :href="$profileSettingsUrl" variant="outline">
-                            {{ __('profile.settings') }}
+                            {{ __('daisy::profile.settings') }}
                         </x-daisy::ui.inputs.button>
                     @endif
                 </div>
@@ -148,8 +148,8 @@
             {{-- Stats --}}
             @if($showStats && count($stats) > 0)
                 <x-daisy::ui.layout.crud-section
-                    :title="__('profile.stats')"
-                    :description="__('profile.stats_description')"
+                    :title="__('daisy::profile.stats')"
+                    :description="__('daisy::profile.stats_description')"
                 >
                     <div class="stats stats-vertical sm:stats-horizontal shadow w-full">
                         @foreach($stats as $stat)
@@ -183,8 +183,8 @@
             {{-- Badges --}}
             @if($showBadges && count($badges) > 0)
                 <x-daisy::ui.layout.crud-section
-                    :title="__('profile.badges')"
-                    :description="__('profile.badges_description')"
+                    :title="__('daisy::profile.badges')"
+                    :description="__('daisy::profile.badges_description')"
                     :borderTop="$showStats && count($stats) > 0"
                 >
                     <div class="flex flex-wrap gap-2">
@@ -217,8 +217,8 @@
             {{-- Timeline --}}
             @if($showTimeline && count($timeline) > 0)
                 <x-daisy::ui.layout.crud-section
-                    :title="__('profile.timeline')"
-                    :description="__('profile.timeline_description')"
+                    :title="__('daisy::profile.timeline')"
+                    :description="__('daisy::profile.timeline_description')"
                     :borderTop="(($showStats && count($stats) > 0) || ($showBadges && count($badges) > 0))"
                 >
                     @php
@@ -243,22 +243,22 @@
             {{-- Contact --}}
             @if($showContact && ($location || $website))
                 <x-daisy::ui.layout.crud-section
-                    :title="__('profile.contact')"
-                    :description="__('profile.contact_description')"
+                    :title="__('daisy::profile.contact')"
+                    :description="__('daisy::profile.contact_description')"
                     :borderTop="(($showStats && count($stats) > 0) || ($showBadges && count($badges) > 0) || ($showTimeline && count($timeline) > 0))"
                 >
                     <dl class="space-y-2">
                         @if($location)
                             <div class="flex items-center gap-2">
                                 <x-bi-geo-alt class="w-5 h-5 text-base-content/50" />
-                                <dt class="text-sm font-medium text-base-content/70">{{ __('profile.location') }}</dt>
+                                <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.location') }}</dt>
                                 <dd class="text-sm text-base-content">{{ $location }}</dd>
                             </div>
                         @endif
                         @if($website)
                             <div class="flex items-center gap-2">
                                 <x-bi-globe class="w-5 h-5 text-base-content/50" />
-                                <dt class="text-sm font-medium text-base-content/70">{{ __('profile.website') }}</dt>
+                                <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.website') }}</dt>
                                 <dd class="text-sm text-base-content">
                                     <a href="{{ $website }}" target="_blank" rel="noopener noreferrer" class="link link-hover">
                                         {{ $website }}

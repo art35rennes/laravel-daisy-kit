@@ -1,5 +1,5 @@
 @props([
-    'title' => __('chat.messages'),
+    'title' => __('daisy::chat.messages'),
     'theme' => null,
     'conversation' => null,
     'conversations' => [],
@@ -18,7 +18,7 @@
     'multipleFiles' => false,
     'showFilePreview' => true,
     'acceptedFileTypes' => 'image/*,application/pdf,.doc,.docx',
-    'placeholder' => __('chat.type_message'),
+    'placeholder' => __('daisy::chat.type_message'),
     // Routes
     'sendMessageUrl' => null,
     'typingUrl' => null,

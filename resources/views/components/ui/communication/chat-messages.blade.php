@@ -45,7 +45,7 @@
     @if(empty($messages))
         <x-daisy::ui.feedback.empty-state
             icon="bi-chat-dots"
-            :title="__('chat.no_messages')"
+            :title="__('daisy::chat.no_messages')"
             size="sm"
         />
     @else
@@ -138,7 +138,7 @@
                 @foreach($typingUsers as $index => $user)
                     {{ $index > 0 ? ', ' : '' }}{{ data_get($user, 'name', 'Quelqu\'un') }}
                 @endforeach
-                {{ __('chat.typing', ['name' => '']) }}
+                {{ __('daisy::chat.typing', ['name' => '']) }}
             </span>
         </div>
     @endif

@@ -38,14 +38,14 @@
         'low' => 'ghost',
     ];
     $priorityColor = $priorityColorMap[$priority] ?? 'ghost';
-    $priorityLabelKey = 'notifications.priority_' . $priority;
+    $priorityLabelKey = 'daisy::notifications.priority_' . $priority;
     $priorityLabel = __($priorityLabelKey);
     if ($priorityLabel === $priorityLabelKey) {
         $priorityLabel = ucfirst($priority);
     }
 
     $channel = strtolower((string) data_get($data, 'channel', 'in_app'));
-    $channelKey = 'notifications.channel_' . $channel;
+    $channelKey = 'daisy::notifications.channel_' . $channel;
     $channelLabel = __($channelKey);
     if ($channelLabel === $channelKey) {
         $channelLabel = \Illuminate\Support\Str::headline($channel);
@@ -68,9 +68,9 @@
     if ($dueAt) {
         try {
             $dueDate = is_string($dueAt) ? \Carbon\Carbon::parse($dueAt) : $dueAt;
-            $dueLabel = __('notifications.due_by', ['date' => $dueDate->isoFormat('MMM D, HH:mm')]);
+            $dueLabel = __('daisy::notifications.due_by', ['date' => $dueDate->isoFormat('MMM D, HH:mm')]);
         } catch (\Exception $exception) {
-            $dueLabel = __('notifications.due_by', ['date' => $dueAt]);
+            $dueLabel = __('daisy::notifications.due_by', ['date' => $dueAt]);
         }
     }
 
@@ -188,7 +188,7 @@
                         data-action="mark-as-read"
                         data-url="{{ $markAsReadUrl }}"
                     >
-                        {{ __('notifications.mark_as_read') }}
+                        {{ __('daisy::notifications.mark_as_read') }}
                     </x-daisy::ui.inputs.button>
                 @endif
                 @if($deleteUrl !== '#')
@@ -200,7 +200,7 @@
                         data-action="delete"
                         data-url="{{ $deleteUrl }}"
                     >
-                        {{ __('notifications.delete') }}
+                        {{ __('daisy::notifications.delete') }}
                     </x-daisy::ui.inputs.button>
                 @endif
             </div>

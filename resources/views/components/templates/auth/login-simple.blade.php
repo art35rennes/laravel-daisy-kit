@@ -1,5 +1,5 @@
 @props([
-    'title' => __('auth.welcome'),
+    'title' => __('daisy::auth.welcome'),
     'theme' => null,
     // Form
     'action' => \Illuminate\Support\Facades\Route::has('login') ? route('login') : '#',
@@ -30,13 +30,13 @@
                 <div class="flex flex-col sm:flex-row gap-3">
                     {{ $socialLogin }}
                 </div>
-                <div class="divider my-6">{{ __('auth.or') }}</div>
+                <div class="divider my-6">{{ __('daisy::auth.or') }}</div>
             @endif
 
             <form action="{{ $action }}" method="POST" class="space-y-4">
                 @csrf
                 {{-- Email --}}
-                <x-daisy::ui.partials.form-field name="email" :label="__('auth.email')" :required="true">
+                <x-daisy::ui.partials.form-field name="email" :label="__('daisy::auth.email')" :required="true">
                         <x-daisy::ui.inputs.input
                             name="email"
                             type="email"
@@ -48,12 +48,12 @@
                 </x-daisy::ui.partials.form-field>
 
                 {{-- Password --}}
-                <x-daisy::ui.partials.form-field name="password" :label="__('auth.password')" :required="true">
+                <x-daisy::ui.partials.form-field name="password" :label="__('daisy::auth.password')" :required="true">
                     <x-slot:labelSlot>
                         <div class="w-full flex items-center justify-between">
-                            <span>{{ __('auth.password') }}</span>
+                            <span>{{ __('daisy::auth.password') }}</span>
                             @if($forgotPasswordUrl !== '#')
-                                <a href="{{ $forgotPasswordUrl }}" class="link link-hover text-sm">{{ __('auth.forgot_password') }}</a>
+                                <a href="{{ $forgotPasswordUrl }}" class="link link-hover text-sm">{{ __('daisy::auth.forgot_password') }}</a>
                             @endif
                         </div>
                     </x-slot:labelSlot>
@@ -69,21 +69,21 @@
                 @if($rememberMe)
                     <div class="flex items-center gap-3">
                         <x-daisy::ui.inputs.checkbox name="remember" />
-                        <span class="text-sm">{{ __('auth.remember_me', ['days' => $rememberMeDays]) }}</span>
+                        <span class="text-sm">{{ __('daisy::auth.remember_me', ['days' => $rememberMeDays]) }}</span>
                     </div>
                 @endif
 
                 <x-daisy::ui.inputs.button type="submit" variant="solid" class="w-full">
-                    {{ __('auth.login') }}
+                    {{ __('daisy::auth.login') }}
                 </x-daisy::ui.inputs.button>
             </form>
 
             <p class="text-center text-sm text-base-content/70">
-                {{ __('auth.first_time') }}
+                {{ __('daisy::auth.first_time') }}
                 @if($signupUrl !== '#')
-                    <a href="{{ $signupUrl }}" class="link link-hover">{{ __('auth.signup_for_free') }}</a>
+                    <a href="{{ $signupUrl }}" class="link link-hover">{{ __('daisy::auth.signup_for_free') }}</a>
                 @else
-                    <span class="opacity-70">{{ __('auth.signup_for_free') }}</span>
+                    <span class="opacity-70">{{ __('daisy::auth.signup_for_free') }}</span>
                 @endif
             </p>
         </div>

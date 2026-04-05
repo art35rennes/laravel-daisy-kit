@@ -22,7 +22,7 @@
     <div class="p-3 sm:p-4 border-b">
         <x-daisy::ui.inputs.input
             type="text"
-            :placeholder="__('chat.search_conversations')"
+            :placeholder="__('daisy::chat.search_conversations')"
             class="w-full"
             data-search-input
         />
@@ -33,7 +33,7 @@
         @if(empty($conversations))
             <x-daisy::ui.feedback.empty-state
                 icon="bi-chat-dots"
-                :title="__('chat.no_conversations')"
+                :title="__('daisy::chat.no_conversations')"
                 size="sm"
             />
         @else
@@ -89,7 +89,7 @@
     @if($showUserList && !empty($onlineUsers))
         <div class="p-3 sm:p-4 border-t">
             <div class="text-xs font-semibold text-base-content opacity-70 mb-2">
-                {{ __('chat.users_online') }}
+                {{ __('daisy::chat.users_online') }}
             </div>
             <div class="flex flex-wrap gap-2">
                 @foreach($onlineUsers as $user)

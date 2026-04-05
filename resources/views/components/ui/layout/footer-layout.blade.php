@@ -126,12 +126,12 @@
                         <input 
                             type="email" 
                             name="email" 
-                            placeholder="{{ __('common.email') }}" 
+                            placeholder="{{ __('daisy::common.email') }}" 
                             class="input input-sm input-bordered flex-1" 
                             required 
                         />
                         <button type="submit" class="btn btn-sm btn-primary">
-                            {{ __('common.subscribe') }}
+                            {{ __('daisy::common.subscribe') }}
                         </button>
                     </form>
                 @elseif(isset($newsletter) && $newsletter instanceof \Illuminate\View\ComponentSlot)

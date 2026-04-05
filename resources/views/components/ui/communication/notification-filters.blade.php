@@ -7,8 +7,8 @@
 @php
     $filterName = 'notification-filter-' . uniqid();
     $items = [
-        ['label' => __('notifications.all'), 'value' => 'all', 'checked' => $currentFilter === 'all'],
-        ['label' => __('notifications.unread'), 'value' => 'unread', 'checked' => $currentFilter === 'unread'],
+        ['label' => __('daisy::notifications.all'), 'value' => 'all', 'checked' => $currentFilter === 'all'],
+        ['label' => __('daisy::notifications.unread'), 'value' => 'unread', 'checked' => $currentFilter === 'unread'],
     ];
 
     foreach ($types as $type) {
@@ -27,7 +27,7 @@
         :name="$filterName"
         :items="$items"
         :use-form="false"
-        :all-label="__('notifications.all')"
+        :all-label="__('daisy::notifications.all')"
         data-filter-name="{{ $filterName }}"
         @if($onFilterChange) data-on-filter-change="{{ $onFilterChange }}" @endif
     />

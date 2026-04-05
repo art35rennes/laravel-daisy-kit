@@ -6,7 +6,7 @@
 @php
     // Génération automatique du titre si non fourni
     if ($title === null) {
-        $title = __('errors.'.$statusCode.'_title', ['default' => __('errors.error_title', ['code' => $statusCode])]);
+        $title = __('daisy::errors.'.$statusCode.'_title', ['default' => __('daisy::errors.error_title', ['code' => $statusCode])]);
     }
 @endphp
 

@@ -1,7 +1,7 @@
 @props([
     'showSearch' => true,
     'showFilters' => true,
-    'searchPlaceholder' => __('changelog.search_placeholder'),
+    'searchPlaceholder' => __('daisy::changelog.search_placeholder'),
     'filterName' => 'changelog-filter',
     'filterItems' => [], // ['added', 'changed', 'fixed', 'removed', 'security']
 ])
@@ -15,14 +15,14 @@
     // Formater les items pour le composant filter
     $formattedFilterItems = array_map(function($type) {
         return [
-            'label' => __('changelog.'.$type),
+            'label' => __('daisy::changelog.'.$type),
             'checked' => false,
         ];
     }, $filterItems);
 
     // Ajouter "Tous les types" en premier
     array_unshift($formattedFilterItems, [
-        'label' => __('changelog.all_types'),
+        'label' => __('daisy::changelog.all_types'),
         'checked' => true,
     ]);
 @endphp
@@ -48,7 +48,7 @@
                 :name="$filterName"
                 :items="$formattedFilterItems"
                 :useForm="false"
-                :resetLabel="__('changelog.all_types')"
+                :resetLabel="__('daisy::changelog.all_types')"
                 class="filter rounded-full bg-base-200/60 p-1"
             />
         </div>

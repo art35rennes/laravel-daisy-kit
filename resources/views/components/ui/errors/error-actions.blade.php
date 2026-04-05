@@ -17,7 +17,7 @@
                 <x-slot:icon>
                     <x-icon name="bi-arrow-left" class="w-4 h-4" />
                 </x-slot:icon>
-                {{ __('errors.go_back') }}
+                {{ __('daisy::errors.go_back') }}
             </x-daisy::ui.inputs.button>
         @endif
         
@@ -30,7 +30,7 @@
                 <x-slot:icon>
                     <x-icon name="bi-house" class="w-4 h-4" />
                 </x-slot:icon>
-                {{ __('errors.go_home') }}
+                {{ __('daisy::errors.go_home') }}
             </x-daisy::ui.inputs.button>
         @endif
     </div>

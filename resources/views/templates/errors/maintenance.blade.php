@@ -1,5 +1,5 @@
 @props([
-    'title' => __('maintenance.maintenance'),
+    'title' => __('daisy::maintenance.maintenance'),
     'theme' => null,
     'message' => null, // Custom message or use Laravel's
     'retryAfter' => null, // Retry-After header value
@@ -9,7 +9,7 @@
 @php
     // Utilisation du message Laravel par défaut si non fourni
     if ($message === null) {
-        $message = __('maintenance.message');
+        $message = __('daisy::maintenance.message');
     }
     
     // Formatage de la date de retour estimée si disponible
@@ -42,13 +42,13 @@
             <x-daisy::ui.feedback.alert
                 color="warning"
                 variant="soft"
-                title="{{ __('maintenance.maintenance') }}"
+                title="{{ __('daisy::maintenance.maintenance') }}"
             >
                 <p>{{ $message }}</p>
                 
                 @if($estimatedReturn)
                     <p class="mt-2 text-sm">
-                        {{ __('maintenance.estimated_return', ['time' => $estimatedReturn]) }}
+                        {{ __('daisy::maintenance.estimated_return', ['time' => $estimatedReturn]) }}
                     </p>
                 @endif
             </x-daisy::ui.feedback.alert>
@@ -57,7 +57,7 @@
                 <x-daisy::ui.feedback.alert
                     color="info"
                     variant="outline"
-                    title="{{ __('maintenance.allowed_ips') }}"
+                    title="{{ __('daisy::maintenance.allowed_ips') }}"
                 >
                     <ul class="list-disc list-inside text-sm space-y-1">
                         @foreach($allowedIps as $ip)

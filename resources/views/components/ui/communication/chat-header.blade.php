@@ -58,7 +58,7 @@
         @endif
         @if($isOnline !== null)
             <div class="text-xs text-base-content opacity-70">
-                {{ $isOnline ? __('chat.online') : __('chat.offline') }}
+                {{ $isOnline ? __('daisy::chat.online') : __('daisy::chat.offline') }}
             </div>
         @endif
     </div>

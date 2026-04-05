@@ -37,7 +37,7 @@ describe('Changelog Components Rendering', function () {
             ])->render();
 
             expect($html)
-                ->toContain(__('changelog.breaking_change'))
+                ->toContain(__('daisy::changelog.breaking_change'))
                 ->toContain('badge-error');
         });
 
@@ -49,9 +49,9 @@ describe('Changelog Components Rendering', function () {
             ])->render();
 
             expect($html)
-                ->toContain(__('changelog.migration_required'))
+                ->toContain(__('daisy::changelog.migration_required'))
                 ->toContain('https://example.com/migration')
-                ->toContain(__('changelog.view_migration_guide'));
+                ->toContain(__('daisy::changelog.view_migration_guide'));
         });
 
         it('renders CVE badge with severity', function () {
@@ -64,7 +64,7 @@ describe('Changelog Components Rendering', function () {
 
             expect($html)
                 ->toContain('CVE-2024-1234')
-                ->toContain(__('changelog.severity_high'));
+                ->toContain(__('daisy::changelog.severity_high'));
         });
 
         it('renders issues links', function () {
@@ -110,7 +110,8 @@ describe('Changelog Components Rendering', function () {
 
             expect($html)
                 ->toContain('changelog-header')
-                ->toContain('changelog');
+                ->toContain('Changelog')
+                ->not->toContain('daisy::changelog.changelog');
         });
 
         it('renders with current version badge', function () {
@@ -121,7 +122,7 @@ describe('Changelog Components Rendering', function () {
 
             expect($html)
                 ->toContain('2.0.0')
-                ->toContain(__('changelog.current_version'))
+                ->toContain(__('daisy::changelog.current_version'))
                 ->toContain('badge-primary');
         });
 
@@ -144,8 +145,8 @@ describe('Changelog Components Rendering', function () {
             expect($html)
                 ->toContain('https://example.com/rss')
                 ->toContain('https://example.com/atom')
-                ->toContain(__('changelog.rss_feed'))
-                ->toContain(__('changelog.atom_feed'));
+                ->toContain(__('daisy::changelog.rss_feed'))
+                ->toContain(__('daisy::changelog.atom_feed'));
         });
     });
 
@@ -202,8 +203,8 @@ describe('Changelog Components Rendering', function () {
             ])->render();
 
             expect($html)
-                ->toContain(__('changelog.added'))
-                ->toContain(__('changelog.fixed'));
+                ->toContain(__('daisy::changelog.added'))
+                ->toContain(__('daisy::changelog.fixed'));
         });
     });
 
@@ -227,7 +228,7 @@ describe('Changelog Components Rendering', function () {
             ])->render();
 
             expect($html)
-                ->toContain(__('changelog.current_version'))
+                ->toContain(__('daisy::changelog.current_version'))
                 ->toContain('badge-primary');
         });
 
@@ -239,7 +240,7 @@ describe('Changelog Components Rendering', function () {
             ])->render();
 
             expect($html)
-                ->toContain(__('changelog.yanked'))
+                ->toContain(__('daisy::changelog.yanked'))
                 ->toContain('badge-error');
         });
 
@@ -252,8 +253,8 @@ describe('Changelog Components Rendering', function () {
             ])->render();
 
             expect($html)
-                ->toContain(__('changelog.view_tag'))
-                ->toContain(__('changelog.compare_versions'))
+                ->toContain(__('daisy::changelog.view_tag'))
+                ->toContain(__('daisy::changelog.compare_versions'))
                 ->toContain('https://github.com/user/repo/releases/tag/2.0.0')
                 ->toContain('https://github.com/user/repo/compare/1.0.0...2.0.0');
         });
@@ -332,7 +333,7 @@ describe('Changelog Components Rendering', function () {
             expect($html)
                 ->toContain('changelog-container')
                 ->toContain('changelog-toolbar')
-                ->toContain(__('changelog.cta_get_template'));
+                ->toContain(__('daisy::changelog.cta_get_template'));
         });
 
         it('renders empty state when no versions', function () {
@@ -341,8 +342,8 @@ describe('Changelog Components Rendering', function () {
             ])->render();
 
             expect($html)
-                ->toContain(__('changelog.no_versions'))
-                ->toContain(__('changelog.no_results'));
+                ->toContain(__('daisy::changelog.no_versions'))
+                ->toContain(__('daisy::changelog.no_results'));
         });
 
         it('renders versions list', function () {
@@ -396,7 +397,7 @@ describe('Changelog Components Rendering', function () {
             ])->render();
 
             expect($html)
-                ->toContain(__('changelog.current_version'));
+                ->toContain(__('daisy::changelog.current_version'));
         });
 
         it('expands latest version by default', function () {

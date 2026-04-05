@@ -51,10 +51,10 @@
     // Construire le titre du collapse
     $titleParts = [];
     if ($version) {
-        $titleParts[] = __('changelog.version').' '.$version;
+        $titleParts[] = __('daisy::changelog.version').' '.$version;
     }
     if ($formattedDate) {
-        $titleParts[] = __('changelog.released_on').' '.$formattedDate;
+        $titleParts[] = __('daisy::changelog.released_on').' '.$formattedDate;
     }
     $collapseTitle = implode(' - ', $titleParts);
 
@@ -81,8 +81,8 @@
     <div class="space-y-3 rounded-box card-border bg-base-100 p-4 md:p-6 shadow transition hover:shadow">
         <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-start gap-4">
             <div class="flex-1 min-w-0">
-                <p class="text-xs uppercase tracking-wide text-base-content/60">{{ __('changelog.version') }}</p>
-                <h3 class="text-xl font-semibold text-base-content">{{ $version ?? __('changelog.version') }}</h3>
+                <p class="text-xs uppercase tracking-wide text-base-content/60">{{ __('daisy::changelog.version') }}</p>
+                <h3 class="text-xl font-semibold text-base-content">{{ $version ?? __('daisy::changelog.version') }}</h3>
                 @if($collapseTitle)
                     <p class="text-sm text-base-content/70 hidden md:block">{{ $collapseTitle }}</p>
                 @endif
@@ -91,25 +91,25 @@
             <div class="flex flex-wrap items-center gap-2 text-xs">
                 @if($isCurrent)
                     <x-daisy::ui.data-display.badge color="primary" size="sm">
-                        {{ __('changelog.current_version') }}
+                        {{ __('daisy::changelog.current_version') }}
                     </x-daisy::ui.data-display.badge>
                 @endif
 
                 @if($yanked)
                     <x-daisy::ui.data-display.badge color="error" size="sm" variant="soft">
-                        {{ __('changelog.yanked') }}
+                        {{ __('daisy::changelog.yanked') }}
                     </x-daisy::ui.data-display.badge>
                 @endif
 
                 @if($tagUrl)
                     <a href="{{ $tagUrl }}" target="_blank" rel="noopener noreferrer" class="link link-primary font-semibold text-xs">
-                        {{ __('changelog.view_tag') }}
+                        {{ __('daisy::changelog.view_tag') }}
                     </a>
                 @endif
 
                 @if($compareUrl)
                     <a href="{{ $compareUrl }}" target="_blank" rel="noopener noreferrer" class="link link-info font-semibold text-xs">
-                        {{ __('changelog.compare_versions') }}
+                        {{ __('daisy::changelog.compare_versions') }}
                     </a>
                 @endif
             </div>
@@ -132,7 +132,7 @@
                     :issue-base-url="$item['issueBaseUrl'] ?? 'https://github.com/user/repo/issues'"
                 />
             @empty
-                <p class="text-sm text-base-content/60">{{ __('changelog.no_results') }}</p>
+                <p class="text-sm text-base-content/60">{{ __('daisy::changelog.no_results') }}</p>
             @endforelse
         </div>
     </div>

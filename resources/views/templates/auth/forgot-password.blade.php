@@ -1,5 +1,5 @@
 @props([
-    'title' => __('auth.forgot_password'),
+    'title' => __('daisy::auth.forgot_password'),
     'theme' => null,
     // Form
     'action' => \Illuminate\Support\Facades\Route::has('password.email') ? route('password.email') : '#',
@@ -22,7 +22,7 @@
 
             <div class="text-center space-y-1">
                 <h1 class="text-2xl font-semibold">{{ __($title) }}</h1>
-                <p class="text-base-content/70">{{ __('auth.forgot_password_description') }}</p>
+                <p class="text-base-content/70">{{ __('daisy::auth.forgot_password_description') }}</p>
             </div>
 
             @if($status)
@@ -34,7 +34,7 @@
             <form action="{{ $action }}" method="POST" class="space-y-4">
                 @csrf
                 {{-- Email --}}
-                <x-daisy::ui.partials.form-field name="email" :label="__('auth.email')" :required="true">
+                <x-daisy::ui.partials.form-field name="email" :label="__('daisy::auth.email')" :required="true">
                     <x-daisy::ui.inputs.input
                         name="email"
                         type="email"
@@ -46,14 +46,14 @@
                 </x-daisy::ui.partials.form-field>
 
                 <x-daisy::ui.inputs.button type="submit" variant="solid" class="w-full">
-                    {{ __('auth.send_reset_link') }}
+                    {{ __('daisy::auth.send_reset_link') }}
                 </x-daisy::ui.inputs.button>
             </form>
 
             @if($loginUrl !== '#')
                 <p class="text-center text-sm text-base-content/70">
-                    {{ __('auth.remember_password') }}
-                    <a href="{{ $loginUrl }}" class="link link-hover">{{ __('auth.sign_in') }}</a>
+                    {{ __('daisy::auth.remember_password') }}
+                    <a href="{{ $loginUrl }}" class="link link-hover">{{ __('daisy::auth.sign_in') }}</a>
                 </p>
             @endif
         </div>

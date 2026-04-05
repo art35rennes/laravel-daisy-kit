@@ -1,5 +1,5 @@
 @props([
-    'title' => __('profile.settings'),
+    'title' => __('daisy::profile.settings'),
     'theme' => null,
     // Profile data (agnostic: array, object, or model)
     'profile' => null, // Auto-detect: auth()->user() if available, or passed explicitly
@@ -65,8 +65,8 @@
 
     // Build breadcrumbs
     $breadcrumbs = [
-        ['label' => __('profile.profile'), 'href' => $profileViewUrl !== '#' ? $profileViewUrl : null],
-        ['label' => __('profile.settings'), 'href' => null],
+        ['label' => __('daisy::profile.profile'), 'href' => $profileViewUrl !== '#' ? $profileViewUrl : null],
+        ['label' => __('daisy::profile.settings'), 'href' => null],
     ];
 
     // Determine HTTP method for form
@@ -118,16 +118,16 @@
             <x-daisy::ui.layout.crud-layout>
                 @if($showPreferences)
                     <x-daisy::ui.layout.crud-section
-                        :title="__('profile.preferences')"
-                        :description="__('profile.preferences_description')"
+                        :title="__('daisy::profile.preferences')"
+                        :description="__('daisy::profile.preferences_description')"
                     >
                         <dl class="space-y-4">
                             <div>
-                                <dt class="text-sm font-medium text-base-content/70">{{ __('profile.language') }}</dt>
+                                <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.language') }}</dt>
                                 <dd class="mt-1 text-sm text-base-content">{{ $availableLanguages[$language] ?? $language }}</dd>
                             </div>
                             <div>
-                                <dt class="text-sm font-medium text-base-content/70">{{ __('profile.timezone') }}</dt>
+                                <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.timezone') }}</dt>
                                 <dd class="mt-1 text-sm text-base-content">{{ $availableTimezones[$timezone] ?? $timezone }}</dd>
                             </div>
                         </dl>
@@ -136,21 +136,21 @@
 
                 @if($showNotifications)
                     <x-daisy::ui.layout.crud-section
-                        :title="__('profile.notifications')"
-                        :description="__('profile.notifications_description')"
+                        :title="__('daisy::profile.notifications')"
+                        :description="__('daisy::profile.notifications_description')"
                         :borderTop="$showPreferences"
                     >
                         <dl class="space-y-4">
                             <div>
-                                <dt class="text-sm font-medium text-base-content/70">{{ __('profile.email_notifications') }}</dt>
+                                <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.email_notifications') }}</dt>
                                 <dd class="mt-1 text-sm text-base-content">{{ $notifyEmail ? __('Yes') : __('No') }}</dd>
                             </div>
                             <div>
-                                <dt class="text-sm font-medium text-base-content/70">{{ __('profile.push_notifications') }}</dt>
+                                <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.push_notifications') }}</dt>
                                 <dd class="mt-1 text-sm text-base-content">{{ $notifyPush ? __('Yes') : __('No') }}</dd>
                             </div>
                             <div>
-                                <dt class="text-sm font-medium text-base-content/70">{{ __('profile.sms_notifications') }}</dt>
+                                <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.sms_notifications') }}</dt>
                                 <dd class="mt-1 text-sm text-base-content">{{ $notifySms ? __('Yes') : __('No') }}</dd>
                             </div>
                         </dl>
@@ -159,13 +159,13 @@
 
                 @if($showSecurity)
                     <x-daisy::ui.layout.crud-section
-                        :title="__('profile.security')"
-                        :description="__('profile.security_description')"
+                        :title="__('daisy::profile.security')"
+                        :description="__('daisy::profile.security_description')"
                         :borderTop="($showPreferences || $showNotifications)"
                     >
                         <dl class="space-y-4">
                             <div>
-                                <dt class="text-sm font-medium text-base-content/70">{{ __('profile.two_factor_auth') }}</dt>
+                                <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.two_factor_auth') }}</dt>
                                 <dd class="mt-1 text-sm text-base-content">{{ $twoFactorEnabled ? __('Yes') : __('No') }}</dd>
                             </div>
                         </dl>
@@ -174,13 +174,13 @@
 
                 @if($showTheme)
                     <x-daisy::ui.layout.crud-section
-                        :title="__('profile.appearance')"
-                        :description="__('profile.appearance_description')"
+                        :title="__('daisy::profile.appearance')"
+                        :description="__('daisy::profile.appearance_description')"
                         :borderTop="($showPreferences || $showNotifications || $showSecurity)"
                     >
                         <dl class="space-y-4">
                             <div>
-                                <dt class="text-sm font-medium text-base-content/70">{{ __('profile.theme') }}</dt>
+                                <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.theme') }}</dt>
                                 <dd class="mt-1 text-sm text-base-content">{{ ucfirst(str_replace('_', ' ', $currentTheme)) }}</dd>
                             </div>
                         </dl>
@@ -198,11 +198,11 @@
                 <x-daisy::ui.layout.crud-layout>
                     @if($showPreferences)
                         <x-daisy::ui.layout.crud-section
-                            :title="__('profile.preferences')"
-                            :description="__('profile.preferences_description')"
+                            :title="__('daisy::profile.preferences')"
+                            :description="__('daisy::profile.preferences_description')"
                         >
                             <div class="space-y-4">
-                                <x-daisy::ui.partials.form-field name="language" :label="__('profile.language')" :required="false">
+                                <x-daisy::ui.partials.form-field name="language" :label="__('daisy::profile.language')" :required="false">
                                     <x-daisy::ui.inputs.select
                                         name="language"
                                         :class="$errors->has('language') ? 'select-error' : ''"
@@ -213,7 +213,7 @@
                                     </x-daisy::ui.inputs.select>
                                 </x-daisy::ui.partials.form-field>
 
-                                <x-daisy::ui.partials.form-field name="timezone" :label="__('profile.timezone')" :required="false">
+                                <x-daisy::ui.partials.form-field name="timezone" :label="__('daisy::profile.timezone')" :required="false">
                                     <x-daisy::ui.inputs.select
                                         name="timezone"
                                         :class="$errors->has('timezone') ? 'select-error' : ''"
@@ -229,30 +229,30 @@
 
                     @if($showNotifications)
                         <x-daisy::ui.layout.crud-section
-                            :title="__('profile.notifications')"
-                            :description="__('profile.notifications_description')"
+                            :title="__('daisy::profile.notifications')"
+                            :description="__('daisy::profile.notifications_description')"
                             :borderTop="$showPreferences"
                         >
                             <div class="space-y-6">
                                 <div class="space-y-4">
-                                    <x-daisy::ui.partials.form-field name="notify_email" :label="__('profile.email_notifications')" :required="false">
+                                    <x-daisy::ui.partials.form-field name="notify_email" :label="__('daisy::profile.email_notifications')" :required="false">
                                         <div class="flex items-center gap-2">
                                             <x-daisy::ui.inputs.toggle name="notify_email" :checked="$notifyEmail" />
-                                            <span class="text-sm text-base-content/70">{{ __('profile.receive_notifications_by_email') }}</span>
+                                            <span class="text-sm text-base-content/70">{{ __('daisy::profile.receive_notifications_by_email') }}</span>
                                         </div>
                                     </x-daisy::ui.partials.form-field>
 
-                                    <x-daisy::ui.partials.form-field name="notify_push" :label="__('profile.push_notifications')" :required="false">
+                                    <x-daisy::ui.partials.form-field name="notify_push" :label="__('daisy::profile.push_notifications')" :required="false">
                                         <div class="flex items-center gap-2">
                                             <x-daisy::ui.inputs.toggle name="notify_push" :checked="$notifyPush" />
-                                            <span class="text-sm text-base-content/70">{{ __('profile.receive_push_notifications') }}</span>
+                                            <span class="text-sm text-base-content/70">{{ __('daisy::profile.receive_push_notifications') }}</span>
                                         </div>
                                     </x-daisy::ui.partials.form-field>
 
-                                    <x-daisy::ui.partials.form-field name="notify_sms" :label="__('profile.sms_notifications')" :required="false">
+                                    <x-daisy::ui.partials.form-field name="notify_sms" :label="__('daisy::profile.sms_notifications')" :required="false">
                                         <div class="flex items-center gap-2">
                                             <x-daisy::ui.inputs.toggle name="notify_sms" :checked="$notifySms" />
-                                            <span class="text-sm text-base-content/70">{{ __('profile.receive_sms_notifications') }}</span>
+                                            <span class="text-sm text-base-content/70">{{ __('daisy::profile.receive_sms_notifications') }}</span>
                                         </div>
                                     </x-daisy::ui.partials.form-field>
                                 </div>
@@ -260,23 +260,23 @@
                                 <div class="divider"></div>
 
                                 <div class="space-y-3">
-                                    <h3 class="text-sm font-medium">{{ __('profile.notification_types') }}</h3>
+                                    <h3 class="text-sm font-medium">{{ __('daisy::profile.notification_types') }}</h3>
                                     <div class="space-y-2">
                                         <label class="flex items-center gap-2 cursor-pointer">
                                             <x-daisy::ui.inputs.checkbox name="notify_features" :checked="$notifyFeatures" />
-                                            <span class="text-sm">{{ __('profile.new_features') }}</span>
+                                            <span class="text-sm">{{ __('daisy::profile.new_features') }}</span>
                                         </label>
                                         <label class="flex items-center gap-2 cursor-pointer">
                                             <x-daisy::ui.inputs.checkbox name="notify_messages" :checked="$notifyMessages" />
-                                            <span class="text-sm">{{ __('profile.messages') }}</span>
+                                            <span class="text-sm">{{ __('daisy::profile.messages') }}</span>
                                         </label>
                                         <label class="flex items-center gap-2 cursor-pointer">
                                             <x-daisy::ui.inputs.checkbox name="notify_comments" :checked="$notifyComments" />
-                                            <span class="text-sm">{{ __('profile.comments') }}</span>
+                                            <span class="text-sm">{{ __('daisy::profile.comments') }}</span>
                                         </label>
                                         <label class="flex items-center gap-2 cursor-pointer">
                                             <x-daisy::ui.inputs.checkbox name="notify_mentions" :checked="$notifyMentions" />
-                                            <span class="text-sm">{{ __('profile.mentions') }}</span>
+                                            <span class="text-sm">{{ __('daisy::profile.mentions') }}</span>
                                         </label>
                                     </div>
                                 </div>
@@ -286,17 +286,17 @@
 
                     @if($showSecurity)
                         <x-daisy::ui.layout.crud-section
-                            :title="__('profile.security')"
-                            :description="__('profile.security_description')"
+                            :title="__('daisy::profile.security')"
+                            :description="__('daisy::profile.security_description')"
                             :borderTop="($showPreferences || $showNotifications)"
                         >
                             <div class="space-y-6">
                                 <x-daisy::ui.advanced.collapse>
                                     <x-slot:title>
-                                        <span class="font-semibold">{{ __('profile.change_password') }}</span>
+                                        <span class="font-semibold">{{ __('daisy::profile.change_password') }}</span>
                                     </x-slot:title>
                                     <div class="space-y-4 pt-2">
-                                        <x-daisy::ui.partials.form-field name="current_password" :label="__('profile.current_password')" :required="false">
+                                        <x-daisy::ui.partials.form-field name="current_password" :label="__('daisy::profile.current_password')" :required="false">
                                             <x-daisy::ui.inputs.input
                                                 name="current_password"
                                                 type="password"
@@ -305,7 +305,7 @@
                                             />
                                         </x-daisy::ui.partials.form-field>
 
-                                        <x-daisy::ui.partials.form-field name="password" :label="__('profile.new_password')" :required="false">
+                                        <x-daisy::ui.partials.form-field name="password" :label="__('daisy::profile.new_password')" :required="false">
                                             <x-daisy::ui.inputs.input
                                                 name="password"
                                                 type="password"
@@ -314,7 +314,7 @@
                                             />
                                         </x-daisy::ui.partials.form-field>
 
-                                        <x-daisy::ui.partials.form-field name="password_confirmation" :label="__('profile.confirm_new_password')" :required="false">
+                                        <x-daisy::ui.partials.form-field name="password_confirmation" :label="__('daisy::profile.confirm_new_password')" :required="false">
                                             <x-daisy::ui.inputs.input
                                                 name="password_confirmation"
                                                 type="password"
@@ -327,10 +327,10 @@
 
                                 <div class="divider"></div>
 
-                                <x-daisy::ui.partials.form-field name="two_factor_enabled" :label="__('profile.two_factor_auth')" :required="false">
+                                <x-daisy::ui.partials.form-field name="two_factor_enabled" :label="__('daisy::profile.two_factor_auth')" :required="false">
                                     <div class="flex items-center gap-2">
                                         <x-daisy::ui.inputs.toggle name="two_factor_enabled" :checked="$twoFactorEnabled" />
-                                        <span class="text-sm text-base-content/70">{{ __('profile.enable_two_factor_authentication') }}</span>
+                                        <span class="text-sm text-base-content/70">{{ __('daisy::profile.enable_two_factor_authentication') }}</span>
                                     </div>
                                 </x-daisy::ui.partials.form-field>
                             </div>
@@ -339,30 +339,30 @@
 
                     @if($showPrivacy)
                         <x-daisy::ui.layout.crud-section
-                            :title="__('profile.privacy')"
-                            :description="__('profile.privacy_description')"
+                            :title="__('daisy::profile.privacy')"
+                            :description="__('daisy::profile.privacy_description')"
                             :borderTop="($showPreferences || $showNotifications || $showSecurity)"
                         >
-                            <p class="text-base-content/70">{{ __('profile.coming_soon') }}</p>
+                            <p class="text-base-content/70">{{ __('daisy::profile.coming_soon') }}</p>
                         </x-daisy::ui.layout.crud-section>
                     @endif
 
                     @if($showTheme)
                         <x-daisy::ui.layout.crud-section
-                            :title="__('profile.appearance')"
-                            :description="__('profile.appearance_description')"
+                            :title="__('daisy::profile.appearance')"
+                            :description="__('daisy::profile.appearance_description')"
                             :borderTop="($showPreferences || $showNotifications || $showSecurity || $showPrivacy)"
                         >
                             <div class="space-y-4">
-                                <x-daisy::ui.partials.form-field name="theme" :label="__('profile.theme')" :required="false">
+                                <x-daisy::ui.partials.form-field name="theme" :label="__('daisy::profile.theme')" :required="false">
                                     <x-daisy::ui.inputs.select
                                         name="theme"
                                         :class="$errors->has('theme') ? 'select-error' : ''"
                                     >
                                         @php
                                             $availableThemes = [
-                                                'light' => __('profile.theme_light'),
-                                                'dark' => __('profile.theme_dark'),
+                                                'light' => __('daisy::profile.theme_light'),
+                                                'dark' => __('daisy::profile.theme_dark'),
                                                 'cupcake' => 'Cupcake',
                                                 'bumblebee' => 'Bumblebee',
                                                 'emerald' => 'Emerald',
@@ -404,11 +404,11 @@
                     <x-slot:actions>
                         @if($profileViewUrl !== '#')
                             <x-daisy::ui.inputs.button tag="a" :href="$profileViewUrl" variant="outline">
-                                {{ __('profile.cancel') }}
+                                {{ __('daisy::profile.cancel') }}
                             </x-daisy::ui.inputs.button>
                         @endif
                         <x-daisy::ui.inputs.button type="submit" variant="solid">
-                            {{ __('profile.save') }}
+                            {{ __('daisy::profile.save') }}
                         </x-daisy::ui.inputs.button>
                     </x-slot:actions>
                 </x-daisy::ui.layout.crud-layout>

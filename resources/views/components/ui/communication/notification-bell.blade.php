@@ -60,7 +60,7 @@
     <div class="w-80 sm:w-96 max-w-[calc(100vw-2rem)] p-3 sm:p-4 space-y-4">
         <div class="p-3 sm:p-4 card-border rounded-box flex items-center justify-between gap-2">
             <h3 class="font-semibold text-sm sm:text-base truncate">
-                {{ __('notifications.notifications') }}
+                {{ __('daisy::notifications.notifications') }}
             </h3>
             @if($hasUnread && $showMarkAllRead && $markAllAsReadUrl !== '#')
                 <x-daisy::ui.inputs.button
@@ -71,8 +71,8 @@
                     data-action="mark-all-read"
                     data-url="{{ $markAllAsReadUrl }}"
                 >
-                    <span class="hidden sm:inline">{{ __('notifications.mark_all_as_read') }}</span>
-                    <span class="sm:hidden">{{ __('notifications.mark_all_as_read') }}</span>
+                    <span class="hidden sm:inline">{{ __('daisy::notifications.mark_all_as_read') }}</span>
+                    <span class="sm:hidden">{{ __('daisy::notifications.mark_all_as_read') }}</span>
                 </x-daisy::ui.inputs.button>
             @endif
         </div>
@@ -81,7 +81,7 @@
             @if(empty($notifications))
                 <x-daisy::ui.feedback.empty-state
                     icon="bi-bell"
-                    :title="__('notifications.no_notifications')"
+                    :title="__('daisy::notifications.no_notifications')"
                     size="xs"
                     class="text-center"
                 />
@@ -108,7 +108,7 @@
                     size="sm"
                     block
                 >
-                    {{ __('notifications.view_all') }}
+                    {{ __('daisy::notifications.view_all') }}
                 </x-daisy::ui.inputs.button>
             </div>
         @endif

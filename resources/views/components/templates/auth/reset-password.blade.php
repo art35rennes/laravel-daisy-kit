@@ -1,12 +1,12 @@
 @props([
-    'title' => __('auth.reset_password'),
+    'title' => __('daisy::auth.reset_password'),
     'theme' => null,
-    'description' => __('auth.send_reset_link'),
+    'description' => __('daisy::auth.send_reset_link'),
     'action' => \Illuminate\Support\Facades\Route::has('password.email') ? route('password.email') : '#',
     'method' => 'POST',
     'backToLoginUrl' => \Illuminate\Support\Facades\Route::has('login') ? route('login') : '#',
-    'backToLoginText' => __('auth.back_to_login'),
-    'submitButtonText' => __('auth.send_reset_link'),
+    'backToLoginText' => __('daisy::auth.back_to_login'),
+    'submitButtonText' => __('daisy::auth.send_reset_link'),
     'emailSent' => (bool) session('status'),
 ])
 
@@ -33,7 +33,7 @@
 
             <form action="{{ $action }}" method="POST" class="space-y-4">
                 @csrf
-                <x-daisy::ui.partials.form-field name="email" :label="__('auth.email')" :required="true">
+                <x-daisy::ui.partials.form-field name="email" :label="__('daisy::auth.email')" :required="true">
                         <x-daisy::ui.inputs.input
                             name="email"
                             type="email"

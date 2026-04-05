@@ -30,8 +30,8 @@
 
 @php
     $id = $attributes->get('id') ?? 'sign-'.uniqid();
-    $clearLabel = $clearLabel ?? __('common.clear');
-    $downloadLabel = $downloadLabel ?? __('common.download');
+    $clearLabel = $clearLabel ?? __('daisy::common.clear');
+    $downloadLabel = $downloadLabel ?? __('daisy::common.download');
 @endphp
 
 <div id="{{ $id }}" 

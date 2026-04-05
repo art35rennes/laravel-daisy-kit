@@ -17,7 +17,7 @@
     
     // Génération automatique du message si non fourni
     if ($message === null) {
-        $message = __('errors.'.$statusCode.'_message', ['default' => __('errors.error_message', ['code' => $statusCode])]);
+        $message = __('daisy::errors.'.$statusCode.'_message', ['default' => __('daisy::errors.error_message', ['code' => $statusCode])]);
     }
     
     // Extraction des détails de l'exception si disponible (uniquement en mode debug)
@@ -56,18 +56,18 @@
             <x-daisy::ui.feedback.alert
                 color="error"
                 variant="outline"
-                title="{{ __('errors.debug_details') }}"
+                title="{{ __('daisy::errors.debug_details') }}"
             >
                 @if($exceptionMessage)
                     <div class="mb-2">
-                        <strong>{{ __('errors.exception_message') }}:</strong>
+                        <strong>{{ __('daisy::errors.exception_message') }}:</strong>
                         <pre class="mt-1 text-xs overflow-x-auto bg-base-200 p-2 rounded">{{ $exceptionMessage }}</pre>
                     </div>
                 @endif
                 
                 @if($exceptionTrace)
                     <details class="mt-2">
-                        <summary class="cursor-pointer text-sm font-medium mb-2">{{ __('errors.stack_trace') }}</summary>
+                        <summary class="cursor-pointer text-sm font-medium mb-2">{{ __('daisy::errors.stack_trace') }}</summary>
                         <pre class="text-xs overflow-x-auto bg-base-200 p-2 rounded max-h-64 overflow-y-auto">{{ $exceptionTrace }}</pre>
                     </details>
                 @endif
