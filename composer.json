@@ -21,6 +21,7 @@
         "illuminate/view": "^13.0"
     },
     "require-dev": {
+        "laravel/boost": "^2.4",
         "laravel/framework": "^13.0",
         "laravel/pint": "^1.25",
         "pestphp/pest": "^4.1"
