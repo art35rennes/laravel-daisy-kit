@@ -16,6 +16,8 @@ return [
     'copy_to_clipboard' => 'Copy to clipboard',
     'copied' => 'Copied!',
     'field' => 'Field',
+    'search' => 'Search',
+    'all' => 'All',
     'edit' => 'Edit',
     'remove' => 'Remove',
     'undo' => 'Undo',

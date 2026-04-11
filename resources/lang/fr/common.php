@@ -16,6 +16,8 @@ return [
     'copy_to_clipboard' => 'Copier dans le presse-papier',
     'copied' => 'Copié!',
     'field' => 'Champ',
+    'search' => 'Rechercher',
+    'all' => 'Toutes',
     'edit' => 'Modifier',
     'remove' => 'Supprimer',
     'undo' => 'Annuler',

@@ -104,3 +104,39 @@ Point the demo app’s Composer `path` repository at `../laravel-daisy-kit`. Thi
 ## Testing
 
 Tests under `tests/` cover package-only behavior: Blade and template rendering, helpers, and package routes (for example the CSRF token endpoint when enabled). Application-level, navigation, and browser tests belong in the demo repository.
+
+## Table components
+
+The package now exposes two distinct table layers:
+
+- `x-daisy::ui.data-display.table` is a thin DaisyUI wrapper. It only maps DaisyUI table classes (`table`, `table-zebra`, `table-pin-rows`, `table-pin-cols`, `table-xs|sm|md|lg|xl`) plus the optional responsive wrapper.
+- `x-daisy::ui.advanced.table` is the package-level component for server-driven table UX such as row selection, server sort links, loading, empty states, and toolbar/after-table slots.
+- `x-daisy::ui.advanced.table` now also supports server pagination, a rows-per-page selector, and Spatie Query Builder-friendly sort URL generation.
+
+### Breaking change
+
+The previous `x-daisy::ui.data-display.table` API based on `headers`, `rows`, `footer`, `selection`, `showRowNumbers`, `offset`, and related JS selection behavior has been removed.
+
+Migration guidance:
+
+- Replace old data-driven usages of `x-daisy::ui.data-display.table` with `x-daisy::ui.advanced.table`.
+- Keep `x-daisy::ui.data-display.table` only for DaisyUI-native table markup where you control `<thead>`, `<tbody>`, and `<tfoot>` yourself.
+- Replace legacy client-side selection hooks (`data-table-select`, `table:select`) with the new advanced table hook `advanced-table:selection`.
+
+### Advanced table conventions
+
+- `x-daisy::ui.advanced.table` supports both `mode="server"` and `mode="client"` (`auto` selects `server` when `queryBuilder` or `paginator` is present, otherwise `client`).
+- Selection is page-scoped by default: the header checkbox selects the current visible page and exposes a mixed state when only some rows are selected.
+- In `server` mode, pass a Laravel paginator through `paginator` and the current page rows through `rows`.
+- In `client` mode, the component can handle global search, column filters, sorting, and pagination directly in the browser.
+- For page-size control, provide `perPageOptions`; the component preserves existing query parameters in `server` mode and updates pagination in place in `client` mode.
+- When `queryBuilder=true`, the component renders native Spatie Query Builder-friendly controls:
+  - global search via `filter[search]` by default
+  - column filters via `filter[column]`
+  - sorting via `sort=name` / `sort=-name`
+- If `sortUrls` is omitted and a column is marked `sortable`, the component generates Query Builder-compatible sort URLs automatically while preserving the rest of the current query string.
+
+### Simple table pagination
+
+- `x-daisy::ui.data-display.table` also supports pagination with `paginationMode="server"` or `paginationMode="client"`.
+- Use this on the thin DaisyUI wrapper when you only need a paginated semantic table, without the richer search/filter/sort UX of `advanced.table`.
