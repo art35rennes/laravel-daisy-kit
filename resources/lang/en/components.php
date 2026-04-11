@@ -30,6 +30,11 @@ return [
     'avatar' => 'Avatar',
     'kbd' => 'Keyboard shortcut',
     'table' => 'Table',
+    'rows_per_page' => 'Rows per page',
+    'showing_results' => 'Showing :from to :to of :total results',
+    'selected_rows' => 'selected',
+    'select_all_rows' => 'Select all rows on this page',
+    'select_row' => 'Select row',
     'stat' => 'Stat',
     'progress' => 'Progress bar',
     'radial-progress' => 'Radial progress',
@@ -81,4 +86,3 @@ return [
     'mockup-phone' => 'Phone mockup',
     'mockup-window' => 'Window mockup',
 ];
-
