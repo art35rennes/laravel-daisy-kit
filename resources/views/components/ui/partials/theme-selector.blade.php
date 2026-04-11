@@ -2,6 +2,7 @@
     'position' => 'fixed', // fixed | relative
     'placement' => 'top-right', // top-right | top-left | bottom-right | bottom-left
     'themes' => null, // null = utilise tous les thèmes de la config (intégrés + personnalisés)
+    'offsetClass' => null, // ex: top-20 pour décaler sous une navbar fixe
 ])
 @php
     use Art35rennes\DaisyKit\Helpers\ThemeHelper;
@@ -24,6 +25,10 @@
             'bottom-left' => 'bottom-4 left-4',
             default => 'top-4 right-4',
         };
+
+        if ($offsetClass) {
+            $placementClasses .= ' '.$offsetClass;
+        }
     @endphp
 
     <div class="{{ $positionClasses }} {{ $placementClasses }}">
@@ -79,4 +84,3 @@
     </script>
     @endpush
 @endif
-
