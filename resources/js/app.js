@@ -226,9 +226,6 @@ onReady(async () => {
   // Charts (Chart.js + thème DaisyUI) : import quand proche, initialisation à la visibilité
   importWhenNearViewport('[data-chart="1"]', () => { heavyQueue(() => import('./chart')); }, { rootMargin: '800px 0px' });
 
-  // Leaflet: charge le module seulement si un composant data-leaflet est proche du viewport
-  importWhenNearViewport('[data-leaflet="1"]', () => { heavyQueue(() => import('./leaflet')); }, { rootMargin: '800px 0px' });
-
   // Calendar Full: composant interne (sans lib externe) – lazy près du viewport
   importWhenNearViewport('[data-calendar-full="1"]', () => { heavyQueue(() => import('./calendar-full')); }, { rootMargin: '800px 0px' });
 });

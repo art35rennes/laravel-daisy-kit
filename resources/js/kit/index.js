@@ -90,13 +90,19 @@ async function initElement(element) {
         // Extraire les options depuis les data-attributes
         const options = extractOptions(element);
         
-        // Initialiser le module
+        // Initialiser le module (attendre les promesses pour éviter les courses avec d'autres bootstrap).
         if (module.default && typeof module.default === 'function') {
-            module.default(element, options);
+            const result = module.default(element, options);
+            if (result !== undefined && typeof result.then === 'function') {
+                await result;
+            }
         } else if (typeof module.init === 'function') {
-            module.init(element, options);
+            const result = module.init(element, options);
+            if (result !== undefined && typeof result.then === 'function') {
+                await result;
+            }
         }
-        
+
         initialized.add(element);
     } catch (error) {
         console.warn(`[DaisyKit] Failed to load module "${moduleName}":`, error);

@@ -1,9 +1,9 @@
 @props([
     /**
      * Position du menu flottant
-     * left|right|top|bottom
+     * bottom-right|bottom-left|top-right|top-left|left|right|top|bottom
      */
-    'position' => 'left',
+    'position' => 'bottom-right',
     /**
      * Orientation des boutons
      * vertical|horizontal
@@ -68,11 +68,15 @@
 @php
     // Classes de position
     $positionClasses = match($position) {
+        'bottom-right' => 'bottom-4 right-4',
+        'bottom-left' => 'bottom-4 left-4',
+        'top-right' => 'top-4 right-4',
+        'top-left' => 'top-4 left-4',
         'left' => 'left-4 top-1/2 -translate-y-1/2',
         'right' => 'right-4 top-1/2 -translate-y-1/2',
         'top' => 'top-4 left-1/2 -translate-x-1/2',
         'bottom' => 'bottom-4 left-1/2 -translate-x-1/2',
-        default => 'left-4 top-1/2 -translate-y-1/2',
+        default => 'bottom-4 right-4',
     };
 
     // Classes de flex selon l'orientation
@@ -152,4 +156,3 @@
         {{ $slot }}
     @endforelse
 </div>
-
