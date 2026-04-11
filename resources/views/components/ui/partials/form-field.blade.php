@@ -13,7 +13,7 @@
 
 @php
     // Determine final wrapper classes.
-    $wrapperClasses = trim(($full ? 'w-full ' : '').'form-control '.$class);
+    $wrapperClasses = trim(($full ? 'w-full ' : '').'flex flex-col gap-1 '.$class);
 
     // Resolve message and state from Laravel validation bag if name is provided.
     $laravelMessage = null;
@@ -61,7 +61,7 @@
     {{ $slot }}
 
     @if(isset($hintSlot) || $hint)
-        <p class="label-text-alt mt-1 text-base-content/70">
+        <p class="mt-1 text-sm text-base-content/70">
             @isset($hintSlot)
                 {{ $hintSlot }}
             @else

@@ -78,17 +78,17 @@
 
             <!-- Toolbar bottom -->
             <div class="absolute bottom-3 inset-x-0 flex items-center justify-center gap-2">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-sm" data-zoom-in title="{{ $labelZoomIn }}" aria-label="{{ $labelZoomIn }}">
+                <div class="join">
+                    <button type="button" class="btn btn-sm join-item" data-zoom-in title="{{ $labelZoomIn }}" aria-label="{{ $labelZoomIn }}">
                         <x-bi-plus class="size-5" />
                     </button>
-                    <button type="button" class="btn btn-sm" data-zoom-out title="{{ $labelZoomOut }}" aria-label="{{ $labelZoomOut }}">
+                    <button type="button" class="btn btn-sm join-item" data-zoom-out title="{{ $labelZoomOut }}" aria-label="{{ $labelZoomOut }}">
                         <x-bi-dash class="size-5" />
                     </button>
-                    <button type="button" class="btn btn-sm" data-zoom-reset title="{{ $labelZoomReset }}" aria-label="{{ $labelZoomReset }}">
+                    <button type="button" class="btn btn-sm join-item" data-zoom-reset title="{{ $labelZoomReset }}" aria-label="{{ $labelZoomReset }}">
                         <x-bi-arrow-clockwise class="size-5" />
                     </button>
-                    <button type="button" class="btn btn-sm" data-fullscreen title="{{ $labelFullscreen }}" aria-label="{{ $labelFullscreen }}">
+                    <button type="button" class="btn btn-sm join-item" data-fullscreen title="{{ $labelFullscreen }}" aria-label="{{ $labelFullscreen }}">
                         <x-bi-arrows-fullscreen class="size-5" />
                     </button>
                 </div>

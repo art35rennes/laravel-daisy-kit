@@ -108,7 +108,7 @@
                 {{-- Champ de recherche optionnel --}}
                 @if($search)
                     <div class="join w-full">
-                        <input type="text" class="input input-sm input-bordered join-item w-full" placeholder="{{ $defaultSearchPlaceholderSource }}" data-transfer-search="source" />
+                        <input type="text" class="input input-sm join-item w-full" placeholder="{{ $defaultSearchPlaceholderSource }}" data-transfer-search="source" />
                     </div>
                 @endif
 
@@ -209,7 +209,7 @@
                 {{-- Champ de recherche optionnel --}}
                 @if($search)
                     <div class="join w-full">
-                        <input type="text" class="input input-sm input-bordered join-item w-full" placeholder="{{ $defaultSearchPlaceholderTarget }}" data-transfer-search="target" />
+                        <input type="text" class="input input-sm join-item w-full" placeholder="{{ $defaultSearchPlaceholderTarget }}" data-transfer-search="target" />
                     </div>
                 @endif
 

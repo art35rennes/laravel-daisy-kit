@@ -42,6 +42,11 @@ export default defineConfig({
                     if (id.includes('chart.js') || id.includes('chart/')) {
                         return 'chart';
                     }
+
+                    // Regrouper DataTables, son extension responsive et jQuery
+                    if (id.includes('datatables.net') || id.includes('/jquery')) {
+                        return 'datatables-vendor';
+                    }
                     
                     // Séparer les autres dépendances lourdes
                     if (id.includes('node_modules')) {

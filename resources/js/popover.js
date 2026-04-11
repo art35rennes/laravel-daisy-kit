@@ -32,6 +32,8 @@ function hideAllPopoversExcept(exceptionPanel) {
  * @param {HTMLElement} root - Élément racine portant l'attribut [data-popover]
  */
 function setupPopover(root) {
+  if (root.hasAttribute('data-module')) return;
+
   // Sélectionne le déclencheur et le panneau du popover
   const trigger = root.querySelector('.popover-trigger');
   const panel = root.querySelector('.popover-panel');
@@ -260,7 +262,7 @@ function setupPopover(root) {
 
 // API globale + initialisation automatique (même si importé après DOMContentLoaded)
 function initAllPopovers() {
-  document.querySelectorAll('[data-popover]').forEach(setupPopover);
+  document.querySelectorAll('[data-popover]:not([data-module])').forEach(setupPopover);
 }
 
 window.DaisyPopover = { init: setupPopover, initAll: initAllPopovers };

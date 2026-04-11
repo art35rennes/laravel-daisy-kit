@@ -70,7 +70,7 @@
 
 @if($shouldEnhance)
     <div class="dropdown w-full" {{ $attributes->class('w-full')->only('class')->merge($dataAttributes) }}>
-        <label class="input input-bordered flex items-center gap-2 w-full">
+        <label class="input flex w-full items-center gap-2">
             <input type="text"
                    data-role="input"
                    class="grow"

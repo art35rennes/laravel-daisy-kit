@@ -1,1 +1,0 @@
-function u(o,c,t,a){o.addEventListener(t,e=>{const n=e.target.closest(c);n&&a.call(n,e)})}function i(o,c){let t;return function(...e){const n=()=>{clearTimeout(t),o(...e)};clearTimeout(t),t=setTimeout(n,c)}}export{i as a,u as d};

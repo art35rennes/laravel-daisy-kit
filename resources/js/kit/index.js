@@ -62,6 +62,9 @@ async function initElement(element) {
         return;
     }
 
+    // Reserve before any await so concurrent init() / reinit() cannot attach duplicate listeners.
+    initialized.add(element);
+
     try {
         // Import dynamique du module avec fallback
         let module;
@@ -102,9 +105,8 @@ async function initElement(element) {
                 await result;
             }
         }
-
-        initialized.add(element);
     } catch (error) {
+        initialized.delete(element);
         console.warn(`[DaisyKit] Failed to load module "${moduleName}":`, error);
     }
 }
@@ -145,11 +147,39 @@ export function init() {
 }
 
 /**
+ * Collects module roots under a container (including the container when it carries data-module).
+ *
+ * @param {ParentNode|Document|null} container
+ * @returns {HTMLElement[]}
+ */
+function collectModuleRoots(container) {
+    if (!container) {
+        return [];
+    }
+    const root = container.nodeType === Node.DOCUMENT_NODE ? container.documentElement : container;
+    if (!root || root.nodeType !== Node.ELEMENT_NODE) {
+        return [];
+    }
+    /** @type {HTMLElement[]} */
+    const roots = [];
+    if (root.matches('[data-module]')) {
+        roots.push(root);
+    }
+    root.querySelectorAll('[data-module]').forEach((el) => {
+        roots.push(el);
+    });
+    return roots;
+}
+
+/**
  * Réinitialise après des mutations DOM (pour le lazy-loading)
  */
 export function reinit(container = document) {
-    const elements = container.querySelectorAll('[data-module]:not([data-initialized])');
-    elements.forEach(initElement);
+    collectModuleRoots(container).forEach((el) => {
+        if (!initialized.has(el)) {
+            void initElement(el);
+        }
+    });
 }
 
 // Auto-initialisation au chargement

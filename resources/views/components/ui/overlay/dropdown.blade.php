@@ -2,6 +2,8 @@
     'label' => null,
     'end' => false,
     'hover' => false,
+    /** @var bool Add dropdown-close to force the menu closed until hover/focus (daisyUI 5.5+). */
+    'forceClose' => false,
     // Classes du bouton trigger (par défaut adapté à la navbar)
     'buttonClass' => 'btn btn-ghost',
     // Afficher le trigger en bouton circulaire (utile en navbar pour avatar/icone)
@@ -23,7 +25,12 @@
     // Placement : dropdown-end pour aligner à droite (défaut : gauche).
     if ($end) $root .= ' dropdown-end';
     // Mode hover : ouverture au survol au lieu du clic (dropdown-hover).
-    if ($hover) $root .= ' dropdown-hover';
+    if ($hover) {
+        $root .= ' dropdown-hover';
+    }
+    if ($forceClose) {
+        $root .= ' dropdown-close';
+    }
 
     // Déduction des classes de contenu selon le type si non fourni explicitement.
     $resolvedContentClass = $contentClass ?? ($type === 'card' ? $cardClass : $menuClass);

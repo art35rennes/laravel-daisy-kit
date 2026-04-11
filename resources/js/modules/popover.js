@@ -19,11 +19,24 @@
 /**
  * Masque tous les popovers ouverts sauf éventuellement un panneau d'exception.
  * Permet de garantir qu'un seul popover est ouvert à la fois sur la page.
+ * Retire aussi les écouteurs document (clic extérieur) des instances fermées pour éviter les fuites avec N popovers.
+ *
  * @param {HTMLElement|null} exceptionPanel - Le panneau à ne pas masquer (optionnel)
  */
 function hideAllPopoversExcept(exceptionPanel) {
-  document.querySelectorAll('.popover-panel').forEach((panel) => {
-    if (panel !== exceptionPanel) panel.classList.add('hidden');
+  document.querySelectorAll('.popover-panel').forEach((panelEl) => {
+    if (panelEl === exceptionPanel) {
+      return;
+    }
+    if (panelEl.classList.contains('hidden')) {
+      return;
+    }
+    panelEl.classList.add('hidden');
+    const rootEl = panelEl.closest('[data-popover]');
+    const cleanup = rootEl && rootEl.__dkPopoverCleanupOutside;
+    if (typeof cleanup === 'function') {
+      cleanup();
+    }
   });
 }
 
@@ -111,10 +124,34 @@ export default function initPopover(root, options = {}) {
   };
 
   /**
-   * Ferme le popover (masque le panneau).
+   * Gestionnaire pour fermer le popover si clic à l'extérieur du composant (mode click).
+   *
+   * @param {MouseEvent} e
+   */
+  function onOutside(e) {
+    if (!root.contains(e.target)) {
+      close();
+    }
+  }
+
+  /**
+   * Retire l'écouteur document (clic extérieur) pour cette instance uniquement.
+   *
+   * @returns {void}
+   */
+  const removeOutsideListener = () => {
+    document.removeEventListener('click', onOutside, { capture: true });
+  };
+
+  // Référencé par hideAllPopoversExcept quand un autre popover s'ouvre sur la page (N instances).
+  root.__dkPopoverCleanupOutside = removeOutsideListener;
+
+  /**
+   * Ferme le popover (masque le panneau) et retire l'écouteur clic document.
    */
   const close = () => {
     panel.classList.add('hidden');
+    removeOutsideListener();
   };
 
   /**
@@ -125,28 +162,15 @@ export default function initPopover(root, options = {}) {
     if (hidden) open(); else close();
   };
 
-  /**
-   * Gestionnaire pour fermer le popover si clic à l'extérieur du composant.
-   * Utilisé uniquement en mode 'click'.
-   * @param {MouseEvent} e
-   */
-  const onOutside = (e) => {
-    if (!root.contains(e.target)) {
-      close();
-      if (triggerMode === 'click') {
-        document.removeEventListener('click', onOutside, { capture: true });
-      }
-    }
-  };
-
   // Gestion du mode d'ouverture selon le triggerMode
   if (triggerMode === 'click') {
     // Mode clic : ouverture/fermeture au clic sur le déclencheur
     trigger.addEventListener('click', (e) => {
       e.preventDefault();
       toggle();
-      // Si le panneau vient d'être ouvert, on écoute les clics extérieurs pour le refermer
+      // Si le panneau vient d'être ouvert, un seul écouteur capture par instance (évite les doublons au reclic).
       if (!panel.classList.contains('hidden')) {
+        removeOutsideListener();
         document.addEventListener('click', onOutside, { capture: true });
       }
     });

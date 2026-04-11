@@ -19,13 +19,20 @@
 @php
     // Construction des classes CSS selon les options (compact, side, imageFull, etc.).
     $root = 'card';
-    if ($compact) $root .= ' card-compact';
-    if ($side) $root .= ' card-side';
-    if ($imageFull) $root .= ' image-full';
-    if ($bordered) $root .= ' card-border';
-    if ($dash) $root .= ' card-dash';
+    if ($side) {
+        $root .= ' card-side';
+    }
+    if ($imageFull) {
+        $root .= ' image-full';
+    }
+    if ($bordered) {
+        $root .= ' card-border';
+    }
+    if ($dash) {
+        $root .= ' card-dash';
+    }
 
-    // Mapping des tailles vers les classes daisyUI.
+    // Mapping des tailles vers les classes daisyUI (daisyUI 5: card-compact removed; use card-sm).
     $sizeMap = [
         'xs' => 'card-xs',
         'sm' => 'card-sm',
@@ -33,13 +40,18 @@
         'lg' => 'card-lg',
         'xl' => 'card-xl',
     ];
-    if (isset($sizeMap[$size])) {
-        $root .= ' ' . $sizeMap[$size];
+    $effectiveSize = $compact ? 'sm' : $size;
+    if (isset($sizeMap[$effectiveSize])) {
+        $root .= ' '.$sizeMap[$effectiveSize];
     }
 
     // Couleur de fond : personnalisée ou base-100 par défaut.
     $bgClass = $color ? ' bg-'.$color : ' bg-base-100';
     $root .= $bgClass.' shadow';
+    // Colonne pour empiler figure + corps ; éviter flex-col avec card-side (disposition horizontale).
+    if (! $side) {
+        $root .= ' flex flex-col';
+    }
 @endphp
 
 <div {{ $attributes->merge(['class' => $root]) }}>
@@ -69,15 +81,18 @@
         </figure>
     @endif
 
-    {{-- Corps de la carte : titre, contenu, actions --}}
-    <div class="card-body">
+    {{-- Corps de la carte : titre, contenu, actions (flex pour aligner les actions en bas dans une grille à hauteur égale). --}}
+    <div @class([
+        'card-body flex flex-col flex-1 min-h-0',
+        'gap-2' => $title || isset($actions),
+    ])>
         @if($title)
             <h2 class="card-title">{{ $title }}</h2>
         @endif
-        <div>{{ $slot }}</div>
+        <div @class(['flex-1' => isset($actions)])>{{ $slot }}</div>
         {{-- Actions : slot pour les boutons d'action (alignés à droite par défaut) --}}
         @isset($actions)
-            <div class="card-actions justify-end">
+            <div class="card-actions mt-auto justify-end">
                 {{ $actions }}
             </div>
         @endisset

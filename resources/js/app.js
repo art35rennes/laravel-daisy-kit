@@ -205,10 +205,12 @@ onReady(async () => {
   importWhenIdle('[data-treeview="1"]', () => { mediumQueue(() => import('./treeview')); });
   importWhenIdle('[data-scrollspy="1"]', () => { mediumQueue(() => import('./scrollspy')); });
   importWhenIdle('[data-popconfirm], [data-popconfirm-modal]', () => { mediumQueue(() => import('./popconfirm')); });
-  importWhenIdle('[data-popover]', () => { mediumQueue(() => import('./popover')); });
+  // Legacy popovers are bootstrapped by resources/js/popover.js.
+  // Exclude kit-managed instances to avoid double initialization with data-module="popover".
+  importWhenIdle('[data-popover]:not([data-module])', () => { mediumQueue(() => import('./popover')); });
   importWhenIdle('[data-stepper]', () => { mediumQueue(() => import('./stepper')); });
   importWhenIdle('[data-onboarding="1"]', () => { mediumQueue(() => import('./onboarding')); });
-  importWhenIdle('[data-advanced-table="1"], [data-simple-table="1"][data-table-pagination-mode="client"]', () => { mediumQueue(() => import('./advanced-table')); });
+  importWhenIdle('[data-daisy-datatable="1"]', () => { mediumQueue(() => import('./datatable-kit')); });
   importWhenIdle('[data-fileinput="1"]', () => { mediumQueue(() => import('./file-input')); });
   importWhenIdle('input[data-inputmask="1"], input[data-obfuscate="1"]', () => { mediumQueue(() => import('./input-mask')); });
   importWhenIdle('[data-scrollstatus="1"]', () => { mediumQueue(() => import('./scroll-status')); });

@@ -35,10 +35,10 @@
                 @csrf
                 {{-- Two-factor code --}}
                 <div class="space-y-2">
-                    <label class="label">
-                        <span class="label-text">{{ __('daisy::auth.two_factor_code') }}</span>
+                    <label class="label flex justify-between gap-2">
+                        <span class="text-sm font-medium">{{ __('daisy::auth.two_factor_code') }}</span>
                         @if($errors->has('code'))
-                            <span class="label-text-alt text-error">{{ $errors->first('code') }}</span>
+                            <span class="text-sm text-error">{{ $errors->first('code') }}</span>
                         @endif
                     </label>
                     <div data-module="otp-code" data-length="6" data-numeric-only="true" data-hidden-input-name="code" class="flex justify-center gap-3">

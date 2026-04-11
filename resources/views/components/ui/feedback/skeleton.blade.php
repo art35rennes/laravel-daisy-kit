@@ -2,10 +2,12 @@
     'width' => null, // e.g. w-32
     'height' => null, // e.g. h-6
     'rounded' => null, // none|sm|md|lg|xl|full
+    /** @var string default|text Use skeleton-text for animated gradient line placeholders (daisyUI 5.5+). */
+    'variant' => 'default',
 ])
 
 @php
-    $classes = 'skeleton';
+    $classes = $variant === 'text' ? 'skeleton skeleton-text' : 'skeleton';
     if ($width) $classes .= ' '.$width;
     if ($height) $classes .= ' '.$height;
     if ($rounded) {

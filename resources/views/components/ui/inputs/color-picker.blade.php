@@ -27,7 +27,7 @@
 @endphp
 
 @if($isNative)
-    <input type="color" id="{{ $id }}" value="{{ $value }}" {{ $attributes->merge(['class' => 'input input-bordered w-32']) }} @disabled($disabled) />
+    <input type="color" id="{{ $id }}" value="{{ $value }}" {{ $attributes->merge(['class' => 'input w-32']) }} @disabled($disabled) />
 @else
     <div id="{{ $id }}" data-module="{{ $module ?? 'color-picker' }}" data-colorpicker="1"
          data-value="{{ $value }}"

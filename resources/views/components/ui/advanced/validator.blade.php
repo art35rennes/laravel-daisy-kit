@@ -14,7 +14,7 @@
         'info' => 'text-info',
         default => 'text-base-content/70',
     };
-    $wrapperClasses = trim(($full ? 'w-full ' : '').'form-control');
+    $wrapperClasses = trim(($full ? 'w-full ' : '').'flex flex-col gap-1');
 @endphp
 
 <{{ $as }} {{ $attributes->merge(['class' => $wrapperClasses]) }}>

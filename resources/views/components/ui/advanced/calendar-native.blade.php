@@ -4,6 +4,6 @@
     'placeholder' => null,
 ])
 
-<input type="date" id="{{ $inputId }}" value="{{ $value }}" placeholder="{{ $placeholder }}" {{ $attributes->merge(['class' => 'input input-bordered']) }} />
+<input type="date" id="{{ $inputId }}" value="{{ $value }}" placeholder="{{ $placeholder }}" {{ $attributes->merge(['class' => 'input']) }} />
 
 

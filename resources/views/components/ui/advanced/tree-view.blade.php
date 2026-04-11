@@ -70,7 +70,7 @@
     @if($search)
         <div class="join w-full mb-2" data-tree-search-container="1">
             <input type="text"
-                   class="input input-sm input-bordered join-item w-full"
+                   class="input input-sm join-item w-full"
                    placeholder="{{ $searchPlaceholder }}"
                    data-tree-search="1" />
             {{-- Bouton de recherche optionnel (si recherche manuelle, pas automatique) --}}

@@ -23,6 +23,7 @@ Homestead.json
 .phpunit.result.cache
 
 /public/build
+/public/vendor/art35rennes/laravel-daisy-kit
 /storage/pail
 .env.backup
 .env.production

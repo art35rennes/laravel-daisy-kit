@@ -196,7 +196,7 @@
             <div class="flex items-center gap-3">
                 <button 
                     type="button"
-                    class="flex-shrink-0 file-download hover:opacity-80 transition-opacity cursor-pointer"
+                    class="shrink-0 file-download hover:opacity-80 transition-opacity cursor-pointer"
                     data-url="{{ $url }}"
                     data-filename="{{ $name ?? 'file' }}"
                     title="{{ __('Download') }}"
@@ -220,7 +220,7 @@
                 @if($downloadable)
                     <button 
                         type="button"
-                        class="btn btn-ghost btn-xs btn-circle file-download flex-shrink-0"
+                        class="btn btn-ghost btn-xs btn-circle file-download shrink-0"
                         data-url="{{ $url }}"
                         data-filename="{{ $name ?? 'file' }}"
                         title="{{ __('Download') }}"

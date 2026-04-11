@@ -127,7 +127,7 @@
                             type="email" 
                             name="email" 
                             placeholder="{{ __('daisy::common.email') }}" 
-                            class="input input-sm input-bordered flex-1" 
+                            class="input input-sm flex-1" 
                             required 
                         />
                         <button type="submit" class="btn btn-sm btn-primary">

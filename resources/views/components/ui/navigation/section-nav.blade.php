@@ -40,7 +40,7 @@
         <div class="bg-base-200 rounded-box shadow-lg p-3 {{ $panelWidth }} max-w-[calc(100vw-2rem)]" data-section-nav-box>
             <div class="font-semibold mb-2">{{ $title }}</div>
             <div class="mb-2">
-                <label class="input input-bordered flex items-center gap-2 w-full">
+                <label class="input flex w-full items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 opacity-70">
                         <path fill-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 1 0 3.897 12.303l3.775 3.775a.75.75 0 1 0 1.06-1.06l-3.775-3.776A6.75 6.75 0 0 0 10.5 3.75ZM5.25 10.5a5.25 5.25 0 1 1 10.5 0 5.25 5.25 0 0 1-10.5 0Z" clip-rule="evenodd" />
                     </svg>

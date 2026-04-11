@@ -40,7 +40,7 @@
     @endif
 
     @if($avatar || $name)
-        <div class="flex-shrink-0">
+        <div class="shrink-0">
             <x-daisy::ui.data-display.avatar
                 :src="$avatar"
                 :placeholder="$name ? substr($name, 0, 1) : 'U'"

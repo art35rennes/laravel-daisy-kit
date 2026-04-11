@@ -10,7 +10,7 @@
     // Couleurs/texte
     'text' => null,         // ex: neutral-content
     'bg' => null,           // ex: base-200
-    'overlayClass' => 'bg-opacity-60',
+    'overlayClass' => 'bg-black/60',
     // Classes supplémentaires
     'contentMax' => 'max-w-md',
     'contentClass' => null,

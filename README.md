@@ -105,38 +105,97 @@ Point the demo app’s Composer `path` repository at `../laravel-daisy-kit`. Thi
 
 Tests under `tests/` cover package-only behavior: Blade and template rendering, helpers, and package routes (for example the CSRF token endpoint when enabled). Application-level, navigation, and browser tests belong in the demo repository.
 
-## Table components
+## DataTable component
 
-The package now exposes two distinct table layers:
+The package now exposes a single DataTables-based table component:
 
-- `x-daisy::ui.data-display.table` is a thin DaisyUI wrapper. It only maps DaisyUI table classes (`table`, `table-zebra`, `table-pin-rows`, `table-pin-cols`, `table-xs|sm|md|lg|xl`) plus the optional responsive wrapper.
-- `x-daisy::ui.advanced.table` is the package-level component for server-driven table UX such as row selection, server sort links, loading, empty states, and toolbar/after-table slots.
-- `x-daisy::ui.advanced.table` now also supports server pagination, a rows-per-page selector, and Spatie Query Builder-friendly sort URL generation.
+- `x-daisy::ui.data-display.datatable`
+
+This component follows the native DataTables 2 semantics:
+
+- `serverSide=false`: the table rows are rendered in HTML and enhanced locally by DataTables
+- `serverSide=true`: DataTables delegates paging, search, ordering, and filtering to the server through `ajax`
+
+The host app only needs the package Vite entry. It does not manually import jQuery, DataTables CSS, or call `new DataTable(...)`.
 
 ### Breaking change
 
-The previous `x-daisy::ui.data-display.table` API based on `headers`, `rows`, `footer`, `selection`, `showRowNumbers`, `offset`, and related JS selection behavior has been removed.
+The previous public components have been removed:
+
+- `x-daisy::ui.data-display.table`
+- `x-daisy::ui.advanced.table`
 
 Migration guidance:
 
-- Replace old data-driven usages of `x-daisy::ui.data-display.table` with `x-daisy::ui.advanced.table`.
-- Keep `x-daisy::ui.data-display.table` only for DaisyUI-native table markup where you control `<thead>`, `<tbody>`, and `<tfoot>` yourself.
-- Replace legacy client-side selection hooks (`data-table-select`, `table:select`) with the new advanced table hook `advanced-table:selection`.
+- Replace locally rendered tables with `x-daisy::ui.data-display.datatable` and `serverSide=false`
+- Replace dynamically loaded tables with `x-daisy::ui.data-display.datatable`, `serverSide=true`, and an `ajax` configuration compatible with DataTables
+- Remove any legacy hooks or assumptions tied to `data-simple-table`, `data-advanced-table`, and `advanced-table.js`
 
-### Advanced table conventions
+### Supported options
 
-- `x-daisy::ui.advanced.table` supports both `mode="server"` and `mode="client"` (`auto` selects `server` when `queryBuilder` or `paginator` is present, otherwise `client`).
-- Selection is page-scoped by default: the header checkbox selects the current visible page and exposes a mixed state when only some rows are selected.
-- In `server` mode, pass a Laravel paginator through `paginator` and the current page rows through `rows`.
-- In `client` mode, the component can handle global search, column filters, sorting, and pagination directly in the browser.
-- For page-size control, provide `perPageOptions`; the component preserves existing query parameters in `server` mode and updates pagination in place in `client` mode.
-- When `queryBuilder=true`, the component renders native Spatie Query Builder-friendly controls:
-  - global search via `filter[search]` by default
-  - column filters via `filter[column]`
-  - sorting via `sort=name` / `sort=-name`
-- If `sortUrls` is omitted and a column is marked `sortable`, the component generates Query Builder-compatible sort URLs automatically while preserving the rest of the current query string.
+The component exposes a controlled subset of DataTables options through props plus the `options` array:
 
-### Simple table pagination
+- `serverSide`
+- `ajax` when `serverSide=true`
+- `columns`
+- `data` or table slots when `serverSide=false`
+- `responsive`
+- `paging`
+- `pageLength`
+- `lengthChange`
+- `searching`
+- `ordering`
+- `order`
+- `language`
+- `layout`
+- `processing`
+- `scrollX`
 
-- `x-daisy::ui.data-display.table` also supports pagination with `paginationMode="server"` or `paginationMode="client"`.
-- Use this on the thin DaisyUI wrapper when you only need a paginated semantic table, without the richer search/filter/sort UX of `advanced.table`.
+`Responsive` is included in the package integration. `Select` and `Buttons` are intentionally out of scope.
+
+### Example: locally rendered table
+
+```blade
+<x-daisy::ui.data-display.datatable
+    :columns="[
+        ['data' => 'name', 'title' => 'Name'],
+        ['data' => 'email', 'title' => 'Email'],
+    ]"
+    :data="$users"
+    zebra
+    responsive
+/>
+```
+
+### Example: server-side DataTables endpoint
+
+```blade
+<x-daisy::ui.data-display.datatable
+    :server-side="true"
+    :responsive="true"
+    :ajax="[
+        'url' => route('users.datatable'),
+        'type' => 'GET',
+    ]"
+    :columns="[
+        ['data' => 'name', 'title' => 'Name', 'name' => 'users.name'],
+        ['data' => 'email', 'title' => 'Email', 'name' => 'users.email'],
+    ]"
+/>
+```
+
+### Theme integration
+
+The package ships a DaisyUI-compatible DataTables theme layer:
+
+- generic DaisyUI control classes for search, length select, and paging
+- theme-token based colors using DaisyUI surface and content variables
+- responsive details styled to match DaisyUI cards and table surfaces
+
+The goal is for DataTables controls to blend into any active DaisyUI theme without forcing a package-specific color preset.
+
+Theme implementation notes:
+
+- the package keeps the native DataTables 2 `layout` structure instead of rebuilding the control bar in Blade
+- DataTables default pagination uses transparent backgrounds and gradient hover states, so the package explicitly remaps paging buttons to DaisyUI-compatible surface, border, hover, active, and disabled states
+- the CSS layer uses DaisyUI v5 semantic variables such as `--color-base-100`, `--color-base-200`, and `--color-base-content`, with legacy fallbacks where needed

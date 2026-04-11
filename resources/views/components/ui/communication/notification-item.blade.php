@@ -95,7 +95,7 @@
     data-read="{{ $isRead ? 'true' : 'false' }}"
 >
     @if($userAvatar || $userName)
-        <div class="flex-shrink-0">
+        <div class="shrink-0">
             <x-daisy::ui.data-display.avatar
                 :src="$userAvatar"
                 :placeholder="$userName ? substr($userName, 0, 1) : 'U'"

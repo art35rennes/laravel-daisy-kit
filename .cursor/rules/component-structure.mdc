@@ -7,11 +7,11 @@ alwaysApply: true
   - `layout/`: card, hero, footer, divider, list, list-row, stack, crud-layout, crud-section, grid-layout
   - `data-display/`: badge, avatar, kbd, table, stat, progress, radial-progress, status, timeline, file-preview
   - `overlay/`: modal, drawer, dropdown, popover, popconfirm, tooltip
-  - `media/`: carousel, lightbox, media-gallery, embed, leaflet
+  - `media/`: carousel, lightbox, media-gallery, embed, leaflet, hover-gallery
   - `feedback/`: alert, toast, loading, skeleton, callout, empty-state
   - `communication/`: chat-*, notification-*, conversation-view, inbox, message-list
-  - `utilities/`: mockup-*, indicator, dock, clipboard, copy-button
-  - `advanced/`: calendar-*, chart, code-editor, filter, onboarding, scroll-*, transfer, tree-view, validator, login-button, wysiwyg, accordion, collapse, countdown, diff, fieldset, join, label, link, mask, rating, swap, theme-controller
+  - `utilities/`: mockup-*, indicator, dock, fab, clipboard, copy-button
+  - `advanced/`: calendar-*, chart, code-editor, filter, onboarding, scroll-*, transfer, tree-view, validator, login-button, wysiwyg, accordion, collapse, countdown, diff, fieldset, join, label, link, mask, rating, swap, theme-controller, hover-3d, text-rotate
   - `partials/`: reusable UI fragments
 
 - Components follow Atomic Design principles (see `atomic-design.mdc`).
