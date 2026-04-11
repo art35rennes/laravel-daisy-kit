@@ -26,24 +26,16 @@ export default defineConfig({
                         return 'trix';
                     }
                     
-                    // Séparer Leaflet et ses plugins (très volumineux)
-                    if (id.includes('leaflet-routing-machine')) {
-                        return 'leaflet-routing';
-                    }
-                    if (id.includes('leaflet.draw')) {
-                        return 'leaflet-draw';
-                    }
-                    if (id.includes('leaflet.markercluster')) {
+                    // Leaflet: markercluster gets its own chunk (~13KB gz, only loaded when cluster=true).
+                    if (id.includes('leaflet.markercluster') || id.includes('markercluster')) {
                         return 'leaflet-cluster';
                     }
-                    if (id.includes('leaflet-measure')) {
-                        return 'leaflet-measure';
+                    // Leaflet core library + small plugins (gesture, fullscreen) share one vendor chunk.
+                    if (id.includes('node_modules/leaflet')) {
+                        return 'leaflet-vendor';
                     }
                     if (id.includes('leaflet') && !id.includes('node_modules')) {
                         return 'leaflet-core';
-                    }
-                    if (id.includes('node_modules') && id.includes('leaflet')) {
-                        return 'leaflet-vendor';
                     }
                     
                     // Séparer Chart.js

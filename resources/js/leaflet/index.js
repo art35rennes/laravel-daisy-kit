@@ -1,16 +1,92 @@
 /**
- * Daisy Leaflet - Minimal Leaflet map integration.
+ * Daisy Leaflet - Leaflet map integration with plugin architecture.
  *
  * Loaded by the DaisyKit module router when a [data-module="leaflet"] element
- * is present in the DOM. Leaflet is dynamically imported so pages without maps
- * never download the library.
+ * is present in the DOM. Leaflet and its plugins are dynamically imported so
+ * pages without maps never download the library.
+ *
+ * @module leaflet
  */
 
-/** @type {string} */
-const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+// ============================================================================
+// Tile providers (built-in lookup, zero external dependency)
+// ============================================================================
 
-/** @type {string} */
-const OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+/**
+ * Built-in tile provider definitions.
+ *
+ * Each entry provides a URL template and default options (attribution, subdomains).
+ * This replaces the heavy `leaflet-providers` package (~460 providers) with only
+ * the most commonly used ones. For exotic providers, use the `tileUrl` prop.
+ *
+ * @type {Object<string, {url: string, options: Object}>}
+ */
+const TILE_PROVIDERS = {
+    osm: {
+        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        options: {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        },
+    },
+    'cartodb.positron': {
+        url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+        options: {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20,
+        },
+    },
+    'cartodb.darkmatter': {
+        url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        options: {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20,
+        },
+    },
+    'cartodb.voyager': {
+        url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+        options: {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20,
+        },
+    },
+    'stamen.toner': {
+        url: 'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}{r}.png',
+        options: {
+            attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://stamen.com/">Stamen Design</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 20,
+        },
+    },
+    'stamen.watercolor': {
+        url: 'https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg',
+        options: {
+            attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://stamen.com/">Stamen Design</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 16,
+        },
+    },
+};
+
+// ============================================================================
+// Plugin registry
+// ============================================================================
+
+/**
+ * Lazy-loaded plugin registry.
+ *
+ * Each key corresponds to a boolean config flag from the Blade component.
+ * The loader function is only called when the config flag is truthy,
+ * keeping the bundle cost at zero for unused plugins.
+ *
+ * @type {Object<string, () => Promise<{apply: Function}>>}
+ */
+const PLUGINS = {
+    scale: () => import('./plugins/scale.js'),
+    gestureHandling: () => import('./plugins/gesture-handling.js'),
+    fullscreen: () => import('./plugins/fullscreen.js'),
+    cluster: () => import('./plugins/cluster.js'),
+};
 
 // ============================================================================
 // DOM helpers
@@ -109,7 +185,7 @@ async function loadLeaflet() {
 // ============================================================================
 
 /**
- * Creates a Leaflet map from a component configuration object.
+ * Creates a Leaflet map instance with options from the Blade component config.
  *
  * @param {L} L - The Leaflet namespace.
  * @param {HTMLElement} container - The inner map container element.
@@ -117,30 +193,68 @@ async function loadLeaflet() {
  * @returns {L.Map}
  */
 function createMap(L, container, cfg) {
-    const map = L.map(container).setView(
+    const mapOptions = {};
+
+    if (cfg.minZoom != null) {
+        mapOptions.minZoom = cfg.minZoom;
+    }
+    if (cfg.maxZoom != null) {
+        mapOptions.maxZoom = cfg.maxZoom;
+    }
+    if (cfg.preferCanvas) {
+        mapOptions.preferCanvas = true;
+    }
+
+    return L.map(container, mapOptions).setView(
         [cfg.center?.lat ?? 0, cfg.center?.lng ?? 0],
         cfg.zoom ?? 2,
     );
-
-    L.tileLayer(OSM_TILE_URL, { attribution: OSM_ATTRIBUTION }).addTo(map);
-
-    return map;
 }
 
 /**
- * Adds simple markers to the map.
+ * Adds a tile layer to the map using the built-in provider lookup or a custom URL.
+ *
+ * Priority: cfg.tileUrl (explicit URL) > cfg.provider (named lookup) > OSM fallback.
+ *
+ * @param {L} L
+ * @param {L.Map} map
+ * @param {Object} cfg
+ * @returns {void}
+ */
+function addTileLayer(L, map, cfg) {
+    if (cfg.tileUrl) {
+        L.tileLayer(cfg.tileUrl, cfg.tileOptions || {}).addTo(map);
+        return;
+    }
+
+    const providerKey = (cfg.provider || 'osm').toLowerCase();
+    const provider = TILE_PROVIDERS[providerKey] || TILE_PROVIDERS.osm;
+
+    L.tileLayer(provider.url, { ...provider.options, ...(cfg.tileOptions || {}) }).addTo(map);
+}
+
+// ============================================================================
+// Data layers
+// ============================================================================
+
+/**
+ * Creates Leaflet markers from the config without adding them to the map.
+ *
+ * Returns the array of L.Marker instances so the cluster plugin can
+ * intercept them if clustering is enabled.
  *
  * Accepts both array format [[lat, lng, popup?]] and object format [{lat, lng, popup?}].
  *
  * @param {L} L
- * @param {L.Map} map
- * @param {Array} markers
- * @returns {void}
+ * @param {Array} markers - Raw marker definitions from Blade config.
+ * @returns {L.Marker[]}
  */
-function addMarkers(L, map, markers) {
+function createMarkers(L, markers) {
     if (!Array.isArray(markers) || markers.length === 0) {
-        return;
+        return [];
     }
+
+    const result = [];
 
     for (const m of markers) {
         let lat, lng, popup;
@@ -161,6 +275,21 @@ function addMarkers(L, map, markers) {
             marker.bindPopup(String(popup));
         }
 
+        result.push(marker);
+    }
+
+    return result;
+}
+
+/**
+ * Adds markers directly to the map (used when clustering is disabled).
+ *
+ * @param {L.Map} map
+ * @param {L.Marker[]} markers
+ * @returns {void}
+ */
+function addMarkersToMap(map, markers) {
+    for (const marker of markers) {
         marker.addTo(map);
     }
 }
@@ -171,15 +300,91 @@ function addMarkers(L, map, markers) {
  * @param {L} L
  * @param {L.Map} map
  * @param {Object|string|null} geojson
- * @returns {void}
+ * @returns {L.GeoJSON|null}
  */
 function addGeoJson(L, map, geojson) {
     if (!geojson) {
-        return;
+        return null;
     }
 
     const data = typeof geojson === 'string' ? JSON.parse(geojson) : geojson;
-    L.geoJSON(data).addTo(map);
+    const layer = L.geoJSON(data);
+    layer.addTo(map);
+
+    return layer;
+}
+
+// ============================================================================
+// Fit bounds
+// ============================================================================
+
+/**
+ * Auto-fits the map viewport to encompass all markers and GeoJSON features.
+ *
+ * Only applies when cfg.fitBounds is truthy and there is content to fit.
+ *
+ * @param {L} L
+ * @param {L.Map} map
+ * @param {Object} cfg
+ * @param {L.Marker[]} markers
+ * @param {L.GeoJSON|null} geojsonLayer
+ * @returns {void}
+ */
+function applyFitBounds(L, map, cfg, markers, geojsonLayer) {
+    if (!cfg.fitBounds) {
+        return;
+    }
+
+    const bounds = L.latLngBounds([]);
+
+    for (const marker of markers) {
+        bounds.extend(marker.getLatLng());
+    }
+
+    if (geojsonLayer) {
+        const geoBounds = geojsonLayer.getBounds();
+        if (geoBounds.isValid()) {
+            bounds.extend(geoBounds);
+        }
+    }
+
+    if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [30, 30] });
+    }
+}
+
+// ============================================================================
+// Plugin loader
+// ============================================================================
+
+/**
+ * Loads and applies all plugins whose config flags are truthy.
+ *
+ * Plugins are loaded in parallel for performance. Each plugin module must
+ * export an `apply(L, map, cfg, context)` function.
+ *
+ * @param {L} L
+ * @param {L.Map} map
+ * @param {Object} cfg
+ * @param {Object} context - Shared context (e.g. markers array for cluster plugin).
+ * @returns {Promise<void>}
+ */
+async function applyPlugins(L, map, cfg, context) {
+    const tasks = [];
+
+    for (const [key, loader] of Object.entries(PLUGINS)) {
+        if (cfg[key]) {
+            tasks.push(
+                loader()
+                    .then(mod => mod.apply(L, map, cfg, context))
+                    .catch(error => {
+                        console.warn(`[DaisyLeaflet] Plugin "${key}" failed:`, error);
+                    }),
+            );
+        }
+    }
+
+    await Promise.all(tasks);
 }
 
 // ============================================================================
@@ -229,25 +434,43 @@ async function init(root) {
     let map;
     try {
         map = createMap(L, container, cfg);
+        addTileLayer(L, map, cfg);
     } catch (error) {
         console.warn('[DaisyLeaflet] Map creation failed:', error);
         showError(root);
         return null;
     }
 
+    let markers = [];
     try {
-        addMarkers(L, map, cfg.markers);
+        markers = createMarkers(L, cfg.markers);
     } catch (error) {
         console.warn('[DaisyLeaflet] Markers failed:', error);
     }
 
+    let geojsonLayer = null;
     try {
-        addGeoJson(L, map, cfg.geojson);
+        geojsonLayer = addGeoJson(L, map, cfg.geojson);
     } catch (error) {
         console.warn('[DaisyLeaflet] GeoJSON failed:', error);
     }
 
-    // Ensure tiles render correctly when the container becomes visible.
+    // Shared context passed to plugins (cluster needs the markers array).
+    const context = { markers, geojsonLayer };
+
+    try {
+        await applyPlugins(L, map, cfg, context);
+    } catch (error) {
+        console.warn('[DaisyLeaflet] Plugins failed:', error);
+    }
+
+    // When clustering is not active, add markers directly to the map.
+    if (!cfg.cluster) {
+        addMarkersToMap(map, markers);
+    }
+
+    applyFitBounds(L, map, cfg, markers, geojsonLayer);
+
     requestAnimationFrame(() => map.invalidateSize({ animate: false }));
     window.setTimeout(() => map.invalidateSize({ animate: false }), 200);
 
@@ -261,3 +484,5 @@ async function init(root) {
 }
 
 export default init;
+
+export { TILE_PROVIDERS, readConfig };

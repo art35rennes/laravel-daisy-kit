@@ -1,83 +1,28 @@
 @props([
-    // Identifiant optionnel du conteneur de carte (auto-généré si null)
     'id' => null,
-    // Style
-    'class' => '',                 // classes utilitaires (DaisyUI/Tailwind)
-    'style' => '',                 // styles inline additionnels
-    // Vue initiale
-    'lat' => 48.117266,            // latitude par défaut (Rennes)
-    'lng' => -1.6777926,           // longitude par défaut (Rennes)
+    'class' => '',
+    'lat' => 48.117266,
+    'lng' => -1.6777926,
     'zoom' => 12,
     'minZoom' => null,
     'maxZoom' => null,
-    // Fond de carte (leaflet-providers)
-    'provider' => 'OpenStreetMap.Mapnik',
-    'tileUrl' => null,             // alternative directe à provider (URL gabarit)
-    'tileOptions' => [],           // options passées à L.tileLayer (attribution, subdomains, etc.)
-    // Performances
-    'preferCanvas' => false,       // rendu Canvas
-    // Essentiels
-    'gestureHandling' => true,
-    'locateControl' => false,
-    'fullscreen' => true,
-    'hash' => false,
-    'scale' => true,               // true|false ou tableau d'options { position, metric, imperial }
-    // Données/visualisation
-    'cluster' => false,            // active marker clustering
+    'fitBounds' => true,
+    'scale' => false,
+    'preferCanvas' => false,
+    'tileUrl' => null,
+    'tileOptions' => [],
+    'provider' => null,
+    'gestureHandling' => false,
+    'cluster' => false,
     'clusterOptions' => [],
-    'heatmap' => false,            // { points: [[lat,lng,intensity], ...], options: {...} }
-    'miniMap' => false,            // true|{ provider: string, tileUrl: string, options: {...} }
-    // Édition/mesures
-    'draw' => false,               // true|{ options... }
-    'measure' => false,            // true|{ options... }
-    // Recherche/géocodage/itinéraires
-    'geocoder' => false,           // true|'osm'|'esri'|{ provider: 'osm'|'esri', options: {...} }
-    'routing' => false,            // true|{ service: 'osrm'|'graphhopper'|'mapbox', serviceUrl, apiKey, options }
-    // Données simples
-    'markers' => [],               // [[lat, lng, popupHtml?], ...] ou [{lat, lng, popup, icon, options}]
-    'geojson' => null,             // objet/array GeoJSON ou JSON string
-    // Surcharge du nom de module JS (optionnel)
+    'fullscreen' => false,
+    'markers' => [],
+    'geojson' => null,
     'module' => null,
 ])
 
-{{--
-  Composant Leaflet (Daisy Kit)
-
-  Objectif
-  - Fournir un conteneur de carte Leaflet prêt à l'emploi avec activation optionnelle des plugins
-    fréquents (providers, gesture-handling, locate, fullscreen, hash, scale, clustering, heatmap,
-    minimap, draw, measure, geocoder, routing).
-
-  Remarques importantes
-  - Aucune dépendance NPM n'est installée automatiquement ici. Le code JS détecte les plugins
-    via window.L et applique un dégradé silencieux si absent. Vous pourrez installer les paquets
-    puis activer leurs fonctionnalités.
-  - Le CSS de Leaflet est requis pour un rendu correct. À ajouter plus tard via NPM:
-      import 'leaflet/dist/leaflet.css';
-    ou via CDN si besoin temporaire.
-  - Le composant émet un <script data-config> JSON lu par le module JS DaisyLeaflet.
-  - La carte s'adapte automatiquement à la taille de son parent.
-
-  Exemple d'usage minimal
-  <x-daisy::ui.media.leaflet class="rounded-box shadow" :zoom="13" :lat="48.11" :lng="-1.67" />
-
-  Activation de plugins
-  <x-daisy::ui.media.leaflet :gestureHandling="true" :fullscreen="true" :hash="true" :scale="true"
-                      :locateControl="true" :cluster="true" :geocoder="'osm'" />
-
-  Données
-  <x-daisy::ui.media.leaflet :markers="[[48.11,-1.67,'<b>Centre</b>']]" :geojson="$monGeojson" />
---}}
-
 @php
     $mapId = $id ?: 'leaflet-'.\Illuminate\Support\Str::uuid()->toString();
-    $rootClasses = trim('relative w-full h-full bg-base-200 '.$class);
-
-    // Normalisation des options simples
-    $scaleOptions = is_array($scale) ? $scale : ($scale ? ['metric' => true, 'imperial' => true] : []);
-    $miniMapConfig = is_array($miniMap) ? $miniMap : ($miniMap ? ['provider' => $provider] : []);
-    $geocoderConfig = is_array($geocoder) ? $geocoder : ($geocoder ? ['provider' => (is_string($geocoder) ? $geocoder : 'osm')] : []);
-    $routingConfig = is_array($routing) ? $routing : ($routing ? ['service' => 'osrm'] : []);
 
     $config = [
         'containerId' => $mapId,
@@ -85,50 +30,38 @@
         'zoom' => (int) $zoom,
         'minZoom' => $minZoom !== null ? (int) $minZoom : null,
         'maxZoom' => $maxZoom !== null ? (int) $maxZoom : null,
+        'fitBounds' => (bool) $fitBounds,
+        'scale' => (bool) $scale,
         'preferCanvas' => (bool) $preferCanvas,
-        'tiles' => [
-            'provider' => $provider,
-            'url' => $tileUrl,
-            'options' => (object) $tileOptions,
-        ],
-        'plugins' => [
-            'gestureHandling' => (bool) $gestureHandling,
-            'locateControl' => (bool) $locateControl,
-            'fullscreen' => (bool) $fullscreen,
-            'hash' => (bool) $hash,
-            'scale' => $scaleOptions,
-            'cluster' => (bool) $cluster,
-            'clusterOptions' => (object) $clusterOptions,
-            'heatmap' => $heatmap,
-            'miniMap' => $miniMapConfig,
-            'draw' => $draw,
-            'measure' => $measure,
-            'geocoder' => $geocoderConfig,
-            'routing' => $routingConfig,
-        ],
-        'data' => [
-            'markers' => $markers,
-            'geojson' => $geojson,
-        ],
+        'tileUrl' => $tileUrl,
+        'tileOptions' => $tileOptions,
+        'provider' => $provider,
+        'gestureHandling' => (bool) $gestureHandling,
+        'cluster' => (bool) $cluster,
+        'clusterOptions' => $clusterOptions,
+        'fullscreen' => (bool) $fullscreen,
+        'markers' => $markers,
+        'geojson' => $geojson,
     ];
+
+    $hasHeightClass = preg_match('/(?:^|\s)(?:(?:sm|md|lg|xl|2xl):)?(?:h-(?:\d+|full|screen|dvh|svh|lvh|\[.+?\])|min-h-|max-h-|aspect-(?:\[|[\d]+\/[\d]+))/u', (string) $class) === 1;
+    $heightClass = $hasHeightClass ? '' : 'h-80';
+    $baseClasses = trim("relative z-0 w-full bg-base-200 {$heightClass} {$class}");
 @endphp
 
-@php
-    // Appliquer une hauteur par défaut si aucune classe de hauteur n'est fournie par l'utilisateur.
-    $hasHeightClass = preg_match('/\b(?:h-(?:\\d+|full|screen)|min-h-|max-h-|aspect-(?:\\[|\\d+\\/\\d+))\\b/u', (string) $class) === 1;
-    $computedClasses = $rootClasses;
-    if (! $hasHeightClass) {
-        // Hauteur par défaut raisonnable pour rendre la carte visible sans configuration parent.
-        $computedClasses = str_replace(' h-full', '', $computedClasses);
-        $computedClasses = trim(str_replace('h-full', '', $computedClasses).' h-80');
-    }
-@endphp
-
-<div {{ $attributes->merge(['class' => $computedClasses, 'data-module' => ($module ?? 'leaflet'), 'data-leaflet' => '1', 'style' => $style]) }}>
+<div {{ $attributes->merge(['class' => $baseClasses, 'data-module' => ($module ?? 'leaflet')]) }}>
     <div id="{{ $mapId }}" class="w-full h-full"></div>
+
+    <div class="daisy-leaflet-loading absolute inset-0 z-10 flex items-center justify-center">
+        <span class="loading loading-spinner loading-lg text-base-content/30"></span>
+    </div>
+
+    <div class="daisy-leaflet-error absolute inset-0 z-10 flex items-center justify-center hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
+        </svg>
+    </div>
+
     <script type="application/json" data-config>@json($config)</script>
     {{ $slot }}
-    {{-- Les barres d'outils/options personnalisées peuvent être passées via le slot --}}
 </div>
-
-

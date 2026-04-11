@@ -4,7 +4,9 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "test:js": "vitest run",
+        "test:js:watch": "vitest"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
@@ -12,7 +14,8 @@
         "daisyui": "^5.4.7",
         "laravel-vite-plugin": "^2.0.0",
         "tailwindcss": "^4.0.0",
-        "vite": "^7.0.4"
+        "vite": "^7.0.4",
+        "vitest": "^4.1.4"
     },
     "dependencies": {
         "@codemirror/commands": "^6.8.1",
@@ -36,22 +39,10 @@
         "cally": "^0.8.0",
         "chart.js": "^4.5.0",
         "codemirror": "^6.0.2",
-        "esri-leaflet": "^3.0.17",
-        "esri-leaflet-geocoder": "^3.1.6",
         "jsonata": "^2.1.0",
         "leaflet": "^1.9.4",
-        "leaflet-control-geocoder": "^3.2.1",
-        "leaflet-draw": "^1.0.4",
-        "leaflet-geometryutil": "^0.10.3",
         "leaflet-gesture-handling": "^1.2.2",
-        "leaflet-hash": "^0.2.1",
-        "leaflet-measure": "^3.1.0",
-        "leaflet-minimap": "^3.6.1",
-        "leaflet-providers": "^2.0.0",
-        "leaflet-routing-machine": "^3.2.12",
         "leaflet.fullscreen": "^4.0.0",
-        "leaflet.heat": "^0.2.0",
-        "leaflet.locatecontrol": "^0.84.2",
         "leaflet.markercluster": "^1.5.3",
         "signature_pad": "^5.1.2",
         "sortablejs": "^1.15.6",
