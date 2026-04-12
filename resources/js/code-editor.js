@@ -39,7 +39,8 @@ import { defaultKeymap, indentWithTab } from '@codemirror/commands';
 import { history, historyKeymap } from '@codemirror/commands';
 import { lineNumbers } from '@codemirror/view';
 import { highlightActiveLineGutter } from '@codemirror/view';
-import { indentOnInput, foldGutter, foldKeymap, foldAll, unfoldAll } from '@codemirror/language';
+import { indentOnInput, foldGutter, foldKeymap, foldAll, unfoldAll, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete';
 import { searchKeymap } from '@codemirror/search';
 import { lintKeymap } from '@codemirror/lint';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -90,6 +91,17 @@ function currentIsDark(root) {
   return theme === 'dark' || (!theme && (document.documentElement.getAttribute('data-theme')?.toLowerCase().includes('dark') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)));
 }
 
+/**
+ * Retourne l'extension de thème complète, y compris la coloration.
+ * Le thème dark embarque déjà son HighlightStyle, mais le thème light
+ * doit enregistrer explicitement le style de coloration par défaut.
+ * @param {HTMLElement} root - Élément racine de l'éditeur
+ * @returns {Extension|Extension[]} Extension(s) de thème CodeMirror
+ */
+function themeExtension(root) {
+  return currentIsDark(root) ? oneDark : syntaxHighlighting(defaultHighlightStyle);
+}
+
 // Compartments pour permettre la reconfiguration dynamique des extensions
 const languageCompartment = new Compartment();
 const readOnlyCompartment = new Compartment();
@@ -127,13 +139,15 @@ function createEditor(root) {
     history(),
     indentOnInput(),
     foldGutter(),
+    closeBrackets(),
+    autocompletion(),
     
     // Raccourcis clavier
-    keymap.of([indentWithTab, ...defaultKeymap, ...foldKeymap, ...historyKeymap, ...searchKeymap, ...lintKeymap]),
+    keymap.of([indentWithTab, ...closeBracketsKeymap, ...defaultKeymap, ...foldKeymap, ...historyKeymap, ...searchKeymap, ...completionKeymap, ...lintKeymap]),
     
     // Configuration dynamique via compartments
     languageCompartment.of(languageExtension(lang)),
-    themeCompartment.of(currentIsDark(root) ? oneDark : []),
+    themeCompartment.of(themeExtension(root)),
     readOnlyCompartment.of(EditorState.readOnly.of(!!readOnly)),
     
     // Configuration statique
