@@ -111,25 +111,52 @@ function applyDaisyUiTheme(instance, root) {
     return;
   }
 
-  scope.classList.add('space-y-4');
+  scope.classList.add('space-y-4', 'text-sm');
+
+  scope.querySelectorAll('.dt-layout-row:not(.dt-layout-table)').forEach((row) => {
+    row.classList.add('flex', 'flex-col', 'gap-3', 'md:flex-row', 'md:items-center', 'md:justify-between');
+  });
+
+  scope.querySelectorAll('.dt-layout-row:not(.dt-layout-table) .dt-layout-cell').forEach((cell) => {
+    cell.classList.add('min-w-0', 'flex', 'flex-wrap', 'items-center', 'gap-3');
+
+    if (cell.classList.contains('dt-layout-start')) {
+      cell.classList.add('justify-start');
+    }
+
+    if (cell.classList.contains('dt-layout-end')) {
+      cell.classList.add('justify-start', 'md:justify-end');
+    }
+
+    if (cell.classList.contains('dt-layout-full')) {
+      cell.classList.add('w-full');
+    }
+  });
+
+  scope.querySelectorAll('.dt-search, .dt-length').forEach((wrapper) => {
+    wrapper.classList.add('w-full', 'md:w-auto');
+  });
 
   scope.querySelectorAll('.dt-search input').forEach((input) => {
-    input.classList.add('input', 'input-sm', 'w-full');
+    input.classList.add('input', 'input-sm', 'w-full', 'md:w-72');
   });
 
   scope.querySelectorAll('.dt-length select').forEach((select) => {
-    select.classList.add('select', 'select-sm');
+    select.classList.add('select', 'select-sm', 'w-full', 'md:w-auto');
   });
 
   scope.querySelectorAll('.dt-paging').forEach((paging) => {
-    paging.classList.add('join', 'join-horizontal');
+    paging.classList.add('join', 'join-horizontal', 'max-w-full', 'overflow-x-auto');
   });
 
   scope.querySelectorAll('.dt-paging-button').forEach((button) => {
+    const isCurrent = button.classList.contains('current') || button.getAttribute('aria-current') === 'page';
+    const isDisabled = button.classList.contains('disabled') || button.getAttribute('aria-disabled') === 'true';
+
     button.classList.add('btn', 'btn-sm', 'join-item');
-    button.classList.toggle('btn-active', button.classList.contains('current') || button.getAttribute('aria-current') === 'page');
-    button.classList.toggle('btn-disabled', button.classList.contains('disabled') || button.getAttribute('aria-disabled') === 'true');
-    button.classList.toggle('pointer-events-none', button.classList.contains('disabled') || button.getAttribute('aria-disabled') === 'true');
+    button.classList.toggle('btn-active', isCurrent);
+    button.classList.toggle('btn-disabled', isDisabled);
+    button.classList.toggle('pointer-events-none', isDisabled);
   });
 
   scope.querySelectorAll('.dt-paging .ellipsis').forEach((ellipsis) => {
@@ -140,8 +167,12 @@ function applyDaisyUiTheme(instance, root) {
     node.classList.add('text-sm', 'text-base-content/70');
   });
 
+  scope.querySelectorAll('.dt-search label, .dt-length label').forEach((label) => {
+    label.classList.add('flex', 'w-full', 'items-center', 'gap-2', 'md:w-auto', 'md:flex-nowrap');
+  });
+
   scope.querySelectorAll('ul.dtr-details').forEach((details) => {
-    details.classList.add('rounded-box', 'border', 'border-base-content/5', 'bg-base-100');
+    details.classList.add('list-none', 'rounded-box', 'border', 'border-base-content/5', 'bg-base-100');
   });
 }
 
