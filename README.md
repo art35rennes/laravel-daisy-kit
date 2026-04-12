@@ -1,78 +1,68 @@
 # Laravel Daisy Kit
 
-Reusable Laravel package that ships Blade UI components, page templates, translations, and optional frontend assets built for **DaisyUI 5** and **Tailwind CSS 4**.
+Laravel Daisy Kit is a reusable UI package for Laravel applications built with **Blade**, **DaisyUI 5**, and **Tailwind CSS 4**.
 
-## Versioning
+It provides:
 
-This package follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
+- Blade components under the `daisy::` namespace
+- reusable page templates
+- package translations
+- optional prebuilt frontend assets
+- a DataTables-based table component styled for DaisyUI
 
-- `MAJOR`: incompatible change on the public package API
-- `MINOR`: backward-compatible feature
-- `PATCH`: backward-compatible fix or maintenance change
+This package is designed to be installed directly in supported Laravel applications with a standard `composer require`, without version bypasses.
 
-The initial stable release baseline is `v1.0.0`.
-See [CHANGELOG.md](CHANGELOG.md) for released versions and [CONTRIBUTING.md](CONTRIBUTING.md) for the project release rules.
+## Support
 
-## Requirements
+- PHP `^8.1`
+- Laravel `10.x`, `11.x`, `12.x`, and `13.x`
 
-- PHP `^8.2`
-- Laravel `^13.0`
+Compatibility follows the Laravel major in use:
+
+- Laravel 10: PHP 8.1+
+- Laravel 11: PHP 8.2+
+- Laravel 12: PHP 8.2+
+- Laravel 13: PHP 8.3+
+
+The Composer constraints intentionally include all minor and patch releases inside those major versions.
 
 ## Installation
+
+Install the package:
 
 ```bash
 composer require art35rennes/laravel-daisy-kit
 ```
 
-The package registers its service provider automatically. Publish configuration and built assets in your host application (see [Host app integration](#host-app-integration)).
+The service provider is registered automatically via Laravel package discovery.
 
-## What this package provides
+## Quick start
 
-- **Blade namespace** `daisy::` — use components such as `x-daisy::ui.inputs.button` or `x-daisy::layout.*`.
-- **Templates** — reusable views under `daisy::templates.*` (also exposed as anonymous Blade components where applicable).
-- **Translations** — `__('daisy::...')` namespace.
-- **JavaScript** — a small bootstrap (`window.DaisyKit`) that initializes modules marked with `data-module`; Alpine.js-friendly patterns are used for simple interactions.
-- **Optional heavy UI** — components like maps (Leaflet) rely on lazy-loaded chunks; publish built assets so those entry points resolve correctly.
-
-## Package scope
-
-This repository contains only package concerns:
-
-- `src/`
-- `config/daisy-kit.php`
-- `resources/views`, `resources/lang`, `resources/js`, `resources/css`
-- package tests under `tests/`
-
-It does **not** include demo routes, documentation pages, inventory tooling, or browser tests. Those live in the separate companion application repository `laravel-daisy-kit-demo`.
-
-Public identifiers:
-
-- PHP namespace: `Art35rennes\DaisyKit`
-- Blade namespace: `daisy::`
-
-## Local package development
-
-```bash
-composer install
-npm install
-composer test
-npm run build
-```
-
-## Host app integration
-
-### Recommended: published build assets
-
-For a typical host app, publish configuration and the prebuilt Vite manifest and assets:
+Publish the package configuration:
 
 ```bash
 php artisan vendor:publish --tag=daisy-config
+```
+
+If you want to use the prebuilt assets shipped by the package, publish them as well:
+
+```bash
 php artisan vendor:publish --tag=daisy-assets
 ```
 
-Assets are written to `public/vendor/art35rennes/laravel-daisy-kit`, which matches the default `config('daisy-kit.vite_build_directory')`. The package can load CSS/JS from that manifest without requiring Node tooling in the host.
+Assets are published to `public/vendor/art35rennes/laravel-daisy-kit`, which matches the default `daisy-kit.vite_build_directory` configuration.
 
-### Optional publish tags
+You can then use the package Blade namespace in your views:
+
+```blade
+<x-daisy::ui.inputs.button>
+    Save
+</x-daisy::ui.inputs.button>
+```
+
+## Publishing assets and views
+
+The package supports several publish tags depending on how much of the UI layer you want to own in the host application.
 
 | Tag | Purpose |
 | --- | --- |
@@ -84,11 +74,11 @@ Assets are written to `public/vendor/art35rennes/laravel-daisy-kit`, which match
 | `daisy-assets-source` | Package `resources/js` and `resources/css` into `resources/vendor/daisy-kit/` for a host-owned Vite pipeline |
 | `daisy-src` | Same as `daisy-assets-source` (legacy alias) |
 
-If the host rebuilds package sources (`daisy-assets-source`), it must install the matching frontend dependencies and wire its own Vite configuration.
+If the host application republishes source assets with `daisy-assets-source`, it becomes responsible for rebuilding those assets in its own frontend pipeline.
 
-### Configuration highlights
+## Configuration
 
-Key keys in `config/daisy-kit.php` (see the published file for the full schema):
+The published `config/daisy-kit.php` file contains the full configuration surface. The most relevant options are:
 
 - `auto_assets` — push default CSS/JS into Blade stacks when enabled.
 - `use_vite` / `vite_build_directory` — resolve hashed assets from the published manifest.
@@ -97,46 +87,51 @@ Key keys in `config/daisy-kit.php` (see the published file for the full schema):
 - `themes` — DaisyUI built-in and custom theme definitions for host Tailwind/daisyUI setup.
 - `trusted_html` — documents that some props accept trusted HTML; never pass unsanitized user input.
 
+## Package contents
+
+This repository contains package code only:
+
+- `src/`
+- `config/daisy-kit.php`
+- `resources/views`, `resources/lang`, `resources/js`, `resources/css`
+- tests in `tests/`
+
+Application-specific pages, documentation screens, and browser-level integration live in the companion repository `laravel-daisy-kit-demo`.
+
+Public identifiers:
+
+- PHP namespace: `Art35rennes\DaisyKit`
+- Blade namespace: `daisy::`
+
 ## Security
 
 - The package ships reusable library UI only; sanitization of user content remains the host application’s responsibility.
 - When `csrf_refresh` is enabled, restrict middleware and path appropriately for your app.
 - Advanced components and templates may accept trusted HTML or SVG for rich rendering. Do not pass raw user content into those surfaces without sanitizing in the host app.
 
-## Local integration with the demo app
+## DataTable
 
-Clone both repositories side by side:
-
-- `laravel-daisy-kit`
-- `laravel-daisy-kit-demo`
-
-Point the demo app’s Composer `path` repository at `../laravel-daisy-kit`. This validates the real integration surface while keeping the package installable from Packagist and versioned independently.
-
-## Testing
-
-Tests under `tests/` cover package-only behavior: Blade and template rendering, helpers, and package routes (for example the CSRF token endpoint when enabled). Application-level, navigation, and browser tests belong in the demo repository.
-
-## DataTable component
-
-The package now exposes a single DataTables-based table component:
+The package exposes a single DataTables-based component:
 
 - `x-daisy::ui.data-display.datatable`
 
-This component follows the native DataTables 2 semantics:
+It is intended to cover both simple enhanced tables and server-side DataTables integrations while keeping a package-owned styling layer consistent with DaisyUI.
+
+This component follows native DataTables 2 semantics:
 
 - `serverSide=false`: the table rows are rendered in HTML and enhanced locally by DataTables
 - `serverSide=true`: DataTables delegates paging, search, ordering, and filtering to the server through `ajax`
 
-The host app only needs the package Vite entry. It does not manually import jQuery, DataTables CSS, or call `new DataTable(...)`.
+The host application only needs the package assets. It does not manually import jQuery, DataTables CSS, or instantiate `new DataTable(...)`.
 
-### Breaking change
+### Migration note
 
-The previous public components have been removed:
+Older table components have been removed:
 
 - `x-daisy::ui.data-display.table`
 - `x-daisy::ui.advanced.table`
 
-Migration guidance:
+Migrate them to `x-daisy::ui.data-display.datatable`:
 
 - Replace locally rendered tables with `x-daisy::ui.data-display.datatable` and `serverSide=false`
 - Replace dynamically loaded tables with `x-daisy::ui.data-display.datatable`, `serverSide=true`, and an `ajax` configuration compatible with DataTables
@@ -144,7 +139,7 @@ Migration guidance:
 
 ### Supported options
 
-The component exposes a controlled subset of DataTables options through props plus the `options` array:
+The component exposes a controlled subset of DataTables options through component props and the `options` array:
 
 - `serverSide`
 - `ajax` when `serverSide=true`
@@ -164,7 +159,7 @@ The component exposes a controlled subset of DataTables options through props pl
 
 `Responsive` is included in the package integration. `Select` and `Buttons` are intentionally out of scope.
 
-### Example: locally rendered table
+### Local table example
 
 ```blade
 <x-daisy::ui.data-display.datatable
@@ -178,7 +173,7 @@ The component exposes a controlled subset of DataTables options through props pl
 />
 ```
 
-### Example: server-side DataTables endpoint
+### Server-side example
 
 ```blade
 <x-daisy::ui.data-display.datatable
@@ -203,10 +198,39 @@ The package ships a DaisyUI-compatible DataTables theme layer:
 - theme-token based colors using DaisyUI surface and content variables
 - responsive details styled to match DaisyUI cards and table surfaces
 
-The goal is for DataTables controls to blend into any active DaisyUI theme without forcing a package-specific color preset.
+The goal is to keep DataTables visually aligned with the active DaisyUI theme without forcing a package-specific design preset.
 
-Theme implementation notes:
+Implementation notes:
 
 - the package keeps the native DataTables 2 `layout` structure instead of rebuilding the control bar in Blade
 - DataTables default pagination uses transparent backgrounds and gradient hover states, so the package explicitly remaps paging buttons to DaisyUI-compatible surface, border, hover, active, and disabled states
 - the CSS layer uses DaisyUI v5 semantic variables such as `--color-base-100`, `--color-base-200`, and `--color-base-content`, with legacy fallbacks where needed
+
+## Testing
+
+Tests in `tests/` cover package-level behavior such as component rendering, helpers, service provider registration, and package routes.
+
+For local package development:
+
+```bash
+composer install
+npm install
+composer test
+npm run build
+```
+
+When changing compatibility constraints, validate the package against a real host application on each supported Laravel major.
+
+## Demo app
+
+For full application-level integration, use the companion repository `laravel-daisy-kit-demo`.
+
+To work on both side by side, place the repositories next to each other and point the demo application's Composer `path` repository to `../laravel-daisy-kit`.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for released versions.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development and release guidelines.
