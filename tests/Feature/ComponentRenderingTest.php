@@ -284,3 +284,76 @@ it('renders a copyable component with display prop (option mode)', function () {
         ->toContain('Texte affiché')
         ->not->toContain('Slot ignoré');
 });
+
+it('renders a tree view parent with an explicit mixed checkbox state', function () {
+    $html = View::make('daisy::components.ui.advanced.tree-view', [
+        'selection' => 'multiple',
+        'data' => [
+            [
+                'id' => 'sandbox',
+                'label' => 'Sandbox',
+                'state' => 'mixed',
+                'children' => [
+                    ['id' => 'draft', 'label' => 'Draft.md', 'selected' => true],
+                    ['id' => 'notes', 'label' => 'Notes.md'],
+                ],
+            ],
+        ],
+    ])->render();
+
+    expect($html)
+        ->toContain('data-indeterminate="true"')
+        ->toContain('aria-checked="mixed"')
+        ->toContain('Draft.md')
+        ->toContain('Notes.md');
+});
+
+it('renders tree nodes from checked aliases used by APIs', function () {
+    $html = View::make('daisy::components.ui.advanced.tree-view', [
+        'selection' => 'multiple',
+        'data' => [
+            [
+                'id' => 'docs',
+                'label' => 'Documentation',
+                'checked' => true,
+                'children' => [
+                    ['id' => 'readme', 'label' => 'README.md', 'checked' => true],
+                ],
+            ],
+        ],
+    ])->render();
+
+    expect(substr_count($html, 'checked'))->toBeGreaterThanOrEqual(2);
+});
+
+it('derives a mixed state for parents from partially selected descendants', function () {
+    $html = View::make('daisy::components.ui.advanced.tree-view', [
+        'selection' => 'multiple',
+        'data' => [
+            [
+                'id' => 'project-beta',
+                'label' => 'Projet Beta',
+                'children' => [
+                    [
+                        'id' => 'docs',
+                        'label' => 'Documentation',
+                        'children' => [
+                            ['id' => 'readme', 'label' => 'README.md', 'selected' => true],
+                            ['id' => 'install', 'label' => 'INSTALL.md'],
+                        ],
+                    ],
+                    [
+                        'id' => 'sources',
+                        'label' => 'Sources',
+                        'children' => [
+                            ['id' => 'main', 'label' => 'main.js'],
+                            ['id' => 'app', 'label' => 'app.vue'],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ])->render();
+
+    expect(substr_count($html, 'data-indeterminate="true"'))->toBeGreaterThanOrEqual(2);
+});

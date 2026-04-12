@@ -138,6 +138,34 @@ function fireEvent(root, type, detail) {
   root.dispatchEvent(new CustomEvent(type, { detail, bubbles: true }));
 }
 
+// Le rendu Blade sérialise les cases mixtes via `data-indeterminate`.
+// Cette fonction applique la propriété DOM `indeterminate`, nécessaire après chargement initial
+// comme après injection de nœuds lazy.
+function initializeIndeterminateCheckboxes(scope) {
+  if (!scope?.querySelectorAll) return;
+  scope.querySelectorAll('input[type="checkbox"][data-indeterminate="true"]').forEach((el) => {
+    el.checked = false;
+    el.indeterminate = true;
+    el.setAttribute('aria-checked', 'mixed');
+  });
+}
+
+function itemHasExplicitSelectionState(item) {
+  if (!item || typeof item !== 'object') return false;
+  return item.selected === true
+    || item.checked === true
+    || item.indeterminate === true
+    || item.state === 'checked'
+    || item.state === 'mixed';
+}
+
+function subtreeHasExplicitSelectionState(items) {
+  return (items || []).some((item) => {
+    if (itemHasExplicitSelectionState(item)) return true;
+    return Array.isArray(item?.children) && subtreeHasExplicitSelectionState(item.children);
+  });
+}
+
 // Persiste l'état des nœuds ouverts si data-persist="true"
 function persistStateIfNeeded(root) {
   const persist = root.dataset.persist === 'true';
@@ -414,7 +442,8 @@ function toggleNode(root, li, open = undefined) {
     if (e) e.classList.toggle('hidden', !willOpen);
   }
   persistStateIfNeeded(root);
-  // Simplification: si le nœud est lazy, à chaque ouverture on supprime la branche et on recharge
+  // Un nœud lazy recharge son groupe à l'ouverture. La persistance continue à ne mémoriser
+  // que l'état d'ouverture; les données enfants restent la responsabilité de la source distante.
   if (willOpen && li.hasAttribute('data-lazy-node')) {
     const grp = li.querySelector(':scope > ul[role="group"]');
     if (grp) grp.innerHTML = '<li class="px-2 py-1 text-sm opacity-60" data-lazy-placeholder>Chargement…</li>';
@@ -545,6 +574,17 @@ function updateSubtreeTriState(li) {
   updateNodeTriState(li);
 }
 
+function syncInitialSelectionState(root) {
+  initializeIndeterminateCheckboxes(root);
+  if (root.dataset.selection !== 'multiple') return;
+  ensureIndex(root);
+  const tree = $(root, 'ul[role="tree"]');
+  if (!tree) return;
+  Array.from(tree.querySelectorAll(':scope > li[role="treeitem"]')).forEach((li) => {
+    updateSubtreeTriState(li);
+  });
+}
+
 // Met à jour les surlignages de sélection sur tous les nœuds
 function refreshSelectionHighlight(root) {
   const mode = root.dataset.selection || 'single';
@@ -671,8 +711,7 @@ function attachInteractions(root) {
     }
     // Clic sur le label (si activé)
     if (header && t.closest('[data-label]')) {
-      if (root.dataset.selectLabel === 'true') toggleNode(root, li);
-      if (!hasDisabledAncestor(li)) selectNode(root, li, false);
+      if (root.dataset.selectLabel === 'true' && !hasDisabledAncestor(li)) selectNode(root, li, false);
       setFocus(root, li);
     }
   });
@@ -747,24 +786,29 @@ function attachInteractions(root) {
         return '<span data-icon-collapsed>▸</span><span data-icon-expanded class="hidden">▾</span>';
       }
     })();
-    // Rendu d'un nœud (réutilisé par lazy et reload)
+    // Rendu d'un nœud distant en conservant les états fournis par l'API
+    // (checked, mixed, expanded, disabled). Les icônes sont normalisées ensuite
+    // via `syncToggleIcons`, ce qui évite de dupliquer la logique du partial Blade.
     const renderNode = (item, level, parentDisabled = false) => {
       const id = item.id;
       const label = item.label ?? String(item.id);
       const isDisabled = !!item.disabled || !!parentDisabled;
       const disabledAttr = isDisabled ? ' disabled' : '';
+      const isSelected = !!item.selected || !!item.checked || item.state === 'checked';
+      const isIndeterminate = !!item.indeterminate || item.state === 'mixed';
       const isLazy = !!item.lazy;
       const children = Array.isArray(item.children) ? item.children : [];
       const hasChildren = isLazy || children.length > 0;
+      const isExpanded = !isLazy && hasChildren && !!item.expanded;
       const indentPx = Math.max(0, (level - 1)) * 16;
       const inputHtml = selectionMode === 'multiple'
-        ? `<input type="checkbox" class="${sampleCheckboxClass}" tabindex="-1"${disabledAttr} />`
-        : `<input type="radio" name="${radioName}" class="${sampleRadioClass}" tabindex="-1"${disabledAttr} />`;
+        ? `<input type="checkbox" class="${sampleCheckboxClass}" tabindex="-1"${disabledAttr}${isSelected && !isIndeterminate ? ' checked' : ''}${isIndeterminate ? ' aria-checked="mixed" data-indeterminate="true"' : ''} />`
+        : `<input type="radio" name="${radioName}" class="${sampleRadioClass}" tabindex="-1"${disabledAttr}${isSelected ? ' checked' : ''} />`;
       const toggleHtml = hasChildren
-        ? (`<button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Toggle" data-toggle="1" tabindex="-1">${normalizedToggleInner}</button>`)
+        ? (`<button type="button" class="btn btn-ghost btn-xs btn-square shrink-0 flex items-center justify-center" aria-label="Toggle" data-toggle="1" tabindex="-1">${normalizedToggleInner}</button>`)
         : `<span class="inline-block w-6"></span>`;
       let html = '';
-      html += `<li role="treeitem" aria-level="${level}" aria-expanded="false" aria-selected="false" data-id="${String(id)}" class="outline-none"${isLazy ? ' data-lazy-node="1"' : ''}>`;
+      html += `<li role="treeitem" aria-level="${level}" aria-expanded="${hasChildren ? (isExpanded ? 'true' : 'false') : 'false'}" aria-selected="${isSelected ? 'true' : 'false'}" data-id="${String(id)}" class="outline-none"${isLazy ? ' data-lazy-node="1"' : ''}>`;
       html += `  <div class="flex items-center gap-2 px-2 py-1 rounded hover:bg-base-200 focus:bg-base-200" data-node-header="1" style="padding-left: ${indentPx}px">`;
       html += `    ${toggleHtml}`;
       html += `    ${inputHtml}`;
@@ -772,7 +816,7 @@ function attachInteractions(root) {
       html += `    <span class="${labelClasses}" data-label="1">${label}</span>`;
       html += `  </div>`;
       if (hasChildren) {
-        html += `  <ul role="group" class="pl-2 ml-4 border-l hidden" data-children="1">`;
+        html += `  <ul role="group" class="pl-2 ml-4 border-l${isExpanded ? '' : ' hidden'}" data-children="1">`;
         if (isLazy) {
           html += `    <li class="px-2 py-1 text-sm opacity-60 hidden" data-lazy-placeholder="1">Loading…</li>`;
         } else {
@@ -813,16 +857,16 @@ function attachInteractions(root) {
         const items = await res.json();
         const parentLevel = parseInt(li.getAttribute('aria-level') || '0', 10) || 0;
         const baseLevel = parentLevel + 1;
-        // Remplace uniquement le placeholder pour éviter d'effacer d'autres nœuds
-        const placeholder = group.querySelector(':scope > [data-lazy-placeholder]');
+        // Remplace uniquement le contenu du groupe lazy ciblé.
         const parentDisabled = !!li.querySelector(':scope > div input[disabled]');
         const html = (items || []).map((it) => renderNode(it, baseLevel, parentDisabled)).join('');
         group.innerHTML = '';
         group.insertAdjacentHTML('afterbegin', html);
+        initializeIndeterminateCheckboxes(group);
         root.__indexStale = true;
         ensureIndex(root);
         const parentBox = li.querySelector(':scope input[type="checkbox"]');
-        if (parentBox && !parentBox.indeterminate) {
+        if (parentBox && !parentBox.indeterminate && !subtreeHasExplicitSelectionState(items)) {
           setDescendantsState(li, parentBox.checked);
         }
         updateSubtreeTriState(li);
@@ -953,7 +997,8 @@ function init(root) {
   root.__treeInit = true;
   attachInteractions(root);
   restoreState(root);
-  // Après restauration, normalise le surlignage (inclut mixed pré-existants)
+  // Reconstitue l'état visuel avant de calculer les surlignages.
+  syncInitialSelectionState(root);
   refreshSelectionHighlight(root);
   syncToggleIcons(root);
   // Détermine s'il faut autofocus au chargement
