@@ -2,6 +2,17 @@
 
 Reusable Laravel package that ships Blade UI components, page templates, translations, and optional frontend assets built for **DaisyUI 5** and **Tailwind CSS 4**.
 
+## Versioning
+
+This package follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
+
+- `MAJOR`: incompatible change on the public package API
+- `MINOR`: backward-compatible feature
+- `PATCH`: backward-compatible fix or maintenance change
+
+The initial stable release baseline is `v1.0.0`.
+See [CHANGELOG.md](CHANGELOG.md) for released versions and [CONTRIBUTING.md](CONTRIBUTING.md) for the project release rules.
+
 ## Requirements
 
 - PHP `^8.2`
