@@ -138,6 +138,58 @@ function fireEvent(root, type, detail) {
   root.dispatchEvent(new CustomEvent(type, { detail, bubbles: true }));
 }
 
+// Réapplique l'état DOM des checkboxes mixtes. Le rendu Blade sérialise `data-indeterminate`,
+// mais la propriété DOM `indeterminate` doit être définie en JavaScript après insertion.
+function initializeIndeterminateCheckboxes(scope) {
+  if (!scope?.querySelectorAll) return;
+  scope.querySelectorAll('input[type="checkbox"][data-indeterminate="true"]').forEach((el) => {
+    el.checked = false;
+    el.indeterminate = true;
+    el.setAttribute('aria-checked', 'mixed');
+  });
+}
+
+function nodeDeclaresSelectionState(item) {
+  if (!item || typeof item !== 'object') return false;
+  const state = item.state;
+  return item.selected === true
+    || item.checked === true
+    || item.indeterminate === true
+    || state === 'checked'
+    || state === 'selected'
+    || state === 'mixed';
+}
+
+function subtreeDeclaresSelectionState(items) {
+  return (items || []).some((item) => {
+    if (nodeDeclaresSelectionState(item)) return true;
+    return Array.isArray(item?.children) && subtreeDeclaresSelectionState(item.children);
+  });
+}
+
+function shouldReloadLazyNode(root, li) {
+  if (!li || !li.hasAttribute('data-lazy-node')) return false;
+  if (li.dataset.lazyLoading === 'true') return false;
+  return root.dataset.lazyReload === 'true' || li.dataset.lazyLoaded !== 'true';
+}
+
+function requestLazyLoad(root, li, options = {}) {
+  if (!li || !li.hasAttribute('data-lazy-node')) return false;
+  if (!shouldReloadLazyNode(root, li)) return false;
+  const grp = li.querySelector(':scope > ul[role="group"]');
+  if (grp) grp.innerHTML = '<li class="px-2 py-1 text-sm opacity-60" data-lazy-placeholder>Chargement…</li>';
+  li.dataset.lazyLoading = 'true';
+  delete li.dataset.lazyLoaded;
+  root.__indexStale = true;
+  fireEvent(root, 'tree:lazy', {
+    root,
+    nodeId: li.dataset.id,
+    li,
+    preserveExpanded: !!options.preserveExpanded,
+  });
+  return true;
+}
+
 // Persiste l'état des nœuds ouverts si data-persist="true"
 function persistStateIfNeeded(root) {
   const persist = root.dataset.persist === 'true';
@@ -414,12 +466,8 @@ function toggleNode(root, li, open = undefined) {
     if (e) e.classList.toggle('hidden', !willOpen);
   }
   persistStateIfNeeded(root);
-  // Simplification: si le nœud est lazy, à chaque ouverture on supprime la branche et on recharge
   if (willOpen && li.hasAttribute('data-lazy-node')) {
-    const grp = li.querySelector(':scope > ul[role="group"]');
-    if (grp) grp.innerHTML = '<li class="px-2 py-1 text-sm opacity-60" data-lazy-placeholder>Chargement…</li>';
-    root.__indexStale = true;
-    fireEvent(root, 'tree:lazy', { root, nodeId: li.dataset.id, li });
+    requestLazyLoad(root, li);
   }
 }
 
@@ -543,6 +591,16 @@ function updateSubtreeTriState(li) {
   const children = li.__childrenLis || [];
   children.forEach((child) => updateSubtreeTriState(child));
   updateNodeTriState(li);
+}
+
+function syncInitialTreeState(root) {
+  initializeIndeterminateCheckboxes(root);
+  if (root.dataset.selection !== 'multiple') return;
+  ensureIndex(root);
+  const tree = $(root, 'ul[role="tree"]');
+  if (!tree) return;
+  Array.from(tree.querySelectorAll(':scope > li[role="treeitem"]'))
+    .forEach((li) => updateSubtreeTriState(li));
 }
 
 // Met à jour les surlignages de sélection sur tous les nœuds
@@ -671,7 +729,6 @@ function attachInteractions(root) {
     }
     // Clic sur le label (si activé)
     if (header && t.closest('[data-label]')) {
-      if (root.dataset.selectLabel === 'true') toggleNode(root, li);
       if (!hasDisabledAncestor(li)) selectNode(root, li, false);
       setFocus(root, li);
     }
@@ -747,24 +804,39 @@ function attachInteractions(root) {
         return '<span data-icon-collapsed>▸</span><span data-icon-expanded class="hidden">▾</span>';
       }
     })();
+    const toggleIcons = (() => {
+      try {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = normalizedToggleInner;
+        return {
+          collapsed: tmp.querySelector('[data-icon-collapsed]')?.innerHTML || '▸',
+          expanded: tmp.querySelector('[data-icon-expanded]')?.innerHTML || '▾',
+        };
+      } catch (_) {
+        return { collapsed: '▸', expanded: '▾' };
+      }
+    })();
     // Rendu d'un nœud (réutilisé par lazy et reload)
     const renderNode = (item, level, parentDisabled = false) => {
       const id = item.id;
       const label = item.label ?? String(item.id);
       const isDisabled = !!item.disabled || !!parentDisabled;
       const disabledAttr = isDisabled ? ' disabled' : '';
+      const isSelected = !!item.selected || !!item.checked || item.state === 'checked' || item.state === 'selected';
+      const isIndeterminate = !!item.indeterminate || item.state === 'mixed';
       const isLazy = !!item.lazy;
       const children = Array.isArray(item.children) ? item.children : [];
       const hasChildren = isLazy || children.length > 0;
+      const isExpanded = !isLazy && hasChildren && !!item.expanded;
       const indentPx = Math.max(0, (level - 1)) * 16;
       const inputHtml = selectionMode === 'multiple'
-        ? `<input type="checkbox" class="${sampleCheckboxClass}" tabindex="-1"${disabledAttr} />`
-        : `<input type="radio" name="${radioName}" class="${sampleRadioClass}" tabindex="-1"${disabledAttr} />`;
+        ? `<input type="checkbox" class="${sampleCheckboxClass}" tabindex="-1"${disabledAttr}${isSelected && !isIndeterminate ? ' checked' : ''}${isIndeterminate ? ' aria-checked="mixed" data-indeterminate="true"' : ''} />`
+        : `<input type="radio" name="${radioName}" class="${sampleRadioClass}" tabindex="-1"${disabledAttr}${isSelected ? ' checked' : ''} />`;
       const toggleHtml = hasChildren
-        ? (`<button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Toggle" data-toggle="1" tabindex="-1">${normalizedToggleInner}</button>`)
+        ? (`<button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Toggle" data-toggle="1" tabindex="-1"><span data-icon-collapsed${isExpanded ? ' class="hidden"' : ''}>${toggleIcons.collapsed}</span><span data-icon-expanded${isExpanded ? '' : ' class="hidden"'}>${toggleIcons.expanded}</span></button>`)
         : `<span class="inline-block w-6"></span>`;
       let html = '';
-      html += `<li role="treeitem" aria-level="${level}" aria-expanded="false" aria-selected="false" data-id="${String(id)}" class="outline-none"${isLazy ? ' data-lazy-node="1"' : ''}>`;
+      html += `<li role="treeitem" aria-level="${level}" aria-expanded="${hasChildren ? (isExpanded ? 'true' : 'false') : 'false'}" aria-selected="${isSelected ? 'true' : 'false'}" data-id="${String(id)}" class="outline-none"${isLazy ? ' data-lazy-node="1"' : ''}>`;
       html += `  <div class="flex items-center gap-2 px-2 py-1 rounded hover:bg-base-200 focus:bg-base-200" data-node-header="1" style="padding-left: ${indentPx}px">`;
       html += `    ${toggleHtml}`;
       html += `    ${inputHtml}`;
@@ -772,7 +844,7 @@ function attachInteractions(root) {
       html += `    <span class="${labelClasses}" data-label="1">${label}</span>`;
       html += `  </div>`;
       if (hasChildren) {
-        html += `  <ul role="group" class="pl-2 ml-4 border-l hidden" data-children="1">`;
+        html += `  <ul role="group" class="pl-2 ml-4 border-l${isExpanded ? '' : ' hidden'}" data-children="1">`;
         if (isLazy) {
           html += `    <li class="px-2 py-1 text-sm opacity-60 hidden" data-lazy-placeholder="1">Loading…</li>`;
         } else {
@@ -796,10 +868,11 @@ function attachInteractions(root) {
       }
     };
     root.addEventListener('tree:lazy', async (e) => {
-      const { li, nodeId } = e.detail || {};
+      const { li, nodeId, preserveExpanded = false } = e.detail || {};
       if (!li) return;
       const group = li.querySelector(':scope > ul[role="group"]');
       if (!group) return;
+      const wasExpanded = li.getAttribute('aria-expanded') === 'true';
       // Placeholder chargement (déjà mis lors du toggle, mais on assure)
       // Toujours placer un placeholder visible avant chargement pour états persistés
       if (!group.querySelector('[data-lazy-placeholder]')) {
@@ -819,24 +892,32 @@ function attachInteractions(root) {
         const html = (items || []).map((it) => renderNode(it, baseLevel, parentDisabled)).join('');
         group.innerHTML = '';
         group.insertAdjacentHTML('afterbegin', html);
+        initializeIndeterminateCheckboxes(group);
+        delete li.dataset.lazyLoading;
+        li.dataset.lazyLoaded = 'true';
         root.__indexStale = true;
         ensureIndex(root);
         const parentBox = li.querySelector(':scope input[type="checkbox"]');
-        if (parentBox && !parentBox.indeterminate) {
+        const apiProvidedSelection = subtreeDeclaresSelectionState(items);
+        if (parentBox && !parentBox.indeterminate && !apiProvidedSelection) {
           setDescendantsState(li, parentBox.checked);
         }
         updateSubtreeTriState(li);
         updateAncestorsTriState(root, li);
-        // Marque le parent comme ouvert et synchronise l'icône
-        li.setAttribute('aria-expanded', 'true');
+        // En auto-load, on peut charger sans ouvrir visuellement le nœud.
+        li.setAttribute('aria-expanded', (preserveExpanded ? wasExpanded : true) ? 'true' : 'false');
+        group.classList.toggle('hidden', preserveExpanded ? !wasExpanded : false);
         const btn = li.querySelector('[data-toggle]');
         if (btn) {
           const c = btn.querySelector('[data-icon-collapsed]');
           const e2 = btn.querySelector('[data-icon-expanded]');
-          if (c) c.classList.add('hidden');
-          if (e2) e2.classList.remove('hidden');
+          const isExpanded = li.getAttribute('aria-expanded') === 'true';
+          if (c) c.classList.toggle('hidden', isExpanded);
+          if (e2) e2.classList.toggle('hidden', !isExpanded);
         }
       } catch (err) {
+        delete li.dataset.lazyLoading;
+        li.dataset.lazyLoaded = 'error';
         group.innerHTML = '<li class="px-2 py-1 text-error">Erreur de chargement</li>';
         // eslint-disable-next-line no-console
         console.error('Tree lazy auto-load error', err);
@@ -847,7 +928,21 @@ function attachInteractions(root) {
       syncToggleIcons(root);
     });
 
-    // Plus de bouton reload: chaque ouverture d'un nœud lazy recharge la branche
+    if (root.dataset.lazyMode === 'auto') {
+      const autoLoadAll = async () => {
+        let pending = Array.from(root.querySelectorAll('li[role="treeitem"][data-lazy-node]'))
+          .filter((li) => shouldReloadLazyNode(root, li) && li.dataset.lazyLoaded !== 'error');
+        while (pending.length) {
+          for (const li of pending) {
+            requestLazyLoad(root, li, { preserveExpanded: true });
+          }
+          await new Promise((resolve) => window.setTimeout(resolve, 0));
+          pending = Array.from(root.querySelectorAll('li[role="treeitem"][data-lazy-node]'))
+            .filter((li) => shouldReloadLazyNode(root, li) && li.dataset.lazyLoaded !== 'error');
+        }
+      };
+      autoLoadAll();
+    }
   }
 
   // Recherche (champ en-tête)
@@ -953,7 +1048,8 @@ function init(root) {
   root.__treeInit = true;
   attachInteractions(root);
   restoreState(root);
-  // Après restauration, normalise le surlignage (inclut mixed pré-existants)
+  // Après restauration, resynchronise d'abord les cases mixtes et le tri-state calculé.
+  syncInitialTreeState(root);
   refreshSelectionHighlight(root);
   syncToggleIcons(root);
   // Détermine s'il faut autofocus au chargement

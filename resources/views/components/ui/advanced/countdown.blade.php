@@ -24,9 +24,11 @@
 @endphp
 
 @if($mode === 'inline' || $mode === 'inline-colon')
-    <span class="countdown font-mono {{ $textSize }}">
+    <span class="inline-flex flex-wrap items-center font-mono {{ $textSize }}">
         @foreach($normalized as $i => $item)
-            <span style="--value: {{ $item['value'] }};" aria-live="polite" aria-label="{{ $item['value'] }}">{{ $item['value'] }}</span>
+            <span class="countdown">
+                <span style="--value: {{ $item['value'] }};" aria-live="polite" aria-label="{{ $item['value'] }}">{{ $item['value'] }}</span>
+            </span>
             @if($i < count($normalized) - 1)
                 @if($mode === 'inline-colon')
                     <span class="mx-1">:</span>

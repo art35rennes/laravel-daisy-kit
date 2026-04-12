@@ -206,6 +206,65 @@ Implementation notes:
 - DataTables default pagination uses transparent backgrounds and gradient hover states, so the package explicitly remaps paging buttons to DaisyUI-compatible surface, border, hover, active, and disabled states
 - the CSS layer uses DaisyUI v5 semantic variables such as `--color-base-100`, `--color-base-200`, and `--color-base-content`, with legacy fallbacks where needed
 
+## TreeView lazy loading
+
+The tree view component supports two lazy-loading strategies when `lazyUrl` is provided.
+
+### Progressive loading on node expand
+
+Use `lazyMode="progressive"` to fetch a lazy branch the first time the user opens that node.
+
+```blade
+<x-daisy::ui.advanced.tree-view
+    :data="[
+        [
+            'id' => 'root',
+            'label' => 'Racine',
+            'children' => [
+                ['id' => 'folder-a', 'label' => 'Dossier A'],
+                ['id' => 'folder-b', 'label' => 'Dossier B', 'lazy' => true],
+            ],
+        ],
+    ]"
+    lazy-url="/demo/api/tree-children"
+    lazy-mode="progressive"
+/>
+```
+
+### Automatic preload
+
+Use `lazyMode="auto"` to preload lazy branches as soon as the tree is initialized. Loaded groups stay visually collapsed until the user opens them.
+
+```blade
+<x-daisy::ui.advanced.tree-view
+    :data="[
+        [
+            'id' => 'alpha',
+            'label' => 'Projet Alpha',
+            'children' => [
+                ['id' => 'docs', 'label' => 'Documentation', 'lazy' => true],
+                ['id' => 'src', 'label' => 'Sources', 'lazy' => true],
+            ],
+        ],
+    ]"
+    lazy-url="/demo/api/tree-children"
+    lazy-mode="auto"
+/>
+```
+
+### Optional branch reload
+
+By default, a lazy branch is fetched once, then reused. Set `lazyReload` if you want a fresh request on every reopen.
+
+```blade
+<x-daisy::ui.advanced.tree-view
+    :data="$nodes"
+    :lazy-url="route('demo.api.tree-children')"
+    lazy-mode="progressive"
+    :lazy-reload="true"
+/>
+```
+
 ## Testing
 
 Tests in `tests/` cover package-level behavior such as component rendering, helpers, service provider registration, and package routes.

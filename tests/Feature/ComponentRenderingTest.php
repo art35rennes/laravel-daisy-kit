@@ -1,6 +1,9 @@
 <?php
 
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\HtmlString;
+use Illuminate\View\ComponentAttributeBag;
 
 it('renders a button component', function () {
     $html = View::make('daisy::components.ui.inputs.button', [
@@ -34,7 +37,7 @@ it('renders an alert component', function () {
 
 it('renders an input component', function () {
     $html = View::make('daisy::components.ui.inputs.input', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag(['placeholder' => 'Type here']),
+        'attributes' => new ComponentAttributeBag(['placeholder' => 'Type here']),
     ])->render();
 
     expect($html)
@@ -54,7 +57,7 @@ it('renders a divider component', function () {
 it('renders a link component', function () {
     $html = View::make('daisy::components.ui.advanced.link', [
         'slot' => 'Link text',
-        'attributes' => new \Illuminate\View\ComponentAttributeBag(['href' => '/test']),
+        'attributes' => new ComponentAttributeBag(['href' => '/test']),
     ])->render();
 
     expect($html)
@@ -69,7 +72,7 @@ it('renders the grid layout with correct classes', function () {
     $html = View::make('daisy::components.ui.layout.grid-layout', [
         'gap' => 6,
         'align' => 'start',
-        'slot' => new \Illuminate\Support\HtmlString($inner),
+        'slot' => new HtmlString($inner),
     ])->render();
 
     expect($html)
@@ -93,7 +96,7 @@ it('injects grid layout CSS utilities only once', function () {
 @stack('styles')
 BLADE;
 
-    $html = \Illuminate\Support\Facades\Blade::render($blade);
+    $html = Blade::render($blade);
 
     expect($html)
         ->toContain('.col-12')
@@ -116,7 +119,7 @@ it('renders footer-layout component with columns', function () {
             ],
         ],
         'copyrightText' => 'Mon Entreprise',
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
     ])->render();
 
     expect($html)
@@ -133,7 +136,7 @@ it('renders footer-layout with social links', function () {
             ['icon' => 'facebook', 'href' => '#', 'label' => 'Facebook'],
             ['icon' => 'twitter', 'href' => '#', 'label' => 'Twitter'],
         ],
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
     ])->render();
 
     expect($html)
@@ -147,7 +150,7 @@ it('renders footer-layout with newsletter', function () {
         'newsletterTitle' => 'Newsletter',
         'newsletterDescription' => 'Restez informé',
         'newsletterAction' => '/subscribe',
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
     ])->render();
 
     expect($html)
@@ -161,7 +164,7 @@ it('renders footer-layout with brand text and description', function () {
     $html = View::make('daisy::components.ui.layout.footer-layout', [
         'brandText' => 'Mon Entreprise',
         'brandDescription' => 'Créons ensemble',
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
     ])->render();
 
     expect($html)
@@ -174,7 +177,7 @@ it('renders footer-layout with custom copyright year', function () {
     $html = View::make('daisy::components.ui.layout.footer-layout', [
         'copyrightYear' => 2023,
         'copyrightText' => 'Mon Entreprise',
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
     ])->render();
 
     expect($html)
@@ -185,7 +188,7 @@ it('renders footer-layout with custom copyright year', function () {
 it('renders footer-layout without divider when showDivider is false', function () {
     $html = View::make('daisy::components.ui.layout.footer-layout', [
         'showDivider' => false,
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
     ])->render();
 
     expect($html)
@@ -194,7 +197,7 @@ it('renders footer-layout without divider when showDivider is false', function (
 
 it('renders a sign component', function () {
     $html = View::make('daisy::components.ui.inputs.sign', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag(['name' => 'signature']),
+        'attributes' => new ComponentAttributeBag(['name' => 'signature']),
     ])->render();
 
     expect($html)
@@ -208,7 +211,7 @@ it('renders a sign component with custom dimensions', function () {
     $html = View::make('daisy::components.ui.inputs.sign', [
         'width' => 600,
         'height' => 300,
-        'attributes' => new \Illuminate\View\ComponentAttributeBag(['name' => 'signature']),
+        'attributes' => new ComponentAttributeBag(['name' => 'signature']),
     ])->render();
 
     expect($html)
@@ -219,7 +222,7 @@ it('renders a sign component with custom dimensions', function () {
 it('renders a sign component without actions', function () {
     $html = View::make('daisy::components.ui.inputs.sign', [
         'showActions' => false,
-        'attributes' => new \Illuminate\View\ComponentAttributeBag(['name' => 'signature']),
+        'attributes' => new ComponentAttributeBag(['name' => 'signature']),
     ])->render();
 
     expect($html)
@@ -283,4 +286,66 @@ it('renders a copyable component with display prop (option mode)', function () {
         ->toContain('data-copy-value="valeur-copiee"')
         ->toContain('Texte affiché')
         ->not->toContain('Slot ignoré');
+});
+
+it('renders inline countdown with one daisyUI countdown wrapper per segment', function () {
+    $html = View::make('daisy::components.ui.advanced.countdown', [
+        'values' => ['h' => 10, 'm' => 24, 's' => 59],
+        'mode' => 'inline',
+        'size' => 'lg',
+    ])->render();
+
+    expect(substr_count($html, '<span class="countdown">'))->toBe(3);
+});
+
+it('renders inline-colon countdown with one daisyUI countdown wrapper per segment', function () {
+    $html = View::make('daisy::components.ui.advanced.countdown', [
+        'values' => ['h' => 10, 'm' => 24, 's' => 59],
+        'mode' => 'inline-colon',
+    ])->render();
+
+    expect(substr_count($html, '<span class="countdown">'))->toBe(3);
+});
+
+it('renders a tree view configured for progressive lazy loading', function () {
+    $html = View::make('daisy::components.ui.advanced.tree-view', [
+        'data' => [
+            [
+                'id' => 'root',
+                'label' => 'Racine',
+                'children' => [
+                    ['id' => 'folder-b', 'label' => 'Dossier B', 'lazy' => true],
+                ],
+            ],
+        ],
+        'lazyUrl' => '/demo/api/tree-children',
+        'lazyMode' => 'progressive',
+    ])->render();
+
+    expect($html)
+        ->toContain('data-lazy-url="/demo/api/tree-children"')
+        ->toContain('data-lazy-mode="progressive"')
+        ->toContain('data-lazy-reload="false"')
+        ->toContain('data-lazy-node="1"');
+});
+
+it('renders a tree view configured for auto lazy loading', function () {
+    $html = View::make('daisy::components.ui.advanced.tree-view', [
+        'data' => [
+            [
+                'id' => 'root',
+                'label' => 'Projet Alpha',
+                'children' => [
+                    ['id' => 'lazy-docs', 'label' => 'Documentation', 'lazy' => true],
+                ],
+            ],
+        ],
+        'lazyUrl' => '/demo/api/tree-children',
+        'lazyMode' => 'auto',
+    ])->render();
+
+    expect($html)
+        ->toContain('data-lazy-url="/demo/api/tree-children"')
+        ->toContain('data-lazy-mode="auto"')
+        ->toContain('data-lazy-reload="false"');
 });

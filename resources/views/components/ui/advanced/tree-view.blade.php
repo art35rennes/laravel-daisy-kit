@@ -26,6 +26,10 @@
     'lazyUrl' => null,
     // Nom du paramètre de query pour passer l'id du nœud (par défaut: node)
     'lazyParam' => 'node',
+    // Mode de chargement lazy: 'progressive' = au premier dépliage, 'auto' = préchargement automatique
+    'lazyMode' => 'progressive',
+    // Recharger les nœuds lazy à chaque réouverture au lieu de conserver la première réponse
+    'lazyReload' => false,
     // Recherche
     'search' => false,
     'searchMin' => 2,
@@ -57,6 +61,8 @@
       data-control-size="{{ $controlSize }}"
       @if($lazyUrl) data-lazy-url="{{ $lazyUrl }}" @endif
       @if($lazyParam) data-lazy-param="{{ $lazyParam }}" @endif
+      @if($lazyUrl) data-lazy-mode="{{ $lazyMode }}" @endif
+      @if($lazyUrl) data-lazy-reload="{{ $lazyReload ? 'true' : 'false' }}" @endif
       data-search-enabled="{{ $search ? 'true' : 'false' }}"
       @if($search) data-search-min="{{ (int) $searchMin }}" @endif
       @if($search) data-search-debounce="{{ (int) $searchDebounce }}" @endif

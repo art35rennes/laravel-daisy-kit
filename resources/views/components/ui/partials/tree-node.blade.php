@@ -10,6 +10,8 @@
     // Les nœuds lazy sont toujours repliés par défaut pour ne charger qu'à l'ouverture.
     $expanded = $isLazy ? false : (bool)($node['expanded'] ?? false);
     $selected = (bool)($node['selected'] ?? false);
+    // Le treeview accepte un état tri-state initial pour les checkboxes parents.
+    $indeterminate = (bool)($node['indeterminate'] ?? false) || (($node['state'] ?? null) === 'mixed');
     // Un nœud est désactivé s'il est explicitement désactivé OU si son parent est désactivé (cascade).
     $nodeDisabled = (bool)($node['disabled'] ?? false) || (bool)($disabledParent ?? false);
     $isMulti = $selection === 'multiple';
@@ -57,7 +59,7 @@
         @if($selection === 'single')
             <x-daisy::ui.inputs.radio name="{{ $name }}" :checked="$selected" :disabled="$nodeDisabled" :size="$controlSize" class="shrink-0" tabindex="-1" />
         @elseif($selection === 'multiple')
-            <x-daisy::ui.inputs.checkbox :checked="$selected" :disabled="$nodeDisabled" :size="$controlSize" class="shrink-0" tabindex="-1" />
+            <x-daisy::ui.inputs.checkbox :checked="$selected" :indeterminate="$indeterminate" :disabled="$nodeDisabled" :size="$controlSize" class="shrink-0" tabindex="-1" />
         @endif
 
         {{-- Label du nœud : texte principal, désactivé visuellement si le nœud est disabled --}}
@@ -91,5 +93,4 @@
         </ul>
     @endif
 </li>
-
 
