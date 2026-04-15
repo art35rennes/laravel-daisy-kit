@@ -9,9 +9,7 @@
 
 /* Trix editor styles */
 @import "trix/dist/trix.css";
-@import "datatables.net-dt/css/dataTables.dataTables.css";
-@import "datatables.net-responsive-dt/css/responsive.dataTables.css";
-@import "./datatables-daisy.css";
+@import "./table.css";
 
 /* Cacher le bouton pièces jointes quand attachments=0 */
 .trix-wrapper[data-trix-attachments="0"] trix-toolbar [data-trix-action="attachFiles"] {

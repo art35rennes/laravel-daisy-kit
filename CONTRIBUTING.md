@@ -20,6 +20,20 @@ The public API of this package includes:
 - template names under `daisy::templates.*`
 - translation namespace `daisy::`
 
+## AI surface maintenance
+
+This package also ships AI guidance intended to make host applications aware of the package component and template surface:
+
+- `resources/boost/guidelines/core.blade.php`
+- `resources/boost/skills/daisy-kit-component-reuse/`
+- generated references under `resources/boost/skills/daisy-kit-component-reuse/references/`
+
+If you add, rename, or remove a public component, layout, or template, regenerate the AI catalog and commit the updated references:
+
+```bash
+composer ai:catalog
+```
+
 ## Release rules
 
 - Any breaking change must be documented before release.

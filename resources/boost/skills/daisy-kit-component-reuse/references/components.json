@@ -1,0 +1,2906 @@
+{
+    "generated_at": "2026-04-15T19:23:49+00:00",
+    "package": "art35rennes/laravel-daisy-kit",
+    "blade_namespace": "daisy::",
+    "summary": {
+        "component_count": 134,
+        "template_count": 28,
+        "excluded_component_template_mirrors": 13
+    },
+    "components": [
+        {
+            "alias": "x-daisy::layout.app",
+            "group": "layout",
+            "name": "app",
+            "relative_path": "resources/views/components/layout/app.blade.php",
+            "props": [
+                "title",
+                "container",
+                "theme"
+            ]
+        },
+        {
+            "alias": "x-daisy::layout.navbar-layout",
+            "group": "layout",
+            "name": "navbar-layout",
+            "relative_path": "resources/views/components/layout/navbar-layout.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "navbarBg",
+                "navbarText",
+                "navbarShadow",
+                "navbarFixed",
+                "navbarFixedPosition",
+                "container"
+            ]
+        },
+        {
+            "alias": "x-daisy::layout.navbar-sidebar-layout",
+            "group": "layout",
+            "name": "navbar-sidebar-layout",
+            "relative_path": "resources/views/components/layout/navbar-sidebar-layout.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "navbarBg",
+                "navbarText",
+                "navbarShadow",
+                "variant",
+                "sideClass",
+                "stickyAt",
+                "brand",
+                "brandHref",
+                "showBrand",
+                "sections",
+                "drawerId",
+                "responsiveOpen",
+                "end",
+                "menuIcon",
+                "iconPrefix",
+                "container"
+            ]
+        },
+        {
+            "alias": "x-daisy::layout.sidebar-layout",
+            "group": "layout",
+            "name": "sidebar-layout",
+            "relative_path": "resources/views/components/layout/sidebar-layout.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "variant",
+                "sideClass",
+                "stickyAt",
+                "brand",
+                "brandHref",
+                "showBrand",
+                "sections",
+                "drawerId",
+                "responsiveOpen",
+                "end",
+                "menuIcon",
+                "iconPrefix",
+                "container",
+                "hasNavbar"
+            ]
+        },
+        {
+            "alias": "x-daisy::partials.assets",
+            "group": "partials",
+            "name": "assets",
+            "relative_path": "resources/views/components/partials/assets.blade.php",
+            "props": []
+        },
+        {
+            "alias": "x-daisy::partials.custom-themes",
+            "group": "partials",
+            "name": "custom-themes",
+            "relative_path": "resources/views/components/partials/custom-themes.blade.php",
+            "props": []
+        },
+        {
+            "alias": "x-daisy::partials.theme-selector",
+            "group": "partials",
+            "name": "theme-selector",
+            "relative_path": "resources/views/components/partials/theme-selector.blade.php",
+            "props": [
+                "position",
+                "placement",
+                "themes"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.accordion",
+            "group": "ui.advanced",
+            "name": "accordion",
+            "relative_path": "resources/views/components/ui/advanced/accordion.blade.php",
+            "props": [
+                "items",
+                "title",
+                "content",
+                "checked",
+                "open",
+                "close",
+                "arrow",
+                "name",
+                "openIndex",
+                "bgClass",
+                "bordered",
+                "itemClass",
+                "titleClass",
+                "contentClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.calendar",
+            "group": "ui.advanced",
+            "name": "calendar",
+            "relative_path": "resources/views/components/ui/advanced/calendar.blade.php",
+            "props": [
+                "provider",
+                "mode",
+                "months",
+                "showPrevNext",
+                "inputId",
+                "value",
+                "min",
+                "max",
+                "locale",
+                "placeholder"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.calendar-cally",
+            "group": "ui.advanced",
+            "name": "calendar-cally",
+            "relative_path": "resources/views/components/ui/advanced/calendar-cally.blade.php",
+            "props": [
+                "mode",
+                "months",
+                "showPrevNext",
+                "monthsClass",
+                "value",
+                "min",
+                "max",
+                "locale",
+                "prevIcon",
+                "nextIcon"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.calendar-full",
+            "group": "ui.advanced",
+            "name": "calendar-full",
+            "relative_path": "resources/views/components/ui/advanced/calendar-full.blade.php",
+            "props": [
+                "view",
+                "views",
+                "initialDate",
+                "events",
+                "eventsUrl",
+                "firstDay",
+                "hourStart",
+                "hourEnd",
+                "height",
+                "detail",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.calendar-native",
+            "group": "ui.advanced",
+            "name": "calendar-native",
+            "relative_path": "resources/views/components/ui/advanced/calendar-native.blade.php",
+            "props": [
+                "inputId",
+                "value",
+                "placeholder"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.chart",
+            "group": "ui.advanced",
+            "name": "chart",
+            "relative_path": "resources/views/components/ui/advanced/chart.blade.php",
+            "props": [
+                "type",
+                "labels",
+                "datasets",
+                "options",
+                "height",
+                "width",
+                "responsive",
+                "maintainAspectRatio",
+                "colors",
+                "palette",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.code-editor",
+            "group": "ui.advanced",
+            "name": "code-editor",
+            "relative_path": "resources/views/components/ui/advanced/code-editor.blade.php",
+            "props": [
+                "language",
+                "value",
+                "readonly",
+                "showToolbar",
+                "showFoldAll",
+                "showUnfoldAll",
+                "showFormat",
+                "showCopy",
+                "height",
+                "width",
+                "fontSize",
+                "tabSize",
+                "theme",
+                "options",
+                "name",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.collapse",
+            "group": "ui.advanced",
+            "name": "collapse",
+            "relative_path": "resources/views/components/ui/advanced/collapse.blade.php",
+            "props": [
+                "title",
+                "arrow",
+                "open",
+                "disabled",
+                "compact",
+                "method",
+                "force",
+                "bordered",
+                "bg",
+                "titleClass",
+                "contentClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.countdown",
+            "group": "ui.advanced",
+            "name": "countdown",
+            "relative_path": "resources/views/components/ui/advanced/countdown.blade.php",
+            "props": [
+                "values",
+                "days",
+                "hours",
+                "min",
+                "sec",
+                "mode",
+                "size",
+                "labels"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.diff",
+            "group": "ui.advanced",
+            "name": "diff",
+            "relative_path": "resources/views/components/ui/advanced/diff.blade.php",
+            "props": [
+                "resizable",
+                "aspect",
+                "focusable",
+                "itemRole"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.fieldset",
+            "group": "ui.advanced",
+            "name": "fieldset",
+            "relative_path": "resources/views/components/ui/advanced/fieldset.blade.php",
+            "props": [
+                "legend",
+                "bg",
+                "bordered",
+                "rounded",
+                "padding",
+                "width"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.filter",
+            "group": "ui.advanced",
+            "name": "filter",
+            "relative_path": "resources/views/components/ui/advanced/filter.blade.php",
+            "props": [
+                "name",
+                "items",
+                "label",
+                "checked",
+                "useForm",
+                "resetLabel",
+                "allLabel"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.hover-3d",
+            "group": "ui.advanced",
+            "name": "hover-3d",
+            "relative_path": "resources/views/components/ui/advanced/hover-3d.blade.php",
+            "props": [
+                "as"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.icon",
+            "group": "ui.advanced",
+            "name": "icon",
+            "relative_path": "resources/views/components/ui/advanced/icon.blade.php",
+            "props": [
+                "name",
+                "size",
+                "prefix"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.join",
+            "group": "ui.advanced",
+            "name": "join",
+            "relative_path": "resources/views/components/ui/advanced/join.blade.php",
+            "props": [
+                "direction",
+                "horizontalAt",
+                "verticalAt"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.label",
+            "group": "ui.advanced",
+            "name": "label",
+            "relative_path": "resources/views/components/ui/advanced/label.blade.php",
+            "props": [
+                "for",
+                "value",
+                "alt",
+                "srOnly",
+                "floating",
+                "span",
+                "spanPosition"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.link",
+            "group": "ui.advanced",
+            "name": "link",
+            "relative_path": "resources/views/components/ui/advanced/link.blade.php",
+            "props": [
+                "href",
+                "color",
+                "underline",
+                "external"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.login-button",
+            "group": "ui.advanced",
+            "name": "login-button",
+            "relative_path": "resources/views/components/ui/advanced/login-button.blade.php",
+            "props": [
+                "provider",
+                "label",
+                "size",
+                "variant",
+                "href"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.mask",
+            "group": "ui.advanced",
+            "name": "mask",
+            "relative_path": "resources/views/components/ui/advanced/mask.blade.php",
+            "props": [
+                "shape",
+                "src",
+                "alt",
+                "class",
+                "half"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.onboarding",
+            "group": "ui.advanced",
+            "name": "onboarding",
+            "relative_path": "resources/views/components/ui/advanced/onboarding.blade.php",
+            "props": [
+                "start",
+                "allowSkip",
+                "keyboard",
+                "mask",
+                "highlight",
+                "interactive",
+                "offset",
+                "radius",
+                "prevText",
+                "nextText",
+                "finishText",
+                "skipText",
+                "confirmSkip",
+                "confirmText",
+                "confirmOkText",
+                "confirmCancelText",
+                "target",
+                "title",
+                "content",
+                "placement",
+                "auto",
+                "steps",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.rating",
+            "group": "ui.advanced",
+            "name": "rating",
+            "relative_path": "resources/views/components/ui/advanced/rating.blade.php",
+            "props": [
+                "name",
+                "count",
+                "value",
+                "half",
+                "shape",
+                "color",
+                "readOnly",
+                "size",
+                "clearable"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.scroll-status",
+            "group": "ui.advanced",
+            "name": "scroll-status",
+            "relative_path": "resources/views/components/ui/advanced/scroll-status.blade.php",
+            "props": [
+                "global",
+                "color",
+                "height",
+                "offset",
+                "container",
+                "scroll",
+                "target",
+                "openOnce",
+                "class",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.scrollspy",
+            "group": "ui.advanced",
+            "name": "scrollspy",
+            "relative_path": "resources/views/components/ui/advanced/scrollspy.blade.php",
+            "props": [
+                "container",
+                "id",
+                "label",
+                "items",
+                "autogen",
+                "smoothScroll",
+                "offset",
+                "rootMargin",
+                "threshold",
+                "sticky",
+                "stickyTop",
+                "navClass",
+                "activeClass",
+                "track",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.swap",
+            "group": "ui.advanced",
+            "name": "swap",
+            "relative_path": "resources/views/components/ui/advanced/swap.blade.php",
+            "props": [
+                "rotate",
+                "flip",
+                "checked",
+                "active",
+                "useInput"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.text-rotate",
+            "group": "ui.advanced",
+            "name": "text-rotate",
+            "relative_path": "resources/views/components/ui/advanced/text-rotate.blade.php",
+            "props": [
+                "words",
+                "innerClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.theme-controller",
+            "group": "ui.advanced",
+            "name": "theme-controller",
+            "relative_path": "resources/views/components/ui/advanced/theme-controller.blade.php",
+            "props": [
+                "themes",
+                "value",
+                "name",
+                "variant",
+                "size",
+                "ghost",
+                "label"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.transfer",
+            "group": "ui.advanced",
+            "name": "transfer",
+            "relative_path": "resources/views/components/ui/advanced/transfer.blade.php",
+            "props": [
+                "source",
+                "data",
+                "disabled",
+                "checked",
+                "customId",
+                "target",
+                "oneWay",
+                "pagination",
+                "elementsPerPage",
+                "search",
+                "selectAll",
+                "noDataText",
+                "titleSource",
+                "titleTarget",
+                "selectAllTextSource",
+                "selectAllTextTarget",
+                "searchPlaceholderSource",
+                "searchPlaceholderTarget",
+                "toTargetButtonText",
+                "toSourceButtonText",
+                "toTargetArrow",
+                "toSourceArrow",
+                "class",
+                "buttonsColor",
+                "buttonsSize",
+                "buttonsVariant",
+                "buttonsMode",
+                "tooltip",
+                "tooltipPlacement",
+                "stackOn",
+                "listOverflow",
+                "listMaxHeight",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.tree-view",
+            "group": "ui.advanced",
+            "name": "tree-view",
+            "relative_path": "resources/views/components/ui/advanced/tree-view.blade.php",
+            "props": [
+                "id",
+                "label",
+                "children",
+                "lazy",
+                "expanded",
+                "selected",
+                "data",
+                "selection",
+                "persist",
+                "selectOnLabel",
+                "itemKey",
+                "labelKey",
+                "childrenKey",
+                "lazyKey",
+                "name",
+                "controlSize",
+                "disabled",
+                "return",
+                "lazyUrl",
+                "lazyParam",
+                "search",
+                "searchMin",
+                "searchDebounce",
+                "searchUrl",
+                "searchParam",
+                "searchPlaceholder",
+                "searchButton",
+                "searchAuto",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.validator",
+            "group": "ui.advanced",
+            "name": "validator",
+            "relative_path": "resources/views/components/ui/advanced/validator.blade.php",
+            "props": [
+                "state",
+                "message",
+                "as",
+                "full",
+                "hintHidden"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.wysiwyg",
+            "group": "ui.advanced",
+            "name": "wysiwyg",
+            "relative_path": "resources/views/components/ui/advanced/wysiwyg.blade.php",
+            "props": [
+                "name",
+                "value",
+                "placeholder",
+                "disabled",
+                "inputId",
+                "toolbar",
+                "height",
+                "attachments",
+                "lazy",
+                "lazyButtonLabel",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.changelog.changelog-change-item",
+            "group": "ui.changelog",
+            "name": "changelog-change-item",
+            "relative_path": "resources/views/components/ui/changelog/changelog-change-item.blade.php",
+            "props": [
+                "type",
+                "category",
+                "description",
+                "breaking",
+                "issues",
+                "number",
+                "url",
+                "contributors",
+                "image",
+                "migration",
+                "migrationGuide",
+                "cve",
+                "severity",
+                "issueBaseUrl"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.changelog.changelog-header",
+            "group": "ui.changelog",
+            "name": "changelog-header",
+            "relative_path": "resources/views/components/ui/changelog/changelog-header.blade.php",
+            "props": [
+                "title",
+                "currentVersion",
+                "rssUrl",
+                "atomUrl",
+                "showVersionBadge"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.changelog.changelog-toolbar",
+            "group": "ui.changelog",
+            "name": "changelog-toolbar",
+            "relative_path": "resources/views/components/ui/changelog/changelog-toolbar.blade.php",
+            "props": [
+                "showSearch",
+                "showFilters",
+                "searchPlaceholder",
+                "filterName",
+                "filterItems"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.changelog.changelog-version-item",
+            "group": "ui.changelog",
+            "name": "changelog-version-item",
+            "relative_path": "resources/views/components/ui/changelog/changelog-version-item.blade.php",
+            "props": [
+                "version",
+                "date",
+                "isCurrent",
+                "yanked",
+                "tagUrl",
+                "compareUrl",
+                "items",
+                "changes",
+                "added",
+                "fixed"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.communication.chat-bubble",
+            "group": "ui.communication",
+            "name": "chat-bubble",
+            "relative_path": "resources/views/components/ui/communication/chat-bubble.blade.php",
+            "props": [
+                "align",
+                "name",
+                "time",
+                "color"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.communication.chat-header",
+            "group": "ui.communication",
+            "name": "chat-header",
+            "relative_path": "resources/views/components/ui/communication/chat-header.blade.php",
+            "props": [
+                "conversation",
+                "showBackButton",
+                "backUrl",
+                "conversationIdKey",
+                "conversationNameKey",
+                "conversationAvatarKey",
+                "conversationIsOnlineKey"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.communication.chat-input",
+            "group": "ui.communication",
+            "name": "chat-input",
+            "relative_path": "resources/views/components/ui/communication/chat-input.blade.php",
+            "props": [
+                "sendMessageUrl",
+                "typingUrl",
+                "enableFileUpload",
+                "maxFileSize",
+                "multipleFiles",
+                "showFilePreview",
+                "acceptedFileTypes",
+                "placeholder",
+                "useWebSockets",
+                "autoReconnect",
+                "conversationIdKey",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.communication.chat-messages",
+            "group": "ui.communication",
+            "name": "chat-messages",
+            "relative_path": "resources/views/components/ui/communication/chat-messages.blade.php",
+            "props": [
+                "messages",
+                "currentUserId",
+                "showTypingIndicator",
+                "typingUsers",
+                "loadMessagesUrl",
+                "useWebSockets",
+                "pollingInterval",
+                "autoReconnect",
+                "reconnectDelay",
+                "messageIdKey",
+                "messageUserIdKey",
+                "messageContentKey",
+                "messageCreatedAtKey",
+                "messageUserNameKey",
+                "messageUserAvatarKey",
+                "messageAttachmentKey",
+                "messageAttachmentsKey",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.communication.chat-sidebar",
+            "group": "ui.communication",
+            "name": "chat-sidebar",
+            "relative_path": "resources/views/components/ui/communication/chat-sidebar.blade.php",
+            "props": [
+                "conversations",
+                "currentConversationId",
+                "showUserList",
+                "onlineUsers",
+                "conversationsUrl",
+                "conversationIdKey",
+                "conversationNameKey",
+                "conversationAvatarKey",
+                "conversationLastMessageKey",
+                "conversationUnreadCountKey",
+                "conversationIsOnlineKey"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.communication.chat-widget",
+            "group": "ui.communication",
+            "name": "chat-widget",
+            "relative_path": "resources/views/components/ui/communication/chat-widget.blade.php",
+            "props": [
+                "conversation",
+                "messages",
+                "currentUserId",
+                "position",
+                "minimized",
+                "showHeader",
+                "showInput",
+                "showBackButton",
+                "backUrl",
+                "showTypingIndicator",
+                "typingUsers",
+                "enableFileUpload",
+                "maxFileSize",
+                "placeholder",
+                "sendMessageUrl",
+                "typingUrl",
+                "loadMessagesUrl",
+                "useWebSockets",
+                "pollingInterval",
+                "autoReconnect",
+                "reconnectDelay",
+                "conversationIdKey",
+                "conversationNameKey",
+                "conversationAvatarKey",
+                "conversationIsOnlineKey",
+                "messageIdKey",
+                "messageUserIdKey",
+                "messageContentKey",
+                "messageCreatedAtKey",
+                "messageUserNameKey",
+                "messageUserAvatarKey",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.communication.conversation-view",
+            "group": "ui.communication",
+            "name": "conversation-view",
+            "relative_path": "resources/views/components/ui/communication/conversation-view.blade.php",
+            "props": [
+                "conversation",
+                "messages",
+                "currentUserId",
+                "showBackButton",
+                "backUrl",
+                "showTypingIndicator",
+                "typingUsers",
+                "enableFileUpload",
+                "maxFileSize",
+                "multipleFiles",
+                "showFilePreview",
+                "acceptedFileTypes",
+                "placeholder",
+                "sendMessageUrl",
+                "typingUrl",
+                "loadMessagesUrl",
+                "useWebSockets",
+                "pollingInterval",
+                "autoReconnect",
+                "reconnectDelay",
+                "conversationIdKey",
+                "conversationNameKey",
+                "conversationAvatarKey",
+                "conversationIsOnlineKey",
+                "messageIdKey",
+                "messageUserIdKey",
+                "messageContentKey",
+                "messageCreatedAtKey",
+                "messageUserNameKey",
+                "messageUserAvatarKey"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.communication.notification-bell",
+            "group": "ui.communication",
+            "name": "notification-bell",
+            "relative_path": "resources/views/components/ui/communication/notification-bell.blade.php",
+            "props": [
+                "notifications",
+                "unreadCount",
+                "position",
+                "showMarkAllRead",
+                "markAllAsReadUrl",
+                "viewAllUrl",
+                "groupByDate",
+                "showActions",
+                "notificationIdKey",
+                "notificationTypeKey",
+                "notificationDataKey",
+                "notificationReadAtKey",
+                "notificationCreatedAtKey"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.communication.notification-filters",
+            "group": "ui.communication",
+            "name": "notification-filters",
+            "relative_path": "resources/views/components/ui/communication/notification-filters.blade.php",
+            "props": [
+                "types",
+                "currentFilter",
+                "onFilterChange"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.communication.notification-item",
+            "group": "ui.communication",
+            "name": "notification-item",
+            "relative_path": "resources/views/components/ui/communication/notification-item.blade.php",
+            "props": [
+                "notification",
+                "showActions",
+                "markAsReadUrl",
+                "deleteUrl",
+                "notificationIdKey",
+                "notificationTypeKey",
+                "notificationDataKey",
+                "notificationReadAtKey",
+                "notificationCreatedAtKey"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.communication.notification-list",
+            "group": "ui.communication",
+            "name": "notification-list",
+            "relative_path": "resources/views/components/ui/communication/notification-list.blade.php",
+            "props": [
+                "notifications",
+                "groupByDate",
+                "showActions",
+                "notificationIdKey",
+                "notificationTypeKey",
+                "notificationDataKey",
+                "notificationReadAtKey",
+                "notificationCreatedAtKey",
+                "markAsReadUrl",
+                "deleteUrl"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.data-display.avatar",
+            "group": "ui.data-display",
+            "name": "avatar",
+            "relative_path": "resources/views/components/ui/data-display/avatar.blade.php",
+            "props": [
+                "src",
+                "alt",
+                "size",
+                "rounded",
+                "placeholder",
+                "status"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.data-display.badge",
+            "group": "ui.data-display",
+            "name": "badge",
+            "relative_path": "resources/views/components/ui/data-display/badge.blade.php",
+            "props": [
+                "color",
+                "size",
+                "variant"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.data-display.file-preview",
+            "group": "ui.data-display",
+            "name": "file-preview",
+            "relative_path": "resources/views/components/ui/data-display/file-preview.blade.php",
+            "props": [
+                "url",
+                "name",
+                "type",
+                "fileSize",
+                "thumbnail",
+                "downloadable",
+                "size",
+                "openMode"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.data-display.kbd",
+            "group": "ui.data-display",
+            "name": "kbd",
+            "relative_path": "resources/views/components/ui/data-display/kbd.blade.php",
+            "props": [
+                "keys",
+                "size"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.data-display.progress",
+            "group": "ui.data-display",
+            "name": "progress",
+            "relative_path": "resources/views/components/ui/data-display/progress.blade.php",
+            "props": [
+                "value",
+                "max",
+                "color"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.data-display.radial-progress",
+            "group": "ui.data-display",
+            "name": "radial-progress",
+            "relative_path": "resources/views/components/ui/data-display/radial-progress.blade.php",
+            "props": [
+                "value",
+                "size",
+                "thickness",
+                "color",
+                "showValue",
+                "min",
+                "max"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.data-display.stat",
+            "group": "ui.data-display",
+            "name": "stat",
+            "relative_path": "resources/views/components/ui/data-display/stat.blade.php",
+            "props": [
+                "title",
+                "value",
+                "desc",
+                "titleClass",
+                "valueClass",
+                "descClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.data-display.status",
+            "group": "ui.data-display",
+            "name": "status",
+            "relative_path": "resources/views/components/ui/data-display/status.blade.php",
+            "props": [
+                "color",
+                "size",
+                "label",
+                "as"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.data-display.table",
+            "group": "ui.data-display",
+            "name": "table",
+            "relative_path": "resources/views/components/ui/data-display/table.blade.php",
+            "props": [
+                "columns",
+                "rows",
+                "mode",
+                "endpoint",
+                "method",
+                "serverAdapter",
+                "persistState",
+                "stateKey",
+                "globalFilterKey",
+                "filters",
+                "initialState",
+                "pageSizeOptions",
+                "search",
+                "columnVisibility",
+                "caption",
+                "size",
+                "zebra",
+                "pinRows",
+                "pinCols",
+                "emptyLabel",
+                "loadingLabel",
+                "errorLabel",
+                "containerClass",
+                "tableClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.data-display.timeline",
+            "group": "ui.data-display",
+            "name": "timeline",
+            "relative_path": "resources/views/components/ui/data-display/timeline.blade.php",
+            "props": [
+                "items",
+                "orientation",
+                "compact",
+                "snapIcon",
+                "boxOn"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.errors.error-actions",
+            "group": "ui.errors",
+            "name": "error-actions",
+            "relative_path": "resources/views/components/ui/errors/error-actions.blade.php",
+            "props": [
+                "homeUrl",
+                "backUrl",
+                "showBack",
+                "showHome"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.errors.error-content",
+            "group": "ui.errors",
+            "name": "error-content",
+            "relative_path": "resources/views/components/ui/errors/error-content.blade.php",
+            "props": [
+                "statusCode",
+                "title",
+                "message",
+                "homeUrl",
+                "backUrl",
+                "showActions",
+                "showDetails",
+                "exception"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.errors.error-header",
+            "group": "ui.errors",
+            "name": "error-header",
+            "relative_path": "resources/views/components/ui/errors/error-header.blade.php",
+            "props": [
+                "statusCode",
+                "title"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.errors.loading-state-content",
+            "group": "ui.errors",
+            "name": "loading-state-content",
+            "relative_path": "resources/views/components/ui/errors/loading-state-content.blade.php",
+            "props": [
+                "type",
+                "message",
+                "size",
+                "skeletonCount"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.feedback.alert",
+            "group": "ui.feedback",
+            "name": "alert",
+            "relative_path": "resources/views/components/ui/feedback/alert.blade.php",
+            "props": [
+                "color",
+                "variant",
+                "icon",
+                "title",
+                "heading",
+                "text",
+                "inline",
+                "iconInHeading",
+                "vertical",
+                "horizontal",
+                "horizontalAt"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.feedback.callout",
+            "group": "ui.feedback",
+            "name": "callout",
+            "relative_path": "resources/views/components/ui/feedback/callout.blade.php",
+            "props": [
+                "variant",
+                "color",
+                "icon",
+                "heading",
+                "text",
+                "inline",
+                "iconInHeading",
+                "horizontalAt"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.feedback.empty-state",
+            "group": "ui.feedback",
+            "name": "empty-state",
+            "relative_path": "resources/views/components/ui/feedback/empty-state.blade.php",
+            "props": [
+                "icon",
+                "title",
+                "message",
+                "actionLabel",
+                "actionUrl",
+                "size"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.feedback.loading",
+            "group": "ui.feedback",
+            "name": "loading",
+            "relative_path": "resources/views/components/ui/feedback/loading.blade.php",
+            "props": [
+                "shape",
+                "size",
+                "color"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.feedback.loading-message",
+            "group": "ui.feedback",
+            "name": "loading-message",
+            "relative_path": "resources/views/components/ui/feedback/loading-message.blade.php",
+            "props": [
+                "message",
+                "shape",
+                "size"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.feedback.skeleton",
+            "group": "ui.feedback",
+            "name": "skeleton",
+            "relative_path": "resources/views/components/ui/feedback/skeleton.blade.php",
+            "props": [
+                "width",
+                "height",
+                "rounded",
+                "variant"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.feedback.toast",
+            "group": "ui.feedback",
+            "name": "toast",
+            "relative_path": "resources/views/components/ui/feedback/toast.blade.php",
+            "props": [
+                "position",
+                "horizontal",
+                "vertical"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.button",
+            "group": "ui.inputs",
+            "name": "button",
+            "relative_path": "resources/views/components/ui/inputs/button.blade.php",
+            "props": [
+                "type",
+                "variant",
+                "color",
+                "size",
+                "wide",
+                "block",
+                "circle",
+                "square",
+                "loading",
+                "active",
+                "noAnimation",
+                "disabled",
+                "tag",
+                "href",
+                "target"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.checkbox",
+            "group": "ui.inputs",
+            "name": "checkbox",
+            "relative_path": "resources/views/components/ui/inputs/checkbox.blade.php",
+            "props": [
+                "color",
+                "size",
+                "checked",
+                "disabled",
+                "indeterminate"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.color-picker",
+            "group": "ui.inputs",
+            "name": "color-picker",
+            "relative_path": "resources/views/components/ui/inputs/color-picker.blade.php",
+            "props": [
+                "mode",
+                "value",
+                "disabled",
+                "dropdown",
+                "swatches",
+                "swatchesHeight",
+                "showPalette",
+                "showInputs",
+                "showFormatToggle",
+                "showAlpha",
+                "showHue",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.file-input",
+            "group": "ui.inputs",
+            "name": "file-input",
+            "relative_path": "resources/views/components/ui/inputs/file-input.blade.php",
+            "props": [
+                "size",
+                "variant",
+                "color",
+                "multiple",
+                "disabled",
+                "dragdrop",
+                "preview",
+                "dropZoneClass",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.input",
+            "group": "ui.inputs",
+            "name": "input",
+            "relative_path": "resources/views/components/ui/inputs/input.blade.php",
+            "props": [
+                "type",
+                "size",
+                "variant",
+                "color",
+                "disabled",
+                "obfuscate",
+                "obfuscateChar",
+                "obfuscateKeepEnd",
+                "inputMask",
+                "mask",
+                "maskCharPlaceholder",
+                "maskPlaceholder",
+                "inputPlaceholder",
+                "clearIncomplete",
+                "customMask",
+                "customValidator"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.radio",
+            "group": "ui.inputs",
+            "name": "radio",
+            "relative_path": "resources/views/components/ui/inputs/radio.blade.php",
+            "props": [
+                "name",
+                "value",
+                "color",
+                "size",
+                "checked",
+                "disabled",
+                "uncheckable"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.range",
+            "group": "ui.inputs",
+            "name": "range",
+            "relative_path": "resources/views/components/ui/inputs/range.blade.php",
+            "props": [
+                "min",
+                "max",
+                "step",
+                "value",
+                "color",
+                "size",
+                "bg",
+                "thumb",
+                "fill",
+                "noFill"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.select",
+            "group": "ui.inputs",
+            "name": "select",
+            "relative_path": "resources/views/components/ui/inputs/select.blade.php",
+            "props": [
+                "size",
+                "variant",
+                "color",
+                "disabled",
+                "search",
+                "autocomplete",
+                "endpoint",
+                "param",
+                "debounce",
+                "minChars",
+                "default",
+                "fetchOnEmpty",
+                "placeholder",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.sign",
+            "group": "ui.inputs",
+            "name": "sign",
+            "relative_path": "resources/views/components/ui/inputs/sign.blade.php",
+            "props": [
+                "width",
+                "height",
+                "penColor",
+                "minWidth",
+                "maxWidth",
+                "velocityFilterWeight",
+                "responsive",
+                "disabled",
+                "showActions",
+                "clearLabel",
+                "downloadLabel",
+                "downloadFormat",
+                "downloadFilename",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.textarea",
+            "group": "ui.inputs",
+            "name": "textarea",
+            "relative_path": "resources/views/components/ui/inputs/textarea.blade.php",
+            "props": [
+                "size",
+                "variant",
+                "color",
+                "disabled",
+                "rows"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.toggle",
+            "group": "ui.inputs",
+            "name": "toggle",
+            "relative_path": "resources/views/components/ui/inputs/toggle.blade.php",
+            "props": [
+                "color",
+                "size",
+                "checked",
+                "disabled",
+                "indeterminate"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.token-input",
+            "group": "ui.inputs",
+            "name": "token-input",
+            "relative_path": "resources/views/components/ui/inputs/token-input.blade.php",
+            "props": [
+                "name",
+                "preset",
+                "size",
+                "variant",
+                "color",
+                "placeholder",
+                "values",
+                "delimiters",
+                "pasteSeparators",
+                "allowDuplicates",
+                "maxItems",
+                "suggestions",
+                "endpoint",
+                "param",
+                "debounce",
+                "minChars",
+                "noResultsText",
+                "invalidText",
+                "duplicateText",
+                "maxItemsText"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.layout.card",
+            "group": "ui.layout",
+            "name": "card",
+            "relative_path": "resources/views/components/ui/layout/card.blade.php",
+            "props": [
+                "title",
+                "imageUrl",
+                "bordered",
+                "compact",
+                "side",
+                "imageFull",
+                "color",
+                "dash",
+                "size",
+                "imageAlt",
+                "imageClass",
+                "figureClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.layout.crud-layout",
+            "group": "ui.layout",
+            "name": "crud-layout",
+            "relative_path": "resources/views/components/ui/layout/crud-layout.blade.php",
+            "props": [
+                "breakpoint",
+                "container",
+                "gap",
+                "categoryWidth",
+                "contentWidth"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.layout.crud-section",
+            "group": "ui.layout",
+            "name": "crud-section",
+            "relative_path": "resources/views/components/ui/layout/crud-section.blade.php",
+            "props": [
+                "title",
+                "description",
+                "id",
+                "breakpoint",
+                "categoryWidth",
+                "contentWidth",
+                "gap",
+                "borderTop"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.layout.divider",
+            "group": "ui.layout",
+            "name": "divider",
+            "relative_path": "resources/views/components/ui/layout/divider.blade.php",
+            "props": [
+                "text",
+                "horizontal",
+                "horizontalAt",
+                "color",
+                "position"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.layout.footer",
+            "group": "ui.layout",
+            "name": "footer",
+            "relative_path": "resources/views/components/ui/layout/footer.blade.php",
+            "props": [
+                "bg",
+                "text",
+                "padding",
+                "center",
+                "horizontal",
+                "horizontalAt"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.layout.footer-layout",
+            "group": "ui.layout",
+            "name": "footer-layout",
+            "relative_path": "resources/views/components/ui/layout/footer-layout.blade.php",
+            "props": [
+                "bg",
+                "text",
+                "padding",
+                "center",
+                "horizontal",
+                "horizontalAt",
+                "gap",
+                "columns",
+                "logo",
+                "brandText",
+                "brandDescription",
+                "copyright",
+                "copyrightYear",
+                "copyrightText",
+                "socialLinks",
+                "newsletter",
+                "newsletterTitle",
+                "newsletterDescription",
+                "newsletterAction",
+                "newsletterMethod",
+                "showDivider",
+                "dividerColor"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.layout.grid-layout",
+            "group": "ui.layout",
+            "name": "grid-layout",
+            "relative_path": "resources/views/components/ui/layout/grid-layout.blade.php",
+            "props": [
+                "gap",
+                "align",
+                "class",
+                "styleStack"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.layout.hero",
+            "group": "ui.layout",
+            "name": "hero",
+            "relative_path": "resources/views/components/ui/layout/hero.blade.php",
+            "props": [
+                "overlay",
+                "imageUrl",
+                "minH",
+                "fullScreen",
+                "row",
+                "reverse",
+                "text",
+                "bg",
+                "overlayClass",
+                "contentMax",
+                "contentClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.layout.list",
+            "group": "ui.layout",
+            "name": "list",
+            "relative_path": "resources/views/components/ui/layout/list.blade.php",
+            "props": [
+                "vertical",
+                "bg",
+                "rounded",
+                "shadow",
+                "title"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.layout.list-row",
+            "group": "ui.layout",
+            "name": "list-row",
+            "relative_path": "resources/views/components/ui/layout/list-row.blade.php",
+            "props": []
+        },
+        {
+            "alias": "x-daisy::ui.layout.stack",
+            "group": "ui.layout",
+            "name": "stack",
+            "relative_path": "resources/views/components/ui/layout/stack.blade.php",
+            "props": [
+                "class",
+                "alignV",
+                "alignH"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.media.carousel",
+            "group": "ui.media",
+            "name": "carousel",
+            "relative_path": "resources/views/components/ui/media/carousel.blade.php",
+            "props": [
+                "vertical",
+                "center",
+                "align"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.media.embed",
+            "group": "ui.media",
+            "name": "embed",
+            "relative_path": "resources/views/components/ui/media/embed.blade.php",
+            "props": [
+                "tag",
+                "ratio",
+                "ratioPercent",
+                "wrapperClass",
+                "src",
+                "allow",
+                "allowfullscreen"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.media.hover-gallery",
+            "group": "ui.media",
+            "name": "hover-gallery",
+            "relative_path": "resources/views/components/ui/media/hover-gallery.blade.php",
+            "props": [
+                "as",
+                "maxWidth",
+                "images"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.media.leaflet",
+            "group": "ui.media",
+            "name": "leaflet",
+            "relative_path": "resources/views/components/ui/media/leaflet.blade.php",
+            "props": [
+                "id",
+                "class",
+                "lat",
+                "lng",
+                "zoom",
+                "minZoom",
+                "maxZoom",
+                "fitBounds",
+                "scale",
+                "preferCanvas",
+                "tileUrl",
+                "tileOptions",
+                "provider",
+                "gestureHandling",
+                "cluster",
+                "clusterOptions",
+                "fullscreen",
+                "markers",
+                "geojson",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.media.lightbox",
+            "group": "ui.media",
+            "name": "lightbox",
+            "relative_path": "resources/views/components/ui/media/lightbox.blade.php",
+            "props": [
+                "src",
+                "thumb",
+                "alt",
+                "caption",
+                "images",
+                "cols",
+                "gap",
+                "loop",
+                "keyboard",
+                "zoom",
+                "fullscreen",
+                "labelClose",
+                "labelPrev",
+                "labelNext",
+                "labelZoomIn",
+                "labelZoomOut",
+                "labelZoomReset",
+                "labelFullscreen",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.media.media-gallery",
+            "group": "ui.media",
+            "name": "media-gallery",
+            "relative_path": "resources/views/components/ui/media/media-gallery.blade.php",
+            "props": [
+                "src",
+                "thumb",
+                "alt",
+                "images",
+                "activation",
+                "zoomEffect",
+                "autoHeight",
+                "position",
+                "thumbsPerRow",
+                "aspectClass",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.navigation.breadcrumbs",
+            "group": "ui.navigation",
+            "name": "breadcrumbs",
+            "relative_path": "resources/views/components/ui/navigation/breadcrumbs.blade.php",
+            "props": [
+                "items",
+                "label",
+                "href",
+                "icon",
+                "size",
+                "as"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.navigation.floating-menu",
+            "group": "ui.navigation",
+            "name": "floating-menu",
+            "relative_path": "resources/views/components/ui/navigation/floating-menu.blade.php",
+            "props": [
+                "position",
+                "orientation",
+                "buttonSize",
+                "buttonVariant",
+                "buttonColor",
+                "items",
+                "icon",
+                "label",
+                "active",
+                "href",
+                "onclick",
+                "groups",
+                "groupSpacing",
+                "itemSpacing",
+                "bg",
+                "rounded",
+                "shadow",
+                "padding"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.navigation.menu",
+            "group": "ui.navigation",
+            "name": "menu",
+            "relative_path": "resources/views/components/ui/navigation/menu.blade.php",
+            "props": [
+                "vertical",
+                "size",
+                "horizontalAt",
+                "bg",
+                "rounded",
+                "title",
+                "filterable",
+                "filterPlaceholder"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.navigation.navbar",
+            "group": "ui.navigation",
+            "name": "navbar",
+            "relative_path": "resources/views/components/ui/navigation/navbar.blade.php",
+            "props": [
+                "bg",
+                "text",
+                "shadow",
+                "rounded",
+                "fixed",
+                "fixedPosition",
+                "centerHiddenBelow"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.navigation.pagination",
+            "group": "ui.navigation",
+            "name": "pagination",
+            "relative_path": "resources/views/components/ui/navigation/pagination.blade.php",
+            "props": [
+                "total",
+                "current",
+                "size",
+                "edges",
+                "maxButtons",
+                "prevLabel",
+                "nextLabel",
+                "equalPrevNext",
+                "outlinePrevNext",
+                "responsive",
+                "mobileLabel",
+                "color",
+                "outline"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.navigation.section-nav",
+            "group": "ui.navigation",
+            "name": "section-nav",
+            "relative_path": "resources/views/components/ui/navigation/section-nav.blade.php",
+            "props": [
+                "title",
+                "targetSelector",
+                "headingSelector",
+                "position",
+                "breakpointClass",
+                "buttonColor",
+                "buttonClass",
+                "panelWidth",
+                "searchPlaceholder",
+                "emptyLabel"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.navigation.sidebar",
+            "group": "ui.navigation",
+            "name": "sidebar",
+            "relative_path": "resources/views/components/ui/navigation/sidebar.blade.php",
+            "props": [
+                "variant",
+                "collapsed",
+                "collapsible",
+                "forceCollapsed",
+                "stickyAt",
+                "sideClass",
+                "minWidth",
+                "maxWidth",
+                "storageKey",
+                "brand",
+                "brandHref",
+                "showBrand",
+                "label",
+                "items",
+                "href",
+                "icon",
+                "active",
+                "children",
+                "sections",
+                "iconPrefix",
+                "searchable",
+                "searchPlaceholder"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.navigation.sidebar-navigation",
+            "group": "ui.navigation",
+            "name": "sidebar-navigation",
+            "relative_path": "resources/views/components/ui/navigation/sidebar-navigation.blade.php",
+            "props": [
+                "label",
+                "children",
+                "href",
+                "items",
+                "current",
+                "searchable",
+                "searchPlaceholder",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.navigation.stepper",
+            "group": "ui.navigation",
+            "name": "stepper",
+            "relative_path": "resources/views/components/ui/navigation/stepper.blade.php",
+            "props": [
+                "items",
+                "current",
+                "stepsContents",
+                "vertical",
+                "horizontal",
+                "horizontalAt",
+                "linear",
+                "allowClickNav",
+                "persist",
+                "showControls",
+                "prevText",
+                "nextText",
+                "finishText",
+                "controlsClass",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.navigation.steps",
+            "group": "ui.navigation",
+            "name": "steps",
+            "relative_path": "resources/views/components/ui/navigation/steps.blade.php",
+            "props": [
+                "items",
+                "current",
+                "vertical",
+                "horizontal",
+                "horizontalAt",
+                "color",
+                "allowClickNav",
+                "rootId"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.navigation.table-of-contents",
+            "group": "ui.navigation",
+            "name": "table-of-contents",
+            "relative_path": "resources/views/components/ui/navigation/table-of-contents.blade.php",
+            "props": [
+                "sections",
+                "scrollSpy"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.navigation.tabs",
+            "group": "ui.navigation",
+            "name": "tabs",
+            "relative_path": "resources/views/components/ui/navigation/tabs.blade.php",
+            "props": [
+                "label",
+                "active",
+                "disabled",
+                "href",
+                "content",
+                "items",
+                "variant",
+                "size",
+                "placement",
+                "radioName",
+                "contentClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.overlay.drawer",
+            "group": "ui.overlay",
+            "name": "drawer",
+            "relative_path": "resources/views/components/ui/overlay/drawer.blade.php",
+            "props": [
+                "id",
+                "open",
+                "sideClass",
+                "end",
+                "responsiveOpen",
+                "sideIsMenu",
+                "fullHeight",
+                "contentClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.overlay.dropdown",
+            "group": "ui.overlay",
+            "name": "dropdown",
+            "relative_path": "resources/views/components/ui/overlay/dropdown.blade.php",
+            "props": [
+                "label",
+                "end",
+                "hover",
+                "forceClose",
+                "buttonClass",
+                "buttonCircle",
+                "type",
+                "contentClass",
+                "menuClass",
+                "cardClass",
+                "cardBodyClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.overlay.modal",
+            "group": "ui.overlay",
+            "name": "modal",
+            "relative_path": "resources/views/components/ui/overlay/modal.blade.php",
+            "props": [
+                "open",
+                "id",
+                "title",
+                "vertical",
+                "horizontal",
+                "backdrop",
+                "closeButton",
+                "boxClass",
+                "responsive",
+                "size",
+                "scrollable",
+                "teleport"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.overlay.popconfirm",
+            "group": "ui.overlay",
+            "name": "popconfirm",
+            "relative_path": "resources/views/components/ui/overlay/popconfirm.blade.php",
+            "props": [
+                "mode",
+                "position",
+                "message",
+                "okText",
+                "cancelText",
+                "okClass",
+                "cancelClass",
+                "panelClass",
+                "id",
+                "title",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.overlay.popover",
+            "group": "ui.overlay",
+            "name": "popover",
+            "relative_path": "resources/views/components/ui/overlay/popover.blade.php",
+            "props": [
+                "trigger",
+                "position",
+                "open",
+                "title",
+                "panelClass",
+                "arrow",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.overlay.tooltip",
+            "group": "ui.overlay",
+            "name": "tooltip",
+            "relative_path": "resources/views/components/ui/overlay/tooltip.blade.php",
+            "props": [
+                "text",
+                "open",
+                "position",
+                "color",
+                "content"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.partials.calendar-event",
+            "group": "ui.partials",
+            "name": "calendar-event",
+            "relative_path": "resources/views/components/ui/partials/calendar-event.blade.php",
+            "props": []
+        },
+        {
+            "alias": "x-daisy::ui.partials.form-field",
+            "group": "ui.partials",
+            "name": "form-field",
+            "relative_path": "resources/views/components/ui/partials/form-field.blade.php",
+            "props": [
+                "name",
+                "label",
+                "labelClass",
+                "error",
+                "hint",
+                "required",
+                "srOnly",
+                "as",
+                "full",
+                "class"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.partials.theme-selector",
+            "group": "ui.partials",
+            "name": "theme-selector",
+            "relative_path": "resources/views/components/ui/partials/theme-selector.blade.php",
+            "props": [
+                "position",
+                "placement",
+                "themes",
+                "offsetClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.partials.tree-node",
+            "group": "ui.partials",
+            "name": "tree-node",
+            "relative_path": "resources/views/components/ui/partials/tree-node.blade.php",
+            "props": []
+        },
+        {
+            "alias": "x-daisy::ui.utilities.copyable",
+            "group": "ui.utilities",
+            "name": "copyable",
+            "relative_path": "resources/views/components/ui/utilities/copyable.blade.php",
+            "props": [
+                "value",
+                "display",
+                "underline",
+                "copyHtml",
+                "iconPosition",
+                "iconSize",
+                "successMessage",
+                "errorMessage",
+                "tag"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.utilities.csrf-keeper",
+            "group": "ui.utilities",
+            "name": "csrf-keeper",
+            "relative_path": "resources/views/components/ui/utilities/csrf-keeper.blade.php",
+            "props": [
+                "refreshInterval",
+                "refreshRatio",
+                "endpoint",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.utilities.dock",
+            "group": "ui.utilities",
+            "name": "dock",
+            "relative_path": "resources/views/components/ui/utilities/dock.blade.php",
+            "props": [
+                "mobile",
+                "position",
+                "size",
+                "as",
+                "label",
+                "fixed"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.utilities.fab",
+            "group": "ui.utilities",
+            "name": "fab",
+            "relative_path": "resources/views/components/ui/utilities/fab.blade.php",
+            "props": [
+                "flower"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.utilities.indicator",
+            "group": "ui.utilities",
+            "name": "indicator",
+            "relative_path": "resources/views/components/ui/utilities/indicator.blade.php",
+            "props": [
+                "label",
+                "position",
+                "color",
+                "type",
+                "statusColor",
+                "itemClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.utilities.mockup-browser",
+            "group": "ui.utilities",
+            "name": "mockup-browser",
+            "relative_path": "resources/views/components/ui/utilities/mockup-browser.blade.php",
+            "props": [
+                "url",
+                "bordered",
+                "bg",
+                "contentBg",
+                "showToolbar",
+                "inputClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.utilities.mockup-code",
+            "group": "ui.utilities",
+            "name": "mockup-code",
+            "relative_path": "resources/views/components/ui/utilities/mockup-code.blade.php",
+            "props": [
+                "warning",
+                "lines",
+                "copy",
+                "copyId"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.utilities.mockup-phone",
+            "group": "ui.utilities",
+            "name": "mockup-phone",
+            "relative_path": "resources/views/components/ui/utilities/mockup-phone.blade.php",
+            "props": [
+                "camera",
+                "borderColor",
+                "wallpaper",
+                "displayClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.utilities.mockup-window",
+            "group": "ui.utilities",
+            "name": "mockup-window",
+            "relative_path": "resources/views/components/ui/utilities/mockup-window.blade.php",
+            "props": [
+                "bordered",
+                "bg",
+                "borderColor",
+                "contentBg",
+                "contentClass",
+                "contentTopBorder",
+                "contentTopBorderColor"
+            ]
+        }
+    ],
+    "templates": [
+        {
+            "component_alias": "x-daisy::templates.auth.forgot-password",
+            "view_alias": "daisy::templates.auth.forgot-password",
+            "group": "auth",
+            "name": "forgot-password",
+            "relative_path": "resources/views/templates/auth/forgot-password.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "action",
+                "method",
+                "loginUrl",
+                "status"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.auth.login-simple",
+            "view_alias": "daisy::templates.auth.login-simple",
+            "group": "auth",
+            "name": "login-simple",
+            "relative_path": "resources/views/templates/auth/login-simple.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "action",
+                "method",
+                "rememberMe",
+                "rememberMeDays",
+                "forgotPasswordUrl",
+                "signupUrl"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.auth.login-split",
+            "view_alias": "daisy::templates.auth.login-split",
+            "group": "auth",
+            "name": "login-split",
+            "relative_path": "resources/views/templates/auth/login-split.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "action",
+                "method",
+                "rememberMe",
+                "rememberMeDays",
+                "forgotPasswordUrl",
+                "signupUrl",
+                "backgroundImage",
+                "showTestimonial",
+                "testimonial",
+                "quote",
+                "author",
+                "role",
+                "avatar",
+                "rating"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.auth.register-simple",
+            "view_alias": "daisy::templates.auth.register-simple",
+            "group": "auth",
+            "name": "register-simple",
+            "relative_path": "resources/views/templates/auth/register-simple.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "action",
+                "method",
+                "loginUrl",
+                "passwordConfirmation",
+                "termsUrl",
+                "privacyUrl",
+                "acceptTerms"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.auth.register-split",
+            "view_alias": "daisy::templates.auth.register-split",
+            "group": "auth",
+            "name": "register-split",
+            "relative_path": "resources/views/templates/auth/register-split.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "action",
+                "method",
+                "loginUrl",
+                "passwordConfirmation",
+                "termsUrl",
+                "privacyUrl",
+                "acceptTerms",
+                "backgroundImage",
+                "showTestimonial",
+                "testimonial",
+                "quote",
+                "author",
+                "role",
+                "avatar",
+                "rating"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.auth.resend-verification",
+            "view_alias": "daisy::templates.auth.resend-verification",
+            "group": "auth",
+            "name": "resend-verification",
+            "relative_path": "resources/views/templates/auth/resend-verification.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "description",
+                "action",
+                "method",
+                "submitButtonText",
+                "emailSent"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.auth.reset-password",
+            "view_alias": "daisy::templates.auth.reset-password",
+            "group": "auth",
+            "name": "reset-password",
+            "relative_path": "resources/views/templates/auth/reset-password.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "description",
+                "action",
+                "method",
+                "backToLoginUrl",
+                "backToLoginText",
+                "submitButtonText",
+                "emailSent"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.auth.two-factor",
+            "view_alias": "daisy::templates.auth.two-factor",
+            "group": "auth",
+            "name": "two-factor",
+            "relative_path": "resources/views/templates/auth/two-factor.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "action",
+                "method",
+                "recoveryUrl",
+                "logoutUrl",
+                "showRecovery",
+                "showLogout"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.auth.verify-email",
+            "view_alias": "daisy::templates.auth.verify-email",
+            "group": "auth",
+            "name": "verify-email",
+            "relative_path": "resources/views/templates/auth/verify-email.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "message",
+                "resendUrl",
+                "logoutUrl",
+                "showLogout",
+                "resendButtonText",
+                "logoutText"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.changelog",
+            "view_alias": "daisy::templates.changelog",
+            "group": "root",
+            "name": "changelog",
+            "relative_path": "resources/views/templates/changelog.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "versions",
+                "currentVersion",
+                "rssUrl",
+                "atomUrl",
+                "showFilters",
+                "showSearch",
+                "showVersionBadge",
+                "groupByMonth",
+                "highlightCurrent",
+                "expandLatest",
+                "itemsPerPage",
+                "pagination"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.communication.chat",
+            "view_alias": "daisy::templates.communication.chat",
+            "group": "communication",
+            "name": "chat",
+            "relative_path": "resources/views/templates/communication/chat.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "conversation",
+                "conversations",
+                "messages",
+                "currentUser",
+                "currentUserId",
+                "showSidebar",
+                "showUserList",
+                "showBackButton",
+                "backUrl",
+                "showTypingIndicator",
+                "typingUsers",
+                "enableFileUpload",
+                "maxFileSize",
+                "multipleFiles",
+                "showFilePreview",
+                "acceptedFileTypes",
+                "placeholder",
+                "sendMessageUrl",
+                "typingUrl",
+                "loadMessagesUrl",
+                "conversationsUrl",
+                "useWebSockets",
+                "pollingInterval",
+                "autoReconnect",
+                "reconnectDelay",
+                "conversationIdKey",
+                "conversationNameKey",
+                "conversationAvatarKey",
+                "conversationIsOnlineKey",
+                "conversationLastMessageKey",
+                "conversationUnreadCountKey",
+                "messageIdKey",
+                "messageUserIdKey",
+                "messageContentKey",
+                "messageCreatedAtKey",
+                "messageUserNameKey",
+                "messageUserAvatarKey"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.communication.notification-center",
+            "view_alias": "daisy::templates.communication.notification-center",
+            "group": "communication",
+            "name": "notification-center",
+            "relative_path": "resources/views/templates/communication/notification-center.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "notifications",
+                "unreadCount",
+                "showFilters",
+                "showMarkAllRead",
+                "showDelete",
+                "groupByDate",
+                "pagination",
+                "types",
+                "currentFilter",
+                "markAsReadUrl",
+                "markAllAsReadUrl",
+                "deleteUrl",
+                "loadNotificationsUrl",
+                "preferencesUrl",
+                "useWebSockets",
+                "pollingInterval",
+                "autoReconnect",
+                "reconnectDelay",
+                "digestTime",
+                "userId",
+                "notificationIdKey",
+                "notificationTypeKey",
+                "notificationDataKey",
+                "notificationReadAtKey",
+                "notificationCreatedAtKey"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.errors.empty-state",
+            "view_alias": "daisy::templates.errors.empty-state",
+            "group": "errors",
+            "name": "empty-state",
+            "relative_path": "resources/views/templates/errors/empty-state.blade.php",
+            "props": [
+                "icon",
+                "title",
+                "message",
+                "actionLabel",
+                "actionUrl",
+                "actionVariant",
+                "size",
+                "illustration",
+                "theme"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.errors.error",
+            "view_alias": "daisy::templates.errors.error",
+            "group": "errors",
+            "name": "error",
+            "relative_path": "resources/views/templates/errors/error.blade.php",
+            "props": [
+                "statusCode",
+                "title",
+                "message",
+                "theme",
+                "homeUrl",
+                "backUrl",
+                "showIllustration",
+                "showActions",
+                "showDetails",
+                "exception"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.errors.loading-state",
+            "view_alias": "daisy::templates.errors.loading-state",
+            "group": "errors",
+            "name": "loading-state",
+            "relative_path": "resources/views/templates/errors/loading-state.blade.php",
+            "props": [
+                "type",
+                "message",
+                "size",
+                "fullScreen",
+                "skeletonCount",
+                "theme"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.errors.maintenance",
+            "view_alias": "daisy::templates.errors.maintenance",
+            "group": "errors",
+            "name": "maintenance",
+            "relative_path": "resources/views/templates/errors/maintenance.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "message",
+                "retryAfter",
+                "allowedIps"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.form.form-inline",
+            "view_alias": "daisy::templates.form.form-inline",
+            "group": "form",
+            "name": "form-inline",
+            "relative_path": "resources/views/templates/form/form-inline.blade.php",
+            "props": [
+                "action",
+                "method",
+                "size",
+                "collapseBelow",
+                "showReset",
+                "submitText",
+                "resetText",
+                "activeFilters",
+                "label",
+                "value",
+                "param",
+                "showAdvanced",
+                "advancedTitle",
+                "autoRefreshCsrf"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.form.form-simple",
+            "view_alias": "daisy::templates.form.form-simple",
+            "group": "form",
+            "name": "form-simple",
+            "relative_path": "resources/views/templates/form/form-simple.blade.php",
+            "props": [
+                "title",
+                "action",
+                "method",
+                "elements",
+                "submitText"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.form.form-with-tabs",
+            "view_alias": "daisy::templates.form.form-with-tabs",
+            "group": "form",
+            "name": "form-with-tabs",
+            "relative_path": "resources/views/templates/form/form-with-tabs.blade.php",
+            "props": [
+                "title",
+                "action",
+                "method",
+                "tabs",
+                "id",
+                "label",
+                "activeTab",
+                "tabsStyle",
+                "tabsPlacement",
+                "highlightErrors",
+                "showErrorBadges",
+                "persistActiveTabField",
+                "fieldToTabMap",
+                "autoRefreshCsrf"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.form.form-wizard",
+            "view_alias": "daisy::templates.form.form-wizard",
+            "group": "form",
+            "name": "form-wizard",
+            "relative_path": "resources/views/templates/form/form-wizard.blade.php",
+            "props": [
+                "title",
+                "action",
+                "method",
+                "steps",
+                "key",
+                "label",
+                "icon",
+                "currentStep",
+                "linear",
+                "allowClickNav",
+                "showSummary",
+                "prevText",
+                "nextText",
+                "finishText",
+                "resumeSlot",
+                "autoRefreshCsrf",
+                "wizardKey"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.layout.footer",
+            "view_alias": "daisy::templates.layout.footer",
+            "group": "layout",
+            "name": "footer",
+            "relative_path": "resources/views/templates/layout/footer.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "container",
+                "footerBg",
+                "footerText",
+                "footerPadding",
+                "footerCenter",
+                "footerHorizontal",
+                "footerHorizontalAt",
+                "footerColumns",
+                "footerLogo",
+                "footerBrandText",
+                "footerBrandDescription",
+                "footerCopyright",
+                "footerCopyrightYear",
+                "footerCopyrightText",
+                "footerSocialLinks",
+                "footerNewsletter",
+                "footerNewsletterTitle",
+                "footerNewsletterDescription",
+                "footerNewsletterAction",
+                "footerNewsletterMethod",
+                "footerShowDivider",
+                "footerDividerColor"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.layout.grid",
+            "view_alias": "daisy::templates.layout.grid",
+            "group": "layout",
+            "name": "grid",
+            "relative_path": "resources/views/templates/layout/grid.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "gap",
+                "align",
+                "container",
+                "containerClass"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.layout.navbar",
+            "view_alias": "daisy::templates.layout.navbar",
+            "group": "layout",
+            "name": "navbar",
+            "relative_path": "resources/views/templates/layout/navbar.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "navbarBg",
+                "navbarText",
+                "navbarShadow",
+                "navbarFixed",
+                "navbarFixedPosition",
+                "container"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.layout.navbar-footer",
+            "view_alias": "daisy::templates.layout.navbar-footer",
+            "group": "layout",
+            "name": "navbar-footer",
+            "relative_path": "resources/views/templates/layout/navbar-footer.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "navbarBg",
+                "navbarText",
+                "navbarShadow",
+                "navbarFixed",
+                "navbarFixedPosition",
+                "container",
+                "footerBg",
+                "footerText",
+                "footerPadding",
+                "footerCenter",
+                "footerHorizontal",
+                "footerHorizontalAt",
+                "footerColumns",
+                "footerLogo",
+                "footerBrandText",
+                "footerBrandDescription",
+                "footerCopyright",
+                "footerCopyrightYear",
+                "footerCopyrightText",
+                "footerSocialLinks",
+                "footerNewsletter",
+                "footerNewsletterTitle",
+                "footerNewsletterDescription",
+                "footerNewsletterAction",
+                "footerNewsletterMethod",
+                "footerShowDivider",
+                "footerDividerColor"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.layout.navbar-grid-footer",
+            "view_alias": "daisy::templates.layout.navbar-grid-footer",
+            "group": "layout",
+            "name": "navbar-grid-footer",
+            "relative_path": "resources/views/templates/layout/navbar-grid-footer.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "navbarBg",
+                "navbarText",
+                "navbarShadow",
+                "navbarFixed",
+                "navbarFixedPosition",
+                "gap",
+                "align",
+                "container",
+                "footerBg",
+                "footerText",
+                "footerPadding",
+                "footerCenter",
+                "footerHorizontal",
+                "footerHorizontalAt",
+                "footerColumns",
+                "footerLogo",
+                "footerBrandText",
+                "footerBrandDescription",
+                "footerCopyright",
+                "footerCopyrightYear",
+                "footerCopyrightText",
+                "footerSocialLinks",
+                "footerNewsletter",
+                "footerNewsletterTitle",
+                "footerNewsletterDescription",
+                "footerNewsletterAction",
+                "footerNewsletterMethod",
+                "footerShowDivider",
+                "footerDividerColor"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.profile.profile-edit",
+            "view_alias": "daisy::templates.profile.profile-edit",
+            "group": "profile",
+            "name": "profile-edit",
+            "relative_path": "resources/views/templates/profile/profile-edit.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "profile",
+                "nameKey",
+                "emailKey",
+                "avatarKey",
+                "phoneKey",
+                "bioKey",
+                "locationKey",
+                "websiteKey",
+                "action",
+                "method",
+                "enctype",
+                "profileViewUrl",
+                "profileSettingsUrl",
+                "showAvatar",
+                "showName",
+                "showEmail",
+                "showPhone",
+                "showBio",
+                "showLocation",
+                "showWebsite",
+                "avatarMaxSize",
+                "avatarAcceptedTypes",
+                "readonly"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.profile.profile-settings",
+            "view_alias": "daisy::templates.profile.profile-settings",
+            "group": "profile",
+            "name": "profile-settings",
+            "relative_path": "resources/views/templates/profile/profile-settings.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "profile",
+                "preferencesKey",
+                "languageKey",
+                "timezoneKey",
+                "action",
+                "method",
+                "profileEditUrl",
+                "profileViewUrl",
+                "showPreferences",
+                "showNotifications",
+                "showSecurity",
+                "showPrivacy",
+                "showLanguage",
+                "showTheme",
+                "preferences",
+                "language",
+                "timezone",
+                "readonly"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.profile.profile-view",
+            "view_alias": "daisy::templates.profile.profile-view",
+            "group": "profile",
+            "name": "profile-view",
+            "relative_path": "resources/views/templates/profile/profile-view.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "profile",
+                "nameKey",
+                "emailKey",
+                "avatarKey",
+                "bioKey",
+                "locationKey",
+                "websiteKey",
+                "createdAtKey",
+                "lastActiveKey",
+                "profileEditUrl",
+                "profileSettingsUrl",
+                "stats",
+                "label",
+                "value",
+                "icon",
+                "badges",
+                "color",
+                "timeline",
+                "date",
+                "showStats",
+                "showBadges",
+                "showTimeline",
+                "showBio",
+                "showContact",
+                "isOwnProfile",
+                "compareProfile"
+            ]
+        }
+    ]
+}

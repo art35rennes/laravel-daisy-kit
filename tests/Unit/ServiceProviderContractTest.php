@@ -1,11 +1,13 @@
 <?php
 
 use Art35rennes\DaisyKit\DaisyKitServiceProvider;
+use Illuminate\Foundation\Exceptions\Handler;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\MessageBag;
 use Illuminate\Support\ServiceProvider;
 
 covers(DaisyKitServiceProvider::class);
@@ -28,7 +30,7 @@ it('loads the package public view and translation namespaces', function () {
 });
 
 it('exposes templates as anonymous Blade components through the public alias', function () {
-    View::share('errors', new \Illuminate\Support\MessageBag);
+    View::share('errors', new MessageBag);
 
     $html = Blade::render('<x-daisy::templates.auth.login-simple />');
 
@@ -88,3 +90,34 @@ it('publishes the documented package groups', function (string $group, Closure $
 
     expect(ServiceProvider::pathsToPublish($provider, $group))->toBe($paths());
 })->with('package publish groups');
+
+it('enriches missing Daisy component exceptions with publish guidance', function () {
+    $handler = app(Handler::class);
+    $exception = new InvalidArgumentException('Unable to locate a class or view for component [daisy::ui.feedback.empty-state].');
+
+    $mapped = invokeProtected($handler, 'mapException', [$exception]);
+
+    expect($mapped)->toBeInstanceOf(InvalidArgumentException::class)
+        ->and($mapped->getMessage())->toContain('probleme de vues publiees obsoletes ou incompletes')
+        ->and($mapped->getMessage())->toContain('php artisan vendor:publish --tag=daisy-views --force')
+        ->and($mapped->getMessage())->toContain('php artisan view:clear')
+        ->and($mapped->getMessage())->toContain('resources/views/components/ui/feedback/empty-state.blade.php')
+        ->and($mapped->getMessage())->toContain('resources/views/vendor/daisy/components/ui/feedback/empty-state.blade.php');
+});
+
+it('leaves unrelated invalid argument exceptions untouched', function () {
+    $handler = app(Handler::class);
+    $exception = new InvalidArgumentException('Plain invalid argument.');
+
+    $mapped = invokeProtected($handler, 'mapException', [$exception]);
+
+    expect($mapped)->toBe($exception);
+});
+
+function invokeProtected(object $target, string $method, array $arguments = []): mixed
+{
+    $reflection = new ReflectionMethod($target, $method);
+    $reflection->setAccessible(true);
+
+    return $reflection->invokeArgs($target, $arguments);
+}

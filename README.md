@@ -86,6 +86,27 @@ Assets are written to `public/vendor/art35rennes/laravel-daisy-kit`, which match
 
 If the host rebuilds package sources (`daisy-assets-source`), it must install the matching frontend dependencies and wire its own Vite configuration.
 
+## AI-aware host integration
+
+If the host application uses Laravel Boost, this package ships third-party Boost guidance and a reusable skill under `resources/boost/...` to bias AI agents toward reusing package UI instead of recreating it.
+
+In the host application:
+
+- run `php artisan boost:install` once if Boost has not been set up yet
+- run `php artisan boost:update` after adding or updating this package so the host refreshes third-party guidelines and skills
+
+The shipped guidance points agents toward:
+
+- existing `x-daisy::layout.*`, `x-daisy::ui.*`, and `x-daisy::templates.*` aliases
+- vendor overrides under `resources/views/vendor/daisy/...`
+- a generated component and template catalog derived from the package Blade surface
+
+For package maintainers, regenerate that catalog after any public Blade surface change:
+
+```bash
+composer ai:catalog
+```
+
 ### Configuration highlights
 
 Key keys in `config/daisy-kit.php` (see the published file for the full schema):
@@ -116,97 +137,257 @@ Point the demo app’s Composer `path` repository at `../laravel-daisy-kit`. Thi
 
 Tests under `tests/` cover package-only behavior: Blade and template rendering, helpers, and package routes (for example the CSRF token endpoint when enabled). Application-level, navigation, and browser tests belong in the demo repository.
 
-## DataTable component
+## Table component
 
-The package now exposes a single DataTables-based table component:
+The package exposes a progressive table component aligned with Blade, DaisyUI, and TanStack Table:
 
-- `x-daisy::ui.data-display.datatable`
+- `x-daisy::ui.data-display.table`
 
-This component follows the native DataTables 2 semantics:
-
-- `serverSide=false`: the table rows are rendered in HTML and enhanced locally by DataTables
-- `serverSide=true`: DataTables delegates paging, search, ordering, and filtering to the server through `ajax`
-
-The host app only needs the package Vite entry. It does not manually import jQuery, DataTables CSS, or call `new DataTable(...)`.
+The Blade view renders semantic HTML and DaisyUI controls. The package JavaScript enhances the component on `[data-daisy-table="1"]` and uses `@tanstack/table-core` as the headless state engine for sorting, filtering, pagination, and column visibility.
 
 ### Breaking change
 
-The previous public components have been removed:
+This release removes the DataTables/jQuery-based public API:
 
-- `x-daisy::ui.data-display.table`
-- `x-daisy::ui.advanced.table`
+- `x-daisy::ui.data-display.datatable` now throws an explicit migration error
+- `x-daisy::ui.advanced.table` remains removed
+- DataTables options such as `ajax`, `options`, `responsive`, `layout`, `pageLength`, `ordering`, `language`, and `scrollX` are no longer supported
 
 Migration guidance:
 
-- Replace locally rendered tables with `x-daisy::ui.data-display.datatable` and `serverSide=false`
-- Replace dynamically loaded tables with `x-daisy::ui.data-display.datatable`, `serverSide=true`, and an `ajax` configuration compatible with DataTables
-- Remove any legacy hooks or assumptions tied to `data-simple-table`, `data-advanced-table`, and `advanced-table.js`
+- Replace `x-daisy::ui.data-display.datatable` with `x-daisy::ui.data-display.table`
+- Replace `data` with `rows`
+- Replace `serverSide=true` with `mode="server"`
+- Replace `ajax` with `endpoint` and `method`
+- Replace DataTables server endpoints with the JSON contract documented below
 
-### Supported options
+### Props
 
-The component exposes a controlled subset of DataTables options through props plus the `options` array:
+Supported public props:
 
-- `serverSide`
-- `ajax` when `serverSide=true`
 - `columns`
-- `data` or table slots when `serverSide=false`
-- `responsive`
-- `paging`
-- `pageLength`
-- `lengthChange`
-- `searching`
-- `ordering`
-- `order`
-- `language`
-- `layout`
-- `processing`
-- `scrollX`
+- `rows`
+- `mode="client|server"`
+- `endpoint` when `mode="server"`
+- `method`
+- `serverAdapter`
+- `persistState`
+- `stateKey`
+- `globalFilterKey`
+- `filters`
+- `initialState`
+- `pageSizeOptions`
+- `search`
+- `columnVisibility`
+- `caption`
+- `size`
+- `zebra`
+- `pinRows`
+- `pinCols`
+- `emptyLabel`
+- `loadingLabel`
+- `containerClass`
+- `tableClass`
 
-`Responsive` is included in the package integration. `Select` and `Buttons` are intentionally out of scope.
+Column definition shape:
 
-### Example: locally rendered table
+```php
+[
+    [
+        'key' => 'name',
+        'label' => 'Name',
+        'sortable' => true,
+        'filterable' => true,
+        'sortKey' => 'users.name',
+        'filterKey' => 'name',
+        'filter' => [
+            'type' => 'text',
+        ],
+        'visible' => true,
+        'width' => '16rem',
+        'cellClass' => 'font-medium',
+        'headerClass' => 'whitespace-nowrap',
+        'html' => false,
+    ],
+]
+```
+
+### Example: client-side table
 
 ```blade
-<x-daisy::ui.data-display.datatable
+<x-daisy::ui.data-display.table
+    mode="client"
     :columns="[
-        ['data' => 'name', 'title' => 'Name'],
-        ['data' => 'email', 'title' => 'Email'],
+        ['key' => 'name', 'label' => 'Name', 'sortable' => true],
+        ['key' => 'email', 'label' => 'Email', 'sortable' => true],
+        ['key' => 'status', 'label' => 'Status', 'html' => true],
     ]"
-    :data="$users"
+    :rows="$users->map(fn ($user) => [
+        'name' => $user->name,
+        'email' => $user->email,
+        'status' => view('users.partials.status-badge', ['user' => $user])->render(),
+    ])"
+    :initial-state="[
+        'sorting' => [['id' => 'name', 'desc' => false]],
+        'pagination' => ['pageIndex' => 0, 'pageSize' => 10],
+    ]"
+    :page-size-options="[10, 25, 50]"
     zebra
-    responsive
+    search
+    column-visibility
 />
 ```
 
-### Example: server-side DataTables endpoint
+### Example: server-side table
 
 ```blade
-<x-daisy::ui.data-display.datatable
-    :server-side="true"
-    :responsive="true"
-    :ajax="[
-        'url' => route('users.datatable'),
-        'type' => 'GET',
-    ]"
+<x-daisy::ui.data-display.table
+    mode="server"
+    server-adapter="spatie-query-builder"
+    persist-state="url"
+    state-key="users-table"
     :columns="[
-        ['data' => 'name', 'title' => 'Name', 'name' => 'users.name'],
-        ['data' => 'email', 'title' => 'Email', 'name' => 'users.email'],
+        ['key' => 'name', 'label' => 'Name', 'sortable' => true, 'filterable' => true, 'sortKey' => 'name', 'filterKey' => 'name', 'filter' => ['type' => 'text']],
+        ['key' => 'email', 'label' => 'Email', 'sortable' => true, 'filterable' => true, 'sortKey' => 'email', 'filterKey' => 'email', 'filter' => ['type' => 'text']],
+        [
+            'key' => 'status',
+            'label' => 'Status',
+            'html' => true,
+            'sortable' => true,
+            'filterable' => true,
+            'sortKey' => 'status',
+            'filterKey' => 'status',
+            'filter' => [
+                'type' => 'select',
+                'options' => [
+                    ['value' => 'active', 'label' => 'Active'],
+                    ['value' => 'invited', 'label' => 'Invited'],
+                    ['value' => 'archived', 'label' => 'Archived'],
+                ],
+            ],
+        ],
     ]"
+    :endpoint="route('users.table')"
+    method="GET"
+    :initial-state="[
+        'sorting' => [['id' => 'name', 'desc' => false]],
+        'pagination' => ['pageIndex' => 0, 'pageSize' => 25],
+    ]"
+    :page-size-options="[10, 25, 50]"
+    zebra
+    search
 />
 ```
 
-### Theme integration
+### Example: Spatie Query Builder backend
 
-The package ships a DaisyUI-compatible DataTables theme layer:
+```php
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
-- generic DaisyUI control classes for search, length select, and paging
-- theme-token based colors using DaisyUI surface and content variables
-- responsive details styled to match DaisyUI cards and table surfaces
+QueryBuilder::for(User::query())
+    ->allowedSorts(['name', 'email', 'status'])
+    ->allowedFilters([
+        'name',
+        'email',
+        'status',
+        AllowedFilter::partial('global'),
+    ])
+    ->paginate(request('page.size', 25))
+    ->appends(request()->query());
+```
 
-The goal is for DataTables controls to blend into any active DaisyUI theme without forcing a package-specific color preset.
+### Server contract
 
-Theme implementation notes:
+Default package server adapter request payload:
 
-- the package keeps the native DataTables 2 `layout` structure instead of rebuilding the control bar in Blade
-- DataTables default pagination uses transparent backgrounds and gradient hover states, so the package explicitly remaps paging buttons to DaisyUI-compatible surface, border, hover, active, and disabled states
-- the CSS layer uses DaisyUI v5 semantic variables such as `--color-base-100`, `--color-base-200`, and `--color-base-content`, with legacy fallbacks where needed
+```json
+{
+  "pageIndex": 0,
+  "pageSize": 25,
+  "sorting": [
+    { "id": "name", "desc": false }
+  ],
+  "globalFilter": "jane",
+  "columnFilters": [
+    { "id": "status", "value": "active" }
+  ],
+  "columnVisibility": {
+    "email": true,
+    "status": true
+  }
+}
+```
+
+Response payload:
+
+```json
+{
+  "rows": [
+    {
+      "id": 1,
+      "name": "Jane Doe",
+      "email": "jane@example.com",
+      "status": "<span class=\"badge badge-success\">Active</span>"
+    }
+  ],
+  "rowCount": 128,
+  "pageCount": 6,
+  "state": {
+    "pageIndex": 0,
+    "pageSize": 25
+  },
+  "meta": {
+    "availableFilters": {
+      "status": [
+        {"label": "Active", "value": "active"},
+        {"label": "Suspended", "value": "suspended"}
+      ]
+    }
+  }
+}
+```
+
+### Spatie Query Builder adapter contract
+
+When `server-adapter="spatie-query-builder"` is enabled, the runtime sends:
+
+- `sort=name,-created_at`
+- `filter[status]=active`
+- `filter[global]=jane`
+- `page[number]=3`
+- `page[size]=25`
+
+Expected response shape:
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Jane Doe",
+      "email": "jane@example.com",
+      "status": "<span class=\"badge badge-success\">Active</span>"
+    }
+  ],
+  "meta": {
+    "current_page": 3,
+    "per_page": 25,
+    "total": 128,
+    "last_page": 6
+  }
+}
+```
+
+Notes:
+
+- `filter[global]` is the default global search key in Spatie mode and can be changed with `globalFilterKey`.
+- The host app must explicitly allow every filter and sort used by the component.
+- URL persistence uses the adapter-native query string so copied links stay backend-compatible.
+
+### Upgrade notes
+
+- There is no compatibility layer for DataTables requests or responses.
+- Responsive details rows, export buttons, row selection, and virtualization are out of scope for v1.
+- The runtime keeps auto-bootstrap semantics, but the global API is now `window.DaisyTable`.
+- `serverAdapter="spatie-query-builder"` is additive; the package JSON server contract remains the default.
