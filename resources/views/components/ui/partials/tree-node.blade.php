@@ -1,4 +1,20 @@
 @php
+    $resolveNodeState = function ($item) use (&$resolveNodeState, $childrenKey, $lazyKey) {
+        if (!is_array($item)) return 'unchecked';
+        $state = $item['state'] ?? null;
+        if ($state === 'mixed' || !empty($item['indeterminate'])) return 'mixed';
+        if ($state === 'checked' || $state === 'selected' || !empty($item['selected']) || !empty($item['checked'])) return 'checked';
+        $itemChildren = $item[$childrenKey] ?? [];
+        $itemIsLazy = !empty($item[$lazyKey]);
+        if ($itemIsLazy || !is_array($itemChildren) || count($itemChildren) === 0) return 'unchecked';
+        $childStates = array_map(fn ($child) => $resolveNodeState($child), $itemChildren);
+        $hasChecked = in_array('checked', $childStates, true);
+        $hasMixed = in_array('mixed', $childStates, true);
+        $hasUnchecked = in_array('unchecked', $childStates, true);
+        if ($hasMixed || ($hasChecked && $hasUnchecked)) return 'mixed';
+        if ($hasChecked) return 'checked';
+        return 'unchecked';
+    };
     // Extraction des propriétés du nœud avec support des clés personnalisables (itemKey, labelKey, etc.).
     $id = is_array($node) ? ($node[$itemKey] ?? null) : null;
     $label = is_array($node) ? ($node[$labelKey] ?? '') : '';
@@ -9,9 +25,10 @@
     $hasChildren = $isLazy || (is_array($children) && count($children) > 0);
     // Les nœuds lazy sont toujours repliés par défaut pour ne charger qu'à l'ouverture.
     $expanded = $isLazy ? false : (bool)($node['expanded'] ?? false);
-    $selected = (bool)($node['selected'] ?? false);
-    // Le treeview accepte un état tri-state initial pour les checkboxes parents.
-    $indeterminate = (bool)($node['indeterminate'] ?? false) || (($node['state'] ?? null) === 'mixed');
+    $resolvedState = $resolveNodeState($node);
+    $selected = $resolvedState === 'checked';
+    // Le rendu serveur déduit aussi l'état mixte des descendants déjà présents.
+    $indeterminate = $resolvedState === 'mixed';
     // Un nœud est désactivé s'il est explicitement désactivé OU si son parent est désactivé (cascade).
     $nodeDisabled = (bool)($node['disabled'] ?? false) || (bool)($disabledParent ?? false);
     $isMulti = $selection === 'multiple';
@@ -37,7 +54,7 @@
         {{-- Bouton toggle pour expand/collapse (uniquement si le nœud a des enfants) --}}
         @if($hasChildren)
             <button type="button"
-                    class="btn btn-ghost btn-xs btn-square"
+                    class="btn btn-ghost btn-xs btn-square shrink-0 flex items-center justify-center"
                     aria-label="Toggle"
                     data-toggle="1"
                     tabindex="-1">
@@ -93,4 +110,3 @@
         </ul>
     @endif
 </li>
-

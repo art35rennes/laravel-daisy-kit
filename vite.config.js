@@ -43,9 +43,9 @@ export default defineConfig({
                         return 'chart';
                     }
 
-                    // Regrouper DataTables, son extension responsive et jQuery
-                    if (id.includes('datatables.net') || id.includes('/jquery')) {
-                        return 'datatables-vendor';
+                    // Isoler TanStack Table pour eviter de gonfler le bundle principal.
+                    if (id.includes('@tanstack/table-core')) {
+                        return 'table-core';
                     }
                     
                     // Séparer les autres dépendances lourdes

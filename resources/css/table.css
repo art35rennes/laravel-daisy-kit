@@ -1,0 +1,73 @@
+.daisy-table-shell {
+  container-type: inline-size;
+}
+
+.daisy-table-toolbar {
+  gap: 0.75rem;
+}
+
+.daisy-table-search {
+  min-width: min(100%, 18rem);
+}
+
+.daisy-table-scroll {
+  overflow-x: auto;
+}
+
+.daisy-table-head-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.daisy-table-head-button:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--color-primary, hsl(var(--p))) 35%, transparent);
+  outline-offset: 2px;
+  border-radius: 0.375rem;
+}
+
+.daisy-table-sort-indicator {
+  color: color-mix(in oklab, var(--color-base-content, hsl(var(--bc))) 55%, transparent);
+  font-size: 0.75rem;
+}
+
+.daisy-table-status {
+  min-height: 2.5rem;
+}
+
+.daisy-table-empty-row td,
+.daisy-table-error-row td,
+.daisy-table-loading-row td {
+  text-align: center;
+  color: color-mix(in oklab, var(--color-base-content, hsl(var(--bc))) 72%, transparent);
+}
+
+.daisy-table-column-menu {
+  min-width: 14rem;
+}
+
+.daisy-table-column-menu label {
+  justify-content: space-between;
+}
+
+@container (max-width: 40rem) {
+  .daisy-table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .daisy-table-toolbar > * {
+    width: 100%;
+  }
+
+  .daisy-table-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

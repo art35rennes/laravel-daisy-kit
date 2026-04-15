@@ -6,7 +6,7 @@
     'selection' => 'single',
     // Persister l'état d'expansion dans sessionStorage (clé: treeview:<id>)
     'persist' => false,
-    // Double-clic sur le libellé pour toggler
+    // Clic sur le libellé pour sélectionner le nœud
     'selectOnLabel' => true,
     // Clés personnalisables
     'itemKey' => 'id',

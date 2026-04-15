@@ -44,6 +44,7 @@
         }
     },
     "scripts": {
+        "ai:catalog": "@php tools/generate-ai-catalog.php",
         "test": "pest",
         "lint": "pint --parallel"
     },

@@ -45,6 +45,49 @@ it('renders an input component', function () {
         ->toContain('Type here');
 });
 
+it('renders a token-input component with prefilled values and hidden inputs', function () {
+    $html = View::make('daisy::components.ui.inputs.token-input', [
+        'name' => 'recipients',
+        'values' => ['Alice@Example.com', 'bob@example.com'],
+        'placeholder' => 'Add recipients',
+    ])->render();
+
+    expect($html)
+        ->toContain('data-module="token-input"')
+        ->toContain('data-submit-name="recipients[]"')
+        ->toContain('Add recipients')
+        ->toContain('data-token-item')
+        ->toContain('value="alice@example.com"')
+        ->toContain('value="bob@example.com"')
+        ->toContain('name="recipients[]"');
+});
+
+it('renders token-input suggestion and endpoint payloads for js enhancement', function () {
+    $html = View::make('daisy::components.ui.inputs.token-input', [
+        'name' => 'tags',
+        'preset' => 'text',
+        'size' => 'sm',
+        'color' => 'primary',
+        'suggestions' => [
+            ['value' => 'laravel', 'label' => 'Laravel'],
+            ['value' => 'livewire', 'label' => 'Livewire'],
+        ],
+        'endpoint' => '/api/tags',
+        'param' => 'search',
+        'debounce' => 150,
+        'minChars' => 1,
+    ])->render();
+
+    expect($html)
+        ->toContain('input-sm')
+        ->toContain('badge-primary')
+        ->toContain('data-suggestions=')
+        ->toContain('data-endpoint="/api/tags"')
+        ->toContain('data-param="search"')
+        ->toContain('data-debounce="150"')
+        ->toContain('data-min-chars="1"');
+});
+
 it('renders a divider component', function () {
     $html = View::make('daisy::components.ui.layout.divider', [
         'slot' => '',
@@ -305,6 +348,79 @@ it('renders inline-colon countdown with one daisyUI countdown wrapper per segmen
     ])->render();
 
     expect(substr_count($html, '<span class="countdown">'))->toBe(3);
+});
+
+it('renders a tree view parent with an explicit mixed checkbox state', function () {
+    $html = View::make('daisy::components.ui.advanced.tree-view', [
+        'selection' => 'multiple',
+        'data' => [
+            [
+                'id' => 'sandbox',
+                'label' => 'Sandbox',
+                'state' => 'mixed',
+                'children' => [
+                    ['id' => 'draft', 'label' => 'Draft.md', 'selected' => true],
+                    ['id' => 'notes', 'label' => 'Notes.md'],
+                ],
+            ],
+        ],
+    ])->render();
+
+    expect($html)
+        ->toContain('data-indeterminate="true"')
+        ->toContain('aria-checked="mixed"')
+        ->toContain('Draft.md')
+        ->toContain('Notes.md');
+});
+
+it('renders tree nodes from checked aliases used by APIs', function () {
+    $html = View::make('daisy::components.ui.advanced.tree-view', [
+        'selection' => 'multiple',
+        'data' => [
+            [
+                'id' => 'docs',
+                'label' => 'Documentation',
+                'checked' => true,
+                'children' => [
+                    ['id' => 'readme', 'label' => 'README.md', 'checked' => true],
+                ],
+            ],
+        ],
+    ])->render();
+
+    expect(substr_count($html, 'checked'))->toBeGreaterThanOrEqual(2);
+});
+
+it('derives a mixed state for parents from partially selected descendants', function () {
+    $html = View::make('daisy::components.ui.advanced.tree-view', [
+        'selection' => 'multiple',
+        'data' => [
+            [
+                'id' => 'project-beta',
+                'label' => 'Projet Beta',
+                'children' => [
+                    [
+                        'id' => 'docs',
+                        'label' => 'Documentation',
+                        'children' => [
+                            ['id' => 'readme', 'label' => 'README.md', 'selected' => true],
+                            ['id' => 'install', 'label' => 'INSTALL.md'],
+                        ],
+                    ],
+                    [
+                        'id' => 'sources',
+                        'label' => 'Sources',
+                        'children' => [
+                            ['id' => 'main', 'label' => 'main.js'],
+                            ['id' => 'app', 'label' => 'app.vue'],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ])->render();
+
+    expect(substr_count($html, 'data-indeterminate="true"'))->toBeGreaterThanOrEqual(2);
 });
 
 it('renders a tree view configured for progressive lazy loading', function () {

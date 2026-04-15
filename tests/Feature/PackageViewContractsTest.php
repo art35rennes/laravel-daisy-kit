@@ -20,6 +20,31 @@ it('renders the package layout component through its public alias', function () 
         ->toContain('name="csrf-token"');
 });
 
+it('renders token-input through its public alias', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.inputs.token-input name="recipients" :values="['alice@example.com']" />
+    BLADE);
+
+    expect($html)
+        ->toContain('data-module="token-input"')
+        ->toContain('name="recipients[]"')
+        ->toContain('alice@example.com');
+});
+
+it('renders table through its public alias', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            :columns="[['key' => 'name', 'label' => 'Name']]"
+            :rows="[['name' => 'Jane']]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('data-daisy-table="1"')
+        ->toContain('Jane')
+        ->toContain('Name');
+});
+
 it('renders the ui theme selector only when the package dev toggle is enabled', function () {
     config([
         'daisy-kit.dev.show_theme_selector' => true,
