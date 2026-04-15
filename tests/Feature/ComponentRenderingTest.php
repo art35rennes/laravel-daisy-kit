@@ -1,6 +1,9 @@
 <?php
 
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\HtmlString;
+use Illuminate\View\ComponentAttributeBag;
 
 it('renders a button component', function () {
     $html = View::make('daisy::components.ui.inputs.button', [
@@ -34,12 +37,55 @@ it('renders an alert component', function () {
 
 it('renders an input component', function () {
     $html = View::make('daisy::components.ui.inputs.input', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag(['placeholder' => 'Type here']),
+        'attributes' => new ComponentAttributeBag(['placeholder' => 'Type here']),
     ])->render();
 
     expect($html)
         ->toContain('input')
         ->toContain('Type here');
+});
+
+it('renders a token-input component with prefilled values and hidden inputs', function () {
+    $html = View::make('daisy::components.ui.inputs.token-input', [
+        'name' => 'recipients',
+        'values' => ['Alice@Example.com', 'bob@example.com'],
+        'placeholder' => 'Add recipients',
+    ])->render();
+
+    expect($html)
+        ->toContain('data-module="token-input"')
+        ->toContain('data-submit-name="recipients[]"')
+        ->toContain('Add recipients')
+        ->toContain('data-token-item')
+        ->toContain('value="alice@example.com"')
+        ->toContain('value="bob@example.com"')
+        ->toContain('name="recipients[]"');
+});
+
+it('renders token-input suggestion and endpoint payloads for js enhancement', function () {
+    $html = View::make('daisy::components.ui.inputs.token-input', [
+        'name' => 'tags',
+        'preset' => 'text',
+        'size' => 'sm',
+        'color' => 'primary',
+        'suggestions' => [
+            ['value' => 'laravel', 'label' => 'Laravel'],
+            ['value' => 'livewire', 'label' => 'Livewire'],
+        ],
+        'endpoint' => '/api/tags',
+        'param' => 'search',
+        'debounce' => 150,
+        'minChars' => 1,
+    ])->render();
+
+    expect($html)
+        ->toContain('input-sm')
+        ->toContain('badge-primary')
+        ->toContain('data-suggestions=')
+        ->toContain('data-endpoint="/api/tags"')
+        ->toContain('data-param="search"')
+        ->toContain('data-debounce="150"')
+        ->toContain('data-min-chars="1"');
 });
 
 it('renders a divider component', function () {
@@ -54,7 +100,7 @@ it('renders a divider component', function () {
 it('renders a link component', function () {
     $html = View::make('daisy::components.ui.advanced.link', [
         'slot' => 'Link text',
-        'attributes' => new \Illuminate\View\ComponentAttributeBag(['href' => '/test']),
+        'attributes' => new ComponentAttributeBag(['href' => '/test']),
     ])->render();
 
     expect($html)
@@ -69,7 +115,7 @@ it('renders the grid layout with correct classes', function () {
     $html = View::make('daisy::components.ui.layout.grid-layout', [
         'gap' => 6,
         'align' => 'start',
-        'slot' => new \Illuminate\Support\HtmlString($inner),
+        'slot' => new HtmlString($inner),
     ])->render();
 
     expect($html)
@@ -93,7 +139,7 @@ it('injects grid layout CSS utilities only once', function () {
 @stack('styles')
 BLADE;
 
-    $html = \Illuminate\Support\Facades\Blade::render($blade);
+    $html = Blade::render($blade);
 
     expect($html)
         ->toContain('.col-12')
@@ -116,7 +162,7 @@ it('renders footer-layout component with columns', function () {
             ],
         ],
         'copyrightText' => 'Mon Entreprise',
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
     ])->render();
 
     expect($html)
@@ -133,7 +179,7 @@ it('renders footer-layout with social links', function () {
             ['icon' => 'facebook', 'href' => '#', 'label' => 'Facebook'],
             ['icon' => 'twitter', 'href' => '#', 'label' => 'Twitter'],
         ],
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
     ])->render();
 
     expect($html)
@@ -147,7 +193,7 @@ it('renders footer-layout with newsletter', function () {
         'newsletterTitle' => 'Newsletter',
         'newsletterDescription' => 'Restez informé',
         'newsletterAction' => '/subscribe',
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
     ])->render();
 
     expect($html)
@@ -161,7 +207,7 @@ it('renders footer-layout with brand text and description', function () {
     $html = View::make('daisy::components.ui.layout.footer-layout', [
         'brandText' => 'Mon Entreprise',
         'brandDescription' => 'Créons ensemble',
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
     ])->render();
 
     expect($html)
@@ -174,7 +220,7 @@ it('renders footer-layout with custom copyright year', function () {
     $html = View::make('daisy::components.ui.layout.footer-layout', [
         'copyrightYear' => 2023,
         'copyrightText' => 'Mon Entreprise',
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
     ])->render();
 
     expect($html)
@@ -185,7 +231,7 @@ it('renders footer-layout with custom copyright year', function () {
 it('renders footer-layout without divider when showDivider is false', function () {
     $html = View::make('daisy::components.ui.layout.footer-layout', [
         'showDivider' => false,
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
     ])->render();
 
     expect($html)
@@ -194,7 +240,7 @@ it('renders footer-layout without divider when showDivider is false', function (
 
 it('renders a sign component', function () {
     $html = View::make('daisy::components.ui.inputs.sign', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag(['name' => 'signature']),
+        'attributes' => new ComponentAttributeBag(['name' => 'signature']),
     ])->render();
 
     expect($html)
@@ -208,7 +254,7 @@ it('renders a sign component with custom dimensions', function () {
     $html = View::make('daisy::components.ui.inputs.sign', [
         'width' => 600,
         'height' => 300,
-        'attributes' => new \Illuminate\View\ComponentAttributeBag(['name' => 'signature']),
+        'attributes' => new ComponentAttributeBag(['name' => 'signature']),
     ])->render();
 
     expect($html)
@@ -219,7 +265,7 @@ it('renders a sign component with custom dimensions', function () {
 it('renders a sign component without actions', function () {
     $html = View::make('daisy::components.ui.inputs.sign', [
         'showActions' => false,
-        'attributes' => new \Illuminate\View\ComponentAttributeBag(['name' => 'signature']),
+        'attributes' => new ComponentAttributeBag(['name' => 'signature']),
     ])->render();
 
     expect($html)
