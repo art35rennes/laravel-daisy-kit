@@ -118,8 +118,10 @@ export default function initTokenInput(root, options = {}) {
     const submitName = String(options.submitName ?? root.dataset.submitName ?? '');
     const allowDuplicates = String(options.allowDuplicates ?? root.dataset.allowDuplicates ?? 'false') === 'true';
     const maxItems = Number.parseInt(options.maxItems ?? root.dataset.maxItems ?? '', 10);
-    const minChars = Number.parseInt(options.minChars ?? root.dataset.minChars ?? '2', 10) || 2;
-    const debounceMs = Number.parseInt(options.debounce ?? root.dataset.debounce ?? '300', 10) || 300;
+    const parsedMinChars = Number.parseInt(options.minChars ?? root.dataset.minChars ?? '2', 10);
+    const parsedDebounceMs = Number.parseInt(options.debounce ?? root.dataset.debounce ?? '300', 10);
+    const minChars = Number.isInteger(parsedMinChars) ? Math.max(1, parsedMinChars) : 2;
+    const debounceMs = Number.isInteger(parsedDebounceMs) ? Math.max(0, parsedDebounceMs) : 300;
     const endpoint = String(options.endpoint ?? root.dataset.endpoint ?? '').trim();
     const param = String(options.param ?? root.dataset.param ?? 'q');
     const delimiters = parseArrayOption(options.delimiters ?? root.dataset.delimiters, ['Enter', 'Tab', ',']);

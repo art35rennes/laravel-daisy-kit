@@ -155,7 +155,31 @@ function normalizeSorting(sorting = [], columns = []) {
 }
 
 function normalizeColumnFilters(filters = [], filterDefinitions = []) {
-  const definitions = new Map(filterDefinitions.map((filter) => [filter.id, filter]));
+  const definitions = new Map(
+    (Array.isArray(filterDefinitions) ? filterDefinitions : [])
+      .map((entry) => {
+        if (!isPlainObject(entry)) {
+          return null;
+        }
+
+        if (typeof entry.id === 'string' && ALLOWED_FILTER_TYPES.includes(entry.type)) {
+          return [entry.id, entry];
+        }
+
+        if (isPlainObject(entry.filter) && typeof entry.key === 'string') {
+          const normalized = normalizeFilterDefinition(entry.filter, {
+            id: entry.key,
+            label: typeof entry.label === 'string' && entry.label !== '' ? entry.label : entry.key,
+            filterKey: typeof entry.filterKey === 'string' && entry.filterKey !== '' ? entry.filterKey : entry.key,
+          });
+
+          return normalized ? [normalized.id, normalized] : null;
+        }
+
+        return null;
+      })
+      .filter(Boolean)
+  );
 
   if (!Array.isArray(filters)) {
     return [];
@@ -318,9 +342,6 @@ function buildSpatieRequestParams(config, state) {
     });
   const columnFilters = normalizeColumnFilters(state.columnFilters, config.filters);
 
-  params.set('page[number]', String((state.pagination.pageIndex ?? 0) + 1));
-  params.set('page[size]', String(state.pagination.pageSize ?? DEFAULT_PAGE_SIZE_OPTIONS[0]));
-
   if (sorting.length > 0) {
     params.set('sort', sorting.join(','));
   }
@@ -342,6 +363,9 @@ function buildSpatieRequestParams(config, state) {
       params.set(`filter[${filterKey}]`, String(filter.value));
     }
   });
+
+  params.set('page[number]', String((state.pagination.pageIndex ?? 0) + 1));
+  params.set('page[size]', String(state.pagination.pageSize ?? DEFAULT_PAGE_SIZE_OPTIONS[0]));
 
   return params;
 }
