@@ -45,6 +45,16 @@ it('renders table through its public alias', function () {
         ->toContain('Name');
 });
 
+it('renders ordered-list through its public alias', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.layout.ordered-list :items="[['id' => 'plan', 'label' => 'Plan V2']]" />
+    BLADE);
+
+    expect($html)
+        ->toContain('Plan V2')
+        ->toContain('data-ordered-list="1"');
+});
+
 it('renders the ui theme selector only when the package dev toggle is enabled', function () {
     config([
         'daisy-kit.dev.show_theme_selector' => true,
