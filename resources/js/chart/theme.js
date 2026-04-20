@@ -1,241 +1,198 @@
-/**
- * Helpers de thème DaisyUI pour Chart.js
- * - Résolution des tokens de couleur DaisyUI (ex: 'primary', 'secondary', 'base-content') vers RGB calculé
- * - Utilitaires pour appliquer l'alpha à une couleur rgb/hex/css
- */
-
-/**
- * Vérifie si une valeur ressemble à une couleur CSS
- * @param {*} value - Valeur à tester
- * @returns {boolean} true si la valeur ressemble à une couleur CSS
- */
 function isCssColorLike(value) {
-  if (!value || typeof value !== 'string') return false;
-  const v = value.trim();
-  return v.startsWith('#') || v.startsWith('rgb') || v.startsWith('hsl') || v.startsWith('oklch') || v.startsWith('lab') || v.startsWith('lch') || v.startsWith('color(') || v.startsWith('var(');
-}
-
-/**
- * Convertit une chaîne rgb() en rgba() avec l'alpha spécifié
- * @param {string} rgbString - Chaîne RGB à convertir
- * @param {number} alpha - Valeur alpha (0-1)
- * @returns {string} Chaîne RGBA ou la chaîne originale si conversion impossible
- */
-function toRgbaString(rgbString, alpha) {
-  try {
-    const m = rgbString.match(/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
-    if (!m) return rgbString;
-    const r = parseInt(m[1], 10), g = parseInt(m[2], 10), b = parseInt(m[3], 10);
-    const a = Math.max(0, Math.min(1, Number(alpha)));
-    return `rgba(${r}, ${g}, ${b}, ${a})`;
-  } catch (_) {
-    return rgbString;
-  }
-}
-
-/**
- * Crée un élément sonde invisible pour tester les styles CSS
- * @param {Element} root - Élément racine où attacher la sonde
- * @returns {HTMLElement} Élément sonde créé
- */
-function createProbe(root) {
-  const probe = document.createElement('span');
-  probe.textContent = '\u200b';
-  probe.style.position = 'absolute';
-  probe.style.left = '-99999px';
-  probe.style.top = '-99999px';
-  probe.style.pointerEvents = 'none';
-  probe.style.opacity = '0';
-  (root || document.body).appendChild(probe);
-  return probe;
-}
-
-/**
- * Résout un token de couleur DaisyUI ou une couleur CSS en valeur calculée
- * @param {string} token - Token DaisyUI (ex: 'primary') ou couleur CSS
- * @param {Element} contextEl - Élément de contexte pour la résolution
- * @param {string} role - Rôle de la couleur ('text', 'bg', 'border')
- * @returns {string|null} Couleur résolue ou null si échec
- */
-function resolveColorToken(token, contextEl, role = 'text') {
-  if (!token) return null;
-  
-  // Valeur de couleur CSS directe
-  if (isCssColorLike(token)) {
-    // Si c'est une variable CSS, la résoudre
-    if (token.startsWith('var(')) {
-      const probe = createProbe(contextEl || document.body);
-      probe.style.color = token;
-      const color = getComputedStyle(probe).color;
-      probe.remove();
-      return color || null;
+    if (!value || typeof value !== 'string') {
+        return false;
     }
-    return token;
-  }
 
-  // Approche par classe utilitaire DaisyUI selon le rôle
-  let className = `text-${token}`;
-  let readProp = 'color';
-  if (role === 'bg') { className = `bg-${token}`; readProp = 'backgroundColor'; }
-  else if (role === 'border') { className = `border border-${token}`; readProp = 'borderTopColor'; }
-  
-  const probe = createProbe(contextEl || document.body);
-  probe.className = className;
-  const comp = getComputedStyle(probe);
-  const color = comp[readProp] || comp.color;
-  probe.remove();
-  return color || null;
+    const candidate = value.trim();
+    return candidate.startsWith('#')
+        || candidate.startsWith('rgb')
+        || candidate.startsWith('hsl')
+        || candidate.startsWith('oklch')
+        || candidate.startsWith('lab')
+        || candidate.startsWith('lch')
+        || candidate.startsWith('color(')
+        || candidate.startsWith('var(');
 }
 
-/**
- * Résout une liste de tokens/couleurs en couleurs calculées
- * @param {Array|string} tokensOrColors - Liste de tokens ou couleurs à résoudre
- * @param {Element} contextEl - Élément de contexte pour la résolution
- * @param {string} role - Rôle des couleurs ('text', 'bg', 'border')
- * @returns {Array} Tableau des couleurs résolues (filtrées des valeurs nulles)
- */
-export function resolveColors(tokensOrColors, contextEl, role = 'text') {
-  const list = Array.isArray(tokensOrColors) ? tokensOrColors : (tokensOrColors ? [tokensOrColors] : []);
-  return list.map((t) => resolveColorToken(String(t), contextEl, role)).filter(Boolean);
+function createProbe(root) {
+    if (typeof document === 'undefined') {
+        return null;
+    }
+
+    const probe = document.createElement('span');
+    probe.textContent = '\u200b';
+    probe.style.position = 'absolute';
+    probe.style.left = '-99999px';
+    probe.style.top = '-99999px';
+    probe.style.pointerEvents = 'none';
+    probe.style.opacity = '0';
+    (root || document.body).appendChild(probe);
+    return probe;
 }
 
-/**
- * Résout un seul token/couleur en couleur calculée
- * @param {string} tokenOrColor - Token DaisyUI ou couleur CSS
- * @param {Element} contextEl - Élément de contexte pour la résolution
- * @param {string} role - Rôle de la couleur ('text', 'bg', 'border')
- * @returns {string|null} Couleur résolue ou null si échec
- */
+function resolveColorToken(token, contextEl, role = 'text') {
+    if (!token || typeof document === 'undefined') {
+        return null;
+    }
+
+    if (isCssColorLike(token)) {
+        if (token.startsWith('var(')) {
+            const probe = createProbe(contextEl || document.body);
+            if (!probe) {
+                return null;
+            }
+            probe.style.color = token;
+            const color = getComputedStyle(probe).color;
+            probe.remove();
+            return color || null;
+        }
+
+        return token;
+    }
+
+    let className = `text-${token}`;
+    let readProp = 'color';
+
+    if (role === 'bg') {
+        className = `bg-${token}`;
+        readProp = 'backgroundColor';
+    } else if (role === 'border') {
+        className = `border border-${token}`;
+        readProp = 'borderTopColor';
+    }
+
+    const probe = createProbe(contextEl || document.body);
+    if (!probe) {
+        return null;
+    }
+    probe.className = className;
+    const computed = getComputedStyle(probe);
+    const color = computed[readProp] || computed.color;
+    probe.remove();
+
+    return color || null;
+}
+
+function toRgbaString(rgbString, alpha) {
+    const match = rgbString?.match(/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+    if (!match) {
+        return rgbString;
+    }
+
+    const [r, g, b] = match.slice(1, 4).map((value) => Number.parseInt(value, 10));
+    return `rgba(${r}, ${g}, ${b}, ${Math.max(0, Math.min(1, Number(alpha)))})`;
+}
+
 export function resolveSingleColor(tokenOrColor, contextEl, role = 'text') {
-  return resolveColorToken(tokenOrColor, contextEl, role);
+    return resolveColorToken(tokenOrColor, contextEl, role);
 }
 
-/**
- * Applique une valeur alpha à une couleur
- * @param {string} color - Couleur source
- * @param {number} alpha - Valeur alpha (0-1)
- * @returns {string} Couleur avec alpha appliqué
- */
+export function resolveColors(tokensOrColors, contextEl, role = 'text') {
+    const list = Array.isArray(tokensOrColors) ? tokensOrColors : (tokensOrColors ? [tokensOrColors] : []);
+    return list.map((entry) => resolveSingleColor(entry, contextEl, role)).filter(Boolean);
+}
+
 export function applyAlpha(color, alpha) {
-  if (!color) return color;
-  
-  if (color.startsWith('rgba(')) {
-    // Remplace l'alpha existant
-    try {
-      const parts = color.substring(5, color.length - 1).split(',').map((s) => s.trim());
-      const r = parts[0], g = parts[1], b = parts[2];
-      const a = Math.max(0, Math.min(1, Number(alpha)));
-      return `rgba(${r}, ${g}, ${b}, ${a})`;
-    } catch (_) { return color; }
-  }
-  
-  if (color.startsWith('rgb(')) {
-    return toRgbaString(color, alpha);
-  }
-  
-  // Pour les chaînes non-rgb, essaie de résoudre en rgb via une sonde
-  const probe = createProbe(document.body);
-  probe.style.color = color;
-  const rgb = getComputedStyle(probe).color;
-  probe.remove();
-  return toRgbaString(rgb, alpha);
+    if (!color || typeof document === 'undefined') {
+        return color;
+    }
+
+    if (color.startsWith('rgba(')) {
+        const parts = color.substring(5, color.length - 1).split(',').map((part) => part.trim());
+        return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${Math.max(0, Math.min(1, Number(alpha)))})`;
+    }
+
+    if (color.startsWith('rgb(')) {
+        return toRgbaString(color, alpha);
+    }
+
+    const probe = createProbe(document.body);
+    if (!probe) {
+        return color;
+    }
+    probe.style.color = color;
+    const rgb = getComputedStyle(probe).color;
+    probe.remove();
+    return toRgbaString(rgb, alpha);
 }
 
-/**
- * Obtient la couleur base-content du thème DaisyUI
- * @param {Element} contextEl - Élément de contexte
- * @returns {string} Couleur base-content ou fallback
- */
-export function getBaseContentColor(contextEl) {
-  return resolveSingleColor('base-content', contextEl) || 'rgb(30,30,30)';
+function getBaseContentColor(contextEl) {
+    return resolveSingleColor('base-content', contextEl) || 'rgb(30, 30, 30)';
 }
 
-/**
- * Obtient la couleur base-300 du thème DaisyUI
- * Utilisée pour les bordures subtiles et lignes de grille
- * @param {Element} contextEl - Élément de contexte
- * @returns {string} Couleur base-300 ou fallback
- */
-export function getBase300Color(contextEl) {
-  // DaisyUI: card-border
-  const probe = createProbe(contextEl || document.body);
-  probe.className = 'card-border';
-  const style = getComputedStyle(probe);
-  // Dans plusieurs navigateurs, la couleur de bordure est reflétée comme color quand pas de texte
-  const borderColor = style.borderTopColor || style.color;
-  probe.remove();
-  return borderColor || 'rgb(200,200,200)';
+function getBase300Color(contextEl) {
+    const probe = createProbe(contextEl || document.body);
+    if (!probe) {
+        return 'rgb(200, 200, 200)';
+    }
+    probe.className = 'card-border';
+    const style = getComputedStyle(probe);
+    const color = style.borderTopColor || style.color;
+    probe.remove();
+    return color || 'rgb(200, 200, 200)';
 }
 
-/**
- * Obtient la couleur base-100 du thème DaisyUI
- * Couleur d'arrière-plan de base/carte
- * @param {Element} contextEl - Élément de contexte
- * @returns {string} Couleur base-100 ou fallback
- */
-export function getBase100Color(contextEl) {
-  const probe = createProbe(contextEl || document.body);
-  probe.className = 'bg-base-100';
-  const style = getComputedStyle(probe);
-  const bg = style.backgroundColor || 'rgb(255,255,255)';
-  probe.remove();
-  return bg;
+function getBase200Color(contextEl) {
+    return resolveSingleColor('base-200', contextEl, 'bg') || 'rgb(245, 245, 245)';
 }
 
-/**
- * Parse une chaîne RGB/RGBA en objet avec composantes numériques
- * @param {string} rgbString - Chaîne RGB à parser
- * @returns {Object|null} Objet {r, g, b, a} ou null si parsing impossible
- */
 function parseRgb(rgbString) {
-  const m = rgbString.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([0-9.]+))?\s*\)/i);
-  if (!m) return null;
-  return { r: Number(m[1]), g: Number(m[2]), b: Number(m[3]), a: m[4] != null ? Number(m[4]) : 1 };
+    const match = rgbString?.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([0-9.]+))?\s*\)/i);
+    if (!match) {
+        return null;
+    }
+
+    return {
+        r: Number(match[1]),
+        g: Number(match[2]),
+        b: Number(match[3]),
+        a: match[4] != null ? Number(match[4]) : 1,
+    };
 }
 
-/**
- * Convertit une composante sRGB en linéaire pour le calcul de luminance
- * @param {number} c - Composante sRGB (0-255)
- * @returns {number} Composante linéaire
- */
-function srgbToLin(c) {
-  c = c / 255;
-  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+function srgbToLinear(channel) {
+    const value = channel / 255;
+    return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
 }
 
-/**
- * Calcule la luminance relative d'une couleur RGB selon WCAG
- * @param {Object} rgb - Objet RGB avec propriétés r, g, b
- * @returns {number} Luminance relative (0-1)
- */
 function relativeLuminance(rgb) {
-  if (!rgb) return 1;
-  const r = srgbToLin(rgb.r);
-  const g = srgbToLin(rgb.g);
-  const b = srgbToLin(rgb.b);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    if (!rgb) {
+        return 1;
+    }
+
+    const r = srgbToLinear(rgb.r);
+    const g = srgbToLinear(rgb.g);
+    const b = srgbToLinear(rgb.b);
+
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-/**
- * Détermine si le thème actuel est sombre basé sur la luminance de base-100
- * @param {Element} contextEl - Élément de contexte
- * @returns {boolean} true si le thème est sombre
- */
-export function isDarkTheme(contextEl) {
-  const bg = getBase100Color(contextEl);
-  const p = parseRgb(bg);
-  const L = relativeLuminance(p);
-  return L < 0.5; // heuristique
+function isDarkTheme(contextEl) {
+    const baseColor = resolveSingleColor('base-100', contextEl, 'bg') || 'rgb(255, 255, 255)';
+    return relativeLuminance(parseRgb(baseColor)) < 0.45;
 }
 
-/**
- * Construit une palette de couleurs à partir de tokens DaisyUI
- * @param {Array} paletteTokens - Liste des tokens à utiliser
- * @param {Element} contextEl - Élément de contexte pour la résolution
- * @returns {Array} Palette de couleurs résolues
- */
-export function buildPalette(paletteTokens, contextEl) {
-  const tokens = Array.isArray(paletteTokens) && paletteTokens.length ? paletteTokens : ['primary','secondary','accent','info','success','warning','error'];
-  const colors = resolveColors(tokens, contextEl, 'text');
-  return colors;
+function buildPalette(tokens, contextEl) {
+    const input = Array.isArray(tokens) && tokens.length
+        ? tokens
+        : ['primary', 'secondary', 'accent', 'info', 'success', 'warning', 'error'];
+
+    const resolved = resolveColors(input, contextEl);
+    return resolved.length ? resolved : ['#2563eb', '#db2777', '#14b8a6', '#0ea5e9', '#22c55e', '#f59e0b', '#ef4444'];
+}
+
+export function buildChartTheme(config, contextEl) {
+    const dark = isDarkTheme(contextEl);
+    const palette = config.colors?.length ? resolveColors(config.colors, contextEl) : buildPalette(config.palette, contextEl);
+    const border = getBase300Color(contextEl);
+
+    return {
+        dark,
+        palette,
+        textColor: getBaseContentColor(contextEl),
+        textMutedColor: applyAlpha(getBaseContentColor(contextEl), dark ? 0.7 : 0.62),
+        axisColor: applyAlpha(border, dark ? 0.55 : 0.8),
+        gridColor: applyAlpha(border, dark ? 0.22 : 0.42),
+        tooltipBackground: applyAlpha(getBase200Color(contextEl), dark ? 0.98 : 0.95),
+    };
 }

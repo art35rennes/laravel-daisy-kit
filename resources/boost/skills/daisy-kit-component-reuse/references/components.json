@@ -1,13 +1,205 @@
 {
-    "generated_at": "2026-04-15T19:23:49+00:00",
+    "generated_at": "2026-04-20T20:01:15+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
-        "component_count": 134,
-        "template_count": 28,
+        "component_count": 144,
+        "template_count": 29,
         "excluded_component_template_mirrors": 13
     },
     "components": [
+        {
+            "alias": "x-daisy::charts.area",
+            "group": "charts",
+            "name": "area",
+            "relative_path": "resources/views/components/charts/area.blade.php",
+            "props": [
+                "series",
+                "categories",
+                "title",
+                "subtitle",
+                "height",
+                "width",
+                "legend",
+                "toolbar",
+                "loading",
+                "emptyMessage",
+                "colors",
+                "palette",
+                "valueFormat",
+                "tooltipFormat",
+                "options",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::charts.bar",
+            "group": "charts",
+            "name": "bar",
+            "relative_path": "resources/views/components/charts/bar.blade.php",
+            "props": [
+                "series",
+                "categories",
+                "title",
+                "subtitle",
+                "height",
+                "width",
+                "legend",
+                "toolbar",
+                "loading",
+                "emptyMessage",
+                "colors",
+                "palette",
+                "valueFormat",
+                "tooltipFormat",
+                "options",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::charts.donut",
+            "group": "charts",
+            "name": "donut",
+            "relative_path": "resources/views/components/charts/donut.blade.php",
+            "props": [
+                "series",
+                "categories",
+                "title",
+                "subtitle",
+                "height",
+                "width",
+                "legend",
+                "toolbar",
+                "loading",
+                "emptyMessage",
+                "colors",
+                "palette",
+                "valueFormat",
+                "tooltipFormat",
+                "options",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::charts.line",
+            "group": "charts",
+            "name": "line",
+            "relative_path": "resources/views/components/charts/line.blade.php",
+            "props": [
+                "series",
+                "categories",
+                "title",
+                "subtitle",
+                "height",
+                "width",
+                "legend",
+                "toolbar",
+                "loading",
+                "emptyMessage",
+                "colors",
+                "palette",
+                "valueFormat",
+                "tooltipFormat",
+                "options",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::charts.pie",
+            "group": "charts",
+            "name": "pie",
+            "relative_path": "resources/views/components/charts/pie.blade.php",
+            "props": [
+                "series",
+                "categories",
+                "title",
+                "subtitle",
+                "height",
+                "width",
+                "legend",
+                "toolbar",
+                "loading",
+                "emptyMessage",
+                "colors",
+                "palette",
+                "valueFormat",
+                "tooltipFormat",
+                "options",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::charts.sparkline",
+            "group": "charts",
+            "name": "sparkline",
+            "relative_path": "resources/views/components/charts/sparkline.blade.php",
+            "props": [
+                "series",
+                "categories",
+                "title",
+                "subtitle",
+                "height",
+                "width",
+                "legend",
+                "toolbar",
+                "loading",
+                "emptyMessage",
+                "colors",
+                "palette",
+                "valueFormat",
+                "tooltipFormat",
+                "options",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::charts.stacked-area",
+            "group": "charts",
+            "name": "stacked-area",
+            "relative_path": "resources/views/components/charts/stacked-area.blade.php",
+            "props": [
+                "series",
+                "categories",
+                "title",
+                "subtitle",
+                "height",
+                "width",
+                "legend",
+                "toolbar",
+                "loading",
+                "emptyMessage",
+                "colors",
+                "palette",
+                "valueFormat",
+                "tooltipFormat",
+                "options",
+                "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::charts.stacked-bar",
+            "group": "charts",
+            "name": "stacked-bar",
+            "relative_path": "resources/views/components/charts/stacked-bar.blade.php",
+            "props": [
+                "series",
+                "categories",
+                "title",
+                "subtitle",
+                "height",
+                "width",
+                "legend",
+                "toolbar",
+                "loading",
+                "emptyMessage",
+                "colors",
+                "palette",
+                "valueFormat",
+                "tooltipFormat",
+                "options",
+                "module"
+            ]
+        },
         {
             "alias": "x-daisy::layout.app",
             "group": "layout",
@@ -196,25 +388,6 @@
                 "inputId",
                 "value",
                 "placeholder"
-            ]
-        },
-        {
-            "alias": "x-daisy::ui.advanced.chart",
-            "group": "ui.advanced",
-            "name": "chart",
-            "relative_path": "resources/views/components/ui/advanced/chart.blade.php",
-            "props": [
-                "type",
-                "labels",
-                "datasets",
-                "options",
-                "height",
-                "width",
-                "responsive",
-                "maintainAspectRatio",
-                "colors",
-                "palette",
-                "module"
             ]
         },
         {
@@ -566,6 +739,11 @@
                 "stackOn",
                 "listOverflow",
                 "listMaxHeight",
+                "sortable",
+                "dragAndDrop",
+                "dropPlaceholder",
+                "keepButtons",
+                "handle",
                 "module"
             ]
         },
@@ -595,6 +773,8 @@
                 "return",
                 "lazyUrl",
                 "lazyParam",
+                "lazyMode",
+                "lazyReload",
                 "search",
                 "searchMin",
                 "searchDebounce",
@@ -965,6 +1145,13 @@
                 "size",
                 "variant"
             ]
+        },
+        {
+            "alias": "x-daisy::ui.data-display.datatable",
+            "group": "ui.data-display",
+            "name": "datatable",
+            "relative_path": "resources/views/components/ui/data-display/datatable.blade.php",
+            "props": []
         },
         {
             "alias": "x-daisy::ui.data-display.file-preview",
@@ -1524,6 +1711,40 @@
             ]
         },
         {
+            "alias": "x-daisy::ui.layout.editable-grid",
+            "group": "ui.layout",
+            "name": "editable-grid",
+            "relative_path": "resources/views/components/ui/layout/editable-grid.blade.php",
+            "props": [
+                "editable",
+                "items",
+                "columns",
+                "cellHeight",
+                "gap",
+                "static",
+                "float",
+                "minRow",
+                "acceptWidgets",
+                "layout",
+                "responsive"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.layout.editable-grid-item",
+            "group": "ui.layout",
+            "name": "editable-grid-item",
+            "relative_path": "resources/views/components/ui/layout/editable-grid-item.blade.php",
+            "props": [
+                "id",
+                "type",
+                "x",
+                "y",
+                "w",
+                "h",
+                "meta"
+            ]
+        },
+        {
             "alias": "x-daisy::ui.layout.footer",
             "group": "ui.layout",
             "name": "footer",
@@ -1617,6 +1838,21 @@
             "name": "list-row",
             "relative_path": "resources/views/components/ui/layout/list-row.blade.php",
             "props": []
+        },
+        {
+            "alias": "x-daisy::ui.layout.ordered-list",
+            "group": "ui.layout",
+            "name": "ordered-list",
+            "relative_path": "resources/views/components/ui/layout/ordered-list.blade.php",
+            "props": [
+                "items",
+                "sortable",
+                "handle",
+                "name",
+                "persist",
+                "disabled",
+                "module"
+            ]
         },
         {
             "alias": "x-daisy::ui.layout.stack",
@@ -2657,6 +2893,22 @@
                 "resumeSlot",
                 "autoRefreshCsrf",
                 "wizardKey"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.layout.editable-grid",
+            "view_alias": "daisy::templates.layout.editable-grid",
+            "group": "layout",
+            "name": "editable-grid",
+            "relative_path": "resources/views/templates/layout/editable-grid.blade.php",
+            "props": [
+                "title",
+                "theme",
+                "editable",
+                "columns",
+                "cellHeight",
+                "gap",
+                "static"
             ]
         },
         {

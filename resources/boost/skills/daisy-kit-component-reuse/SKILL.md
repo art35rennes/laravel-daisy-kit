@@ -48,6 +48,8 @@ Do not rebuild a component, page shell, or layout that already exists in the pac
 - Navigation, sections, and page structure:
   - `x-daisy::ui.navigation.*`
   - `x-daisy::ui.layout.*`
+  - `x-daisy::ui.layout.editable-grid`
+  - `x-daisy::ui.layout.editable-grid-item`
 - Feedback, empty, loading, and error states:
   - `x-daisy::ui.feedback.*`
   - `x-daisy::ui.errors.*`

@@ -215,6 +215,7 @@ onReady(async () => {
   importWhenIdle('input[data-inputmask="1"], input[data-obfuscate="1"]', () => { mediumQueue(() => import('./input-mask')); });
   importWhenIdle('[data-scrollstatus="1"]', () => { mediumQueue(() => import('./scroll-status')); });
   importWhenIdle('[data-transfer="1"]', () => { mediumQueue(() => import('./transfer')); });
+  importWhenIdle('[data-ordered-list="1"]', () => { mediumQueue(() => import('./modules/ordered-list')); });
   importWhenIdle('[data-sign="1"]', () => { mediumQueue(() => import('./modules/sign')); });
 
   // Modules lourds : chargement quand l'élément approche du viewport
@@ -225,8 +226,28 @@ onReady(async () => {
   // Éditeurs lazy (CodeMirror & Trix) seulement quand on approche de leur zone
   importWhenNearViewport('.collapse .code-editor, .collapse trix-editor, details.collapse', () => { heavyQueue(() => import('./lazy-editors')); }, { rootMargin: '800px 0px' });
   
-  // Charts (Chart.js + thème DaisyUI) : import quand proche, initialisation à la visibilité
-  importWhenNearViewport('[data-chart="1"]', () => { heavyQueue(() => import('./chart')); }, { rootMargin: '800px 0px' });
+  // Charts (ECharts + thème DaisyUI) : import quand proche, puis auto-observation des nouveaux charts.
+  let chartModuleRequested = false;
+  const requestChartModule = () => {
+    if (chartModuleRequested) return;
+    chartModuleRequested = true;
+    heavyQueue(() => import('./chart'));
+  };
+  importWhenNearViewport('[data-daisy-chart="1"]', requestChartModule, { rootMargin: '800px 0px' });
+  if (typeof MutationObserver !== 'undefined') {
+    const chartObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (!(node instanceof Element)) continue;
+          if (node.matches('[data-daisy-chart="1"]') || node.querySelector('[data-daisy-chart="1"]')) {
+            requestChartModule();
+            return;
+          }
+        }
+      }
+    });
+    chartObserver.observe(document.body, { childList: true, subtree: true });
+  }
 
   // Calendar Full: composant interne (sans lib externe) – lazy près du viewport
   importWhenNearViewport('[data-calendar-full="1"]', () => { heavyQueue(() => import('./calendar-full')); }, { rootMargin: '800px 0px' });

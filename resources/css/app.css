@@ -8,8 +8,157 @@
 }
 
 /* Trix editor styles */
+@import "gridstack/dist/gridstack.min.css";
 @import "trix/dist/trix.css";
 @import "./table.css";
+
+/* Editable grid: keep item wrappers neutral so Daisy components define the visual skin */
+.daisy-editable-grid.grid-stack {
+  min-height: 12rem;
+}
+
+.daisy-editable-grid .grid-stack-item {
+  border-radius: var(--rounded-box, 1rem);
+}
+
+.daisy-editable-grid .grid-stack-item-content {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  background: transparent;
+  border-radius: inherit;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item-content {
+  cursor: move;
+}
+
+.daisy-editable-grid .grid-stack-item-content > * {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.daisy-editable-grid .grid-stack-item-content > .card,
+.daisy-editable-grid .grid-stack-item-content > .list,
+.daisy-editable-grid .grid-stack-item-content > .stats,
+.daisy-editable-grid .grid-stack-item-content > .stat,
+.daisy-editable-grid .grid-stack-item-content > .daisy-table-shell,
+.daisy-editable-grid .grid-stack-item-content > .skeleton,
+.daisy-editable-grid .grid-stack-item-content > [data-daisy-table="1"],
+.daisy-editable-grid .grid-stack-item-content > [data-loading-state],
+.daisy-editable-grid .grid-stack-item-content > [data-loading] {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.daisy-editable-grid .daisy-editable-grid-item-content > .card {
+  border: 1px solid color-mix(in srgb, var(--color-base-content, currentColor) 10%, transparent);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+}
+
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item:hover .daisy-editable-grid-item-content > .card,
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item:focus-within .daisy-editable-grid-item-content > .card {
+  border-color: color-mix(in srgb, var(--color-primary, currentColor) 22%, transparent);
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.08);
+}
+
+.daisy-editable-grid .daisy-editable-grid-item-content > .skeleton {
+  display: block;
+  border-radius: inherit;
+}
+
+.daisy-editable-grid .daisy-editable-grid-item-content .list {
+  overflow: auto;
+}
+
+.daisy-editable-grid .daisy-editable-grid-item-content .stat,
+.daisy-editable-grid .daisy-editable-grid-item-content .stats {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.daisy-editable-grid .daisy-editable-grid-item-content .daisy-table-shell,
+.daisy-editable-grid .daisy-editable-grid-item-content [data-daisy-table="1"] {
+  overflow: hidden;
+}
+
+.daisy-editable-grid .grid-stack-placeholder > .placeholder-content,
+.daisy-editable-grid .grid-stack-item-placeholder > .placeholder-content {
+  inset: 0;
+  border-radius: var(--rounded-box, 1rem);
+  border: 2px dashed color-mix(in srgb, var(--color-primary, currentColor) 32%, transparent);
+  background: color-mix(in srgb, var(--color-base-200, currentColor) 72%, transparent);
+}
+
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item.ui-draggable-dragging,
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item.ui-resizable-resizing {
+  z-index: 30;
+}
+
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item.ui-draggable-dragging .daisy-editable-grid-item-content > .card,
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item.ui-resizable-resizing .daisy-editable-grid-item-content > .card {
+  border-color: color-mix(in srgb, var(--color-primary, currentColor) 28%, transparent);
+  box-shadow: 0 14px 30px rgb(0 0 0 / 0.1);
+}
+
+.daisy-editable-grid .grid-stack-item > .ui-resizable-handle,
+.daisy-editable-grid .grid-stack-item > .ui-resizable-se,
+.daisy-editable-grid .grid-stack-item > .ui-resizable-sw,
+.daisy-editable-grid .grid-stack-item > .ui-resizable-ne,
+.daisy-editable-grid .grid-stack-item > .ui-resizable-nw {
+  z-index: 31;
+}
+
+.daisy-editable-grid .grid-stack-item-content :where(.card-body, .stat, .stats, .list, .overflow-auto, .overflow-y-auto, .overflow-x-auto) {
+  min-height: 0;
+  min-width: 0;
+}
+
+.daisy-editable-grid .ui-resizable-handle {
+  opacity: 0.55;
+}
+
+.daisy-editable-grid .ui-resizable-handle:hover {
+  opacity: 1;
+}
+
+.daisy-ordered-list {
+  counter-reset: ordered-list;
+}
+
+.daisy-ordered-list-item {
+  list-style-position: inside;
+}
+
+.daisy-drag-handle {
+  flex-shrink: 0;
+}
+
+.daisy-sortable-ghost {
+  opacity: 0.45;
+  background: color-mix(in srgb, var(--color-base-200, currentColor) 80%, transparent);
+}
+
+.daisy-sortable-chosen {
+  outline: 1px dashed color-mix(in srgb, var(--color-primary, currentColor) 30%, transparent);
+}
+
+[data-transfer="1"] [data-transfer-list] [data-transfer-item] {
+  border-radius: var(--rounded-box, 1rem);
+}
+
+[data-transfer="1"] [data-transfer-list] [data-transfer-item][data-disabled="true"] {
+  opacity: 0.55;
+}
 
 /* Cacher le bouton pièces jointes quand attachments=0 */
 .trix-wrapper[data-trix-attachments="0"] trix-toolbar [data-trix-action="attachFiles"] {

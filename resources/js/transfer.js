@@ -1,3 +1,5 @@
+import Sortable from 'sortablejs';
+
 /**
  * Daisy Kit - Transfer
  *
@@ -46,6 +48,35 @@ function parseItems(listEl) {
     items.push({ id, label, disabled, checked });
   });
   return items;
+}
+
+export function moveTransferItem(collection, itemId, targetIndex) {
+  const next = Array.isArray(collection) ? [...collection] : [];
+  const currentIndex = next.findIndex((item) => item.id === itemId);
+
+  if (currentIndex === -1) {
+    return next;
+  }
+
+  const [item] = next.splice(currentIndex, 1);
+  const boundedIndex = Math.max(0, Math.min(targetIndex, next.length));
+  next.splice(boundedIndex, 0, item);
+
+  return next;
+}
+
+export function reorderTransferItems(items, orderedIds) {
+  if (!Array.isArray(items) || !Array.isArray(orderedIds) || orderedIds.length === 0) {
+    return Array.isArray(items) ? [...items] : [];
+  }
+
+  const map = new Map(items.map((item) => [item.id, item]));
+  const ordered = orderedIds
+    .map((id) => map.get(id))
+    .filter(Boolean);
+  const remaining = items.filter((item) => !orderedIds.includes(item.id));
+
+  return [...ordered, ...remaining];
 }
 
 function setCheckboxState(checkbox, state) {
@@ -104,7 +135,7 @@ function syncSelectAllCheckbox(checkbox, items, state) {
  * @returns {Object} - { total, pages }
  */
 function renderList(listEl, items, opts) {
-  const { page, perPage, searchTerm, noDataText } = opts;
+  const { page, perPage, searchTerm, noDataText, useHandle, sortableEnabled, dropPlaceholder } = opts;
   let filtered = items;
   // Filtrage par recherche si nécessaire
   if (searchTerm) {
@@ -122,7 +153,7 @@ function renderList(listEl, items, opts) {
   if (!pageItems.length) {
     const li = document.createElement('li');
     li.className = 'px-2 py-2 opacity-70';
-    li.textContent = noDataText || 'No Data';
+    li.textContent = sortableEnabled ? (dropPlaceholder || noDataText || 'Drop here') : (noDataText || 'No Data');
     listEl.appendChild(li);
   } else {
     // Pour chaque item à afficher, on crée un <li> avec une case à cocher et le label
@@ -134,9 +165,23 @@ function renderList(listEl, items, opts) {
       li.setAttribute('data-label', it.label);
       li.setAttribute('data-disabled', it.disabled ? 'true' : 'false');
       li.setAttribute('data-checked', it.checked ? 'true' : 'false');
+      const row = document.createElement('div');
+      row.className = 'flex items-center gap-2';
+
+      if (sortableEnabled && useHandle) {
+        const handle = document.createElement('button');
+        handle.type = 'button';
+        handle.className = 'btn btn-ghost btn-xs btn-square daisy-drag-handle cursor-grab';
+        handle.setAttribute('data-transfer-handle', '');
+        handle.setAttribute('aria-label', `Reorder ${it.label}`);
+        handle.disabled = !!it.disabled;
+        handle.innerHTML = '<span aria-hidden="true">⋮⋮</span>';
+        row.append(handle);
+      }
+
       // Création du label contenant la checkbox et le texte
       const label = document.createElement('label');
-      label.className = 'label cursor-pointer';
+      label.className = 'label cursor-pointer grow';
       // Création de la checkbox
       const cb = document.createElement('input');
       cb.type = 'checkbox';
@@ -154,7 +199,8 @@ function renderList(listEl, items, opts) {
       span.textContent = it.label;
       // Assemblage
       label.append(cb, span);
-      li.append(label);
+      row.append(label);
+      li.append(row);
       listEl.append(li);
     });
   }
@@ -212,8 +258,11 @@ function initTransfer(root) {
   const search = root.getAttribute('data-search') === 'true';
   const selectAll = root.getAttribute('data-select-all') !== 'false';
   const noDataText = root.getAttribute('data-no-data-text') || 'No Data';
-  const stackOn = root.getAttribute('data-stack-on') || 'md';
-  const orientWrap = root.querySelector('[data-transfer-orient]');
+  const dropPlaceholder = root.getAttribute('data-drop-placeholder') || 'Drop here';
+  const sortableEnabled = root.getAttribute('data-sortable') === 'true';
+  const dragAndDrop = root.getAttribute('data-drag-and-drop') === 'true' && !pagination;
+  const useHandle = root.getAttribute('data-handle') === 'true';
+  const searchDisablesDnd = search;
 
   // Sélection des éléments DOM internes
   const listSource = root.querySelector('[data-transfer-list="source"]');
@@ -230,10 +279,112 @@ function initTransfer(root) {
   // Initialisation des listes d'objets métier (source et cible)
   let itemsSource = parseItems(listSource);
   let itemsTarget = parseItems(listTarget);
+  let sourceSortable = null;
+  let targetSortable = null;
 
   // États de pagination et de recherche pour chaque liste
   const stateSource = { page: 1, pages: 1, perPage, pagination, searchTerm: '', noDataText };
   const stateTarget = { page: 1, pages: 1, perPage, pagination, searchTerm: '', noDataText };
+
+  function canUseDnd() {
+    if (!sortableEnabled) return false;
+    if (pagination) return false;
+    if (!searchDisablesDnd) return true;
+    return !stateSource.searchTerm && !stateTarget.searchTerm;
+  }
+
+  function emitTransferChange(eventName = 'transfer:change') {
+    root.dispatchEvent(new CustomEvent(eventName, {
+      detail: { source: itemsSource, target: itemsTarget },
+      bubbles: true,
+    }));
+  }
+
+  function teardownSortables() {
+    sourceSortable?.destroy();
+    targetSortable?.destroy();
+    sourceSortable = null;
+    targetSortable = null;
+  }
+
+  function syncArrayFromDom(listEl, items, side) {
+    const orderedIds = Array.from(listEl.querySelectorAll('[data-transfer-item]'))
+      .map((item) => item.getAttribute('data-id'))
+      .filter(Boolean);
+
+    const reordered = reorderTransferItems(items, orderedIds);
+
+    if (side === 'source') {
+      itemsSource = reordered;
+    } else {
+      itemsTarget = reordered;
+    }
+  }
+
+  function setupSortables() {
+    teardownSortables();
+
+    if (!canUseDnd()) {
+      return;
+    }
+
+    const baseOptions = {
+      animation: 150,
+      handle: useHandle ? '[data-transfer-handle]' : undefined,
+      draggable: '[data-transfer-item]:not([data-disabled="true"])',
+      ghostClass: 'daisy-sortable-ghost',
+      chosenClass: 'daisy-sortable-chosen',
+      dragClass: 'daisy-sortable-drag',
+      filter: '[data-disabled="true"]',
+      preventOnFilter: false,
+    };
+
+    sourceSortable = Sortable.create(listSource, {
+      ...baseOptions,
+      group: dragAndDrop ? 'daisy-transfer' : undefined,
+      onUpdate: () => {
+        syncArrayFromDom(listSource, itemsSource, 'source');
+        renderAll();
+        emitTransferChange('transfer:reorder');
+      },
+      onAdd: dragAndDrop ? (event) => {
+        const itemId = event.item?.getAttribute('data-id');
+        if (!itemId) return;
+        const movedIndex = itemsTarget.findIndex((item) => item.id === itemId);
+        if (movedIndex === -1) return;
+        const [moved] = itemsTarget.splice(movedIndex, 1);
+        moved.checked = false;
+        itemsSource.splice(event.newIndex, 0, moved);
+        renderAll();
+        emitTransferChange();
+      } : undefined,
+      onEnd: () => {
+      },
+    });
+
+    targetSortable = Sortable.create(listTarget, {
+      ...baseOptions,
+      group: dragAndDrop ? 'daisy-transfer' : undefined,
+      onUpdate: () => {
+        syncArrayFromDom(listTarget, itemsTarget, 'target');
+        renderAll();
+        emitTransferChange('transfer:reorder');
+      },
+      onAdd: dragAndDrop ? (event) => {
+        const itemId = event.item?.getAttribute('data-id');
+        if (!itemId) return;
+        const movedIndex = itemsSource.findIndex((item) => item.id === itemId);
+        if (movedIndex === -1) return;
+        const [moved] = itemsSource.splice(movedIndex, 1);
+        moved.checked = false;
+        itemsTarget.splice(event.newIndex, 0, moved);
+        renderAll();
+        emitTransferChange();
+      } : undefined,
+      onEnd: () => {
+      },
+    });
+  }
 
   /**
    * Rend les deux listes (source et cible) et met à jour la pagination.
@@ -245,6 +396,9 @@ function initTransfer(root) {
     // Rendu de la liste source
     const s = renderList(listSource, itemsSource, {
       ...stateSource,
+      useHandle,
+      sortableEnabled: canUseDnd(),
+      dropPlaceholder,
       onItemChange: () => renderAll(),
     });
     stateSource.pages = s.pages;
@@ -252,6 +406,9 @@ function initTransfer(root) {
     // Rendu de la liste cible
     const t = renderList(listTarget, itemsTarget, {
       ...stateTarget,
+      useHandle,
+      sortableEnabled: canUseDnd(),
+      dropPlaceholder,
       onItemChange: () => renderAll(),
     });
     stateTarget.pages = t.pages;
@@ -270,6 +427,8 @@ function initTransfer(root) {
       detail: { source: itemsSource, target: itemsTarget },
       bubbles: true
     }));
+
+    setupSortables();
   }
   // Orientation responsive (vertical si parent trop petit ou overflow-x)
   // Grid CSS utilisée, pas besoin de toggler flex manuellement
@@ -354,6 +513,7 @@ function initTransfer(root) {
       const keep = moveSelected(itemsSource, itemsTarget, stateSource);
       if (keep) itemsSource = keep;
       renderAll();
+      emitTransferChange();
     });
   }
   // Gestion du transfert cible -> source (si mode bidirectionnel)
@@ -362,6 +522,7 @@ function initTransfer(root) {
       const keep = moveSelected(itemsTarget, itemsSource, stateTarget);
       if (keep) itemsTarget = keep;
       renderAll();
+      emitTransferChange();
     });
   }
   // Si mode unidirectionnel, on désactive le bouton de retour
@@ -377,6 +538,9 @@ function initTransfer(root) {
 function initAllTransfers() {
   document.querySelectorAll('[data-transfer="1"]').forEach(initTransfer);
 }
+
+export { initTransfer, initAllTransfers, parseItems };
+export default initTransfer;
 
 // Expose l'API globale pour usage externe
 window.DaisyTransfer = { init: initTransfer, initAll: initAllTransfers };

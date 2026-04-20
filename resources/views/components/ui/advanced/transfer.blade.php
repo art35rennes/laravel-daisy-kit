@@ -33,22 +33,36 @@
     'stackOn' => 'md',             // sm | md | lg | xl (breakpoint de passage en colonnes)
     'listOverflow' => 'y',         // y | x | both | none
     'listMaxHeight' => 'max-h-64', // classe Tailwind appliquée quand overflow-y
+    'sortable' => false,
+    'dragAndDrop' => false,
+    'dropPlaceholder' => 'Déplacer ici',
+    'keepButtons' => true,
+    'handle' => false,
     // Surcharge du nom de module JS (optionnel)
     'module' => null,
 ])
 
 @php
+    $resolvedPagination = (bool) $pagination;
+    $resolvedDragAndDrop = (bool) $dragAndDrop && ! $resolvedPagination;
+    $resolvedSortable = ((bool) $sortable || $resolvedDragAndDrop) && ! $resolvedPagination;
+    $resolvedHandle = (bool) $handle;
+
     // Préparation des attributs data-* pour l'initialisation JavaScript du module transfer.
     $wrapAttrs = [
         'data-transfer' => '1',
         'data-one-way' => $oneWay ? 'true' : 'false',
-        'data-pagination' => $pagination ? 'true' : 'false',
+        'data-pagination' => $resolvedPagination ? 'true' : 'false',
         'data-elements-per-page' => (string) $elementsPerPage,
         'data-search' => $search ? 'true' : 'false',
         'data-select-all' => $selectAll ? 'true' : 'false',
         'data-no-data-text' => $noDataText,
         'data-stack-on' => $stackOn,
         'data-list-overflow' => $listOverflow,
+        'data-sortable' => $resolvedSortable ? 'true' : 'false',
+        'data-drag-and-drop' => $resolvedDragAndDrop ? 'true' : 'false',
+        'data-drop-placeholder' => $dropPlaceholder,
+        'data-handle' => $resolvedHandle ? 'true' : 'false',
     ];
     
     // Génération des textes par défaut pour les placeholders et boutons (si non fournis).
@@ -123,10 +137,17 @@
                             $customId = is_array($it) ? ($it['customId'] ?? null) : null;
                         @endphp
                         <li data-transfer-item data-id="{{ $customId ?? ('s-'.$i) }}" data-label="{{ $label }}" data-disabled="{{ $disabled ? 'true' : 'false' }}" data-checked="{{ $checked ? 'true' : 'false' }}">
-                            <label class="label cursor-pointer">
-                                <input type="checkbox" class="checkbox checkbox-sm" @checked($checked) @disabled($disabled) />
-                                <span class="truncate">{{ $label }}</span>
-                            </label>
+                            <div class="flex items-center gap-2">
+                                @if($resolvedSortable && $resolvedHandle)
+                                    <button type="button" class="btn btn-ghost btn-xs btn-square daisy-drag-handle cursor-grab" data-transfer-handle aria-label="Reorder {{ $label }}" @disabled($disabled)>
+                                        <span aria-hidden="true">⋮⋮</span>
+                                    </button>
+                                @endif
+                                <label class="label cursor-pointer grow">
+                                    <input type="checkbox" class="checkbox checkbox-sm" @checked($checked) @disabled($disabled) />
+                                    <span class="truncate">{{ $label }}</span>
+                                </label>
+                            </div>
                         </li>
                     @endforeach
                 </ul>
@@ -157,13 +178,15 @@
                     .'</button>'
                 ); 
             @endphp
-            @if($tooltip && !$useText && $useIcon)
-                <div class="{{ $tooltipClass }}" data-tip="{{ $defaultToTargetButtonText }}">{!! $toTargetBtn !!}</div>
-            @else
-                {!! $toTargetBtn !!}
+            @if($keepButtons)
+                @if($tooltip && !$useText && $useIcon)
+                    <div class="{{ $tooltipClass }}" data-tip="{{ $defaultToTargetButtonText }}">{!! $toTargetBtn !!}</div>
+                @else
+                    {!! $toTargetBtn !!}
+                @endif
             @endif
 
-            @if(!$oneWay)
+            @if(!$oneWay && $keepButtons)
                 @php 
                     $toSourceContent = '';
                     if ($useIcon) {
@@ -224,10 +247,17 @@
                             $customId = is_array($it) ? ($it['customId'] ?? null) : null;
                         @endphp
                         <li data-transfer-item data-id="{{ $customId ?? ('t-'.$i) }}" data-label="{{ $label }}" data-disabled="{{ $disabled ? 'true' : 'false' }}" data-checked="{{ $checked ? 'true' : 'false' }}">
-                            <label class="label cursor-pointer">
-                                <input type="checkbox" class="checkbox checkbox-sm" @checked($checked) @disabled($disabled) />
-                                <span class="truncate">{{ $label }}</span>
-                            </label>
+                            <div class="flex items-center gap-2">
+                                @if($resolvedSortable && $resolvedHandle)
+                                    <button type="button" class="btn btn-ghost btn-xs btn-square daisy-drag-handle cursor-grab" data-transfer-handle aria-label="Reorder {{ $label }}" @disabled($disabled)>
+                                        <span aria-hidden="true">⋮⋮</span>
+                                    </button>
+                                @endif
+                                <label class="label cursor-pointer grow">
+                                    <input type="checkbox" class="checkbox checkbox-sm" @checked($checked) @disabled($disabled) />
+                                    <span class="truncate">{{ $label }}</span>
+                                </label>
+                            </div>
                         </li>
                     @endforeach
                 </ul>

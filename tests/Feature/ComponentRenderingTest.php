@@ -97,6 +97,34 @@ it('renders a divider component', function () {
         ->toContain('divider');
 });
 
+it('renders a charts.bar component', function () {
+    $html = View::make('daisy::components.charts.bar', [
+        'title' => 'Revenue',
+        'categories' => ['Jan', 'Feb'],
+        'series' => [
+            ['name' => 'Revenue', 'data' => [12, 24]],
+        ],
+    ])->render();
+
+    expect($html)
+        ->toContain('data-daisy-chart="1"')
+        ->toContain('"preset":"bar"')
+        ->toContain('"categories":["Jan","Feb"]')
+        ->toContain('Revenue');
+});
+
+it('renders a charts.sparkline component without legend by default', function () {
+    $html = View::make('daisy::components.charts.sparkline', [
+        'series' => [
+            ['name' => 'Visitors', 'data' => [1, 3, 2]],
+        ],
+    ])->render();
+
+    expect($html)
+        ->toContain('"preset":"sparkline"')
+        ->toContain('"legend":false');
+});
+
 it('renders a link component', function () {
     $html = View::make('daisy::components.ui.advanced.link', [
         'slot' => 'Link text',
@@ -148,6 +176,23 @@ BLADE;
 
     $styleCount = substr_count($html, '<style>');
     expect($styleCount)->toBe(1);
+});
+
+it('renders transfer dnd hooks without breaking the existing API', function () {
+    $html = View::make('daisy::components.ui.advanced.transfer', [
+        'source' => [['data' => 'Alpha', 'customId' => 'alpha']],
+        'target' => [['data' => 'Beta', 'customId' => 'beta']],
+        'sortable' => true,
+        'dragAndDrop' => true,
+        'handle' => true,
+    ])->render();
+
+    expect($html)
+        ->toContain('data-sortable="true"')
+        ->toContain('data-drag-and-drop="true"')
+        ->toContain('data-transfer-handle')
+        ->toContain('data-id="alpha"')
+        ->toContain('data-id="beta"');
 });
 
 it('renders footer-layout component with columns', function () {

@@ -38,8 +38,8 @@ export default defineConfig({
                         return 'leaflet-core';
                     }
                     
-                    // Séparer Chart.js
-                    if (id.includes('chart.js') || id.includes('chart/')) {
+                    // Séparer ECharts et le runtime charts du package
+                    if (id.includes('echarts') || id.includes('chart/')) {
                         return 'chart';
                     }
 

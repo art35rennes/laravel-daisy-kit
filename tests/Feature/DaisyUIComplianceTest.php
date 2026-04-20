@@ -145,11 +145,10 @@ describe('DaisyUI Compliance Tests', function () {
                 ->not->toContain('border border-base-300');
         });
 
-        it('uses card-border in chart component', function () {
-            $html = View::make('daisy::components.ui.advanced.chart', [
-                'type' => 'bar',
-                'labels' => ['A', 'B', 'C'],
-                'datasets' => [['label' => 'Test', 'data' => [1, 2, 3]]],
+        it('uses card-border in charts.bar component', function () {
+            $html = View::make('daisy::components.charts.bar', [
+                'categories' => ['A', 'B', 'C'],
+                'series' => [['name' => 'Test', 'data' => [1, 2, 3]]],
             ])->render();
 
             expect($html)
