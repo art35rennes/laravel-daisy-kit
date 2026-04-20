@@ -78,4 +78,18 @@ describe('chart presets', () => {
         expect(pieOption.series[0].radius).toBe('72%');
         expect(donutOption.series[0].radius).toEqual(['48%', '72%']);
     });
+
+    it('uses stable hover defaults for cartesian charts', () => {
+        const option = buildChartOption(normalizeChartConfig({
+            preset: 'bar',
+            categories: ['A', 'B'],
+            series: [{ name: 'Load', data: [10, 12] }],
+        }), theme);
+
+        expect(option.tooltip.transitionDuration).toBe(0);
+        expect(option.tooltip.axisPointer.animation).toBe(false);
+        expect(option.series[0].emphasis.focus).toBe('none');
+        expect(option.series[0].select.disabled).toBe(true);
+        expect(option.series[0].emphasis.itemStyle.opacity).toBe(1);
+    });
 });

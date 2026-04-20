@@ -53,7 +53,22 @@ export default function initOrderedList(root) {
       ghostClass: 'daisy-sortable-ghost',
       chosenClass: 'daisy-sortable-chosen',
       dragClass: 'daisy-sortable-drag',
+      onStart: (event) => {
+        root.classList.add('daisy-sortable-sorting');
+        const handle = event.item?.querySelector('[data-ordered-list-handle]');
+        if (handle instanceof HTMLButtonElement) {
+          handle.blur();
+          handle.setAttribute('aria-pressed', 'true');
+        }
+      },
       onEnd: () => {
+        root.classList.remove('daisy-sortable-sorting');
+        root.querySelectorAll('[data-ordered-list-handle][aria-pressed="true"]').forEach((handle) => {
+          handle.removeAttribute('aria-pressed');
+          if (handle instanceof HTMLButtonElement) {
+            handle.blur();
+          }
+        });
         syncOrderedList(root);
       },
     });

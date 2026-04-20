@@ -90,7 +90,18 @@ function createCartesianSeries(config, theme) {
             data: entry.data,
             yAxisIndex: entry.axis === 'right' ? 1 : 0,
             itemStyle: { color },
-            emphasis: { focus: 'series' },
+            emphasis: {
+                focus: 'none',
+                scale: false,
+            },
+            blur: {
+                itemStyle: { opacity: 1 },
+                lineStyle: { opacity: 1 },
+                areaStyle: { opacity: 1 },
+            },
+            select: {
+                disabled: true,
+            },
             smooth: config.preset === 'sparkline',
         };
 
@@ -101,14 +112,32 @@ function createCartesianSeries(config, theme) {
         if (lineSeries.type === 'line') {
             lineSeries.symbol = config.isSparkline ? 'none' : 'circle';
             lineSeries.showSymbol = !config.isSparkline;
+            lineSeries.symbolSize = config.isSparkline ? 0 : 6;
             lineSeries.lineStyle = {
                 width: config.isSparkline ? 2 : 3,
+            };
+            lineSeries.emphasis.lineStyle = {
+                width: config.isSparkline ? 2 : 3,
+            };
+            lineSeries.emphasis.itemStyle = {
+                color,
             };
         }
 
         if (config.isArea) {
             lineSeries.areaStyle = {
                 opacity: theme.dark ? 0.24 : 0.16,
+            };
+            lineSeries.emphasis.areaStyle = {
+                opacity: theme.dark ? 0.24 : 0.16,
+            };
+        }
+
+        if (lineSeries.type === 'bar') {
+            lineSeries.barMaxWidth = 40;
+            lineSeries.emphasis.itemStyle = {
+                color,
+                opacity: 1,
             };
         }
 
@@ -148,11 +177,25 @@ export function buildChartOption(config, theme) {
     const title = baseTitle(config);
     const tooltip = {
         trigger: config.isCircular ? 'item' : 'axis',
+        triggerOn: 'mousemove|click',
+        transitionDuration: 0,
         backgroundColor: theme.tooltipBackground,
         borderColor: theme.axisColor,
         borderWidth: 1,
         textStyle: {
             color: theme.textColor,
+        },
+        axisPointer: config.isCircular ? undefined : {
+            type: config.preset === 'bar' || config.preset === 'stacked-bar' ? 'shadow' : 'line',
+            animation: false,
+            snap: true,
+            lineStyle: {
+                color: theme.axisColor,
+                width: 1,
+            },
+            shadowStyle: {
+                color: theme.dark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.04)',
+            },
         },
         formatter: createTooltipFormatter(config.tooltipFormat),
     };
