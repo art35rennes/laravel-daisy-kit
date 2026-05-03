@@ -16,9 +16,10 @@
     $wrapperClasses = trim(($full ? 'w-full ' : '').'flex flex-col gap-1 '.$class);
 
     // Resolve message and state from Laravel validation bag if name is provided.
+    $laravelErrors = $errors ?? new \Illuminate\Support\ViewErrorBag();
     $laravelMessage = null;
     if ($name) {
-        $laravelMessage = $errors->first($name);
+        $laravelMessage = $laravelErrors->first($name);
     }
     $message = $error ?? $laravelMessage;
     $hasError = filled($message);
@@ -81,4 +82,3 @@
         {{-- No custom CSS – rely only on Tailwind v4 + daisyUI v5 as per guidelines. --}}
     @endpush
 @endonce
-

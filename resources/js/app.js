@@ -46,14 +46,29 @@ onReady(async () => {
 
   // Comportement générique des sidebars
   // Gère l'expansion/réduction avec persistance localStorage
-  document.querySelectorAll('[data-sidebar-root] .sidebar-toggle').forEach((button) => {
-    const aside = button.closest('[data-sidebar-root]');
-    if (!aside) return;
+  document.querySelectorAll('[data-sidebar-root]').forEach((aside) => {
+    const button = aside.querySelector('.sidebar-toggle');
     
     // Configuration depuis les data-attributes
     const storageKey = aside.dataset.storageKey || 'daisy.sidebar';
     const wideClass = aside.dataset.wideClass;
     const collapsedClass = aside.dataset.collapsedClass || 'w-20';
+    const expandedLabel = aside.dataset.expandedLabel || 'Collapse';
+    const collapsedLabel = aside.dataset.collapsedLabel || 'Expand';
+    const expandOnHover = aside.dataset.expandOnHover === '1';
+    let hoverCloseTimeout = null;
+
+    if (!button && !expandOnHover) return;
+
+    const classListFrom = (value) => (value || '').split(/\s+/).filter(Boolean);
+
+    const removeClasses = (classes) => {
+      classListFrom(classes).forEach((cls) => aside.classList.remove(cls));
+    };
+
+    const addClasses = (classes) => {
+      classListFrom(classes).forEach((cls) => aside.classList.add(cls));
+    };
     
     /**
      * Définit l'état collapsed/expanded de la sidebar
@@ -66,26 +81,18 @@ onReady(async () => {
       const widthStrategy = aside.dataset.widthStrategy || 'wide';
       
       // Nettoyer d'abord toutes les classes de largeur existantes
-      ['w-20', 'w-64', 'w-fit', 'min-w-48', 'max-w-80', 'sidebar-auto', 'sidebar-fit', 'sidebar-adaptive'].forEach(cls => {
+      ['w-20', 'w-64', 'w-fit', 'min-w-48', 'max-w-80', 'sidebar-auto', 'sidebar-fit', 'sidebar-adaptive'].forEach((cls) => {
         aside.classList.remove(cls);
       });
-      
-      if (wideClass) {
-        wideClass.split(' ').forEach(cls => {
-          if (cls.trim()) aside.classList.remove(cls.trim());
-        });
-      }
+      removeClasses(wideClass);
+      removeClasses(collapsedClass);
       
       if (collapsed) {
-        // Mode collapsed : toujours utiliser w-20
-        aside.classList.add('w-20');
+        // Mode collapsed : utiliser la largeur compacte configurée.
+        addClasses(collapsedClass);
       } else {
         // Mode expanded : appliquer les classes selon la stratégie
-        if (wideClass) {
-          wideClass.split(' ').forEach(cls => {
-            if (cls.trim()) aside.classList.add(cls.trim());
-          });
-        }
+        addClasses(wideClass);
         
         // Ajouter les classes spéciales selon la stratégie
         switch (widthStrategy) {
@@ -102,29 +109,65 @@ onReady(async () => {
       aside.querySelectorAll('.sidebar-label').forEach((el) => el.classList.toggle('hidden', collapsed));
       
       // Mettre à jour le texte du bouton
+      const label = collapsed ? collapsedLabel : expandedLabel;
       const txt = aside.querySelector('.sidebar-label-toggle');
-      if (txt) txt.textContent = collapsed ? 'Expand' : 'Collapse';
+      if (txt) {
+        txt.textContent = label;
+        txt.classList.toggle('sr-only', collapsed);
+      }
+      if (button) {
+        button.setAttribute('aria-label', label);
+        button.setAttribute('title', label);
+        button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        button.querySelector('[data-sidebar-icon-collapsed]')?.classList.toggle('hidden', !collapsed);
+        button.querySelector('[data-sidebar-icon-expanded]')?.classList.toggle('hidden', collapsed);
+      }
+      aside.querySelectorAll('[data-sidebar-submenu]').forEach((submenu) => {
+        submenu.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
+      });
+      aside.querySelectorAll('[data-sidebar-hover-content]').forEach((content) => {
+        content.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
+      });
       
       // Sauvegarder l'état
-      try { localStorage.setItem(storageKey, collapsed ? '1' : '0'); } catch (_) {}
-      
-      // Mise à jour de l'icône du bouton
-      const icon = button.querySelector('svg');
-      if (icon) {
-        icon.outerHTML = collapsed
-          ? '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0"/></svg>'
-          : '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/></svg>';
+      if (!expandOnHover) {
+        try { localStorage.setItem(storageKey, collapsed ? '1' : '0'); } catch (_) {}
       }
+    };
+
+    const closeHoverSidebar = () => {
+      if (!expandOnHover) return;
+
+      hoverCloseTimeout = window.setTimeout(() => {
+        if (aside.matches(':hover') || aside.contains(document.activeElement)) return;
+
+        setCollapsed(true);
+      }, 160);
+    };
+
+    const openHoverSidebar = () => {
+      if (!expandOnHover) return;
+
+      window.clearTimeout(hoverCloseTimeout);
+      setCollapsed(false);
     };
     
     // Restauration de l'état depuis localStorage
-    try {
-      const persisted = localStorage.getItem(storageKey);
-      if (persisted === '1' || persisted === '0') setCollapsed(persisted === '1');
-    } catch (_) {}
+    if (expandOnHover) {
+      setCollapsed(true);
+    } else {
+      try {
+        const persisted = localStorage.getItem(storageKey);
+        if (persisted === '1' || persisted === '0') setCollapsed(persisted === '1');
+      } catch (_) {}
+    }
     
     // Gestionnaire de clic pour basculer l'état
-    button.addEventListener('click', () => setCollapsed(aside.dataset.collapsed !== '1'));
+    button?.addEventListener('click', () => setCollapsed(aside.dataset.collapsed !== '1'));
+    aside.addEventListener('pointerenter', openHoverSidebar);
+    aside.addEventListener('pointerleave', closeHoverSidebar);
+    aside.addEventListener('focusin', openHoverSidebar);
+    aside.addEventListener('focusout', closeHoverSidebar);
   });
 
   // Greffon copyable : chargement direct (léger, s'initialise automatiquement)

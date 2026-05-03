@@ -255,6 +255,10 @@
   transition: width 0.3s ease-in-out;
 }
 
+[data-sidebar-root] {
+  transition: width 0.2s ease-in-out, min-width 0.2s ease-in-out, max-width 0.2s ease-in-out;
+}
+
 /* Responsive behavior pour fit mode */
 @media (max-width: 1024px) {
   .sidebar-fit {
@@ -302,9 +306,25 @@
 /* Mode collapsed : optimiser l'affichage */
 [data-collapsed="1"] .menu li > a,
 [data-collapsed="1"] .menu li > summary {
-  justify-content: flex-start;
+  justify-content: center;
   padding-left: 0.75rem;
-  padding-right: 0.5rem;
+  padding-right: 0.75rem;
+}
+
+[data-collapsed="1"] .menu li > details > summary::after {
+  display: none;
+}
+
+[data-collapsed="1"] [data-sidebar-submenu] {
+  display: none !important;
+}
+
+[data-collapsed="1"] [data-sidebar-hover-content] {
+  display: none !important;
+}
+
+[data-collapsed="1"] .sidebar-toggle {
+  justify-content: center;
 }
 
 /* Assurer que les labels sont bien masqués en mode collapsed */

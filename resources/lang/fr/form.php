@@ -11,6 +11,16 @@ return [
     'clear_filter' => 'Supprimer le filtre',
     'advanced_filters' => 'Filtres avancés',
 
+    'builder' => [
+        'diagnostics' => 'Diagnostics',
+        'functions' => 'Fonctions',
+        'inspector' => 'Inspecteur',
+        'json' => 'JSON',
+        'outline' => 'Structure',
+        'palette' => 'Palette',
+        'preview' => 'Aperçu',
+    ],
+
     'tabs' => [
         'title' => 'Formulaire à onglets',
     ],

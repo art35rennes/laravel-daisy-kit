@@ -39,6 +39,18 @@ return [
     // N'y injectez jamais de contenu utilisateur brut sans assainissement préalable côté application hôte.
     'trusted_html' => false,
 
+    // Form Kit: builder/viewer JSON agnostiques avec JSONata unifié.
+    'forms' => [
+        'jsonata' => [
+            'evaluator' => null,
+            'function_catalog' => [],
+            'engine_version' => '2.1.0',
+            'max_expression_length' => 5000,
+            'max_expression_count' => 100,
+            'timeout' => 5,
+        ],
+    ],
+
     // Configuration des thèmes daisyUI
     'themes' => [
         // Thèmes intégrés daisyUI activés par défaut

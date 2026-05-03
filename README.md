@@ -137,6 +137,44 @@ Point the demo app’s Composer `path` repository at `../laravel-daisy-kit`. Thi
 
 Tests under `tests/` cover package-only behavior: Blade and template rendering, helpers, and package routes (for example the CSRF token endpoint when enabled). Application-level, navigation, and browser tests belong in the demo repository.
 
+## Form Kit
+
+The package exposes a greenfield JSON-driven form surface:
+
+- `x-daisy::forms.viewer` renders a `DaisyFormSchema` `1.0` payload into a progressive HTML form.
+- `x-daisy::forms.builder` edits the same schema and emits canonical JSON.
+- JSONata powers field visibility, complex validation rules, and computed values.
+
+The viewer is agnostic by default. Use `submitMode="event"` to listen for `daisy-form:submit`, or opt into `html`, `fetch`, or `none`.
+
+```blade
+<x-daisy::forms.viewer
+    :schema="[
+        'version' => '1.0',
+        'id' => 'quote',
+        'jsonata' => ['engine' => 'jsonata', 'minVersion' => '2.1.0'],
+        'fields' => [
+            ['id' => 'quantity', 'type' => 'number', 'name' => 'quantity', 'label' => 'Quantity', 'rules' => ['required', 'min:1']],
+            ['id' => 'unit_price', 'type' => 'number', 'name' => 'unit_price', 'label' => 'Unit price'],
+            [
+                'id' => 'total',
+                'type' => 'number',
+                'name' => 'total',
+                'label' => 'Total',
+                'computed' => [
+                    'type' => 'jsonata',
+                    'expression' => '$number(values.quantity) * $number(values.unit_price)',
+                    'dependsOn' => ['quantity', 'unit_price'],
+                    'mode' => 'readonly',
+                ],
+            ],
+        ],
+    ]"
+/>
+```
+
+Server-side JSONata execution is deliberately host-owned. Implement `Art35rennes\DaisyKit\FormKit\Contracts\JsonataEvaluator` to call your own JSONata engine, then use `FormSubmissionEvaluator` to batch visibility, JSONata validations, and computed values before persisting.
+
 ## Table component
 
 The package exposes a progressive table component aligned with Blade, DaisyUI, and TanStack Table:

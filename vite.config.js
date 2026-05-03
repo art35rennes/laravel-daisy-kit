@@ -47,6 +47,14 @@ export default defineConfig({
                     if (id.includes('@tanstack/table-core')) {
                         return 'table-core';
                     }
+
+                    if (id.includes('jsonata')) {
+                        return 'jsonata';
+                    }
+
+                    if (id.includes('form-kit')) {
+                        return 'form-kit';
+                    }
                     
                     // Séparer les autres dépendances lourdes
                     if (id.includes('node_modules')) {
