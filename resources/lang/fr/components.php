@@ -31,6 +31,8 @@ return [
     'navbar' => 'Barre de navigation',
     'sidebar-navigation' => 'Navigation de la documentation',
     'sidebar' => 'Barre latérale',
+    'sidebar_collapse' => 'Réduire',
+    'sidebar_expand' => 'Développer',
     'tabs' => 'Onglets',
     'steps' => 'Étapes',
     'stepper' => 'Assistant multi-étapes',

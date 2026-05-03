@@ -4,6 +4,8 @@
     'collapsed' => false,
     // Autoriser l'utilisateur à plier/déplier (afficher le contrôleur)
     'collapsible' => true,
+    // Ouvrir temporairement la sidebar au survol/focus tout en la gardant minifiée par défaut
+    'expandOnHover' => false,
     // Forcer l'état plié/déplié et masquer le contrôleur
     'forceCollapsed' => null, // null|true|false
     // Breakpoint à partir duquel la sidebar est fixe/ouverte
@@ -42,8 +44,9 @@
     $isSlim = $variant === 'slim';
     $isAuto = $variant === 'auto';
     $isFit = $variant === 'fit';
-    // État de collapse effectif : forceCollapsed a priorité sur collapsed.
-    $effectiveCollapsed = isset($forceCollapsed) ? (bool)$forceCollapsed : (bool)$collapsed;
+    // État de collapse effectif : forceCollapsed a priorité sur collapsed et le mode hover.
+    $hoverExpandable = (bool)$expandOnHover && !isset($forceCollapsed);
+    $effectiveCollapsed = isset($forceCollapsed) ? (bool)$forceCollapsed : ($hoverExpandable || (bool)$collapsed);
     
     // === CONFIGURATION DES LARGEURS ===
     // Détermination de la classe de largeur selon la variante et l'état collapsed.
@@ -115,6 +118,9 @@
     
     // Activation du module JavaScript de filtrage si searchable est activé et sidebar non collapsed.
     $needsFilterModule = $searchable && !$effectiveCollapsed;
+    $collapseLabel = __('daisy::components.sidebar_collapse');
+    $expandLabel = __('daisy::components.sidebar_expand');
+    $toggleLabel = $effectiveCollapsed ? $expandLabel : $collapseLabel;
 @endphp
 
 <aside {{ $attributes->merge(['class' => trim($rootClasses.' '.$widthClass.' '.$baseClasses)]) }}
@@ -123,6 +129,9 @@
        data-wide-class="{{ $wideWidthClass }}" 
        data-collapsed-class="{{ $collapsedWidthClass }}"
        data-collapsed="{{ $effectiveCollapsed ? '1' : '0' }}" 
+       data-expanded-label="{{ $collapseLabel }}"
+       data-collapsed-label="{{ $expandLabel }}"
+       @if($hoverExpandable) data-expand-on-hover="1" @endif
        @if($isAuto) data-sidebar-auto @endif
        @if($isFit) data-sidebar-fit @endif
        @if($storageKey) data-storage-key="{{ $storageKey }}" @endif>
@@ -136,8 +145,8 @@
             @endif
         </div>
     @endif
-    @if($searchable && !$effectiveCollapsed)
-        <div class="px-2 py-2 border-b border-base-content/10" data-module="menu-filter">
+    @if($searchable && (! $effectiveCollapsed || $hoverExpandable))
+        <div class="px-2 py-2 border-b border-base-content/10" data-module="menu-filter" data-sidebar-hover-content aria-hidden="{{ $effectiveCollapsed ? 'true' : 'false' }}">
             <label class="input input-sm">
                 <x-daisy::ui.advanced.icon name="search" :prefix="$iconPrefix" size="sm" class="opacity-50" />
                 <input type="search" 
@@ -153,7 +162,7 @@
         @forelse($sections as $section)
             {{-- Titre de section optionnel --}}
             @if(!empty($section['label']))
-                <li class="menu-title">{{ __($section['label']) }}</li>
+                <li class="menu-title sidebar-section-title sidebar-label {{ $effectiveCollapsed ? 'hidden' : '' }}">{{ __($section['label']) }}</li>
             @endif
             {{-- Items de navigation : support des items simples et des items avec sous-menu --}}
             @foreach(($section['items'] ?? []) as $item)
@@ -167,16 +176,16 @@
                     {{-- Item avec sous-menu : utilise <details> pour le collapse natif --}}
                     <li>
                         <details {{ $isActive ? 'open' : '' }}>
-                            <summary class="flex items-center gap-2">
+                            <summary class="flex items-center gap-2 {{ $isActive ? 'menu-active' : '' }}" title="{{ __($item['label'] ?? '') }}" aria-label="{{ __($item['label'] ?? '') }}">
                                 @if(!empty($item['icon']))
                                     <x-daisy::ui.advanced.icon :name="$item['icon']" :prefix="$iconPrefix" size="md" />
                                 @endif
                                 <span class="sidebar-label {{ $effectiveCollapsed ? 'hidden' : '' }}">{{ __($item['label'] ?? '') }}</span>
                             </summary>
-                            <ul>
+                            <ul data-sidebar-submenu aria-hidden="{{ $effectiveCollapsed ? 'true' : 'false' }}">
                                 @foreach($item['children'] as $child)
                                     <li>
-                                        <a href="{{ $child['href'] ?? '#' }}" class="flex items-center gap-2 {{ !empty($child['active']) ? 'menu-active' : '' }}">
+                                        <a href="{{ $child['href'] ?? '#' }}" class="flex items-center gap-2 {{ !empty($child['active']) ? 'menu-active' : '' }}" title="{{ __($child['label'] ?? '') }}" aria-label="{{ __($child['label'] ?? '') }}">
                                             @if(!empty($child['icon']))
                                                 <x-daisy::ui.advanced.icon :name="$child['icon']" :prefix="$iconPrefix" size="md" />
                                             @endif
@@ -190,7 +199,7 @@
                 @else
                     {{-- Item simple : lien direct sans sous-menu --}}
                     <li>
-                        <a href="{{ $item['href'] ?? '#' }}" class="flex items-center gap-2 {{ $isActive ? 'menu-active' : '' }}">
+                        <a href="{{ $item['href'] ?? '#' }}" class="flex items-center gap-2 {{ $isActive ? 'menu-active' : '' }}" title="{{ __($item['label'] ?? '') }}" aria-label="{{ __($item['label'] ?? '') }}">
                             @if(!empty($item['icon']))
                                 <x-daisy::ui.advanced.icon :name="$item['icon']" :prefix="$iconPrefix" size="md" />
                             @endif
@@ -206,15 +215,16 @@
     </ul>
     {{-- Contrôle de collapse : bouton pour plier/déplier la sidebar (si autorisé et non forcé) --}}
     <div class="p-2 border-t border-base-content/10">
-        @php $showToggle = $collapsible && !isset($forceCollapsed); @endphp
+        @php $showToggle = $collapsible && !isset($forceCollapsed) && ! $hoverExpandable; @endphp
         @if($showToggle)
-            <button type="button" class="btn btn-ghost btn-sm w-full justify-between sidebar-toggle">
-                <span class="sidebar-label-toggle">{{ $effectiveCollapsed ? __('Expand') : __('Collapse') }}</span>
-                @if($effectiveCollapsed)
+            <button type="button" class="btn btn-ghost btn-sm w-full justify-between sidebar-toggle" title="{{ $toggleLabel }}" aria-label="{{ $toggleLabel }}" aria-expanded="{{ $effectiveCollapsed ? 'false' : 'true' }}">
+                <span class="sidebar-label-toggle {{ $effectiveCollapsed ? 'sr-only' : '' }}">{{ $toggleLabel }}</span>
+                <span data-sidebar-icon-collapsed class="{{ $effectiveCollapsed ? '' : 'hidden' }}">
                     <x-daisy::ui.advanced.icon name="chevron-double-right" :prefix="$iconPrefix" size="sm" />
-                @else
+                </span>
+                <span data-sidebar-icon-expanded class="{{ $effectiveCollapsed ? 'hidden' : '' }}">
                     <x-daisy::ui.advanced.icon name="chevron-double-left" :prefix="$iconPrefix" size="sm" />
-                @endif
+                </span>
             </button>
         @endif
     </div>

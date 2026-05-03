@@ -17,6 +17,8 @@ return [
     'pagination' => 'Pagination',
     'navbar' => 'Navbar',
     'sidebar' => 'Sidebar',
+    'sidebar_collapse' => 'Collapse',
+    'sidebar_expand' => 'Expand',
     'tabs' => 'Tabs',
     'steps' => 'Steps',
     'stepper' => 'Stepper',
