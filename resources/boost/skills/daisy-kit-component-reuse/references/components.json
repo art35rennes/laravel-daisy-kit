@@ -1,9 +1,9 @@
 {
-    "generated_at": "2026-04-20T20:01:15+00:00",
+    "generated_at": "2026-05-03T11:00:35+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
-        "component_count": 144,
+        "component_count": 148,
         "template_count": 29,
         "excluded_component_template_mirrors": 13
     },
@@ -198,6 +198,46 @@
                 "tooltipFormat",
                 "options",
                 "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::forms.builder",
+            "group": "forms",
+            "name": "builder",
+            "relative_path": "resources/views/components/forms/builder.blade.php",
+            "props": [
+                "schema",
+                "fieldTypes",
+                "functionCatalog",
+                "preview",
+                "jsonEditor",
+                "name"
+            ]
+        },
+        {
+            "alias": "x-daisy::forms.partials.field",
+            "group": "forms.partials",
+            "name": "field",
+            "relative_path": "resources/views/components/forms/partials/field.blade.php",
+            "props": [
+                "value",
+                "errors",
+                "readonly"
+            ]
+        },
+        {
+            "alias": "x-daisy::forms.viewer",
+            "group": "forms",
+            "name": "viewer",
+            "relative_path": "resources/views/components/forms/viewer.blade.php",
+            "props": [
+                "value",
+                "errors",
+                "submitMode",
+                "action",
+                "method",
+                "readonly",
+                "validateOn"
             ]
         },
         {
@@ -1457,6 +1497,27 @@
             ]
         },
         {
+            "alias": "x-daisy::ui.inputs.choice-card-group",
+            "group": "ui.inputs",
+            "name": "choice-card-group",
+            "relative_path": "resources/views/components/ui/inputs/choice-card-group.blade.php",
+            "props": [
+                "name",
+                "items",
+                "type",
+                "value",
+                "values",
+                "legend",
+                "hint",
+                "required",
+                "columns",
+                "color",
+                "size",
+                "showControl",
+                "iconPrefix"
+            ]
+        },
+        {
             "alias": "x-daisy::ui.inputs.color-picker",
             "group": "ui.inputs",
             "name": "color-picker",
@@ -2095,6 +2156,7 @@
                 "variant",
                 "collapsed",
                 "collapsible",
+                "expandOnHover",
                 "forceCollapsed",
                 "stickyAt",
                 "sideClass",
