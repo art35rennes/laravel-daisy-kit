@@ -34,5 +34,9 @@ auth.json
 /tests/Fixtures/laravel/storage/framework/sessions/*
 /tests/Fixtures/laravel/storage/framework/testing/*
 /tests/Fixtures/laravel/storage/framework/views/*
+!/tests/Fixtures/laravel/storage/framework/cache/.gitkeep
+!/tests/Fixtures/laravel/storage/framework/sessions/.gitkeep
+!/tests/Fixtures/laravel/storage/framework/testing/.gitkeep
+!/tests/Fixtures/laravel/storage/framework/views/.gitkeep
 /storage
 /.vite

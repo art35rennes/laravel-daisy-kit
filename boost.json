@@ -1,0 +1,17 @@
+{
+    "agents": [
+        "codex",
+        "cursor"
+    ],
+    "cloud": false,
+    "guidelines": true,
+    "mcp": false,
+    "packages": [],
+    "sail": false,
+    "skills": [
+        "daisy-kit-component-reuse",
+        "laravel-best-practices",
+        "pest-testing",
+        "tailwindcss-development"
+    ]
+}

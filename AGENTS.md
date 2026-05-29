@@ -27,3 +27,10 @@ This repository is the source package for `art35rennes/laravel-daisy-kit`.
 - If you add, rename, or remove a public component, layout, or template, run `composer ai:catalog`.
 - Keep `resources/boost/guidelines/core.blade.php` and the `daisy-kit-component-reuse` skill aligned with the current package surface.
 - Do not let AI guidance drift away from the actual Blade API.
+
+## Agent Skills And Boost
+
+- Codex skills are installed in `.agents/skills`.
+- Cursor skills are installed in `.cursor/skills`.
+- This repository is a Laravel package and does not expose an `artisan` executable at the root. Do not configure Boost MCP here unless a real package-level Artisan entry point is added.
+- `laravel/boost` and `laravel/pao` are development dependencies. PAO is expected to optimize Pest/PHPUnit output for agent consumption.
