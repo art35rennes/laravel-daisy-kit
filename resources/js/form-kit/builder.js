@@ -1,12 +1,14 @@
 /**
- * Client-side form schema builder: palette of field types, field outline with reorder/remove,
- * inspector for ids and JSONata hooks, live JSON mirror, and compile-time diagnostics.
+ * Client-side form schema builder controller.
+ *
+ * Blade owns the builder markup through `<template data-builder-template="...">` fragments.
+ * This module only mutates schema state, clones templates, wires events, and emits changes.
  *
  * @module form-kit/builder
  */
 
 import { DEFAULT_FIELD_DEFINITIONS, createField, normalizeOption } from './fields.js';
-import { canonicalizeSchema, createDefaultSchema, validateSchema } from './schema.js';
+import { canonicalizeSchema, createDefaultSchema, flattenFields, validateSchema } from './schema.js';
 import { compileExpression, registerCatalog } from './jsonata-engine.js';
 
 /**
@@ -17,10 +19,9 @@ import { compileExpression, registerCatalog } from './jsonata-engine.js';
  * @param {Object} [options.schema] - Starting Daisy form schema; defaults via {@link createDefaultSchema}.
  * @param {Array<{type: string, label?: string}>} [options.fieldTypes] - Palette entries; defaults to built-in field types.
  * @param {Array<Object>} [options.functionCatalog] - JSONata function catalog entries for registration/display.
- * @returns {{addField: Function, deleteField: Function, moveField: Function, render: Function, state: Object}}
+ * @returns {{addField: Function, addSection: Function, addStep: Function, deleteField: Function, moveField: Function, render: Function, state: Object}}
  */
 export function createFormBuilder(root, options = {}) {
-    // Single mutable snapshot shared across palette/outline/inspector; always re-canonicalized on render.
     const state = {
         schema: canonicalizeSchema(options.schema ?? createDefaultSchema()),
         selectedId: null,
@@ -29,7 +30,6 @@ export function createFormBuilder(root, options = {}) {
         diagnostics: [],
     };
 
-    // Regions are optional so hosts may omit preview/json/aside blocks without breaking init.
     const elements = {
         palette: root.querySelector('[data-builder-palette]'),
         outline: root.querySelector('[data-builder-outline]'),
@@ -39,28 +39,31 @@ export function createFormBuilder(root, options = {}) {
         hidden: root.querySelector('[data-builder-hidden]'),
         diagnostics: root.querySelector('[data-builder-diagnostics]'),
         functions: root.querySelector('[data-builder-functions]'),
+        templates: {
+            paletteItem: root.querySelector('template[data-builder-template="palette-item"]'),
+            outlineItem: root.querySelector('template[data-builder-template="outline-item"]'),
+            inspectorEmpty: root.querySelector('template[data-builder-template="inspector-empty"]'),
+            inspectorInput: root.querySelector('template[data-builder-template="inspector-input"]'),
+            inspectorTextarea: root.querySelector('template[data-builder-template="inspector-textarea"]'),
+            previewField: root.querySelector('template[data-builder-template="preview-field"]'),
+            functionItem: root.querySelector('template[data-builder-template="function-item"]'),
+            diagnosticItem: root.querySelector('template[data-builder-template="diagnostic-item"]'),
+        },
     };
 
-    /**
-     * Recomputes diagnostics, redraws all panels, syncs hidden/json outputs, and emits change events.
-     *
-     * @returns {Promise<void>}
-     */
     async function render() {
         state.schema = canonicalizeSchema(state.schema);
         state.diagnostics = await collectDiagnostics(state.schema);
 
-        // Full repaint strategy keeps DOM and Blade conventions aligned without incremental diffing.
-        renderPalette(elements.palette, state, addField);
-        renderOutline(elements.outline, state, selectField, moveField, deleteField);
-        renderInspector(elements.inspector, state, updateSelectedField);
-        renderPreview(elements.preview, state);
-        renderFunctions(elements.functions, state.functionCatalog);
+        renderPalette(elements.palette, state, addField, elements.templates.paletteItem);
+        renderOutline(elements.outline, state, selectField, moveField, deleteField, elements.templates.outlineItem);
+        renderInspector(elements.inspector, state, updateSelectedField, elements.templates);
+        renderPreview(elements.preview, state, elements.templates.previewField);
+        renderFunctions(elements.functions, state.functionCatalog, elements.templates.functionItem);
         syncJson(elements, state);
-        renderDiagnostics(elements.diagnostics, state.diagnostics);
+        renderDiagnostics(elements.diagnostics, state.diagnostics, elements.templates.diagnosticItem);
         dispatch('daisy-form-builder:change', { schema: state.schema, diagnostics: state.diagnostics });
 
-        // Separate invalid event lets hosts gate autosave pipelines without parsing diagnostics arrays.
         if (state.diagnostics.length > 0) {
             dispatch('daisy-form-builder:invalid', { diagnostics: state.diagnostics });
         }
@@ -71,9 +74,43 @@ export function createFormBuilder(root, options = {}) {
     }
 
     function addField(type) {
-        const field = createField(type, state.schema.fields.length + 1);
-        state.schema.fields.push(field);
+        const field = createField(type, nextFieldIndex(state.schema));
+        addFieldToSelectedContainer(state, field);
         state.selectedId = field.id;
+        void render();
+    }
+
+    function addSection(label = 'Section') {
+        const section = createField('section', nextFieldIndex(state.schema));
+        section.label = label;
+        section.fields = [];
+
+        if (state.schema.layout?.type === 'multi-step') {
+            const step = selectedField(state.schema, state.selectedId)?.type === 'wizardStep'
+                ? selectedField(state.schema, state.selectedId)
+                : firstFieldOfType(state.schema, 'wizardStep');
+
+            if (step) {
+                state.schema.fields = appendFieldToTree(state.schema.fields, step.id, section);
+            } else {
+                state.schema.fields.push(section);
+            }
+        } else {
+            state.schema.fields.push(section);
+        }
+
+        state.selectedId = section.id;
+        void render();
+    }
+
+    function addStep(label = 'Step') {
+        state.schema.layout = { ...(state.schema.layout ?? {}), type: 'multi-step' };
+
+        const step = createField('wizardStep', nextFieldIndex(state.schema));
+        step.label = label;
+        step.fields = [];
+        state.schema.fields.push(step);
+        state.selectedId = step.id;
         void render();
     }
 
@@ -83,16 +120,14 @@ export function createFormBuilder(root, options = {}) {
     }
 
     function updateSelectedField(updates) {
-        state.schema.fields = state.schema.fields.map((field) => {
+        state.schema.fields = mapFieldTree(state.schema.fields, (field) => {
             if (field.id !== state.selectedId) {
                 return field;
             }
 
-            // Strip undefined so clearing optional JSONata blocks removes keys instead of serializing null.
             return canonicalizeFieldUpdate({ ...field, ...updates });
         });
 
-        // Renaming id updates outline dataset hooks; keep selection consistent with the renamed row.
         if (updates.id) {
             state.selectedId = updates.id;
         }
@@ -101,7 +136,7 @@ export function createFormBuilder(root, options = {}) {
     }
 
     function deleteField(id) {
-        state.schema.fields = state.schema.fields.filter((field) => field.id !== id);
+        state.schema.fields = removeFieldFromTree(state.schema.fields, id);
 
         if (state.selectedId === id) {
             state.selectedId = state.schema.fields[0]?.id ?? null;
@@ -118,7 +153,6 @@ export function createFormBuilder(root, options = {}) {
             return;
         }
 
-        // Swap positions immutably so reactive watchers observing `fields` references still behave predictably.
         const fields = [...state.schema.fields];
         const [field] = fields.splice(index, 1);
         fields.splice(target, 0, field);
@@ -132,9 +166,8 @@ export function createFormBuilder(root, options = {}) {
                 state.schema = canonicalizeSchema(JSON.parse(elements.json.value));
                 state.selectedId = state.schema.fields[0]?.id ?? null;
             } catch (error) {
-                // Avoid wiping author edits: surface parse failure locally without rewriting the textarea via syncJson.
                 state.diagnostics = [{ code: 'json_parse_error', message: error.message }];
-                renderDiagnostics(elements.diagnostics, state.diagnostics);
+                renderDiagnostics(elements.diagnostics, state.diagnostics, elements.templates.diagnosticItem);
 
                 return;
             }
@@ -148,6 +181,8 @@ export function createFormBuilder(root, options = {}) {
 
     return {
         addField,
+        addSection,
+        addStep,
         deleteField,
         moveField,
         render,
@@ -155,13 +190,91 @@ export function createFormBuilder(root, options = {}) {
     };
 }
 
-/**
- * @param {HTMLElement|null} container - `[data-builder-palette]` region.
- * @param {{ fieldTypes: Array<{type: string, label?: string}> }} state - Builder state slice.
- * @param {(type: string) => void} addField - Adds a field of the given type.
- * @returns {void}
- */
-function renderPalette(container, state, addField) {
+function addFieldToSelectedContainer(state, field) {
+    const selected = selectedField(state.schema, state.selectedId);
+
+    if (selected && ['section', 'wizardStep', 'tabs'].includes(selected.type)) {
+        state.schema.fields = appendFieldToTree(state.schema.fields, selected.id, field);
+
+        return;
+    }
+
+    const firstSection = firstFieldOfType(state.schema, 'section');
+
+    if (firstSection) {
+        state.schema.fields = appendFieldToTree(state.schema.fields, firstSection.id, field);
+
+        return;
+    }
+
+    const firstStep = firstFieldOfType(state.schema, 'wizardStep');
+
+    if (state.schema.layout?.type === 'multi-step' && firstStep) {
+        state.schema.fields = appendFieldToTree(state.schema.fields, firstStep.id, field);
+
+        return;
+    }
+
+    state.schema.fields.push(field);
+}
+
+function selectedField(schema, selectedId) {
+    return flattenFields(schema.fields).find((field) => field.id === selectedId) ?? null;
+}
+
+function firstFieldOfType(schema, type) {
+    return flattenFields(schema.fields).find((field) => field.type === type) ?? null;
+}
+
+function nextFieldIndex(schema) {
+    return flattenFields(schema.fields).length + 1;
+}
+
+function mapFieldTree(fields, callback) {
+    return fields.map((field) => {
+        const mapped = callback(field);
+
+        if (Array.isArray(mapped.fields)) {
+            return {
+                ...mapped,
+                fields: mapFieldTree(mapped.fields, callback),
+            };
+        }
+
+        return mapped;
+    });
+}
+
+function removeFieldFromTree(fields, id) {
+    return fields
+        .filter((field) => field.id !== id)
+        .map((field) => ({
+            ...field,
+            fields: Array.isArray(field.fields) ? removeFieldFromTree(field.fields, id) : field.fields,
+        }));
+}
+
+function appendFieldToTree(fields, containerId, child) {
+    return fields.map((field) => {
+        if (field.id === containerId) {
+            return {
+                ...field,
+                fields: [...(field.fields ?? []), child],
+            };
+        }
+
+        if (Array.isArray(field.fields)) {
+            return {
+                ...field,
+                fields: appendFieldToTree(field.fields, containerId, child),
+            };
+        }
+
+        return field;
+    });
+}
+
+function renderPalette(container, state, addField, template) {
     if (!container) {
         return;
     }
@@ -169,78 +282,72 @@ function renderPalette(container, state, addField) {
     container.innerHTML = '';
 
     state.fieldTypes.forEach((fieldType) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'btn btn-sm justify-start';
-        button.textContent = fieldType.label ?? fieldType.type;
+        const button = cloneTemplateElement(template, 'button');
         button.dataset.builderAdd = fieldType.type;
+        setTemplateText(button, fieldType.label ?? fieldType.type);
         button.addEventListener('click', () => addField(fieldType.type));
         container.appendChild(button);
     });
 }
 
-/**
- * @param {HTMLElement|null} container - `[data-builder-outline]` region.
- * @returns {void}
- */
-function renderOutline(container, state, selectField, moveField, deleteField) {
+function renderOutline(container, state, selectField, moveField, deleteField, template) {
     if (!container) {
         return;
     }
 
     container.innerHTML = '';
 
-    state.schema.fields.forEach((field) => {
-        const item = document.createElement('div');
-        item.className = `flex items-center gap-2 rounded-box border border-base-300 bg-base-100 p-2 ${state.selectedId === field.id ? 'ring-2 ring-primary' : ''}`;
-        item.dataset.builderField = field.id;
+    renderOutlineFields(container, state.schema.fields, state, selectField, moveField, deleteField, template);
+}
 
-        const select = document.createElement('button');
-        select.type = 'button';
-        select.className = 'btn btn-ghost btn-sm flex-1 justify-start';
-        select.textContent = `${field.label ?? field.id} (${field.type})`;
+function renderOutlineFields(container, fields, state, selectField, moveField, deleteField, template, depth = 0) {
+    fields.forEach((field) => {
+        const item = cloneTemplateElement(template, 'div');
+        item.dataset.builderField = field.id;
+        item.classList.toggle('ring-2', state.selectedId === field.id);
+        item.classList.toggle('ring-primary', state.selectedId === field.id);
+        item.style.marginInlineStart = depth > 0 ? `${depth * 0.75}rem` : '';
+
+        const select = item.querySelector('[data-builder-select]') ?? item;
+        setTemplateText(select, `${field.label ?? field.id} (${field.type})`);
         select.addEventListener('click', () => selectField(field.id));
-        item.appendChild(select);
 
         [
-            ['up', -1, '↑'],
-            ['down', 1, '↓'],
-        ].forEach(([action, direction, label]) => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'btn btn-ghost btn-xs';
-            button.dataset.builderMove = action;
-            button.textContent = label;
-            button.addEventListener('click', () => moveField(field.id, direction));
-            item.appendChild(button);
+            ['up', -1],
+            ['down', 1],
+        ].forEach(([action, direction]) => {
+            const button = item.querySelector(`[data-builder-move="${action}"]`);
+
+            if (button) {
+                button.addEventListener('click', () => moveField(field.id, direction));
+            }
         });
 
-        const remove = document.createElement('button');
-        remove.type = 'button';
-        remove.className = 'btn btn-ghost btn-xs text-error';
-        remove.dataset.builderDelete = field.id;
-        remove.textContent = '×';
-        remove.addEventListener('click', () => deleteField(field.id));
-        item.appendChild(remove);
+        const remove = item.querySelector('[data-builder-delete]');
+
+        if (remove) {
+            remove.dataset.builderDelete = field.id;
+            remove.addEventListener('click', () => deleteField(field.id));
+        }
 
         container.appendChild(item);
+
+        if (Array.isArray(field.fields)) {
+            renderOutlineFields(container, field.fields, state, selectField, moveField, deleteField, template, depth + 1);
+        }
     });
 }
 
-/**
- * @param {HTMLElement|null} container - `[data-builder-inspector]` region.
- * @returns {void}
- */
-function renderInspector(container, state, updateSelectedField) {
+function renderInspector(container, state, updateSelectedField, templates) {
     if (!container) {
         return;
     }
 
-    const field = state.schema.fields.find((item) => item.id === state.selectedId);
+    const field = selectedField(state.schema, state.selectedId);
     container.innerHTML = '';
 
     if (!field) {
-        container.textContent = 'Select a field.';
+        container.appendChild(cloneTemplateElement(templates.inspectorEmpty, 'p'));
 
         return;
     }
@@ -250,10 +357,10 @@ function renderInspector(container, state, updateSelectedField) {
         ['name', 'Name', field.name ?? ''],
         ['label', 'Label', field.label ?? ''],
     ].forEach(([key, label, value]) => {
-        container.appendChild(createTextInput(label, value, (nextValue) => updateSelectedField({ [key]: nextValue })));
+        container.appendChild(createTextInput(templates.inspectorInput, label, value, (nextValue) => updateSelectedField({ [key]: nextValue })));
     });
 
-    container.appendChild(createTextarea('Options JSON', JSON.stringify(field.options ?? [], null, 2), (nextValue) => {
+    container.appendChild(createTextarea(templates.inspectorTextarea, 'Options JSON', JSON.stringify(field.options ?? [], null, 2), (nextValue) => {
         try {
             const options = JSON.parse(nextValue).map(normalizeOption).filter(Boolean);
             updateSelectedField({ options });
@@ -262,7 +369,7 @@ function renderInspector(container, state, updateSelectedField) {
         }
     }));
 
-    container.appendChild(createTextarea('Visible when JSONata', field.visibleWhen?.expression ?? '', (expression) => {
+    container.appendChild(createTextarea(templates.inspectorTextarea, 'Visible when JSONata', field.visibleWhen?.expression ?? '', (expression) => {
         updateSelectedField({
             visibleWhen: expression.trim()
                 ? { type: 'jsonata', expression, dependsOn: field.visibleWhen?.dependsOn ?? [] }
@@ -270,7 +377,7 @@ function renderInspector(container, state, updateSelectedField) {
         });
     }));
 
-    container.appendChild(createTextInput('Visible dependsOn CSV', (field.visibleWhen?.dependsOn ?? []).join(','), (value) => {
+    container.appendChild(createTextInput(templates.inspectorInput, 'Visible dependsOn CSV', (field.visibleWhen?.dependsOn ?? []).join(','), (value) => {
         updateSelectedField({
             visibleWhen: {
                 type: 'jsonata',
@@ -280,7 +387,7 @@ function renderInspector(container, state, updateSelectedField) {
         });
     }));
 
-    container.appendChild(createTextarea('Computed JSONata', field.computed?.expression ?? '', (expression) => {
+    container.appendChild(createTextarea(templates.inspectorTextarea, 'Computed JSONata', field.computed?.expression ?? '', (expression) => {
         updateSelectedField({
             computed: expression.trim()
                 ? { type: 'jsonata', expression, dependsOn: field.computed?.dependsOn ?? [], mode: field.computed?.mode ?? 'readonly' }
@@ -289,41 +396,36 @@ function renderInspector(container, state, updateSelectedField) {
     }));
 }
 
-/**
- * @param {HTMLElement|null} container - `[data-builder-preview]` region.
- * @returns {void}
- */
-function renderPreview(container, state) {
+function renderPreview(container, state, template) {
     if (!container) {
         return;
     }
 
     container.innerHTML = '';
 
-    state.schema.fields.forEach((field) => {
-        const wrapper = document.createElement('label');
-        wrapper.className = 'form-control w-full';
+    flattenFields(state.schema.fields)
+        .filter((field) => !['section', 'tabs', 'wizardStep', 'hidden', 'staticText'].includes(field.type))
+        .forEach((field) => {
+            const wrapper = cloneTemplateElement(template, 'label');
+            setTemplateText(wrapper, field.label ?? field.id);
 
-        const label = document.createElement('span');
-        label.className = 'label-text mb-1';
-        label.textContent = field.label ?? field.id;
-        wrapper.appendChild(label);
+            const input = wrapper.querySelector('[data-builder-preview-input]');
+            const textarea = wrapper.querySelector('[data-builder-preview-textarea]');
 
-        const input = document.createElement(field.type === 'textarea' ? 'textarea' : 'input');
-        input.className = field.type === 'textarea' ? 'textarea textarea-bordered w-full' : 'input input-bordered w-full';
-        input.disabled = true;
-        input.placeholder = field.type;
-        wrapper.appendChild(input);
-        container.appendChild(wrapper);
-    });
+            if (textarea && input && field.type === 'textarea') {
+                input.classList.add('hidden');
+                textarea.classList.remove('hidden');
+                textarea.placeholder = field.type;
+            } else if (input) {
+                input.placeholder = field.type;
+                input.type = ['email', 'tel', 'url', 'password', 'number', 'date', 'time', 'datetime-local', 'month', 'color'].includes(field.type) ? field.type : 'text';
+            }
+
+            container.appendChild(wrapper);
+        });
 }
 
-/**
- * @param {HTMLElement|null} container - `[data-builder-functions]` list element.
- * @param {Array<{name: string, signature?: string}>} catalog - Registered JSONata definitions.
- * @returns {void}
- */
-function renderFunctions(container, catalog) {
+function renderFunctions(container, catalog, template) {
     if (!container) {
         return;
     }
@@ -331,19 +433,13 @@ function renderFunctions(container, catalog) {
     container.innerHTML = '';
 
     catalog.forEach((definition) => {
-        const item = document.createElement('li');
-        item.className = 'rounded-box bg-base-200 px-2 py-1';
-        item.textContent = `${definition.name} ${definition.signature ?? ''}`.trim();
+        const item = cloneTemplateElement(template, 'li');
+        setTemplateText(item, `${definition.name} ${definition.signature ?? ''}`.trim());
         container.appendChild(item);
     });
 }
 
-/**
- * @param {HTMLElement|null} container - `[data-builder-diagnostics]` region.
- * @param {Array<{message: string}>} diagnostics - Messages to surface to the author.
- * @returns {void}
- */
-function renderDiagnostics(container, diagnostics) {
+function renderDiagnostics(container, diagnostics, template) {
     if (!container) {
         return;
     }
@@ -352,23 +448,15 @@ function renderDiagnostics(container, diagnostics) {
     container.classList.toggle('hidden', diagnostics.length === 0);
 
     diagnostics.forEach((diagnostic) => {
-        const item = document.createElement('li');
-        item.textContent = diagnostic.message;
+        const item = cloneTemplateElement(template, 'li');
+        setTemplateText(item, diagnostic.message);
         container.appendChild(item);
     });
 }
 
-/**
- * Keeps the JSON textarea and optional hidden submission field aligned with `state.schema`.
- *
- * @param {Object} elements - Cached DOM handles from the builder root.
- * @param {{ schema: Object }} state - Current schema snapshot.
- * @returns {void}
- */
 function syncJson(elements, state) {
     const value = JSON.stringify(state.schema, null, 2);
 
-    // Skip reassignment when unchanged so caret position / undo stacks survive programmatic sync after inspector edits.
     if (elements.json && elements.json.value !== value) {
         elements.json.value = value;
     }
@@ -378,18 +466,11 @@ function syncJson(elements, state) {
     }
 }
 
-/**
- * Merges structural schema validation errors with JSONata compile failures per field.
- *
- * @param {Object} schema - Canonical Daisy form schema.
- * @returns {Promise<Array<{code?: string, message: string}>>}
- */
 async function collectDiagnostics(schema) {
     const validation = validateSchema(schema);
     const diagnostics = [...validation.errors];
 
-    // Structural errors come from AJV + Daisy semantic passes; expressions need separate compile probes per field.
-    for (const field of schema.fields) {
+    for (const field of flattenFields(schema.fields)) {
         for (const expression of [field.visibleWhen, field.computed, ...(field.rules ?? []).filter((rule) => rule?.type === 'jsonata')]) {
             if (!expression?.expression) {
                 continue;
@@ -409,60 +490,30 @@ async function collectDiagnostics(schema) {
     return diagnostics;
 }
 
-/**
- * @param {string} label - Visible label (HTML-escaped).
- * @param {string} value - Controlled value.
- * @param {(next: string) => void} onChange - Invoked on `change`.
- * @returns {HTMLLabelElement}
- */
-function createTextInput(label, value, onChange) {
-    const wrapper = document.createElement('label');
-    wrapper.className = 'form-control w-full';
-    wrapper.innerHTML = `<span class="label-text mb-1">${escapeHtml(label)}</span>`;
-
-    const input = document.createElement('input');
-    input.className = 'input input-bordered input-sm w-full';
+function createTextInput(template, label, value, onChange) {
+    const wrapper = cloneTemplateElement(template, 'label');
+    const input = ensureControl(wrapper, 'input');
+    setTemplateText(wrapper, label);
     input.value = value;
     input.addEventListener('change', () => onChange(input.value));
-    wrapper.appendChild(input);
 
     return wrapper;
 }
 
-/**
- * @param {string} label - Visible label (HTML-escaped).
- * @param {string} value - Controlled value.
- * @param {(next: string) => void} onChange - Invoked on `change`.
- * @returns {HTMLLabelElement}
- */
-function createTextarea(label, value, onChange) {
-    const wrapper = document.createElement('label');
-    wrapper.className = 'form-control w-full';
-    wrapper.innerHTML = `<span class="label-text mb-1">${escapeHtml(label)}</span>`;
-
-    const input = document.createElement('textarea');
-    input.className = 'textarea textarea-bordered textarea-sm min-h-24 w-full font-mono';
+function createTextarea(template, label, value, onChange) {
+    const wrapper = cloneTemplateElement(template, 'label');
+    const input = ensureControl(wrapper, 'textarea');
+    setTemplateText(wrapper, label);
     input.value = value;
     input.addEventListener('change', () => onChange(input.value));
-    wrapper.appendChild(input);
 
     return wrapper;
 }
 
-/**
- * Drops undefined entries so compact merges do not clutter serialized schema.
- *
- * @param {Object} field - Field draft from the inspector.
- * @returns {Object}
- */
 function canonicalizeFieldUpdate(field) {
     return Object.fromEntries(Object.entries(field).filter(([, value]) => value !== undefined));
 }
 
-/**
- * @param {string} value - Comma-separated dependency ids.
- * @returns {string[]}
- */
 function splitCsv(value) {
     return String(value ?? '')
         .split(',')
@@ -470,16 +521,35 @@ function splitCsv(value) {
         .filter(Boolean);
 }
 
-/**
- * @param {unknown} value - Plain text to embed in inspector markup.
- * @returns {string}
- */
-function escapeHtml(value) {
-    // Text-node round-trip avoids coupling inspector labels to a full HTML sanitizer dependency.
-    const div = document.createElement('div');
-    div.textContent = String(value ?? '');
+function cloneTemplateElement(template, fallbackTag) {
+    if (template instanceof HTMLTemplateElement) {
+        const element = template.content.firstElementChild?.cloneNode(true);
 
-    return div.innerHTML;
+        if (element instanceof HTMLElement) {
+            return element;
+        }
+    }
+
+    return document.createElement(fallbackTag);
+}
+
+function setTemplateText(element, value) {
+    const target = element.querySelector('[data-builder-label]') ?? element;
+    target.textContent = String(value ?? '');
+}
+
+function ensureControl(wrapper, tagName) {
+    const existing = wrapper.querySelector('[data-builder-control]');
+
+    if (existing instanceof HTMLInputElement || existing instanceof HTMLTextAreaElement) {
+        return existing;
+    }
+
+    const control = document.createElement(tagName);
+    control.dataset.builderControl = '';
+    wrapper.appendChild(control);
+
+    return control;
 }
 
 /**

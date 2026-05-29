@@ -24,7 +24,7 @@ import { evaluateExpression } from './jsonata-engine.js';
  * @param {'event'|'html'|'fetch'|'none'} [options.submitMode] - How successful validation should finalize.
  * @returns {{
  *   refresh: () => Promise<void>,
- *   validate: () => Promise<boolean>,
+ *   validate: (options?: {scope?: 'all'|'current'}) => Promise<boolean>,
  *   submit: (event?: Event|null) => Promise<boolean>,
  *   state: Object,
  *   serialize: () => Record<string, unknown>,
@@ -34,7 +34,8 @@ export function createFormRuntime(root, options = {}) {
     const schema = canonicalizeSchema(options.schema);
     const validation = validateSchema(schema);
     // Containers render recursively in Blade but runtime logic only binds leaf controls carrying submit names.
-    const fields = flattenFields(schema.fields).filter((field) => !CONTAINER_FIELD_TYPES.includes(field.type));
+    const allFields = flattenFields(schema.fields);
+    const fields = allFields.filter((field) => !CONTAINER_FIELD_TYPES.includes(field.type));
     const state = {
         schema,
         fields,
@@ -45,7 +46,10 @@ export function createFormRuntime(root, options = {}) {
         visible: {},
         touched: {},
         valid: validation.valid,
+        currentStep: 0,
     };
+    const isMultiStep = schema.layout?.type === 'multi-step';
+    const stepFields = schema.fields.filter((field) => field.type === 'wizardStep');
 
     fields.forEach((field) => {
         const key = field.name ?? field.id;
@@ -93,6 +97,7 @@ export function createFormRuntime(root, options = {}) {
         await applyComputedValues();
         await applyVisibility();
         applyDomState(root, fields, state);
+        applyStepState(root, state);
         dispatch('daisy-form:change', { values: { ...state.values }, visible: { ...state.visible } });
     }
 
@@ -153,7 +158,8 @@ export function createFormRuntime(root, options = {}) {
      *
      * @returns {Promise<boolean>}
      */
-    async function validate() {
+    async function validate(options = {}) {
+        const scope = options.scope ?? 'all';
         const errors = {};
 
         if (!validation.valid) {
@@ -162,6 +168,10 @@ export function createFormRuntime(root, options = {}) {
 
         for (const field of fields) {
             if (state.visible[field.id] === false) {
+                continue;
+            }
+
+            if (isMultiStep && scope === 'current' && !isFieldOnCurrentStep(field, state, stepFields, allFields)) {
                 continue;
             }
 
@@ -176,6 +186,7 @@ export function createFormRuntime(root, options = {}) {
         state.errors = errors;
         state.valid = Object.keys(errors).length === 0;
         applyDomState(root, fields, state);
+        applyStepState(root, state);
 
         if (!state.valid) {
             dispatch('daisy-form:invalid', { errors });
@@ -239,6 +250,26 @@ export function createFormRuntime(root, options = {}) {
     root.addEventListener('submit', (event) => {
         void submit(event);
     });
+    root.querySelectorAll('[data-form-next]').forEach((button) => {
+        button.addEventListener('click', async () => {
+            await refresh();
+
+            if (!await validate({ scope: 'current' })) {
+                return;
+            }
+
+            state.currentStep = Math.min(state.currentStep + 1, Math.max(0, stepFields.length - 1));
+            applyStepState(root, state);
+            dispatch('daisy-form:step-change', { currentStep: state.currentStep });
+        });
+    });
+    root.querySelectorAll('[data-form-previous]').forEach((button) => {
+        button.addEventListener('click', () => {
+            state.currentStep = Math.max(0, state.currentStep - 1);
+            applyStepState(root, state);
+            dispatch('daisy-form:step-change', { currentStep: state.currentStep });
+        });
+    });
 
     void refresh().then(() => {
         dispatch('daisy-form:ready', { schema, values: { ...state.values } });
@@ -251,6 +282,61 @@ export function createFormRuntime(root, options = {}) {
         state,
         serialize: () => serializeVisibleValues(fields, state.values, state.visible),
     };
+}
+
+function isFieldOnCurrentStep(field, state, stepFields, fields) {
+    if (stepFields.length === 0) {
+        return true;
+    }
+
+    const currentStep = stepFields[state.currentStep];
+
+    if (!currentStep) {
+        return true;
+    }
+
+    const fieldMap = new Map(fields.map((item) => [item.id, item]));
+    let parent = field.parent;
+
+    while (parent) {
+        if (parent === currentStep.id) {
+            return true;
+        }
+
+        parent = fieldMap.get(parent)?.parent;
+    }
+
+    return field.id === currentStep.id;
+}
+
+function applyStepState(root, state) {
+    const steps = Array.from(root.querySelectorAll('[data-form-step]'));
+
+    if (steps.length === 0) {
+        return;
+    }
+
+    steps.forEach((step, index) => {
+        step.classList.toggle('hidden', index !== state.currentStep);
+        step.toggleAttribute('aria-hidden', index !== state.currentStep);
+    });
+
+    root.querySelectorAll('[data-form-step-indicator]').forEach((indicator) => {
+        const index = Number(indicator.dataset.formStepIndicator);
+        indicator.classList.toggle('step-primary', index <= state.currentStep);
+    });
+
+    root.querySelectorAll('[data-form-previous]').forEach((button) => {
+        button.toggleAttribute('disabled', state.currentStep === 0);
+    });
+
+    root.querySelectorAll('[data-form-next]').forEach((button) => {
+        button.classList.toggle('hidden', state.currentStep >= steps.length - 1);
+    });
+
+    root.querySelectorAll('[data-form-submit]').forEach((button) => {
+        button.classList.toggle('hidden', state.currentStep < steps.length - 1);
+    });
 }
 
 /**

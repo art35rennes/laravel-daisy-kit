@@ -121,7 +121,7 @@ export function canonicalizeSchema(schema) {
         id: String(source.id ?? 'form'),
         meta: source.meta && typeof source.meta === 'object' ? compactObject({ ...source.meta }) : {},
         jsonata: canonicalizeJsonata(source.jsonata),
-        layout: source.layout && typeof source.layout === 'object' ? compactObject({ type: source.layout.type ?? 'sections', ...source.layout }) : { type: 'sections' },
+        layout: canonicalizeLayout(source.layout),
         fields: Array.isArray(source.fields) ? source.fields.map(canonicalizeField).filter(Boolean) : [],
         submit: canonicalizeSubmit(source.submit),
     });
@@ -129,6 +129,16 @@ export function canonicalizeSchema(schema) {
     canonical.fields = Array.isArray(canonical.fields) ? canonical.fields : [];
 
     return canonical;
+}
+
+function canonicalizeLayout(layout) {
+    const source = layout && typeof layout === 'object' ? layout : {};
+    const type = ['one-page', 'multi-step', 'sections'].includes(source.type) ? source.type : 'one-page';
+
+    return compactObject({
+        ...source,
+        type,
+    });
 }
 
 function canonicalizeJsonata(jsonataConfig) {

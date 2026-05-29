@@ -143,9 +143,12 @@ The package exposes a greenfield JSON-driven form surface:
 
 - `x-daisy::forms.viewer` renders a `DaisyFormSchema` `1.0` payload into a progressive HTML form.
 - `x-daisy::forms.builder` edits the same schema and emits canonical JSON.
+- `x-daisy::templates.form.builder` combines the builder and viewer into an embeddable authoring surface.
 - JSONata powers field visibility, complex validation rules, and computed values.
 
-The viewer is agnostic by default. Use `submitMode="event"` to listen for `daisy-form:submit`, or opt into `html`, `fetch`, or `none`.
+The viewer is agnostic by default. Use `submitMode="event"` to listen for `daisy-form:submit`, or opt into `html`, `fetch`, or `none`. The host application owns persistence, authorization, and business processing; Daisy Kit owns the schema contract and the renderer.
+
+Supported layout modes are `one-page`, `sections`, and `multi-step`. Supported field types include native inputs (`text`, `email`, `tel`, `url`, `password`, `number`, `date`, `time`, `datetime-local`, `month`, `color`), text/content controls (`textarea`, `staticText`, `hidden`), choices (`select`, `radio`, `checkbox`, `toggle`, `range`), attachments (`file`, `signature`), and containers (`section`, `tabs`, `wizardStep`).
 
 ```blade
 <x-daisy::forms.viewer
@@ -170,6 +173,16 @@ The viewer is agnostic by default. Use `submitMode="event"` to listen for `daisy
             ],
         ],
     ]"
+/>
+```
+
+For authoring screens, post the generated schema JSON back to your app with the builder:
+
+```blade
+<x-daisy::templates.form.builder
+    title="Contact form"
+    schema-name="form_schema"
+    :schema="$form->schema"
 />
 ```
 

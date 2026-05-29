@@ -62,6 +62,60 @@ it('detects JSONata dependency cycles', function () {
     expect(array_column($errors, 'code'))->toContain('dependency_cycle');
 });
 
+it('accepts multi step schemas with nested sections and common fields', function () {
+    $validator = new FormSchemaValidator;
+
+    $errors = $validator->validate(validFormSchema([
+        'layout' => ['type' => 'multi-step'],
+        'fields' => [
+            [
+                'id' => 'contact',
+                'type' => 'wizardStep',
+                'label' => 'Contact',
+                'fields' => [
+                    [
+                        'id' => 'identity',
+                        'type' => 'section',
+                        'label' => 'Identity',
+                        'fields' => [
+                            ['id' => 'name', 'type' => 'text', 'name' => 'name', 'rules' => ['required']],
+                            ['id' => 'email', 'type' => 'email', 'name' => 'email', 'rules' => ['required', 'email']],
+                            ['id' => 'phone', 'type' => 'tel', 'name' => 'phone'],
+                            ['id' => 'website', 'type' => 'url', 'name' => 'website'],
+                            ['id' => 'message', 'type' => 'textarea', 'name' => 'message', 'rules' => ['nullable']],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'id' => 'confirmation',
+                'type' => 'wizardStep',
+                'label' => 'Confirmation',
+                'fields' => [
+                    ['id' => 'appointment_date', 'type' => 'date', 'name' => 'appointment_date'],
+                    ['id' => 'appointment_time', 'type' => 'time', 'name' => 'appointment_time'],
+                    ['id' => 'starts_at', 'type' => 'datetime-local', 'name' => 'starts_at'],
+                    ['id' => 'billing_month', 'type' => 'month', 'name' => 'billing_month'],
+                    ['id' => 'brand_color', 'type' => 'color', 'name' => 'brand_color'],
+                    ['id' => 'terms', 'type' => 'checkbox', 'name' => 'terms', 'rules' => ['accepted']],
+                ],
+            ],
+        ],
+    ]));
+
+    expect($errors)->toBe([]);
+});
+
+it('rejects unsupported form layout types', function () {
+    $validator = new FormSchemaValidator;
+
+    $errors = $validator->validate(validFormSchema([
+        'layout' => ['type' => 'kanban'],
+    ]));
+
+    expect(array_column($errors, 'code'))->toContain('unknown_layout_type');
+});
+
 it('maps simple rules to Laravel rules and skips JSONata rules', function () {
     $mapper = new LaravelRuleMapper;
 

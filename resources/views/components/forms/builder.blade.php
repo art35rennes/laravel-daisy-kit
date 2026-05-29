@@ -78,5 +78,62 @@
     <script type="application/json" data-builder-field-types>@json($fieldTypes)</script>
     <script type="application/json" data-builder-function-catalog>@json($functionCatalog)</script>
 
+    <template data-builder-template="palette-item">
+        <button type="button" class="btn btn-sm justify-start" data-builder-add>
+            <span data-builder-label></span>
+        </button>
+    </template>
+
+    <template data-builder-template="outline-item">
+        <div class="flex items-center gap-2 rounded-box border border-base-300 bg-base-100 p-2" data-builder-field>
+            <button type="button" class="btn btn-ghost btn-sm flex-1 justify-start" data-builder-select>
+                <span data-builder-label></span>
+            </button>
+            <button type="button" class="btn btn-ghost btn-xs" data-builder-move="up" aria-label="{{ __('daisy::form.builder.move_up') }}">
+                <span aria-hidden="true">↑</span>
+            </button>
+            <button type="button" class="btn btn-ghost btn-xs" data-builder-move="down" aria-label="{{ __('daisy::form.builder.move_down') }}">
+                <span aria-hidden="true">↓</span>
+            </button>
+            <button type="button" class="btn btn-ghost btn-xs text-error" data-builder-delete aria-label="{{ __('daisy::form.builder.remove') }}">
+                <span aria-hidden="true">×</span>
+            </button>
+        </div>
+    </template>
+
+    <template data-builder-template="inspector-empty">
+        <p class="text-sm text-base-content/60">{{ __('daisy::form.builder.select_field') }}</p>
+    </template>
+
+    <template data-builder-template="inspector-input">
+        <label class="form-control w-full">
+            <span class="label-text mb-1" data-builder-label></span>
+            <input class="input input-bordered input-sm w-full" data-builder-control />
+        </label>
+    </template>
+
+    <template data-builder-template="inspector-textarea">
+        <label class="form-control w-full">
+            <span class="label-text mb-1" data-builder-label></span>
+            <textarea class="textarea textarea-bordered textarea-sm min-h-24 w-full font-mono" data-builder-control></textarea>
+        </label>
+    </template>
+
+    <template data-builder-template="preview-field">
+        <label class="form-control w-full">
+            <span class="label-text mb-1" data-builder-label></span>
+            <input class="input input-bordered w-full" disabled data-builder-preview-input />
+            <textarea class="textarea textarea-bordered hidden w-full" disabled data-builder-preview-textarea></textarea>
+        </label>
+    </template>
+
+    <template data-builder-template="function-item">
+        <li class="rounded-box bg-base-200 px-2 py-1" data-builder-label></li>
+    </template>
+
+    <template data-builder-template="diagnostic-item">
+        <li data-builder-label></li>
+    </template>
+
     @include('daisy::components.partials.assets')
 </div>

@@ -147,7 +147,7 @@
             />
         @else
             <x-daisy::ui.inputs.input
-                type="{{ $type === 'date' ? 'date' : (in_array($type, ['email', 'password', 'number'], true) ? $type : 'text') }}"
+                type="{{ in_array($type, ['email', 'tel', 'url', 'password', 'number', 'date', 'time', 'datetime-local', 'month', 'color'], true) ? $type : 'text' }}"
                 name="{{ $name }}"
                 value="{{ is_scalar($fieldValue) ? $fieldValue : '' }}"
                 :disabled="$readonly"

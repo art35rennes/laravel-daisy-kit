@@ -33,10 +33,14 @@ it('exposes templates as anonymous Blade components through the public alias', f
     View::share('errors', new MessageBag);
 
     $html = Blade::render('<x-daisy::templates.auth.login-simple />');
+    $builderHtml = Blade::render('<x-daisy::templates.form.builder />');
 
     expect($html)
         ->toContain('<form')
-        ->toContain(__('daisy::auth.login'));
+        ->toContain(__('daisy::auth.login'))
+        ->and($builderHtml)
+        ->toContain('data-module="form-builder"')
+        ->toContain('data-module="form-viewer"');
 });
 
 it('registers the default csrf refresh route contract', function () {

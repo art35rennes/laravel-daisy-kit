@@ -22,6 +22,8 @@ class FormSchemaValidator
     protected const FieldTypes = [
         'text',
         'email',
+        'tel',
+        'url',
         'password',
         'number',
         'textarea',
@@ -31,6 +33,10 @@ class FormSchemaValidator
         'toggle',
         'range',
         'date',
+        'time',
+        'datetime-local',
+        'month',
+        'color',
         'file',
         'signature',
         'hidden',
@@ -46,6 +52,13 @@ class FormSchemaValidator
      * @var array<int, string>
      */
     protected const ContainerTypes = ['section', 'tabs', 'wizardStep'];
+
+    /**
+     * Layout modes supported by the v1 form viewer.
+     *
+     * @var array<int, string>
+     */
+    protected const LayoutTypes = ['one-page', 'multi-step', 'sections'];
 
     /**
      * Declarative simple validation tokens mirrored by {@see LaravelRuleMapper}.
@@ -84,6 +97,8 @@ class FormSchemaValidator
             $errors[] = $this->error('/id', 'invalid_id', 'The form schema needs a stable id.');
         }
 
+        $this->validateLayout($schema['layout'] ?? null, $errors);
+
         if (! is_array($schema['fields'] ?? null)) {
             $errors[] = $this->error('/fields', 'missing_fields', 'The form schema needs a fields array.');
 
@@ -94,6 +109,28 @@ class FormSchemaValidator
         $this->validateDependencies($schema['fields'], $errors);
 
         return $errors;
+    }
+
+    /**
+     * @param  array<int, array{path: string, code: string, message: string}>  $errors
+     */
+    protected function validateLayout(mixed $layout, array &$errors): void
+    {
+        if ($layout === null) {
+            return;
+        }
+
+        if (! is_array($layout)) {
+            $errors[] = $this->error('/layout', 'invalid_layout', 'The form layout must be an object.');
+
+            return;
+        }
+
+        $type = $layout['type'] ?? 'one-page';
+
+        if (! is_string($type) || ! in_array($type, self::LayoutTypes, true)) {
+            $errors[] = $this->error('/layout/type', 'unknown_layout_type', "Layout type `{$type}` is not supported.");
+        }
     }
 
     /**

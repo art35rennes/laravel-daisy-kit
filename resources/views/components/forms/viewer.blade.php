@@ -25,6 +25,10 @@
     $submit = (array) ($schema['submit'] ?? []);
     $submitLabel = $submit['label'] ?? __('daisy::form.submit');
     $resolvedSubmitMode = $submitMode ?: ($submit['mode'] ?? 'event');
+    $layoutType = data_get($schema, 'layout.type', 'one-page');
+    $isMultiStep = $layoutType === 'multi-step';
+    $topLevelFields = array_values((array) ($schema['fields'] ?? []));
+    $steps = array_values(array_filter($topLevelFields, fn ($field) => ($field['type'] ?? null) === 'wizardStep'));
 @endphp
 
 <form
@@ -53,19 +57,65 @@
     @endif
 
     <div class="space-y-4" data-form-fields>
-        @foreach((array) ($schema['fields'] ?? []) as $field)
-            @include('daisy::components.forms.partials.field', [
-                'field' => $field,
-                'value' => $value,
-                'errors' => $errors,
-                'readonly' => $readonly,
-            ])
-        @endforeach
+        @if($isMultiStep && count($steps) > 0)
+            <div class="steps steps-horizontal w-full">
+                @foreach($steps as $index => $step)
+                    <div class="step {{ $index === 0 ? 'step-primary' : '' }}" data-form-step-indicator="{{ $index }}">
+                        {{ $step['label'] ?? __('daisy::form.step', ['number' => $index + 1]) }}
+                    </div>
+                @endforeach
+            </div>
+
+            @foreach($steps as $index => $step)
+                <section
+                    class="space-y-4"
+                    data-form-step="{{ $step['id'] ?? $index }}"
+                    data-form-step-index="{{ $index }}"
+                >
+                    @if($step['label'] ?? null)
+                        <header>
+                            <h3 class="text-lg font-semibold">{{ $step['label'] }}</h3>
+                            @if($step['description'] ?? null)
+                                <p class="mt-1 text-sm text-base-content/70">{{ $step['description'] }}</p>
+                            @endif
+                        </header>
+                    @endif
+
+                    @foreach((array) ($step['fields'] ?? []) as $field)
+                        @include('daisy::components.forms.partials.field', [
+                            'field' => $field,
+                            'value' => $value,
+                            'errors' => $errors,
+                            'readonly' => $readonly,
+                        ])
+                    @endforeach
+                </section>
+            @endforeach
+        @else
+            @foreach($topLevelFields as $field)
+                @include('daisy::components.forms.partials.field', [
+                    'field' => $field,
+                    'value' => $value,
+                    'errors' => $errors,
+                    'readonly' => $readonly,
+                ])
+            @endforeach
+        @endif
     </div>
 
     @if($resolvedSubmitMode !== 'none' && ! $readonly)
-        <div class="flex items-center justify-end border-t border-base-300 pt-4">
-            <x-daisy::ui.inputs.button type="submit" color="primary">
+        <div class="flex items-center justify-end gap-2 border-t border-base-300 pt-4">
+            @if($isMultiStep && count($steps) > 0)
+                <x-daisy::ui.inputs.button type="button" color="ghost" data-form-previous>
+                    {{ __('daisy::form.previous') }}
+                </x-daisy::ui.inputs.button>
+
+                <x-daisy::ui.inputs.button type="button" color="primary" data-form-next>
+                    {{ __('daisy::form.next') }}
+                </x-daisy::ui.inputs.button>
+            @endif
+
+            <x-daisy::ui.inputs.button type="submit" color="primary" data-form-submit>
                 {{ $submitLabel }}
             </x-daisy::ui.inputs.button>
         </div>

@@ -238,11 +238,12 @@ function countBladeFiles(string $path): int
 
 function relativeBladePath(string $basePath, string $file): string
 {
-    return str_replace(
-        ['\\', rtrim($basePath, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR],
-        ['/', ''],
-        $file
-    );
+    $normalizedBasePath = str_replace('\\', '/', rtrim($basePath, DIRECTORY_SEPARATOR)).'/';
+    $normalizedFile = str_replace('\\', '/', $file);
+
+    return str_starts_with($normalizedFile, $normalizedBasePath)
+        ? substr($normalizedFile, strlen($normalizedBasePath))
+        : $normalizedFile;
 }
 
 function ensureDirectory(string $path): void

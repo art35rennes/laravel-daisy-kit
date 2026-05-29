@@ -29,6 +29,7 @@ class DaisyKitServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'daisy');
         // Exposer les templates comme composants anonymes pour éviter les doublons avec components/templates.
         Blade::anonymousComponentPath(__DIR__.'/../resources/views/templates', 'daisy::templates');
+        Blade::anonymousComponentPath(__DIR__.'/../resources/views/templates/form', 'daisy::templates.form');
 
         // Charger les traductions du package: __('daisy::calendar.today')
         $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'daisy');
