@@ -94,6 +94,8 @@ class DaisyKitServiceProvider extends ServiceProvider
         }
 
         $publishedView = resource_path('views/vendor/daisy/components/'.str_replace('.', '/', $componentKey).'.blade.php');
+        $packageView = str_replace('\\', '/', $packageView);
+        $publishedView = str_replace('\\', '/', $publishedView);
 
         $message = $exception->getMessage().' DaisyKit fournit bien ce composant, donc cela ressemble a un probleme de vues publiees obsoletes ou incompletes.'
             .' Si vous avez publie les vues du package, republiez-les avec `php artisan vendor:publish --tag=daisy-views --force`'
