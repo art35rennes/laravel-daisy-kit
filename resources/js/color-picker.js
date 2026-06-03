@@ -9,6 +9,7 @@
  * - data-swatches: JSON d'un tableau de lignes de couleurs [["#fff", "#000"], ...]
  * - data-swatches-height: hauteur max en px de la palette scrollable
  * - Sorties facultatives: [data-colorchip], [data-colortext] pour refléter la valeur
+ * - Sortie formulaire facultative: [data-colorpicker-input] reçoit la valeur courante
  *
  * Evénement: 'colorpicker:change' (detail.value = hsla(...))
  * API: window.DaisyColorPicker.{ init(root), initAll() }
@@ -394,6 +395,7 @@ function buildPanel(root, state) {
   // Cache des éléments DOM pour éviter les recherches répétitives
   const chipOut = root.querySelector('[data-colorchip]');
   const textOut = root.querySelector('[data-colortext]');
+  const hiddenInput = root.querySelector('[data-colorpicker-input]');
   
   // Cache des conversions pour éviter les recalculs
   let lastState = null;
@@ -439,6 +441,10 @@ function buildPanel(root, state) {
       if (textOut.textContent !== formatted) {
         textOut.textContent = formatted;
       }
+    }
+
+    if (hiddenInput) {
+      hiddenInput.value = cachedFormats[state.__format] || css;
     }
   }
 

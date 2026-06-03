@@ -21,7 +21,7 @@ export async function apply(L, map) {
     await import('leaflet.fullscreen');
 
     try {
-        await import('leaflet.fullscreen/dist/Control.FullScreen.css');
+        await import('leaflet.fullscreen/Control.FullScreen.css');
     } catch {
         // CSS may be bundled separately.
     }

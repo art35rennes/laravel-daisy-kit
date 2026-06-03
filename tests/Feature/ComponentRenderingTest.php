@@ -62,6 +62,27 @@ it('renders a token-input component with prefilled values and hidden inputs', fu
         ->toContain('name="recipients[]"');
 });
 
+it('renders localized code-editor toolbar and CodeMirror phrases', function () {
+    app()->setLocale('fr');
+
+    $html = View::make('daisy::components.ui.advanced.code-editor', [
+        'language' => 'json',
+        'value' => '{"name":"Ada"}',
+    ])->render();
+
+    app()->setLocale('en');
+
+    expect($html)
+        ->toContain('Tout plier')
+        ->toContain('Tout déplier')
+        ->toContain('Formater')
+        ->toContain('Copier')
+        ->toContain('Tout plier récursivement')
+        ->toContain('Rechercher')
+        ->toContain('"regexp"')
+        ->toContain('data-i18n');
+});
+
 it('renders token-input suggestion and endpoint payloads for js enhancement', function () {
     $html = View::make('daisy::components.ui.inputs.token-input', [
         'name' => 'tags',
@@ -299,12 +320,14 @@ it('renders a sign component with custom dimensions', function () {
     $html = View::make('daisy::components.ui.inputs.sign', [
         'width' => 600,
         'height' => 300,
+        'value' => 'data:image/png;base64,abc',
         'attributes' => new ComponentAttributeBag(['name' => 'signature']),
     ])->render();
 
     expect($html)
         ->toContain('data-width="600"')
-        ->toContain('data-height="300"');
+        ->toContain('data-height="300"')
+        ->toContain('value="data:image/png;base64,abc"');
 });
 
 it('renders a sign component without actions', function () {
@@ -509,4 +532,27 @@ it('renders a tree view configured for auto lazy loading', function () {
         ->toContain('data-lazy-url="/demo/api/tree-children"')
         ->toContain('data-lazy-mode="auto"')
         ->toContain('data-lazy-reload="false"');
+});
+
+it('renders color picker as a submittable form control', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.inputs.color-picker
+            id="brand-color"
+            name="brand_color"
+            value="#123456"
+            :dropdown="true"
+            :swatches="[['#123456', '#abcdef']]"
+            :show-alpha="false"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('id="brand-color"')
+        ->toContain('data-colorpicker="1"')
+        ->toContain('name="brand_color"')
+        ->toContain('data-colorpicker-input')
+        ->toContain('value="#123456"')
+        ->toContain('data-dropdown="true"')
+        ->toContain('data-show-alpha="false"')
+        ->toContain('#abcdef');
 });

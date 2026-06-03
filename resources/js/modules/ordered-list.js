@@ -56,8 +56,10 @@ export default function initOrderedList(root) {
       onStart: (event) => {
         root.classList.add('daisy-sortable-sorting');
         const handle = event.item?.querySelector('[data-ordered-list-handle]');
-        if (handle instanceof HTMLButtonElement) {
-          handle.blur();
+        if (handle instanceof HTMLElement) {
+          if (typeof handle.blur === 'function') {
+            handle.blur();
+          }
           handle.setAttribute('aria-pressed', 'true');
         }
       },
@@ -65,7 +67,7 @@ export default function initOrderedList(root) {
         root.classList.remove('daisy-sortable-sorting');
         root.querySelectorAll('[data-ordered-list-handle][aria-pressed="true"]').forEach((handle) => {
           handle.removeAttribute('aria-pressed');
-          if (handle instanceof HTMLButtonElement) {
+          if (handle instanceof HTMLElement && typeof handle.blur === 'function') {
             handle.blur();
           }
         });

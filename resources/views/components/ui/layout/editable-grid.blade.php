@@ -39,7 +39,8 @@
     }
 
     $renderedItems = is_array($items) ? array_values($items) : [];
-    $hasSlotContent = isset($slot) && trim((string) $slot) !== '';
+    $hasSlotContent = isset($slot)
+        && (method_exists($slot, 'isEmpty') ? ! $slot->isEmpty() : trim((string) $slot) !== '');
 
     $config = [
         'editable' => $resolvedEditable,
@@ -54,41 +55,43 @@
         'responsive' => $resolvedResponsive,
     ];
 
-    $rootClasses = trim('grid-stack daisy-editable-grid '.($attributes->get('class') ?? ''));
+    $surfaceClasses = trim('grid-stack daisy-editable-grid '.($attributes->get('class') ?? ''));
     $attributes = $attributes->except('class');
 @endphp
 
 <div
-    {{ $attributes->merge(['id' => $rootId, 'class' => $rootClasses]) }}
+    class="daisy-editable-grid-host"
     data-module="editable-grid"
     data-editable-grid="1"
     data-editable="{{ $resolvedEditable ? '1' : '0' }}"
     data-static="{{ $resolvedStatic ? '1' : '0' }}"
 >
-    @if($hasSlotContent)
-        {{ $slot }}
-    @else
-        @foreach($renderedItems as $item)
-            <x-daisy::ui.layout.editable-grid-item
-                :id="$item['id'] ?? null"
-                :type="$item['type'] ?? null"
-                :x="$item['x'] ?? 0"
-                :y="$item['y'] ?? 0"
-                :w="$item['w'] ?? 3"
-                :h="$item['h'] ?? 2"
-                :meta="$item['meta'] ?? null"
-            >
-                @php($content = $item['content'] ?? null)
-                @if($content instanceof \Illuminate\Contracts\Support\Htmlable)
-                    {!! $content->toHtml() !!}
-                @elseif($content instanceof \Illuminate\Support\HtmlString)
-                    {!! $content !!}
-                @elseif(filled($content))
-                    {{ $content }}
-                @endif
-            </x-daisy::ui.layout.editable-grid-item>
-        @endforeach
-    @endif
+    <div {{ $attributes->merge(['id' => $rootId, 'class' => $surfaceClasses]) }}>
+        @if($hasSlotContent)
+            {{ $slot }}
+        @else
+            @foreach($renderedItems as $item)
+                <x-daisy::ui.layout.editable-grid-item
+                    :id="$item['id'] ?? null"
+                    :type="$item['type'] ?? null"
+                    :x="$item['x'] ?? 0"
+                    :y="$item['y'] ?? 0"
+                    :w="$item['w'] ?? 3"
+                    :h="$item['h'] ?? 2"
+                    :meta="$item['meta'] ?? null"
+                >
+                    @php($content = $item['content'] ?? null)
+                    @if($content instanceof \Illuminate\Contracts\Support\Htmlable)
+                        {!! $content->toHtml() !!}
+                    @elseif($content instanceof \Illuminate\Support\HtmlString)
+                        {!! $content !!}
+                    @elseif(filled($content))
+                        {{ $content }}
+                    @endif
+                </x-daisy::ui.layout.editable-grid-item>
+            @endforeach
+        @endif
+    </div>
 
     <script type="application/json" data-editable-grid-config>
         {!! json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}

@@ -44,15 +44,13 @@
             >
                 <div class="flex items-start gap-3">
                     @if($handle && $resolvedSortable)
-                        <button
-                            type="button"
-                            class="btn btn-ghost btn-xs btn-square mt-0.5 cursor-grab daisy-drag-handle"
+                        <span
+                            class="btn btn-ghost btn-xs btn-square mt-0.5 cursor-grab select-none daisy-drag-handle"
                             data-ordered-list-handle
-                            aria-label="Reorder {{ $itemLabel }}"
-                            @disabled($itemDisabled || ! $resolvedSortable)
+                            aria-hidden="true"
                         >
                             <span aria-hidden="true">⋮⋮</span>
-                        </button>
+                        </span>
                     @endif
 
                     <div class="min-w-0 flex-1">

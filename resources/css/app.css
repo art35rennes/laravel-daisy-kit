@@ -12,6 +12,12 @@
 @import "trix/dist/trix.css";
 @import "./table.css";
 
+/* Editable grid host wraps the `.grid-stack` surface plus JSON config (must stay outside `.grid-stack`). */
+.daisy-editable-grid-host {
+  display: block;
+  width: 100%;
+}
+
 /* Editable grid: keep item wrappers neutral so Daisy components define the visual skin */
 .daisy-editable-grid.grid-stack {
   min-height: 12rem;
@@ -149,6 +155,9 @@
 
 .daisy-drag-handle {
   flex-shrink: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .daisy-sortable-ghost {

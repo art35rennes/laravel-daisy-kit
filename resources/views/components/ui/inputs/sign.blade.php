@@ -26,6 +26,8 @@
     'downloadFilename' => 'signature',
     // Surcharge du nom de module JS (optionnel)
     'module' => null,
+    // Valeur initiale du champ caché
+    'value' => null,
 ])
 
 @php
@@ -84,10 +86,9 @@
             <input type="hidden" 
                    name="{{ $attributes->get('name', 'signature') }}" 
                    data-sign-input
-                   value="" />
+                   value="{{ is_scalar($value) ? $value : '' }}" />
         </div>
     </div>
 </div>
 
 @include('daisy::components.partials.assets')
-

@@ -38,4 +38,23 @@ describe('ordered-list module', () => {
     ]);
     expect(root.querySelector('[data-ordered-list-input]').value).toBe('["first","second"]');
   });
+
+  it('creates a Sortable instance when sorting is enabled', () => {
+    document.body.innerHTML = `
+      <ol data-ordered-list="1" data-sortable="true">
+        <li data-ordered-list-item data-id="first">
+          <span data-ordered-list-handle></span>
+        </li>
+        <li data-ordered-list-item data-id="second">
+          <span data-ordered-list-handle></span>
+        </li>
+      </ol>
+    `;
+
+    const root = document.querySelector('[data-ordered-list="1"]');
+    const api = initOrderedList(root);
+
+    expect(api.sortable).not.toBeNull();
+    expect(root.__daisyOrderedList).toBe(api);
+  });
 });

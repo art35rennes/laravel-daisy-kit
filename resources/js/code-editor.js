@@ -39,7 +39,7 @@ import { defaultKeymap, indentWithTab } from '@codemirror/commands';
 import { history, historyKeymap } from '@codemirror/commands';
 import { lineNumbers } from '@codemirror/view';
 import { highlightActiveLineGutter } from '@codemirror/view';
-import { indentOnInput, foldGutter, foldKeymap, foldAll, unfoldAll, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { indentOnInput, foldGutter, foldKeymap, foldEffect, foldable, unfoldAll, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete';
 import { searchKeymap } from '@codemirror/search';
 import { lintKeymap } from '@codemirror/lint';
@@ -107,12 +107,26 @@ const languageCompartment = new Compartment();
 const readOnlyCompartment = new Compartment();
 const themeCompartment = new Compartment();
 
+function readI18n(root) {
+  try {
+    const raw = root.querySelector('script[data-i18n]')?.textContent?.trim();
+    return raw ? JSON.parse(raw) : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function phrase(root, key, fallback = key) {
+  return root.__cmI18n?.[key] ?? fallback;
+}
+
 /**
  * Crée et initialise une nouvelle instance d'éditeur CodeMirror
  * @param {HTMLElement} root - Élément racine contenant la configuration et l'hôte
  */
 function createEditor(root) {
   const host = root.querySelector('.cm-host');
+  root.__cmI18n = readI18n(root);
   
   // Lecture des données initiales depuis un script JSON optionnel
   let initial = {};
@@ -144,6 +158,7 @@ function createEditor(root) {
     
     // Raccourcis clavier
     keymap.of([indentWithTab, ...closeBracketsKeymap, ...defaultKeymap, ...foldKeymap, ...historyKeymap, ...searchKeymap, ...completionKeymap, ...lintKeymap]),
+    EditorState.phrases.of(root.__cmI18n),
     
     // Configuration dynamique via compartments
     languageCompartment.of(languageExtension(lang)),
@@ -222,7 +237,28 @@ function setLanguage(root, lang) {
  */
 function doFoldAll(root) {
   const view = getView(root); if (!view) return;
-  foldAll(view);
+  const effects = [];
+  const seen = new Set();
+
+  for (let pos = 1; pos <= view.state.doc.length;) {
+    const line = view.state.doc.lineAt(pos);
+    const range = foldable(view.state, line.from, line.to);
+
+    if (range) {
+      const key = `${range.from}:${range.to}`;
+
+      if (!seen.has(key)) {
+        seen.add(key);
+        effects.push(foldEffect.of(range));
+      }
+    }
+
+    pos = line.to + 1;
+  }
+
+  if (effects.length) {
+    view.dispatch({ effects });
+  }
 }
 
 /**
@@ -272,7 +308,7 @@ async function doCopy(root) {
     const btn = root.querySelector('[data-action="copy"]');
     if (btn) {
       const prev = btn.textContent;
-      btn.textContent = 'Copié!';
+      btn.textContent = phrase(root, 'Copied!', 'Copied!');
       setTimeout(() => (btn.textContent = prev), 1000);
     }
   } catch (_) {

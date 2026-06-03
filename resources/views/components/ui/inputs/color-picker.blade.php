@@ -3,6 +3,7 @@
     'mode' => 'advanced',
     // Valeur initiale (hex|rgb|hsl) - stock interne en HSLA
     'value' => '#563d7c',
+    'name' => null,
     // Readonly/disabled
     'disabled' => false,
     // Afficher comme dropdown attaché à un bouton/trigger
@@ -27,7 +28,7 @@
 @endphp
 
 @if($isNative)
-    <input type="color" id="{{ $id }}" value="{{ $value }}" {{ $attributes->merge(['class' => 'input w-32']) }} @disabled($disabled) />
+    <input type="color" id="{{ $id }}" @if($name) name="{{ $name }}" @endif value="{{ $value }}" {{ $attributes->merge(['class' => 'input w-32']) }} @disabled($disabled) />
 @else
     <div id="{{ $id }}" data-module="{{ $module ?? 'color-picker' }}" data-colorpicker="1"
          data-value="{{ $value }}"
@@ -41,6 +42,10 @@
          data-show-alpha="{{ $showAlpha ? 'true' : 'false' }}"
          data-show-hue="{{ $showHue ? 'true' : 'false' }}"
          {{ $attributes->merge(['class' => 'inline-block']) }}>
+        @if($name)
+            <input type="hidden" name="{{ $name }}" value="{{ $value }}" data-colorpicker-input>
+        @endif
+
         @if($dropdown)
             <div class="dropdown">
                 <div tabindex="0" role="button" class="btn btn-sm btn-ghost" data-colorpicker-trigger>

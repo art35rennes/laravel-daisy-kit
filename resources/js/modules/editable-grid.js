@@ -63,19 +63,37 @@ function dispatch(root, name, detail) {
   }));
 }
 
-export default function initEditableGrid(root) {
-  if (!(root instanceof HTMLElement)) {
+/**
+ * Resolves the DOM node Gridstack must own (only `.grid-stack-item` children allowed).
+ *
+ * @param {HTMLElement} host - Root element carrying `data-module="editable-grid"`.
+ * @returns {HTMLElement}
+ */
+function resolveGridSurface(host) {
+  if (!(host instanceof HTMLElement)) {
+    return host;
+  }
+
+  const scoped = host.querySelector(':scope > .grid-stack.daisy-editable-grid')
+    ?? host.querySelector(':scope > .grid-stack');
+
+  return scoped instanceof HTMLElement ? scoped : host;
+}
+
+export default function initEditableGrid(host) {
+  if (!(host instanceof HTMLElement)) {
     return null;
   }
 
-  if (root.__daisyEditableGrid) {
-    return root.__daisyEditableGrid;
+  if (host.__daisyEditableGrid) {
+    return host.__daisyEditableGrid;
   }
 
-  const config = parseConfig(root);
+  const surface = resolveGridSurface(host);
+  const config = parseConfig(host);
   const isEditable = Boolean(config.editable) && !Boolean(config.static);
 
-  root.dataset.editableGridEnabled = isEditable ? '1' : '0';
+  surface.dataset.editableGridEnabled = isEditable ? '1' : '0';
 
   const grid = GridStack.init({
     column: Number.isFinite(config.columns) ? config.columns : 12,
@@ -90,7 +108,7 @@ export default function initEditableGrid(root) {
     layout: config.layout || 'list',
     float: Boolean(config.float),
     animate: true,
-  }, root);
+  }, surface);
 
   const api = {
     grid,
@@ -98,8 +116,8 @@ export default function initEditableGrid(root) {
     serializeItems: () => serializeItems(grid),
     setStatic(nextStatic = true) {
       grid.setStatic(!!nextStatic);
-      root.dataset.editableGridEnabled = nextStatic ? '0' : '1';
-      dispatch(root, 'gridstack:change', {
+      surface.dataset.editableGridEnabled = nextStatic ? '0' : '1';
+      dispatch(host, 'gridstack:change', {
         layout: serializeGrid(grid),
         items: serializeItems(grid),
         changed: [],
@@ -109,20 +127,20 @@ export default function initEditableGrid(root) {
 
   const emitChange = (changed = []) => {
     const layout = serializeGrid(grid);
-    root.dataset.layout = JSON.stringify(layout);
+    host.dataset.layout = JSON.stringify(layout);
 
-    dispatch(root, 'gridstack:change', {
+    dispatch(host, 'gridstack:change', {
       layout,
       items: layout.items,
       changed: Array.isArray(changed) ? changed.map(serializeNode) : [],
     });
 
-    dispatch(root, 'gridstack:layout-changed', {
+    dispatch(host, 'gridstack:layout-changed', {
       layout,
       items: layout.items,
     });
 
-    dispatch(root, 'gridstack:serialized', {
+    dispatch(host, 'gridstack:serialized', {
       layout,
       items: layout.items,
     });
@@ -133,7 +151,7 @@ export default function initEditableGrid(root) {
   });
 
   grid.on('added', (_event, items) => {
-    dispatch(root, 'gridstack:item-added', {
+    dispatch(host, 'gridstack:item-added', {
       layout: serializeGrid(grid),
       items: serializeItems(grid),
       added: Array.isArray(items) ? items.map(serializeNode) : [],
@@ -141,7 +159,7 @@ export default function initEditableGrid(root) {
   });
 
   grid.on('removed', (_event, items) => {
-    dispatch(root, 'gridstack:item-removed', {
+    dispatch(host, 'gridstack:item-removed', {
       layout: serializeGrid(grid),
       items: serializeItems(grid),
       removed: Array.isArray(items) ? items.map(serializeNode) : [],
@@ -150,7 +168,7 @@ export default function initEditableGrid(root) {
 
   grid.on('dragstop', (_event, element) => {
     const node = element?.gridstackNode;
-    dispatch(root, 'gridstack:item-moved', {
+    dispatch(host, 'gridstack:item-moved', {
       item: node ? serializeNode(node) : null,
       layout: serializeGrid(grid),
     });
@@ -158,20 +176,20 @@ export default function initEditableGrid(root) {
 
   grid.on('resizestop', (_event, element) => {
     const node = element?.gridstackNode;
-    dispatch(root, 'gridstack:item-resized', {
+    dispatch(host, 'gridstack:item-resized', {
       item: node ? serializeNode(node) : null,
       layout: serializeGrid(grid),
     });
   });
 
-  root.addEventListener('click', (event) => {
+  host.addEventListener('click', (event) => {
     const item = event.target instanceof Element ? event.target.closest('.grid-stack-item') : null;
 
-    if (!item || !root.contains(item)) {
+    if (!item || !surface.contains(item)) {
       return;
     }
 
-    dispatch(root, 'gridstack:item-selected', {
+    dispatch(host, 'gridstack:item-selected', {
       item: {
         id: item.getAttribute('gs-id') || item.dataset.gsId || null,
         type: item.dataset.type || null,
@@ -179,8 +197,8 @@ export default function initEditableGrid(root) {
     });
   });
 
-  root.__daisyEditableGrid = api;
-  root.dataset.layout = JSON.stringify(api.serialize());
+  host.__daisyEditableGrid = api;
+  host.dataset.layout = JSON.stringify(api.serialize());
 
   return api;
 }

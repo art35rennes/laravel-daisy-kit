@@ -267,7 +267,7 @@ onReady(async () => {
   importWhenNearViewport('[data-media-gallery="1"]', () => { heavyQueue(() => import('./media-gallery')); }, { rootMargin: '600px 0px' });
   
   // Éditeurs lazy (CodeMirror & Trix) seulement quand on approche de leur zone
-  importWhenNearViewport('.collapse .code-editor, .collapse trix-editor, details.collapse', () => { heavyQueue(() => import('./lazy-editors')); }, { rootMargin: '800px 0px' });
+  importWhenNearViewport('.code-editor, trix-editor, details.collapse', () => { heavyQueue(() => import('./lazy-editors')); }, { rootMargin: '800px 0px' });
   
   // Charts (ECharts + thème DaisyUI) : import quand proche, puis auto-observation des nouveaux charts.
   let chartModuleRequested = false;

@@ -1,5 +1,6 @@
 @props([
     'name' => null,          // Required to bind errors/old values
+    'for' => '__name',       // Optional explicit HTML id targeted by the label (`null` disables `for`)
     'label' => null,         // Label text (can be overridden by slot: label)
     'labelClass' => null,    // Extra classes on label
     'error' => null,         // Force an error message (overrides Laravel $errors)
@@ -14,6 +15,7 @@
 @php
     // Determine final wrapper classes.
     $wrapperClasses = trim(($full ? 'w-full ' : '').'flex flex-col gap-1 '.$class);
+    $labelFor = $for === '__name' ? $name : $for;
 
     // Resolve message and state from Laravel validation bag if name is provided.
     $laravelErrors = $errors ?? new \Illuminate\Support\ViewErrorBag();
@@ -41,7 +43,7 @@
 <{{ $as }} {{ $attributes->merge(['class' => $wrapperClasses]) }}>
     @if($label || isset($labelSlot))
         <x-daisy::ui.advanced.label
-            :for="$name"
+            :for="$labelFor"
             :srOnly="$srOnly"
             class="{{ $labelClass }}"
         >

@@ -33,6 +33,8 @@ it('renders ordered list persistence hooks when requested', function () {
         ->toContain('data-sortable="true"')
         ->toContain('data-persist="true"')
         ->toContain('data-ordered-list-handle')
+        ->toContain('aria-hidden="true"')
+        ->not->toContain('type="button"')
         ->toContain('name="ordered_ids"');
 });
 

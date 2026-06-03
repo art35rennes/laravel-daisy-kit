@@ -7,6 +7,8 @@
     'color' => 'primary',
     'allowClickNav' => false,
     'rootId' => null,
+    'indicatorAttribute' => 'data-step-index',
+    'indicatorOffset' => 0,
 ])
 
 @php
@@ -23,7 +25,7 @@
     $defaultColor = in_array($color, $validColors) ? $color : 'primary';
 
     // Fonction helper pour extraire et normaliser les propriétés d'un item d'étape.
-    $extractItemData = function($item, $index) use ($defaultColor, $current, $validColors, $allowClickNav, $rootId) {
+    $extractItemData = function($item, $index) use ($defaultColor, $current, $validColors, $allowClickNav, $rootId, $indicatorAttribute, $indicatorOffset) {
         // Extraction des propriétés de base (support array ou string simple).
         $data = [
             'label' => is_array($item) ? ($item['label'] ?? '') : (string) $item,
@@ -64,7 +66,10 @@
             $data['attributes']['id'] = "{$rootId}-header-{$data['stepIndex']}";
             $data['attributes']['aria-controls'] = "{$rootId}-panel-{$data['stepIndex']}";
         }
-        $data['attributes']['data-step-index'] = $data['stepIndex'];
+        $safeIndicatorAttribute = is_string($indicatorAttribute) && preg_match('/^[a-zA-Z_:][-a-zA-Z0-9_:.]*$/', $indicatorAttribute)
+            ? $indicatorAttribute
+            : 'data-step-index';
+        $data['attributes'][$safeIndicatorAttribute] = $data['stepIndex'] + (int) $indicatorOffset;
         
         return $data;
     };
