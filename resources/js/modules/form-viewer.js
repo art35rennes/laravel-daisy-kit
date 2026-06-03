@@ -28,11 +28,71 @@ export default function initFormViewer(root, options = {}) {
         method: options.method ?? root.getAttribute('method') ?? 'POST',
         submitMode: options.submitMode ?? root.dataset.submitMode,
         validateOn: options.validateOn ?? root.dataset.validateOn ?? 'submit',
+        readonly: options.readonly ?? root.dataset.readonly === 'true',
     });
 
     root.__daisyFormRuntime = runtime;
+    registerViewerRuntime(runtime);
+    decorateDestroy(runtime);
 
     return runtime;
+}
+
+/**
+ * Keeps the global viewer registry aligned when a host manually destroys a runtime.
+ *
+ * @param {ReturnType<typeof createFormRuntime>} runtime - Public viewer runtime.
+ * @returns {void}
+ */
+function decorateDestroy(runtime) {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    if (runtime.__daisyDestroyDecorated) {
+        return;
+    }
+
+    const destroy = runtime.destroy;
+
+    runtime.destroy = () => {
+        destroy();
+        window.DaisyFormViewer?.unregister(runtime.id);
+    };
+    runtime.__daisyDestroyDecorated = true;
+}
+
+function registerViewerRuntime(runtime) {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    window.DaisyFormViewer = window.DaisyFormViewer ?? createRegistry();
+    window.DaisyFormViewer.register(runtime);
+}
+
+function createRegistry() {
+    const runtimes = new Map();
+
+    return {
+        register(runtime) {
+            runtimes.set(runtime.id, runtime);
+
+            return runtime;
+        },
+        get(id) {
+            return runtimes.get(id) ?? null;
+        },
+        getByElement(element) {
+            return element?.__daisyFormRuntime ?? null;
+        },
+        all() {
+            return Array.from(runtimes.values());
+        },
+        unregister(id) {
+            runtimes.delete(id);
+        },
+    };
 }
 
 /**

@@ -20,7 +20,7 @@
     'schemaName' => 'schema',
     'fieldTypes' => null,
     'functionCatalog' => null,
-    'viewerSubmitMode' => 'none',
+    'viewerSubmitMode' => null,
     'preview' => true,
     'jsonEditor' => false,
 ])
@@ -38,34 +38,22 @@
         </header>
     @endif
 
-    <div class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)]">
-        <div class="space-y-3">
-            <div class="flex items-center justify-between gap-3">
-                <h2 class="text-base font-semibold">{{ __('daisy::form.builder.surface') }}</h2>
-                <span class="badge badge-outline">{{ __('daisy::form.builder.schema_version', ['version' => '1.0']) }}</span>
-            </div>
-
-            <x-daisy::forms.builder
-                :schema="$schema"
-                :field-types="$fieldTypes"
-                :function-catalog="$functionCatalog"
-                :preview="$preview"
-                :json-editor="$jsonEditor"
-                :name="$schemaName"
-            />
+    <div class="space-y-3">
+        <div class="flex items-center justify-between gap-3">
+            <h2 class="text-base font-semibold">{{ __('daisy::form.builder.surface') }}</h2>
+            <span class="badge badge-outline">{{ __('daisy::form.builder.schema_version', ['version' => '1.0']) }}</span>
         </div>
 
-        <aside class="space-y-3">
-            <h2 class="text-base font-semibold">{{ __('daisy::form.builder.viewer_preview') }}</h2>
-
-            <div class="rounded-box border border-base-300 bg-base-100 p-4">
-                <x-daisy::forms.viewer
-                    :schema="$schema"
-                    :value="$value"
-                    :errors="$errors"
-                    :submit-mode="$viewerSubmitMode"
-                />
-            </div>
-        </aside>
+        <x-daisy::forms.builder
+            :schema="$schema"
+            :field-types="$fieldTypes"
+            :function-catalog="$functionCatalog"
+            :preview="$preview"
+            :json-editor="$jsonEditor"
+            :name="$schemaName"
+            :value="$value"
+            :errors="$errors"
+            :viewer-submit-mode="$viewerSubmitMode"
+        />
     </div>
 </section>

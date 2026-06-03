@@ -142,13 +142,44 @@ Tests under `tests/` cover package-only behavior: Blade and template rendering, 
 The package exposes a greenfield JSON-driven form surface:
 
 - `x-daisy::forms.viewer` renders a `DaisyFormSchema` `1.0` payload into a progressive HTML form.
-- `x-daisy::forms.builder` edits the same schema and emits canonical JSON.
-- `x-daisy::templates.form.builder` combines the builder and viewer into an embeddable authoring surface.
+- `x-daisy::forms.builder` uses Livewire to edit the same schema, render the real viewer preview, show diagnostics, and export canonical JSON.
+- `x-daisy::templates.form.builder` wraps that Livewire builder as an embeddable authoring surface.
 - JSONata powers field visibility, complex validation rules, and computed values.
 
-The viewer is agnostic by default. Use `submitMode="event"` to listen for `daisy-form:submit`, or opt into `html`, `fetch`, or `none`. The host application owns persistence, authorization, and business processing; Daisy Kit owns the schema contract and the renderer.
+The viewer reads `schema.submit.mode` by default. Pass `submitMode="event"`, `html`, `fetch`, or `none` only when the host needs to override the schema for a specific render. If neither the prop nor the schema defines a mode, the final fallback is `event`. The host application owns persistence, authorization, and business processing; Daisy Kit owns the schema contract and the renderer.
 
 Supported layout modes are `one-page`, `sections`, and `multi-step`. Supported field types include native inputs (`text`, `email`, `tel`, `url`, `password`, `number`, `date`, `time`, `datetime-local`, `month`, `color`), text/content controls (`textarea`, `staticText`, `hidden`), choices (`select`, `radio`, `checkbox`, `toggle`, `range`), attachments (`file`, `signature`), and containers (`section`, `tabs`, `wizardStep`).
+
+Field component props are stored in the schema under `attrs.*` and `ui.*`. For example, `ui.width` controls the responsive grid span and signature-specific `attrs.width`, `attrs.height`, `attrs.penColor`, `attrs.showActions`, `attrs.downloadFormat`, and `attrs.downloadFilename` are forwarded to `x-daisy::ui.inputs.sign`.
+
+### Viewer JavaScript API
+
+Every viewer root is identifiable through `data-form-id` and registers a runtime in `window.DaisyFormViewer`.
+The registry intentionally exposes only integration hooks; schema ownership, persistence, and submission policy remain in the host application.
+
+```js
+const runtime = window.DaisyFormViewer.get('quote-viewer');
+
+runtime.on('daisy-form:submit', (event) => {
+    console.log(event.detail.values);
+});
+
+await runtime.setValue('quantity', 3);
+await runtime.validate();
+```
+
+Runtime methods include:
+
+- `getSchema()`, `getField(key)`, `getVisibleFields()`
+- `getValues({ visible: true })`, `getValue(key)`, `setValue(key, value)`, `setValues(values)`, `reset(values)`
+- `validate()`, `isValid()`, `getErrors()`, `setErrors(errors)`, `clearErrors()`
+- `submit()`, `getSubmitMode()`, `getValidateOn()`, `isReadonly()`
+- `getStep()`, `setStep(index)`, `nextStep()`, `previousStep()` for multi-step schemas
+- `on(event, listener)`, `off(event, listener)`, `destroy()`
+
+Viewer events bubble from the form root and include `daisy-form:ready`, `daisy-form:change`, `daisy-form:invalid`, `daisy-form:step-change`, `daisy-form:submit`, and `daisy-form:destroy`. Each event detail includes the viewer `id` and the `runtime` instance so hosts can integrate without querying global state.
+
+Readonly viewers keep the same schema/value contract and expose `data-readonly="true"` plus `runtime.isReadonly()`. They render disabled controls and omit submit controls, which lets hosts display stored data without forking the renderer.
 
 ```blade
 <x-daisy::forms.viewer

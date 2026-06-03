@@ -22,17 +22,49 @@ import { evaluateExpression } from './jsonata-engine.js';
  * @param {string} [options.action] - Overrides form action when using fetch submit mode.
  * @param {string} [options.method] - HTTP verb override for fetch submits.
  * @param {'event'|'html'|'fetch'|'none'} [options.submitMode] - How successful validation should finalize.
+ * @param {boolean} [options.readonly=false] - Whether the viewer is rendered for display-only usage.
  * @returns {{
+ *   id: string,
+ *   root: HTMLElement,
  *   refresh: () => Promise<void>,
  *   validate: (options?: {scope?: 'all'|'current'}) => Promise<boolean>,
  *   submit: (event?: Event|null) => Promise<boolean>,
+ *   destroy: () => void,
+ *   on: (name: string, listener: EventListener, options?: AddEventListenerOptions|boolean) => () => void,
+ *   off: (name: string, listener: EventListener, options?: EventListenerOptions|boolean) => void,
  *   state: Object,
  *   serialize: () => Record<string, unknown>,
+ *   getSchema: () => Object,
+ *   getSubmitMode: () => 'event'|'html'|'fetch'|'none',
+ *   getValidateOn: () => 'input'|'change'|'submit',
+ *   isReadonly: () => boolean,
+ *   getValues: (options?: {visible?: boolean}) => Record<string, unknown>,
+ *   getValue: (key: string) => unknown,
+ *   setValue: (key: string, value: unknown, options?: {refresh?: boolean}) => Promise<void>,
+ *   setValues: (values: Record<string, unknown>, options?: {refresh?: boolean}) => Promise<void>,
+ *   reset: (values?: Record<string, unknown>) => Promise<void>,
+ *   getErrors: () => Record<string, string[]>,
+ *   setErrors: (errors: Record<string, string|string[]>) => void,
+ *   clearErrors: () => void,
+ *   getField: (key: string) => Object|null,
+ *   getInput: (key: string) => HTMLElement|null,
+ *   getVisibleFields: () => Object[],
+ *   isValid: () => boolean,
+ *   getStep: () => number,
+ *   setStep: (index: number) => Promise<number>,
+ *   nextStep: () => Promise<number>,
+ *   previousStep: () => Promise<number>,
  * }}
  */
 export function createFormRuntime(root, options = {}) {
     const schema = canonicalizeSchema(options.schema);
     const validation = validateSchema(schema);
+    const validateOn = ['input', 'change', 'submit'].includes(options.validateOn) ? options.validateOn : 'submit';
+    const submitModes = ['event', 'html', 'fetch', 'none'];
+    const submitMode = submitModes.includes(options.submitMode)
+        ? options.submitMode
+        : (submitModes.includes(schema.submit?.mode) ? schema.submit.mode : 'event');
+    const readonly = options.readonly === true;
     // Containers render recursively in Blade but runtime logic only binds leaf controls carrying submit names.
     const allFields = flattenFields(schema.fields);
     const fields = allFields.filter((field) => !CONTAINER_FIELD_TYPES.includes(field.type));
@@ -50,6 +82,18 @@ export function createFormRuntime(root, options = {}) {
     };
     const isMultiStep = schema.layout?.type === 'multi-step';
     const stepFields = schema.fields.filter((field) => field.type === 'wizardStep');
+    const runtimeId = root.dataset.formId || root.id || schema.id || `daisy-form-${Date.now()}`;
+    let destroyed = false;
+
+    if (!root.id) {
+        root.id = runtimeId;
+    }
+
+    root.dataset.formId = runtimeId;
+    root.dataset.formRuntimeState = 'initializing';
+    root.dataset.formSubmitMode = submitMode;
+    root.dataset.formValidateOn = validateOn;
+    root.dataset.formReadonly = readonly ? 'true' : 'false';
 
     fields.forEach((field) => {
         const key = field.name ?? field.id;
@@ -213,8 +257,6 @@ export function createFormRuntime(root, options = {}) {
         }
 
         const payload = serializeVisibleValues(fields, state.values, state.visible);
-        const submitMode = options.submitMode ?? schema.submit?.mode ?? 'event';
-
         if (submitMode === 'none') {
             return true;
         }
@@ -237,51 +279,233 @@ export function createFormRuntime(root, options = {}) {
     }
 
     function dispatch(name, detail) {
-        root.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }));
+        root.dispatchEvent(new CustomEvent(name, {
+            detail: {
+                id: runtimeId,
+                runtime: publicApi,
+                ...detail,
+            },
+            bubbles: true,
+        }));
+    }
+
+    async function handleInteraction(kind) {
+        await refresh();
+
+        if (validateOn === kind || (validateOn === 'input' && kind === 'change')) {
+            await validate();
+        }
     }
 
     // `change` covers selects/checkboxes; `input` keeps ranges/text reactive without waiting for blur.
-    root.addEventListener('input', () => {
-        void refresh();
-    });
-    root.addEventListener('change', () => {
-        void refresh();
-    });
-    root.addEventListener('submit', (event) => {
+    const onInput = () => {
+        void handleInteraction('input');
+    };
+    const onChange = () => {
+        void handleInteraction('change');
+    };
+    const onSubmit = (event) => {
         void submit(event);
-    });
+    };
+    const onNextStep = async () => {
+        await nextStep();
+    };
+    const onPreviousStep = async () => {
+        await previousStep();
+    };
+
+    root.addEventListener('input', onInput);
+    root.addEventListener('change', onChange);
+    root.addEventListener('submit', onSubmit);
     root.querySelectorAll('[data-form-next]').forEach((button) => {
-        button.addEventListener('click', async () => {
-            await refresh();
-
-            if (!await validate({ scope: 'current' })) {
-                return;
-            }
-
-            state.currentStep = Math.min(state.currentStep + 1, Math.max(0, stepFields.length - 1));
-            applyStepState(root, state);
-            dispatch('daisy-form:step-change', { currentStep: state.currentStep });
-        });
+        button.addEventListener('click', onNextStep);
     });
     root.querySelectorAll('[data-form-previous]').forEach((button) => {
-        button.addEventListener('click', () => {
-            state.currentStep = Math.max(0, state.currentStep - 1);
-            applyStepState(root, state);
-            dispatch('daisy-form:step-change', { currentStep: state.currentStep });
+        button.addEventListener('click', onPreviousStep);
+    });
+
+    async function setValue(key, value, options = {}) {
+        const field = findRuntimeField(fields, key);
+        const stateKey = field?.name ?? key;
+
+        state.values[stateKey] = value;
+
+        if (field) {
+            setFieldInputValue(root, field, value);
+        }
+
+        if (options.refresh !== false) {
+            await refresh();
+        }
+    }
+
+    async function setValues(values, options = {}) {
+        for (const [key, value] of Object.entries(values ?? {})) {
+            const field = findRuntimeField(fields, key);
+            const stateKey = field?.name ?? key;
+
+            state.values[stateKey] = value;
+
+            if (field) {
+                setFieldInputValue(root, field, value);
+            }
+        }
+
+        if (options.refresh !== false) {
+            await refresh();
+        }
+    }
+
+    async function reset(values = options.value ?? {}) {
+        state.values = { ...(values ?? {}) };
+        state.errors = {};
+        state.touched = {};
+
+        fields.forEach((field) => {
+            const key = field.name ?? field.id;
+            const value = Object.prototype.hasOwnProperty.call(state.values, key)
+                ? state.values[key]
+                : getFieldValue(state.values, field);
+
+            state.values[key] = value;
+            setFieldInputValue(root, field, value);
         });
-    });
 
-    void refresh().then(() => {
-        dispatch('daisy-form:ready', { schema, values: { ...state.values } });
-    });
+        await refresh();
+    }
 
-    return {
+    function setErrors(errors) {
+        state.errors = normalizeErrors(errors);
+        state.valid = Object.keys(state.errors).length === 0;
+        applyDomState(root, fields, state);
+        applyStepState(root, state);
+    }
+
+    function clearErrors() {
+        setErrors({});
+    }
+
+    /**
+     * Attaches a host listener to the form root and returns an unsubscribe callback.
+     *
+     * @param {string} name - Event name, for example `daisy-form:submit`.
+     * @param {EventListener} listener - Listener invoked with a `CustomEvent` detail payload.
+     * @param {AddEventListenerOptions|boolean} [options] - Native listener options.
+     * @returns {() => void}
+     */
+    function on(name, listener, options = undefined) {
+        root.addEventListener(name, listener, options);
+
+        return () => off(name, listener, options);
+    }
+
+    /**
+     * Removes a listener previously registered with {@link on}.
+     *
+     * @param {string} name - Event name.
+     * @param {EventListener} listener - Listener reference.
+     * @param {EventListenerOptions|boolean} [options] - Native listener options.
+     * @returns {void}
+     */
+    function off(name, listener, options = undefined) {
+        root.removeEventListener(name, listener, options);
+    }
+
+    /**
+     * Detaches runtime listeners while leaving server-rendered HTML in place.
+     *
+     * @returns {void}
+     */
+    function destroy() {
+        if (destroyed) {
+            return;
+        }
+
+        destroyed = true;
+        root.removeEventListener('input', onInput);
+        root.removeEventListener('change', onChange);
+        root.removeEventListener('submit', onSubmit);
+        root.querySelectorAll('[data-form-next]').forEach((button) => {
+            button.removeEventListener('click', onNextStep);
+        });
+        root.querySelectorAll('[data-form-previous]').forEach((button) => {
+            button.removeEventListener('click', onPreviousStep);
+        });
+        root.dataset.formRuntimeState = 'destroyed';
+        delete root.__daisyFormRuntime;
+        dispatch('daisy-form:destroy', { schema, values: { ...state.values } });
+    }
+
+    async function setStep(index) {
+        const next = Math.max(0, Math.min(Number(index) || 0, Math.max(0, stepFields.length - 1)));
+        state.currentStep = next;
+        applyStepState(root, state);
+        dispatch('daisy-form:step-change', { currentStep: state.currentStep });
+
+        return state.currentStep;
+    }
+
+    async function nextStep() {
+        await refresh();
+
+        if (!await validate({ scope: 'current' })) {
+            return state.currentStep;
+        }
+
+        return setStep(state.currentStep + 1);
+    }
+
+    async function previousStep() {
+        return setStep(state.currentStep - 1);
+    }
+
+    const publicApi = {
+        id: runtimeId,
+        root,
         refresh,
         validate,
         submit,
+        destroy,
+        on,
+        off,
         state,
         serialize: () => serializeVisibleValues(fields, state.values, state.visible),
+        getSchema: () => state.schema,
+        getSubmitMode: () => submitMode,
+        getValidateOn: () => validateOn,
+        isReadonly: () => readonly,
+        getValues: (options = {}) => options.visible ? serializeVisibleValues(fields, state.values, state.visible) : { ...state.values },
+        getValue: (key) => state.values[findRuntimeField(fields, key)?.name ?? key],
+        setValue,
+        setValues,
+        reset,
+        getErrors: () => ({ ...state.errors }),
+        setErrors,
+        clearErrors,
+        getField: (key) => findRuntimeField(fields, key) ?? null,
+        getInput: (key) => {
+            const field = findRuntimeField(fields, key);
+
+            return field ? root.querySelector(`[data-form-input="${cssEscape(field.id)}"]`) : null;
+        },
+        getVisibleFields: () => fields.filter((field) => state.visible[field.id] !== false),
+        isValid: () => state.valid,
+        getStep: () => state.currentStep,
+        setStep,
+        nextStep,
+        previousStep,
     };
+
+    void refresh().then(() => {
+        root.dataset.formRuntimeState = 'ready';
+        dispatch('daisy-form:ready', { schema, values: { ...state.values } });
+    });
+
+    return publicApi;
+}
+
+function findRuntimeField(fields, key) {
+    return fields.find((field) => field.id === key || field.name === key);
 }
 
 function isFieldOnCurrentStep(field, state, stepFields, fields) {
@@ -505,7 +729,7 @@ function syncValuesFromDom(root, fields, values) {
 
         if (input.type === 'radio') {
             // Multiple radios share `name`; scan within the form subtree for whichever peer is checked.
-            const checked = root.querySelector(`[name="${cssEscape(field.name)}"]:checked`);
+            const checked = root.querySelector(`[name="${cssEscape(field.name ?? field.id)}"]:checked`);
             values[key] = checked ? checked.value : null;
 
             return;
@@ -546,6 +770,23 @@ function setFieldInputValue(root, field, value) {
 
     if (input.type === 'checkbox') {
         input.checked = Boolean(value);
+
+        return;
+    }
+
+    if (input.type === 'radio') {
+        root.querySelectorAll(`[name="${cssEscape(field.name ?? field.id)}"]`).forEach((radio) => {
+            radio.checked = radio.value === String(value);
+        });
+
+        return;
+    }
+
+    if (input instanceof HTMLSelectElement && input.multiple) {
+        const values = Array.isArray(value) ? value.map(String) : [String(value)];
+        Array.from(input.options).forEach((option) => {
+            option.selected = values.includes(option.value);
+        });
 
         return;
     }

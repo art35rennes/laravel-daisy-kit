@@ -39,7 +39,7 @@ it('exposes templates as anonymous Blade components through the public alias', f
         ->toContain('<form')
         ->toContain(__('daisy::auth.login'))
         ->and($builderHtml)
-        ->toContain('data-module="form-builder"')
+        ->toContain('data-form-builder-livewire')
         ->toContain('data-module="form-viewer"');
 });
 

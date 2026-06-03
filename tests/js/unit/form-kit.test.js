@@ -1,52 +1,27 @@
 /** @vitest-environment jsdom */
 
 import { describe, expect, it } from 'vitest';
-import { createFormBuilder } from '../../../resources/js/form-kit/builder.js';
 import { evaluateExpression, registerFunction } from '../../../resources/js/form-kit/jsonata-engine.js';
 import { createFormRuntime } from '../../../resources/js/form-kit/runtime.js';
 import { createDefaultSchema, validateSchema } from '../../../resources/js/form-kit/schema.js';
+import initFormBuilder from '../../../resources/js/modules/form-builder.js';
+import initFormViewer from '../../../resources/js/modules/form-viewer.js';
 
 async function tick() {
     await new Promise((resolve) => setTimeout(resolve, 0));
     await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-function builderTemplates() {
-    return `
-        <template data-builder-template="palette-item">
-            <button type="button" data-builder-add><span data-builder-label></span></button>
-        </template>
-        <template data-builder-template="outline-item">
-            <div data-builder-field>
-                <button type="button" data-builder-select><span data-builder-label></span></button>
-                <button type="button" data-builder-move="up"></button>
-                <button type="button" data-builder-move="down"></button>
-                <button type="button" data-builder-delete></button>
-            </div>
-        </template>
-        <template data-builder-template="inspector-empty">
-            <p>Select a field.</p>
-        </template>
-        <template data-builder-template="inspector-input">
-            <label><span data-builder-label></span><input data-builder-control /></label>
-        </template>
-        <template data-builder-template="inspector-textarea">
-            <label><span data-builder-label></span><textarea data-builder-control></textarea></label>
-        </template>
-        <template data-builder-template="preview-field">
-            <label>
-                <span data-builder-label></span>
-                <input data-builder-preview-input />
-                <textarea data-builder-preview-textarea class="hidden"></textarea>
-            </label>
-        </template>
-        <template data-builder-template="function-item">
-            <li data-builder-label></li>
-        </template>
-        <template data-builder-template="diagnostic-item">
-            <li data-builder-label></li>
-        </template>
-    `;
+async function frame() {
+    await new Promise((resolve) => {
+        if (typeof window.requestAnimationFrame === 'function') {
+            window.requestAnimationFrame(resolve);
+
+            return;
+        }
+
+        setTimeout(resolve, 0);
+    });
 }
 
 describe('form-kit schema', () => {
@@ -124,6 +99,139 @@ describe('form-kit JSONata runtime', () => {
 });
 
 describe('form-kit viewer runtime', () => {
+    it('hydrates the viewer bridge from embedded schema value and errors JSON', async () => {
+        document.body.innerHTML = `
+            <form id="signup-viewer" data-form-id="signup-viewer" data-module="form-viewer" data-submit-mode="none" data-validate-on="change" data-readonly="true" action="/forms" method="POST">
+                <div data-form-field="email">
+                    <input data-form-input="email" name="email" value="ada@example.com" />
+                    <p data-form-errors="email" class="hidden"></p>
+                </div>
+                <script type="application/json" data-form-schema>
+                    {"version":"1.0","id":"signup","fields":[{"id":"email","type":"email","name":"email","label":"Email","rules":["required","email"]}]}
+                </script>
+                <script type="application/json" data-form-value>{"email":"ada@example.com"}</script>
+                <script type="application/json" data-form-errors-payload>{"email":["Already used."]}</script>
+            </form>
+        `;
+
+        const root = document.querySelector('[data-module="form-viewer"]');
+        const runtime = initFormViewer(root);
+
+        await tick();
+
+        expect(root.__daisyFormRuntime).toBe(runtime);
+        expect(window.DaisyFormViewer.get('signup-viewer')).toBe(runtime);
+        expect(window.DaisyFormViewer.getByElement(root)).toBe(runtime);
+        expect(runtime.state.schema.id).toBe('signup');
+        expect(runtime.state.values.email).toBe('ada@example.com');
+        expect(runtime.state.errors.email).toEqual(['Already used.']);
+        expect(root.dataset.formRuntimeState).toBe('ready');
+        expect(root.dataset.formSubmitMode).toBe('none');
+        expect(root.dataset.formValidateOn).toBe('change');
+        expect(root.dataset.formReadonly).toBe('true');
+        expect(runtime.getSubmitMode()).toBe('none');
+        expect(runtime.getValidateOn()).toBe('change');
+        expect(runtime.isReadonly()).toBe(true);
+        expect(await runtime.submit()).toBe(true);
+    });
+
+    it('exposes a public viewer API for host integrations', async () => {
+        document.body.innerHTML = `
+            <form id="profile-viewer" data-form-id="profile-viewer">
+                <div data-form-field="name">
+                    <input data-form-input="name" name="name" value="Ada" />
+                    <p data-form-errors="name" class="hidden"></p>
+                </div>
+                <button type="submit" data-form-submit>Submit</button>
+            </form>
+        `;
+
+        const root = document.querySelector('form');
+        const changes = [];
+        const submissions = [];
+        const readyEvents = [];
+        root.addEventListener('daisy-form:change', (event) => changes.push(event.detail));
+        root.addEventListener('daisy-form:submit', (event) => submissions.push(event.detail));
+
+        const runtime = createFormRuntime(root, {
+            schema: {
+                version: '1.0',
+                id: 'profile',
+                fields: [{ id: 'name', type: 'text', name: 'name', label: 'Name', rules: ['required'] }],
+            },
+            submitMode: 'event',
+        });
+        const unsubscribeReady = runtime.on('daisy-form:ready', (event) => readyEvents.push(event.detail));
+
+        await tick();
+
+        expect(runtime.id).toBe('profile-viewer');
+        expect(runtime.getSubmitMode()).toBe('event');
+        expect(runtime.getValidateOn()).toBe('submit');
+        expect(runtime.isReadonly()).toBe(false);
+        expect(runtime.isValid()).toBe(true);
+        expect(runtime.getSchema().id).toBe('profile');
+        expect(runtime.getField('name').id).toBe('name');
+        expect(runtime.getVisibleFields().map((field) => field.id)).toEqual(['name']);
+        expect(runtime.getInput('name')).toBe(root.querySelector('[name="name"]'));
+        expect(runtime.getValue('name')).toBe('Ada');
+        expect(root.dataset.formRuntimeState).toBe('ready');
+        expect(readyEvents.at(-1).id).toBe('profile-viewer');
+        unsubscribeReady();
+
+        await runtime.setValue('name', 'Grace');
+
+        expect(root.querySelector('[name="name"]').value).toBe('Grace');
+        expect(runtime.getValues()).toEqual({ name: 'Grace' });
+        expect(runtime.getValues({ visible: true })).toEqual({ name: 'Grace' });
+        expect(changes.at(-1).id).toBe('profile-viewer');
+        expect(changes.at(-1).runtime).toBe(runtime);
+
+        runtime.setErrors({ name: ['Required.'] });
+        expect(runtime.getErrors().name).toEqual(['Required.']);
+        expect(root.querySelector('[data-form-errors="name"]').textContent).toBe('Required.');
+        runtime.clearErrors();
+        expect(runtime.getErrors()).toEqual({});
+
+        await runtime.submit();
+        expect(submissions.at(-1).id).toBe('profile-viewer');
+        expect(submissions.at(-1).values).toEqual({ name: 'Grace' });
+
+        await runtime.reset({ name: 'Ada' });
+        expect(runtime.getValue('name')).toBe('Ada');
+
+        runtime.destroy();
+        expect(root.dataset.formRuntimeState).toBe('destroyed');
+    });
+
+    it('unregisters viewer bridge instances when destroyed', async () => {
+        document.body.innerHTML = `
+            <form id="destroyable-viewer" data-form-id="destroyable-viewer" data-module="form-viewer" data-submit-mode="none">
+                <div data-form-field="name">
+                    <input data-form-input="name" name="name" value="Ada" />
+                    <p data-form-errors="name" class="hidden"></p>
+                </div>
+                <script type="application/json" data-form-schema>
+                    {"version":"1.0","id":"profile","fields":[{"id":"name","type":"text","name":"name","label":"Name"}]}
+                </script>
+                <script type="application/json" data-form-value>{"name":"Ada"}</script>
+                <script type="application/json" data-form-errors-payload>{}</script>
+            </form>
+        `;
+
+        const root = document.querySelector('[data-module="form-viewer"]');
+        const runtime = initFormViewer(root);
+
+        await tick();
+
+        expect(window.DaisyFormViewer.get('destroyable-viewer')).toBe(runtime);
+
+        runtime.destroy();
+
+        expect(window.DaisyFormViewer.get('destroyable-viewer')).toBe(null);
+        expect(window.DaisyFormViewer.getByElement(root)).toBe(null);
+    });
+
     it('handles visibility, validation and computed values', async () => {
         document.body.innerHTML = `
             <form>
@@ -260,88 +368,181 @@ describe('form-kit viewer runtime', () => {
 
         expect(submissions).toEqual([{ name: 'Ada', email: 'ada@example.com' }]);
     });
-});
 
-describe('form-kit builder', () => {
-    it('adds, reorders and exports fields', async () => {
+    it('validates on input or change when configured', async () => {
         document.body.innerHTML = `
-            <div data-module="form-builder">
-                <div data-builder-palette></div>
-                <div data-builder-outline></div>
-                <div data-builder-inspector></div>
-                <div data-builder-preview></div>
-                <textarea data-builder-json></textarea>
-                <textarea data-builder-hidden></textarea>
-                <ul data-builder-diagnostics></ul>
-                <ul data-builder-functions></ul>
-                ${builderTemplates()}
-            </div>
+            <form>
+                <div data-form-field="email">
+                    <input data-form-input="email" name="email" value="" />
+                    <p data-form-errors="email" class="hidden"></p>
+                </div>
+            </form>
         `;
 
-        const root = document.querySelector('[data-module="form-builder"]');
-        const builder = createFormBuilder(root, {
+        const root = document.querySelector('form');
+        const runtime = createFormRuntime(root, {
             schema: {
                 version: '1.0',
-                id: 'builder',
-                fields: [],
+                id: 'signup',
+                fields: [{ id: 'email', type: 'email', name: 'email', label: 'Email', rules: ['required', 'email'] }],
             },
-            fieldTypes: [{ type: 'text', label: 'Text' }, { type: 'email', label: 'Email' }],
+            validateOn: 'input',
         });
 
         await tick();
 
-        root.querySelector('[data-builder-add="text"]').click();
-        await tick();
-        root.querySelector('[data-builder-add="email"]').click();
-        await tick();
-
-        expect(builder.state.schema.fields.map((field) => field.type)).toEqual(['text', 'email']);
-
-        root.querySelector('[data-builder-field="email-2"] [data-builder-move="up"]').click();
+        root.querySelector('[name="email"]').value = 'invalid';
+        root.dispatchEvent(new Event('input', { bubbles: true }));
         await tick();
 
-        expect(builder.state.schema.fields.map((field) => field.type)).toEqual(['email', 'text']);
-        expect(JSON.parse(root.querySelector('[data-builder-hidden]').value).fields).toHaveLength(2);
+        expect(runtime.state.valid).toBe(false);
+        expect(root.querySelector('[data-form-errors="email"]').textContent).toContain('valid email');
+
+        root.querySelector('[name="email"]').value = 'ada@example.com';
+        root.dispatchEvent(new Event('change', { bubbles: true }));
+        await tick();
+
+        expect(runtime.state.valid).toBe(true);
     });
 
-    it('builds multi-step schemas with nested sections and fields', async () => {
+    it('falls back to event submit mode for invalid runtime and schema submit modes', async () => {
+        document.body.innerHTML = `
+            <form>
+                <div data-form-field="email">
+                    <input data-form-input="email" name="email" value="ada@example.com" />
+                    <p data-form-errors="email" class="hidden"></p>
+                </div>
+                <button type="submit" data-form-submit>Submit</button>
+            </form>
+        `;
+
+        const root = document.querySelector('form');
+        const submissions = [];
+        root.addEventListener('daisy-form:submit', (event) => submissions.push(event.detail.values));
+
+        const runtime = createFormRuntime(root, {
+            schema: {
+                version: '1.0',
+                id: 'signup',
+                fields: [{ id: 'email', type: 'email', name: 'email', label: 'Email', rules: ['required', 'email'] }],
+                submit: { mode: 'bogus' },
+            },
+            submitMode: 'invalid',
+        });
+
+        await tick();
+        expect(await runtime.submit()).toBe(true);
+
+        expect(submissions).toEqual([{ email: 'ada@example.com' }]);
+    });
+
+    it('lets an explicit valid runtime submit mode override the schema submit mode', async () => {
+        document.body.innerHTML = `
+            <form>
+                <div data-form-field="email">
+                    <input data-form-input="email" name="email" value="ada@example.com" />
+                    <p data-form-errors="email" class="hidden"></p>
+                </div>
+                <button type="submit" data-form-submit>Submit</button>
+            </form>
+        `;
+
+        const root = document.querySelector('form');
+        const submissions = [];
+        root.addEventListener('daisy-form:submit', (event) => submissions.push(event.detail.values));
+
+        const runtime = createFormRuntime(root, {
+            schema: {
+                version: '1.0',
+                id: 'signup',
+                fields: [{ id: 'email', type: 'email', name: 'email', label: 'Email', rules: ['required', 'email'] }],
+                submit: { mode: 'event' },
+            },
+            submitMode: 'none',
+        });
+
+        await tick();
+        expect(await runtime.submit()).toBe(true);
+
+        expect(submissions).toEqual([]);
+    });
+});
+
+describe('form-kit builder bridge', () => {
+    it('defers drop zone priming until the drag actually starts', async () => {
         document.body.innerHTML = `
             <div data-module="form-builder">
-                <div data-builder-palette></div>
-                <div data-builder-outline></div>
-                <div data-builder-inspector></div>
-                <div data-builder-preview></div>
-                <textarea data-builder-hidden></textarea>
-                <ul data-builder-diagnostics></ul>
-                ${builderTemplates()}
+                <table>
+                    <tbody>
+                        <tr data-builder-drop-row>
+                            <td>
+                                <button data-builder-drop-zone data-builder-drop-target="section" data-builder-drop-action="before"></button>
+                            </td>
+                        </tr>
+                        <tr data-builder-field="section" data-builder-field-depth="0">
+                            <td>
+                                <span data-builder-drag-handle data-builder-drag-field="section" data-builder-drag-descendants='["child"]'></span>
+                                <button data-builder-select><span>Section</span></button>
+                                <span data-builder-type-badge>section</span>
+                            </td>
+                        </tr>
+                        <tr data-builder-drop-row>
+                            <td>
+                                <button data-builder-drop-zone data-builder-drop-target="child" data-builder-drop-action="before"></button>
+                            </td>
+                        </tr>
+                        <tr data-builder-field="child" data-builder-field-depth="1">
+                            <td>Child</td>
+                        </tr>
+                        <tr data-builder-drop-row>
+                            <td>
+                                <button data-builder-drop-zone data-builder-drop-target="after" data-builder-drop-action="before"></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         `;
 
         const root = document.querySelector('[data-module="form-builder"]');
-        const builder = createFormBuilder(root, {
-            schema: {
-                version: '1.0',
-                id: 'builder',
-                layout: { type: 'multi-step' },
-                fields: [],
-            },
-            fieldTypes: [{ type: 'text', label: 'Text' }, { type: 'email', label: 'Email' }],
-        });
+        const handle = root.querySelector('[data-builder-drag-handle]');
 
-        await tick();
+        initFormBuilder(root);
+        handle.dispatchEvent(new MouseEvent('pointerdown', {
+            bubbles: true,
+            button: 0,
+            clientX: 10,
+            clientY: 10,
+        }));
 
-        builder.addStep('Contact');
-        await tick();
-        builder.addSection('Identity');
-        await tick();
-        builder.addField('text');
-        await tick();
+        expect(root.dataset.builderDragReady).toBe('1');
+        expect(root.dataset.dragging).toBeUndefined();
+        expect(root.querySelector('[data-builder-field="section"]').hasAttribute('data-builder-dragging-row')).toBe(false);
 
-        const schema = JSON.parse(root.querySelector('[data-builder-hidden]').value);
+        document.dispatchEvent(new MouseEvent('pointermove', {
+            bubbles: true,
+            button: 0,
+            clientX: 220,
+            clientY: 220,
+        }));
 
-        expect(schema.layout.type).toBe('multi-step');
-        expect(schema.fields[0]).toMatchObject({ type: 'wizardStep', label: 'Contact' });
-        expect(schema.fields[0].fields[0]).toMatchObject({ type: 'section', label: 'Identity' });
-        expect(schema.fields[0].fields[0].fields[0]).toMatchObject({ type: 'text', name: 'text_3' });
+        await frame();
+        await frame();
+
+        expect(root.dataset.dragging).toBe('section');
+        expect(root.querySelector('[data-builder-field="section"]').hasAttribute('data-builder-dragging-row')).toBe(true);
+        expect(root.querySelector('[data-builder-drop-target="section"]').hasAttribute('data-builder-drop-disabled')).toBe(true);
+        expect(root.querySelector('[data-builder-drop-target="child"]').hasAttribute('data-builder-drop-disabled')).toBe(true);
+        expect(root.querySelector('[data-builder-drop-target="after"]').hasAttribute('data-builder-drop-disabled')).toBe(false);
+
+        document.dispatchEvent(new MouseEvent('pointerup', {
+            bubbles: true,
+            button: 0,
+            clientX: 10,
+            clientY: 10,
+        }));
+
+        expect(root.dataset.dragging).toBeUndefined();
+        expect(root.querySelector('[data-builder-field="section"]').hasAttribute('data-builder-dragging-row')).toBe(false);
     });
 });

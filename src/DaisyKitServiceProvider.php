@@ -2,12 +2,14 @@
 
 namespace Art35rennes\DaisyKit;
 
+use Art35rennes\DaisyKit\FormKit\Livewire\FormBuilder;
 use Art35rennes\DaisyKit\Http\Controllers\CsrfTokenController;
 use Illuminate\Foundation\Exceptions\Handler;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
+use Livewire\Livewire;
 use Throwable;
 
 class DaisyKitServiceProvider extends ServiceProvider
@@ -30,6 +32,10 @@ class DaisyKitServiceProvider extends ServiceProvider
         // Exposer les templates comme composants anonymes pour éviter les doublons avec components/templates.
         Blade::anonymousComponentPath(__DIR__.'/../resources/views/templates', 'daisy::templates');
         Blade::anonymousComponentPath(__DIR__.'/../resources/views/templates/form', 'daisy::templates.form');
+
+        if (class_exists(Livewire::class)) {
+            Livewire::component('daisy.form-builder', FormBuilder::class);
+        }
 
         // Charger les traductions du package: __('daisy::calendar.today')
         $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'daisy');
