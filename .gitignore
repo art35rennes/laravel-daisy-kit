@@ -40,3 +40,4 @@ auth.json
 !/tests/Fixtures/laravel/storage/framework/views/.gitkeep
 /storage
 /.vite
+.DS_Store
