@@ -1,11 +1,11 @@
 {
-    "generated_at": "2026-05-29T15:26:38+00:00",
+    "generated_at": "2026-06-03T07:11:59+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
         "component_count": 148,
         "template_count": 30,
-        "excluded_component_template_mirrors": 13
+        "excluded_component_template_mirrors": 14
     },
     "components": [
         {
@@ -211,7 +211,10 @@
                 "functionCatalog",
                 "preview",
                 "jsonEditor",
-                "name"
+                "name",
+                "value",
+                "errors",
+                "viewerSubmitMode"
             ]
         },
         {
@@ -222,7 +225,8 @@
             "props": [
                 "value",
                 "errors",
-                "readonly"
+                "readonly",
+                "formId"
             ]
         },
         {
@@ -1525,6 +1529,7 @@
             "props": [
                 "mode",
                 "value",
+                "name",
                 "disabled",
                 "dropdown",
                 "swatches",
@@ -1652,7 +1657,8 @@
                 "downloadLabel",
                 "downloadFormat",
                 "downloadFilename",
-                "module"
+                "module",
+                "value"
             ]
         },
         {
@@ -2230,7 +2236,9 @@
                 "horizontalAt",
                 "color",
                 "allowClickNav",
-                "rootId"
+                "rootId",
+                "indicatorAttribute",
+                "indicatorOffset"
             ]
         },
         {
@@ -2378,6 +2386,7 @@
             "relative_path": "resources/views/components/ui/partials/form-field.blade.php",
             "props": [
                 "name",
+                "for",
                 "label",
                 "labelClass",
                 "error",
