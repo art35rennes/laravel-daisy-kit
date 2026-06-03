@@ -25,14 +25,34 @@ export default function initFormBuilder(root) {
     return node;
   };
 
-  const clearDragState = () => {
-    delete root.dataset.dragging;
-    root.__daisyFormBuilderActiveDropZone = null;
-    root.querySelectorAll('[data-builder-dragging-row], [data-builder-drop-active], [data-builder-drop-disabled], [data-builder-drop-disabled-row]').forEach((node) => {
-      node.removeAttribute('data-builder-dragging-row');
-      node.removeAttribute('data-builder-drop-active');
-      node.removeAttribute('data-builder-drop-disabled');
-      node.removeAttribute('data-builder-drop-disabled-row');
+  const preserveScrollAnchor = (anchor, callback) => {
+    const beforeTop = anchor?.isConnected ? anchor.getBoundingClientRect().top : null;
+
+    callback();
+
+    if (typeof beforeTop !== 'number') return;
+
+    window.requestAnimationFrame(() => {
+      if (!anchor.isConnected) return;
+
+      const delta = anchor.getBoundingClientRect().top - beforeTop;
+
+      if (Math.abs(delta) > 1) {
+        window.scrollBy(0, delta);
+      }
+    });
+  };
+
+  const clearDragState = (scrollAnchor = null) => {
+    preserveScrollAnchor(scrollAnchor, () => {
+      delete root.dataset.dragging;
+      root.__daisyFormBuilderActiveDropZone = null;
+      root.querySelectorAll('[data-builder-dragging-row], [data-builder-drop-active], [data-builder-drop-disabled], [data-builder-drop-disabled-row]').forEach((node) => {
+        node.removeAttribute('data-builder-dragging-row');
+        node.removeAttribute('data-builder-drop-active');
+        node.removeAttribute('data-builder-drop-disabled');
+        node.removeAttribute('data-builder-drop-disabled-row');
+      });
     });
 
     document.body.style.removeProperty('cursor');
@@ -106,9 +126,11 @@ export default function initFormBuilder(root) {
     window.requestAnimationFrame(() => {
       if (!state.dragStarted || state.finished) return;
 
-      state.eligibleZones = collectEligibleDropZones(state.draggedId, state.draggedDescendants);
-      root.dataset.dragging = state.draggedId;
-      root.__daisyFormBuilderActiveDropZone = null;
+      preserveScrollAnchor(state.draggedRow, () => {
+        state.eligibleZones = collectEligibleDropZones(state.draggedId, state.draggedDescendants);
+        root.dataset.dragging = state.draggedId;
+        root.__daisyFormBuilderActiveDropZone = null;
+      });
       activateDropZone(findDropZone(currentEvent, state.eligibleZones));
     });
   };
@@ -275,7 +297,7 @@ export default function initFormBuilder(root) {
 
     const finish = () => {
       state.finished = true;
-      clearDragState();
+      clearDragState(state.draggedRow);
       hideDragGhost(state.activeGhost);
       stopAutoScroll();
       setHandleCaptured(handle, event.pointerId, false);

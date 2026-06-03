@@ -793,18 +793,40 @@
         }
 
         [data-builder-editor-modal] .modal-box {
+            display: flex;
+            height: min(46rem, calc(100dvh - 2rem));
+            max-height: calc(100dvh - 2rem);
+            flex-direction: column;
             padding: 0;
         }
 
         [data-builder-editor-modal] .modal-box > :not(.modal-action) {
+            min-height: 0;
+            flex: 1 1 auto;
+            overflow: hidden;
             padding: 1.5rem 1.5rem 0;
+        }
+
+        [data-builder-editor-modal] .daisy-form-builder-editor {
+            display: flex;
+            min-height: 0;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        [data-builder-editor-modal] [data-builder-field-editor] {
+            min-height: 0;
+            flex: 1 1 auto;
+            overflow-y: auto;
+            padding-right: 0.25rem;
         }
 
         [data-builder-editor-modal] .modal-action {
             position: sticky;
             bottom: 0;
             z-index: 3;
-            margin: 1.5rem 0 0;
+            flex: 0 0 auto;
+            margin: 0;
             padding: 1rem 1.5rem;
             border-top: 1px solid color-mix(in oklab, currentColor 14%, transparent);
             background: var(--color-base-100, #fff);

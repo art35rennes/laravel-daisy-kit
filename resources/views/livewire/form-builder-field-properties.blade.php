@@ -4,16 +4,139 @@
 ])
 
 <div class="space-y-5" data-builder-field-editor>
-    @foreach($propertyGroups as $group)
-        <section class="space-y-3">
-            <h4 class="border-b border-base-300 pb-2 text-xs font-semibold uppercase tracking-wide text-base-content/60">{{ $group['label'] }}</h4>
+    @php
+        $properties = collect($propertyGroups)
+            ->flatMap(fn (array $group): array => $group['properties'] ?? [])
+            ->values();
+        $propertiesByPath = $properties->keyBy('path');
+        $fieldName = (string) ($selectedField['name'] ?? '');
+        $fieldId = (string) ($selectedField['id'] ?? '');
+        $hasPayloadName = $propertiesByPath->has('name');
+        $hasCustomId = ! $hasPayloadName || $fieldName === '' || $fieldId !== $fieldName;
+        $editorTabsId = 'daisy-form-builder-field-editor-tabs-'.($fieldId !== '' ? $fieldId : 'field');
+        $componentPaths = $properties
+            ->pluck('path')
+            ->filter(fn (string $path): bool => str_starts_with($path, 'attrs.') || (str_starts_with($path, 'ui.') && $path !== 'ui.width'))
+            ->values()
+            ->all();
+        $dataPaths = $hasPayloadName ? ['default', 'options', 'rules'] : [];
+        $editorSections = collect([
+            [
+                'id' => 'general',
+                'label' => __('daisy::form.builder.editor_tabs.general'),
+                'help' => __('daisy::form.builder.editor_tabs_help.general'),
+                'paths' => ['label', 'description', 'text'],
+                'always' => true,
+            ],
+            [
+                'id' => 'data',
+                'label' => __('daisy::form.builder.editor_tabs.data'),
+                'help' => __('daisy::form.builder.editor_tabs_help.data'),
+                'paths' => $dataPaths,
+            ],
+            [
+                'id' => 'display',
+                'label' => __('daisy::form.builder.editor_tabs.display'),
+                'help' => __('daisy::form.builder.editor_tabs_help.display'),
+                'paths' => array_values(array_merge(['ui.width'], $componentPaths)),
+            ],
+            [
+                'id' => 'logic',
+                'label' => __('daisy::form.builder.editor_tabs.logic'),
+                'help' => __('daisy::form.builder.editor_tabs_help.logic'),
+                'paths' => ['visibleWhen', 'computed'],
+            ],
+        ])
+            ->filter(fn (array $section): bool => ($section['always'] ?? false)
+                || collect($section['paths'])->contains(fn (string $path): bool => $propertiesByPath->has($path)))
+            ->values()
+            ->all();
+    @endphp
 
-            @foreach($group['properties'] as $property)
-                @php
-                    $path = $property['path'];
-                    $control = $property['control'];
-                    $current = data_get($selectedField, $path);
-                @endphp
+    <div
+        class="tabs tabs-border daisy-form-builder-editor-tabs"
+        x-data="{ customFieldId: @js($hasCustomId) }"
+        data-builder-editor-tabs
+    >
+        @foreach($editorSections as $sectionIndex => $section)
+            <input
+                type="radio"
+                name="{{ $editorTabsId }}"
+                class="tab"
+                aria-label="{{ $section['label'] }}"
+                @checked($sectionIndex === 0)
+            />
+
+            <section class="tab-content space-y-4 pt-4" data-builder-editor-tab-panel="{{ $section['id'] }}">
+                <div class="rounded-box border border-base-300 bg-base-200/40 p-3">
+                    <h4 class="text-sm font-semibold">{{ $section['label'] }}</h4>
+                    <p class="mt-1 text-xs text-base-content/60">{{ $section['help'] }}</p>
+                </div>
+
+                @if($section['id'] === 'general')
+                    <div class="grid gap-4 lg:grid-cols-2">
+                        @if($hasPayloadName && $propertiesByPath->has('name'))
+                            @php
+                                $property = $propertiesByPath->get('name');
+                            @endphp
+                            <x-daisy::ui.partials.form-field :label="$property['label']">
+                                <x-daisy::ui.inputs.input
+                                    type="text"
+                                    size="sm"
+                                    value="{{ $fieldName }}"
+                                    x-on:change="$wire.updateSelectedPath('name', $event.target.value); if (! customFieldId) $wire.updateSelectedPath('id', $event.target.value)"
+                                />
+                                <x-slot:hintSlot>
+                                    {{ $property['help'] ?? 'name' }}
+                                    <code class="kbd kbd-xs ms-1">name</code>
+                                </x-slot:hintSlot>
+                            </x-daisy::ui.partials.form-field>
+
+                            <div class="space-y-3 rounded-box border border-base-300 p-3">
+                                <label class="flex items-start gap-3 text-sm">
+                                    <x-daisy::ui.inputs.toggle x-model="customFieldId" data-builder-custom-id />
+                                    <span>
+                                        <span class="block font-medium">{{ __('daisy::form.builder.custom_field_id') }}</span>
+                                        <span class="block text-xs text-base-content/60">{{ __('daisy::form.builder.custom_field_id_help') }}</span>
+                                    </span>
+                                </label>
+
+                                @php
+                                    $property = $propertiesByPath->get('id');
+                                @endphp
+                                <div x-show="customFieldId" x-cloak>
+                                    <x-daisy::ui.partials.form-field :label="$property['label']">
+                                        <x-daisy::ui.inputs.input type="text" size="sm" value="{{ $fieldId }}" wire:change="updateSelectedPath('id', $event.target.value)" />
+                                        <x-slot:hintSlot>
+                                            {{ $property['help'] ?? 'id' }}
+                                            <code class="kbd kbd-xs ms-1">id</code>
+                                        </x-slot:hintSlot>
+                                    </x-daisy::ui.partials.form-field>
+                                </div>
+                            </div>
+                        @elseif($propertiesByPath->has('id'))
+                            @php
+                                $property = $propertiesByPath->get('id');
+                            @endphp
+                            <x-daisy::ui.partials.form-field :label="$property['label']">
+                                <x-daisy::ui.inputs.input type="text" size="sm" value="{{ $fieldId }}" wire:change="updateSelectedPath('id', $event.target.value)" />
+                                <x-slot:hintSlot>
+                                    {{ $property['help'] ?? 'id' }}
+                                    <code class="kbd kbd-xs ms-1">id</code>
+                                </x-slot:hintSlot>
+                            </x-daisy::ui.partials.form-field>
+                        @endif
+                    </div>
+                @endif
+
+                @foreach($section['paths'] as $path)
+                    @continue(! $propertiesByPath->has($path))
+                    @php
+                        $property = $propertiesByPath->get($path);
+                        $path = $property['path'];
+                        $control = $property['control'];
+                        $current = data_get($selectedField, $path);
+                    @endphp
 
                 @if($control === 'options')
                     <div class="space-y-2">
@@ -92,7 +215,8 @@
                         </x-slot:hintSlot>
                     </x-daisy::ui.partials.form-field>
                 @endif
-            @endforeach
-        </section>
-    @endforeach
+                @endforeach
+            </section>
+        @endforeach
+    </div>
 </div>

@@ -97,7 +97,9 @@ it('renders the real forms viewer as the reactive preview', function () {
         ->assertSee('ada@example.com')
         ->call('selectField', 'email')
         ->assertSeeHtml('data-builder-field-editor')
-        ->assertSee('Component settings')
+        ->assertSeeHtml('data-builder-editor-tabs')
+        ->assertSeeHtml('data-builder-editor-tab-panel="display"')
+        ->assertSeeHtml('data-builder-custom-id')
         ->assertSeeHtml('data-builder-json-property="rules"')
         ->call('updateSelectedField', 'label', 'Email address')
         ->assertSee('Email address');
@@ -147,8 +149,9 @@ it('opens field editing in a responsive modal without a backdrop', function () {
         ->assertSeeHtml('data-builder-editor-confirm')
         ->assertSeeHtml('btn-outline btn-error')
         ->assertSeeHtml('btn-success')
-        ->assertSee('Field identifier')
-        ->assertSee('Stable schema id')
+        ->assertSee('Payload name')
+        ->assertSee('Custom identifier')
+        ->assertSee('Enable only when the internal identifier must differ')
         ->call('closeFieldEditor')
         ->assertSet('fieldEditorOpen', false)
         ->assertSet('selectedId', 'email');

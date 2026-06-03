@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { evaluateExpression, registerFunction } from '../../../resources/js/form-kit/jsonata-engine.js';
 import { createFormRuntime } from '../../../resources/js/form-kit/runtime.js';
 import { createDefaultSchema, validateSchema } from '../../../resources/js/form-kit/schema.js';
@@ -544,5 +544,70 @@ describe('form-kit builder bridge', () => {
 
         expect(root.dataset.dragging).toBeUndefined();
         expect(root.querySelector('[data-builder-field="section"]').hasAttribute('data-builder-dragging-row')).toBe(false);
+    });
+
+    it('keeps the dragged row anchored when drop zones change layout height', async () => {
+        document.body.innerHTML = `
+            <div data-module="form-builder">
+                <table>
+                    <tbody>
+                        <tr data-builder-drop-row>
+                            <td>
+                                <button data-builder-drop-zone data-builder-drop-target="before" data-builder-drop-action="before"></button>
+                            </td>
+                        </tr>
+                        <tr data-builder-field="section" data-builder-field-depth="0">
+                            <td>
+                                <span data-builder-drag-handle data-builder-drag-field="section" data-builder-drag-descendants="[]"></span>
+                                <button data-builder-select><span>Section</span></button>
+                                <span data-builder-type-badge>section</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        const root = document.querySelector('[data-module="form-builder"]');
+        const row = root.querySelector('[data-builder-field="section"]');
+        const handle = root.querySelector('[data-builder-drag-handle]');
+        const scrollBy = vi.spyOn(window, 'scrollBy').mockImplementation(() => {});
+
+        row.getBoundingClientRect = () => ({
+            top: root.dataset.dragging ? 360 : 300,
+        });
+
+        initFormBuilder(root);
+        handle.dispatchEvent(new MouseEvent('pointerdown', {
+            bubbles: true,
+            button: 0,
+            clientX: 10,
+            clientY: 10,
+        }));
+
+        document.dispatchEvent(new MouseEvent('pointermove', {
+            bubbles: true,
+            button: 0,
+            clientX: 80,
+            clientY: 300,
+        }));
+
+        await frame();
+        await frame();
+        await frame();
+
+        expect(scrollBy).toHaveBeenCalledWith(0, 60);
+
+        document.dispatchEvent(new MouseEvent('pointerup', {
+            bubbles: true,
+            button: 0,
+            clientX: 80,
+            clientY: 300,
+        }));
+
+        await frame();
+
+        expect(scrollBy).toHaveBeenCalledWith(0, -60);
+        scrollBy.mockRestore();
     });
 });
