@@ -15,45 +15,6 @@ class FormSchemaValidator
     public const Version = '1.0';
 
     /**
-     * Allowed field `type` discriminator values including layout containers.
-     *
-     * @var array<int, string>
-     */
-    protected const FieldTypes = [
-        'text',
-        'email',
-        'tel',
-        'url',
-        'password',
-        'number',
-        'textarea',
-        'select',
-        'radio',
-        'checkbox',
-        'toggle',
-        'range',
-        'date',
-        'time',
-        'datetime-local',
-        'month',
-        'color',
-        'file',
-        'signature',
-        'hidden',
-        'staticText',
-        'section',
-        'tabs',
-        'wizardStep',
-    ];
-
-    /**
-     * Structural nodes whose children inherit naming constraints separately from the container itself.
-     *
-     * @var array<int, string>
-     */
-    protected const ContainerTypes = ['section', 'tabs', 'wizardStep'];
-
-    /**
      * Layout modes supported by the v1 form viewer.
      *
      * @var array<int, string>
@@ -208,14 +169,15 @@ class FormSchemaValidator
 
             $ids[] = $id;
 
-            if (! in_array($field['type'] ?? null, self::FieldTypes, true)) {
+            if (! in_array($field['type'] ?? null, FormSchemaNormalizer::FieldTypes, true)) {
                 $type = (string) ($field['type'] ?? '');
                 $errors[] = $this->error($path, 'unknown_field_type', "Field type `{$type}` is not supported.");
             }
 
-            $isContainer = in_array($field['type'] ?? null, self::ContainerTypes, true);
+            $isContainer = in_array($field['type'] ?? null, FormSchemaNormalizer::ContainerTypes, true);
+            $isNonSubmitting = in_array($field['type'] ?? null, FormSchemaNormalizer::NonSubmittingFieldTypes, true);
 
-            if (! $isContainer && ($field['type'] ?? null) !== 'staticText') {
+            if (! $isContainer && ! $isNonSubmitting) {
                 $name = (string) ($field['name'] ?? '');
 
                 if (! preg_match('/^[A-Za-z_][A-Za-z0-9_.\-[\]]*$/', $name)) {

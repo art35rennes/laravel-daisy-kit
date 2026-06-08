@@ -77,7 +77,7 @@ class FormFieldCatalog
     {
         $definition = collect($this->definitions())->firstWhere('type', $type);
         $features = $definition['features'] ?? [];
-        $nonSubmittingTypes = [...FormSchemaNormalizer::ContainerTypes, 'staticText'];
+        $nonSubmittingTypes = [...FormSchemaNormalizer::ContainerTypes, ...FormSchemaNormalizer::NonSubmittingFieldTypes];
         $properties = [
             $this->property('id', 'text', 'identity', required: true),
             $this->property('name', 'text', 'identity', except: $nonSubmittingTypes),

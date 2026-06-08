@@ -41,6 +41,8 @@ class FormSchemaNormalizer
 
     public const ContainerTypes = ['section', 'tabs', 'wizardStep'];
 
+    public const NonSubmittingFieldTypes = ['staticText'];
+
     /**
      * Normalizes an arbitrary schema payload into the canonical package contract.
      *

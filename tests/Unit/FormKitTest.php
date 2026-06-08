@@ -134,6 +134,27 @@ it('keeps the builder field catalog aligned with canonical schema field types', 
         ->toContain('attrs.showFormatToggle');
 });
 
+it('uses canonical non submitting field taxonomy during schema validation', function () {
+    $validator = new FormSchemaValidator;
+
+    $errors = $validator->validate(validFormSchema([
+        'fields' => [
+            ['id' => 'copy', 'type' => 'staticText', 'text' => 'Read this first.'],
+            ['id' => 'group', 'type' => 'section', 'fields' => []],
+        ],
+    ]));
+
+    expect($errors)->toBe([]);
+
+    $errors = $validator->validate(validFormSchema([
+        'fields' => [
+            ['id' => 'email', 'type' => 'email', 'name' => '', 'label' => 'Email'],
+        ],
+    ]));
+
+    expect(array_column($errors, 'code'))->toContain('invalid_name');
+});
+
 it('rejects unsupported form layout types', function () {
     $validator = new FormSchemaValidator;
 
