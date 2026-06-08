@@ -118,6 +118,86 @@ Key keys in `config/daisy-kit.php` (see the published file for the full schema):
 - `themes` — DaisyUI built-in and custom theme definitions for host Tailwind/daisyUI setup.
 - `trusted_html` — documents that some props accept trusted HTML; never pass unsanitized user input.
 
+## Breadcrumbs
+
+Use `x-daisy::ui.navigation.breadcrumbs` for manual Laravel breadcrumb trails. It renders accessible `nav` markup by default and keeps the existing `items` array API.
+
+```blade
+<x-daisy::ui.navigation.breadcrumbs
+    :items="[
+        ['label' => 'Dashboard', 'href' => route('dashboard'), 'iconName' => 'bi-house'],
+        ['label' => 'Users', 'href' => route('users.index')],
+        ['label' => $user->name, 'current' => true],
+    ]"
+    truncate
+    schema
+/>
+```
+
+Supported item keys:
+
+- `label` — visible text, escaped by default.
+- `href` — link target; empty values render as text.
+- `current` — marks the page item with `aria-current="page"`.
+- `disabled` — renders text with `aria-disabled="true"` and no link.
+- `separator` — renders a non-interactive visual separator.
+- `iconName` — renders a Blade Icons icon, for example `bi-house`.
+- `icon` — accepts plain text or trusted `HtmlString`; plain strings are escaped.
+- `iconHtml` — explicit trusted HTML escape hatch for package-controlled icon markup.
+
+For custom markup, provide the list items yourself:
+
+```blade
+<x-daisy::ui.navigation.breadcrumbs>
+    <li><a href="{{ route('dashboard') }}">Dashboard</a></li>
+    <li><span aria-current="page">{{ $pageTitle }}</span></li>
+</x-daisy::ui.navigation.breadcrumbs>
+```
+
+## Laravel-aware component conveniences
+
+The core layout, form, feedback, and action components expose small Laravel-friendly props so host apps do not have to repeat common wiring.
+
+```blade
+<x-daisy::layout.app
+    title="Dashboard"
+    body-class="app-shell"
+    :load-default-font="false"
+>
+    <x-daisy::ui.feedback.alert color="success" session-key="status" dismissible />
+
+    <x-daisy::ui.partials.form-field name="email" label="Email" hint="Used for login">
+        <x-daisy::ui.inputs.input
+            name="email"
+            :error="$errors->first('email')"
+        />
+    </x-daisy::ui.partials.form-field>
+
+    <x-daisy::ui.inputs.select
+        name="role"
+        :value="$user->role"
+        :options="[
+            ['value' => 'user', 'label' => 'User'],
+            ['value' => 'admin', 'label' => 'Administrator'],
+        ]"
+    />
+
+    <x-daisy::ui.inputs.button icon-name="bi-check" loading>
+        Save
+    </x-daisy::ui.inputs.button>
+</x-daisy::layout.app>
+```
+
+Useful defaults:
+
+- `layout.app` accepts `htmlClass`, `bodyClass`, `fontUrl`, and `loadDefaultFont`.
+- `layout.navbar-sidebar-layout` and `layout.sidebar-layout` accept `showThemeController`, `themes`, and `themeLabel`.
+- `input` and `select` accept `name`, `id`, `value`, `bindOld`, `error`, and accessibility attributes.
+- `alert` can render a `sessionKey`, validation errors via `showErrors`, automatic roles, and a dismiss button.
+- `table` accepts `toolbar` and `actions` slots for page-level controls.
+- `crud-layout` and `crud-section` provide `header`, `aside`, `headerActions`, and aligned `actions` slots.
+- `modal` supports `header`, `footer`, `actions`, `closeLabel`, and labelled dialog markup.
+
 ## Security
 
 - The package ships reusable library UI only; sanitization of user content remains the host application’s responsibility.
@@ -268,8 +348,14 @@ Supported public props:
 - `pinCols`
 - `emptyLabel`
 - `loadingLabel`
+- `errorLabel`
 - `containerClass`
 - `tableClass`
+
+Named slots:
+
+- `toolbar` replaces the default search area with host-owned controls.
+- `actions` adds page-level controls before filters and pagination controls, for example a Create button.
 
 Column definition shape:
 
@@ -361,6 +447,25 @@ Column definition shape:
 />
 ```
 
+Add page-level controls without forking the table:
+
+```blade
+<x-daisy::ui.data-display.table
+    :columns="$columns"
+    :rows="$users"
+>
+    <x-slot:toolbar>
+        <x-daisy::ui.inputs.input name="q" placeholder="Search users" />
+    </x-slot:toolbar>
+
+    <x-slot:actions>
+        <x-daisy::ui.inputs.button tag="a" :href="route('users.create')" icon-name="bi-plus">
+            New user
+        </x-daisy::ui.inputs.button>
+    </x-slot:actions>
+</x-daisy::ui.data-display.table>
+```
+
 ### Example: Spatie Query Builder backend
 
 ```php
@@ -378,6 +483,8 @@ QueryBuilder::for(User::query())
     ->paginate(request('page.size', 25))
     ->appends(request()->query());
 ```
+
+For Laravel resources, return the table keys directly in `toArray()` or map them before passing rows to the component. Keep HTML values opt-in with the column `html` flag.
 
 ### Server contract
 

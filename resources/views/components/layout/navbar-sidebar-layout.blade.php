@@ -21,6 +21,9 @@
     'iconPrefix' => 'bi',
     // Content container
     'container' => 'p-6',
+    'showThemeController' => true,
+    'themes' => ['light', 'dark', 'cupcake', 'bumblebee', 'emerald', 'corporate', 'synthwave', 'retro', 'cyberpunk', 'valentine', 'halloween', 'garden', 'forest', 'aqua', 'lofi', 'pastel', 'fantasy', 'wireframe', 'black', 'luxury', 'dracula', 'cmyk', 'autumn', 'business', 'acid', 'lemonade', 'night', 'coffee', 'winter'],
+    'themeLabel' => 'Theme',
 ])
 
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="false">
@@ -37,12 +40,14 @@
                 {{ $nav ?? '' }}
             </x-slot:center>
             <x-slot:end>
-                <x-daisy::ui.advanced.theme-controller 
-                    variant="dropdown" 
-                    :themes="['light', 'dark', 'cupcake', 'bumblebee', 'emerald', 'corporate', 'synthwave', 'retro', 'cyberpunk', 'valentine', 'halloween', 'garden', 'forest', 'aqua', 'lofi', 'pastel', 'fantasy', 'wireframe', 'black', 'luxury', 'dracula', 'cmyk', 'autumn', 'business', 'acid', 'lemonade', 'night', 'coffee', 'winter']"
-                    label="Theme"
-                    size="sm"
-                />
+                @if($showThemeController)
+                    <x-daisy::ui.advanced.theme-controller
+                        variant="dropdown"
+                        :themes="$themes"
+                        :label="$themeLabel"
+                        size="sm"
+                    />
+                @endif
                 {{ $actions ?? '' }}
             </x-slot:end>
         </x-daisy::ui.navigation.navbar>
@@ -65,54 +70,57 @@
             :iconPrefix="$iconPrefix"
             :container="$container"
             :hasNavbar="true"
+            :showThemeController="$showThemeController"
+            :themes="$themes"
+            :themeLabel="$themeLabel"
         >
             {{ $slot }}
         </x-daisy::layout.sidebar-layout>
     </div>
 
-    @push('scripts')
-    <script>
-        (function() {
-            const THEME_KEY = 'daisy-theme';
-            const htmlEl = document.documentElement;
-            const controllers = () => Array.from(document.querySelectorAll('.theme-controller'));
+    @if($showThemeController)
+        @push('scripts')
+        <script>
+            (function() {
+                const THEME_KEY = 'daisy-theme';
+                const htmlEl = document.documentElement;
+                const controllers = () => Array.from(document.querySelectorAll('.theme-controller'));
 
-            function applyTheme(theme) {
-                if (!theme) return;
-                htmlEl.setAttribute('data-theme', theme);
-                try { localStorage.setItem(THEME_KEY, theme); } catch (_) {}
-                controllers().forEach((el) => {
-                    if (el.type === 'radio') {
-                        el.checked = (el.value === theme);
+                function applyTheme(theme) {
+                    if (!theme) return;
+                    htmlEl.setAttribute('data-theme', theme);
+                    try { localStorage.setItem(THEME_KEY, theme); } catch (_) {}
+                    controllers().forEach((el) => {
+                        if (el.type === 'radio') {
+                            el.checked = (el.value === theme);
+                        }
+                    });
+                }
+
+                function readSavedTheme() {
+                    try { return localStorage.getItem(THEME_KEY); } catch (_) { return null; }
+                }
+
+                function init() {
+                    const saved = readSavedTheme();
+                    const current = saved || htmlEl.getAttribute('data-theme') || 'light';
+                    applyTheme(current);
+                }
+
+                document.addEventListener('change', (e) => {
+                    const t = e.target;
+                    if (t && t.classList && t.classList.contains('theme-controller')) {
+                        applyTheme(t.value);
                     }
                 });
-            }
 
-            function readSavedTheme() {
-                try { return localStorage.getItem(THEME_KEY); } catch (_) { return null; }
-            }
-
-            function init() {
-                const saved = readSavedTheme();
-                const current = saved || htmlEl.getAttribute('data-theme') || 'light';
-                applyTheme(current);
-            }
-
-            document.addEventListener('change', (e) => {
-                const t = e.target;
-                if (t && t.classList && t.classList.contains('theme-controller')) {
-                    applyTheme(t.value);
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', init);
+                } else {
+                    init();
                 }
-            });
-
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', init);
-            } else {
-                init();
-            }
-        })();
-    </script>
-    @endpush
+            })();
+        </script>
+        @endpush
+    @endif
 </x-daisy::layout.app>
-
-

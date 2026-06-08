@@ -112,6 +112,10 @@
         static fn (array $column) => $column['key'] !== ''
     ));
 
+    if (is_array($columns) && $columns !== [] && $resolvedColumns === []) {
+        throw new InvalidArgumentException('The table component requires at least one column with a non-empty key.');
+    }
+
     $columnFilters = collect($resolvedColumns)
         ->filter(fn (array $column) => $column['filterable'] && is_array($column['filter']))
         ->map(fn (array $column) => [
@@ -222,7 +226,11 @@
     class="{{ $wrapperClasses }}"
 >
     <div class="daisy-table-toolbar flex flex-wrap items-center justify-between gap-3">
-        @if($search)
+        @isset($toolbar)
+            <div class="flex flex-wrap items-center gap-3">
+                {{ $toolbar }}
+            </div>
+        @elseif($search)
             <label class="input input-sm flex w-full max-w-sm items-center gap-2">
                 <span class="text-base-content/70">{{ __('daisy::common.search') }}</span>
                 <input
@@ -237,6 +245,10 @@
         @endif
 
         <div class="flex flex-wrap items-center gap-3">
+            @isset($actions)
+                {{ $actions }}
+            @endisset
+
             @foreach($resolvedFilters as $filter)
                 @if($filter['type'] === 'text')
                     <label class="input input-sm flex items-center gap-2">

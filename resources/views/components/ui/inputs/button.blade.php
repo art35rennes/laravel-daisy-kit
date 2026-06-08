@@ -14,6 +14,8 @@
     'tag' => 'button',    // button | a
     'href' => null,       // URL pour les liens
     'target' => null,     // _blank, _self, etc.
+    'iconName' => null,
+    'iconPosition' => 'left', // left | right
 ])
 
 @php
@@ -70,22 +72,44 @@
     if ($noAnimation) $classes .= ' no-animation';
     if ($active) $classes .= ' btn-active';
     if ($disabled) $classes .= ' btn-disabled';
+
+    $resolvedIconPosition = $iconPosition === 'right' ? 'right' : 'left';
 @endphp
 
 @if($tag === 'a')
     <a 
         @if($href) href="{{ $href }}" @endif
         @if($target) target="{{ $target }}" @endif
+        @if($loading) aria-busy="true" @endif
+        @if($disabled) aria-disabled="true" @endif
         {{ $attributes->merge(['class' => $classes]) }}
     >
-        @isset($icon)
-            <span class="shrink-0">
-                {{ $icon }}
-            </span>
-        @endisset
+        @if($iconName && $resolvedIconPosition === 'left')
+            <x-icon :name="$iconName" class="w-4 h-4 shrink-0" />
+        @endif
+
+        @if($resolvedIconPosition === 'left')
+            @isset($icon)
+                <span class="shrink-0">
+                    {{ $icon }}
+                </span>
+            @endisset
+        @endif
 
         @if(trim($slot) !== '')
             <span>{{ $slot }}</span>
+        @endif
+
+        @if($iconName && $resolvedIconPosition === 'right')
+            <x-icon :name="$iconName" class="w-4 h-4 shrink-0" />
+        @endif
+
+        @if($resolvedIconPosition === 'right')
+            @isset($icon)
+                <span class="shrink-0">
+                    {{ $icon }}
+                </span>
+            @endisset
         @endif
 
         @isset($iconRight)
@@ -95,15 +119,33 @@
         @endisset
     </a>
 @else
-    <button type="{{ $type }}" @disabled($disabled) {{ $attributes->merge(['class' => $classes]) }}>
-        @isset($icon)
-            <span class="shrink-0">
-                {{ $icon }}
-            </span>
-        @endisset
+    <button type="{{ $type }}" @disabled($disabled) @if($loading) aria-busy="true" @endif {{ $attributes->merge(['class' => $classes]) }}>
+        @if($iconName && $resolvedIconPosition === 'left')
+            <x-icon :name="$iconName" class="w-4 h-4 shrink-0" />
+        @endif
+
+        @if($resolvedIconPosition === 'left')
+            @isset($icon)
+                <span class="shrink-0">
+                    {{ $icon }}
+                </span>
+            @endisset
+        @endif
 
         @if(trim($slot) !== '')
             <span>{{ $slot }}</span>
+        @endif
+
+        @if($iconName && $resolvedIconPosition === 'right')
+            <x-icon :name="$iconName" class="w-4 h-4 shrink-0" />
+        @endif
+
+        @if($resolvedIconPosition === 'right')
+            @isset($icon)
+                <span class="shrink-0">
+                    {{ $icon }}
+                </span>
+            @endisset
         @endif
 
         @isset($iconRight)
@@ -113,5 +155,4 @@
         @endisset
     </button>
 @endif
-
 

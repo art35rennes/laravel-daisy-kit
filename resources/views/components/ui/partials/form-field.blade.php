@@ -10,12 +10,14 @@
     'as' => 'div',           // Wrapper tag
     'full' => true,          // Apply w-full on wrapper
     'class' => '',           // Extra classes on wrapper
+    'id' => null,            // Explicit control id; defaults from name
 ])
 
 @php
     // Determine final wrapper classes.
     $wrapperClasses = trim(($full ? 'w-full ' : '').'flex flex-col gap-1 '.$class);
-    $labelFor = $for === '__name' ? $name : $for;
+    $fieldId = $id ?: ($name ? preg_replace('/[^A-Za-z0-9_-]+/', '-', trim((string) $name, '[]')) : null);
+    $labelFor = $for === '__name' ? $fieldId : $for;
 
     // Resolve message and state from Laravel validation bag if name is provided.
     $laravelErrors = $errors ?? new \Illuminate\Support\ViewErrorBag();
@@ -38,6 +40,11 @@
     $errorClassInput = $hasError ? 'input-error' : '';
     $errorClassSelect = $hasError ? 'select-error' : '';
     $errorClassTextarea = $hasError ? 'textarea-error' : '';
+    $hintId = $fieldId ? $fieldId.'-hint' : null;
+    $errorId = $fieldId ? $fieldId.'-error' : null;
+    $describedBy = collect([$hint || isset($hintSlot) ? $hintId : null, $errorMessage ? $errorId : null])
+        ->filter()
+        ->implode(' ');
 @endphp
 
 <{{ $as }} {{ $attributes->merge(['class' => $wrapperClasses]) }}>
@@ -64,7 +71,7 @@
     {{ $slot }}
 
     @if(isset($hintSlot) || $hint)
-        <p class="mt-1 text-sm text-base-content/70">
+        <p @if($hintId) id="{{ $hintId }}" @endif class="mt-1 text-sm text-base-content/70">
             @isset($hintSlot)
                 {{ $hintSlot }}
             @else
@@ -75,7 +82,14 @@
 
     {{-- Validation message using validator component --}}
     @if($errorMessage)
-        <x-daisy::ui.advanced.validator state="error" :message="$errorMessage" :full="false" as="div" class="mt-1" />
+        <x-daisy::ui.advanced.validator
+            state="error"
+            :message="$errorMessage"
+            :full="false"
+            as="div"
+            class="mt-1"
+            :id="$errorId"
+        />
     @endif
 </{{ $as }}>
 

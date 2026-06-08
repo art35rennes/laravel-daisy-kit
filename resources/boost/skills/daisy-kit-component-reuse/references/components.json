@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-06-03T07:11:59+00:00",
+    "generated_at": "2026-06-08T14:59:37+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
@@ -252,7 +252,11 @@
             "props": [
                 "title",
                 "container",
-                "theme"
+                "theme",
+                "htmlClass",
+                "bodyClass",
+                "fontUrl",
+                "loadDefaultFont"
             ]
         },
         {
@@ -294,7 +298,10 @@
                 "end",
                 "menuIcon",
                 "iconPrefix",
-                "container"
+                "container",
+                "showThemeController",
+                "themes",
+                "themeLabel"
             ]
         },
         {
@@ -318,7 +325,10 @@
                 "menuIcon",
                 "iconPrefix",
                 "container",
-                "hasNavbar"
+                "hasNavbar",
+                "showThemeController",
+                "themes",
+                "themeLabel"
             ]
         },
         {
@@ -1386,7 +1396,12 @@
                 "iconInHeading",
                 "vertical",
                 "horizontal",
-                "horizontalAt"
+                "horizontalAt",
+                "role",
+                "sessionKey",
+                "showErrors",
+                "dismissible",
+                "closeLabel"
             ]
         },
         {
@@ -1484,7 +1499,9 @@
                 "disabled",
                 "tag",
                 "href",
-                "target"
+                "target",
+                "iconName",
+                "iconPosition"
             ]
         },
         {
@@ -1580,7 +1597,13 @@
                 "inputPlaceholder",
                 "clearIncomplete",
                 "customMask",
-                "customValidator"
+                "customValidator",
+                "name",
+                "id",
+                "value",
+                "bindOld",
+                "error",
+                "describedBy"
             ]
         },
         {
@@ -1635,7 +1658,14 @@
                 "default",
                 "fetchOnEmpty",
                 "placeholder",
-                "module"
+                "module",
+                "name",
+                "id",
+                "value",
+                "bindOld",
+                "error",
+                "describedBy",
+                "options"
             ]
         },
         {
@@ -1745,7 +1775,8 @@
                 "container",
                 "gap",
                 "categoryWidth",
-                "contentWidth"
+                "contentWidth",
+                "actionsAlignment"
             ]
         },
         {
@@ -1761,7 +1792,9 @@
                 "categoryWidth",
                 "contentWidth",
                 "gap",
-                "borderTop"
+                "borderTop",
+                "stickyAside",
+                "actionsAlignment"
             ]
         },
         {
@@ -2050,11 +2083,12 @@
             "relative_path": "resources/views/components/ui/navigation/breadcrumbs.blade.php",
             "props": [
                 "items",
-                "label",
-                "href",
-                "icon",
                 "size",
-                "as"
+                "as",
+                "label",
+                "truncate",
+                "ellipsisLabel",
+                "schema"
             ]
         },
         {
@@ -2322,7 +2356,9 @@
                 "responsive",
                 "size",
                 "scrollable",
-                "teleport"
+                "teleport",
+                "closeLabel",
+                "initialFocus"
             ]
         },
         {
@@ -2395,7 +2431,8 @@
                 "srOnly",
                 "as",
                 "full",
-                "class"
+                "class",
+                "id"
             ]
         },
         {

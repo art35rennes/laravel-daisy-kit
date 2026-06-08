@@ -17,6 +17,12 @@
     'clearIncomplete' => null,     // bool → data-clear-incomplete
     'customMask' => null,          // liste de tokens personnalisés (ex: "#,%,@") → data-custom-mask
     'customValidator' => null,     // liste de regex correspondantes → data-custom-validator
+    'name' => null,
+    'id' => null,
+    'value' => null,
+    'bindOld' => true,
+    'error' => null,
+    'describedBy' => null,
 ])
 
 @php
@@ -38,9 +44,27 @@
         $classes .= ' input-'.$color;
     }
 
+    $sharedErrors = view()->shared('errors');
+    $localErrors = $errors ?? null;
+    $laravelErrors = $localErrors instanceof \Illuminate\Support\ViewErrorBag && $localErrors->any()
+        ? $localErrors
+        : ($sharedErrors instanceof \Illuminate\Support\ViewErrorBag ? $sharedErrors : new \Illuminate\Support\ViewErrorBag());
+    $errorMessage = $error ?? ($name && method_exists($laravelErrors, 'first') ? $laravelErrors->first($name) : null);
+    $hasError = filled($errorMessage);
+
+    if ($hasError) {
+        $classes .= ' input-error';
+    }
+
     if (isset($sizeMap[$size])) {
         $classes .= ' '.$sizeMap[$size];
     }
+
+    $inputId = $id ?: ($name ? preg_replace('/[^A-Za-z0-9_-]+/', '-', trim((string) $name, '[]')) : null);
+    $canBindValue = ! in_array($type, ['password', 'file'], true);
+    $oldInput = $name ? data_get(session()->get('_old_input', []), $name, old($name, $value)) : $value;
+    $inputValue = $canBindValue ? ($bindOld && $name ? $oldInput : $value) : null;
+    $resolvedDescribedBy = $describedBy ?: ($hasError && $inputId ? $inputId.'-error' : null);
 
     // Mapping des props → data-attributes pour l'init JS (obfuscation / mask)
     $dataAttrs = [];
@@ -62,8 +86,17 @@
         if (!is_null($customMask)) $dataAttrs['data-custom-mask'] = (string) $customMask;
         if (!is_null($customValidator)) $dataAttrs['data-custom-validator'] = (string) $customValidator;
     }
+
+    $inputAttributes = $attributes
+        ->merge(['class' => $classes])
+        ->merge($dataAttrs)
+        ->merge(array_filter([
+            'id' => $inputId,
+            'name' => $name,
+            'value' => $inputValue,
+            'aria-invalid' => $hasError ? 'true' : null,
+            'aria-describedby' => $resolvedDescribedBy,
+        ], static fn ($value) => ! is_null($value)));
 @endphp
 
-<input type="{{ $type }}" @disabled($disabled) {{ $attributes->merge(['class' => $classes])->merge($dataAttrs) }} />
-
-
+<input type="{{ $type }}" @disabled($disabled) {{ $inputAttributes }} />

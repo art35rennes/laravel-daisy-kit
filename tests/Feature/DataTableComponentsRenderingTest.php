@@ -134,6 +134,19 @@ it('requires server mode when a server adapter is provided', function () {
     expect($render)->toThrow(ViewException::class);
 });
 
+it('requires at least one valid column key', function () {
+    $render = fn () => View::make('daisy::components.ui.data-display.table', [
+        'columns' => [
+            ['label' => 'Missing key'],
+        ],
+        'rows' => [
+            ['name' => 'Jane'],
+        ],
+    ])->render();
+
+    expect($render)->toThrow(ViewException::class, 'at least one column with a non-empty key');
+});
+
 it('keeps the legacy datatable alias only as an explicit migration error', function () {
     $render = fn () => Blade::render('<x-daisy::ui.data-display.datatable />');
 

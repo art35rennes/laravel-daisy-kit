@@ -11,6 +11,8 @@
     'gap' => 8,
     // Bordure top optionnelle pour séparer visuellement
     'borderTop' => false,
+    'stickyAside' => false,
+    'actionsAlignment' => 'end', // start | center | end | between
 ])
 
 {{--
@@ -103,29 +105,59 @@
     $contentClass = 'space-y-4';
     $categoryClass .= ' '.($categorySpans[$bpKey] ?? $categoryMap['1/3'][$bpKey]);
     $contentClass .= ' '.($contentSpans[$bpKey] ?? $contentMap['2/3'][$bpKey]);
+    $stickyMap = [
+        'sm' => 'sm:sticky sm:top-6',
+        'md' => 'md:sticky md:top-6',
+        'lg' => 'lg:sticky lg:top-6',
+        'xl' => 'xl:sticky xl:top-6',
+        '2xl' => '2xl:sticky 2xl:top-6',
+    ];
+    $asideInnerClass = trim(($stickyAside ? ($stickyMap[$bpKey] ?? $stickyMap['lg']).' ' : '').'space-y-1');
+    $actionsAlignmentClass = match ($actionsAlignment) {
+        'start' => 'justify-start',
+        'center' => 'justify-center',
+        'between' => 'justify-between',
+        default => 'justify-end',
+    };
 @endphp
 
 <section {{ $attributes->merge(['id' => $id, 'class' => $root]) }}>
     <div class="{{ $categoryClass }}">
-        @if($title)
-            <h2 class="text-base font-medium">{{ $title }}</h2>
-        @endif
-        @if($description)
-            <p class="text-sm text-base-content/70">
-                {{ $description }}
-            </p>
-        @endif
+        <div class="{{ $asideInnerClass }}">
+            <div class="flex items-start justify-between gap-3">
+                <div class="space-y-1">
+                    @if($title)
+                        <h2 class="text-base font-medium">{{ $title }}</h2>
+                    @endif
+                    @if($description)
+                        <p class="text-sm text-base-content/70">
+                            {{ $description }}
+                        </p>
+                    @endif
+                </div>
+
+                @isset($headerActions)
+                    <div class="shrink-0">
+                        {{ $headerActions }}
+                    </div>
+                @endisset
+            </div>
+
+            @isset($aside)
+                <div>
+                    {{ $aside }}
+                </div>
+            @endisset
+        </div>
     </div>
 
     <div class="{{ $contentClass }}">
         {{ $slot }}
 
         @isset($actions)
-            <div class="mt-4 flex items-center justify-end gap-3">
+            <div class="mt-4 flex items-center {{ $actionsAlignmentClass }} gap-3">
                 {{ $actions }}
             </div>
         @endisset
     </div>
 </section>
-
-

@@ -10,6 +10,7 @@
     // Props présentes pour compatibilité/évolutions (ratio appliqué par crud-section).
     'categoryWidth' => '1/3',
     'contentWidth' => '2/3',
+    'actionsAlignment' => 'end', // start | center | end | between
 ])
 
 {{--
@@ -30,18 +31,29 @@
     // Normalisation du gap vers une classe Tailwind space-y-*.
     $gapValue = is_numeric($gap) ? (int) $gap : 12;
     $stackClasses = 'space-y-'.$gapValue;
+    $actionsAlignmentClass = match ($actionsAlignment) {
+        'start' => 'justify-start',
+        'center' => 'justify-center',
+        'between' => 'justify-between',
+        default => 'justify-end',
+    };
 @endphp
 
 {{-- Conteneur principal : centré avec largeur max et espacement vertical --}}
 <div {{ $attributes->merge(['class' => trim($container.' '.$stackClasses)]) }}>
+    @isset($header)
+        <div class="mb-8">
+            {{ $header }}
+        </div>
+    @endisset
+
     {{ $slot }}
 
     {{-- Actions globales : slot pour les boutons d'action en bas de page (ex: Save, Cancel) --}}
     @if (isset($actions))
-        <div class="mt-8 flex items-center justify-end gap-3">
+        <div class="mt-8 flex items-center {{ $actionsAlignmentClass }} gap-3">
             {{ $actions }}
         </div>
     @endif
 </div>
-
 

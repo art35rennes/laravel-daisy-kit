@@ -12,6 +12,11 @@
     'vertical' => null,       // bool|null
     'horizontal' => null,     // bool|null
     'horizontalAt' => null,   // ex: 'sm' → alert-vertical sm:alert-horizontal
+    'role' => null,
+    'sessionKey' => null,
+    'showErrors' => false,
+    'dismissible' => false,
+    'closeLabel' => 'Close alert',
 ])
 
 @php
@@ -40,7 +45,15 @@
         $classes .= ' items-center';
     }
 
+    $resolvedRole = $role ?: (in_array($colorKey, ['error', 'warning'], true) ? 'alert' : 'status');
+
     $headingText = $heading ?? $title;
+    $sessionMessage = $sessionKey ? session($sessionKey) : null;
+    $laravelErrors = $errors ?? new \Illuminate\Support\ViewErrorBag();
+    $errorMessages = $showErrors && method_exists($laravelErrors, 'any') && $laravelErrors->any()
+        ? $laravelErrors->all()
+        : [];
+    $bodyText = $text ?? $sessionMessage;
     
     // Gestion de l'icône pour éviter l'erreur BladeUI\Icons\Svg
     $iconHtml = null;
@@ -57,7 +70,7 @@
     }
 @endphp
 
-<div {{ $attributes->merge(['role' => 'alert', 'class' => $classes]) }}>
+<div {{ $attributes->merge(['role' => $resolvedRole, 'class' => $classes]) }}>
     @if($iconHtml && !$iconInHeading)
         <span class="shrink-0">{!! $iconHtml !!}</span>
     @endif
@@ -70,7 +83,19 @@
                 <span>{{ $headingText }}</span>
             </h3>
         @endif
-        <div class="text-sm">{!! $text !== null ? e($text) : $slot !!}</div>
+        <div class="text-sm">
+            @if($errorMessages !== [])
+                <ul class="list-disc list-inside">
+                    @foreach($errorMessages as $errorMessage)
+                        <li>{{ $errorMessage }}</li>
+                    @endforeach
+                </ul>
+            @elseif($bodyText !== null)
+                {{ $bodyText }}
+            @else
+                {{ $slot }}
+            @endif
+        </div>
     </div>
     @isset($actions)
         <div class="flex items-center gap-2 flex-wrap justify-start sm:justify-end">{{ $actions }}</div>
@@ -78,4 +103,9 @@
     @isset($controls)
         <div class="ms-2">{{ $controls }}</div>
     @endisset
+    @if($dismissible)
+        <button type="button" class="btn btn-ghost btn-xs btn-square ms-2" aria-label="{{ $closeLabel }}" onclick="this.closest('[role]')?.remove()">
+            <x-icon name="bi-x" class="w-4 h-4" />
+        </button>
+    @endif
 </div>
