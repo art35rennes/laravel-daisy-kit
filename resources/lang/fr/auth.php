@@ -42,6 +42,7 @@ return [
     'two_factor_description' => 'Entrez le code à 6 chiffres généré par votre application d\'authentification.',
     'two_factor_instructions' => 'Ouvrez votre application d\'authentification et entrez le code à 6 chiffres affiché.',
     'two_factor_code' => 'Code d\'authentification',
+    'two_factor_recovery_code' => 'Code de récupération',
     'two_factor_recovery' => 'Utiliser un code de récupération',
     'two_factor_logout' => 'Se déconnecter',
     'verify' => 'Vérifier',

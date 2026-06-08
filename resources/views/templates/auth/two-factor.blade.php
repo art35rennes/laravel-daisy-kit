@@ -9,9 +9,32 @@
     // Options
     'showRecovery' => true,
     'showLogout' => true,
+    'useRecoveryCode' => false,
+    'submitButtonText' => __('daisy::auth.verify'),
 ])
 
 @php
+    $normalizeUrl = function($url, $fallback = '#') {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return $fallback;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return $fallback;
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : $fallback;
+    };
+
+    $action = $normalizeUrl($action);
+    $recoveryUrl = $normalizeUrl($recoveryUrl);
+    $logoutUrl = $normalizeUrl($logoutUrl);
     $formMethod = strtoupper($method);
     $htmlMethod = $formMethod === 'GET' ? 'GET' : 'POST';
 @endphp
@@ -45,28 +68,39 @@
                     @method($formMethod)
                 @endif
 
-                {{-- Two-factor code --}}
-                <div class="space-y-2">
-                    <label class="label flex justify-between gap-2">
-                        <span class="text-sm font-medium">@lang('daisy::auth.two_factor_code')</span>
-                        @if($errors->has('code'))
-                            <span class="text-sm text-error">{{ $errors->first('code') }}</span>
-                        @endif
-                    </label>
-                    <div data-module="otp-code" data-length="6" data-numeric-only="true" data-hidden-input-name="code" class="flex justify-center gap-3">
-                        @for($i = 0; $i < 6; $i++)
-                            <x-daisy::ui.inputs.input
-                                type="text"
-                                data-otp-digit
-                                class="w-14 h-16 text-center text-3xl font-mono font-semibold {{ $errors->has('code') ? 'input-error' : '' }}"
-                                aria-label="@lang('daisy::auth.two_factor_code') {{ $i + 1 }}"
-                            />
-                        @endfor
+                @if($useRecoveryCode)
+                    <x-daisy::ui.partials.form-field name="recovery_code" :label="__('daisy::auth.two_factor_recovery_code')" :required="true">
+                        <x-daisy::ui.inputs.input
+                            name="recovery_code"
+                            type="text"
+                            autocomplete="one-time-code"
+                            :class="$errors->has('recovery_code') ? 'input-error' : ''"
+                        />
+                    </x-daisy::ui.partials.form-field>
+                @else
+                    {{-- Two-factor code --}}
+                    <div class="space-y-2">
+                        <label class="label flex justify-between gap-2">
+                            <span class="text-sm font-medium">@lang('daisy::auth.two_factor_code')</span>
+                            @if($errors->has('code'))
+                                <span class="text-sm text-error">{{ $errors->first('code') }}</span>
+                            @endif
+                        </label>
+                        <div data-module="otp-code" data-length="6" data-numeric-only="true" data-hidden-input-name="code" class="flex justify-center gap-3">
+                            @for($i = 0; $i < 6; $i++)
+                                <x-daisy::ui.inputs.input
+                                    type="text"
+                                    data-otp-digit
+                                    class="w-14 h-16 text-center text-3xl font-mono font-semibold {{ $errors->has('code') ? 'input-error' : '' }}"
+                                    aria-label="@lang('daisy::auth.two_factor_code') {{ $i + 1 }}"
+                                />
+                            @endfor
+                        </div>
                     </div>
-                </div>
+                @endif
 
                 <x-daisy::ui.inputs.button type="submit" variant="solid" class="w-full">
-                    @lang('daisy::auth.verify')
+                    {{ __($submitButtonText) }}
                 </x-daisy::ui.inputs.button>
             </form>
 

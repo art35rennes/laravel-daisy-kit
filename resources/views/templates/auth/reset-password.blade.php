@@ -12,6 +12,26 @@
 ])
 
 @php
+    $normalizeUrl = function($url, $fallback = '#') {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return $fallback;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return $fallback;
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : $fallback;
+    };
+
+    $action = $normalizeUrl($action);
+    $backToLoginUrl = $normalizeUrl($backToLoginUrl);
     $formMethod = strtoupper($method);
     $htmlMethod = $formMethod === 'GET' ? 'GET' : 'POST';
 @endphp

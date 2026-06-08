@@ -111,13 +111,26 @@ it('omits csrf tokens for get auth template methods', function () {
 });
 
 it('renders verify-email template', function () {
-    $html = View::make('daisy::templates.auth.verify-email')->render();
+    $html = View::make('daisy::templates.auth.verify-email', [
+        'resendUrl' => '/email/verification-notification',
+    ])->render();
 
     expect($html)
         ->toContain('Verify your email')
         ->toContain(__('daisy::auth.verify_email'))
         ->not->toContain('daisy::auth.verify_email')
         ->toContain(__('daisy::auth.resend_verification'));
+});
+
+it('renders verify-email template without resend form when disabled', function () {
+    $html = View::make('daisy::templates.auth.verify-email', [
+        'showResend' => false,
+    ])->render();
+
+    expect($html)
+        ->toContain(__('daisy::auth.verify_email'))
+        ->not->toContain(__('daisy::auth.resend_verification'))
+        ->not->toContain('<form action="#" method="POST">');
 });
 
 it('renders resend-verification template', function () {
@@ -167,6 +180,18 @@ it('renders register-simple template without password confirmation', function ()
         ->not->toContain('password_confirmation');
 });
 
+it('renders register-simple template without name fields', function () {
+    $html = View::make('daisy::templates.auth.register-simple', [
+        'showName' => false,
+        'showFirstName' => false,
+    ])->render();
+
+    expect($html)
+        ->not->toContain('name="name"')
+        ->not->toContain('name="first_name"')
+        ->toContain('name="email"');
+});
+
 it('renders register-simple template without terms acceptance', function () {
     $html = View::make('daisy::templates.auth.register-simple', [
         'acceptTerms' => false,
@@ -186,6 +211,43 @@ it('renders registration policy links with blank-target rel protection', functio
         ->toContain('target="_blank" rel="noopener noreferrer"')
         ->toContain('https://example.com/terms')
         ->toContain('https://example.com/privacy');
+});
+
+it('does not render unsafe auth form or navigation URLs', function () {
+    $html = View::make('daisy::templates.auth.login-simple', [
+        'action' => 'javascript:alert(1)',
+        'forgotPasswordUrl' => 'javascript:alert(2)',
+        'signupUrl' => 'javascript:alert(3)',
+        'showSignup' => true,
+    ])->render();
+
+    expect($html)
+        ->not->toContain('action="javascript:alert(1)"')
+        ->not->toContain('href="javascript:alert(2)"')
+        ->not->toContain('href="javascript:alert(3)"');
+});
+
+it('does not render unsafe auth policy links', function () {
+    $html = View::make('daisy::templates.auth.register-simple', [
+        'termsUrl' => 'javascript:alert(1)',
+        'privacyUrl' => 'javascript:alert(2)',
+    ])->render();
+
+    expect($html)
+        ->not->toContain('href="javascript:alert(1)"')
+        ->not->toContain('href="javascript:alert(2)"')
+        ->not->toContain('target="_blank" rel="noopener noreferrer"');
+});
+
+it('does not render unsafe two-factor recovery or logout URLs', function () {
+    $html = View::make('daisy::templates.auth.two-factor', [
+        'recoveryUrl' => 'javascript:alert(1)',
+        'logoutUrl' => 'javascript:alert(2)',
+    ])->render();
+
+    expect($html)
+        ->not->toContain('href="javascript:alert(1)"')
+        ->not->toContain('action="javascript:alert(2)"');
 });
 
 it('renders register-split template', function () {
@@ -221,6 +283,18 @@ it('renders register-split template with testimonial', function () {
         ->toContain('rating');
 });
 
+it('renders register-split template without name fields', function () {
+    $html = View::make('daisy::templates.auth.register-split', [
+        'showName' => false,
+        'showFirstName' => false,
+    ])->render();
+
+    expect($html)
+        ->not->toContain('name="name"')
+        ->not->toContain('name="first_name"')
+        ->toContain('name="email"');
+});
+
 it('renders two-factor template', function () {
     $html = View::make('daisy::templates.auth.two-factor')->render();
 
@@ -254,4 +328,15 @@ it('renders two-factor template without logout link', function () {
 
     expect($html)
         ->not->toContain(__('daisy::auth.two_factor_logout'));
+});
+
+it('renders two-factor template with recovery code mode', function () {
+    $html = View::make('daisy::templates.auth.two-factor', [
+        'useRecoveryCode' => true,
+    ])->render();
+
+    expect($html)
+        ->toContain('name="recovery_code"')
+        ->toContain(__('daisy::auth.two_factor_recovery_code'))
+        ->not->toContain('data-module="otp-code"');
 });

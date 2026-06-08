@@ -6,13 +6,38 @@
     'method' => 'POST',
     'loginUrl' => \Illuminate\Support\Facades\Route::has('login') ? route('login') : '#',
     // Validation
+    'showName' => true,
+    'showFirstName' => true,
     'passwordConfirmation' => true,
     'termsUrl' => null,
     'privacyUrl' => null,
     'acceptTerms' => true,
+    'submitButtonText' => __('daisy::auth.register'),
 ])
 
 @php
+    $normalizeUrl = function($url, $fallback = '#') {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return $fallback;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return $fallback;
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : $fallback;
+    };
+
+    $action = $normalizeUrl($action);
+    $loginUrl = $normalizeUrl($loginUrl);
+    $termsUrl = $normalizeUrl($termsUrl, null);
+    $privacyUrl = $normalizeUrl($privacyUrl, null);
     $formMethod = strtoupper($method);
     $htmlMethod = $formMethod === 'GET' ? 'GET' : 'POST';
 @endphp
@@ -49,29 +74,33 @@
                     @method($formMethod)
                 @endif
 
-                {{-- Name (optional) --}}
-                <x-daisy::ui.partials.form-field name="name" :label="__('daisy::auth.name')" :required="false">
-                    <x-daisy::ui.inputs.input
-                        name="name"
-                        type="text"
-                        :value="old('name')"
-                        autocomplete="name"
-                        placeholder="{{ __('daisy::auth.name_placeholder') }}"
-                        :class="$errors->has('name') ? 'input-error' : ''"
-                    />
-                </x-daisy::ui.partials.form-field>
+                @if($showName)
+                    {{-- Name --}}
+                    <x-daisy::ui.partials.form-field name="name" :label="__('daisy::auth.name')" :required="false">
+                        <x-daisy::ui.inputs.input
+                            name="name"
+                            type="text"
+                            :value="old('name')"
+                            autocomplete="name"
+                            placeholder="{{ __('daisy::auth.name_placeholder') }}"
+                            :class="$errors->has('name') ? 'input-error' : ''"
+                        />
+                    </x-daisy::ui.partials.form-field>
+                @endif
 
-                {{-- First name (optional) --}}
-                <x-daisy::ui.partials.form-field name="first_name" :label="__('daisy::auth.first_name')" :required="false">
-                    <x-daisy::ui.inputs.input
-                        name="first_name"
-                        type="text"
-                        :value="old('first_name')"
-                        autocomplete="given-name"
-                        placeholder="{{ __('daisy::auth.first_name_placeholder') }}"
-                        :class="$errors->has('first_name') ? 'input-error' : ''"
-                    />
-                </x-daisy::ui.partials.form-field>
+                @if($showFirstName)
+                    {{-- First name --}}
+                    <x-daisy::ui.partials.form-field name="first_name" :label="__('daisy::auth.first_name')" :required="false">
+                        <x-daisy::ui.inputs.input
+                            name="first_name"
+                            type="text"
+                            :value="old('first_name')"
+                            autocomplete="given-name"
+                            placeholder="{{ __('daisy::auth.first_name_placeholder') }}"
+                            :class="$errors->has('first_name') ? 'input-error' : ''"
+                        />
+                    </x-daisy::ui.partials.form-field>
+                @endif
 
                 {{-- Email --}}
                 <x-daisy::ui.partials.form-field name="email" :label="__('daisy::auth.email')" :required="true">
@@ -132,7 +161,7 @@
                 @endif
 
                 <x-daisy::ui.inputs.button type="submit" variant="solid" class="w-full">
-                    {{ __('daisy::auth.register') }}
+                    {{ __($submitButtonText) }}
                 </x-daisy::ui.inputs.button>
             </form>
 
