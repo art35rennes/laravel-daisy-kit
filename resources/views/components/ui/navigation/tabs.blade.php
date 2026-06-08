@@ -11,6 +11,7 @@
     // Mode radio + contenu juste après chaque tab
     'radioName' => null, // si fourni, rend <input type="radio" class="tab"> + <div class="tab-content"> pour chaque item
     'contentClass' => 'border-base-300 bg-base-100 p-6',
+    'errorBag' => null,
 ])
 
 @php
@@ -44,6 +45,10 @@
     if (!$generatedRadio && $radioName !== null) {
         $generatedRadio = uniqid('tabs_', false);
     }
+    $resolvedErrorBag = $errorBag instanceof \Illuminate\Support\ViewErrorBag
+        ? $errorBag
+        : (view()->shared('errors') instanceof \Illuminate\Support\ViewErrorBag ? view()->shared('errors') : new \Illuminate\Support\ViewErrorBag());
+    $errorLabel = __('daisy::components.tab_error');
 @endphp
 
 @if(!$isRadio)
@@ -51,19 +56,33 @@
     <div role="tablist" {{ $attributes->merge(['class' => $classes]) }}>
         @foreach($items as $tab)
             @php
+                if (data_get($tab, 'visible', true) === false) {
+                    continue;
+                }
                 // Extraction des propriétés de l'onglet.
-                $isActive = !empty($tab['active']);
-                $isDisabled = !empty($tab['disabled']);
-                $label = $tab['label'] ?? 'Tab';
-                $href = $tab['href'] ?? null;
+                $isActive = (bool) data_get($tab, 'active', false);
+                $isDisabled = (bool) data_get($tab, 'disabled', false);
+                $label = data_get($tab, 'label', __('daisy::components.tab'));
+                $href = data_get($tab, 'href');
+                $iconName = data_get($tab, 'iconName');
+                $errorKey = data_get($tab, 'errorKey');
+                $hasError = is_string($errorKey) && $resolvedErrorBag->has($errorKey);
                 // Construction des classes : tab de base + états (active, disabled).
-                $tabClasses = 'tab'.($isActive ? ' tab-active' : '').($isDisabled ? ' tab-disabled' : '');
+                $tabClasses = 'tab'.($isActive ? ' tab-active' : '').($isDisabled ? ' tab-disabled' : '').($hasError ? ' text-error' : '');
             @endphp
             {{-- Rendu conditionnel : lien si href fourni, sinon bouton --}}
             @if($href)
-                <a role="tab" href="{{ $href }}" class="{{ $tabClasses }}" aria-selected="{{ $isActive ? 'true' : 'false' }}">{!! $label !!}</a>
+                <a role="tab" href="{{ $href }}" class="{{ $tabClasses }}" aria-selected="{{ $isActive ? 'true' : 'false' }}">
+                    @if($iconName)<x-icon :name="$iconName" class="w-4 h-4" />@endif
+                    <span>{{ $label }}</span>
+                    @if($hasError)<span aria-hidden="true">•</span><span class="sr-only">{{ $errorLabel }}</span>@endif
+                </a>
             @else
-                <button role="tab" class="{{ $tabClasses }}" @disabled($isDisabled) aria-selected="{{ $isActive ? 'true' : 'false' }}">{!! $label !!}</button>
+                <button role="tab" class="{{ $tabClasses }}" @disabled($isDisabled) aria-selected="{{ $isActive ? 'true' : 'false' }}">
+                    @if($iconName)<x-icon :name="$iconName" class="w-4 h-4" />@endif
+                    <span>{{ $label }}</span>
+                    @if($hasError)<span aria-hidden="true">•</span><span class="sr-only">{{ $errorLabel }}</span>@endif
+                </button>
             @endif
         @endforeach
     </div>
@@ -72,13 +91,18 @@
     <div {{ $attributes->merge(['class' => $classes]) }}>
         @foreach($items as $index => $tab)
             @php
-                $label = $tab['label'] ?? 'Tab';
+                if (data_get($tab, 'visible', true) === false) {
+                    continue;
+                }
+                $label = data_get($tab, 'label', __('daisy::components.tab'));
                 // L'onglet est checked s'il est explicitement actif OU si c'est le premier (index 0).
-                $checked = array_key_exists('active', $tab) ? (bool) $tab['active'] : ($index === 0);
-                $isDisabled = !empty($tab['disabled']);
+                $checked = array_key_exists('active', $tab) ? (bool) data_get($tab, 'active') : ($index === 0);
+                $isDisabled = (bool) data_get($tab, 'disabled', false);
+                $errorKey = data_get($tab, 'errorKey');
+                $hasError = is_string($errorKey) && $resolvedErrorBag->has($errorKey);
             @endphp
             {{-- Input radio : contrôle l'affichage du contenu associé via CSS (pattern daisyUI) --}}
-            <input type="radio" name="{{ $generatedRadio }}" class="tab" aria-label="{{ $label }}" @checked($checked) @disabled($isDisabled) />
+            <input type="radio" name="{{ $generatedRadio }}" class="tab {{ $hasError ? 'text-error' : '' }}" aria-label="{{ $label }}" @checked($checked) @disabled($isDisabled) />
             {{-- Contenu de l'onglet : visible uniquement si le radio correspondant est checked --}}
             <div class="tab-content {{ $contentClass }}">{!! $tab['content'] ?? '' !!}</div>
         @endforeach

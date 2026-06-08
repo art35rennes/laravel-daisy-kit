@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-06-08T14:59:37+00:00",
+    "generated_at": "2026-06-08T16:46:32+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
@@ -1431,7 +1431,9 @@
                 "message",
                 "actionLabel",
                 "actionUrl",
-                "size"
+                "size",
+                "preset",
+                "iconName"
             ]
         },
         {
@@ -1514,7 +1516,14 @@
                 "size",
                 "checked",
                 "disabled",
-                "indeterminate"
+                "indeterminate",
+                "name",
+                "id",
+                "value",
+                "uncheckedValue",
+                "bindOld",
+                "error",
+                "describedBy"
             ]
         },
         {
@@ -1701,7 +1710,13 @@
                 "variant",
                 "color",
                 "disabled",
-                "rows"
+                "rows",
+                "name",
+                "id",
+                "value",
+                "bindOld",
+                "error",
+                "describedBy"
             ]
         },
         {
@@ -2166,7 +2181,8 @@
                 "responsive",
                 "mobileLabel",
                 "color",
-                "outline"
+                "outline",
+                "paginator"
             ]
         },
         {
@@ -2254,6 +2270,7 @@
                 "nextText",
                 "finishText",
                 "controlsClass",
+                "validateBeforeNext",
                 "module"
             ]
         },
@@ -2301,7 +2318,8 @@
                 "size",
                 "placement",
                 "radioName",
-                "contentClass"
+                "contentClass",
+                "errorBag"
             ]
         },
         {
@@ -2336,7 +2354,10 @@
                 "contentClass",
                 "menuClass",
                 "cardClass",
-                "cardBodyClass"
+                "cardBodyClass",
+                "id",
+                "triggerLabel",
+                "contentRole"
             ]
         },
         {

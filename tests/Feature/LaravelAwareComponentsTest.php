@@ -119,6 +119,91 @@ it('renders Laravel aware select options selected value and validation state', f
         ->toContain('Administrator');
 });
 
+it('renders Laravel aware checkbox names values old input and validation state', function () {
+    $this->withSession(['_old_input' => ['terms' => 'accepted']]);
+
+    $html = View::make('daisy::components.ui.inputs.checkbox', [
+        'name' => 'terms',
+        'value' => 'accepted',
+        'uncheckedValue' => '0',
+        'error' => 'Terms are required',
+    ])->render();
+
+    expect($html)
+        ->toContain('type="hidden" name="terms" value="0"')
+        ->toContain('type="checkbox"')
+        ->toContain('id="terms"')
+        ->toContain('name="terms"')
+        ->toContain('value="accepted"')
+        ->toContain('checked')
+        ->toContain('checkbox-error')
+        ->toContain('aria-invalid="true"')
+        ->toContain('aria-describedby="terms-error"');
+});
+
+it('lets checkbox old input override an explicit checked default', function () {
+    $this->withSession(['_old_input' => ['published' => '0']]);
+
+    $html = View::make('daisy::components.ui.inputs.checkbox', [
+        'name' => 'published',
+        'checked' => true,
+        'uncheckedValue' => '0',
+        'error' => 'Choose publication state',
+    ])->render();
+
+    expect($html)
+        ->toContain('type="hidden" name="published" value="0"')
+        ->toContain('id="published"')
+        ->toContain('name="published"')
+        ->toContain('value="1"')
+        ->toContain('checkbox-error')
+        ->toContain('aria-invalid="true"')
+        ->not->toContain('checked');
+});
+
+it('renders Laravel aware textarea old input and validation state', function () {
+    $this->withSession(['_old_input' => ['bio' => 'Old biography']]);
+
+    $html = View::make('daisy::components.ui.inputs.textarea', [
+        'name' => 'bio',
+        'value' => 'Stored biography',
+        'error' => 'Bio is too long',
+    ])->render();
+
+    expect($html)
+        ->toContain('id="bio"')
+        ->toContain('name="bio"')
+        ->toContain('textarea-error')
+        ->toContain('aria-invalid="true"')
+        ->toContain('aria-describedby="bio-error"')
+        ->toContain('>Old biography</textarea>');
+});
+
+it('renders navigation tabs with visibility icons and error markers', function () {
+    $errors = new ViewErrorBag;
+    $errors->put('default', new MessageBag(['profile.name' => ['Required']]));
+
+    $html = View::make('daisy::components.ui.navigation.tabs', [
+        'errorBag' => $errors,
+        'items' => [
+            ['label' => 'Profile', 'iconName' => 'bi-person', 'errorKey' => 'profile.name'],
+            ['label' => 'Hidden', 'visible' => false],
+            ['label' => 'Billing', 'href' => '/billing'],
+            ['label' => '<script>Unsafe</script>'],
+        ],
+    ])->render();
+
+    expect($html)
+        ->toContain('Profile')
+        ->toContain('Billing')
+        ->toContain('<svg')
+        ->toContain('text-error')
+        ->toContain('Error')
+        ->toContain('&lt;script&gt;Unsafe&lt;/script&gt;')
+        ->not->toContain('<script>Unsafe</script>')
+        ->not->toContain('Hidden');
+});
+
 it('renders table toolbar and actions slots', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.data-display.table

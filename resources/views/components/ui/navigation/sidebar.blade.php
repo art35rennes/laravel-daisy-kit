@@ -167,10 +167,29 @@
             {{-- Items de navigation : support des items simples et des items avec sous-menu --}}
             @foreach(($section['items'] ?? []) as $item)
                 @php
+                    if (data_get($item, 'visible', true) === false) {
+                        continue;
+                    }
+                    $routeNames = array_filter((array) data_get($item, 'activeRoutes', []));
+                    if (data_get($item, 'activeRoute')) {
+                        $routeNames[] = data_get($item, 'activeRoute');
+                    }
+                    $routeIsActive = $routeNames !== [] && collect($routeNames)->contains(fn ($routeName) => \Illuminate\Support\Facades\Route::currentRouteNamed($routeName));
                     // Détection de la présence d'enfants (sous-menu).
                     $hasChildren = !empty($item['children']);
                     // Un item est actif s'il est marqué actif ou si un de ses enfants est actif.
-                    $isActive = !empty($item['active']) || collect($item['children'] ?? [])->contains(fn($c) => !empty($c['active']));
+                    $isActive = !empty($item['active']) || $routeIsActive || collect($item['children'] ?? [])->contains(function ($child) {
+                        if (data_get($child, 'visible', true) === false) {
+                            return false;
+                        }
+
+                        $childRouteNames = array_filter((array) data_get($child, 'activeRoutes', []));
+                        if (data_get($child, 'activeRoute')) {
+                            $childRouteNames[] = data_get($child, 'activeRoute');
+                        }
+
+                        return ! empty($child['active']) || ($childRouteNames !== [] && collect($childRouteNames)->contains(fn ($routeName) => \Illuminate\Support\Facades\Route::currentRouteNamed($routeName)));
+                    });
                 @endphp
                 @if($hasChildren)
                     {{-- Item avec sous-menu : utilise <details> pour le collapse natif --}}
@@ -184,8 +203,16 @@
                             </summary>
                             <ul data-sidebar-submenu aria-hidden="{{ $effectiveCollapsed ? 'true' : 'false' }}">
                                 @foreach($item['children'] as $child)
+                                    @continue(data_get($child, 'visible', true) === false)
+                                    @php
+                                        $childRouteNames = array_filter((array) data_get($child, 'activeRoutes', []));
+                                        if (data_get($child, 'activeRoute')) {
+                                            $childRouteNames[] = data_get($child, 'activeRoute');
+                                        }
+                                        $childIsActive = ! empty($child['active']) || ($childRouteNames !== [] && collect($childRouteNames)->contains(fn ($routeName) => \Illuminate\Support\Facades\Route::currentRouteNamed($routeName)));
+                                    @endphp
                                     <li>
-                                        <a href="{{ $child['href'] ?? '#' }}" class="flex items-center gap-2 {{ !empty($child['active']) ? 'menu-active' : '' }}" title="{{ __($child['label'] ?? '') }}" aria-label="{{ __($child['label'] ?? '') }}">
+                                        <a href="{{ $child['href'] ?? '#' }}" class="flex items-center gap-2 {{ $childIsActive ? 'menu-active' : '' }}" title="{{ __($child['label'] ?? '') }}" aria-label="{{ __($child['label'] ?? '') }}">
                                             @if(!empty($child['icon']))
                                                 <x-daisy::ui.advanced.icon :name="$child['icon']" :prefix="$iconPrefix" size="md" />
                                             @endif

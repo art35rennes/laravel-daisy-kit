@@ -1,13 +1,24 @@
 @props([
     'icon' => 'bi-inbox', // Blade icon name
-    'title' => __('daisy::common.empty'),
+    'title' => null,
     'message' => null,
     'actionLabel' => null,
     'actionUrl' => null,
     'size' => 'md', // sm, md, lg
+    'preset' => null, // no-results | no-data | no-permission
+    'iconName' => null,
 ])
 
 @php
+    $presetMap = [
+        'no-results' => ['icon' => 'bi-search', 'title' => __('daisy::common.no_results')],
+        'no-data' => ['icon' => 'bi-inbox', 'title' => __('daisy::common.empty')],
+        'no-permission' => ['icon' => 'bi-lock', 'title' => __('daisy::common.access_unavailable')],
+    ];
+    $presetConfig = is_string($preset) && isset($presetMap[$preset]) ? $presetMap[$preset] : [];
+    $resolvedIcon = $iconName ?: ($presetConfig['icon'] ?? $icon);
+    $resolvedTitle = $title ?: ($presetConfig['title'] ?? __('daisy::common.empty'));
+
     $sizeMap = [
         'xs' => 'text-xs',
         'sm' => 'text-sm',
@@ -36,15 +47,15 @@
 @endphp
 
 <div {{ $attributes->merge(['class' => 'flex flex-col items-center justify-center '.$containerClass]) }}>
-    @if($icon)
+    @if($resolvedIcon)
         <div class="{{ $iconSizeMap[$size] ?? 'w-16 h-16' }} text-base-content opacity-50">
-            <x-icon :name="$icon" class="w-full h-full" />
+            <x-icon :name="$resolvedIcon" class="w-full h-full" />
         </div>
     @endif
     
-    @if($title)
+    @if($resolvedTitle)
         <h3 class="{{ $titleSizeMap[$size] ?? 'text-xl' }} font-semibold text-base-content">
-            {{ $title }}
+            {{ $resolvedTitle }}
         </h3>
     @endif
     
@@ -54,16 +65,20 @@
         </p>
     @endif
     
-    @if($actionLabel && $actionUrl)
-        <x-daisy::ui.inputs.button
-            tag="a"
-            :href="$actionUrl"
-            size="sm"
-            color="primary"
-            class="mt-2"
-        >
-            {{ $actionLabel }}
-        </x-daisy::ui.inputs.button>
+    @isset($actions)
+        <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
+            {{ $actions }}
+        </div>
+    @elseif($actionLabel && $actionUrl)
+        <div class="mt-2">
+            <x-daisy::ui.inputs.button
+                tag="a"
+                :href="$actionUrl"
+                size="sm"
+                color="primary"
+            >
+                {{ $actionLabel }}
+            </x-daisy::ui.inputs.button>
+        </div>
     @endif
 </div>
-

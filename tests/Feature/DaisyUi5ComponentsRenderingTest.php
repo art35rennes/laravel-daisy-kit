@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\HtmlString;
 
@@ -62,12 +63,20 @@ it('renders skeleton text variant', function () {
 
 it('renders dropdown with dropdown-close when forceClose is true', function () {
     $html = View::make('daisy::components.ui.overlay.dropdown', [
+        'id' => 'user-menu',
         'label' => 'Open',
+        'triggerLabel' => 'Open user menu',
+        'contentRole' => 'menu',
         'forceClose' => true,
         'slot' => new HtmlString('<li><a>Item</a></li>'),
     ])->render();
 
-    expect($html)->toContain('dropdown-close');
+    expect($html)
+        ->toContain('id="user-menu"')
+        ->toContain('aria-label="Open user menu"')
+        ->toContain('aria-controls="user-menu-content"')
+        ->toContain('role="menu"')
+        ->toContain('dropdown-close');
 });
 
 it('maps card compact to card-sm instead of removed card-compact', function () {
@@ -104,4 +113,38 @@ it('renders pagination with DaisyUI join and btn join-item', function () {
         ->toContain('btn-outline')
         ->toContain('btn-active')
         ->toContain('&hellip;');
+});
+
+it('renders pagination from a Laravel paginator with page links', function () {
+    $paginator = new LengthAwarePaginator(
+        items: range(1, 10),
+        total: 50,
+        perPage: 10,
+        currentPage: 3,
+        options: ['path' => '/users'],
+    );
+
+    $html = View::make('daisy::components.ui.navigation.pagination', [
+        'paginator' => $paginator,
+        'urlWindow' => true,
+    ])->render();
+
+    expect($html)
+        ->toContain('href="/users?page=2"')
+        ->toContain('href="/users?page=3"')
+        ->toContain('href="/users?page=4"')
+        ->toContain('aria-current="page"')
+        ->toContain('btn-active');
+});
+
+it('renders stepper validation hooks for guarded flows', function () {
+    $html = View::make('daisy::components.ui.navigation.stepper', [
+        'items' => ['Account', 'Profile'],
+        'validateBeforeNext' => true,
+    ])->render();
+
+    expect($html)
+        ->toContain('data-validate-before-next="true"')
+        ->toContain('Account')
+        ->toContain('Profile');
 });

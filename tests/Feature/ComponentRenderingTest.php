@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\MessageBag;
+use Illuminate\Support\ViewErrorBag;
 use Illuminate\View\ComponentAttributeBag;
 
 it('renders a button component', function () {
@@ -81,6 +83,58 @@ it('renders localized code-editor toolbar and CodeMirror phrases', function () {
         ->toContain('Rechercher')
         ->toContain('"regexp"')
         ->toContain('data-i18n');
+});
+
+it('renders localized default labels for public UI components', function () {
+    app()->setLocale('fr');
+
+    try {
+        $errors = new ViewErrorBag;
+        $errors->put('default', new MessageBag(['profile.name' => ['Missing name']]));
+
+        $emptyState = View::make('daisy::components.ui.feedback.empty-state', [
+            'preset' => 'no-permission',
+        ])->render();
+
+        $pagination = View::make('daisy::components.ui.navigation.pagination', [
+            'total' => 3,
+            'current' => 2,
+        ])->render();
+
+        $tabs = View::make('daisy::components.ui.navigation.tabs', [
+            'errorBag' => $errors,
+            'items' => [
+                ['errorKey' => 'profile.name'],
+            ],
+        ])->render();
+
+        $dropdown = View::make('daisy::components.ui.overlay.dropdown', [
+            'id' => 'localized-dropdown',
+        ])->render();
+
+        $stepper = View::make('daisy::components.ui.navigation.stepper', [
+            'items' => [[], []],
+        ])->render();
+
+        expect($emptyState)
+            ->toContain('Accès indisponible');
+        expect($pagination)
+            ->toContain('aria-label="Précédent"')
+            ->toContain('aria-label="Suivant"')
+            ->toContain('Page 2 sur 3');
+        expect($tabs)
+            ->toContain('Onglet')
+            ->toContain('Erreur');
+        expect($dropdown)
+            ->toContain('aria-label="Ouvrir le menu déroulant"');
+        expect($stepper)
+            ->toContain('Précédent')
+            ->toContain('Suivant')
+            ->toContain('Terminer')
+            ->toContain('Etape 1');
+    } finally {
+        app()->setLocale('en');
+    }
 });
 
 it('renders token-input suggestion and endpoint payloads for js enhancement', function () {

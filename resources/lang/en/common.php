@@ -5,6 +5,7 @@ return [
     'please_wait' => 'Please wait',
     'empty' => 'No data',
     'no_results' => 'No results',
+    'access_unavailable' => 'Access unavailable',
     'create_first' => 'Create an item first',
     'download' => 'Download',
     'import' => 'Import',
@@ -22,4 +23,6 @@ return [
     'remove' => 'Remove',
     'undo' => 'Undo',
     'redo' => 'Redo',
+    'previous' => 'Previous',
+    'next' => 'Next',
 ];

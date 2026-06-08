@@ -9,10 +9,11 @@
     'allowClickNav' => true,
     'persist' => false,
     'showControls' => true,
-    'prevText' => 'Précédent',
-    'nextText' => 'Suivant',
-    'finishText' => 'Terminer',
+    'prevText' => null,
+    'nextText' => null,
+    'finishText' => null,
     'controlsClass' => '',
+    'validateBeforeNext' => false,
     // Surcharge du nom de module JS (optionnel)
     'module' => null,
 ])
@@ -42,7 +43,7 @@
         $invalid = is_array($item) && ($item['invalid'] ?? false);
         
         $stepData = [
-            'label' => is_array($item) ? ($item['label'] ?? "Step {$adjustedIndex}") : (string) $item,
+            'label' => is_array($item) ? ($item['label'] ?? __('daisy::form.step', ['number' => $adjustedIndex])) : (string) $item,
             'icon' => is_array($item) ? ($item['icon'] ?? null) : null,
             'disabled' => $disabled,
             'invalid' => $invalid,
@@ -75,7 +76,11 @@
         'data-allow-click' => $allowClickNav ? 'true' : 'false',
         'data-persist' => $persist ? 'true' : 'false',
         'data-current' => (int) $current,
+        'data-validate-before-next' => $validateBeforeNext ? 'true' : 'false',
     ]);
+    $resolvedPrevText = $prevText ?: __('daisy::form.previous');
+    $resolvedNextText = $nextText ?: __('daisy::form.next');
+    $resolvedFinishText = $finishText ?: __('daisy::form.finish');
 @endphp
 
 <div {{ $containerAttrs }}>
@@ -116,7 +121,7 @@
                     {!! $stepsContents[$stepIndex] instanceof \Illuminate\View\ComponentSlot ? $stepsContents[$stepIndex]->toHtml() : (string) $stepsContents[$stepIndex] !!}
                 @elseif (isset(${'step_'.$stepIndex}))
                     {{ ${'step_'.$stepIndex} }}
-                @elseif ($slot->isNotEmpty())
+                @elseif (isset($slot) && $slot->isNotEmpty())
                     {{ $slot }}
                 @endif
             </div>
@@ -127,16 +132,16 @@
     @if($showControls)
         <div class="mt-4 flex items-center justify-between {{ $controlsClass }}" data-stepper-controls>
             <x-daisy::ui.inputs.button variant="ghost" size="sm" data-stepper-prev>
-                {{ $prevText }}
+                {{ $resolvedPrevText }}
             </x-daisy::ui.inputs.button>
             
             <div class="flex gap-2">
                 <x-daisy::ui.inputs.button size="sm" data-stepper-next>
-                    {{ $nextText }}
+                    {{ $resolvedNextText }}
                 </x-daisy::ui.inputs.button>
                 
                 <x-daisy::ui.inputs.button size="sm" color="success" data-stepper-finish class="hidden">
-                    {{ $finishText }}
+                    {{ $resolvedFinishText }}
                 </x-daisy::ui.inputs.button>
             </div>
         </div>

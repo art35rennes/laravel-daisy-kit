@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 
@@ -30,6 +31,22 @@ describe('Communication Components Rendering', function () {
                 ->toContain('You have no notifications yet.')
                 ->toContain('View all')
                 ->toContain('/notifications');
+        });
+
+        it('renders empty-state presets and custom action slots', function () {
+            $html = Blade::render(<<<'BLADE'
+                <x-daisy::ui.feedback.empty-state preset="no-results" icon-name="bi-lock" message="Adjust filters">
+                    <x-slot:actions>
+                        <button type="button">Reset filters</button>
+                    </x-slot:actions>
+                </x-daisy::ui.feedback.empty-state>
+            BLADE);
+
+            expect($html)
+                ->toContain('bi-lock')
+                ->toContain('No results')
+                ->toContain('Adjust filters')
+                ->toContain('Reset filters');
         });
     });
 

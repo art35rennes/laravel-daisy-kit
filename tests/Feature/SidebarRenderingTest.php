@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 
 function daisyKitSidebarSections(): array
@@ -77,4 +78,66 @@ it('renders expand on hover as a temporary compact state', function () {
         ->toContain('aria-hidden="true"')
         ->toContain('data-sidebar-submenu')
         ->not->toContain('sidebar-toggle');
+});
+
+it('hides sidebar items marked as not visible', function () {
+    $sections = daisyKitSidebarSections();
+    $sections[0]['items'][] = [
+        'label' => 'Hidden item',
+        'href' => '/hidden',
+        'visible' => false,
+    ];
+    $sections[0]['items'][1]['children'][] = [
+        'label' => 'Hidden child',
+        'href' => '/hidden-child',
+        'visible' => false,
+    ];
+
+    $html = View::make('daisy::components.ui.navigation.sidebar', [
+        'sections' => $sections,
+    ])->render();
+
+    expect($html)
+        ->not->toContain('Hidden item')
+        ->not->toContain('Hidden child')
+        ->toContain('Overview')
+        ->toContain('Health');
+});
+
+it('marks sidebar items active from named routes', function () {
+    $renderSidebar = function () {
+        return View::make('daisy::components.ui.navigation.sidebar', [
+            'sections' => [
+                [
+                    'items' => [
+                        [
+                            'label' => 'Users',
+                            'href' => '/users',
+                            'activeRoute' => 'sidebar.users.index',
+                        ],
+                        [
+                            'label' => 'Settings',
+                            'href' => '/settings',
+                            'activeRoutes' => ['sidebar.settings.*'],
+                        ],
+                    ],
+                ],
+            ],
+        ])->render();
+    };
+
+    Route::get('/sidebar-active-route-test', $renderSidebar)->name('sidebar.users.index');
+    Route::get('/sidebar-active-routes-test', $renderSidebar)->name('sidebar.settings.edit');
+
+    $usersHtml = $this->get('/sidebar-active-route-test')->getContent();
+    $settingsHtml = $this->get('/sidebar-active-routes-test')->getContent();
+
+    expect($usersHtml)
+        ->toContain('Users')
+        ->toContain('menu-active')
+        ->toContain('Settings')
+        ->not->toContain('href="/settings" class="flex items-center gap-2 menu-active"');
+    expect($settingsHtml)
+        ->toContain('Settings')
+        ->toContain('href="/settings" class="flex items-center gap-2 menu-active"');
 });

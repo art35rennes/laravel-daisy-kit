@@ -17,6 +17,9 @@
     // Classes pour le helper dropdown (carte)
     'cardClass' => 'card card-sm dropdown-content bg-base-100 rounded-box z-[1] w-64 shadow',
     'cardBodyClass' => 'card-body',
+    'id' => null,
+    'triggerLabel' => null,
+    'contentRole' => null,
 ])
 
 @php
@@ -34,39 +37,41 @@
 
     // Déduction des classes de contenu selon le type si non fourni explicitement.
     $resolvedContentClass = $contentClass ?? ($type === 'card' ? $cardClass : $menuClass);
+    $dropdownId = $id ?: 'dropdown-'.\Illuminate\Support\Str::uuid();
+    $contentId = $dropdownId.'-content';
+    $resolvedTriggerLabel = $triggerLabel ?: (is_string($label) ? $label : __('daisy::components.dropdown_open'));
+    $resolvedContentRole = $contentRole ?: ($type === 'card' ? 'dialog' : 'menu');
 @endphp
 
 {{-- Dropdown : menu déroulant ou carte (pattern daisyUI) --}}
-<div {{ $attributes->merge(['class' => $root]) }}>
+<div id="{{ $dropdownId }}" {{ $attributes->merge(['class' => $root]) }}>
     {{-- Trigger : bouton qui ouvre le dropdown (clic ou hover selon configuration) --}}
-    <div tabindex="0" role="button" class="{{ $buttonClass }}{{ $buttonCircle ? ' btn-circle' : '' }}">
+    <div tabindex="0" role="button" class="{{ $buttonClass }}{{ $buttonCircle ? ' btn-circle' : '' }}" aria-label="{{ $resolvedTriggerLabel }}" aria-controls="{{ $contentId }}">
         @isset($trigger)
             {{ $trigger }}
         @else
-            {{ $label ?? 'Open' }}
+            {{ $label ?? $resolvedTriggerLabel }}
         @endisset
     </div>
     @if($type === 'card')
         {{-- Type card : dropdown avec structure de carte (utile pour des contenus complexes) --}}
-        <div tabindex="0" class="{{ $resolvedContentClass }}">
+        <div id="{{ $contentId }}" tabindex="0" role="{{ $resolvedContentRole }}" class="{{ $resolvedContentClass }}">
             <div class="{{ $cardBodyClass }}">
                 @isset($content)
                     {{ $content }}
-                @else
+                @elseif(isset($slot))
                     {{ $slot }}
                 @endisset
             </div>
         </div>
     @else
         {{-- Type menu (défaut) : dropdown avec structure de menu (liste d'items) --}}
-        <ul tabindex="0" class="{{ $resolvedContentClass }}">
+        <ul id="{{ $contentId }}" tabindex="0" role="{{ $resolvedContentRole }}" class="{{ $resolvedContentClass }}">
             @isset($content)
                 {{ $content }}
-            @else
+            @elseif(isset($slot))
                 {{ $slot }}
             @endisset
         </ul>
     @endif
  </div>
-
-

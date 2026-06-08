@@ -211,7 +211,15 @@ Useful defaults:
 - `layout.app` accepts `htmlClass`, `bodyClass`, `fontUrl`, and `loadDefaultFont`.
 - `layout.navbar-sidebar-layout` and `layout.sidebar-layout` accept `showThemeController`, `themes`, and `themeLabel`.
 - `input` and `select` accept `name`, `id`, `value`, `bindOld`, `error`, and accessibility attributes.
+- `textarea` mirrors the Laravel-aware input props for old input, validation state, and described-by wiring.
+- `checkbox` accepts `name`, `value`, `uncheckedValue`, `bindOld`, and validation state for common form submissions.
 - `alert` can render a `sessionKey`, validation errors via `showErrors`, automatic roles, and a dismiss button.
+- `empty-state` supports `preset`, `iconName`, and an `actions` slot for no-data/no-results screens.
+- `pagination` accepts a Laravel paginator instance and renders page links while preserving the manual API.
+- `tabs` accepts `visible`, `iconName`, and `errorKey` item keys for form tabs and conditional navigation.
+- `sidebar` accepts `visible`, `activeRoute`, and `activeRoutes` item keys for route-aware menus.
+- `dropdown` accepts `id`, `triggerLabel`, and `contentRole` for predictable accessible overlays.
+- `stepper` exposes `validateBeforeNext` as a JavaScript data hook for guarded flows.
 - `table` accepts `toolbar` and `actions` slots for page-level controls.
 - `crud-layout` and `crud-section` provide `header`, `aside`, `headerActions`, and aligned `actions` slots.
 - `modal` supports `header`, `footer`, `actions`, `closeLabel`, and labelled dialog markup.
