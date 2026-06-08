@@ -15,8 +15,9 @@ See [CHANGELOG.md](CHANGELOG.md) for released versions and [CONTRIBUTING.md](CON
 
 ## Requirements
 
-- PHP `^8.2`
-- Laravel `^13.0`
+- PHP `^8.1`
+- Laravel `^10.0`, `^11.0`, `^12.0`, or `^13.0`
+- Livewire `^3.6` when using `x-daisy::forms.builder`
 
 ## Installation
 
@@ -24,7 +25,22 @@ See [CHANGELOG.md](CHANGELOG.md) for released versions and [CONTRIBUTING.md](CON
 composer require art35rennes/laravel-daisy-kit
 ```
 
-The package registers its service provider automatically. Publish configuration and built assets in your host application (see [Host app integration](#host-app-integration)).
+The package registers its service provider automatically. For most host applications, publish the configuration and prebuilt assets:
+
+```bash
+php artisan vendor:publish --tag=daisy-config
+php artisan vendor:publish --tag=daisy-assets
+```
+
+Then include the package components in Blade:
+
+```blade
+<x-daisy::layout.app title="Dashboard">
+    <x-daisy::ui.feedback.alert color="success" session-key="status" dismissible />
+</x-daisy::layout.app>
+```
+
+If the host renders the Form Kit builder, make sure Livewire 3 is installed and its scripts/styles are present in the application layout. The viewer does not require Livewire; it is rendered by Blade and progressively enhanced by the package JavaScript runtime.
 
 ## What this package provides
 
@@ -63,7 +79,7 @@ npm run build
 
 ### Recommended: published build assets
 
-For a typical host app, publish configuration and the prebuilt Vite manifest and assets:
+For a typical host app, publish configuration and the prebuilt Vite manifest and assets after install and after each package update:
 
 ```bash
 php artisan vendor:publish --tag=daisy-config
@@ -71,6 +87,8 @@ php artisan vendor:publish --tag=daisy-assets
 ```
 
 Assets are written to `public/vendor/art35rennes/laravel-daisy-kit`, which matches the default `config('daisy-kit.vite_build_directory')`. The package can load CSS/JS from that manifest without requiring Node tooling in the host.
+
+If the host uses the builder surface, install and configure Livewire in the host application as usual. Daisy Kit registers the `daisy.form-builder` Livewire component; the host remains responsible for authentication, authorization, persistence, and where the exported schema JSON is stored.
 
 ### Optional publish tags
 
@@ -219,18 +237,86 @@ Tests under `tests/` cover package-only behavior: Blade and template rendering, 
 
 ## Form Kit
 
-The package exposes a greenfield JSON-driven form surface:
+The package exposes a JSON-driven authoring and rendering surface built around one canonical `DaisyFormSchema` payload:
 
 - `x-daisy::forms.viewer` renders a `DaisyFormSchema` `1.0` payload into a progressive HTML form.
 - `x-daisy::forms.builder` uses Livewire to edit the same schema, render the real viewer preview, show diagnostics, and export canonical JSON.
 - `x-daisy::templates.form.builder` wraps that Livewire builder as an embeddable authoring surface.
 - JSONata powers field visibility, complex validation rules, and computed values.
 
-The viewer reads `schema.submit.mode` by default. Pass `submitMode="event"`, `html`, `fetch`, or `none` only when the host needs to override the schema for a specific render. If neither the prop nor the schema defines a mode, the final fallback is `event`. The host application owns persistence, authorization, and business processing; Daisy Kit owns the schema contract and the renderer.
+The host application owns persistence, authorization, submission handling, and business workflows. Daisy Kit owns the schema contract, the Livewire builder, the Blade viewer, PHP helpers, and the browser runtime.
+
+### Viewer usage
+
+Use the viewer anywhere a persisted schema should be rendered for data entry:
+
+```blade
+<x-daisy::forms.viewer
+    id="quote-viewer"
+    :schema="$schema"
+    :value="$draftValues"
+    :errors="$errors"
+    validate-on="change"
+/>
+```
+
+Use the same component for readonly display:
+
+```blade
+<x-daisy::forms.viewer
+    id="quote-summary"
+    :schema="$schema"
+    :value="$storedValues"
+    :readonly="true"
+    submit-mode="none"
+/>
+```
+
+The viewer reads `schema.submit.mode` by default. Pass `submitMode="event"`, `html`, `fetch`, or `none` only when the host needs to override the schema for a specific render. If neither the prop nor the schema defines a valid mode, the final fallback is `event`.
+
+`validateOn` supports `input`, `change`, and `submit`. Runtime validation is client-side convenience only; validate again in the host application before persisting user data.
+
+### Builder usage
+
+Use the builder in an authenticated authoring screen. The builder state is Livewire-owned, renders the real viewer preview, shows diagnostics, supports nested field reorder, and exports canonical JSON through the configured hidden field name:
+
+```blade
+<form method="POST" action="{{ route('forms.update', $form) }}">
+    @csrf
+    @method('PUT')
+
+    <x-daisy::forms.builder
+        name="schema"
+        :schema="$form->schema"
+        :value="$previewValues"
+        :errors="$previewErrors"
+        :preview="true"
+        :json-editor="true"
+    />
+
+    <x-daisy::ui.inputs.button type="submit" color="primary">
+        Save schema
+    </x-daisy::ui.inputs.button>
+</form>
+```
+
+For a ready-made authoring wrapper, use:
+
+```blade
+<x-daisy::templates.form.builder
+    title="Contact form"
+    schema-name="schema"
+    :schema="$form->schema"
+/>
+```
+
+The package does not save schemas for you. Persist the posted JSON in the host, then render that stored schema with `x-daisy::forms.viewer`.
 
 Supported layout modes are `one-page`, `sections`, and `multi-step`. Supported field types include native inputs (`text`, `email`, `tel`, `url`, `password`, `number`, `date`, `time`, `datetime-local`, `month`, `color`), text/content controls (`textarea`, `staticText`, `hidden`), choices (`select`, `radio`, `checkbox`, `toggle`, `range`), attachments (`file`, `signature`), and containers (`section`, `tabs`, `wizardStep`).
 
 Field component props are stored in the schema under `attrs.*` and `ui.*`. For example, `ui.width` controls the responsive grid span and signature-specific `attrs.width`, `attrs.height`, `attrs.penColor`, `attrs.showActions`, `attrs.downloadFormat`, and `attrs.downloadFilename` are forwarded to `x-daisy::ui.inputs.sign`.
+
+Server-side JSONata execution is deliberately host-owned. Implement `Art35rennes\DaisyKit\FormKit\Contracts\JsonataEvaluator` to call your own JSONata engine, then use `FormSubmissionEvaluator` to batch visibility, JSONata validations, and computed values before persisting.
 
 ### Viewer JavaScript API
 
@@ -238,14 +324,16 @@ Every viewer root is identifiable through `data-form-id` and registers a runtime
 The registry intentionally exposes only integration hooks; schema ownership, persistence, and submission policy remain in the host application.
 
 ```js
-const runtime = window.DaisyFormViewer.get('quote-viewer');
+document.getElementById('quote-viewer').addEventListener('daisy-form:ready', async (event) => {
+    const runtime = event.detail.runtime;
 
-runtime.on('daisy-form:submit', (event) => {
-    console.log(event.detail.values);
+    runtime.on('daisy-form:submit', (submitEvent) => {
+        console.log(submitEvent.detail.values);
+    });
+
+    await runtime.setValue('quantity', 3);
+    await runtime.validate();
 });
-
-await runtime.setValue('quantity', 3);
-await runtime.validate();
 ```
 
 Runtime methods include:
@@ -286,18 +374,6 @@ Readonly viewers keep the same schema/value contract and expose `data-readonly="
     ]"
 />
 ```
-
-For authoring screens, post the generated schema JSON back to your app with the builder:
-
-```blade
-<x-daisy::templates.form.builder
-    title="Contact form"
-    schema-name="form_schema"
-    :schema="$form->schema"
-/>
-```
-
-Server-side JSONata execution is deliberately host-owned. Implement `Art35rennes\DaisyKit\FormKit\Contracts\JsonataEvaluator` to call your own JSONata engine, then use `FormSubmissionEvaluator` to batch visibility, JSONata validations, and computed values before persisting.
 
 ## Table component
 
