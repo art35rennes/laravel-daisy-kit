@@ -83,19 +83,36 @@ function registerViewerRuntime(runtime) {
 function createRegistry() {
     const runtimes = new Map();
 
+    const pruneDisconnected = () => {
+        for (const [id, runtime] of runtimes.entries()) {
+            if (!runtime.root?.isConnected) {
+                runtimes.delete(id);
+            }
+        }
+    };
+
     return {
         register(runtime) {
+            pruneDisconnected();
             runtimes.set(runtime.id, runtime);
 
             return runtime;
         },
         get(id) {
+            pruneDisconnected();
+
             return runtimes.get(id) ?? null;
         },
         getByElement(element) {
-            return element?.__daisyFormRuntime ?? null;
+            if (!element?.isConnected) {
+                return null;
+            }
+
+            return element.__daisyFormRuntime ?? null;
         },
         all() {
+            pruneDisconnected();
+
             return Array.from(runtimes.values());
         },
         unregister(id) {

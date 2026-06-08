@@ -319,6 +319,50 @@ describe('form-kit viewer runtime', () => {
         expect(window.DaisyFormViewer.getByElement(root)).toBe(null);
     });
 
+    it('prunes disconnected viewer runtimes from the global registry', async () => {
+        document.body.innerHTML = `
+            <section>
+                <form id="stale-viewer" data-form-id="stale-viewer" data-module="form-viewer" data-submit-mode="none">
+                    <div data-form-field="name">
+                        <input data-form-input="name" name="name" value="Ada" />
+                        <p data-form-errors="name" class="hidden"></p>
+                    </div>
+                    <script type="application/json" data-form-schema>
+                        {"version":"1.0","id":"profile","fields":[{"id":"name","type":"text","name":"name","label":"Name"}]}
+                    </script>
+                    <script type="application/json" data-form-value>{"name":"Ada"}</script>
+                    <script type="application/json" data-form-errors-payload>{}</script>
+                </form>
+                <form id="live-viewer" data-form-id="live-viewer" data-module="form-viewer" data-submit-mode="none">
+                    <div data-form-field="email">
+                        <input data-form-input="email" name="email" value="ada@example.com" />
+                        <p data-form-errors="email" class="hidden"></p>
+                    </div>
+                    <script type="application/json" data-form-schema>
+                        {"version":"1.0","id":"contact","fields":[{"id":"email","type":"email","name":"email","label":"Email"}]}
+                    </script>
+                    <script type="application/json" data-form-value>{"email":"ada@example.com"}</script>
+                    <script type="application/json" data-form-errors-payload>{}</script>
+                </form>
+            </section>
+        `;
+
+        const staleRoot = document.querySelector('#stale-viewer');
+        const liveRoot = document.querySelector('#live-viewer');
+        const staleRuntime = initFormViewer(staleRoot);
+        const liveRuntime = initFormViewer(liveRoot);
+
+        await tick();
+
+        expect(window.DaisyFormViewer.all()).toEqual(expect.arrayContaining([staleRuntime, liveRuntime]));
+
+        staleRoot.remove();
+
+        expect(window.DaisyFormViewer.get('stale-viewer')).toBe(null);
+        expect(window.DaisyFormViewer.getByElement(staleRoot)).toBe(null);
+        expect(window.DaisyFormViewer.all()).toEqual([liveRuntime]);
+    });
+
     it('initializes nested color picker controls rendered by the viewer', async () => {
         document.body.innerHTML = `
             <form id="color-viewer" data-form-id="color-viewer" data-module="form-viewer" data-submit-mode="none">
