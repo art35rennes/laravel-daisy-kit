@@ -7,7 +7,7 @@
  * @module form-kit/runtime
  */
 
-import { CONTAINER_FIELD_TYPES, getFieldValue } from './fields.js';
+import { CONTAINER_FIELD_TYPES, NON_SUBMITTING_FIELD_TYPES, getFieldValue } from './fields.js';
 import { canonicalizeSchema, flattenFields, validateSchema } from './schema.js';
 import { evaluateExpression } from './jsonata-engine.js';
 
@@ -65,9 +65,11 @@ export function createFormRuntime(root, options = {}) {
         ? options.submitMode
         : (submitModes.includes(schema.submit?.mode) ? schema.submit.mode : 'event');
     const readonly = options.readonly === true;
-    // Containers render recursively in Blade but runtime logic only binds leaf controls carrying submit names.
+    // Containers render recursively in Blade. Content leaves still participate in visibility, but only
+    // submitting leaves bind values, validation rules, and submit payloads.
     const allFields = flattenFields(schema.fields);
     const fields = allFields.filter((field) => !CONTAINER_FIELD_TYPES.includes(field.type));
+    const submittingFields = fields.filter((field) => !NON_SUBMITTING_FIELD_TYPES.includes(field.type));
     const state = {
         schema,
         fields,
@@ -95,14 +97,16 @@ export function createFormRuntime(root, options = {}) {
     root.dataset.formValidateOn = validateOn;
     root.dataset.formReadonly = readonly ? 'true' : 'false';
 
-    fields.forEach((field) => {
+    submittingFields.forEach((field) => {
         const key = field.name ?? field.id;
 
         if (!Object.prototype.hasOwnProperty.call(state.values, key)) {
             // Hydrate defaults without clobbering explicit null sent from the server for nullable fields.
             state.values[key] = getFieldValue(state.values, field);
         }
+    });
 
+    fields.forEach((field) => {
         // Visibility defaults true until JSONata runs; keeps SSR markup visible before first microtask tick.
         state.visible[field.id] = true;
     });
@@ -136,7 +140,7 @@ export function createFormRuntime(root, options = {}) {
      * @returns {Promise<void>}
      */
     async function refresh() {
-        syncValuesFromDom(root, fields, state.values);
+        syncValuesFromDom(root, submittingFields, state.values);
         // Computed fields must run before visibility so expressions can reference freshly derived values.
         await applyComputedValues();
         await applyVisibility();
@@ -172,7 +176,7 @@ export function createFormRuntime(root, options = {}) {
      * @returns {Promise<void>}
      */
     async function applyComputedValues() {
-        for (const field of fields) {
+        for (const field of submittingFields) {
             if (!field.computed?.expression) {
                 continue;
             }
@@ -210,7 +214,7 @@ export function createFormRuntime(root, options = {}) {
             errors._schema = validation.errors.map((error) => error.message);
         }
 
-        for (const field of fields) {
+        for (const field of submittingFields) {
             if (state.visible[field.id] === false) {
                 continue;
             }
@@ -256,7 +260,7 @@ export function createFormRuntime(root, options = {}) {
             return false;
         }
 
-        const payload = serializeVisibleValues(fields, state.values, state.visible);
+        const payload = serializeVisibleValues(submittingFields, state.values, state.visible);
         if (submitMode === 'none') {
             return true;
         }
@@ -361,7 +365,7 @@ export function createFormRuntime(root, options = {}) {
         state.errors = {};
         state.touched = {};
 
-        fields.forEach((field) => {
+        submittingFields.forEach((field) => {
             const key = field.name ?? field.id;
             const value = Object.prototype.hasOwnProperty.call(state.values, key)
                 ? state.values[key]
@@ -469,12 +473,12 @@ export function createFormRuntime(root, options = {}) {
         on,
         off,
         state,
-        serialize: () => serializeVisibleValues(fields, state.values, state.visible),
+        serialize: () => serializeVisibleValues(submittingFields, state.values, state.visible),
         getSchema: () => state.schema,
         getSubmitMode: () => submitMode,
         getValidateOn: () => validateOn,
         isReadonly: () => readonly,
-        getValues: (options = {}) => options.visible ? serializeVisibleValues(fields, state.values, state.visible) : { ...state.values },
+        getValues: (options = {}) => options.visible ? serializeVisibleValues(submittingFields, state.values, state.visible) : { ...state.values },
         getValue: (key) => state.values[findRuntimeField(fields, key)?.name ?? key],
         setValue,
         setValues,

@@ -36,6 +36,9 @@ export const FIELD_TYPES = [
 /** Structural nodes that nest additional definitions instead of emitting standalone controls. */
 export const CONTAINER_FIELD_TYPES = ['section', 'tabs', 'wizardStep'];
 
+/** Leaf nodes rendered for content/layout but intentionally absent from submitted values. */
+export const NON_SUBMITTING_FIELD_TYPES = ['staticText'];
+
 /** Validation helpers mirrored loosely after Laravel rule strings (subset). */
 export const SIMPLE_RULES = [
     'required',

@@ -205,6 +205,58 @@ describe('form-kit viewer runtime', () => {
         expect(root.dataset.formRuntimeState).toBe('destroyed');
     });
 
+    it('keeps static text visible without treating it as submitted viewer data', async () => {
+        document.body.innerHTML = `
+            <form id="content-viewer" data-form-id="content-viewer">
+                <div data-form-field="intro">Read before continuing.</div>
+                <div data-form-field="email">
+                    <input data-form-input="email" name="email" value="hide" />
+                    <p data-form-errors="email" class="hidden"></p>
+                </div>
+                <button type="submit" data-form-submit>Submit</button>
+            </form>
+        `;
+
+        const root = document.querySelector('form');
+        const submissions = [];
+        root.addEventListener('daisy-form:submit', (event) => submissions.push(event.detail.values));
+
+        const runtime = createFormRuntime(root, {
+            schema: {
+                version: '1.0',
+                id: 'content',
+                fields: [
+                    {
+                        id: 'intro',
+                        type: 'staticText',
+                        text: 'Read before continuing.',
+                        visibleWhen: { type: 'jsonata', expression: "values.email = 'show'", dependsOn: ['email'] },
+                    },
+                    { id: 'email', type: 'email', name: 'email', label: 'Email' },
+                ],
+            },
+            submitMode: 'event',
+        });
+
+        await tick();
+
+        expect(runtime.getValues()).toEqual({ email: 'hide' });
+        expect(runtime.serialize()).toEqual({ email: 'hide' });
+        expect(runtime.getVisibleFields().map((field) => field.id)).toEqual(['email']);
+        expect(root.querySelector('[data-form-field="intro"]').classList.contains('hidden')).toBe(true);
+
+        await runtime.setValue('email', 'show');
+
+        expect(runtime.getValues()).toEqual({ email: 'show' });
+        expect(runtime.serialize()).toEqual({ email: 'show' });
+        expect(runtime.getVisibleFields().map((field) => field.id)).toEqual(['intro', 'email']);
+        expect(root.querySelector('[data-form-field="intro"]').classList.contains('hidden')).toBe(false);
+
+        await runtime.submit();
+
+        expect(submissions.at(-1)).toEqual({ email: 'show' });
+    });
+
     it('unregisters viewer bridge instances when destroyed', async () => {
         document.body.innerHTML = `
             <form id="destroyable-viewer" data-form-id="destroyable-viewer" data-module="form-viewer" data-submit-mode="none">
