@@ -514,6 +514,52 @@ describe('form-kit viewer runtime', () => {
         expect(runtime.state.visible.company_vat).toBe(true);
     });
 
+    it('clears stale expression diagnostics after expressions recover', async () => {
+        document.body.innerHTML = `
+            <form>
+                <div data-form-field="quantity">
+                    <input data-form-input="quantity" name="quantity" value="2" />
+                    <p data-form-errors="quantity" class="hidden"></p>
+                </div>
+                <div data-form-field="total">
+                    <input data-form-input="total" name="total" value="" />
+                    <p data-form-errors="total" class="hidden"></p>
+                </div>
+            </form>
+        `;
+
+        const root = document.querySelector('form');
+        const runtime = createFormRuntime(root, {
+            schema: {
+                version: '1.0',
+                id: 'totals',
+                fields: [
+                    { id: 'quantity', type: 'number', name: 'quantity', label: 'Quantity' },
+                    {
+                        id: 'total',
+                        type: 'number',
+                        name: 'total',
+                        label: 'Total',
+                        computed: { type: 'jsonata', expression: '$missingFunction()', mode: 'readonly' },
+                    },
+                ],
+            },
+        });
+
+        await tick();
+
+        expect(runtime.getErrors().total.at(0)).toBeTruthy();
+        expect(root.querySelector('[data-form-errors="total"]').classList.contains('hidden')).toBe(false);
+
+        runtime.getField('total').computed.expression = '$number(values.quantity) * 2';
+        await runtime.refresh();
+
+        expect(runtime.getErrors()).toEqual({});
+        expect(root.querySelector('[data-form-errors="total"]').classList.contains('hidden')).toBe(true);
+        expect(runtime.getValue('total')).toBe(4);
+        expect(root.querySelector('[name="total"]').value).toBe('4');
+    });
+
     it('navigates multi-step forms and only submits on the final step', async () => {
         document.body.innerHTML = `
             <form>
