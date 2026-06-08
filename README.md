@@ -285,6 +285,8 @@ Use the same component for readonly display:
 
 The viewer reads `schema.submit.mode` by default. Pass `submitMode="event"`, `html`, `fetch`, or `none` only when the host needs to override the schema for a specific render. If neither the prop nor the schema defines a valid mode, the final fallback is `event`.
 
+For Laravel-style non-`GET`/`POST` methods, pass `method="PUT"`, `PATCH`, or `DELETE` as usual. The viewer renders valid HTML with `method="POST"` and the hidden `_method` field, while the JavaScript runtime keeps the original verb through `data-form-method` for `fetch` submissions.
+
 `validateOn` supports `input`, `change`, and `submit`. Runtime validation is client-side convenience only; validate again in the host application before persisting user data.
 
 ### Builder usage
