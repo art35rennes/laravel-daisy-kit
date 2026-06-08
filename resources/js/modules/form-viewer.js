@@ -8,6 +8,7 @@
 
 import { createFormRuntime } from '../form-kit/runtime.js';
 import { parseJsonPayload } from '../form-kit/schema.js';
+import { initColorPicker } from '../color-picker.js';
 
 /**
  * @param {HTMLElement} root - `<form>` element rendered by `forms.viewer` Blade component.
@@ -15,6 +16,8 @@ import { parseJsonPayload } from '../form-kit/schema.js';
  * @returns {ReturnType<typeof createFormRuntime>}
  */
 export default function initFormViewer(root, options = {}) {
+    initNestedControls(root);
+
     const schema = readJson(root, '[data-form-schema]', {});
     const value = readJson(root, '[data-form-value]', {});
     const errors = readJson(root, '[data-form-errors-payload]', {});
@@ -36,6 +39,12 @@ export default function initFormViewer(root, options = {}) {
     decorateDestroy(runtime);
 
     return runtime;
+}
+
+function initNestedControls(root) {
+    root.querySelectorAll('[data-colorpicker="1"]').forEach((element) => {
+        initColorPicker(element);
+    });
 }
 
 /**

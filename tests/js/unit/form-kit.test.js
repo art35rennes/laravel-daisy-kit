@@ -233,6 +233,58 @@ describe('form-kit viewer runtime', () => {
         expect(window.DaisyFormViewer.getByElement(root)).toBe(null);
     });
 
+    it('initializes nested color picker controls rendered by the viewer', async () => {
+        document.body.innerHTML = `
+            <form id="color-viewer" data-form-id="color-viewer" data-module="form-viewer" data-submit-mode="none">
+                <div data-colorpicker="1"
+                    data-module="color-picker"
+                    data-value="#2f80ed"
+                    data-disabled="false"
+                    data-dropdown="true"
+                    data-swatches="[]"
+                    data-swatches-height="0"
+                    data-show-palette="true"
+                    data-show-inputs="true"
+                    data-show-format-toggle="true"
+                    data-show-alpha="false"
+                    data-show-hue="true"
+                    data-form-input="brand_color">
+                    <input type="hidden" name="brand_color" value="#2f80ed" data-colorpicker-input>
+                    <div class="dropdown">
+                        <div tabindex="0" role="button" data-colorpicker-trigger>
+                            <span data-colorchip></span>
+                            <span data-colortext>#2f80ed</span>
+                        </div>
+                        <div data-colorpicker-panel></div>
+                    </div>
+                </div>
+                <script type="application/json" data-form-schema>
+                    {"version":"1.0","id":"brand","fields":[{"id":"brand_color","type":"color","name":"brand_color","label":"Brand color"}]}
+                </script>
+                <script type="application/json" data-form-value>{"brand_color":"#2f80ed"}</script>
+                <script type="application/json" data-form-errors-payload>{}</script>
+            </form>
+        `;
+
+        const root = document.querySelector('[data-module="form-viewer"]');
+        const runtime = initFormViewer(root);
+        const picker = root.querySelector('[data-colorpicker="1"]');
+        const dropdown = picker.querySelector('.dropdown');
+        const trigger = picker.querySelector('[data-colorpicker-trigger]');
+
+        expect(picker.__cpInit).toBe(true);
+
+        trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(dropdown.classList.contains('dropdown-open')).toBe(true);
+
+        const formatSelect = picker.querySelector('[data-colorpicker-panel] select');
+        formatSelect.value = 'hex';
+        formatSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+        expect(dropdown.classList.contains('dropdown-open')).toBe(true);
+        expect(runtime.getValue('brand_color')).toBe('#2f80ed');
+    });
+
     it('handles visibility, validation and computed values', async () => {
         document.body.innerHTML = `
             <form>
