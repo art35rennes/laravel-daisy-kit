@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-06-08T20:52:01+00:00",
+    "generated_at": "2026-06-08T21:26:28+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
@@ -1431,6 +1431,7 @@
                 "message",
                 "actionLabel",
                 "actionUrl",
+                "actionColor",
                 "size",
                 "preset",
                 "iconName"
@@ -2124,6 +2125,7 @@
                 "href",
                 "onclick",
                 "groups",
+                "allowInlineHandlers",
                 "groupSpacing",
                 "itemSpacing",
                 "bg",
@@ -2667,10 +2669,13 @@
                 "action",
                 "method",
                 "loginUrl",
+                "showName",
+                "showFirstName",
                 "passwordConfirmation",
                 "termsUrl",
                 "privacyUrl",
-                "acceptTerms"
+                "acceptTerms",
+                "submitButtonText"
             ]
         },
         {
@@ -2685,10 +2690,13 @@
                 "action",
                 "method",
                 "loginUrl",
+                "showName",
+                "showFirstName",
                 "passwordConfirmation",
                 "termsUrl",
                 "privacyUrl",
                 "acceptTerms",
+                "submitButtonText",
                 "backgroundImage",
                 "showTestimonial",
                 "testimonial",
@@ -2748,7 +2756,9 @@
                 "recoveryUrl",
                 "logoutUrl",
                 "showRecovery",
-                "showLogout"
+                "showLogout",
+                "useRecoveryCode",
+                "submitButtonText"
             ]
         },
         {
@@ -2763,6 +2773,7 @@
                 "message",
                 "resendUrl",
                 "logoutUrl",
+                "showResend",
                 "showLogout",
                 "resendButtonText",
                 "logoutText"
@@ -2781,9 +2792,11 @@
                 "currentVersion",
                 "rssUrl",
                 "atomUrl",
+                "documentationUrl",
                 "showFilters",
                 "showSearch",
                 "showVersionBadge",
+                "showDocumentationCta",
                 "groupByMonth",
                 "highlightCurrent",
                 "expandLatest",
@@ -2919,6 +2932,7 @@
             "name": "loading-state",
             "relative_path": "resources/views/templates/errors/loading-state.blade.php",
             "props": [
+                "title",
                 "type",
                 "message",
                 "size",
@@ -2938,7 +2952,8 @@
                 "theme",
                 "message",
                 "retryAfter",
-                "allowedIps"
+                "allowedIps",
+                "showAllowedIps"
             ]
         },
         {
@@ -3266,6 +3281,9 @@
                 "preferences",
                 "language",
                 "timezone",
+                "availableLanguages",
+                "availableTimezones",
+                "availableThemes",
                 "readonly"
             ]
         },
