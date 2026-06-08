@@ -476,19 +476,19 @@ describe('form-kit builder bridge', () => {
                     <tbody>
                         <tr data-builder-drop-row>
                             <td>
-                                <button data-builder-drop-zone data-builder-drop-target="section" data-builder-drop-action="before"></button>
+                                <button data-builder-drop-zone data-builder-drop-target="section" data-builder-drop-action="before" data-builder-drop-kind="position" data-builder-drop-parent="__root" data-builder-drop-index="0" data-builder-drop-previous=""></button>
                             </td>
                         </tr>
                         <tr data-builder-field="section" data-builder-field-depth="0">
                             <td>
-                                <span data-builder-drag-handle data-builder-drag-field="section" data-builder-drag-descendants='["child"]'></span>
+                                <span data-builder-drag-handle data-builder-drag-field="section" data-builder-drag-descendants='["child"]' data-builder-drag-parent="__root" data-builder-drag-index="0"></span>
                                 <button data-builder-select><span>Section</span></button>
                                 <span data-builder-type-badge>section</span>
                             </td>
                         </tr>
                         <tr data-builder-drop-row>
                             <td>
-                                <button data-builder-drop-zone data-builder-drop-target="child" data-builder-drop-action="before"></button>
+                                <button data-builder-drop-zone data-builder-drop-target="child" data-builder-drop-action="before" data-builder-drop-kind="position" data-builder-drop-parent="section" data-builder-drop-index="0" data-builder-drop-previous=""></button>
                             </td>
                         </tr>
                         <tr data-builder-field="child" data-builder-field-depth="1">
@@ -496,7 +496,15 @@ describe('form-kit builder bridge', () => {
                         </tr>
                         <tr data-builder-drop-row>
                             <td>
-                                <button data-builder-drop-zone data-builder-drop-target="after" data-builder-drop-action="before"></button>
+                                <button data-builder-drop-zone data-builder-drop-target="after" data-builder-drop-action="before" data-builder-drop-kind="position" data-builder-drop-parent="__root" data-builder-drop-index="1" data-builder-drop-previous="section"></button>
+                            </td>
+                        </tr>
+                        <tr data-builder-field="after" data-builder-field-depth="0">
+                            <td>After</td>
+                        </tr>
+                        <tr data-builder-drop-row>
+                            <td>
+                                <button data-builder-drop-zone data-builder-drop-target="tail" data-builder-drop-action="before" data-builder-drop-kind="position" data-builder-drop-parent="__root" data-builder-drop-index="2" data-builder-drop-previous="after"></button>
                             </td>
                         </tr>
                     </tbody>
@@ -533,7 +541,8 @@ describe('form-kit builder bridge', () => {
         expect(root.querySelector('[data-builder-field="section"]').hasAttribute('data-builder-dragging-row')).toBe(true);
         expect(root.querySelector('[data-builder-drop-target="section"]').hasAttribute('data-builder-drop-disabled')).toBe(true);
         expect(root.querySelector('[data-builder-drop-target="child"]').hasAttribute('data-builder-drop-disabled')).toBe(true);
-        expect(root.querySelector('[data-builder-drop-target="after"]').hasAttribute('data-builder-drop-disabled')).toBe(false);
+        expect(root.querySelector('[data-builder-drop-target="after"]').hasAttribute('data-builder-drop-disabled')).toBe(true);
+        expect(root.querySelector('[data-builder-drop-target="tail"]').hasAttribute('data-builder-drop-disabled')).toBe(false);
 
         document.dispatchEvent(new MouseEvent('pointerup', {
             bubbles: true,
@@ -544,6 +553,83 @@ describe('form-kit builder bridge', () => {
 
         expect(root.dataset.dragging).toBeUndefined();
         expect(root.querySelector('[data-builder-field="section"]').hasAttribute('data-builder-dragging-row')).toBe(false);
+    });
+
+    it('hides same-level drop zones that would keep the dragged field in place', async () => {
+        document.body.innerHTML = `
+            <div data-module="form-builder">
+                <table>
+                    <tbody>
+                        <tr data-builder-drop-row>
+                            <td>
+                                <button data-builder-drop-zone data-builder-drop-target="first" data-builder-drop-action="before" data-builder-drop-kind="position" data-builder-drop-parent="__root" data-builder-drop-index="0" data-builder-drop-previous=""></button>
+                            </td>
+                        </tr>
+                        <tr data-builder-field="first" data-builder-field-depth="0">
+                            <td>First</td>
+                        </tr>
+                        <tr data-builder-drop-row>
+                            <td>
+                                <button data-builder-drop-zone data-builder-drop-target="middle" data-builder-drop-action="before" data-builder-drop-kind="position" data-builder-drop-parent="__root" data-builder-drop-index="1" data-builder-drop-previous="first"></button>
+                            </td>
+                        </tr>
+                        <tr data-builder-field="middle" data-builder-field-depth="0">
+                            <td>
+                                <span data-builder-drag-handle data-builder-drag-field="middle" data-builder-drag-descendants="[]" data-builder-drag-parent="__root" data-builder-drag-index="1"></span>
+                                <button data-builder-select><span>Middle</span></button>
+                                <span data-builder-type-badge>text</span>
+                            </td>
+                        </tr>
+                        <tr data-builder-drop-row>
+                            <td>
+                                <button data-builder-drop-zone data-builder-drop-target="last" data-builder-drop-action="before" data-builder-drop-kind="position" data-builder-drop-parent="__root" data-builder-drop-index="2" data-builder-drop-previous="middle"></button>
+                            </td>
+                        </tr>
+                        <tr data-builder-field="last" data-builder-field-depth="0">
+                            <td>Last</td>
+                        </tr>
+                        <tr data-builder-drop-row>
+                            <td>
+                                <button data-builder-drop-zone data-builder-drop-target="last" data-builder-drop-action="after" data-builder-drop-kind="position" data-builder-drop-parent="__root" data-builder-drop-index="3" data-builder-drop-previous="last"></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        const root = document.querySelector('[data-module="form-builder"]');
+        const handle = root.querySelector('[data-builder-drag-handle]');
+
+        initFormBuilder(root);
+        handle.dispatchEvent(new MouseEvent('pointerdown', {
+            bubbles: true,
+            button: 0,
+            clientX: 10,
+            clientY: 10,
+        }));
+
+        document.dispatchEvent(new MouseEvent('pointermove', {
+            bubbles: true,
+            button: 0,
+            clientX: 80,
+            clientY: 180,
+        }));
+
+        await frame();
+        await frame();
+
+        expect(root.querySelector('[data-builder-drop-target="first"]').hasAttribute('data-builder-drop-disabled')).toBe(false);
+        expect(root.querySelector('[data-builder-drop-target="middle"]').hasAttribute('data-builder-drop-disabled')).toBe(true);
+        expect(root.querySelector('[data-builder-drop-target="last"][data-builder-drop-action="before"]').hasAttribute('data-builder-drop-disabled')).toBe(true);
+        expect(root.querySelector('[data-builder-drop-target="last"][data-builder-drop-action="after"]').hasAttribute('data-builder-drop-disabled')).toBe(false);
+
+        document.dispatchEvent(new MouseEvent('pointerup', {
+            bubbles: true,
+            button: 0,
+            clientX: 80,
+            clientY: 180,
+        }));
     });
 
     it('keeps the dragged row anchored when drop zones change layout height', async () => {

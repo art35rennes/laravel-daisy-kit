@@ -228,7 +228,11 @@
                                             $isContainer = is_array($field['fields'] ?? null);
                                             $fieldId = (string) ($field['id'] ?? '');
                                             $parentId = $fieldParents[$fieldId] ?? null;
-                                            $siblings = $fieldSiblingsByParent[$parentId ?? '__root'] ?? [];
+                                            $parentKey = $parentId ?? '__root';
+                                            $siblings = $fieldSiblingsByParent[$parentKey] ?? [];
+                                            $siblingIndex = array_search($fieldId, $siblings, true);
+                                            $siblingIndex = is_int($siblingIndex) ? $siblingIndex : 0;
+                                            $previousSiblingId = $siblings[$siblingIndex - 1] ?? null;
                                             $isLastDirectSibling = $fieldId === end($siblings);
                                             $hasExpandableChildren = $isContainer && count((array) ($field['fields'] ?? [])) > 0;
                                             $isCollapsed = $collapsedFieldIds[$field['id'] ?? ''] ?? false;
@@ -261,6 +265,9 @@
                                                     data-builder-drop-descendants='@json($fieldDescendants[$fieldId] ?? [])'
                                                     data-builder-drop-kind="position"
                                                     data-builder-drop-action="before"
+                                                    data-builder-drop-parent="{{ $parentKey }}"
+                                                    data-builder-drop-index="{{ $siblingIndex }}"
+                                                    data-builder-drop-previous="{{ $previousSiblingId ?? '' }}"
                                                     data-builder-drop-zone="before"
                                                     aria-label="{{ __('daisy::form.builder.drop_position') }}"
                                                 >
@@ -286,6 +293,8 @@
                                                         data-builder-drag-handle
                                                         data-builder-drag-field="{{ $fieldId }}"
                                                         data-builder-drag-descendants='@json($fieldDescendants[$fieldId] ?? [])'
+                                                        data-builder-drag-parent="{{ $parentKey }}"
+                                                        data-builder-drag-index="{{ $siblingIndex }}"
                                                         onpointerdown="event.stopPropagation()"
                                                         onclick="event.stopPropagation()"
                                                         aria-label="{{ __('daisy::form.builder.drag_handle') }}"
@@ -354,6 +363,8 @@
                                                         data-builder-drop-descendants='@json($fieldDescendants[$fieldId] ?? [])'
                                                         data-builder-drop-kind="inside"
                                                         data-builder-drop-action="inside"
+                                                        data-builder-drop-parent="{{ $fieldId }}"
+                                                        data-builder-drop-index="{{ count((array) ($field['fields'] ?? [])) }}"
                                                         data-builder-drop-zone="inside"
                                                         aria-label="{{ __('daisy::form.builder.drop_inside') }}"
                                                     >
@@ -375,6 +386,9 @@
                                                         data-builder-drop-descendants='@json($fieldDescendants[$fieldId] ?? [])'
                                                         data-builder-drop-kind="position"
                                                         data-builder-drop-action="after"
+                                                        data-builder-drop-parent="{{ $parentKey }}"
+                                                        data-builder-drop-index="{{ count($siblings) }}"
+                                                        data-builder-drop-previous="{{ $fieldId }}"
                                                         data-builder-drop-zone="after"
                                                         aria-label="{{ __('daisy::form.builder.drop_position_end') }}"
                                                     >

@@ -87,10 +87,28 @@ export default function initFormBuilder(root) {
     return zone;
   };
 
-  const collectEligibleDropZones = (draggedId, draggedDescendants) => {
+  const isSameLevelNoopDrop = (zone, draggedId, draggedParent, draggedIndex) => {
+    if (zone.dataset.builderDropKind !== 'position' || Number.isNaN(draggedIndex)) {
+      return false;
+    }
+
+    if ((zone.dataset.builderDropParent || '__root') !== draggedParent) {
+      return false;
+    }
+
+    if (zone.dataset.builderDropPrevious === draggedId) {
+      return true;
+    }
+
+    const dropIndex = Number.parseInt(zone.dataset.builderDropIndex || '', 10);
+
+    return dropIndex === draggedIndex || dropIndex === draggedIndex + 1;
+  };
+
+  const collectEligibleDropZones = (draggedId, draggedDescendants, draggedParent, draggedIndex) => {
     return Array.from(root.querySelectorAll('[data-builder-drop-zone]')).filter((zone) => {
       const targetId = zone.dataset.builderDropTarget;
-      const disabled = !targetId || targetId === draggedId || draggedDescendants.includes(targetId);
+      const disabled = !targetId || targetId === draggedId || draggedDescendants.includes(targetId) || isSameLevelNoopDrop(zone, draggedId, draggedParent, draggedIndex);
       const dropRow = zone.closest('[data-builder-drop-row]');
 
       zone.toggleAttribute('data-builder-drop-disabled', disabled);
@@ -127,7 +145,12 @@ export default function initFormBuilder(root) {
       if (!state.dragStarted || state.finished) return;
 
       preserveScrollAnchor(state.draggedRow, () => {
-        state.eligibleZones = collectEligibleDropZones(state.draggedId, state.draggedDescendants);
+        state.eligibleZones = collectEligibleDropZones(
+          state.draggedId,
+          state.draggedDescendants,
+          state.draggedParent,
+          state.draggedIndex,
+        );
         root.dataset.dragging = state.draggedId;
         root.__daisyFormBuilderActiveDropZone = null;
       });
@@ -244,6 +267,7 @@ export default function initFormBuilder(root) {
     event.stopPropagation();
 
     const draggedDescendants = parseJsonAttribute(handle.dataset.builderDragDescendants);
+    const draggedIndex = Number.parseInt(handle.dataset.builderDragIndex || '', 10);
     const startX = event.clientX;
     const startY = event.clientY;
     const draggedRow = handle.closest('[data-builder-field]');
@@ -251,6 +275,8 @@ export default function initFormBuilder(root) {
       activeGhost: null,
       draggedDescendants,
       draggedId,
+      draggedIndex,
+      draggedParent: handle.dataset.builderDragParent || '__root',
       draggedRow,
       dragStarted: false,
       eligibleZones: null,
@@ -320,7 +346,12 @@ export default function initFormBuilder(root) {
 
     const onPointerUp = (upEvent) => {
       if (state.dragStarted && !state.eligibleZones) {
-        state.eligibleZones = collectEligibleDropZones(state.draggedId, state.draggedDescendants);
+        state.eligibleZones = collectEligibleDropZones(
+          state.draggedId,
+          state.draggedDescendants,
+          state.draggedParent,
+          state.draggedIndex,
+        );
       }
 
       const zone = findDropZone(upEvent, state.eligibleZones);
