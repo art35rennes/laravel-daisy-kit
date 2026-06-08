@@ -7,10 +7,12 @@
     // Routes
     'rssUrl' => null, // RSS feed URL (optional)
     'atomUrl' => null, // Atom feed URL (optional)
+    'documentationUrl' => null, // Optional CTA target
     // Options
     'showFilters' => true,
     'showSearch' => true,
     'showVersionBadge' => true,
+    'showDocumentationCta' => null, // Auto-detect from documentationUrl when null
     'groupByMonth' => false, // Group versions by month
     'highlightCurrent' => true, // Highlight current version
     'expandLatest' => true, // Expand latest version by default
@@ -25,6 +27,12 @@
     if (is_null($currentVersion)) {
         $currentVersion = config('app.version');
     }
+
+    $documentationUrl ??= Route::has('templates.documentation.changelog')
+        ? route('templates.documentation.changelog')
+        : null;
+
+    $showDocumentationCta ??= filled($documentationUrl);
 
     // Normaliser les versions : déterminer isCurrent si non fourni
     $normalizedVersions = collect($versions)->map(function($version) use ($currentVersion) {
@@ -73,14 +81,16 @@
                             {{ __('daisy::changelog.current_version') }} {{ $currentVersion }}
                         </x-daisy::ui.data-display.badge>
                     @endif
-                    <x-daisy::ui.inputs.button
-                        tag="a"
-                        :href="Route::has('templates.documentation.changelog') ? route('templates.documentation.changelog') : '#'"
-                        color="primary"
-                        class="btn-wide"
-                    >
-                        {{ __('daisy::changelog.cta_get_template') }}
-                    </x-daisy::ui.inputs.button>
+                    @if($showDocumentationCta && $documentationUrl)
+                        <x-daisy::ui.inputs.button
+                            tag="a"
+                            :href="$documentationUrl"
+                            color="primary"
+                            class="btn-wide"
+                        >
+                            {{ __('daisy::changelog.cta_get_template') }}
+                        </x-daisy::ui.inputs.button>
+                    @endif
                 </div>
             </div>
         </section>
@@ -234,4 +244,3 @@
         @endpush
     @endif
 </x-daisy::layout.app>
-

@@ -23,14 +23,14 @@
                 <x-daisy::ui.feedback.empty-state
                     :icon="$icon"
                     :title="$title"
-                    :message="$message"
-                    :actionLabel="$actionLabel"
-                    :actionUrl="$actionUrl"
-                    :size="$size"
-                />
+                :message="$message"
+                :actionLabel="$actionLabel"
+                :actionUrl="$actionUrl"
+                :actionColor="$actionVariant"
+                :size="$size"
+            />
             </div>
         </x-daisy::ui.layout.card>
     </div>
 </x-daisy::layout.app>
-
 

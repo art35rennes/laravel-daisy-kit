@@ -54,6 +54,37 @@
     $location = $getData($locationKey, old('location'));
     $website = $getData($websiteKey, old('website'));
 
+    $normalizeExternalUrl = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return null;
+        }
+
+        $url = trim((string) $url);
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : null;
+    };
+
+    $normalizeFormAction = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return '#';
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return '#';
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : '#';
+    };
+
+    $action = $normalizeFormAction($action);
+    $websiteUrl = $normalizeExternalUrl($website);
+
     // Handle avatar URL (if stored in storage, use Storage::url)
     if ($avatar && !filter_var($avatar, FILTER_VALIDATE_URL) && str_starts_with($avatar, 'storage/')) {
         $avatar = \Illuminate\Support\Facades\Storage::url($avatar);
@@ -162,9 +193,13 @@
                             <div>
                                 <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.website') }}</dt>
                                 <dd class="mt-1 text-sm text-base-content">
-                                    <a href="{{ $website }}" target="_blank" rel="noopener noreferrer" class="link link-hover">
+                                    @if($websiteUrl)
+                                        <a href="{{ $websiteUrl }}" target="_blank" rel="noopener noreferrer" class="link link-hover">
+                                            {{ $website }}
+                                        </a>
+                                    @else
                                         {{ $website }}
-                                    </a>
+                                    @endif
                                 </dd>
                             </div>
                         @endif

@@ -64,6 +64,28 @@
     $createdAt = $getData($createdAtKey);
     $lastActive = $getData($lastActiveKey);
 
+    $normalizeExternalUrl = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return null;
+        }
+
+        $url = trim((string) $url);
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : null;
+    };
+
+    $normalizeIconName = function($icon) {
+        if (!is_string($icon) && !$icon instanceof \Stringable) {
+            return null;
+        }
+
+        $icon = trim((string) $icon);
+
+        return preg_match('/^[A-Za-z0-9_.:-]+$/', $icon) === 1 ? $icon : null;
+    };
+
+    $websiteUrl = $normalizeExternalUrl($website);
+
     // Format dates if they are Carbon instances or date strings
     if ($createdAt && ($createdAt instanceof \Carbon\Carbon || is_string($createdAt))) {
         try {
@@ -130,12 +152,12 @@
             @if($isOwnProfile)
                 <div class="flex gap-2">
                     @if($profileEditUrl !== '#')
-                        <x-daisy::ui.inputs.button :href="$profileEditUrl" variant="outline">
+                        <x-daisy::ui.inputs.button tag="a" :href="$profileEditUrl" variant="outline">
                             {{ __('daisy::profile.edit_profile') }}
                         </x-daisy::ui.inputs.button>
                     @endif
                     @if($profileSettingsUrl !== '#')
-                        <x-daisy::ui.inputs.button :href="$profileSettingsUrl" variant="outline">
+                        <x-daisy::ui.inputs.button tag="a" :href="$profileSettingsUrl" variant="outline">
                             {{ __('daisy::profile.settings') }}
                         </x-daisy::ui.inputs.button>
                     @endif
@@ -160,17 +182,17 @@
                             >
                                 @if(!empty($stat['icon']))
                                     <x-slot:figure>
-                                        @if(is_string($stat['icon']))
-                                            @php
-                                                $iconName = $stat['icon'];
-                                            @endphp
+                                        @php
+                                            $iconName = $normalizeIconName($stat['icon']);
+                                        @endphp
+                                        @if($iconName)
                                             @if(str_starts_with($iconName, 'bi-'))
                                                 <x-dynamic-component :component="'bi-'.str_replace('bi-', '', $iconName)" class="w-8 h-8" />
                                             @else
                                                 <x-icon :name="$iconName" class="w-8 h-8" />
                                             @endif
-                                        @else
-                                            {!! $stat['icon'] !!}
+                                        @elseif($stat['icon'] instanceof \Illuminate\Contracts\Support\Htmlable)
+                                            {!! $stat['icon']->toHtml() !!}
                                         @endif
                                     </x-slot:figure>
                                 @endif
@@ -194,17 +216,17 @@
                                 :size="$badge['size'] ?? 'md'"
                             >
                                 @if(!empty($badge['icon']))
-                                    @if(is_string($badge['icon']))
-                                        @php
-                                            $iconName = $badge['icon'];
-                                        @endphp
+                                    @php
+                                        $iconName = $normalizeIconName($badge['icon']);
+                                    @endphp
+                                    @if($iconName)
                                         @if(str_starts_with($iconName, 'bi-'))
                                             <x-dynamic-component :component="'bi-'.str_replace('bi-', '', $iconName)" class="w-4 h-4" />
                                         @else
                                             <x-icon :name="$iconName" class="w-4 h-4" />
                                         @endif
-                                    @else
-                                        {!! $badge['icon'] !!}
+                                    @elseif($badge['icon'] instanceof \Illuminate\Contracts\Support\Htmlable)
+                                        {!! $badge['icon']->toHtml() !!}
                                     @endif
                                 @endif
                                 {{ $badge['label'] ?? '' }}
@@ -224,15 +246,14 @@
                     @php
                         $timelineItems = [];
                         foreach ($timeline as $item) {
+                            $icon = $item['icon'] ?? null;
+                            $iconName = $normalizeIconName($icon);
                             $timelineItems[] = [
                                 'when' => $item['date'] ?? '',
                                 'title' => $item['title'] ?? '',
                                 'content' => $item['content'] ?? null,
-                                'icon' => !empty($item['icon']) ? (is_string($item['icon']) 
-                                    ? (str_starts_with($item['icon'], 'bi-') 
-                                        ? '<x-dynamic-component component="bi-'.str_replace('bi-', '', $item['icon']).'" class="w-5 h-5" />' 
-                                        : '<x-icon name="'.$item['icon'].'" class="w-5 h-5" />')
-                                    : $item['icon']) : null,
+                                'iconName' => $iconName,
+                                'icon' => $iconName ? null : $icon,
                             ];
                         }
                     @endphp
@@ -260,9 +281,13 @@
                                 <x-bi-globe class="w-5 h-5 text-base-content/50" />
                                 <dt class="text-sm font-medium text-base-content/70">{{ __('daisy::profile.website') }}</dt>
                                 <dd class="text-sm text-base-content">
-                                    <a href="{{ $website }}" target="_blank" rel="noopener noreferrer" class="link link-hover">
+                                    @if($websiteUrl)
+                                        <a href="{{ $websiteUrl }}" target="_blank" rel="noopener noreferrer" class="link link-hover">
+                                            {{ $website }}
+                                        </a>
+                                    @else
                                         {{ $website }}
-                                    </a>
+                                    @endif
                                 </dd>
                             </div>
                         @endif

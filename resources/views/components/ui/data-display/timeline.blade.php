@@ -1,5 +1,5 @@
 @props([
-    'items' => [], // [ { when,title,content, icon, boxOn: 'start'|'end'|null, hrBefore?:bool, hrAfter?:bool, startHtml?, endHtml? } ]
+    'items' => [], // [ { when,title,content, iconName?, iconHtml?, icon?, boxOn: 'start'|'end'|null, hrBefore?:bool, hrAfter?, startHtml?, endHtml? } ]
     'orientation' => 'vertical', // vertical|horizontal (daisyUI: horizontal par défaut)
     'compact' => false,
     'snapIcon' => false, // timeline-snap-icon (icône alignée sur start)
@@ -47,8 +47,14 @@
 
             {{-- Colonne middle : icône (personnalisée ou par défaut) --}}
             <div class="timeline-middle">
-                @if(!empty($item['icon']))
-                    {!! $item['icon'] !!}
+                @if(!empty($item['iconName']))
+                    <x-icon :name="$item['iconName']" class="h-5 w-5" />
+                @elseif(!empty($item['iconHtml']))
+                    {!! $item['iconHtml'] !!}
+                @elseif(!empty($item['icon']) && $item['icon'] instanceof \Illuminate\Contracts\Support\Htmlable)
+                    {!! $item['icon']->toHtml() !!}
+                @elseif(!empty($item['icon']))
+                    {{ $item['icon'] }}
                 @else
                     {{-- Icône par défaut : checkmark (timeline de succès) --}}
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5">

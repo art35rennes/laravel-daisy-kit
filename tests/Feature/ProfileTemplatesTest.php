@@ -1,7 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\MessageBag;
+use Illuminate\View\ComponentAttributeBag;
 
 beforeEach(function () {
     View::share('errors', new MessageBag);
@@ -9,7 +11,7 @@ beforeEach(function () {
 
 it('renders profile-view template', function () {
     $html = View::make('daisy::templates.profile.profile-view', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe', 'email' => 'john@example.com'],
     ])->render();
 
@@ -23,7 +25,7 @@ it('renders profile-view template', function () {
 
 it('renders profile-view template with stats', function () {
     $html = View::make('daisy::templates.profile.profile-view', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe'],
         'stats' => [
             ['label' => 'Posts', 'value' => 42],
@@ -40,7 +42,7 @@ it('renders profile-view template with stats', function () {
 
 it('renders profile-view template with badges', function () {
     $html = View::make('daisy::templates.profile.profile-view', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe'],
         'badges' => [
             ['label' => 'Early Adopter', 'color' => 'primary'],
@@ -55,22 +57,82 @@ it('renders profile-view template with badges', function () {
 
 it('renders profile-view template with timeline', function () {
     $html = View::make('daisy::templates.profile.profile-view', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe'],
         'timeline' => [
-            ['date' => '2024-01-15', 'title' => 'A rejoint la plateforme'],
+            ['date' => '2024-01-15', 'title' => 'A rejoint la plateforme', 'icon' => 'bi-person'],
             ['date' => '2024-01-20', 'title' => 'Premier post publié'],
         ],
     ])->render();
 
     expect($html)
         ->toContain('A rejoint la plateforme')
-        ->toContain('Premier post publié');
+        ->toContain('Premier post publié')
+        ->toContain('bi-person');
+});
+
+it('does not render untrusted profile website values as clickable links', function () {
+    $html = View::make('daisy::templates.profile.profile-view', [
+        'attributes' => new ComponentAttributeBag([]),
+        'profile' => ['name' => 'John Doe', 'website' => 'javascript:alert(1)'],
+        'showContact' => true,
+    ])->render();
+
+    expect($html)
+        ->toContain('javascript:alert(1)')
+        ->not->toContain('href="javascript:alert(1)"');
+});
+
+it('does not render untrusted profile icon HTML from arrays', function () {
+    $html = View::make('daisy::templates.profile.profile-view', [
+        'attributes' => new ComponentAttributeBag([]),
+        'profile' => ['name' => 'John Doe'],
+        'stats' => [
+            ['label' => 'Posts', 'value' => 42, 'icon' => '<script>alert(1)</script>'],
+        ],
+        'badges' => [
+            ['label' => 'Trusted', 'icon' => new HtmlString('<svg data-safe-icon="1"></svg>')],
+        ],
+    ])->render();
+
+    expect($html)
+        ->not->toContain('<script>alert(1)</script>')
+        ->toContain('data-safe-icon="1"');
+});
+
+it('does not render untrusted website links in readonly profile edit template', function () {
+    $html = View::make('daisy::templates.profile.profile-edit', [
+        'attributes' => new ComponentAttributeBag([]),
+        'profile' => ['name' => 'John Doe', 'website' => 'javascript:alert(1)'],
+        'readonly' => true,
+        'showWebsite' => true,
+    ])->render();
+
+    expect($html)
+        ->toContain('javascript:alert(1)')
+        ->not->toContain('href="javascript:alert(1)"');
+});
+
+it('does not render unsafe profile form actions', function () {
+    $editHtml = View::make('daisy::templates.profile.profile-edit', [
+        'attributes' => new ComponentAttributeBag([]),
+        'action' => 'javascript:alert(1)',
+    ])->render();
+
+    $settingsHtml = View::make('daisy::templates.profile.profile-settings', [
+        'attributes' => new ComponentAttributeBag([]),
+        'action' => 'javascript:alert(2)',
+    ])->render();
+
+    expect($editHtml)
+        ->not->toContain('action="javascript:alert(1)"')
+        ->and($settingsHtml)
+        ->not->toContain('action="javascript:alert(2)"');
 });
 
 it('renders profile-edit template', function () {
     $html = View::make('daisy::templates.profile.profile-edit', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe', 'email' => 'john@example.com'],
     ])->render();
 
@@ -83,7 +145,7 @@ it('renders profile-edit template', function () {
 
 it('renders profile-edit template in readonly mode', function () {
     $html = View::make('daisy::templates.profile.profile-edit', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe', 'email' => 'john@example.com'],
         'readonly' => true,
     ])->render();
@@ -97,7 +159,7 @@ it('renders profile-edit template in readonly mode', function () {
 
 it('renders profile-edit template with avatar section', function () {
     $html = View::make('daisy::templates.profile.profile-edit', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe', 'avatar' => '/path/to/avatar.jpg'],
         'showAvatar' => true,
     ])->render();
@@ -109,7 +171,7 @@ it('renders profile-edit template with avatar section', function () {
 
 it('renders profile-edit template without optional fields', function () {
     $html = View::make('daisy::templates.profile.profile-edit', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe'],
         'showPhone' => false,
         'showLocation' => false,
@@ -124,7 +186,7 @@ it('renders profile-edit template without optional fields', function () {
 
 it('renders profile-settings template', function () {
     $html = View::make('daisy::templates.profile.profile-settings', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
     ])->render();
 
     expect($html)
@@ -135,7 +197,7 @@ it('renders profile-settings template', function () {
 
 it('renders profile-settings template in readonly mode', function () {
     $html = View::make('daisy::templates.profile.profile-settings', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'readonly' => true,
     ])->render();
 
@@ -147,7 +209,7 @@ it('renders profile-settings template in readonly mode', function () {
 
 it('renders profile-settings template with preferences tab', function () {
     $html = View::make('daisy::templates.profile.profile-settings', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'showPreferences' => true,
     ])->render();
 
@@ -161,7 +223,7 @@ it('renders profile-settings template with preferences tab', function () {
 
 it('renders profile-settings template with notifications tab', function () {
     $html = View::make('daisy::templates.profile.profile-settings', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'showNotifications' => true,
     ])->render();
 
@@ -173,7 +235,7 @@ it('renders profile-settings template with notifications tab', function () {
 
 it('renders profile-settings template with security tab', function () {
     $html = View::make('daisy::templates.profile.profile-settings', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'showSecurity' => true,
     ])->render();
 
@@ -185,7 +247,7 @@ it('renders profile-settings template with security tab', function () {
 
 it('renders profile-settings template with appearance tab', function () {
     $html = View::make('daisy::templates.profile.profile-settings', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'showTheme' => true,
     ])->render();
 
@@ -196,7 +258,7 @@ it('renders profile-settings template with appearance tab', function () {
 
 it('renders profile-settings template without privacy tab', function () {
     $html = View::make('daisy::templates.profile.profile-settings', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'showPrivacy' => false,
     ])->render();
 
@@ -210,7 +272,7 @@ it('renders profile-view template with isOwnProfile detection', function () {
     // Pass isOwnProfile directly to avoid database dependency
     // Also provide URLs so buttons are rendered
     $html = View::make('daisy::templates.profile.profile-view', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'profile' => $user,
         'isOwnProfile' => true,
         'profileEditUrl' => '/profile/edit',
@@ -219,7 +281,9 @@ it('renders profile-view template with isOwnProfile detection', function () {
 
     expect($html)
         ->toContain(__('daisy::profile.edit_profile'))
-        ->toContain(__('daisy::profile.settings'));
+        ->toContain(__('daisy::profile.settings'))
+        ->toContain('href="/profile/edit"')
+        ->toContain('href="/profile/settings"');
 });
 
 it('renders profile-edit template with old values', function () {
@@ -228,7 +292,7 @@ it('renders profile-edit template with old values', function () {
     session()->flashInput(['name' => 'Jane Doe']);
 
     $html = View::make('daisy::templates.profile.profile-edit', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'profile' => ['name' => 'John Doe'],
     ])->render();
 
@@ -238,7 +302,7 @@ it('renders profile-edit template with old values', function () {
 
 it('renders profile-settings template with preferences data', function () {
     $html = View::make('daisy::templates.profile.profile-settings', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'preferences' => [
             'language' => 'en',
             'timezone' => 'America/New_York',
@@ -248,4 +312,24 @@ it('renders profile-settings template with preferences data', function () {
     expect($html)
         ->toContain('selected')
         ->toContain('America/New_York');
+});
+
+it('renders profile-settings template with host-provided option lists', function () {
+    $html = View::make('daisy::templates.profile.profile-settings', [
+        'attributes' => new ComponentAttributeBag([]),
+        'preferences' => [
+            'language' => 'es',
+            'timezone' => 'Europe/Madrid',
+            'theme' => 'corporate',
+        ],
+        'availableLanguages' => ['es' => 'Español'],
+        'availableTimezones' => ['Europe/Madrid' => 'Europe/Madrid (CET)'],
+        'availableThemes' => ['corporate' => 'Corporate only'],
+    ])->render();
+
+    expect($html)
+        ->toContain('Español')
+        ->toContain('Europe/Madrid (CET)')
+        ->toContain('Corporate only')
+        ->not->toContain('America/New_York');
 });

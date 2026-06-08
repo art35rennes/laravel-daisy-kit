@@ -4,6 +4,7 @@
     'message' => null, // Custom message or use Laravel's
     'retryAfter' => null, // Retry-After header value
     'allowedIps' => [], // IPs allowed during maintenance
+    'showAllowedIps' => false,
 ])
 
 @php
@@ -16,9 +17,9 @@
     $estimatedReturn = null;
     if ($retryAfter) {
         try {
-            $carbon = \\Carbon\\Carbon::now()->addSeconds($retryAfter);
+            $carbon = \Carbon\Carbon::now()->addSeconds($retryAfter);
             $estimatedReturn = $carbon->format('d/m/Y H:i');
-        } catch (\\Exception $e) {
+        } catch (\Exception $e) {
             // Ignore si Carbon n'est pas disponible ou erreur de formatage
         }
     }
@@ -53,7 +54,7 @@
                 @endif
             </x-daisy::ui.feedback.alert>
             
-            @if(!empty($allowedIps))
+            @if($showAllowedIps && !empty($allowedIps))
                 <x-daisy::ui.feedback.alert
                     color="info"
                     variant="outline"
@@ -69,5 +70,3 @@
         </div>
     </div>
 </x-daisy::layout.app>
-
-

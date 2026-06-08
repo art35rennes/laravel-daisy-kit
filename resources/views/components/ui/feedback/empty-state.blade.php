@@ -4,6 +4,7 @@
     'message' => null,
     'actionLabel' => null,
     'actionUrl' => null,
+    'actionColor' => 'primary',
     'size' => 'md', // sm, md, lg
     'preset' => null, // no-results | no-data | no-permission
     'iconName' => null,
@@ -75,7 +76,7 @@
                 tag="a"
                 :href="$actionUrl"
                 size="sm"
-                color="primary"
+                :color="$actionColor"
             >
                 {{ $actionLabel }}
             </x-daisy::ui.inputs.button>

@@ -21,6 +21,9 @@
     'showTheme' => true,
     // Preferences data (can be passed separately or accessed from profile)
     'preferences' => null, // ['language' => 'fr', 'timezone' => 'Europe/Paris', ...]
+    'availableLanguages' => null,
+    'availableTimezones' => null,
+    'availableThemes' => null,
     // Readonly mode
     'readonly' => false,
 ])
@@ -63,6 +66,26 @@
     // Theme preference
     $currentTheme = old('theme', $prefs['theme'] ?? session('theme', 'light'));
 
+    $normalizeFormAction = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return '#';
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return '#';
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : '#';
+    };
+
+    $action = $normalizeFormAction($action);
+
     // Build breadcrumbs
     $breadcrumbs = [
         ['label' => __('daisy::profile.profile'), 'href' => $profileViewUrl !== '#' ? $profileViewUrl : null],
@@ -73,17 +96,48 @@
     $httpMethod = strtoupper($method);
     $needsMethodOverride = in_array($httpMethod, ['PUT', 'PATCH', 'DELETE']);
 
-    // Available languages (from config or default)
-    $availableLanguages = config('app.locales', ['fr' => 'Français', 'en' => 'English']);
+    // Available options can be provided by the host app, or resolved from sensible package defaults.
+    $availableLanguages ??= config('app.locales', ['fr' => 'Français', 'en' => 'English']);
 
-    // Available timezones
-    $availableTimezones = [
+    $availableTimezones ??= [
         'UTC' => 'UTC',
         'Europe/Paris' => 'Europe/Paris (CET)',
         'Europe/London' => 'Europe/London (GMT)',
         'America/New_York' => 'America/New_York (EST)',
         'America/Los_Angeles' => 'America/Los_Angeles (PST)',
         'Asia/Tokyo' => 'Asia/Tokyo (JST)',
+    ];
+
+    $availableThemes ??= [
+        'light' => __('daisy::profile.theme_light'),
+        'dark' => __('daisy::profile.theme_dark'),
+        'cupcake' => 'Cupcake',
+        'bumblebee' => 'Bumblebee',
+        'emerald' => 'Emerald',
+        'corporate' => 'Corporate',
+        'synthwave' => 'Synthwave',
+        'retro' => 'Retro',
+        'cyberpunk' => 'Cyberpunk',
+        'valentine' => 'Valentine',
+        'halloween' => 'Halloween',
+        'garden' => 'Garden',
+        'forest' => 'Forest',
+        'aqua' => 'Aqua',
+        'lofi' => 'Lofi',
+        'pastel' => 'Pastel',
+        'fantasy' => 'Fantasy',
+        'wireframe' => 'Wireframe',
+        'black' => 'Black',
+        'luxury' => 'Luxury',
+        'dracula' => 'Dracula',
+        'cmyk' => 'CMYK',
+        'autumn' => 'Autumn',
+        'business' => 'Business',
+        'acid' => 'Acid',
+        'lemonade' => 'Lemonade',
+        'night' => 'Night',
+        'coffee' => 'Coffee',
+        'winter' => 'Winter',
     ];
 @endphp
 
@@ -359,39 +413,6 @@
                                         name="theme"
                                         :class="$errors->has('theme') ? 'select-error' : ''"
                                     >
-                                        @php
-                                            $availableThemes = [
-                                                'light' => __('daisy::profile.theme_light'),
-                                                'dark' => __('daisy::profile.theme_dark'),
-                                                'cupcake' => 'Cupcake',
-                                                'bumblebee' => 'Bumblebee',
-                                                'emerald' => 'Emerald',
-                                                'corporate' => 'Corporate',
-                                                'synthwave' => 'Synthwave',
-                                                'retro' => 'Retro',
-                                                'cyberpunk' => 'Cyberpunk',
-                                                'valentine' => 'Valentine',
-                                                'halloween' => 'Halloween',
-                                                'garden' => 'Garden',
-                                                'forest' => 'Forest',
-                                                'aqua' => 'Aqua',
-                                                'lofi' => 'Lofi',
-                                                'pastel' => 'Pastel',
-                                                'fantasy' => 'Fantasy',
-                                                'wireframe' => 'Wireframe',
-                                                'black' => 'Black',
-                                                'luxury' => 'Luxury',
-                                                'dracula' => 'Dracula',
-                                                'cmyk' => 'CMYK',
-                                                'autumn' => 'Autumn',
-                                                'business' => 'Business',
-                                                'acid' => 'Acid',
-                                                'lemonade' => 'Lemonade',
-                                                'night' => 'Night',
-                                                'coffee' => 'Coffee',
-                                                'winter' => 'Winter',
-                                            ];
-                                        @endphp
                                         @foreach($availableThemes as $themeValue => $themeLabel)
                                             <option value="{{ $themeValue }}" @selected($currentTheme === $themeValue)>{{ $themeLabel }}</option>
                                         @endforeach
