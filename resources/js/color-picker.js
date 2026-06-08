@@ -477,39 +477,67 @@ function buildPanel(root, state) {
  * @param {HTMLElement} root 
  */
 function initColorPicker(root) {
-  if (!root || root.__cpInit) return; // Déjà initialisé
+  if (!root) return;
+
+  if (root.__cpInit) {
+    ensureDropdownController(root);
+
+    return;
+  }
+
   root.__cpInit = true;
   if (root.dataset.disabled === 'true') return; // Désactivé
   
   // Etat initial à partir de data-value ou couleur par défaut
   const state = parseColor(root.dataset.value || '#563d7c');
   buildPanel(root, state);
-  // Récupération des éléments d'interaction
+  ensureDropdownController(root);
+}
+
+/**
+ * Attache le contrôleur d'ouverture du dropdown indépendamment de la construction du panneau.
+ *
+ * Certains chargeurs peuvent initialiser le composant une première fois avant une
+ * réhydratation Livewire. On garde donc ce garde-fou séparé de `__cpInit` pour
+ * éviter un picker visuellement ouvert par `:focus-within` mais sans état
+ * `dropdown-open`, ce qui le fait disparaître au clic dans le select de format.
+ *
+ * @param {HTMLElement} root
+ * @returns {void}
+ */
+function ensureDropdownController(root) {
+  if (!root || root.__cpDropdownInit) return;
+
   const trigger = root.querySelector('[data-colorpicker-trigger]');
   const panel = root.querySelector('[data-colorpicker-panel]');
   const dropdown = root.querySelector('.dropdown');
-  if (dropdown && trigger && panel) {
-    ['pointerdown', 'mousedown', 'click'].forEach((eventName) => {
-      panel.addEventListener(eventName, (event) => {
-        event.stopPropagation();
-      });
-    });
 
-    // Ouverture/fermeture du dropdown au clic sur le trigger
-    trigger.addEventListener('click', (e) => {
-      e.preventDefault(); 
-      e.stopPropagation();
-      dropdown.classList.toggle('dropdown-open');
+  if (!dropdown || !trigger || !panel) return;
+
+  root.__cpDropdownInit = true;
+
+  ['pointerdown', 'mousedown', 'click'].forEach((eventName) => {
+    root.addEventListener(eventName, (event) => {
+      event.stopPropagation();
     });
-    // Fermeture du dropdown si clic en dehors
-    document.addEventListener('click', (e) => {
-      if (!root.contains(e.target)) dropdown.classList.remove('dropdown-open');
-    });
-    // Fermeture du dropdown à la touche Escape
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') dropdown.classList.remove('dropdown-open');
-    });
-  }
+  });
+
+  // Ouverture/fermeture du dropdown au clic sur le trigger.
+  trigger.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropdown.classList.toggle('dropdown-open');
+  });
+
+  // Fermeture du dropdown si clic en dehors.
+  document.addEventListener('click', (e) => {
+    if (!root.contains(e.target)) dropdown.classList.remove('dropdown-open');
+  });
+
+  // Fermeture du dropdown à la touche Escape.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') dropdown.classList.remove('dropdown-open');
+  });
 }
 
 /**

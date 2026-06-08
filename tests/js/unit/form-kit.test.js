@@ -874,4 +874,37 @@ describe('color picker', () => {
 
         document.removeEventListener('click', globalCloser);
     });
+
+    it('attaches dropdown controls when a picker was already marked initialized', () => {
+        document.body.innerHTML = `
+            <div data-colorpicker="1"
+                data-value="#123456"
+                data-disabled="false"
+                data-dropdown="true"
+                data-swatches="[]"
+                data-swatches-height="0"
+                data-show-palette="true"
+                data-show-inputs="true"
+                data-show-format-toggle="true"
+                data-show-alpha="true"
+                data-show-hue="true">
+                <div class="dropdown">
+                    <button type="button" data-colorpicker-trigger>Open</button>
+                    <div data-colorpicker-panel></div>
+                </div>
+            </div>
+        `;
+
+        const root = document.querySelector('[data-colorpicker="1"]');
+        const dropdown = root.querySelector('.dropdown');
+        const trigger = root.querySelector('[data-colorpicker-trigger]');
+
+        root.__cpInit = true;
+
+        initColorPicker(root);
+        trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+        expect(dropdown.classList.contains('dropdown-open')).toBe(true);
+        expect(root.__cpDropdownInit).toBe(true);
+    });
 });
