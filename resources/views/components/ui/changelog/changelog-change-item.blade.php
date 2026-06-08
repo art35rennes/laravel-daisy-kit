@@ -25,10 +25,33 @@
     $typeColor = $typeColorMap[$type] ?? 'neutral';
     $typeLabel = __('daisy::changelog.'.$type);
 
+    $normalizeUrl = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return null;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return null;
+        }
+
+        if (str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : null;
+    };
+
+    $issueBaseUrl = $normalizeUrl($issueBaseUrl) ?? 'https://github.com/user/repo/issues';
+    $migrationGuide = $normalizeUrl($migrationGuide);
+    $image = $normalizeUrl($image);
+
     // Formatage des issues
     $formattedIssues = [];
     foreach ($issues as $issue) {
         if (is_array($issue)) {
+            $issue['url'] = $normalizeUrl($issue['url'] ?? null);
             $formattedIssues[] = $issue;
         } else {
             $formattedIssues[] = [
@@ -98,9 +121,13 @@
             <div class="flex flex-wrap items-center gap-2">
                 <span class="text-xs uppercase tracking-wide text-base-content/50">{{ __('daisy::changelog.issues') }}</span>
                 @foreach($formattedIssues as $issue)
-                    <a href="{{ $issue['url'] }}" target="_blank" rel="noopener noreferrer" class="link link-primary text-xs font-semibold">
-                        #{{ $issue['number'] }}
-                    </a>
+                    @if($issue['url'] ?? null)
+                        <a href="{{ $issue['url'] }}" target="_blank" rel="noopener noreferrer" class="link link-primary text-xs font-semibold">
+                            #{{ $issue['number'] }}
+                        </a>
+                    @else
+                        <span class="text-xs font-semibold">#{{ $issue['number'] }}</span>
+                    @endif
                 @endforeach
             </div>
         @endif
@@ -132,4 +159,3 @@
         </div>
     @endif
 </div>
-

@@ -104,6 +104,38 @@ it('hides sidebar items marked as not visible', function () {
         ->toContain('Health');
 });
 
+it('does not render unsafe sidebar hrefs', function () {
+    $html = View::make('daisy::components.ui.navigation.sidebar', [
+        'brandHref' => 'javascript:alert(1)',
+        'sections' => [
+            [
+                'items' => [
+                    [
+                        'label' => 'Unsafe',
+                        'href' => 'javascript:alert(2)',
+                    ],
+                    [
+                        'label' => 'Parent',
+                        'children' => [
+                            [
+                                'label' => 'Unsafe child',
+                                'href' => 'javascript:alert(3)',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ])->render();
+
+    expect($html)
+        ->toContain('Unsafe')
+        ->toContain('Unsafe child')
+        ->not->toContain('href="javascript:alert(1)"')
+        ->not->toContain('href="javascript:alert(2)"')
+        ->not->toContain('href="javascript:alert(3)"');
+});
+
 it('marks sidebar items active from named routes', function () {
     $renderSidebar = function () {
         return View::make('daisy::components.ui.navigation.sidebar', [

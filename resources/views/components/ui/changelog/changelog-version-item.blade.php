@@ -14,6 +14,27 @@
 @php
     use Carbon\Carbon;
 
+    $normalizeUrl = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return null;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return null;
+        }
+
+        if (str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : null;
+    };
+
+    $tagUrl = $normalizeUrl($tagUrl);
+    $compareUrl = $normalizeUrl($compareUrl);
+
     // Normaliser les données : convertir le format simple en format enrichi si nécessaire
     $normalizedItems = [];
 
@@ -137,4 +158,3 @@
         </div>
     </div>
 </div>
-

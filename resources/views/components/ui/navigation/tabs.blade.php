@@ -49,6 +49,24 @@
         ? $errorBag
         : (view()->shared('errors') instanceof \Illuminate\Support\ViewErrorBag ? view()->shared('errors') : new \Illuminate\Support\ViewErrorBag());
     $errorLabel = __('daisy::components.tab_error');
+
+    $normalizeHref = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return null;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return null;
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^(https?:|mailto:|tel:)/i', $url) === 1 ? $url : null;
+    };
 @endphp
 
 @if(!$isRadio)
@@ -63,7 +81,7 @@
                 $isActive = (bool) data_get($tab, 'active', false);
                 $isDisabled = (bool) data_get($tab, 'disabled', false);
                 $label = data_get($tab, 'label', __('daisy::components.tab'));
-                $href = data_get($tab, 'href');
+                $href = $normalizeHref(data_get($tab, 'href'));
                 $iconName = data_get($tab, 'iconName');
                 $errorKey = data_get($tab, 'errorKey');
                 $hasError = is_string($errorKey) && $resolvedErrorBag->has($errorKey);

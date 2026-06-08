@@ -34,11 +34,34 @@
 ])
 
 @php
+    $normalizeEndpoint = function($url, $fallback = '#') {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return $fallback;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return $fallback;
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : $fallback;
+    };
+
     $markAsReadUrl = $markAsReadUrl ?? (Route::has('notifications.read') ? route('notifications.read', ':id') : '#');
     $markAllAsReadUrl = $markAllAsReadUrl ?? (Route::has('notifications.read-all') ? route('notifications.read-all') : '#');
     $deleteUrl = $deleteUrl ?? (Route::has('notifications.delete') ? route('notifications.delete', ':id') : '#');
     $loadNotificationsUrl = $loadNotificationsUrl ?? (Route::has('notifications.index') ? route('notifications.index') : '#');
     $preferencesUrl = $preferencesUrl ?? (Route::has('notifications.preferences') ? route('notifications.preferences') : null);
+    $markAsReadUrl = $normalizeEndpoint($markAsReadUrl);
+    $markAllAsReadUrl = $normalizeEndpoint($markAllAsReadUrl);
+    $deleteUrl = $normalizeEndpoint($deleteUrl);
+    $loadNotificationsUrl = $normalizeEndpoint($loadNotificationsUrl);
+    $preferencesUrl = $normalizeEndpoint($preferencesUrl, null);
 
     $notificationsCollection = collect($notifications);
 
@@ -164,6 +187,7 @@
                         color="neutral"
                         :tag="$preferencesUrl ? 'a' : 'button'"
                         :href="$preferencesUrl"
+                        :disabled="!$preferencesUrl"
                     >
                         <span class="flex items-center gap-2">
                             <x-icon name="bi-gear" class="w-4 h-4" />
@@ -218,7 +242,7 @@
                         @forelse($focusNotifications as $focusNotification)
                             @php
                                 $focusData = data_get($focusNotification, $notificationDataKey, []);
-                                $focusLink = data_get($focusData, 'action.url', data_get($focusData, 'link', '#'));
+                                $focusLink = $normalizeEndpoint(data_get($focusData, 'action.url', data_get($focusData, 'link', '#')));
                                 $focusMessage = data_get($focusData, 'message', __('daisy::notifications.new_notification'));
                                 $focusCreatedAt = data_get($focusNotification, $notificationCreatedAtKey);
                                 $focusDate = null;
@@ -274,10 +298,10 @@
                     data-polling-interval="{{ $pollingInterval }}"
                     data-auto-reconnect="{{ $autoReconnect ? 'true' : 'false' }}"
                     data-reconnect-delay="{{ $reconnectDelay }}"
-                    data-mark-as-read-url="{{ $markAsReadUrl }}"
-                    data-mark-all-as-read-url="{{ $markAllAsReadUrl }}"
-                    data-delete-url="{{ $deleteUrl }}"
-                    data-load-notifications-url="{{ $loadNotificationsUrl }}"
+                    data-mark-as-read-url="{{ $markAsReadUrl !== '#' ? $markAsReadUrl : '' }}"
+                    data-mark-all-as-read-url="{{ $markAllAsReadUrl !== '#' ? $markAllAsReadUrl : '' }}"
+                    data-delete-url="{{ $deleteUrl !== '#' ? $deleteUrl : '' }}"
+                    data-load-notifications-url="{{ $loadNotificationsUrl !== '#' ? $loadNotificationsUrl : '' }}"
                     @if($userId) data-user-id="{{ $userId }}" @endif
                 >
                     <x-daisy::ui.communication.notification-list
@@ -382,4 +406,3 @@
         </div>
     </section>
 </x-daisy::layout.app>
-

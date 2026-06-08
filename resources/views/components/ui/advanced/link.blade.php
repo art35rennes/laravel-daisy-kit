@@ -8,6 +8,26 @@
 ])
 
 @php
+    $normalizeHref = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return '#';
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '' || $url === '#') {
+            return '#';
+        }
+
+        if (str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^(https?:|mailto:|tel:)/i', $url) === 1 ? $url : '#';
+    };
+
+    $href = $normalizeHref($href);
+
     $classes = 'link';
     if ($underline) $classes .= ' link-hover';
     if ($color) $classes .= ' link-'.$color;
@@ -19,5 +39,4 @@
         <x-bi-box-arrow-up-right class="ml-1 align-[-2px] h-4 w-4" />
     @endif
 </a>
-
 

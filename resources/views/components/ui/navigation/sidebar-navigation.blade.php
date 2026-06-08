@@ -19,6 +19,24 @@
 @php
     $currentPath = '/'.ltrim((string) ($current ?? request()->path()), '/');
 
+    $normalizeHref = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return null;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return null;
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^(https?:|mailto:|tel:)/i', $url) === 1 ? $url : null;
+    };
+
     $isActive = function (?string $href) use ($currentPath): bool {
         if (!$href) {
             return false;
@@ -84,7 +102,7 @@
         @foreach($items as $node)
             @php
                 $label = (string) ($node['label'] ?? '');
-                $href = isset($node['href']) && is_string($node['href']) ? $node['href'] : null;
+                $href = $normalizeHref($node['href'] ?? null);
                 $children = is_array($node['children'] ?? null) ? $node['children'] : [];
                 $nodeHasChildren = !empty($children);
 
@@ -100,7 +118,7 @@
                             @foreach($children as $child)
                                 @php
                                     $childLabel = (string) ($child['label'] ?? '');
-                                    $childHref = isset($child['href']) && is_string($child['href']) ? $child['href'] : null;
+                                    $childHref = $normalizeHref($child['href'] ?? null);
                                     $childIsActive = $isActive($childHref);
                                 @endphp
 
@@ -127,4 +145,3 @@
         @endforeach
     </x-daisy::ui.navigation.menu>
 </nav>
-

@@ -18,6 +18,30 @@ it('lets the app layout customize body html and default font loading', function 
         ->not->toContain('fonts.bunny.net/css');
 });
 
+it('does not render unsafe app layout font URLs', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::layout.app title="Dashboard" font-url="javascript:alert(1)">
+            Content
+        </x-daisy::layout.app>
+    BLADE);
+
+    expect($html)
+        ->not->toContain('href="javascript:alert(1)"')
+        ->not->toContain('rel="stylesheet"');
+});
+
+it('does not render unsafe hero image URLs', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.layout.hero image-url="javascript:alert(1)">
+            Content
+        </x-daisy::ui.layout.hero>
+    BLADE);
+
+    expect($html)
+        ->not->toContain("background-image: url('javascript:alert(1)')")
+        ->not->toContain('javascript:alert(1)');
+});
+
 it('lets the navbar sidebar layout hide and configure theme controls', function () {
     $hidden = Blade::render('<x-daisy::layout.navbar-sidebar-layout :show-theme-controller="false">Content</x-daisy::layout.navbar-sidebar-layout>');
 
@@ -70,9 +94,24 @@ it('renders alert session messages validation errors roles and dismiss controls'
         ->toContain('role="status"')
         ->toContain('Saved')
         ->toContain('aria-label="Close alert"')
+        ->toContain('data-module="alert-dismiss"')
+        ->toContain('data-alert-dismiss')
+        ->not->toContain('onclick=')
         ->and($errorAlert)
         ->toContain('role="alert"')
         ->toContain('Invalid email');
+});
+
+it('does not render an alert when the session flash is empty', function () {
+    session()->flash('status', '');
+
+    $html = View::make('daisy::components.ui.feedback.alert', [
+        'color' => 'success',
+        'sessionKey' => 'status',
+        'dismissible' => true,
+    ])->render();
+
+    expect($html)->toBe('');
 });
 
 it('wires form field ids descriptions old input and validation state into inputs', function () {

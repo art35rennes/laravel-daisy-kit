@@ -17,6 +17,26 @@
 ])
 
 @php
+    $normalizeImageUrl = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return null;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return null;
+        }
+
+        if (str_starts_with($url, '/')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : null;
+    };
+
+    $imageUrl = $normalizeImageUrl($imageUrl);
+
     $rootClasses = 'hero ' . ($fullScreen ? 'min-h-screen' : $minH);
     if ($bg) $rootClasses .= ' bg-'.$bg;
 

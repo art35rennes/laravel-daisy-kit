@@ -17,14 +17,34 @@
 ])
 
 @php
+    $normalizeEndpoint = function($url, $fallback = '#') {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return $fallback;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return $fallback;
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : $fallback;
+    };
+
     $sendMessageUrl = $sendMessageUrl ?? (Route::has('chat.send') ? route('chat.send') : '#');
     $typingUrl = $typingUrl ?? (Route::has('chat.typing') ? route('chat.typing') : '#');
+    $sendMessageUrl = $normalizeEndpoint($sendMessageUrl);
+    $typingUrl = $normalizeEndpoint($typingUrl);
 @endphp
 
 <div 
     {{ $attributes->merge(['class' => 'chat-input flex flex-col gap-2 p-3 sm:p-4 border-t bg-base-100']) }}
     data-module="{{ $module }}"
-    data-send-message-url="{{ $sendMessageUrl }}"
+    data-send-message-url="{{ $sendMessageUrl !== '#' ? $sendMessageUrl : '' }}"
     data-typing-url="{{ $typingUrl !== '#' ? $typingUrl : '' }}"
     data-enable-file-upload="{{ $enableFileUpload ? 'true' : 'false' }}"
     data-max-file-size="{{ $maxFileSize }}"
@@ -82,4 +102,3 @@
         </x-daisy::ui.inputs.button>
     </div>
 </div>
-

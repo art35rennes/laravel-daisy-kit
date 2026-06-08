@@ -163,6 +163,18 @@ it('renders token-input suggestion and endpoint payloads for js enhancement', fu
         ->toContain('data-min-chars="1"');
 });
 
+it('does not render unsafe tab hrefs', function () {
+    $html = View::make('daisy::components.ui.navigation.tabs', [
+        'items' => [
+            ['label' => 'Unsafe tab', 'href' => 'javascript:alert(1)'],
+        ],
+    ])->render();
+
+    expect($html)
+        ->toContain('Unsafe tab')
+        ->not->toContain('href="javascript:alert(1)"');
+});
+
 it('renders a divider component', function () {
     $html = View::make('daisy::components.ui.layout.divider', [
         'slot' => '',
@@ -318,6 +330,74 @@ it('renders footer-layout with social links', function () {
     expect($html)
         ->toContain('footer')
         ->toContain('btn-circle');
+});
+
+it('does not render unsafe footer URLs', function () {
+    $html = View::make('daisy::components.ui.layout.footer-layout', [
+        'columns' => [
+            [
+                'title' => 'Links',
+                'links' => [
+                    ['label' => 'Unsafe', 'href' => 'javascript:alert(1)'],
+                ],
+            ],
+        ],
+        'socialLinks' => [
+            ['href' => 'javascript:alert(2)', 'label' => 'Unsafe social'],
+        ],
+        'newsletter' => true,
+        'newsletterAction' => 'javascript:alert(3)',
+        'attributes' => new ComponentAttributeBag([]),
+    ])->render();
+
+    expect($html)
+        ->toContain('Unsafe')
+        ->toContain('Unsafe social')
+        ->not->toContain('href="javascript:alert(1)"')
+        ->not->toContain('href="javascript:alert(2)"')
+        ->not->toContain('action="javascript:alert(3)"')
+        ->not->toContain('type="email"');
+});
+
+it('normalizes unsafe footer newsletter methods', function () {
+    $html = View::make('daisy::components.ui.layout.footer-layout', [
+        'newsletter' => true,
+        'newsletterAction' => '/subscribe',
+        'newsletterMethod' => 'TRACE',
+        'attributes' => new ComponentAttributeBag([]),
+    ])->render();
+
+    expect($html)
+        ->toContain('action="/subscribe"')
+        ->toContain('method="POST"')
+        ->not->toContain('method="TRACE"');
+});
+
+it('keeps safe footer URLs', function () {
+    $html = View::make('daisy::components.ui.layout.footer-layout', [
+        'columns' => [
+            [
+                'title' => 'Links',
+                'links' => [
+                    ['label' => 'Docs', 'href' => '/docs'],
+                    ['label' => 'Mail', 'href' => 'mailto:hello@example.com'],
+                ],
+            ],
+        ],
+        'socialLinks' => [
+            ['href' => 'https://example.com', 'label' => 'Website'],
+        ],
+        'newsletter' => true,
+        'newsletterAction' => '/subscribe',
+        'attributes' => new ComponentAttributeBag([]),
+    ])->render();
+
+    expect($html)
+        ->toContain('href="/docs"')
+        ->toContain('href="mailto:hello@example.com"')
+        ->toContain('href="https://example.com"')
+        ->toContain('action="/subscribe"')
+        ->toContain('type="email"');
 });
 
 it('renders footer-layout with newsletter', function () {

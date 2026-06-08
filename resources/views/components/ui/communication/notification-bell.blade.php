@@ -17,8 +17,28 @@
 ])
 
 @php
+    $normalizeEndpoint = function($url, $fallback = '#') {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return $fallback;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return $fallback;
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : $fallback;
+    };
+
     $markAllAsReadUrl = $markAllAsReadUrl ?? (Route::has('notifications.read-all') ? route('notifications.read-all') : '#');
     $viewAllUrl = $viewAllUrl ?? (Route::has('notifications.index') ? route('notifications.index') : '#');
+    $markAllAsReadUrl = $normalizeEndpoint($markAllAsReadUrl);
+    $viewAllUrl = $normalizeEndpoint($viewAllUrl);
     
     // Calculer le nombre de non lues si non fourni
     if (is_null($unreadCount) && !empty($notifications)) {
@@ -114,4 +134,3 @@
         @endif
     </div>
 </x-daisy::ui.overlay.dropdown>
-

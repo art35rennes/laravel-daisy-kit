@@ -23,13 +23,32 @@
 ])
 
 @php
+    $normalizeEndpoint = function($url, $fallback = '#') {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return $fallback;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return $fallback;
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : $fallback;
+    };
+
     $loadMessagesUrl = $loadMessagesUrl ?? (Route::has('chat.messages') ? route('chat.messages', ':conversationId') : '#');
+    $loadMessagesUrl = $normalizeEndpoint($loadMessagesUrl);
 @endphp
 
 <div 
     {{ $attributes->merge(['class' => 'chat-messages flex flex-col overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4']) }}
     data-module="{{ $module }}"
-    data-load-messages-url="{{ $loadMessagesUrl }}"
+    data-load-messages-url="{{ $loadMessagesUrl !== '#' ? $loadMessagesUrl : '' }}"
     data-current-user-id="{{ $currentUserId }}"
     data-use-websockets="{{ $useWebSockets ? 'true' : 'false' }}"
     data-polling-interval="{{ $pollingInterval }}"
@@ -143,4 +162,3 @@
         </div>
     @endif
 </div>
-

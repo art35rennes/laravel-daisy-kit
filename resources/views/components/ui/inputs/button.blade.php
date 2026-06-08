@@ -19,6 +19,26 @@
 ])
 
 @php
+    $normalizeHref = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return null;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return null;
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^(https?:|mailto:|tel:)/i', $url) === 1 ? $url : null;
+    };
+
+    $href = $normalizeHref($href);
+
     $sizeMap = [
         'xs' => 'btn-xs',
         'sm' => 'btn-sm',

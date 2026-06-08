@@ -39,6 +39,7 @@
      * ]
      */
     'groups' => [],
+    'allowInlineHandlers' => false,
     /**
      * Espacement entre les groupes (en rem)
      */
@@ -100,6 +101,24 @@
     }
 
     $containerClasses .= ' ' . $padding;
+
+    $normalizeHref = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return null;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return null;
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^(https?:|mailto:|tel:)/i', $url) === 1 ? $url : null;
+    };
 @endphp
 
 <div {{ $attributes->merge(['class' => $containerClasses . ' ' . $positionClasses]) }}>
@@ -113,8 +132,8 @@
                     $isActive = $item['active'] ?? false;
                     $icon = $item['icon'] ?? null;
                     $label = $item['label'] ?? null;
-                    $href = $item['href'] ?? null;
-                    $onclick = $item['onclick'] ?? null;
+                    $href = $normalizeHref($item['href'] ?? null);
+                    $onclick = $allowInlineHandlers ? ($item['onclick'] ?? null) : null;
                     $tag = $href ? 'a' : 'button';
                     
                     // Construction des classes de bouton

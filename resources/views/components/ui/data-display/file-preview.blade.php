@@ -10,6 +10,28 @@
 ])
 
 @php
+    $normalizeUrl = function($value) {
+        if (!is_string($value) && !$value instanceof \Stringable) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        if (str_starts_with($value, '/')) {
+            return $value;
+        }
+
+        return preg_match('/^https?:\/\//i', $value) === 1 ? $value : null;
+    };
+
+    $url = $normalizeUrl($url);
+    $thumbnail = $normalizeUrl($thumbnail);
+    $downloadable = $downloadable && filled($url);
+
     // Détection automatique du type si non fourni
     if (!$type && $url) {
         $extension = strtolower(pathinfo($url, PATHINFO_EXTENSION));
@@ -305,4 +327,3 @@
 </script>
 @endpush
 @endonce
-

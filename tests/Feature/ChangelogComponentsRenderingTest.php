@@ -80,6 +80,22 @@ describe('Changelog Components Rendering', function () {
                 ->toContain('https://github.com/user/repo/issues/123');
         });
 
+        it('does not render unsafe changelog issue or migration links', function () {
+            $html = View::make('daisy::components.ui.changelog.changelog-change-item', [
+                'description' => 'Unsafe links',
+                'issues' => [
+                    ['number' => 123, 'url' => 'javascript:alert(1)'],
+                ],
+                'migration' => true,
+                'migrationGuide' => 'javascript:alert(2)',
+            ])->render();
+
+            expect($html)
+                ->toContain('#123')
+                ->not->toContain('href="javascript:alert(1)"')
+                ->not->toContain('href="javascript:alert(2)"');
+        });
+
         it('renders contributors', function () {
             $html = View::make('daisy::components.ui.changelog.changelog-change-item', [
                 'description' => 'Feature by contributors',
@@ -147,6 +163,17 @@ describe('Changelog Components Rendering', function () {
                 ->toContain('https://example.com/atom')
                 ->toContain(__('daisy::changelog.rss_feed'))
                 ->toContain(__('daisy::changelog.atom_feed'));
+        });
+
+        it('does not render unsafe feed links', function () {
+            $html = View::make('daisy::components.ui.changelog.changelog-header', [
+                'rssUrl' => 'javascript:alert(1)',
+                'atomUrl' => 'javascript:alert(2)',
+            ])->render();
+
+            expect($html)
+                ->not->toContain('href="javascript:alert(1)"')
+                ->not->toContain('href="javascript:alert(2)"');
         });
     });
 
@@ -259,6 +286,19 @@ describe('Changelog Components Rendering', function () {
                 ->toContain('https://github.com/user/repo/compare/1.0.0...2.0.0');
         });
 
+        it('does not render unsafe Git tag or compare links', function () {
+            $html = View::make('daisy::components.ui.changelog.changelog-version-item', [
+                'version' => '2.0.0',
+                'date' => '2024-01-15',
+                'tagUrl' => 'javascript:alert(1)',
+                'compareUrl' => 'javascript:alert(2)',
+            ])->render();
+
+            expect($html)
+                ->not->toContain('href="javascript:alert(1)"')
+                ->not->toContain('href="javascript:alert(2)"');
+        });
+
         it('renders items in enriched format', function () {
             $html = View::make('daisy::components.ui.changelog.changelog-version-item', [
                 'version' => '2.0.0',
@@ -333,7 +373,18 @@ describe('Changelog Components Rendering', function () {
             expect($html)
                 ->toContain('changelog-container')
                 ->toContain('changelog-toolbar')
-                ->toContain(__('daisy::changelog.cta_get_template'));
+                ->not->toContain(__('daisy::changelog.cta_get_template'));
+        });
+
+        it('renders documentation CTA only when a URL is available', function () {
+            $html = View::make('daisy::templates.changelog', [
+                'versions' => [],
+                'documentationUrl' => '/docs/changelog-template',
+            ])->render();
+
+            expect($html)
+                ->toContain(__('daisy::changelog.cta_get_template'))
+                ->toContain('href="/docs/changelog-template"');
         });
 
         it('renders empty state when no versions', function () {

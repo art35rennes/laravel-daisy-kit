@@ -8,6 +8,28 @@
     'loadDefaultFont' => true,
 ])
 
+@php
+    $normalizeStylesheetUrl = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return null;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return null;
+        }
+
+        if (str_starts_with($url, '/')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : null;
+    };
+
+    $fontUrl = $normalizeStylesheetUrl($fontUrl);
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @if($theme) data-theme="{{ $theme }}" @endif @if($htmlClass) class="{{ $htmlClass }}" @endif>
 <head>
@@ -36,4 +58,3 @@
     @stack('scripts')
 </body>
 </html>
-

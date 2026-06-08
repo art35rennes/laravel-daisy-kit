@@ -14,8 +14,28 @@
 ])
 
 @php
+    $normalizeEndpoint = function($url, $fallback = '#') {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return $fallback;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return $fallback;
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : $fallback;
+    };
+
     $markAsReadUrl = $markAsReadUrl ?? (Route::has('notifications.read') ? route('notifications.read', ':id') : '#');
     $deleteUrl = $deleteUrl ?? (Route::has('notifications.delete') ? route('notifications.delete', ':id') : '#');
+    $markAsReadUrl = $normalizeEndpoint($markAsReadUrl);
+    $deleteUrl = $normalizeEndpoint($deleteUrl);
 
     // Grouper par date si demandé
     $groupedNotifications = [];
@@ -96,4 +116,3 @@
         @endif
     @endif
 </div>
-

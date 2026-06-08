@@ -23,6 +23,7 @@ describe('Communication Components Rendering', function () {
                 'message' => 'You have no notifications yet.',
                 'actionLabel' => 'View all',
                 'actionUrl' => '/notifications',
+                'actionColor' => 'secondary',
             ])->render();
 
             expect($html)
@@ -30,7 +31,8 @@ describe('Communication Components Rendering', function () {
                 ->toContain('No notifications')
                 ->toContain('You have no notifications yet.')
                 ->toContain('View all')
-                ->toContain('/notifications');
+                ->toContain('/notifications')
+                ->toContain('btn-secondary');
         });
 
         it('renders empty-state presets and custom action slots', function () {
@@ -85,6 +87,30 @@ describe('Communication Components Rendering', function () {
 
             expect($html)
                 ->toContain('data-read="true"');
+        });
+
+        it('does not render unsafe notification links', function () {
+            $notification = [
+                'id' => 1,
+                'type' => 'security',
+                'data' => [
+                    'message' => 'Review required',
+                    'link' => 'javascript:alert(1)',
+                    'action' => [
+                        'label' => 'Open',
+                        'url' => 'javascript:alert(2)',
+                    ],
+                ],
+            ];
+
+            $html = View::make('daisy::components.ui.communication.notification-item', [
+                'notification' => $notification,
+            ])->render();
+
+            expect($html)
+                ->toContain('Review required')
+                ->not->toContain('href="javascript:alert(1)"')
+                ->not->toContain('href="javascript:alert(2)"');
         });
     });
 
@@ -191,6 +217,19 @@ describe('Communication Components Rendering', function () {
                 ->toContain('badge')
                 ->toContain('5');
         });
+
+        it('does not render unsafe notification-bell action URLs', function () {
+            $html = View::make('daisy::components.ui.communication.notification-bell', [
+                'notifications' => [],
+                'unreadCount' => 1,
+                'markAllAsReadUrl' => 'javascript:alert(1)',
+                'viewAllUrl' => 'javascript:alert(2)',
+            ])->render();
+
+            expect($html)
+                ->not->toContain('data-url="javascript:alert(1)"')
+                ->not->toContain('href="javascript:alert(2)"');
+        });
     });
 
     describe('Chat Header', function () {
@@ -268,6 +307,17 @@ describe('Communication Components Rendering', function () {
                 ->toContain('Hi')
                 ->toContain('chat-bubble');
         });
+
+        it('does not render unsafe chat-messages endpoint URLs', function () {
+            $html = View::make('daisy::components.ui.communication.chat-messages', [
+                'messages' => [],
+                'loadMessagesUrl' => 'javascript:alert(1)',
+            ])->render();
+
+            expect($html)
+                ->not->toContain('data-load-messages-url="javascript:alert(1)"')
+                ->toContain('data-load-messages-url=""');
+        });
     });
 
     describe('Chat Input', function () {
@@ -293,6 +343,19 @@ describe('Communication Components Rendering', function () {
                 ->toContain('data-enable-file-upload="true"')
                 ->toContain('data-max-file-size="5120"')
                 ->toContain('bi-paperclip');
+        });
+
+        it('does not render unsafe chat-input endpoint URLs', function () {
+            $html = View::make('daisy::components.ui.communication.chat-input', [
+                'sendMessageUrl' => 'javascript:alert(1)',
+                'typingUrl' => 'javascript:alert(2)',
+            ])->render();
+
+            expect($html)
+                ->not->toContain('data-send-message-url="javascript:alert(1)"')
+                ->not->toContain('data-typing-url="javascript:alert(2)"')
+                ->toContain('data-send-message-url=""')
+                ->toContain('data-typing-url=""');
         });
     });
 
@@ -387,6 +450,37 @@ describe('Communication Components Rendering', function () {
 
             expect($html)
                 ->toContain('Test');
+        });
+
+        it('does not render unsafe notification-center endpoint URLs', function () {
+            $html = View::make('daisy::templates.communication.notification-center', [
+                'notifications' => [
+                    [
+                        'id' => 1,
+                        'data' => [
+                            'message' => 'Unsafe focus',
+                            'priority' => 'critical',
+                            'action' => ['label' => 'Open', 'url' => 'javascript:alert(1)'],
+                        ],
+                        'read_at' => null,
+                    ],
+                ],
+                'unreadCount' => 1,
+                'markAsReadUrl' => 'javascript:alert(2)',
+                'markAllAsReadUrl' => 'javascript:alert(3)',
+                'deleteUrl' => 'javascript:alert(4)',
+                'loadNotificationsUrl' => 'javascript:alert(5)',
+                'preferencesUrl' => 'javascript:alert(6)',
+            ])->render();
+
+            expect($html)
+                ->toContain('Unsafe focus')
+                ->not->toContain('href="javascript:alert(1)"')
+                ->not->toContain('data-mark-as-read-url="javascript:alert(2)"')
+                ->not->toContain('data-mark-all-as-read-url="javascript:alert(3)"')
+                ->not->toContain('data-delete-url="javascript:alert(4)"')
+                ->not->toContain('data-load-notifications-url="javascript:alert(5)"')
+                ->not->toContain('href="javascript:alert(6)"');
         });
     });
 
@@ -514,6 +608,19 @@ describe('Communication Components Rendering', function () {
             expect($html)
                 ->toContain('file-preview')
                 ->not->toContain('file-download');
+        });
+
+        it('does not render unsafe file-preview URLs', function () {
+            $html = View::make('daisy::components.ui.data-display.file-preview', [
+                'url' => 'javascript:alert(1)',
+                'name' => 'unsafe.pdf',
+                'type' => 'pdf',
+            ])->render();
+
+            expect($html)
+                ->toContain('file-preview')
+                ->not->toContain('javascript:alert(1)')
+                ->not->toContain('data-url="javascript:alert(1)"');
         });
     });
 });

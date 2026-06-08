@@ -121,6 +121,24 @@
     $collapseLabel = __('daisy::components.sidebar_collapse');
     $expandLabel = __('daisy::components.sidebar_expand');
     $toggleLabel = $effectiveCollapsed ? $expandLabel : $collapseLabel;
+
+    $normalizeHref = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return '#';
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return '#';
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^(https?:|mailto:|tel:)/i', $url) === 1 ? $url : '#';
+    };
 @endphp
 
 <aside {{ $attributes->merge(['class' => trim($rootClasses.' '.$widthClass.' '.$baseClasses)]) }}
@@ -137,7 +155,7 @@
        @if($storageKey) data-storage-key="{{ $storageKey }}" @endif>
     @if($showBrand)
         <div class="px-4 py-3 border-b border-base-content/10 flex items-center gap-2">
-            <a href="{{ $brandHref ?: '#' }}" class="flex items-center gap-2 flex-1">
+            <a href="{{ $normalizeHref($brandHref ?: '#') }}" class="flex items-center gap-2 flex-1">
                 <div class="font-bold text-lg truncate sidebar-label {{ $effectiveCollapsed ? 'hidden' : '' }}">{{ $brand ?: config('app.name', 'App') }}</div>
             </a>
             @if($isSlim)
@@ -212,7 +230,7 @@
                                         $childIsActive = ! empty($child['active']) || ($childRouteNames !== [] && collect($childRouteNames)->contains(fn ($routeName) => \Illuminate\Support\Facades\Route::currentRouteNamed($routeName)));
                                     @endphp
                                     <li>
-                                        <a href="{{ $child['href'] ?? '#' }}" class="flex items-center gap-2 {{ $childIsActive ? 'menu-active' : '' }}" title="{{ __($child['label'] ?? '') }}" aria-label="{{ __($child['label'] ?? '') }}">
+                                        <a href="{{ $normalizeHref($child['href'] ?? '#') }}" class="flex items-center gap-2 {{ $childIsActive ? 'menu-active' : '' }}" title="{{ __($child['label'] ?? '') }}" aria-label="{{ __($child['label'] ?? '') }}">
                                             @if(!empty($child['icon']))
                                                 <x-daisy::ui.advanced.icon :name="$child['icon']" :prefix="$iconPrefix" size="md" />
                                             @endif
@@ -226,7 +244,7 @@
                 @else
                     {{-- Item simple : lien direct sans sous-menu --}}
                     <li>
-                        <a href="{{ $item['href'] ?? '#' }}" class="flex items-center gap-2 {{ $isActive ? 'menu-active' : '' }}" title="{{ __($item['label'] ?? '') }}" aria-label="{{ __($item['label'] ?? '') }}">
+                        <a href="{{ $normalizeHref($item['href'] ?? '#') }}" class="flex items-center gap-2 {{ $isActive ? 'menu-active' : '' }}" title="{{ __($item['label'] ?? '') }}" aria-label="{{ __($item['label'] ?? '') }}">
                             @if(!empty($item['icon']))
                                 <x-daisy::ui.advanced.icon :name="$item['icon']" :prefix="$iconPrefix" size="md" />
                             @endif

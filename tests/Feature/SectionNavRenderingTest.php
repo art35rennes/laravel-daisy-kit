@@ -22,4 +22,30 @@ describe('Section nav component rendering', function () {
             ->toContain('fixed top-6 left-6')
             ->toContain('absolute top-16 left-0');
     });
+
+    it('does not render unsafe sidebar-navigation hrefs', function () {
+        $html = View::make('daisy::components.ui.navigation.sidebar-navigation', [
+            'items' => [
+                [
+                    'label' => 'Unsafe parent',
+                    'href' => 'javascript:alert(1)',
+                ],
+                [
+                    'label' => 'Group',
+                    'children' => [
+                        [
+                            'label' => 'Unsafe child',
+                            'href' => 'javascript:alert(2)',
+                        ],
+                    ],
+                ],
+            ],
+        ])->render();
+
+        expect($html)
+            ->toContain('Unsafe parent')
+            ->toContain('Unsafe child')
+            ->not->toContain('href="javascript:alert(1)"')
+            ->not->toContain('href="javascript:alert(2)"');
+    });
 });

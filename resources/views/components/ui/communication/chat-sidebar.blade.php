@@ -14,7 +14,26 @@
 ])
 
 @php
+    $normalizeEndpoint = function($url, $fallback = '#') {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return $fallback;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return $fallback;
+        }
+
+        if ($url === '#' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : $fallback;
+    };
+
     $conversationsUrl = $conversationsUrl ?? (Route::has('chat.conversations') ? route('chat.conversations') : '#');
+    $conversationsUrl = $normalizeEndpoint($conversationsUrl);
 @endphp
 
 <div {{ $attributes->merge(['class' => 'chat-sidebar flex flex-col h-full border-r bg-base-100']) }}>
@@ -109,4 +128,3 @@
         </div>
     @endif
 </div>
-

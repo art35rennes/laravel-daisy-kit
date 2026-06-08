@@ -6,6 +6,29 @@
     'showVersionBadge' => true,
 ])
 
+@php
+    $normalizeUrl = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return null;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return null;
+        }
+
+        if (str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : null;
+    };
+
+    $rssUrl = $normalizeUrl($rssUrl);
+    $atomUrl = $normalizeUrl($atomUrl);
+@endphp
+
 <header class="changelog-header mb-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div class="flex items-center gap-3">
@@ -40,4 +63,3 @@
         @endif
     </div>
 </header>
-

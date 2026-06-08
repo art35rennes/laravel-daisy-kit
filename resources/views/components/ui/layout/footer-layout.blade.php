@@ -66,6 +66,46 @@
             default => 'base-300',
         };
     }
+
+    $normalizeHref = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return '#';
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '' || $url === '#') {
+            return '#';
+        }
+
+        if (str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
+        }
+
+        return preg_match('/^(https?:|mailto:|tel:)/i', $url) === 1 ? $url : '#';
+    };
+
+    $normalizeFormAction = function($url) {
+        if (!is_string($url) && !$url instanceof \Stringable) {
+            return null;
+        }
+
+        $url = trim((string) $url);
+
+        if ($url === '' || $url === '#') {
+            return null;
+        }
+
+        if (str_starts_with($url, '/')) {
+            return $url;
+        }
+
+        return preg_match('/^https?:\/\//i', $url) === 1 ? $url : null;
+    };
+
+    $newsletterAction = $normalizeFormAction($newsletterAction);
+    $newsletterMethod = strtoupper((string) $newsletterMethod);
+    $newsletterMethod = in_array($newsletterMethod, ['GET', 'POST'], true) ? $newsletterMethod : 'POST';
 @endphp
 
 <footer {{ $attributes->merge(['class' => $footerClasses]) }}>
@@ -99,7 +139,7 @@
                 @if(isset($column['links']) && is_array($column['links']))
                     @foreach($column['links'] as $link)
                         <a 
-                            href="{{ $link['href'] ?? '#' }}" 
+                            href="{{ $normalizeHref($link['href'] ?? '#') }}"
                             class="link link-hover"
                             @if(isset($link['external']) && $link['external'])
                                 target="_blank" rel="noopener noreferrer"
@@ -176,7 +216,7 @@
             <nav class="flex gap-2">
                 @foreach($socialLinks as $social)
                     <a 
-                        href="{{ $social['href'] ?? '#' }}" 
+                        href="{{ $normalizeHref($social['href'] ?? '#') }}"
                         class="btn btn-circle btn-sm btn-ghost"
                         @if(isset($social['external']) && $social['external'])
                             target="_blank" rel="noopener noreferrer"
@@ -199,4 +239,3 @@
         @endif
     </div>
 </footer>
-
