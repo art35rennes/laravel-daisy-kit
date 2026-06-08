@@ -41,6 +41,7 @@ import { evaluateExpression } from './jsonata-engine.js';
  *   getValidateOn: () => 'input'|'change'|'submit',
  *   isReadonly: () => boolean,
  *   getValues: (options?: {visible?: boolean}) => Record<string, unknown>,
+ *   getFormData: (options?: {visible?: boolean}) => FormData,
  *   getValue: (key: string) => unknown,
  *   setValue: (key: string, value: unknown, options?: {refresh?: boolean}) => Promise<void>,
  *   setValues: (values: Record<string, unknown>, options?: {refresh?: boolean}) => Promise<void>,
@@ -50,6 +51,7 @@ import { evaluateExpression } from './jsonata-engine.js';
  *   clearErrors: () => void,
  *   getField: (key: string) => Object|null,
  *   getInput: (key: string) => HTMLElement|null,
+ *   getInputs: (key: string) => HTMLElement[],
  *   getVisibleFields: () => Object[],
  *   isValid: () => boolean,
  *   getStep: () => number,
@@ -79,7 +81,7 @@ export function createFormRuntime(root, options = {}) {
         values: {
             ...(options.value ?? {}),
         },
-        errors: normalizeErrors(options.errors ?? {}),
+        errors: canonicalizeRuntimeErrors(fields, options.errors ?? {}),
         visible: {},
         touched: {},
         valid: validation.valid,
@@ -103,10 +105,14 @@ export function createFormRuntime(root, options = {}) {
 
     submittingFields.forEach((field) => {
         const key = field.name ?? field.id;
+        const idKey = field.id;
 
-        if (!Object.prototype.hasOwnProperty.call(state.values, key)) {
+        if (Object.prototype.hasOwnProperty.call(state.values, key)) {
+            assignRuntimeValue(field, key, state.values[key]);
+        } else {
             // Hydrate defaults without clobbering explicit null sent from the server for nullable fields.
-            state.values[key] = getFieldValue(state.values, field);
+            const sourceKey = idKey && Object.prototype.hasOwnProperty.call(state.values, idKey) ? idKey : key;
+            assignRuntimeValue(field, sourceKey, getFieldValue(state.values, field));
         }
     });
 
@@ -242,7 +248,7 @@ export function createFormRuntime(root, options = {}) {
         applyStepState(root, state);
 
         if (!state.valid) {
-            dispatch('daisy-form:invalid', { errors });
+            dispatch('daisy-form:invalid', { errors: cloneErrors(state.errors) });
         }
 
         return state.valid;
@@ -270,8 +276,14 @@ export function createFormRuntime(root, options = {}) {
             return true;
         }
 
+        let response = null;
+
         if (submitMode === 'fetch') {
-            await submitWithFetch(root, payload, options);
+            response = await submitWithFetch(root, payload, options);
+
+            if (await applyFetchValidationErrors(response)) {
+                return false;
+            }
             // Fetch executes without aborting the flow so hosts still observe `daisy-form:submit` after networking completes.
         }
 
@@ -282,7 +294,38 @@ export function createFormRuntime(root, options = {}) {
         }
 
         // Default `event` mode keeps Laravel CSR cookies untouched while letting hosts wire SPA routers.
-        dispatch('daisy-form:submit', { values: payload, schema });
+        dispatch('daisy-form:submit', { values: payload, schema, response });
+
+        return true;
+    }
+
+    /**
+     * Maps Laravel-style 422 JSON validation responses back into the viewer error UI.
+     *
+     * @param {Response|null} response - Fetch response returned by the host endpoint.
+     * @returns {Promise<boolean>} True when validation errors were handled.
+     */
+    async function applyFetchValidationErrors(response) {
+        if (!response || response.status !== 422) {
+            return false;
+        }
+
+        let payload = null;
+
+        try {
+            payload = await response.json();
+        } catch (_) {
+            return false;
+        }
+
+        const errors = normalizeErrors(payload?.errors ?? {});
+
+        if (Object.keys(errors).length === 0) {
+            return false;
+        }
+
+        setErrors(errors);
+        dispatch('daisy-form:invalid', { errors: cloneErrors(state.errors) });
 
         return true;
     }
@@ -339,9 +382,7 @@ export function createFormRuntime(root, options = {}) {
 
     async function setValue(key, value, options = {}) {
         const field = findRuntimeField(fields, key);
-        const stateKey = field?.name ?? key;
-
-        state.values[stateKey] = value;
+        assignRuntimeValue(field, key, value);
 
         if (field) {
             setFieldInputValue(root, field, value);
@@ -355,9 +396,7 @@ export function createFormRuntime(root, options = {}) {
     async function setValues(values, options = {}) {
         for (const [key, value] of Object.entries(values ?? {})) {
             const field = findRuntimeField(fields, key);
-            const stateKey = field?.name ?? key;
-
-            state.values[stateKey] = value;
+            assignRuntimeValue(field, key, value);
 
             if (field) {
                 setFieldInputValue(root, field, value);
@@ -376,11 +415,15 @@ export function createFormRuntime(root, options = {}) {
 
         submittingFields.forEach((field) => {
             const key = field.name ?? field.id;
+            const idKey = field.id;
+            const sourceKey = Object.prototype.hasOwnProperty.call(state.values, key)
+                ? key
+                : (idKey && Object.prototype.hasOwnProperty.call(state.values, idKey) ? idKey : key);
             const value = Object.prototype.hasOwnProperty.call(state.values, key)
                 ? state.values[key]
                 : getFieldValue(state.values, field);
 
-            state.values[key] = value;
+            assignRuntimeValue(field, sourceKey, value);
             setFieldInputValue(root, field, value);
         });
 
@@ -389,10 +432,28 @@ export function createFormRuntime(root, options = {}) {
 
     function setErrors(errors) {
         expressionErrors = {};
-        state.errors = normalizeErrors(errors);
+        state.errors = canonicalizeRuntimeErrors(fields, errors);
         state.valid = Object.keys(state.errors).length === 0;
         applyDomState(root, visibilityFields, state);
         applyStepState(root, state);
+    }
+
+    /**
+     * Writes a value using the canonical submit `name` while removing known id aliases.
+     *
+     * @param {Object|null|undefined} field - Matched runtime field, when the key belongs to the schema.
+     * @param {string} key - Incoming host key.
+     * @param {unknown} value - Value to store.
+     * @returns {void}
+     */
+    function assignRuntimeValue(field, key, value) {
+        const stateKey = field?.name ?? key;
+
+        state.values[stateKey] = value;
+
+        if (field?.id && field.id !== stateKey) {
+            delete state.values[field.id];
+        }
     }
 
     function clearErrors() {
@@ -485,6 +546,23 @@ export function createFormRuntime(root, options = {}) {
         return setStep(state.currentStep - 1);
     }
 
+    /**
+     * Builds a synchronous value snapshot for host API reads.
+     *
+     * JSONata computed/visibility refreshes remain async through `refresh()`, but direct DOM edits,
+     * typed values, and file selections should be visible to integrations immediately.
+     *
+     * @param {{visible?: boolean}} [options={}] - Whether to include only currently visible submitting fields.
+     * @returns {Record<string, unknown>}
+     */
+    function snapshotValues(options = {}) {
+        const values = { ...state.values };
+        const editableFields = submittingFields.filter((field) => !field.computed?.mode || field.computed.mode === 'suggested');
+        syncValuesFromDom(root, editableFields, values);
+
+        return options.visible ? serializeVisibleValues(submittingFields, values, state.visible) : values;
+    }
+
     const publicApi = {
         id: runtimeId,
         root,
@@ -495,17 +573,18 @@ export function createFormRuntime(root, options = {}) {
         on,
         off,
         state,
-        serialize: () => serializeVisibleValues(submittingFields, state.values, state.visible),
+        serialize: () => snapshotValues({ visible: true }),
         getSchema: () => state.schema,
         getSubmitMode: () => submitMode,
         getValidateOn: () => validateOn,
         isReadonly: () => readonly,
-        getValues: (options = {}) => options.visible ? serializeVisibleValues(submittingFields, state.values, state.visible) : { ...state.values },
-        getValue: (key) => state.values[findRuntimeField(fields, key)?.name ?? key],
+        getValues: snapshotValues,
+        getFormData: (options = {}) => payloadToFormData(snapshotValues(options), root),
+        getValue: (key) => snapshotValues()[findRuntimeField(fields, key)?.name ?? key],
         setValue,
         setValues,
         reset,
-        getErrors: () => ({ ...state.errors }),
+        getErrors: () => cloneErrors(state.errors),
         setErrors,
         clearErrors,
         getField: (key) => findRuntimeField(fields, key) ?? null,
@@ -513,6 +592,11 @@ export function createFormRuntime(root, options = {}) {
             const field = findRuntimeField(fields, key);
 
             return field ? root.querySelector(`[data-form-input="${cssEscape(field.id)}"]`) : null;
+        },
+        getInputs: (key) => {
+            const field = findRuntimeField(fields, key);
+
+            return field ? Array.from(root.querySelectorAll(`[data-form-input="${cssEscape(field.id)}"]`)) : [];
         },
         getVisibleFields: () => fields.filter((field) => state.visible[field.id] !== false),
         isValid: () => state.valid,
@@ -745,6 +829,24 @@ function syncValuesFromDom(root, fields, values) {
 
         // Blade wraps some atoms (radio groups, signature widgets) where `data-form-input` targets the wrapper element.
         if (!(input instanceof HTMLInputElement) && !(input instanceof HTMLTextAreaElement) && !(input instanceof HTMLSelectElement)) {
+            const radios = input.querySelectorAll(`input[type="radio"][name="${cssEscape(field.name ?? field.id)}"]`);
+
+            if (radios.length > 0) {
+                const checkedRadio = Array.from(radios).find((radio) => radio.checked);
+                values[key] = checkedRadio?.value ?? null;
+
+                return;
+            }
+
+            const checkbox = input.querySelector(`input[type="checkbox"][name="${cssEscape(field.name ?? field.id)}"]`)
+                ?? input.querySelector('input[type="checkbox"]');
+
+            if (checkbox) {
+                values[key] = checkbox.checked;
+
+                return;
+            }
+
             const nestedInput = input.querySelector('input, textarea, select');
             values[key] = nestedInput?.value ?? null;
 
@@ -753,6 +855,13 @@ function syncValuesFromDom(root, fields, values) {
 
         if (input.type === 'checkbox') {
             values[key] = input.checked;
+
+            return;
+        }
+
+        if (input.type === 'file') {
+            const files = Array.from(input.files ?? []);
+            values[key] = input.multiple ? files : (files[0] ?? null);
 
             return;
         }
@@ -789,6 +898,25 @@ function setFieldInputValue(root, field, value) {
     }
 
     if (!(input instanceof HTMLInputElement) && !(input instanceof HTMLTextAreaElement) && !(input instanceof HTMLSelectElement)) {
+        const radios = input.querySelectorAll(`input[type="radio"][name="${cssEscape(field.name ?? field.id)}"]`);
+
+        if (radios.length > 0) {
+            radios.forEach((radio) => {
+                radio.checked = radio.value === String(value);
+            });
+
+            return;
+        }
+
+        const checkbox = input.querySelector(`input[type="checkbox"][name="${cssEscape(field.name ?? field.id)}"]`)
+            ?? input.querySelector('input[type="checkbox"]');
+
+        if (checkbox) {
+            checkbox.checked = Boolean(value);
+
+            return;
+        }
+
         const nestedInput = input.querySelector('input, textarea, select');
 
         if (nestedInput) {
@@ -809,6 +937,11 @@ function setFieldInputValue(root, field, value) {
             radio.checked = radio.value === String(value);
         });
 
+        return;
+    }
+
+    if (input.type === 'file') {
+        // Browsers intentionally prevent programmatic file input hydration.
         return;
     }
 
@@ -883,6 +1016,40 @@ function normalizeErrors(errors) {
 }
 
 /**
+ * Canonicalizes error keys so hosts may address fields by either schema id or submit name.
+ *
+ * @param {Object[]} fields - Runtime leaf fields.
+ * @param {unknown} errors - Arbitrary error payload.
+ * @returns {Record<string, string[]>}
+ */
+function canonicalizeRuntimeErrors(fields, errors) {
+    const normalized = normalizeErrors(errors);
+
+    return Object.entries(normalized).reduce((carry, [key, messages]) => {
+        const field = findRuntimeField(fields, key);
+        const stateKey = field?.name ?? key;
+
+        carry[stateKey] = [...(carry[stateKey] ?? []), ...messages];
+
+        return carry;
+    }, {});
+}
+
+/**
+ * Copies the public error bag so host code cannot mutate runtime-owned arrays.
+ *
+ * @param {Record<string, string[]>} errors - Runtime error bag.
+ * @returns {Record<string, string[]>}
+ */
+function cloneErrors(errors) {
+    return Object.entries(errors ?? {}).reduce((carry, [key, messages]) => {
+        carry[key] = [...messages];
+
+        return carry;
+    }, {});
+}
+
+/**
  * Combines multiple normalized error bags without mutating the source maps.
  *
  * @param {...Record<string, string[]>} bags - Normalized error bags.
@@ -943,7 +1110,8 @@ function hasValue(value) {
 }
 
 /**
- * Performs a JSON `fetch` against `options.action` or the host form `action` attribute.
+ * Performs a `fetch` against `options.action` or the host form `action` attribute.
+ * Multipart viewer forms are sent as `FormData` so file inputs keep native browser semantics.
  *
  * @returns {Promise<Response|null>}
  */
@@ -954,14 +1122,115 @@ async function submitWithFetch(root, payload, options) {
         return null;
     }
 
+    if (root instanceof HTMLFormElement && root.enctype === 'multipart/form-data') {
+        return fetch(endpoint, {
+            method: options.method ?? root.getAttribute('method') ?? 'POST',
+            headers: {
+                Accept: 'application/json',
+                ...csrfHeader(root),
+            },
+            body: payloadToFormData(payload, root),
+        });
+    }
+
     return fetch(endpoint, {
         method: options.method ?? root.getAttribute('method') ?? 'POST',
         headers: {
             'Content-Type': 'application/json',
             Accept: 'application/json',
+            ...csrfHeader(root),
         },
         body: JSON.stringify(payload),
     });
+}
+
+/**
+ * Resolves the Laravel CSRF token already rendered by Blade or exposed in the host layout.
+ *
+ * @param {HTMLElement} root - Viewer root used as the primary lookup scope.
+ * @returns {Record<string, string>}
+ */
+function csrfHeader(root) {
+    const token = root.querySelector('input[name="_token"]')?.value
+        ?? document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    return token ? { 'X-CSRF-TOKEN': token } : {};
+}
+
+/**
+ * Converts the serialized viewer payload into `FormData` for multipart fetch submits.
+ *
+ * @param {Record<string, unknown>} payload - Serialized visible values.
+ * @param {HTMLElement|null} [root=null] - Optional form root providing framework hidden fields.
+ * @returns {FormData}
+ */
+function payloadToFormData(payload, root = null) {
+    const formData = new FormData();
+
+    Object.entries(payload).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+            value.forEach((item) => appendFormDataValue(formData, formDataArrayKey(key), item));
+
+            return;
+        }
+
+        appendFormDataValue(formData, key, value);
+    });
+
+    appendFormHiddenValue(formData, root, '_token');
+    appendFormHiddenValue(formData, root, '_method');
+
+    return formData;
+}
+
+/**
+ * Keeps Laravel-style array field names stable instead of turning `files[]` into `files[][]`.
+ *
+ * @param {string} key - Serialized payload key.
+ * @returns {string}
+ */
+function formDataArrayKey(key) {
+    return key.endsWith('[]') ? key : `${key}[]`;
+}
+
+/**
+ * Appends framework-owned hidden form controls that live outside the Daisy schema payload.
+ *
+ * @param {FormData} formData - Target multipart payload.
+ * @param {HTMLElement|null} root - Optional form root lookup scope.
+ * @param {string} name - Hidden input name to preserve.
+ * @returns {void}
+ */
+function appendFormHiddenValue(formData, root, name) {
+    const input = root?.querySelector(`input[type="hidden"][name="${cssEscape(name)}"]`);
+
+    if (input instanceof HTMLInputElement && input.value !== '' && !formData.has(name)) {
+        formData.append(name, input.value);
+    }
+}
+
+/**
+ * Appends one scalar/blob value while preserving `File`/`Blob` instances.
+ *
+ * @param {FormData} formData - Target multipart payload.
+ * @param {string} key - Form field name.
+ * @param {unknown} value - Value from the runtime state.
+ * @returns {void}
+ */
+function appendFormDataValue(formData, key, value) {
+    if (value === null || value === undefined) {
+        formData.append(key, '');
+
+        return;
+    }
+
+    if (value instanceof Blob) {
+        formData.append(key, value);
+
+        return;
+    }
+
+    formData.append(key, String(value));
 }
 
 /**

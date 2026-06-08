@@ -50,18 +50,19 @@ class FormSubmissionEvaluator
             ];
         }
 
+        $normalizedValues = $this->canonicalizeSubmissionValues($schema, $values);
         $evaluations = $this->buildEvaluations($schema);
 
         if ($evaluations === []) {
             return [
-                'normalizedData' => $values,
+                'normalizedData' => $normalizedValues,
                 'errors' => [],
             ];
         }
 
         if (! $this->jsonataEvaluator) {
             return [
-                'normalizedData' => $values,
+                'normalizedData' => $normalizedValues,
                 'errors' => [
                     '_jsonata' => ['evaluator_missing'],
                 ],
@@ -70,7 +71,7 @@ class FormSubmissionEvaluator
 
         try {
             $results = $this->jsonataEvaluator->evaluateBatch($evaluations, [
-                'values' => $values,
+                'values' => $normalizedValues,
                 'visible' => [],
                 'meta' => $schema['meta'] ?? [],
                 'step' => null,
@@ -82,14 +83,53 @@ class FormSubmissionEvaluator
             ]);
         } catch (Throwable $exception) {
             return [
-                'normalizedData' => $values,
+                'normalizedData' => $normalizedValues,
                 'errors' => [
                     '_jsonata' => [$exception->getMessage()],
                 ],
             ];
         }
 
-        return $this->applyResults($schema, $values, $evaluations, $results);
+        return $this->applyResults($schema, $normalizedValues, $evaluations, $results);
+    }
+
+    /**
+     * Canonicalizes inbound values to submit `name` keys while accepting legacy field-id aliases.
+     *
+     * @param  array<string, mixed>  $schema
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    protected function canonicalizeSubmissionValues(array $schema, array $values): array
+    {
+        $normalized = $values;
+
+        foreach ($this->schemaValidator->flattenFields($schema['fields'] ?? []) as $field) {
+            if (in_array($field['type'] ?? null, FormSchemaNormalizer::ContainerTypes, true)
+                || in_array($field['type'] ?? null, FormSchemaNormalizer::NonSubmittingFieldTypes, true)) {
+                continue;
+            }
+
+            $id = (string) ($field['id'] ?? '');
+            $name = (string) ($field['name'] ?? $id);
+
+            if ($id === '' || $name === '' || $id === $name) {
+                continue;
+            }
+
+            if (array_key_exists($name, $normalized)) {
+                unset($normalized[$id]);
+
+                continue;
+            }
+
+            if (array_key_exists($id, $normalized)) {
+                $normalized[$name] = $normalized[$id];
+                unset($normalized[$id]);
+            }
+        }
+
+        return $normalized;
     }
 
     /**

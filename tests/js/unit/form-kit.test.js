@@ -199,10 +199,17 @@ describe('form-kit viewer runtime', () => {
         expect(runtime.getField('name').id).toBe('name');
         expect(runtime.getVisibleFields().map((field) => field.id)).toEqual(['name']);
         expect(runtime.getInput('name')).toBe(root.querySelector('[name="name"]'));
+        expect(runtime.getInputs('name')).toEqual([root.querySelector('[name="name"]')]);
         expect(runtime.getValue('name')).toBe('Ada');
         expect(root.dataset.formRuntimeState).toBe('ready');
         expect(readyEvents.at(-1).id).toBe('profile-viewer');
         unsubscribeReady();
+
+        root.querySelector('[name="name"]').value = 'Lovelace';
+        expect(runtime.getValue('name')).toBe('Lovelace');
+        expect(runtime.getValues()).toEqual({ name: 'Lovelace' });
+        expect(runtime.serialize()).toEqual({ name: 'Lovelace' });
+        expect(runtime.getFormData().get('name')).toBe('Lovelace');
 
         await runtime.setValue('name', 'Grace');
 
@@ -213,6 +220,9 @@ describe('form-kit viewer runtime', () => {
         expect(changes.at(-1).runtime).toBe(runtime);
 
         runtime.setErrors({ name: ['Required.'] });
+        expect(runtime.getErrors().name).toEqual(['Required.']);
+        const errorsSnapshot = runtime.getErrors();
+        errorsSnapshot.name.push('Mutated outside.');
         expect(runtime.getErrors().name).toEqual(['Required.']);
         expect(root.querySelector('[data-form-errors="name"]').textContent).toBe('Required.');
         runtime.clearErrors();
@@ -227,6 +237,127 @@ describe('form-kit viewer runtime', () => {
 
         runtime.destroy();
         expect(root.dataset.formRuntimeState).toBe('destroyed');
+    });
+
+    it('normalizes id-keyed values to canonical submit names', async () => {
+        document.body.innerHTML = `
+            <form>
+                <div data-form-field="firstName">
+                    <input data-form-input="firstName" name="first_name" value="Ada" />
+                    <p data-form-errors="firstName" class="hidden"></p>
+                </div>
+            </form>
+        `;
+
+        const root = document.querySelector('form');
+        const runtime = createFormRuntime(root, {
+            schema: {
+                version: '1.0',
+                id: 'profile',
+                fields: [{ id: 'firstName', type: 'text', name: 'first_name', label: 'First name' }],
+            },
+            value: { firstName: 'Alias value', first_name: 'Ada' },
+            errors: { firstName: ['Use a full first name.'] },
+        });
+
+        await tick();
+
+        expect(runtime.getValue('firstName')).toBe('Ada');
+        expect(runtime.getValues()).toEqual({ first_name: 'Ada' });
+        expect(runtime.state.values).toEqual({ first_name: 'Ada' });
+        expect(runtime.getErrors()).toEqual({ first_name: ['Use a full first name.'] });
+        expect(root.querySelector('[data-form-errors="firstName"]').textContent).toBe('Use a full first name.');
+
+        await runtime.setValue('firstName', 'Grace');
+
+        expect(runtime.getValue('first_name')).toBe('Grace');
+        expect(runtime.getValues()).toEqual({ first_name: 'Grace' });
+        runtime.setErrors({ firstName: ['Still too short.'] });
+        expect(runtime.getErrors()).toEqual({ first_name: ['Still too short.'] });
+        expect(root.querySelector('[data-form-errors="firstName"]').textContent).toBe('Still too short.');
+
+        await runtime.setValues({ firstName: 'Katherine' });
+
+        expect(runtime.getValues()).toEqual({ first_name: 'Katherine' });
+        expect(runtime.serialize()).toEqual({ first_name: 'Katherine' });
+
+        await runtime.reset({ firstName: 'Alias reset value', first_name: 'Dorothy' });
+
+        expect(runtime.getValues()).toEqual({ first_name: 'Dorothy' });
+        expect(runtime.serialize()).toEqual({ first_name: 'Dorothy' });
+        expect(runtime.state.values).toEqual({ first_name: 'Dorothy' });
+    });
+
+    it('reads and writes wrapped radio groups by the checked option', async () => {
+        document.body.innerHTML = `
+            <form>
+                <div data-form-field="civilite">
+                    <label><input data-form-input="civilite" type="radio" name="civility" value="mr" /> Monsieur</label>
+                    <label><input data-form-input="civilite" type="radio" name="civility" value="mrs" checked /> Madame</label>
+                    <p data-form-errors="civilite" class="hidden"></p>
+                </div>
+            </form>
+        `;
+
+        const root = document.querySelector('form');
+        const runtime = createFormRuntime(root, {
+            schema: {
+                version: '1.0',
+                id: 'profile',
+                fields: [{ id: 'civilite', type: 'radio', name: 'civility', label: 'Civility' }],
+            },
+        });
+
+        await tick();
+
+        expect(runtime.getValue('civilite')).toBe('mrs');
+        expect(runtime.getValues()).toEqual({ civility: 'mrs' });
+        expect(runtime.getInput('civilite')).toBe(root.querySelector('input[value="mr"]'));
+        expect(runtime.getInputs('civilite')).toEqual([
+            root.querySelector('input[value="mr"]'),
+            root.querySelector('input[value="mrs"]'),
+        ]);
+
+        await runtime.setValue('civilite', 'mr');
+
+        expect(root.querySelector('input[value="mr"]').checked).toBe(true);
+        expect(root.querySelector('input[value="mrs"]').checked).toBe(false);
+        expect(runtime.getValues()).toEqual({ civility: 'mr' });
+
+        root.querySelector('input[value="mr"]').checked = false;
+        expect(runtime.getValues()).toEqual({ civility: null });
+    });
+
+    it('reads and writes wrapped checkbox controls by checked state', async () => {
+        document.body.innerHTML = `
+            <form>
+                <div data-form-field="notify">
+                    <div data-form-input="notify">
+                        <label><input type="checkbox" name="notify" checked /> Receive notifications</label>
+                    </div>
+                    <p data-form-errors="notify" class="hidden"></p>
+                </div>
+            </form>
+        `;
+
+        const root = document.querySelector('form');
+        const runtime = createFormRuntime(root, {
+            schema: {
+                version: '1.0',
+                id: 'profile',
+                fields: [{ id: 'notify', type: 'toggle', name: 'notify', label: 'Notifications' }],
+            },
+        });
+
+        await tick();
+
+        expect(runtime.getValue('notify')).toBe(true);
+        expect(runtime.getValues()).toEqual({ notify: true });
+
+        await runtime.setValue('notify', false);
+
+        expect(root.querySelector('input[name="notify"]').checked).toBe(false);
+        expect(runtime.getValues()).toEqual({ notify: false });
     });
 
     it('keeps static text visible without treating it as submitted viewer data', async () => {
@@ -729,6 +860,7 @@ describe('form-kit viewer runtime', () => {
     it('uses the original viewer method data attribute for fetch submissions', async () => {
         document.body.innerHTML = `
             <form action="/contacts/1" method="POST" data-form-method="PATCH">
+                <input type="hidden" name="_token" value="csrf-json-token" />
                 <div data-form-field="email">
                     <input data-form-input="email" name="email" value="ada@example.com" />
                     <p data-form-errors="email" class="hidden"></p>
@@ -743,6 +875,114 @@ describe('form-kit viewer runtime', () => {
         `;
 
         const root = document.querySelector('form');
+        const submissions = [];
+        root.addEventListener('daisy-form:submit', (event) => submissions.push(event.detail));
+        const response = { ok: true, status: 200 };
+        const fetch = vi.fn().mockResolvedValue(response);
+        const previousFetch = globalThis.fetch;
+        globalThis.fetch = fetch;
+
+        const runtime = initFormViewer(root);
+
+        await tick();
+        expect(await runtime.submit()).toBe(true);
+
+        expect(fetch).toHaveBeenCalledWith('/contacts/1', expect.objectContaining({
+            method: 'PATCH',
+            headers: expect.objectContaining({
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': 'csrf-json-token',
+            }),
+        }));
+        expect(submissions.at(-1).response).toBe(response);
+        expect(submissions.at(-1).values).toEqual({ email: 'ada@example.com' });
+
+        globalThis.fetch = previousFetch;
+    });
+
+    it('hydrates viewer errors from Laravel validation fetch responses', async () => {
+        document.body.innerHTML = `
+            <form action="/contacts" method="POST">
+                <input type="hidden" name="_token" value="csrf-json-token" />
+                <div data-form-field="firstName">
+                    <input data-form-input="firstName" name="first_name" value="Ada" />
+                    <p data-form-errors="firstName" class="hidden"></p>
+                </div>
+                <script type="application/json" data-form-schema>
+                    {"version":"1.0","id":"signup","fields":[{"id":"firstName","type":"text","name":"first_name","label":"First name","rules":["required"]}],"submit":{"mode":"fetch"}}
+                </script>
+                <script type="application/json" data-form-value>{"first_name":"Ada"}</script>
+                <script type="application/json" data-form-errors-payload>{}</script>
+            </form>
+        `;
+
+        const root = document.querySelector('form');
+        const submissions = [];
+        const invalid = [];
+        root.addEventListener('daisy-form:submit', (event) => submissions.push(event.detail));
+        root.addEventListener('daisy-form:invalid', (event) => invalid.push(event.detail));
+        const fetch = vi.fn().mockResolvedValue({
+            ok: false,
+            status: 422,
+            json: async () => ({ errors: { firstName: ['Use a full first name.'] } }),
+        });
+        const previousFetch = globalThis.fetch;
+        globalThis.fetch = fetch;
+
+        const runtime = initFormViewer(root);
+
+        await tick();
+        expect(await runtime.submit()).toBe(false);
+
+        expect(runtime.getErrors()).toEqual({ first_name: ['Use a full first name.'] });
+        expect(root.querySelector('[data-form-errors="firstName"]').textContent).toBe('Use a full first name.');
+        expect(root.querySelector('[data-form-errors="firstName"]').classList.contains('hidden')).toBe(false);
+        expect(invalid.at(-1).errors).toEqual({ first_name: ['Use a full first name.'] });
+        expect(submissions).toEqual([]);
+
+        globalThis.fetch = previousFetch;
+    });
+
+    it('submits multipart fetch payloads as form data with files', async () => {
+        document.body.innerHTML = `
+            <form action="/contacts/1" method="POST" data-form-method="PATCH" enctype="multipart/form-data">
+                <input type="hidden" name="_token" value="csrf-file-token" />
+                <input type="hidden" name="_method" value="PATCH" />
+                <div data-form-field="name">
+                    <input data-form-input="name" name="name" value="Ada" />
+                    <p data-form-errors="name" class="hidden"></p>
+                </div>
+                <div data-form-field="avatar">
+                    <input data-form-input="avatar" name="avatar" type="file" />
+                    <p data-form-errors="avatar" class="hidden"></p>
+                </div>
+                <div data-form-field="documents">
+                    <input data-form-input="documents" name="documents[]" type="file" multiple />
+                    <p data-form-errors="documents" class="hidden"></p>
+                </div>
+                <script type="application/json" data-form-schema>
+                    {"version":"1.0","id":"profile","fields":[{"id":"name","type":"text","name":"name","label":"Name"},{"id":"avatar","type":"file","name":"avatar","label":"Avatar"},{"id":"documents","type":"file","name":"documents[]","label":"Documents"}],"submit":{"mode":"fetch"}}
+                </script>
+                <script type="application/json" data-form-value>{"name":"Ada"}</script>
+                <script type="application/json" data-form-errors-payload>{}</script>
+            </form>
+        `;
+
+        const root = document.querySelector('form');
+        const fileInput = root.querySelector('[data-form-input="avatar"]');
+        const documentsInput = root.querySelector('[data-form-input="documents"]');
+        const file = new File(['image'], 'avatar.png', { type: 'image/png' });
+        const documentA = new File(['a'], 'a.pdf', { type: 'application/pdf' });
+        const documentB = new File(['b'], 'b.pdf', { type: 'application/pdf' });
+        Object.defineProperty(fileInput, 'files', {
+            value: [file],
+            configurable: true,
+        });
+        Object.defineProperty(documentsInput, 'files', {
+            value: [documentA, documentB],
+            configurable: true,
+        });
         const fetch = vi.fn().mockResolvedValue({ ok: true });
         const previousFetch = globalThis.fetch;
         globalThis.fetch = fetch;
@@ -750,11 +990,31 @@ describe('form-kit viewer runtime', () => {
         const runtime = initFormViewer(root);
 
         await tick();
+        const formData = runtime.getFormData();
+        expect(formData.get('name')).toBe('Ada');
+        expect(formData.get('avatar')).toBe(file);
+        expect(formData.getAll('documents[]')).toEqual([documentA, documentB]);
+        expect(formData.getAll('documents[][]')).toEqual([]);
+        expect(formData.get('_token')).toBe('csrf-file-token');
+        expect(formData.get('_method')).toBe('PATCH');
+
         await runtime.submit();
 
+        const [, options] = fetch.mock.calls[0];
         expect(fetch).toHaveBeenCalledWith('/contacts/1', expect.objectContaining({
             method: 'PATCH',
         }));
+        expect(options.headers).toEqual({
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': 'csrf-file-token',
+        });
+        expect(options.body).toBeInstanceOf(FormData);
+        expect(options.body.get('name')).toBe('Ada');
+        expect(options.body.get('avatar')).toBe(file);
+        expect(options.body.getAll('documents[]')).toEqual([documentA, documentB]);
+        expect(options.body.getAll('documents[][]')).toEqual([]);
+        expect(options.body.get('_token')).toBe('csrf-file-token');
+        expect(options.body.get('_method')).toBe('PATCH');
 
         globalThis.fetch = previousFetch;
     });

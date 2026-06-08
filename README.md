@@ -287,6 +287,9 @@ The viewer reads `schema.submit.mode` by default. Pass `submitMode="event"`, `ht
 
 For Laravel-style non-`GET`/`POST` methods, pass `method="PUT"`, `PATCH`, or `DELETE` as usual. The viewer renders valid HTML with `method="POST"` and the hidden `_method` field, while the JavaScript runtime keeps the original verb through `data-form-method` for `fetch` submissions.
 
+When the schema contains a `file` field, the viewer renders `enctype="multipart/form-data"`. In `fetch` mode, the runtime sends a `FormData` payload so uploaded files keep native browser semantics and preserves Laravel hidden `_token` / `_method` controls.
+Laravel-style `422` JSON validation responses shaped as `{ errors: { field: [...] } }` are mapped back into the viewer errors and emit `daisy-form:invalid`.
+
 `validateOn` supports `input`, `change`, and `submit`. Runtime validation is client-side convenience only; validate again in the host application before persisting user data.
 
 ### Builder usage
@@ -349,16 +352,30 @@ document.getElementById('quote-viewer').addEventListener('daisy-form:ready', asy
 });
 ```
 
+The global registry is useful when the host application initializes behavior outside the viewer event lifecycle:
+
+```js
+const runtime = window.DaisyFormViewer.get('quote-viewer');
+const runtimeFromElement = window.DaisyFormViewer.getByElement(document.getElementById('quote-viewer'));
+const activeRuntimes = window.DaisyFormViewer.all();
+
+runtime?.destroy();
+```
+
+`get(id)` and `getByElement(element)` return `null` when the viewer has been disconnected. `all()` prunes disconnected viewers before returning the active runtimes, and `destroy()` unregisters the runtime.
+
 Runtime methods include:
 
 - `getSchema()`, `getField(key)`, `getVisibleFields()`
-- `getValues({ visible: true })`, `getValue(key)`, `setValue(key, value)`, `setValues(values)`, `reset(values)`
+- `getValues({ visible: true })`, `serialize()`, `getFormData({ visible: true })`, `getValue(key)`, `getInput(key)`, `getInputs(key)`, `setValue(key, value)`, `setValues(values)`, `reset(values)`
 - `validate()`, `isValid()`, `getErrors()`, `setErrors(errors)`, `clearErrors()`
 - `submit()`, `getSubmitMode()`, `getValidateOn()`, `isReadonly()`
 - `getStep()`, `setStep(index)`, `nextStep()`, `previousStep()` for multi-step schemas
 - `on(event, listener)`, `off(event, listener)`, `destroy()`
 
-Viewer events bubble from the form root and include `daisy-form:ready`, `daisy-form:change`, `daisy-form:invalid`, `daisy-form:step-change`, `daisy-form:submit`, and `daisy-form:destroy`. Each event detail includes the viewer `id` and the `runtime` instance so hosts can integrate without querying global state.
+`getInput(key)` returns the first rendered control for the field. `getInputs(key)` returns every rendered control, which is useful for radio groups and future composite controls that expose multiple focusable elements for one schema field.
+
+Viewer events bubble from the form root and include `daisy-form:ready`, `daisy-form:change`, `daisy-form:invalid`, `daisy-form:step-change`, `daisy-form:submit`, and `daisy-form:destroy`. Each event detail includes the viewer `id` and the `runtime` instance so hosts can integrate without querying global state. In `fetch` mode, successful `daisy-form:submit` details also include the `Response` object.
 
 Readonly viewers keep the same schema/value contract and expose `data-readonly="true"` plus `runtime.isReadonly()`. They render disabled controls and omit submit controls, which lets hosts display stored data without forking the renderer.
 

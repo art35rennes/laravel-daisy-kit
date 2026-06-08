@@ -210,6 +210,36 @@ it('fails closed when JSONata expressions need an evaluator', function () {
     expect($result['errors']['_jsonata'])->toBe(['evaluator_missing']);
 });
 
+it('canonicalizes server submission values to submit names', function () {
+    $evaluator = new FormSubmissionEvaluator;
+
+    $result = $evaluator->evaluate(validFormSchema([
+        'fields' => [
+            [
+                'id' => 'identity',
+                'type' => 'section',
+                'fields' => [
+                    ['id' => 'firstName', 'type' => 'text', 'name' => 'first_name'],
+                    ['id' => 'lastName', 'type' => 'text', 'name' => 'last_name'],
+                    ['id' => 'intro', 'type' => 'staticText', 'text' => 'Read first.'],
+                ],
+            ],
+        ],
+    ]), [
+        'firstName' => 'Alias value',
+        'first_name' => 'Ada',
+        'lastName' => 'Lovelace',
+        'intro' => 'Ignored layout value',
+    ]);
+
+    expect($result['errors'])->toBe([])
+        ->and($result['normalizedData'])
+        ->not->toHaveKeys(['firstName', 'lastName'])
+        ->and($result['normalizedData']['first_name'])->toBe('Ada')
+        ->and($result['normalizedData']['last_name'])->toBe('Lovelace')
+        ->and($result['normalizedData']['intro'])->toBe('Ignored layout value');
+});
+
 it('applies batch JSONata results for visibility, validation and computed values', function () {
     $jsonata = new class extends JsonataEvaluator
     {
