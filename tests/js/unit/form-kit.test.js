@@ -415,6 +415,36 @@ describe('form-kit viewer runtime', () => {
         expect(runtime.getValue('brand_color')).toBe('#2f80ed');
     });
 
+    it('syncs color picker custom changes into the viewer runtime', async () => {
+        document.body.innerHTML = `
+            <form id="color-viewer" data-form-id="color-viewer">
+                <div data-colorpicker="1" data-form-input="brand_color">
+                    <input type="hidden" name="brand_color" value="#2f80ed" data-colorpicker-input>
+                </div>
+                <script type="application/json" data-form-schema>
+                    {"version":"1.0","id":"brand","fields":[{"id":"brand_color","type":"color","name":"brand_color","label":"Brand color"}]}
+                </script>
+            </form>
+        `;
+
+        const root = document.querySelector('#color-viewer');
+        const picker = root.querySelector('[data-colorpicker="1"]');
+        const input = picker.querySelector('[data-colorpicker-input]');
+        const runtime = createFormRuntime(root, {
+            schema: JSON.parse(root.querySelector('[data-form-schema]').textContent),
+        });
+
+        input.value = '#ff3366';
+        picker.dispatchEvent(new CustomEvent('colorpicker:change', {
+            bubbles: true,
+            detail: { value: '#ff3366' },
+        }));
+
+        await tick();
+
+        expect(runtime.getValue('brand_color')).toBe('#ff3366');
+    });
+
     it('handles visibility, validation and computed values', async () => {
         document.body.innerHTML = `
             <form>
@@ -950,5 +980,34 @@ describe('color picker', () => {
 
         expect(dropdown.classList.contains('dropdown-open')).toBe(true);
         expect(root.__cpDropdownInit).toBe(true);
+    });
+
+    it('opens dropdowns when the visible wrapper receives the click', () => {
+        document.body.innerHTML = `
+            <div data-colorpicker="1"
+                data-value="#123456"
+                data-disabled="false"
+                data-dropdown="true"
+                data-swatches="[]"
+                data-swatches-height="0"
+                data-show-palette="true"
+                data-show-inputs="true"
+                data-show-format-toggle="true"
+                data-show-alpha="true"
+                data-show-hue="true">
+                <div class="dropdown">
+                    <button type="button" data-colorpicker-trigger>Open</button>
+                    <div data-colorpicker-panel></div>
+                </div>
+            </div>
+        `;
+
+        const root = document.querySelector('[data-colorpicker="1"]');
+        const dropdown = root.querySelector('.dropdown');
+
+        initColorPicker(root);
+        dropdown.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+        expect(dropdown.classList.contains('dropdown-open')).toBe(true);
     });
 });

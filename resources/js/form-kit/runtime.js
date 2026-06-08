@@ -2,7 +2,8 @@
  * Form viewer runtime: binds a Daisy JSON schema to server-rendered inputs, evaluates JSONata for
  * visibility and computed fields, runs validation rules, and coordinates submit modes.
  *
- * Dispatches `daisy-form:ready`, `daisy-form:change`, `daisy-form:invalid`, and `daisy-form:submit`.
+ * Dispatches `daisy-form:ready`, `daisy-form:change`, `daisy-form:invalid`,
+ * `daisy-form:step-change`, `daisy-form:submit`, and `daisy-form:destroy`.
  *
  * @module form-kit/runtime
  */
@@ -22,6 +23,7 @@ import { evaluateExpression } from './jsonata-engine.js';
  * @param {string} [options.action] - Overrides form action when using fetch submit mode.
  * @param {string} [options.method] - HTTP verb override for fetch submits.
  * @param {'event'|'html'|'fetch'|'none'} [options.submitMode] - How successful validation should finalize.
+ * @param {'input'|'change'|'submit'} [options.validateOn='submit'] - Interaction that triggers live validation.
  * @param {boolean} [options.readonly=false] - Whether the viewer is rendered for display-only usage.
  * @returns {{
  *   id: string,
@@ -309,6 +311,9 @@ export function createFormRuntime(root, options = {}) {
     const onChange = () => {
         void handleInteraction('change');
     };
+    const onColorPickerChange = () => {
+        void handleInteraction('change');
+    };
     const onSubmit = (event) => {
         void submit(event);
     };
@@ -321,6 +326,7 @@ export function createFormRuntime(root, options = {}) {
 
     root.addEventListener('input', onInput);
     root.addEventListener('change', onChange);
+    root.addEventListener('colorpicker:change', onColorPickerChange);
     root.addEventListener('submit', onSubmit);
     root.querySelectorAll('[data-form-next]').forEach((button) => {
         button.addEventListener('click', onNextStep);
@@ -429,6 +435,7 @@ export function createFormRuntime(root, options = {}) {
         destroyed = true;
         root.removeEventListener('input', onInput);
         root.removeEventListener('change', onChange);
+        root.removeEventListener('colorpicker:change', onColorPickerChange);
         root.removeEventListener('submit', onSubmit);
         root.querySelectorAll('[data-form-next]').forEach((button) => {
             button.removeEventListener('click', onNextStep);

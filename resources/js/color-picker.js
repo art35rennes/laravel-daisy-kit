@@ -15,6 +15,8 @@
  * API: window.DaisyColorPicker.{ init(root), initAll() }
  */
 
+let dropdownControllerInitialized = false;
+
 // Limite une valeur n entre min et max
 function clamp(n, min, max) { 
   return Math.min(max, Math.max(min, n)); 
@@ -514,6 +516,7 @@ function ensureDropdownController(root) {
 
   if (!dropdown || !trigger || !panel) return;
 
+  ensureGlobalDropdownController();
   root.__cpDropdownInit = true;
 
   ['pointerdown', 'mousedown', 'click'].forEach((eventName) => {
@@ -521,22 +524,50 @@ function ensureDropdownController(root) {
       event.stopPropagation();
     });
   });
+}
 
-  // Ouverture/fermeture du dropdown au clic sur le trigger.
-  trigger.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+/**
+ * Contrôle les dropdowns par délégation pour rester robuste après un morph Livewire.
+ *
+ * @returns {void}
+ */
+function ensureGlobalDropdownController() {
+  if (dropdownControllerInitialized) return;
+
+  dropdownControllerInitialized = true;
+
+  document.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const root = target?.closest('[data-colorpicker="1"]');
+
+    if (!root) {
+      document.querySelectorAll('[data-colorpicker="1"] .dropdown.dropdown-open').forEach((dropdown) => {
+        dropdown.classList.remove('dropdown-open');
+      });
+
+      return;
+    }
+
+    const dropdown = root.querySelector('.dropdown');
+    const panel = target.closest('[data-colorpicker-panel]');
+    let trigger = target.closest('[data-colorpicker-trigger]');
+
+    if (!trigger && !panel && dropdown?.contains(target)) {
+      trigger = root.querySelector('[data-colorpicker-trigger]');
+    }
+
+    if (!trigger || !dropdown) return;
+
+    event.preventDefault();
     dropdown.classList.toggle('dropdown-open');
-  });
+  }, true);
 
-  // Fermeture du dropdown si clic en dehors.
-  document.addEventListener('click', (e) => {
-    if (!root.contains(e.target)) dropdown.classList.remove('dropdown-open');
-  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
 
-  // Fermeture du dropdown à la touche Escape.
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') dropdown.classList.remove('dropdown-open');
+    document.querySelectorAll('[data-colorpicker="1"] .dropdown.dropdown-open').forEach((dropdown) => {
+      dropdown.classList.remove('dropdown-open');
+    });
   });
 }
 
