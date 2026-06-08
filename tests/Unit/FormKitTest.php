@@ -118,17 +118,28 @@ it('keeps the builder field catalog aligned with canonical schema field types', 
     expect($staticTextProperties)
         ->toContain('id')
         ->toContain('text')
+        ->toContain('visibleWhen')
         ->toContain('ui.width')
-        ->not->toContain('name');
+        ->not->toContain('name')
+        ->not->toContain('default')
+        ->not->toContain('rules')
+        ->not->toContain('computed');
 
     foreach (FormSchemaNormalizer::ContainerTypes as $containerType) {
         expect(collect($catalog->propertiesFor($containerType))->pluck('path')->all())
             ->toContain('ui.width')
-            ->not->toContain('name');
+            ->toContain('visibleWhen')
+            ->not->toContain('name')
+            ->not->toContain('default')
+            ->not->toContain('rules')
+            ->not->toContain('computed');
     }
 
     expect(collect($catalog->propertiesFor('color'))->pluck('path')->all())
         ->toContain('name')
+        ->toContain('default')
+        ->toContain('rules')
+        ->toContain('computed')
         ->toContain('attrs.mode')
         ->toContain('attrs.dropdown')
         ->toContain('attrs.showFormatToggle');

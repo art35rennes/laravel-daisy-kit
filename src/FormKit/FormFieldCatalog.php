@@ -78,16 +78,20 @@ class FormFieldCatalog
         $definition = collect($this->definitions())->firstWhere('type', $type);
         $features = $definition['features'] ?? [];
         $nonSubmittingTypes = [...FormSchemaNormalizer::ContainerTypes, ...FormSchemaNormalizer::NonSubmittingFieldTypes];
+        $isSubmittingType = ! in_array($type, $nonSubmittingTypes, true);
         $properties = [
             $this->property('id', 'text', 'identity', required: true),
             $this->property('name', 'text', 'identity', except: $nonSubmittingTypes),
             $this->property('label', 'text', 'identity'),
             $this->property('description', 'textarea', 'identity'),
-            $this->property('default', 'json', 'behavior'),
-            $this->property('rules', 'json', 'behavior'),
             $this->property('visibleWhen', 'json', 'behavior'),
-            $this->property('computed', 'json', 'behavior'),
         ];
+
+        if ($isSubmittingType) {
+            $properties[] = $this->property('default', 'json', 'behavior');
+            $properties[] = $this->property('rules', 'json', 'behavior');
+            $properties[] = $this->property('computed', 'json', 'behavior');
+        }
 
         if (in_array('text', $features, true)) {
             $properties[] = $this->property('text', 'textarea', 'content');

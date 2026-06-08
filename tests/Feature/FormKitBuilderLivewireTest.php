@@ -474,12 +474,11 @@ it('covers advanced field authoring attributes', function () {
             'version' => '1.0',
             'id' => 'builder',
             'fields' => [
-                ['id' => 'copy', 'type' => 'staticText', 'text' => 'Original'],
+                ['id' => 'title', 'type' => 'text', 'name' => 'title', 'label' => 'Title'],
             ],
         ],
     ])
-        ->call('selectField', 'copy')
-        ->call('updateSelectedField', 'text', 'Updated static copy')
+        ->call('selectField', 'title')
         ->call('updateSelectedJson', 'default', '"draft"')
         ->call('updateSelectedJson', 'options', '[{"label":"A","value":"a"}]')
         ->call('updateSelectedJson', 'visibleWhen', '{"type":"jsonata","expression":"values.enabled = true","dependsOn":["enabled"]}')
@@ -491,7 +490,6 @@ it('covers advanced field authoring attributes', function () {
 
     expect($field)
         ->toMatchArray([
-            'text' => 'Updated static copy',
             'default' => 'draft',
             'options' => [['label' => 'A', 'value' => 'a']],
             'visibleWhen' => ['type' => 'jsonata', 'expression' => 'values.enabled = true', 'dependsOn' => ['enabled']],
@@ -499,6 +497,29 @@ it('covers advanced field authoring attributes', function () {
             'attrs' => ['autocomplete' => 'name'],
             'ui' => ['width' => '1/2'],
         ]);
+});
+
+it('keeps static text authoring focused on content and visibility', function () {
+    Livewire::test(FormBuilder::class, [
+        'schema' => [
+            'version' => '1.0',
+            'id' => 'builder',
+            'fields' => [
+                ['id' => 'copy', 'type' => 'staticText', 'text' => 'Original'],
+            ],
+        ],
+    ])
+        ->call('selectField', 'copy')
+        ->call('editField', 'copy')
+        ->assertSee('Static text')
+        ->assertSee('Visibility condition')
+        ->assertDontSee('Default value')
+        ->assertDontSee('Validation rules')
+        ->assertDontSee('Computed value')
+        ->call('updateSelectedField', 'text', 'Updated static copy')
+        ->call('updateSelectedJson', 'visibleWhen', '{"type":"jsonata","expression":"values.enabled = true","dependsOn":["enabled"]}')
+        ->assertSet('schema.fields.0.text', 'Updated static copy')
+        ->assertSet('schema.fields.0.visibleWhen.expression', 'values.enabled = true');
 });
 
 it('exposes signature component properties in the builder', function () {
