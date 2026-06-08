@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { evaluateExpression, registerFunction } from '../../../resources/js/form-kit/jsonata-engine.js';
 import { createFormRuntime } from '../../../resources/js/form-kit/runtime.js';
 import { createDefaultSchema, validateSchema } from '../../../resources/js/form-kit/schema.js';
+import initColorPicker from '../../../resources/js/color-picker.js';
 import initFormBuilder from '../../../resources/js/modules/form-builder.js';
 import initFormViewer from '../../../resources/js/modules/form-viewer.js';
 
@@ -695,5 +696,44 @@ describe('form-kit builder bridge', () => {
 
         expect(scrollBy).toHaveBeenCalledWith(0, -60);
         scrollBy.mockRestore();
+    });
+});
+
+describe('color picker', () => {
+    it('keeps dropdown interactions inside the panel from reaching global closers', () => {
+        document.body.innerHTML = `
+            <div data-colorpicker="1"
+                data-value="#123456"
+                data-disabled="false"
+                data-dropdown="true"
+                data-swatches="[]"
+                data-swatches-height="0"
+                data-show-palette="true"
+                data-show-inputs="true"
+                data-show-format-toggle="true"
+                data-show-alpha="true"
+                data-show-hue="true">
+                <div class="dropdown dropdown-open">
+                    <button type="button" data-colorpicker-trigger>Open</button>
+                    <div data-colorpicker-panel></div>
+                </div>
+            </div>
+        `;
+
+        const root = document.querySelector('[data-colorpicker="1"]');
+        const dropdown = root.querySelector('.dropdown');
+        const globalCloser = vi.fn(() => dropdown.classList.remove('dropdown-open'));
+
+        document.addEventListener('click', globalCloser);
+
+        initColorPicker(root);
+
+        const formatSelect = root.querySelector('[data-colorpicker-panel] select');
+        formatSelect.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+        expect(globalCloser).not.toHaveBeenCalled();
+        expect(dropdown.classList.contains('dropdown-open')).toBe(true);
+
+        document.removeEventListener('click', globalCloser);
     });
 });

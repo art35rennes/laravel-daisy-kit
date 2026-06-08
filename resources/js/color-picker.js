@@ -489,6 +489,12 @@ function initColorPicker(root) {
   const panel = root.querySelector('[data-colorpicker-panel]');
   const dropdown = root.querySelector('.dropdown');
   if (dropdown && trigger && panel) {
+    ['pointerdown', 'mousedown', 'click'].forEach((eventName) => {
+      panel.addEventListener(eventName, (event) => {
+        event.stopPropagation();
+      });
+    });
+
     // Ouverture/fermeture du dropdown au clic sur le trigger
     trigger.addEventListener('click', (e) => {
       e.preventDefault(); 
