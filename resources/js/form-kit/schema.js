@@ -11,6 +11,7 @@ import addFormats from 'ajv-formats';
 import {
     CONTAINER_FIELD_TYPES,
     FIELD_TYPES,
+    NON_SUBMITTING_FIELD_TYPES,
     SIMPLE_RULES,
     createField,
     normalizeOption,
@@ -360,7 +361,7 @@ function validateFields(fields, errors) {
             errors.push({ path, code: 'unknown_field_type', message: `Field type "${field.type}" is not supported.` });
         }
 
-        if (!CONTAINER_FIELD_TYPES.includes(field.type) && field.type !== 'staticText') {
+        if (!CONTAINER_FIELD_TYPES.includes(field.type) && !NON_SUBMITTING_FIELD_TYPES.includes(field.type)) {
             if (!namePattern.test(String(field.name ?? ''))) {
                 errors.push({ path, code: 'invalid_name', message: `Field "${field.id}" needs a valid submit name.` });
             }

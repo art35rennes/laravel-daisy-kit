@@ -50,6 +50,30 @@ describe('form-kit schema', () => {
         expect(result.valid).toBe(true);
     });
 
+    it('uses canonical non-submitting field taxonomy during schema validation', () => {
+        const contentResult = validateSchema({
+            version: '1.0',
+            id: 'content',
+            fields: [
+                { id: 'copy', type: 'staticText', text: 'Read first.' },
+                { id: 'group', type: 'section', fields: [] },
+            ],
+        });
+
+        expect(contentResult.valid).toBe(true);
+
+        const invalidResult = validateSchema({
+            version: '1.0',
+            id: 'content',
+            fields: [
+                { id: 'email', type: 'email', name: '', label: 'Email' },
+            ],
+        });
+
+        expect(invalidResult.valid).toBe(false);
+        expect(invalidResult.errors.map((error) => error.code)).toContain('invalid_name');
+    });
+
     it('rejects unsupported versions and dependency cycles', () => {
         const result = validateSchema({
             version: '2.0',

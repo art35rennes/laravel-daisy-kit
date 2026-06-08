@@ -685,7 +685,7 @@ export function validateSimpleRule(rule, value, values = {}, field = {}) {
 }
 
 /**
- * Builds the payload honoring visibility flags and skipping non-submitting artifacts (`staticText`).
+ * Builds the payload honoring visibility flags and skipping non-submitting schema artifacts.
  *
  * @param {Object[]} fields - Flattened field definitions from {@link flattenFields}.
  * @param {Record<string, unknown>} values - Live value bag.
@@ -694,7 +694,7 @@ export function validateSimpleRule(rule, value, values = {}, field = {}) {
  */
 export function serializeVisibleValues(fields, values, visible) {
     return fields.reduce((payload, field) => {
-        if (field.type === 'staticText' || visible[field.id] === false) {
+        if (NON_SUBMITTING_FIELD_TYPES.includes(field.type) || visible[field.id] === false) {
             return payload;
         }
 
