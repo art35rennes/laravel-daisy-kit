@@ -278,6 +278,10 @@ function buildPanel(root, state) {
       if (fmt === state.__format) opt.selected = true; 
       sel.append(opt);
     });
+    // Le sélecteur de format est un contrôle interne au picker. Son
+    // `change` natif ne doit pas remonter au viewer/formulaire hôte.
+    stopInternalControlPropagation(sel);
+
     // Changement de format : on met à jour l'affichage
     sel.addEventListener('change', () => { 
       state.__format = sel.value;
@@ -467,10 +471,27 @@ function buildPanel(root, state) {
   }, 16); // ~60fps
 
   // Quand l'utilisateur modifie le champ texte, on tente de parser la couleur
+  stopInternalControlPropagation(text);
   text.addEventListener('change', () => { 
     Object.assign(state, parseColor(text.value)); 
     fastUpdate();
     debouncedEvent();
+  });
+}
+
+/**
+ * Empêche les contrôles internes du panneau de déclencher les listeners de
+ * formulaire globaux (viewer, Livewire host, auto-submit) tout en conservant
+ * leurs propres gestionnaires.
+ *
+ * @param {HTMLElement} element
+ * @returns {void}
+ */
+function stopInternalControlPropagation(element) {
+  ['pointerdown', 'mousedown', 'click', 'input', 'change'].forEach((eventName) => {
+    element.addEventListener(eventName, (event) => {
+      event.stopPropagation();
+    });
   });
 }
 

@@ -995,6 +995,50 @@ describe('color picker', () => {
         document.removeEventListener('click', globalCloser);
     });
 
+    it('keeps format select changes inside the picker dropdown', async () => {
+        document.body.innerHTML = `
+            <form>
+                <div data-colorpicker="1"
+                    data-value="#123456"
+                    data-disabled="false"
+                    data-dropdown="true"
+                    data-swatches="[]"
+                    data-swatches-height="0"
+                    data-show-palette="true"
+                    data-show-inputs="true"
+                    data-show-format-toggle="true"
+                    data-show-alpha="true"
+                    data-show-hue="true">
+                    <div class="dropdown dropdown-open">
+                        <button type="button" data-colorpicker-trigger>Open</button>
+                        <div data-colorpicker-panel></div>
+                    </div>
+                </div>
+            </form>
+        `;
+
+        const form = document.querySelector('form');
+        const root = document.querySelector('[data-colorpicker="1"]');
+        const dropdown = root.querySelector('.dropdown');
+        const formChange = vi.fn();
+        const colorChange = vi.fn();
+
+        form.addEventListener('change', formChange);
+        root.addEventListener('colorpicker:change', colorChange);
+
+        initColorPicker(root);
+
+        const formatSelect = root.querySelector('[data-colorpicker-panel] select');
+        formatSelect.value = 'hex';
+        formatSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+        await new Promise((resolve) => setTimeout(resolve, 60));
+
+        expect(formChange).not.toHaveBeenCalled();
+        expect(colorChange).toHaveBeenCalledOnce();
+        expect(dropdown.classList.contains('dropdown-open')).toBe(true);
+    });
+
     it('attaches dropdown controls when a picker was already marked initialized', () => {
         document.body.innerHTML = `
             <div data-colorpicker="1"
