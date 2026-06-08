@@ -504,3 +504,48 @@ it('renders color fields with the package color picker component', function () {
         ->toContain('data-show-alpha="false"')
         ->toContain('#abcdef');
 });
+
+it('renders file fields as multipart forms with package file input props', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::forms.viewer
+            id="upload-viewer"
+            method="POST"
+            :schema="[
+                'version' => '1.0',
+                'id' => 'upload',
+                'fields' => [
+                    [
+                        'id' => 'documents',
+                        'type' => 'section',
+                        'label' => 'Documents',
+                        'fields' => [
+                            [
+                                'id' => 'attachments',
+                                'type' => 'file',
+                                'name' => 'attachments',
+                                'label' => 'Attachments',
+                                'attrs' => [
+                                    'accept' => '.pdf,image/*',
+                                    'multiple' => true,
+                                ],
+                                'ui' => [
+                                    'size' => 'sm',
+                                    'color' => 'primary',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('enctype="multipart/form-data"')
+        ->toContain('data-form-input="attachments"')
+        ->toContain('name="attachments"')
+        ->toContain('accept=".pdf,image/*"')
+        ->toContain('multiple')
+        ->toContain('file-input-sm')
+        ->toContain('file-input-primary');
+});

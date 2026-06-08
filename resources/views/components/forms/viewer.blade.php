@@ -33,6 +33,29 @@
     $layoutType = data_get($schema, 'layout.type', 'one-page');
     $isMultiStep = $layoutType === 'multi-step';
     $topLevelFields = array_values((array) ($schema['fields'] ?? []));
+    $containsFileField = function (array $fields) use (&$containsFileField): bool {
+        foreach ($fields as $field) {
+            if (! is_array($field)) {
+                continue;
+            }
+
+            if (($field['type'] ?? null) === 'file') {
+                return true;
+            }
+
+            if (is_array($field['fields'] ?? null) && $containsFileField($field['fields'])) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+    $formAttributes = ['id' => $formId, 'class' => 'daisy-form-viewer space-y-6'];
+
+    if ($containsFileField($topLevelFields)) {
+        $formAttributes['enctype'] = 'multipart/form-data';
+    }
+
     $steps = array_values(array_filter($topLevelFields, fn ($field) => ($field['type'] ?? null) === 'wizardStep'));
     $stepItems = array_values(array_map(
         fn (array $step, int $index): array => [
@@ -45,7 +68,7 @@
 @endphp
 
 <form
-    {{ $attributes->merge(['id' => $formId, 'class' => 'daisy-form-viewer space-y-6']) }}
+    {{ $attributes->merge($formAttributes) }}
     method="{{ $htmlMethod }}"
     action="{{ $action ?? '#' }}"
     data-module="form-viewer"
