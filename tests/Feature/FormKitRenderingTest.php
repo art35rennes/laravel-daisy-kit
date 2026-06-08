@@ -286,6 +286,28 @@ it('falls back to event submit mode when schema submit mode is invalid', functio
         ->toContain('Send');
 });
 
+it('spoofs non-post viewer methods through Laravel form method spoofing', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::forms.viewer
+            method="PATCH"
+            :schema="[
+                'version' => '1.0',
+                'id' => 'contact',
+                'fields' => [
+                    ['id' => 'email', 'type' => 'email', 'name' => 'email', 'label' => 'Email'],
+                ],
+            ]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('method="POST"')
+        ->toContain('data-form-method="PATCH"')
+        ->toContain('name="_method"')
+        ->toContain('value="PATCH"')
+        ->toContain('name="_token"');
+});
+
 it('renders readonly viewers as identifiable display-only forms', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::forms.viewer

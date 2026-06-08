@@ -28,7 +28,7 @@ export default function initFormViewer(root, options = {}) {
         errors,
         // Prefer explicit module options but fall back to native form attributes for progressive enhancement.
         action: options.action ?? root.getAttribute('action'),
-        method: options.method ?? root.getAttribute('method') ?? 'POST',
+        method: options.method ?? root.dataset.formMethod ?? root.getAttribute('method') ?? 'POST',
         submitMode: options.submitMode ?? root.dataset.submitMode,
         validateOn: options.validateOn ?? root.dataset.validateOn ?? 'submit',
         readonly: options.readonly ?? root.dataset.readonly === 'true',

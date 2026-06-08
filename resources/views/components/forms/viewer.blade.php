@@ -21,6 +21,7 @@
         ? (new \Art35rennes\DaisyKit\FormKit\FormErrorBagMapper())->map($errors)
         : (array) $errors;
     $method = strtoupper((string) $method);
+    $htmlMethod = $method === 'GET' ? 'GET' : 'POST';
     $formId = $attributes->get('id') ?? 'daisy-form-viewer-'.uniqid();
     $submit = (array) ($schema['submit'] ?? []);
     $submitLabel = $submit['label'] ?? __('daisy::form.submit');
@@ -45,19 +46,20 @@
 
 <form
     {{ $attributes->merge(['id' => $formId, 'class' => 'daisy-form-viewer space-y-6']) }}
-    method="{{ $method }}"
+    method="{{ $htmlMethod }}"
     action="{{ $action ?? '#' }}"
     data-module="form-viewer"
     data-form-id="{{ $formId }}"
+    data-form-method="{{ $method }}"
     data-submit-mode="{{ $resolvedSubmitMode }}"
     data-validate-on="{{ $validateOn }}"
     data-readonly="{{ $readonly ? 'true' : 'false' }}"
 >
-    @if($method !== 'GET')
+    @if($htmlMethod !== 'GET')
         @csrf
     @endif
 
-    @if($method !== 'GET' && $method !== 'POST')
+    @if(! in_array($method, ['GET', 'POST'], true))
         @method($method)
     @endif
 

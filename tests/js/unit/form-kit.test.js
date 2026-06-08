@@ -725,6 +725,39 @@ describe('form-kit viewer runtime', () => {
 
         expect(submissions).toEqual([]);
     });
+
+    it('uses the original viewer method data attribute for fetch submissions', async () => {
+        document.body.innerHTML = `
+            <form action="/contacts/1" method="POST" data-form-method="PATCH">
+                <div data-form-field="email">
+                    <input data-form-input="email" name="email" value="ada@example.com" />
+                    <p data-form-errors="email" class="hidden"></p>
+                </div>
+                <button type="submit" data-form-submit>Submit</button>
+                <script type="application/json" data-form-schema>
+                    {"version":"1.0","id":"signup","fields":[{"id":"email","type":"email","name":"email","label":"Email","rules":["required","email"]}],"submit":{"mode":"fetch"}}
+                </script>
+                <script type="application/json" data-form-value>{"email":"ada@example.com"}</script>
+                <script type="application/json" data-form-errors-payload>{}</script>
+            </form>
+        `;
+
+        const root = document.querySelector('form');
+        const fetch = vi.fn().mockResolvedValue({ ok: true });
+        const previousFetch = globalThis.fetch;
+        globalThis.fetch = fetch;
+
+        const runtime = initFormViewer(root);
+
+        await tick();
+        await runtime.submit();
+
+        expect(fetch).toHaveBeenCalledWith('/contacts/1', expect.objectContaining({
+            method: 'PATCH',
+        }));
+
+        globalThis.fetch = previousFetch;
+    });
 });
 
 describe('form-kit builder bridge', () => {
