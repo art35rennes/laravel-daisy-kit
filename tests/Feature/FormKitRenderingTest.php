@@ -70,6 +70,36 @@ it('renders a multi step form viewer with Blade-owned step markup', function () 
         ->toContain('data-form-submit');
 });
 
+it('renders static text as layout content without submitting a field value', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::forms.viewer
+            id="content-viewer"
+            :schema="[
+                'version' => '1.0',
+                'id' => 'content',
+                'fields' => [
+                    [
+                        'id' => 'intro',
+                        'type' => 'staticText',
+                        'label' => 'Intro fallback',
+                        'text' => 'Read this before continuing.',
+                        'ui' => ['width' => '1/2'],
+                    ],
+                    ['id' => 'email', 'type' => 'email', 'name' => 'email', 'label' => 'Email'],
+                ],
+            ]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('data-form-field="intro"')
+        ->toContain('Read this before continuing.')
+        ->toContain('md:col-span-6')
+        ->toContain('data-form-input="email"')
+        ->not->toContain('data-form-input="intro"')
+        ->not->toContain('name="intro"');
+});
+
 it('links viewer labels to stable field control ids', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::forms.viewer

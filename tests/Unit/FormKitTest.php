@@ -1,6 +1,8 @@
 <?php
 
 use Art35rennes\DaisyKit\FormKit\Contracts\JsonataEvaluator;
+use Art35rennes\DaisyKit\FormKit\FormFieldCatalog;
+use Art35rennes\DaisyKit\FormKit\FormSchemaNormalizer;
 use Art35rennes\DaisyKit\FormKit\FormSchemaValidator;
 use Art35rennes\DaisyKit\FormKit\FormSubmissionEvaluator;
 use Art35rennes\DaisyKit\FormKit\LaravelRuleMapper;
@@ -104,6 +106,32 @@ it('accepts multi step schemas with nested sections and common fields', function
     ]));
 
     expect($errors)->toBe([]);
+});
+
+it('keeps the builder field catalog aligned with canonical schema field types', function () {
+    $catalog = new FormFieldCatalog;
+
+    expect(collect($catalog->definitions())->pluck('type')->all())
+        ->toEqualCanonicalizing(FormSchemaNormalizer::FieldTypes);
+
+    $staticTextProperties = collect($catalog->propertiesFor('staticText'))->pluck('path')->all();
+    expect($staticTextProperties)
+        ->toContain('id')
+        ->toContain('text')
+        ->toContain('ui.width')
+        ->not->toContain('name');
+
+    foreach (FormSchemaNormalizer::ContainerTypes as $containerType) {
+        expect(collect($catalog->propertiesFor($containerType))->pluck('path')->all())
+            ->toContain('ui.width')
+            ->not->toContain('name');
+    }
+
+    expect(collect($catalog->propertiesFor('color'))->pluck('path')->all())
+        ->toContain('name')
+        ->toContain('attrs.mode')
+        ->toContain('attrs.dropdown')
+        ->toContain('attrs.showFormatToggle');
 });
 
 it('rejects unsupported form layout types', function () {
