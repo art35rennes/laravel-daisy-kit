@@ -13,7 +13,9 @@
 ])
 
 @php
-    $isGet = strtoupper($method) === 'GET';
+    $formMethod = strtoupper($method);
+    $isGet = $formMethod === 'GET';
+    $htmlMethod = $isGet ? 'GET' : 'POST';
     $sizeClasses = match($size) {
         'xs' => 'input-xs',
         'sm' => 'input-sm',
@@ -36,7 +38,7 @@
 <form 
     id="{{ $instanceId }}"
     action="{{ $action }}" 
-    method="{{ strtoupper($method) }}" 
+    method="{{ $htmlMethod }}" 
     data-module="inline"
     data-inline-instance-id="{{ $instanceId }}"
     class="space-y-4"
@@ -46,8 +48,8 @@
         @csrf
     @endif
     
-    @if(!$isGet && strtoupper($method) !== 'POST')
-        @method($method)
+    @if(!$isGet && $formMethod !== 'POST')
+        @method($formMethod)
     @endif
     
     @if($autoRefreshCsrf && !$isGet)
@@ -133,5 +135,4 @@
         </x-slot:side>
     </x-daisy::ui.overlay.drawer>
 @endif
-
 

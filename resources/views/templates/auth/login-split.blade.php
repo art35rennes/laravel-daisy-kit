@@ -8,11 +8,18 @@
     'rememberMeDays' => 30,
     'forgotPasswordUrl' => \Illuminate\Support\Facades\Route::has('password.request') ? route('password.request') : '#',
     'signupUrl' => \Illuminate\Support\Facades\Route::has('register') ? route('register') : '#',
+    'showSignup' => null,
     // UI
     'backgroundImage' => null,
     'showTestimonial' => false,
     'testimonial' => null, // ['quote' => '', 'author' => '', 'role' => '', 'avatar' => '', 'rating' => 5]
 ])
+
+@php
+    $shouldShowSignup = $showSignup ?? \Illuminate\Support\Facades\Route::has('register');
+    $formMethod = strtoupper($method);
+    $htmlMethod = $formMethod === 'GET' ? 'GET' : 'POST';
+@endphp
 
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="false">
     <x-daisy::ui.partials.theme-selector position="fixed" placement="top-right" />
@@ -39,8 +46,15 @@
                     <div class="divider my-6">{{ __('daisy::auth.or') }}</div>
                 @endif
 
-                <form action="{{ $action }}" method="POST" class="space-y-4">
-                    @csrf
+                <form action="{{ $action }}" method="{{ $htmlMethod }}" class="space-y-4">
+                    @if($htmlMethod !== 'GET')
+                        @csrf
+                    @endif
+
+                    @if(! in_array($formMethod, ['GET', 'POST'], true))
+                        @method($formMethod)
+                    @endif
+
                     {{-- Email --}}
                     <x-daisy::ui.partials.form-field name="email" :label="__('daisy::auth.email')" :required="true">
                         <x-slot:labelSlot>{{ __('daisy::auth.email') }}</x-slot:labelSlot>
@@ -55,12 +69,15 @@
                     </x-daisy::ui.partials.form-field>
 
                     {{-- Password --}}
-                    <x-daisy::ui.partials.form-field name="password" :label="__('daisy::auth.password')" :required="true">
+                    <x-daisy::ui.partials.form-field name="password" :required="true">
                         <x-slot:labelSlot>
-                            <div class="w-full flex items-center justify-between">
-                                <span>{{ __('daisy::auth.password') }}</span>
+                            <div class="w-full flex items-center justify-between gap-3">
+                                <span>
+                                    {{ __('daisy::auth.password') }}
+                                    <span aria-hidden="true" class="text-error ml-1">*</span>
+                                </span>
                                 @if($forgotPasswordUrl !== '#')
-                                    <a href="{{ $forgotPasswordUrl }}" class="link link-hover text-sm">{{ __('daisy::auth.forgot_password') }}</a>
+                                    <a href="{{ $forgotPasswordUrl }}" class="link link-hover text-sm shrink-0">{{ __('daisy::auth.forgot_password') }}</a>
                                 @endif
                             </div>
                         </x-slot:labelSlot>
@@ -85,6 +102,7 @@
                     </x-daisy::ui.inputs.button>
                 </form>
 
+                @if($shouldShowSignup)
                 <p class="text-sm text-base-content/70">
                     {{ __('daisy::auth.first_time') }}
                     @if($signupUrl !== '#')
@@ -93,6 +111,7 @@
                         <span class="opacity-70">{{ __('daisy::auth.signup_for_free') }}</span>
                     @endif
                 </p>
+                @endif
             </div>
         </div>
 
@@ -139,5 +158,4 @@
         </div>
     </div>
 </x-daisy::layout.app>
-
 

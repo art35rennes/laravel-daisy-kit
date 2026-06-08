@@ -13,6 +13,7 @@ return [
     'first_time' => 'Première visite ici ?',
     'signup_for_free' => 'Inscrivez-vous gratuitement',
     'reset_password' => 'Réinitialiser le mot de passe',
+    'reset_password_description' => 'Choisissez un nouveau mot de passe pour votre compte.',
     'send_reset_link' => 'Envoyer le lien de réinitialisation',
     'back_to_login' => 'Retour à la connexion',
     'verify_email' => 'Vérifiez votre email',

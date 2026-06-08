@@ -42,7 +42,29 @@ if (! function_exists('packagePath')) {
             return $root;
         }
 
-        return $root.DIRECTORY_SEPARATOR.ltrim($path, DIRECTORY_SEPARATOR);
+        $normalized = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+        $segments = array_values(array_filter(
+            explode(DIRECTORY_SEPARATOR, $normalized),
+            static fn (string $segment): bool => $segment !== '' && $segment !== '.',
+        ));
+
+        $resolved = [];
+
+        foreach ($segments as $segment) {
+            if ($segment === '..') {
+                array_pop($resolved);
+
+                continue;
+            }
+
+            $resolved[] = $segment;
+        }
+
+        if ($resolved === []) {
+            return $root;
+        }
+
+        return $root.DIRECTORY_SEPARATOR.implode(DIRECTORY_SEPARATOR, $resolved);
     }
 }
 

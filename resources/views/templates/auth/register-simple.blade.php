@@ -12,6 +12,11 @@
     'acceptTerms' => true,
 ])
 
+@php
+    $formMethod = strtoupper($method);
+    $htmlMethod = $formMethod === 'GET' ? 'GET' : 'POST';
+@endphp
+
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="true">
     <x-daisy::ui.partials.theme-selector position="fixed" placement="top-right" />
     <div class="min-h-[calc(100vh-8rem)] flex items-center justify-center">
@@ -35,8 +40,15 @@
                 <div class="divider my-6">{{ __('daisy::auth.or') }}</div>
             @endif
 
-            <form action="{{ $action }}" method="POST" class="space-y-4">
-                @csrf
+            <form action="{{ $action }}" method="{{ $htmlMethod }}" class="space-y-4">
+                @if($htmlMethod !== 'GET')
+                    @csrf
+                @endif
+
+                @if(! in_array($formMethod, ['GET', 'POST'], true))
+                    @method($formMethod)
+                @endif
+
                 {{-- Name (optional) --}}
                 <x-daisy::ui.partials.form-field name="name" :label="__('daisy::auth.name')" :required="false">
                     <x-daisy::ui.inputs.input
@@ -105,11 +117,11 @@
                             <label for="terms" class="text-sm cursor-pointer">
                                 {{ __('daisy::auth.accept_terms') }}
                                 @if($termsUrl)
-                                    <a href="{{ $termsUrl }}" class="link link-hover" target="_blank">{{ __('daisy::auth.terms_link') }}</a>
+                                    <a href="{{ $termsUrl }}" class="link link-hover" target="_blank" rel="noopener noreferrer">{{ __('daisy::auth.terms_link') }}</a>
                                 @endif
                                 @if($privacyUrl)
                                     {{ __('daisy::auth.and') }}
-                                    <a href="{{ $privacyUrl }}" class="link link-hover" target="_blank">{{ __('daisy::auth.privacy_link') }}</a>
+                                    <a href="{{ $privacyUrl }}" class="link link-hover" target="_blank" rel="noopener noreferrer">{{ __('daisy::auth.privacy_link') }}</a>
                                 @endif
                             </label>
                         </div>
@@ -135,4 +147,3 @@
         </div>
     </div>
 </x-daisy::layout.app>
-

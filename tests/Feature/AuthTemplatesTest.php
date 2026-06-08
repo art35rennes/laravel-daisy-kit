@@ -1,7 +1,9 @@
 <?php
 
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\MessageBag;
+use Illuminate\View\ComponentAttributeBag;
 
 beforeEach(function () {
     View::share('errors', new MessageBag);
@@ -9,7 +11,7 @@ beforeEach(function () {
 
 it('renders login-split template', function () {
     $html = View::make('daisy::templates.auth.login-split', [
-        'attributes' => new \Illuminate\View\ComponentAttributeBag([]),
+        'attributes' => new ComponentAttributeBag([]),
         'backgroundImage' => '/img/divers/divers-6.jpg',
     ])->render();
 
@@ -30,10 +32,82 @@ it('renders reset-password template', function () {
     $html = View::make('daisy::templates.auth.reset-password')->render();
 
     expect($html)
-        ->toContain('Reset password')
         ->toContain(__('daisy::auth.reset_password'))
-        ->not->toContain('daisy::auth.reset_password')
+        ->toContain(__('daisy::auth.reset_password_description'))
+        ->toContain('name="password"')
+        ->toContain('name="password_confirmation"')
         ->toContain('form');
+});
+
+it('renders login-simple password label with forgot password link separated', function () {
+    $html = View::make('daisy::templates.auth.login-simple', [
+        'forgotPasswordUrl' => '/forgot-password',
+        'showSignup' => false,
+    ])->render();
+
+    expect($html)
+        ->toContain('justify-between')
+        ->toContain('shrink-0')
+        ->toContain('Forgot password?')
+        ->not->toContain(__('daisy::auth.first_time'));
+});
+
+it('renders login-split public component alias from the template source', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::templates.auth.login-split
+            forgot-password-url="/forgot-password"
+            :show-signup="false"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('shrink-0')
+        ->toContain('/forgot-password')
+        ->not->toContain(__('daisy::auth.first_time'));
+});
+
+it('renders login-split without signup when disabled', function () {
+    $html = View::make('daisy::templates.auth.login-split', [
+        'showSignup' => false,
+    ])->render();
+
+    expect($html)->not->toContain(__('daisy::auth.first_time'));
+});
+
+it('renders reset-password with token and prefilled email', function () {
+    $html = View::make('daisy::templates.auth.reset-password', [
+        'token' => 'reset-token',
+        'email' => 'jane@example.com',
+    ])->render();
+
+    expect($html)
+        ->toContain('name="token" value="reset-token"')
+        ->toContain('value="jane@example.com"')
+        ->toContain('name="password"')
+        ->toContain('name="password_confirmation"');
+});
+
+it('spoofs non-post auth template methods through Laravel form method spoofing', function () {
+    $html = View::make('daisy::templates.auth.login-simple', [
+        'method' => 'PATCH',
+        'showSignup' => false,
+    ])->render();
+
+    expect($html)
+        ->toContain('method="POST"')
+        ->toContain('name="_method"')
+        ->toContain('value="PATCH"')
+        ->toContain('name="_token"');
+});
+
+it('omits csrf tokens for get auth template methods', function () {
+    $html = View::make('daisy::templates.auth.forgot-password', [
+        'method' => 'GET',
+    ])->render();
+
+    expect($html)
+        ->toContain('method="GET"')
+        ->not->toContain('name="_token"');
 });
 
 it('renders verify-email template', function () {
@@ -100,6 +174,18 @@ it('renders register-simple template without terms acceptance', function () {
 
     expect($html)
         ->not->toContain('terms');
+});
+
+it('renders registration policy links with blank-target rel protection', function () {
+    $html = View::make('daisy::templates.auth.register-simple', [
+        'termsUrl' => 'https://example.com/terms',
+        'privacyUrl' => 'https://example.com/privacy',
+    ])->render();
+
+    expect($html)
+        ->toContain('target="_blank" rel="noopener noreferrer"')
+        ->toContain('https://example.com/terms')
+        ->toContain('https://example.com/privacy');
 });
 
 it('renders register-split template', function () {

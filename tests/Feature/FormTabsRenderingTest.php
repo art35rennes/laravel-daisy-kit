@@ -94,3 +94,22 @@ it('counts errors by tab using TabErrorBag helper', function () {
         ->and($counts['general'])->toBe(2)
         ->and($counts['advanced'])->toBe(1);
 });
+
+it('spoofs non-post tabbed form methods through Laravel form method spoofing', function () {
+    View::share('errors', new MessageBag);
+
+    $view = view('daisy::templates.form.form-with-tabs', [
+        'tabs' => [
+            ['id' => 'general', 'label' => 'Général'],
+        ],
+        'method' => 'PATCH',
+    ]);
+
+    $html = $view->render();
+
+    expect($html)
+        ->toContain('method="POST"')
+        ->toContain('name="_method"')
+        ->toContain('value="PATCH"')
+        ->toContain('name="_token"');
+});

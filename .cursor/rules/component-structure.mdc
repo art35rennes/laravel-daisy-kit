@@ -21,7 +21,7 @@ alwaysApply: true
 
 **Template structure**
 - Reusable/stable templates: `resources/views/templates/{category}/{name}.blade.php`
-- Templates also exposed as Blade components when a component alias is part of the public API: `resources/views/components/templates/{category}/{name}.blade.php`
+- Templates are exposed as Blade components through the package anonymous component namespace, resolving `x-daisy::templates.*` to `daisy::templates.*`.
 - No documentation-only or example-only templates belong in this repository
 - See `atomic-design.mdc` for additional template rules.
 
@@ -29,5 +29,4 @@ alwaysApply: true
 
 - All templates are in `resources/views/templates/{category}/{name}.blade.php`.
 - Templates are package assets meant to be consumed from a host application.
-- If a template is intended for direct Blade component usage, mirror it under `components/templates/{category}/`.
-- If a template is intended to be rendered via `view('daisy::templates...')`, keep it only under `templates/`.
+- Do not mirror templates under `resources/views/components/templates`; `resources/views/templates` is the single source for both `daisy::templates.*` views and `x-daisy::templates.*` component aliases.

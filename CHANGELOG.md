@@ -6,6 +6,13 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Ship prebuilt Vite assets under `dist/vendor/art35rennes/laravel-daisy-kit/` so `php artisan vendor:publish --tag=daisy-assets` works after `composer install` without a local package build step.
+- Fix auth label layout when templates provide rich `labelSlot` content (for example the login password row with a forgot-password link).
+- Hide self-service signup messaging on login templates unless a `register` route exists or `showSignup` is enabled.
+- Restore the `reset-password` template as a real password reset form instead of a duplicate forgot-password screen.
+
 ### Changed
 
 - Replaced the DataTables/jQuery-based datatable implementation with a new `x-daisy::ui.data-display.table` component powered by `@tanstack/table-core`.

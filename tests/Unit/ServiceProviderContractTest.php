@@ -1,10 +1,12 @@
 <?php
 
 use Art35rennes\DaisyKit\DaisyKitServiceProvider;
+use Art35rennes\DaisyKit\Support\PackagePaths;
 use Illuminate\Foundation\Exceptions\Handler;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Facade;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\MessageBag;
@@ -41,6 +43,10 @@ it('exposes templates as anonymous Blade components through the public alias', f
         ->and($builderHtml)
         ->toContain('data-form-builder-livewire')
         ->toContain('data-module="form-viewer"');
+});
+
+it('keeps templates as a single source under resources views templates', function () {
+    expect(File::isDirectory(PackagePaths::path('resources', 'views', 'components', 'templates')))->toBeFalse();
 });
 
 it('registers the default csrf refresh route contract', function () {

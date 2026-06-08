@@ -22,22 +22,24 @@
 @php
     // Génération d'un ID unique pour le formulaire si non fourni.
     $formId = $attributes->get('id') ?? 'form-simple-'.uniqid();
+    $formMethod = strtoupper($method);
+    $htmlMethod = $formMethod === 'GET' ? 'GET' : 'POST';
 @endphp
 
 <form
     id="{{ $formId }}"
     action="{{ $action }}"
-    method="{{ strtoupper($method) }}"
+    method="{{ $htmlMethod }}"
     class="space-y-6"
 >
     {{-- Protection CSRF : requise pour toutes les méthodes sauf GET --}}
-    @if(strtoupper($method) !== 'GET')
+    @if($htmlMethod !== 'GET')
         @csrf
     @endif
 
     {{-- Méthode spoofing : Laravel simule PUT/PATCH/DELETE via POST + @method --}}
-    @if(strtoupper($method) !== 'GET' && strtoupper($method) !== 'POST')
-        @method($method)
+    @if(! in_array($formMethod, ['GET', 'POST'], true))
+        @method($formMethod)
     @endif
 
 
@@ -64,5 +66,4 @@
         </div>
     @endif
 </form>
-
 

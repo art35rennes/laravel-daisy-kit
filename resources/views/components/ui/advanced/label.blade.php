@@ -26,7 +26,11 @@
         @php($labelClass .= ' sr-only')
     @endif
     <label @if($for) for="{{ $for }}" @endif {{ $attributes->merge(['class' => $labelClass]) }}>
-        <span class="break-words text-wrap whitespace-normal overflow-hidden">{{ $slot->isNotEmpty() ? $slot : $value }}</span>
+        @if($slot->isNotEmpty())
+            {{ $slot }}
+        @else
+            <span class="break-words text-wrap whitespace-normal overflow-hidden">{{ $value }}</span>
+        @endif
         @if($alt)
             <span class="break-words text-wrap whitespace-normal overflow-hidden text-sm opacity-80">{{ $alt }}</span>
         @endif

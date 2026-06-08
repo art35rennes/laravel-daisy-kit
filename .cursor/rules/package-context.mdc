@@ -14,7 +14,7 @@ alwaysApply: true
 - Prefer `blade-ui-kit/blade-icons` and installed icon collections for reusable icons. Inline SVG is acceptable only when it is a deliberate, stable package asset and not host-app-specific decoration.
 - Do not add demo pages, docs pages, inventory tooling, or application navigation into this repository.
 - Front assets are exposed through explicit publish tags:
-  - `daisy-assets` for built distributable assets
+  - `daisy-assets` for built distributable assets shipped under `dist/vendor/art35rennes/laravel-daisy-kit/`
   - `daisy-assets-source` for raw sources when a host explicitly wants to rebuild them
   - `daisy-config`, `daisy-views`, `daisy-templates`, `daisy-lang` for package resources
 - Prioritize factorization, reactive Blade props usage, clarity.

@@ -71,3 +71,20 @@ it('includes csrf keeper when autoRefreshCsrf is enabled', function () {
 
     expect($html)->toContain('csrf-keeper');
 });
+
+it('spoofs non-post wizard methods through Laravel form method spoofing', function () {
+    $view = view('daisy::templates.form.form-wizard', [
+        'steps' => [
+            ['key' => 'profile', 'label' => 'Profil'],
+        ],
+        'method' => 'PUT',
+    ]);
+
+    $html = $view->render();
+
+    expect($html)
+        ->toContain('method="POST"')
+        ->toContain('name="_method"')
+        ->toContain('value="PUT"')
+        ->toContain('name="_token"');
+});

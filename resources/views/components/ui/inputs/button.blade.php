@@ -74,12 +74,14 @@
     if ($disabled) $classes .= ' btn-disabled';
 
     $resolvedIconPosition = $iconPosition === 'right' ? 'right' : 'left';
+    $rel = $target === '_blank' ? 'noopener noreferrer' : null;
 @endphp
 
 @if($tag === 'a')
     <a 
         @if($href) href="{{ $href }}" @endif
         @if($target) target="{{ $target }}" @endif
+        @if($rel) rel="{{ $rel }}" @endif
         @if($loading) aria-busy="true" @endif
         @if($disabled) aria-disabled="true" @endif
         {{ $attributes->merge(['class' => $classes]) }}
@@ -155,4 +157,3 @@
         @endisset
     </button>
 @endif
-

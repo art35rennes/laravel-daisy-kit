@@ -54,10 +54,16 @@
     }
 @endphp
 
+@php
+    $formMethod = strtoupper($method);
+    $isGet = $formMethod === 'GET';
+    $htmlMethod = $isGet ? 'GET' : 'POST';
+@endphp
+
 <form 
     id="{{ $instanceId }}"
     action="{{ $action }}" 
-    method="{{ strtoupper($method) }}" 
+    method="{{ $htmlMethod }}" 
     data-module="wizard"
     data-wizard-key="{{ $wizardKey }}"
     data-wizard-instance-id="{{ $instanceId }}"
@@ -66,15 +72,15 @@
     class="space-y-6"
     {{ $attributes->except(['id']) }}
 >
-    @if(strtoupper($method) !== 'GET')
+    @if(!$isGet)
         @csrf
     @endif
     
-    @if(strtoupper($method) !== 'GET' && strtoupper($method) !== 'POST')
-        @method($method)
+    @if(!$isGet && $formMethod !== 'POST')
+        @method($formMethod)
     @endif
     
-    @if($autoRefreshCsrf && strtoupper($method) !== 'GET')
+    @if($autoRefreshCsrf && !$isGet)
         <x-daisy::ui.utilities.csrf-keeper />
     @endif
     
@@ -144,5 +150,4 @@
         </div>
     </div>
 </form>
-
 

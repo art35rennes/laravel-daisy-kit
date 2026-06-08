@@ -60,28 +60,31 @@
 @php
     // Générer un ID unique pour cette instance si non fourni
     $instanceId = $attributes->get('id') ?? 'form-tabs-'.uniqid();
+    $formMethod = strtoupper($method);
+    $isGet = $formMethod === 'GET';
+    $htmlMethod = $isGet ? 'GET' : 'POST';
 @endphp
 
 <form 
     id="{{ $instanceId }}"
     action="{{ $action }}" 
-    method="{{ strtoupper($method) }}" 
+    method="{{ $htmlMethod }}" 
     data-module="tabs"
     data-tabs-instance-id="{{ $instanceId }}"
     data-persist-field="{{ $persistActiveTabField }}"
     {{ $attributes->except(['id']) }}
 >
-    @if(strtoupper($method) !== 'GET')
+    @if(!$isGet)
         @csrf
     @endif
     
-    @if(strtoupper($method) !== 'GET' && strtoupper($method) !== 'POST')
-        @method($method)
+    @if(!$isGet && $formMethod !== 'POST')
+        @method($formMethod)
     @endif
     
     <input type="hidden" name="{{ $persistActiveTabField }}" value="{{ $currentActiveTab }}" />
     
-    @if($autoRefreshCsrf && strtoupper($method) !== 'GET')
+    @if($autoRefreshCsrf && !$isGet)
         <x-daisy::ui.utilities.csrf-keeper />
     @endif
     
@@ -143,5 +146,4 @@
         @endisset
     </div>
 </form>
-
 

@@ -57,6 +57,7 @@ This repository contains only package concerns:
 - `src/`
 - `config/daisy-kit.php`
 - `resources/views`, `resources/lang`, `resources/js`, `resources/css`
+- `dist/vendor/art35rennes/laravel-daisy-kit/` — prebuilt assets published to host apps via `daisy-assets`
 - package tests under `tests/`
 
 It does **not** include demo routes, documentation pages, inventory tooling, or browser tests. Those live in the separate companion application repository `laravel-daisy-kit-demo`.
@@ -74,6 +75,8 @@ npm install
 composer test
 npm run build
 ```
+
+`npm run build` writes the distributable Vite manifest and assets to `dist/vendor/art35rennes/laravel-daisy-kit/`. That directory is shipped with the Composer package so host apps can publish it with `daisy-assets` without rebuilding frontend tooling locally.
 
 ## Host app integration
 

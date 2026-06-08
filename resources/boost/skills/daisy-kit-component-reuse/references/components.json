@@ -1,11 +1,11 @@
 {
-    "generated_at": "2026-06-08T16:46:32+00:00",
+    "generated_at": "2026-06-08T20:52:01+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
         "component_count": 148,
         "template_count": 30,
-        "excluded_component_template_mirrors": 14
+        "excluded_component_template_mirrors": 0
     },
     "components": [
         {
@@ -2625,7 +2625,8 @@
                 "rememberMe",
                 "rememberMeDays",
                 "forgotPasswordUrl",
-                "signupUrl"
+                "signupUrl",
+                "showSignup"
             ]
         },
         {
@@ -2643,6 +2644,7 @@
                 "rememberMeDays",
                 "forgotPasswordUrl",
                 "signupUrl",
+                "showSignup",
                 "backgroundImage",
                 "showTestimonial",
                 "testimonial",
@@ -2725,10 +2727,11 @@
                 "description",
                 "action",
                 "method",
+                "token",
+                "email",
                 "backToLoginUrl",
                 "backToLoginText",
-                "submitButtonText",
-                "emailSent"
+                "passwordConfirmation"
             ]
         },
         {

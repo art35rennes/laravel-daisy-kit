@@ -33,6 +33,21 @@ it('renders form inline with POST method with csrf and csrf keeper', function ()
         ->toContain('data-module="inline"');
 });
 
+it('spoofs non-post form inline methods through Laravel form method spoofing', function () {
+    $view = view('daisy::templates.form.form-inline', [
+        'action' => '/filters',
+        'method' => 'PATCH',
+    ]);
+
+    $html = $view->render();
+
+    expect($html)
+        ->toContain('method="POST"')
+        ->toContain('name="_method"')
+        ->toContain('value="PATCH"')
+        ->toContain('name="_token"');
+});
+
 it('displays active filter tokens with clear buttons for backend params', function () {
     $view = view('daisy::templates.form.form-inline', [
         'activeFilters' => [

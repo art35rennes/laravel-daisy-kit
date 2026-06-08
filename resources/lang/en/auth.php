@@ -13,6 +13,7 @@ return [
     'first_time' => 'First time around here?',
     'signup_for_free' => 'Sign up for free',
     'reset_password' => 'Reset password',
+    'reset_password_description' => 'Choose a new password for your account.',
     'send_reset_link' => 'Send reset link',
     'back_to_login' => 'Back to login',
     'verify_email' => 'Verify your email',

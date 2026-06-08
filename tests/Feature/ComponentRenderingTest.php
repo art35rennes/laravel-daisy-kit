@@ -212,6 +212,19 @@ it('renders a link component', function () {
         ->toContain('/test');
 });
 
+it('renders button links opened in a new tab with noopener rel protection', function () {
+    $html = View::make('daisy::components.ui.inputs.button', [
+        'tag' => 'a',
+        'href' => 'https://example.com',
+        'target' => '_blank',
+        'slot' => 'External',
+    ])->render();
+
+    expect($html)
+        ->toContain('target="_blank"')
+        ->toContain('rel="noopener noreferrer"');
+});
+
 it('renders the grid layout with correct classes', function () {
     $inner = '<div class="col-sm-12 col-xl-4">Col 1</div>';
 

@@ -40,6 +40,7 @@ composer ai:catalog
 - Any release must update `CHANGELOG.md`.
 - Tags must follow the `vMAJOR.MINOR.PATCH` format.
 - Until a contrary decision is documented, the stable public baseline starts at `v1.0.0`.
+- Run `npm run build` before tagging so `dist/vendor/art35rennes/laravel-daisy-kit/` matches the release and host apps can publish `daisy-assets` after `composer install`.
 
 ## Initial release baseline
 

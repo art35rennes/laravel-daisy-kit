@@ -24,6 +24,7 @@ Homestead.json
 
 /public/build
 /public/vendor/art35rennes/laravel-daisy-kit
+/dist/hot
 /storage/pail
 .env.backup
 .env.production

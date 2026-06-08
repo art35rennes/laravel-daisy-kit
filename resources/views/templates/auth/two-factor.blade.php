@@ -11,6 +11,11 @@
     'showLogout' => true,
 ])
 
+@php
+    $formMethod = strtoupper($method);
+    $htmlMethod = $formMethod === 'GET' ? 'GET' : 'POST';
+@endphp
+
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="true">
     <x-daisy::ui.partials.theme-selector position="fixed" placement="top-right" />
     <div class="min-h-[calc(100vh-8rem)] flex items-center justify-center">
@@ -31,8 +36,15 @@
                 @lang('daisy::auth.two_factor_instructions')
             </x-daisy::ui.feedback.alert>
 
-            <form action="{{ $action }}" method="POST" class="space-y-4">
-                @csrf
+            <form action="{{ $action }}" method="{{ $htmlMethod }}" class="space-y-4">
+                @if($htmlMethod !== 'GET')
+                    @csrf
+                @endif
+
+                @if(! in_array($formMethod, ['GET', 'POST'], true))
+                    @method($formMethod)
+                @endif
+
                 {{-- Two-factor code --}}
                 <div class="space-y-2">
                     <label class="label flex justify-between gap-2">
