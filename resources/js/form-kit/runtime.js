@@ -65,9 +65,10 @@ export function createFormRuntime(root, options = {}) {
         ? options.submitMode
         : (submitModes.includes(schema.submit?.mode) ? schema.submit.mode : 'event');
     const readonly = options.readonly === true;
-    // Containers render recursively in Blade. Content leaves still participate in visibility, but only
-    // submitting leaves bind values, validation rules, and submit payloads.
+    // Containers render recursively in Blade. Every schema node can drive visibility,
+    // while only submitting leaves bind values, validation rules, and submit payloads.
     const allFields = flattenFields(schema.fields);
+    const visibilityFields = allFields;
     const fields = allFields.filter((field) => !CONTAINER_FIELD_TYPES.includes(field.type));
     const submittingFields = fields.filter((field) => !NON_SUBMITTING_FIELD_TYPES.includes(field.type));
     const state = {
@@ -106,7 +107,7 @@ export function createFormRuntime(root, options = {}) {
         }
     });
 
-    fields.forEach((field) => {
+    visibilityFields.forEach((field) => {
         // Visibility defaults true until JSONata runs; keeps SSR markup visible before first microtask tick.
         state.visible[field.id] = true;
     });
@@ -144,7 +145,7 @@ export function createFormRuntime(root, options = {}) {
         // Computed fields must run before visibility so expressions can reference freshly derived values.
         await applyComputedValues();
         await applyVisibility();
-        applyDomState(root, fields, state);
+        applyDomState(root, visibilityFields, state);
         applyStepState(root, state);
         dispatch('daisy-form:change', { values: { ...state.values }, visible: { ...state.visible } });
     }
@@ -153,7 +154,7 @@ export function createFormRuntime(root, options = {}) {
      * @returns {Promise<void>}
      */
     async function applyVisibility() {
-        for (const field of fields) {
+        for (const field of visibilityFields) {
             if (!field.visibleWhen?.expression) {
                 state.visible[field.id] = true;
 
@@ -233,7 +234,7 @@ export function createFormRuntime(root, options = {}) {
 
         state.errors = errors;
         state.valid = Object.keys(errors).length === 0;
-        applyDomState(root, fields, state);
+        applyDomState(root, visibilityFields, state);
         applyStepState(root, state);
 
         if (!state.valid) {
@@ -381,7 +382,7 @@ export function createFormRuntime(root, options = {}) {
     function setErrors(errors) {
         state.errors = normalizeErrors(errors);
         state.valid = Object.keys(state.errors).length === 0;
-        applyDomState(root, fields, state);
+        applyDomState(root, visibilityFields, state);
         applyStepState(root, state);
     }
 
@@ -545,8 +546,12 @@ function applyStepState(root, state) {
     }
 
     steps.forEach((step, index) => {
-        step.classList.toggle('hidden', index !== state.currentStep);
-        step.toggleAttribute('aria-hidden', index !== state.currentStep);
+        const stepId = step.dataset.formStep;
+        const stepVisible = !stepId || state.visible[stepId] !== false;
+        const hidden = index !== state.currentStep || !stepVisible;
+
+        step.classList.toggle('hidden', hidden);
+        step.toggleAttribute('aria-hidden', hidden);
     });
 
     root.querySelectorAll('[data-form-step-indicator]').forEach((indicator) => {
@@ -805,7 +810,8 @@ function setFieldInputValue(root, field, value) {
  */
 function applyDomState(root, fields, state) {
     fields.forEach((field) => {
-        const wrapper = root.querySelector(`[data-form-field="${cssEscape(field.id)}"]`);
+        const wrapper = root.querySelector(`[data-form-field="${cssEscape(field.id)}"]`)
+            ?? (field.type === 'wizardStep' ? root.querySelector(`[data-form-step="${cssEscape(field.id)}"]`) : null);
 
         if (wrapper) {
             wrapper.classList.toggle('hidden', state.visible[field.id] === false);
