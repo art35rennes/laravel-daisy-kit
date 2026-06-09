@@ -45,12 +45,19 @@
     $titleId = $title ? $id.'-title' : null;
 
     // Préparation des attributs du dialog : classes + état open si spécifié.
-    $dialogAttrs = $attributes->merge(['class' => $modalClasses]);
+    $dialogAttrs = $attributes->merge([
+        'class' => $modalClasses,
+        'data-module' => 'modal',
+        'data-teleport' => $teleport ? 'true' : 'false',
+    ]);
     if ($open) {
         $dialogAttrs = $dialogAttrs->merge(['open' => true]);
     }
     if ($titleId) {
         $dialogAttrs = $dialogAttrs->merge(['aria-labelledby' => $titleId]);
+    }
+    if ($initialFocus) {
+        $dialogAttrs = $dialogAttrs->merge(['data-initial-focus' => $initialFocus]);
     }
 
     // Mapping des tailles vers les classes max-width Tailwind.
@@ -72,7 +79,6 @@
     $boxResponsiveClasses = $responsive ? ('w-11/12 ' . $maxWidthClass) : $maxWidthClass;
     // Classes de scroll : limite la hauteur et active le scroll vertical si le contenu dépasse.
     $scrollClasses = $scrollable ? ' max-h-[calc(100svh-4rem)] overflow-y-auto' : '';
-    $shouldRenderScript = $teleport || $open || $initialFocus;
 @endphp
 
 <dialog {{ $dialogAttrs }} @if($id) id="{{ $id }}" @endif>
@@ -97,7 +103,7 @@
                     <button 
                         type="button" 
                         class="btn btn-sm btn-circle btn-ghost shrink-0" 
-                        onclick="document.getElementById('{{ $id }}').close()"
+                        data-modal-close
                         aria-label="{{ $closeLabel }}"
                     >
                         <x-bi-x class="size-5" />
@@ -121,44 +127,3 @@
         </form>
     @endif
 </dialog>
-{{-- Téléportation et focus initial léger, sans dépendance JS externe. --}}
-@if($shouldRenderScript)
-    <script>
-    (function(){
-        try {
-            var el = document.getElementById('{{ $id }}');
-            if (!el) return;
-
-            @if($teleport)
-                if (el.parentElement && el.parentElement.tagName !== 'BODY' && !el.dataset.teleported) {
-                    document.body.appendChild(el);
-                    el.dataset.teleported = '1';
-                }
-            @endif
-
-            var focusSelector = @json($initialFocus);
-            var fallbackSelector = '[autofocus], [data-autofocus], button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-            function focusInitialTarget() {
-                if (!el.open) return;
-
-                var target = focusSelector ? el.querySelector(focusSelector) : null;
-                target = target || el.querySelector(fallbackSelector);
-
-                if (target && typeof target.focus === 'function') {
-                    target.focus();
-                }
-            }
-
-            if (el.open) {
-                window.requestAnimationFrame(focusInitialTarget);
-            }
-
-            if (!el.dataset.focusListener) {
-                el.addEventListener('toggle', focusInitialTarget);
-                el.dataset.focusListener = '1';
-            }
-        } catch (e) { /* noop */ }
-    })();
-    </script>
-@endif

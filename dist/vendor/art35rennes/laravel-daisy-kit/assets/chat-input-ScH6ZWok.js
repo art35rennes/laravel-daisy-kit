@@ -1,0 +1,1 @@
+import{initChatInput as e}from"./chat-DIjvQhwi.js";function t(t,n={}){return e(t,n)}export{t as default};

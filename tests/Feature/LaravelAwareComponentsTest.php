@@ -299,6 +299,8 @@ it('renders modal header footer and accessible labels', function () {
         ->toContain('Confirm')
         ->toContain('aria-labelledby="delete-user-title"')
         ->toContain('[data-confirm-delete]')
-        ->toContain('focusInitialTarget')
+        ->toContain('data-module="modal"')
+        ->toContain('data-modal-close')
+        ->not->toContain('focusInitialTarget')
         ->not->toContain('document.body.appendChild');
 });

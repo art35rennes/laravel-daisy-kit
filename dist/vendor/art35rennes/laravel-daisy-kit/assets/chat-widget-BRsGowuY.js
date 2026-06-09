@@ -1,1 +1,0 @@
-import{initChatWidget as e}from"./chat-B1hsPX0g.js";function t(t,n={}){return e(t,n)}export{t as default};

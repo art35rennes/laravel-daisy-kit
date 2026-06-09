@@ -91,13 +91,13 @@
     $modalId = $openMode === 'modal' ? 'file-preview-modal-'.\Illuminate\Support\Str::uuid() : null;
 @endphp
 
-<div {{ $attributes->merge(['class' => 'file-preview inline-block '.$sizes['container']]) }}>
+<div {{ $attributes->merge(['class' => 'file-preview inline-block '.$sizes['container'], 'data-module' => 'file-preview']) }}>
     @if($type === 'image')
         <div class="relative rounded-box overflow-hidden card-border hover:border-primary transition-colors">
             @if($openMode === 'modal')
                 <button 
                     type="button"
-                    onclick="document.getElementById('{{ $modalId }}').showModal()"
+                    data-file-preview-open-modal="{{ $modalId }}"
                     class="block w-full cursor-pointer"
                 >
                     <img 
@@ -126,10 +126,10 @@
                 <button 
                     type="button"
                     class="absolute top-2 right-2 btn btn-sm btn-circle btn-primary opacity-80 hover:opacity-100 file-download"
+                    data-file-download
                     data-url="{{ $url }}"
                     data-filename="{{ $name ?? 'image' }}"
                     title="{{ __('Download') }}"
-                    onclick="event.stopPropagation();"
                 >
                     <x-icon name="bi-download" class="w-4 h-4" />
                 </button>
@@ -158,6 +158,7 @@
                         <button 
                             type="button"
                             class="btn btn-primary file-download"
+                            data-file-download
                             data-url="{{ $url }}"
                             data-filename="{{ $name ?? 'image' }}"
                             title="{{ __('Download') }}"
@@ -189,6 +190,7 @@
                     <button 
                         type="button"
                         class="btn btn-ghost btn-xs file-download"
+                        data-file-download
                         data-url="{{ $url }}"
                         data-filename="{{ $name }}"
                         title="{{ __('Download') }}"
@@ -219,6 +221,7 @@
                 <button 
                     type="button"
                     class="shrink-0 file-download hover:opacity-80 transition-opacity cursor-pointer"
+                    data-file-download
                     data-url="{{ $url }}"
                     data-filename="{{ $name ?? 'file' }}"
                     title="{{ __('Download') }}"
@@ -228,6 +231,7 @@
                 <button 
                     type="button"
                     class="flex-1 min-w-0 text-left file-download hover:opacity-80 transition-opacity cursor-pointer"
+                    data-file-download
                     data-url="{{ $url }}"
                     data-filename="{{ $name ?? 'file' }}"
                     title="{{ __('Download') }}"
@@ -243,10 +247,10 @@
                     <button 
                         type="button"
                         class="btn btn-ghost btn-xs btn-circle file-download shrink-0"
+                        data-file-download
                         data-url="{{ $url }}"
                         data-filename="{{ $name ?? 'file' }}"
                         title="{{ __('Download') }}"
-                        onclick="event.stopPropagation();"
                     >
                         <x-icon name="bi-download" class="w-4 h-4" />
                     </button>
@@ -255,75 +259,3 @@
         </div>
     @endif
 </div>
-
-@once
-@push('scripts')
-<script>
-    (function() {
-        // Gestion du téléchargement de fichiers
-        function initFileDownloads() {
-            document.querySelectorAll('.file-download').forEach(button => {
-                if (button.dataset.downloadInitialized) return;
-                button.dataset.downloadInitialized = 'true';
-                
-                button.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const url = this.dataset.url;
-                    const filename = this.dataset.filename || 'file';
-                    
-                    try {
-                        // Télécharger le fichier via fetch pour gérer les CORS
-                        const response = await fetch(url, {
-                            method: 'GET',
-                            headers: {
-                                'Accept': '*/*',
-                            },
-                        });
-                        
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        
-                        const blob = await response.blob();
-                        const blobUrl = window.URL.createObjectURL(blob);
-                        
-                        // Créer un lien temporaire pour télécharger
-                        const link = document.createElement('a');
-                        link.href = blobUrl;
-                        link.download = filename;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        
-                        // Libérer l'URL du blob
-                        window.URL.revokeObjectURL(blobUrl);
-                    } catch (error) {
-                        console.error('Error downloading file:', error);
-                        // Fallback : ouvrir dans un nouvel onglet si le téléchargement échoue
-                        window.open(url, '_blank');
-                    }
-                });
-            });
-        }
-        
-        // Initialiser au chargement
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initFileDownloads);
-        } else {
-            initFileDownloads();
-        }
-        
-        // Réinitialiser après les mutations DOM (pour le lazy-loading)
-        if (typeof MutationObserver !== 'undefined') {
-            const observer = new MutationObserver(initFileDownloads);
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true,
-            });
-        }
-    })();
-</script>
-@endpush
-@endonce

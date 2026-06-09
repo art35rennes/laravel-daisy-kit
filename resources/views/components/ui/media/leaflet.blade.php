@@ -9,6 +9,7 @@
     'fitBounds' => true,
     'scale' => false,
     'preferCanvas' => false,
+    'tiles' => null,
     'tileUrl' => null,
     'tileOptions' => [],
     'provider' => null,
@@ -23,6 +24,26 @@
 
 @php
     $mapId = $id ?: 'leaflet-'.\Illuminate\Support\Str::uuid()->toString();
+    $normalizeTileUrl = function($value) {
+        if (!is_string($value) && !$value instanceof \Stringable) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        if (str_starts_with($value, '/')) {
+            return $value;
+        }
+
+        return preg_match('/^https?:\/\//i', $value) === 1 ? $value : null;
+    };
+
+    $tileUrl = $normalizeTileUrl($tileUrl);
+    $tilesEnabled = $tiles ?? filled($tileUrl) || filled($provider);
 
     $config = [
         'containerId' => $mapId,
@@ -33,6 +54,7 @@
         'fitBounds' => (bool) $fitBounds,
         'scale' => (bool) $scale,
         'preferCanvas' => (bool) $preferCanvas,
+        'tiles' => (bool) $tilesEnabled,
         'tileUrl' => $tileUrl,
         'tileOptions' => $tileOptions,
         'provider' => $provider,

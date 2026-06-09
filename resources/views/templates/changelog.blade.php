@@ -109,7 +109,11 @@
                 class="rounded-box card-border bg-base-100/80"
             />
         @else
-            <div class="changelog-versions space-y-10" data-changelog-container>
+            <div
+                class="changelog-versions space-y-10"
+                data-changelog-container
+                @if($showSearch || $showFilters) data-module="changelog-filter" data-all-types-label="{{ __('daisy::changelog.all_types') }}" @endif
+            >
                 @if($groupByMonth)
                     @foreach($groupedVersions as $month => $monthVersions)
                         @php
@@ -160,6 +164,9 @@
                         @endforeach
                     </div>
                 @endif
+                <div class="changelog-no-results text-center py-8 text-base-content/70" data-changelog-empty hidden>
+                    {{ __('daisy::changelog.no_results') }}
+                </div>
             </div>
 
             @if($pagination && isset($paginationData))
@@ -172,75 +179,4 @@
             @endif
         @endif
     </div>
-
-    @if($showSearch || $showFilters)
-        @push('scripts')
-        <script>
-            (function() {
-                const container = document.querySelector('[data-changelog-container]');
-                if (!container) return;
-
-                const searchInput = document.querySelector('[data-changelog-search]');
-                const filterInputs = document.querySelectorAll('input[name=\"changelog-filter\"]');
-
-                function filterChangelog() {
-                    const searchTerm = searchInput?.value.toLowerCase() || '';
-                    const selectedFilter = Array.from(filterInputs).find(input => input.checked)?.ariaLabel?.toLowerCase() || '';
-
-                    const versionItems = container.querySelectorAll('.changelog-version-item');
-                    let visibleCount = 0;
-
-                    versionItems.forEach(versionItem => {
-                        const changeItems = versionItem.querySelectorAll('.changelog-change-item');
-                        let versionVisible = false;
-
-                        changeItems.forEach(changeItem => {
-                            const description = changeItem.textContent.toLowerCase();
-                            const typeBadge = changeItem.querySelector('.badge')?.textContent.toLowerCase() || '';
-
-                            const matchesSearch = !searchTerm || description.includes(searchTerm);
-                            const matchesFilter = !selectedFilter ||
-                                selectedFilter === @json(__('daisy::changelog.all_types')).toLowerCase() ||
-                                typeBadge.includes(selectedFilter);
-
-                            if (matchesSearch && matchesFilter) {
-                                changeItem.style.display = '';
-                                versionVisible = true;
-                            } else {
-                                changeItem.style.display = 'none';
-                            }
-                        });
-
-                        if (versionVisible) {
-                            versionItem.style.display = '';
-                            visibleCount++;
-                        } else {
-                            versionItem.style.display = 'none';
-                        }
-                    });
-
-                    const noResults = container.querySelector('.changelog-no-results');
-                    if (visibleCount === 0) {
-                        if (!noResults) {
-                            const message = document.createElement('div');
-                            message.className = 'changelog-no-results text-center py-8 text-base-content/70';
-                            message.innerText = @json(__('daisy::changelog.no_results'));
-                            container.appendChild(message);
-                        }
-                    } else if (noResults) {
-                        noResults.remove();
-                    }
-                }
-
-                if (searchInput) {
-                    searchInput.addEventListener('input', filterChangelog);
-                }
-
-                filterInputs.forEach(input => {
-                    input.addEventListener('change', filterChangelog);
-                });
-            })();
-        </script>
-        @endpush
-    @endif
 </x-daisy::layout.app>

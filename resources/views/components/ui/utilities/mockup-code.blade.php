@@ -35,7 +35,7 @@
     }
 @endphp
 
-<div {{ $attributes->merge(['class' => trim('mockup-code '.($containerClasses ?? ''))]) }}>
+<div {{ $attributes->merge(['class' => trim('mockup-code '.($containerClasses ?? '')), 'data-module' => $copy ? 'mockup-code' : null]) }}>
   @if($copy)
     <div class="flex items-center justify-end gap-2 mb-2">
       <button 
@@ -75,43 +75,3 @@
     @endif
   </div>
 </div>
-
-@if($copy)
-@pushOnce('scripts')
-<script>
-(function() {
-  document.addEventListener('click', async function(e) {
-    const btn = e.target.closest('[data-copy-button]');
-    if (!btn) return;
-    
-    const targetId = btn.dataset.copyTarget;
-    const copyText = btn.dataset.copyText;
-    
-    let text = copyText;
-    if (!text && targetId) {
-      const target = document.getElementById(targetId);
-      if (target) {
-        text = target.textContent || target.innerText || '';
-      }
-    }
-    
-    if (!text) return;
-    
-    try {
-      await navigator.clipboard.writeText(text.trim());
-      const copyTextEl = btn.querySelector('.copy-text');
-      if (copyTextEl) {
-        const original = copyTextEl.textContent;
-        copyTextEl.textContent = 'Copié!';
-        setTimeout(() => {
-          copyTextEl.textContent = original;
-        }, 2000);
-      }
-    } catch (err) {
-      console.error('Erreur lors de la copie:', err);
-    }
-  });
-})();
-</script>
-@endPushOnce
-@endif

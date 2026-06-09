@@ -44,6 +44,16 @@ export default function init(element, options) {
         });
     });
 
+    form.querySelectorAll('[data-inline-open-drawer]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const drawer = document.getElementById(button.dataset.inlineOpenDrawer);
+
+            if (drawer instanceof HTMLInputElement && drawer.type === 'checkbox') {
+                drawer.checked = true;
+            }
+        });
+    });
+
     // Écouter les events filter-clear depuis l'extérieur
     form.addEventListener('filter-clear', (e) => {
         const param = e.detail?.param;
@@ -52,4 +62,3 @@ export default function init(element, options) {
         }
     });
 }
-

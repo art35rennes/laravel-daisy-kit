@@ -89,7 +89,7 @@
                 <button 
                     type="button" 
                     class="btn {{ $buttonSizeClasses }} btn-ghost"
-                    onclick="document.getElementById('form-inline-advanced-drawer').checked = true"
+                    data-inline-open-drawer="form-inline-advanced-drawer"
                 >
                     {{ $advancedTitle }}
                 </button>
@@ -135,4 +135,3 @@
         </x-slot:side>
     </x-daisy::ui.overlay.drawer>
 @endif
-

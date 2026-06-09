@@ -133,7 +133,6 @@
                     $icon = $item['icon'] ?? null;
                     $label = $item['label'] ?? null;
                     $href = $normalizeHref($item['href'] ?? null);
-                    $onclick = $allowInlineHandlers ? ($item['onclick'] ?? null) : null;
                     $tag = $href ? 'a' : 'button';
                     
                     // Construction des classes de bouton
@@ -149,7 +148,6 @@
 
                 <{{ $tag }}
                     @if($href) href="{{ $href }}" @endif
-                    @if($onclick) onclick="{{ $onclick }}" @endif
                     @if($tag === 'button') type="button" @endif
                     class="{{ $buttonClasses }}"
                     @if($label) aria-label="{{ $label }}" title="{{ $label }}" @endif

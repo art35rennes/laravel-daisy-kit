@@ -47,7 +47,7 @@
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="false">
     <x-daisy::ui.partials.theme-selector position="fixed" placement="top-right" />
     @if($showSidebar && !empty($conversations))
-        <x-daisy::ui.overlay.drawer id="chat-sidebar-drawer" :responsiveOpen="'lg'" :sideIsMenu="false" sideClass="w-80" :fullHeight="false">
+        <x-daisy::ui.overlay.drawer id="chat-sidebar-drawer" :responsiveOpen="'lg'" :sideIsMenu="false" sideClass="w-80" :fullHeight="false" data-module="chat-drawer" data-drawer-id="chat-sidebar-drawer">
             <x-slot:content>
                 <div class="flex h-screen overflow-hidden">
                     <x-daisy::ui.communication.conversation-view
@@ -100,25 +100,6 @@
                 />
             </x-slot:side>
         </x-daisy::ui.overlay.drawer>
-
-        @push('scripts')
-        <script>
-            // Fermer le drawer en mobile quand on clique sur une conversation
-            document.addEventListener('DOMContentLoaded', function() {
-                const drawerToggle = document.getElementById('chat-sidebar-drawer');
-                const conversationRows = document.querySelectorAll('.chat-sidebar [data-conversation-id]');
-                
-                conversationRows.forEach(row => {
-                    row.addEventListener('click', function() {
-                        // Fermer le drawer en mobile uniquement
-                        if (window.innerWidth < 1024 && drawerToggle) {
-                            drawerToggle.checked = false;
-                        }
-                    });
-                });
-            });
-        </script>
-        @endpush
     @else
         <div class="flex h-screen overflow-hidden">
             <x-daisy::ui.communication.conversation-view
@@ -156,5 +137,4 @@
         </div>
     @endif
 </x-daisy::layout.app>
-
 

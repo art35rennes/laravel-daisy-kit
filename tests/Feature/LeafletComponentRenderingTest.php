@@ -232,14 +232,26 @@ describe('Leaflet V2 props', function () {
         $html = renderLeaflet(['tileUrl' => $url]);
         $config = extractConfig($html);
 
-        expect($config['tileUrl'])->toBe($url);
+        expect($config['tileUrl'])->toBe($url)
+            ->and($config['tiles'])->toBeTrue();
     });
 
-    it('sets tileUrl to null by default', function () {
+    it('does not enable external tiles by default', function () {
         $html = renderLeaflet();
         $config = extractConfig($html);
 
-        expect($config['tileUrl'])->toBeNull();
+        expect($config['tileUrl'])->toBeNull()
+            ->and($config['provider'])->toBeNull()
+            ->and($config['tiles'])->toBeFalse();
+    });
+
+    it('does not include unsafe tile URLs', function () {
+        $html = renderLeaflet(['tileUrl' => 'javascript:alert(1)', 'tiles' => true]);
+        $config = extractConfig($html);
+
+        expect($html)->not->toContain('javascript:alert(1)')
+            ->and($config['tileUrl'])->toBeNull()
+            ->and($config['tiles'])->toBeTrue();
     });
 
     it('includes tileOptions when provided', function () {
@@ -261,7 +273,8 @@ describe('Leaflet V2 props', function () {
         $html = renderLeaflet(['provider' => 'cartodb.positron']);
         $config = extractConfig($html);
 
-        expect($config['provider'])->toBe('cartodb.positron');
+        expect($config['provider'])->toBe('cartodb.positron')
+            ->and($config['tiles'])->toBeTrue();
     });
 
     it('sets provider to null by default', function () {

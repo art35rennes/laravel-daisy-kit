@@ -215,6 +215,8 @@ function createMap(L, container, cfg) {
  * Adds a tile layer to the map using the built-in provider lookup or a custom URL.
  *
  * Priority: cfg.tileUrl (explicit URL) > cfg.provider (named lookup) > OSM fallback.
+ * No tile layer is added unless cfg.tiles is truthy; this keeps the default
+ * component compatible with strict CSP img-src/connect-src self policies.
  *
  * @param {L} L
  * @param {L.Map} map
@@ -222,6 +224,10 @@ function createMap(L, container, cfg) {
  * @returns {void}
  */
 function addTileLayer(L, map, cfg) {
+    if (!cfg.tiles) {
+        return;
+    }
+
     if (cfg.tileUrl) {
         L.tileLayer(cfg.tileUrl, cfg.tileOptions || {}).addTo(map);
         return;

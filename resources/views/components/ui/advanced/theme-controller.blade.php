@@ -26,7 +26,7 @@
 @endphp
 
 @if($variant === 'dropdown')
-    <div {{ $attributes->merge(['class' => 'dropdown']) }}>
+    <div {{ $attributes->merge(['class' => 'dropdown', 'data-module' => 'theme-controller']) }}>
         <div tabindex="0" role="button" class="btn m-1">
             {{ $label }}
             <svg width="12" height="12" class="inline-block h-2 w-2 fill-current opacity-60" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048"><path d="M1799 349l242 241-1017 1017L7 590l242-241 775 775 775-775z"></path></svg>
@@ -40,7 +40,7 @@
         </ul>
     </div>
 @else
-    <div {{ $attributes->merge(['class' => 'join']) }}>
+    <div {{ $attributes->merge(['class' => 'join', 'data-module' => 'theme-controller']) }}>
         @foreach($themes as $t)
             <input type="radio" name="{{ $name }}" value="{{ $t }}" class="join-item {{ $itemBase }}" aria-label="{{ ucfirst($t) }}" @checked($value === $t) />
         @endforeach

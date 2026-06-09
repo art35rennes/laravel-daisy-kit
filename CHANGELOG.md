@@ -26,6 +26,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 - Added real column filter controls, state persistence (`url` / `local`), and Laravel paginator response normalization for server-backed tables.
 - Refined public template APIs for auth, profile, errors, changelog, communication, and layout templates, with stricter component URL and route handling.
 - Improved color picker, code editor, transfer, sidebar, modal, alert, and viewer runtime behavior for nested/package usage.
+- Hardened CSP compatibility by moving package interactions to `data-module` JavaScript, removing executable inline Blade scripts, and documenting host-owned CSP extensions for external fonts and map tile providers.
 
 ### Fixed
 
@@ -34,6 +35,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 - Form builder authoring keeps Livewire as the single schema source, filters no-op drop zones, supports selected-object insertion, and keeps preview rendering through the real viewer.
 - Alert component no longer renders an empty container when `sessionKey` or `text` is blank.
 - Dismissible alerts use `data-module="alert-dismiss"` instead of inline `onclick`, so they work under strict CSP.
+- Leaflet maps no longer load external tile providers by default; hosts must pass `tile-url`, `provider`, or `tiles=true` and allow the matching tile origin in their CSP when they want external map tiles.
 - Fix auth label layout when templates provide rich `labelSlot` content (for example the login password row with a forgot-password link).
 - Hide self-service signup messaging on login templates unless a `register` route exists or `showSignup` is enabled.
 - Restore the `reset-password` template as a real password reset form instead of a duplicate forgot-password screen.

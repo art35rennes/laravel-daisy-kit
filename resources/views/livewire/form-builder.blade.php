@@ -59,7 +59,7 @@
                 <div class="dropdown-content z-20 mt-2 rounded-box border border-base-300 bg-base-100 p-3 shadow">
                     <div class="mb-3 flex items-center justify-between gap-3">
                         <h3 class="text-sm font-semibold">{{ __('daisy::form.builder.schema_settings') }}</h3>
-                        <x-daisy::ui.inputs.button type="button" size="xs" variant="ghost" color="neutral" square onclick="this.closest('details')?.removeAttribute('open')" aria-label="{{ __('daisy::form.builder.close_menu') }}">
+                        <x-daisy::ui.inputs.button type="button" size="xs" variant="ghost" color="neutral" square data-builder-close-menu aria-label="{{ __('daisy::form.builder.close_menu') }}">
                             <x-bi-x class="size-4" />
                         </x-daisy::ui.inputs.button>
                     </div>
@@ -120,17 +120,6 @@
                 variant="outline"
                 color="success"
                 data-builder-export
-                onclick="
-                    const root = this.closest('[data-form-builder-livewire]');
-                    const payload = root?.querySelector('[data-builder-export-json]')?.textContent || '{}';
-                    const blob = new Blob([payload], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const anchor = document.createElement('a');
-                    anchor.href = url;
-                    anchor.download = `${root?.dataset.schemaId || 'daisy-form-schema'}.json`;
-                    anchor.click();
-                    URL.revokeObjectURL(url);
-                "
             >
                 <x-slot:icon>
                     <x-bi-download class="size-3.5" />
@@ -295,8 +284,7 @@
                                                         data-builder-drag-descendants='@json($fieldDescendants[$fieldId] ?? [])'
                                                         data-builder-drag-parent="{{ $parentKey }}"
                                                         data-builder-drag-index="{{ $siblingIndex }}"
-                                                        onpointerdown="event.stopPropagation()"
-                                                        onclick="event.stopPropagation()"
+                                                        data-builder-stop-propagation
                                                         aria-label="{{ __('daisy::form.builder.drag_handle') }}"
                                                     >
                                                         <x-bi-grip-vertical class="size-3.5 pointer-events-none" />
@@ -443,7 +431,7 @@
         <section class="tab-content border-base-300 bg-base-100 p-3 lg:!block lg:border-0 lg:bg-transparent lg:p-0" data-builder-preview-panel>
             <div class="space-y-4 lg:sticky lg:top-4">
                 @if($preview)
-                    <div class="rounded-box border border-base-300 bg-base-100 p-4" onclick="event.stopPropagation()" data-builder-preview>
+                    <div class="rounded-box border border-base-300 bg-base-100 p-4" data-builder-stop-propagation data-builder-preview>
                         <h2 class="mb-3 font-semibold">{{ __('daisy::form.builder.preview') }}</h2>
                         <div wire:key="daisy-form-builder-viewer-{{ md5($canonicalJson) }}">
                             <x-daisy::forms.viewer

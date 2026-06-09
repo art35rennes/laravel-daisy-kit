@@ -86,7 +86,7 @@ it('renders the real forms viewer as the reactive preview', function () {
         ->assertSeeHtml('data-builder-json')
         ->assertSeeHtml('data-module="form-viewer"')
         ->assertSeeHtml('data-form-input="email"')
-        ->assertSeeHtml('onclick="event.stopPropagation()" data-builder-preview')
+        ->assertSeeHtml('data-builder-stop-propagation data-builder-preview')
         ->assertSeeHtml('data-builder-type-badge="email"')
         ->assertSeeHtml('daisy-form-builder-type-badge')
         ->assertSeeHtml('badge-info text-info')

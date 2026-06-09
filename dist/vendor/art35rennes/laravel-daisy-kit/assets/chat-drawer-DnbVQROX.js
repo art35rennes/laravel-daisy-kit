@@ -1,0 +1,1 @@
+function e(e,t={}){let n=document.getElementById(t.drawerId||`chat-sidebar-drawer`);e.querySelectorAll(`.chat-sidebar [data-conversation-id]`).forEach(e=>{e.addEventListener(`click`,()=>{window.innerWidth<1024&&n&&(n.checked=!1)})})}export{e as default};

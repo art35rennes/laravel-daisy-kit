@@ -47,7 +47,7 @@ describe('Floating menu component rendering', function () {
             ->not->toContain('onclick="alert(2)"');
     });
 
-    it('can render inline handlers only when explicitly allowed', function () {
+    it('does not render inline handlers when legacy opt in is passed', function () {
         $html = View::make('daisy::components.ui.navigation.floating-menu', [
             'allowInlineHandlers' => true,
             'groups' => [
@@ -63,6 +63,8 @@ describe('Floating menu component rendering', function () {
             ],
         ])->render();
 
-        expect($html)->toContain('onclick="alert(1)"');
+        expect($html)
+            ->toContain('Allowed')
+            ->not->toContain('onclick="alert(1)"');
     });
 });

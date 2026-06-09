@@ -50,6 +50,28 @@ If the host renders the Form Kit builder, make sure Livewire 3 is installed and 
 - **JavaScript** — a small bootstrap (`window.DaisyKit`) that initializes modules marked with `data-module`; Alpine.js-friendly patterns are used for simple interactions.
 - **Optional heavy UI** — components like maps (Leaflet) rely on lazy-loaded chunks; publish built assets so those entry points resolve correctly.
 
+## Security Headers And CSP
+
+Daisy Kit is designed to work with strict host Content Security Policy rules such as `script-src 'self'`, `connect-src 'self'`, `form-action 'self'`, `object-src 'none'`, and `frame-ancestors 'none'`.
+
+- Package interactions use published JavaScript modules loaded from the host origin through `data-module`; components must not rely on inline `onclick` handlers or executable inline `<script>` blocks.
+- Inline `<script type="application/json">` and `<script type="application/ld+json">` blocks are used only as non-executable data payloads for progressive enhancement.
+- `x-daisy::layout.app` links Instrument Sans from Bunny Fonts by default. Hosts using that default font must allow `https://fonts.bunny.net` in `font-src`; pass `font-url=""` to avoid the external font link.
+- `x-daisy::ui.media.leaflet` does not load external map tiles by default. To render a tiled map, pass a same-origin `tile-url`, or explicitly opt into a provider / external `tile-url` and open the matching host CSP directives, usually `img-src` and sometimes `connect-src`.
+
+Example for an ECA3-style host CSP using Bunny Fonts and OpenStreetMap tiles:
+
+```http
+script-src 'self';
+style-src 'self' 'unsafe-inline';
+img-src 'self' data: https://*.tile.openstreetmap.org;
+font-src 'self' data: https://fonts.bunny.net;
+connect-src 'self';
+form-action 'self';
+```
+
+When a host chooses another tile provider, CDN, upload endpoint, websocket, analytics endpoint, or media origin, the host application owns the corresponding CSP extension. The package default should remain functional without those external origins.
+
 ## Package scope
 
 This repository contains only package concerns:

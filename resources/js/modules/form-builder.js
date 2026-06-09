@@ -15,6 +15,39 @@ export default function initFormBuilder(root) {
   let autoScrollDelta = 0;
   const dragStartTolerance = 4;
 
+  root.addEventListener('click', (event) => {
+    const closeMenu = event.target.closest('[data-builder-close-menu]');
+    if (closeMenu && root.contains(closeMenu)) {
+      closeMenu.closest('details')?.removeAttribute('open');
+    }
+
+    const stopPropagation = event.target.closest('[data-builder-stop-propagation]');
+    if (stopPropagation && root.contains(stopPropagation)) {
+      event.stopPropagation();
+    }
+
+    const exportButton = event.target.closest('[data-builder-export]');
+    if (exportButton && root.contains(exportButton)) {
+      const payload = root.querySelector('[data-builder-export-json]')?.textContent || '{}';
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+
+      anchor.href = url;
+      anchor.download = `${root.dataset.schemaId || 'daisy-form-schema'}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    }
+  }, true);
+
+  root.addEventListener('pointerdown', (event) => {
+    const stopPropagation = event.target.closest('[data-builder-stop-propagation]');
+
+    if (stopPropagation && root.contains(stopPropagation)) {
+      event.stopPropagation();
+    }
+  }, true);
+
   const findLivewireComponent = (element) => {
     let node = element;
 

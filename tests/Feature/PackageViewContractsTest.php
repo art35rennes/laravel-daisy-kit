@@ -73,5 +73,6 @@ it('renders the ui theme selector only when the package dev toggle is enabled', 
         ->toContain('relative bottom-4 left-4')
         ->toContain('theme-controller')
         ->toContain('brand')
-        ->toContain("const THEME_KEY = 'daisy-theme';");
+        ->toContain('data-module="theme-controller"')
+        ->not->toContain("const THEME_KEY = 'daisy-theme';");
 });

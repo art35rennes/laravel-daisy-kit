@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-06-08T21:26:28+00:00",
+    "generated_at": "2026-06-09T08:52:25+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
@@ -2034,6 +2034,7 @@
                 "fitBounds",
                 "scale",
                 "preferCanvas",
+                "tiles",
                 "tileUrl",
                 "tileOptions",
                 "provider",
