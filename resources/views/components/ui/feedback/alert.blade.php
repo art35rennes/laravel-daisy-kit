@@ -30,14 +30,20 @@
         'outline' => 'alert-outline',
         'dash' => 'alert-dash',
     ];
-    if (isset($variantMap[$variant])) $classes .= ' '.$variantMap[$variant];
+    if (isset($variantMap[$variant])) {
+        $classes .= ' '.$variantMap[$variant];
+    }
 
     // Orientation
     if ($horizontalAt) {
         $classes .= ' alert-vertical '.($horizontalAt).':alert-horizontal';
-    } elseif (!is_null($vertical) || !is_null($horizontal)) {
-        if ($vertical) $classes .= ' alert-vertical';
-        if ($horizontal) $classes .= ' alert-horizontal';
+    } elseif (! is_null($vertical) || ! is_null($horizontal)) {
+        if ($vertical) {
+            $classes .= ' alert-vertical';
+        }
+        if ($horizontal) {
+            $classes .= ' alert-horizontal';
+        }
     }
 
     // Inline actions → aligner verticalement au centre
@@ -53,8 +59,16 @@
     $errorMessages = $showErrors && method_exists($laravelErrors, 'any') && $laravelErrors->any()
         ? $laravelErrors->all()
         : [];
-    $bodyText = $text ?? $sessionMessage;
-    
+    $bodyText = filled($text) ? $text : (filled($sessionMessage) ? $sessionMessage : null);
+
+    $hasSlotContent = isset($slot)
+        && (method_exists($slot, 'isEmpty') ? ! $slot->isEmpty() : filled(trim((string) $slot)));
+
+    $hasContent = filled($headingText)
+        || filled($bodyText)
+        || $errorMessages !== []
+        || $hasSlotContent;
+
     // Gestion de l'icône pour éviter l'erreur BladeUI\Icons\Svg
     $iconHtml = null;
     if ($icon) {
@@ -70,42 +84,52 @@
     }
 @endphp
 
-<div {{ $attributes->merge(['role' => $resolvedRole, 'class' => $classes]) }}>
-    @if($iconHtml && !$iconInHeading)
-        <span class="shrink-0">{!! $iconHtml !!}</span>
-    @endif
-    <div class="flex-1">
-        @if($headingText)
-            <h3 class="font-medium flex items-center gap-2">
-                @if($iconHtml && $iconInHeading)
-                    <span class="shrink-0">{!! $iconHtml !!}</span>
-                @endif
-                <span>{{ $headingText }}</span>
-            </h3>
+@if ($hasContent)
+    <div
+        {{ $attributes->merge(['role' => $resolvedRole, 'class' => $classes]) }}
+        @if ($dismissible) data-module="alert-dismiss" @endif
+    >
+        @if ($iconHtml && ! $iconInHeading)
+            <span class="shrink-0">{!! $iconHtml !!}</span>
         @endif
-        <div class="text-sm">
-            @if($errorMessages !== [])
-                <ul class="list-disc list-inside">
-                    @foreach($errorMessages as $errorMessage)
-                        <li>{{ $errorMessage }}</li>
-                    @endforeach
-                </ul>
-            @elseif($bodyText !== null)
-                {{ $bodyText }}
-            @else
-                {{ $slot }}
+        <div class="flex-1">
+            @if ($headingText)
+                <h3 class="font-medium flex items-center gap-2">
+                    @if ($iconHtml && $iconInHeading)
+                        <span class="shrink-0">{!! $iconHtml !!}</span>
+                    @endif
+                    <span>{{ $headingText }}</span>
+                </h3>
             @endif
+            <div class="text-sm">
+                @if ($errorMessages !== [])
+                    <ul class="list-disc list-inside">
+                        @foreach ($errorMessages as $errorMessage)
+                            <li>{{ $errorMessage }}</li>
+                        @endforeach
+                    </ul>
+                @elseif ($bodyText !== null)
+                    {{ $bodyText }}
+                @else
+                    {{ $slot }}
+                @endif
+            </div>
         </div>
+        @isset($actions)
+            <div class="flex items-center gap-2 flex-wrap justify-start sm:justify-end">{{ $actions }}</div>
+        @endisset
+        @isset($controls)
+            <div class="ms-2">{{ $controls }}</div>
+        @endisset
+        @if ($dismissible)
+            <button
+                type="button"
+                class="btn btn-ghost btn-xs btn-square ms-2"
+                aria-label="{{ $closeLabel }}"
+                data-alert-dismiss
+            >
+                <x-icon name="bi-x" class="w-4 h-4" />
+            </button>
+        @endif
     </div>
-    @isset($actions)
-        <div class="flex items-center gap-2 flex-wrap justify-start sm:justify-end">{{ $actions }}</div>
-    @endisset
-    @isset($controls)
-        <div class="ms-2">{{ $controls }}</div>
-    @endisset
-    @if($dismissible)
-        <button type="button" class="btn btn-ghost btn-xs btn-square ms-2" aria-label="{{ $closeLabel }}" onclick="this.closest('[role]')?.remove()">
-            <x-icon name="bi-x" class="w-4 h-4" />
-        </button>
-    @endif
-</div>
+@endif

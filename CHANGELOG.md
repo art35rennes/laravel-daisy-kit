@@ -8,6 +8,8 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 
 ### Fixed
 
+- Alert component no longer renders an empty container when `sessionKey` or `text` is blank.
+- Dismissible alerts use `data-module="alert-dismiss"` instead of inline `onclick`, so they work under strict CSP.
 - Ship prebuilt Vite assets under `dist/vendor/art35rennes/laravel-daisy-kit/` so `php artisan vendor:publish --tag=daisy-assets` works after `composer install` without a local package build step.
 - Fix auth label layout when templates provide rich `labelSlot` content (for example the login password row with a forgot-password link).
 - Hide self-service signup messaging on login templates unless a `register` route exists or `showSignup` is enabled.
