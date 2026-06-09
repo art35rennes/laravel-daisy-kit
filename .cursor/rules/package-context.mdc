@@ -19,3 +19,4 @@ alwaysApply: true
   - `daisy-config`, `daisy-views`, `daisy-templates`, `daisy-lang` for package resources
 - Prioritize factorization, reactive Blade props usage, clarity.
 - PHPDoc: See `documentation.mdc` for strict requirements.
+- **Host boundary**: never fix host-app misconfiguration (session, CSP, wrong routes, unpublished assets) in this package. A package change requires isolated reproduction without host-specific setup and must benefit all consumers — not only one host like ECA3.
