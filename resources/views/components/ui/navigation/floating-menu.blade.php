@@ -29,7 +29,7 @@
      * [
      *   [
      *     'items' => [
-     *       ['icon' => 'pencil', 'label' => 'Edit', 'active' => false, 'href' => '#', 'onclick' => '...'],
+     *       ['icon' => 'pencil', 'label' => 'Edit', 'active' => false, 'href' => '/edit'],
      *       ['icon' => 'eye', 'label' => 'Preview', 'active' => true],
      *     ]
      *   ],
