@@ -1,6 +1,6 @@
 {
-  "_events-Uoh0sXeK.js": {
-    "file": "assets/events-Uoh0sXeK.js",
+  "_events-BarjlngU.js": {
+    "file": "assets/events-BarjlngU.js",
     "name": "events"
   },
   "_jsonata-DzASGsAR.js": {
@@ -104,7 +104,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-wkoLoO14.js",
+    "file": "assets/app-Cu0kc_id.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -114,6 +114,7 @@
       "_trix-CUvHwtfI.js"
     ],
     "dynamicImports": [
+      "resources/js/modules/alert-dismiss.js",
       "resources/js/modules/chat-input.js",
       "resources/js/modules/chat-messages.js",
       "resources/js/modules/chat-widget.js",
@@ -179,7 +180,7 @@
     ]
   },
   "resources/js/calendar-full/index.js": {
-    "file": "assets/index-Bq9bOWSu.js",
+    "file": "assets/index-BD1q7Lpw.js",
     "name": "index",
     "src": "resources/js/calendar-full/index.js",
     "isDynamicEntry": true,
@@ -201,12 +202,12 @@
     ]
   },
   "resources/js/chat/index.js": {
-    "file": "assets/index-eGvDfjpk.js",
+    "file": "assets/index-Dv4BGLRH.js",
     "name": "index",
     "src": "resources/js/chat/index.js",
     "isDynamicEntry": true,
     "imports": [
-      "_events-Uoh0sXeK.js"
+      "_events-BarjlngU.js"
     ]
   },
   "resources/js/code-editor.js": {
@@ -232,7 +233,7 @@
     "isDynamicEntry": true
   },
   "resources/js/form-kit/index.js": {
-    "file": "assets/form-kit-BZOi3Vie.js",
+    "file": "assets/form-kit-seZzaXWD.js",
     "name": "form-kit",
     "src": "resources/js/form-kit/index.js",
     "isDynamicEntry": true,
@@ -300,34 +301,40 @@
     "src": "resources/js/media-gallery.js",
     "isDynamicEntry": true
   },
+  "resources/js/modules/alert-dismiss.js": {
+    "file": "assets/alert-dismiss-4sw4IGN1.js",
+    "name": "alert-dismiss",
+    "src": "resources/js/modules/alert-dismiss.js",
+    "isDynamicEntry": true
+  },
   "resources/js/modules/chat-input.js": {
-    "file": "assets/chat-input-un37idH-.js",
+    "file": "assets/chat-input-DVpCLnOY.js",
     "name": "chat-input",
     "src": "resources/js/modules/chat-input.js",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/chat/index.js",
-      "_events-Uoh0sXeK.js"
+      "_events-BarjlngU.js"
     ]
   },
   "resources/js/modules/chat-messages.js": {
-    "file": "assets/chat-messages-DazhEiQj.js",
+    "file": "assets/chat-messages-n15RQx2a.js",
     "name": "chat-messages",
     "src": "resources/js/modules/chat-messages.js",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/chat/index.js",
-      "_events-Uoh0sXeK.js"
+      "_events-BarjlngU.js"
     ]
   },
   "resources/js/modules/chat-widget.js": {
-    "file": "assets/chat-widget-CxJDFNMN.js",
+    "file": "assets/chat-widget-CxOw4mYD.js",
     "name": "chat-widget",
     "src": "resources/js/modules/chat-widget.js",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/chat/index.js",
-      "_events-Uoh0sXeK.js"
+      "_events-BarjlngU.js"
     ]
   },
   "resources/js/modules/copyable.js": {
@@ -359,7 +366,7 @@
     "isDynamicEntry": true
   },
   "resources/js/modules/form-viewer.js": {
-    "file": "assets/form-viewer-Caovl0w4.js",
+    "file": "assets/form-viewer-DTrSGZGd.js",
     "name": "form-viewer",
     "src": "resources/js/modules/form-viewer.js",
     "isDynamicEntry": true,
@@ -396,12 +403,12 @@
     "isDynamicEntry": true
   },
   "resources/js/modules/notifications.js": {
-    "file": "assets/notifications-B7SVKFfe.js",
+    "file": "assets/notifications-CeC2UkrI.js",
     "name": "notifications",
     "src": "resources/js/modules/notifications.js",
     "isDynamicEntry": true,
     "imports": [
-      "_events-Uoh0sXeK.js"
+      "_events-BarjlngU.js"
     ]
   },
   "resources/js/modules/ordered-list.js": {
