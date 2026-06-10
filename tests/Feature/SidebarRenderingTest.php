@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 
@@ -62,6 +63,29 @@ it('renders a compact collapsed navigation state', function () {
         ->toContain('data-sidebar-icon-collapsed')
         ->toContain('data-sidebar-submenu')
         ->toContain('menu-active');
+});
+
+it('renders configured collapsed widths and collapsed brand content', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.navigation.sidebar expanded-width="w-72" collapsed-width="w-16" collapsed :sections="[['items' => [['label' => 'Home', 'href' => '/home', 'icon' => 'house']]]]">
+            <x-slot:brand>
+                <span data-expanded-brand>Expanded brand</span>
+            </x-slot:brand>
+            <x-slot:brandCollapsed>
+                <span data-collapsed-brand>DK</span>
+            </x-slot:brandCollapsed>
+        </x-daisy::ui.navigation.sidebar>
+    BLADE);
+
+    expect($html)
+        ->toContain('data-width-strategy="configured"')
+        ->toContain('data-wide-class="w-72"')
+        ->toContain('data-collapsed-class="w-16"')
+        ->toContain('w-16')
+        ->toContain('data-sidebar-brand-collapsed')
+        ->toContain('data-collapsed-brand')
+        ->toContain('justify-center gap-0')
+        ->toContain('btn-square mx-auto justify-center');
 });
 
 it('renders expand on hover as a temporary compact state', function () {
@@ -134,6 +158,31 @@ it('does not render unsafe sidebar hrefs', function () {
         ->not->toContain('href="javascript:alert(1)"')
         ->not->toContain('href="javascript:alert(2)"')
         ->not->toContain('href="javascript:alert(3)"');
+});
+
+it('does not wrap a custom sidebar brand without an explicit url', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.navigation.sidebar>
+            <x-slot:brand>
+                <a href="/dashboard" class="brand-link">Acme</a>
+            </x-slot:brand>
+        </x-daisy::ui.navigation.sidebar>
+    BLADE);
+
+    expect($html)
+        ->toContain('<a href="/dashboard" class="brand-link">Acme</a>')
+        ->not->toContain('href="#"');
+});
+
+it('links the sidebar brand only when a brand url is provided', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.navigation.sidebar brand="Acme" brand-url="/dashboard" />
+    BLADE);
+
+    expect($html)
+        ->toContain('href="/dashboard"')
+        ->toContain('Acme')
+        ->not->toContain('href="#"');
 });
 
 it('marks sidebar items active from named routes', function () {

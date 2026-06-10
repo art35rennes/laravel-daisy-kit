@@ -107,6 +107,20 @@ onReady(async () => {
       
       // Masquer/afficher les labels
       aside.querySelectorAll('.sidebar-label').forEach((el) => el.classList.toggle('hidden', collapsed));
+      aside.querySelector('[data-sidebar-brand]')?.classList.toggle('justify-center', collapsed);
+      aside.querySelector('[data-sidebar-brand]')?.classList.toggle('justify-between', !collapsed);
+      aside.querySelector('[data-sidebar-brand]')?.classList.toggle('px-2', collapsed);
+      aside.querySelector('[data-sidebar-brand]')?.classList.toggle('px-4', !collapsed);
+      aside.querySelector('[data-sidebar-brand-expanded]')?.classList.toggle('hidden', collapsed);
+      aside.querySelector('[data-sidebar-brand-expanded]')?.classList.toggle('flex', !collapsed);
+      aside.querySelector('[data-sidebar-brand-collapsed]')?.classList.toggle('hidden', !collapsed);
+      aside.querySelector('[data-sidebar-brand-collapsed]')?.classList.toggle('flex', collapsed);
+      aside.querySelector('[data-sidebar-brand-collapsed]')?.setAttribute('aria-hidden', collapsed ? 'false' : 'true');
+      aside.querySelectorAll('[data-sidebar-row]').forEach((row) => {
+        row.classList.toggle('justify-center', collapsed);
+        row.classList.toggle('gap-0', collapsed);
+        row.classList.toggle('gap-2', !collapsed);
+      });
       
       // Mettre à jour le texte du bouton
       const label = collapsed ? collapsedLabel : expandedLabel;
@@ -119,6 +133,11 @@ onReady(async () => {
         button.setAttribute('aria-label', label);
         button.setAttribute('title', label);
         button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        button.classList.toggle('btn-square', collapsed);
+        button.classList.toggle('mx-auto', collapsed);
+        button.classList.toggle('justify-center', collapsed);
+        button.classList.toggle('w-full', !collapsed);
+        button.classList.toggle('justify-between', !collapsed);
         button.querySelector('[data-sidebar-icon-collapsed]')?.classList.toggle('hidden', !collapsed);
         button.querySelector('[data-sidebar-icon-expanded]')?.classList.toggle('hidden', collapsed);
       }

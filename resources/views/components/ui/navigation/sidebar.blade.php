@@ -12,6 +12,8 @@
     'stickyAt' => 'lg', // null|sm|md|lg|xl
     // Classes de largeur personnalisées si besoin
     'sideClass' => null,
+    'expandedWidth' => null,
+    'collapsedWidth' => 'w-20',
     // Largeur minimum et maximum pour variant="fit"
     'minWidth' => 'min-w-48', // w-48 = 192px
     'maxWidth' => 'max-w-80', // w-80 = 320px
@@ -21,6 +23,8 @@
     'brand' => null,
     // Lien du brand
     'brandHref' => null,
+    'brandUrl' => null,
+    'brandCollapsed' => null,
     // Afficher le brand dans la sidebar
     'showBrand' => true,
     // Navigation: tableau de sections
@@ -50,7 +54,10 @@
     
     // === CONFIGURATION DES LARGEURS ===
     // Détermination de la classe de largeur selon la variante et l'état collapsed.
-    if ($sideClass) {
+    if ($expandedWidth) {
+        $wideWidthClass = $expandedWidth;
+        $widthStrategy = 'configured';
+    } elseif ($sideClass) {
         // Largeur personnalisée fournie explicitement (priorité absolue).
         $wideWidthClass = $sideClass;
         $widthStrategy = 'custom';
@@ -73,8 +80,11 @@
     }
     
     // Largeur en mode collapsed (toujours minimale, indépendamment de la variante).
-    $collapsedWidthClass = 'w-20';
+    $collapsedWidthClass = $collapsedWidth ?: 'w-20';
     $widthClass = $effectiveCollapsed ? $collapsedWidthClass : $wideWidthClass;
+    $collapsedItemClasses = $effectiveCollapsed ? 'justify-center gap-0' : 'gap-2';
+    $collapsedPanelClasses = $effectiveCollapsed ? 'px-2 justify-center' : 'px-4 justify-between';
+    $collapsedToggleClasses = $effectiveCollapsed ? 'btn-square mx-auto justify-center' : 'w-full justify-between';
 
     // Classes de base pour le conteneur sidebar.
     $rootClasses = 'bg-base-200 text-base-content';
@@ -139,6 +149,12 @@
 
         return preg_match('/^(https?:|mailto:|tel:)/i', $url) === 1 ? $url : '#';
     };
+
+    $resolvedBrandHref = $brandHref ?: $brandUrl;
+    $normalizedBrandHref = $normalizeHref($resolvedBrandHref);
+    $hasBrandLink = $normalizedBrandHref !== '#';
+    $hasCustomBrandSlot = $brand instanceof \Illuminate\View\ComponentSlot;
+    $hasCollapsedBrand = $brandCollapsed instanceof \Illuminate\View\ComponentSlot || filled($brandCollapsed);
 @endphp
 
 <aside {{ $attributes->merge(['class' => trim($rootClasses.' '.$widthClass.' '.$baseClasses)]) }}
@@ -154,13 +170,27 @@
        @if($isFit) data-sidebar-fit @endif
        @if($storageKey) data-storage-key="{{ $storageKey }}" @endif>
     @if($showBrand)
-        <div class="px-4 py-3 border-b border-base-content/10 flex items-center gap-2">
-            <a href="{{ $normalizeHref($brandHref ?: '#') }}" class="flex items-center gap-2 flex-1">
-                <div class="font-bold text-lg truncate sidebar-label {{ $effectiveCollapsed ? 'hidden' : '' }}">{{ $brand ?: config('app.name', 'App') }}</div>
-            </a>
-            @if($isSlim)
-                <span class="opacity-50 text-xs">&nbsp;</span>
-            @endif
+        <div class="h-14 border-b border-base-content/10 flex items-center gap-2 {{ $collapsedPanelClasses }}" data-sidebar-brand>
+            <div class="{{ $effectiveCollapsed ? 'hidden' : 'flex' }} min-w-0 flex-1 items-center gap-2" data-sidebar-brand-expanded>
+                @if($hasBrandLink)
+                    <a href="{{ $normalizedBrandHref }}" class="flex min-w-0 items-center gap-2">
+                        <div class="font-bold text-lg truncate">{{ $brand ?: config('app.name', 'App') }}</div>
+                    </a>
+                @elseif($hasCustomBrandSlot)
+                    {{ $brand }}
+                @elseif($brand)
+                    <div class="font-bold text-lg truncate sidebar-label {{ $effectiveCollapsed ? 'hidden' : '' }}">{{ $brand ?: config('app.name', 'App') }}</div>
+                @else
+                    <div class="font-bold text-lg truncate sidebar-label {{ $effectiveCollapsed ? 'hidden' : '' }}">{{ config('app.name', 'App') }}</div>
+                @endif
+            </div>
+            <div class="{{ $effectiveCollapsed ? 'flex' : 'hidden' }} size-10 items-center justify-center" data-sidebar-brand-collapsed aria-hidden="{{ $effectiveCollapsed ? 'false' : 'true' }}">
+                @if($hasCollapsedBrand)
+                    {{ $brandCollapsed }}
+                @elseif($isSlim)
+                    <span class="opacity-50 text-xs">&nbsp;</span>
+                @endif
+            </div>
         </div>
     @endif
     @if($searchable && (! $effectiveCollapsed || $hoverExpandable))
@@ -213,7 +243,7 @@
                     {{-- Item avec sous-menu : utilise <details> pour le collapse natif --}}
                     <li>
                         <details {{ $isActive ? 'open' : '' }}>
-                            <summary class="flex items-center gap-2 {{ $isActive ? 'menu-active' : '' }}" title="{{ __($item['label'] ?? '') }}" aria-label="{{ __($item['label'] ?? '') }}">
+                            <summary class="flex items-center {{ $collapsedItemClasses }} {{ $isActive ? 'menu-active' : '' }}" title="{{ __($item['label'] ?? '') }}" aria-label="{{ __($item['label'] ?? '') }}" data-sidebar-row>
                                 @if(!empty($item['icon']))
                                     <x-daisy::ui.advanced.icon :name="$item['icon']" :prefix="$iconPrefix" size="md" />
                                 @endif
@@ -230,7 +260,7 @@
                                         $childIsActive = ! empty($child['active']) || ($childRouteNames !== [] && collect($childRouteNames)->contains(fn ($routeName) => \Illuminate\Support\Facades\Route::currentRouteNamed($routeName)));
                                     @endphp
                                     <li>
-                                        <a href="{{ $normalizeHref($child['href'] ?? '#') }}" class="flex items-center gap-2 {{ $childIsActive ? 'menu-active' : '' }}" title="{{ __($child['label'] ?? '') }}" aria-label="{{ __($child['label'] ?? '') }}">
+                                        <a href="{{ $normalizeHref($child['href'] ?? '#') }}" class="flex items-center {{ $collapsedItemClasses }} {{ $childIsActive ? 'menu-active' : '' }}" title="{{ __($child['label'] ?? '') }}" aria-label="{{ __($child['label'] ?? '') }}" data-sidebar-row>
                                             @if(!empty($child['icon']))
                                                 <x-daisy::ui.advanced.icon :name="$child['icon']" :prefix="$iconPrefix" size="md" />
                                             @endif
@@ -244,7 +274,7 @@
                 @else
                     {{-- Item simple : lien direct sans sous-menu --}}
                     <li>
-                        <a href="{{ $normalizeHref($item['href'] ?? '#') }}" class="flex items-center gap-2 {{ $isActive ? 'menu-active' : '' }}" title="{{ __($item['label'] ?? '') }}" aria-label="{{ __($item['label'] ?? '') }}">
+                        <a href="{{ $normalizeHref($item['href'] ?? '#') }}" class="flex items-center {{ $collapsedItemClasses }} {{ $isActive ? 'menu-active' : '' }}" title="{{ __($item['label'] ?? '') }}" aria-label="{{ __($item['label'] ?? '') }}" data-sidebar-row>
                             @if(!empty($item['icon']))
                                 <x-daisy::ui.advanced.icon :name="$item['icon']" :prefix="$iconPrefix" size="md" />
                             @endif
@@ -262,7 +292,7 @@
     <div class="p-2 border-t border-base-content/10">
         @php $showToggle = $collapsible && !isset($forceCollapsed) && ! $hoverExpandable; @endphp
         @if($showToggle)
-            <button type="button" class="btn btn-ghost btn-sm w-full justify-between sidebar-toggle" title="{{ $toggleLabel }}" aria-label="{{ $toggleLabel }}" aria-expanded="{{ $effectiveCollapsed ? 'false' : 'true' }}">
+            <button type="button" class="btn btn-ghost btn-sm sidebar-toggle {{ $collapsedToggleClasses }}" title="{{ $toggleLabel }}" aria-label="{{ $toggleLabel }}" aria-expanded="{{ $effectiveCollapsed ? 'false' : 'true' }}">
                 <span class="sidebar-label-toggle {{ $effectiveCollapsed ? 'sr-only' : '' }}">{{ $toggleLabel }}</span>
                 <span data-sidebar-icon-collapsed class="{{ $effectiveCollapsed ? '' : 'hidden' }}">
                     <x-daisy::ui.advanced.icon name="chevron-double-right" :prefix="$iconPrefix" size="sm" />

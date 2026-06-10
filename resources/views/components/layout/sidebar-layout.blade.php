@@ -4,9 +4,13 @@
     // Sidebar options
     'variant' => 'wide', // slim|wide
     'sideClass' => null,
+    'expandedWidth' => null,
+    'collapsedWidth' => 'w-20',
     'stickyAt' => 'lg',
     'brand' => null,
     'brandHref' => null,
+    'brandUrl' => null,
+    'brandCollapsed' => null,
     'showBrand' => true,
     'sections' => [],
     // Responsive drawer behavior
@@ -52,7 +56,10 @@
                         </div>
                     </div>
                 @endif
-                <div class="{{ $container }} {{ $hasNavbar ? 'pt-16' : '' }}">
+                @if($hasNavbar && isset($topbar))
+                    {{ $topbar }}
+                @endif
+                <div class="{{ $container }} {{ $hasNavbar && ! isset($topbar) ? 'pt-16' : '' }}">
                     {{ $slot }}
                 </div>
             </x-slot:content>
@@ -60,9 +67,13 @@
                 <x-daisy::ui.navigation.sidebar 
                     :variant="$variant" 
                     :sideClass="$sideClass" 
+                    :expandedWidth="$expandedWidth"
+                    :collapsedWidth="$collapsedWidth"
                     :stickyAt="$stickyAt" 
                     :brand="$brand" 
                     :brandHref="$brandHref" 
+                    :brandUrl="$brandUrl"
+                    :brandCollapsed="$brandCollapsed"
                     :showBrand="$showBrand" 
                     :sections="$sections" 
                     :iconPrefix="$iconPrefix" 

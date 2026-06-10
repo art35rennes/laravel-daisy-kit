@@ -114,6 +114,30 @@ it('lets the navbar sidebar layout hide and configure theme controls', function 
         ->toContain('dark');
 });
 
+it('renders navbar sidebar layout topbar inside drawer content with independent slots', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::layout.navbar-sidebar-layout :show-theme-controller="false">
+            <x-slot:navbarStart><span data-navbar-start>Start</span></x-slot:navbarStart>
+            <x-slot:navbarCenter><span data-navbar-center>Center</span></x-slot:navbarCenter>
+            <x-slot:navbarEnd><span data-navbar-end>End</span></x-slot:navbarEnd>
+            Content
+        </x-daisy::layout.navbar-sidebar-layout>
+    BLADE);
+
+    $drawerContentPosition = strpos($html, 'drawer-content');
+    $topbarPosition = strpos($html, 'data-navbar-sidebar-topbar');
+    $drawerSidePosition = strpos($html, 'drawer-side');
+
+    expect($html)
+        ->toContain('data-navbar-start')
+        ->toContain('data-navbar-center')
+        ->toContain('data-navbar-end')
+        ->toContain('navbar-center')
+        ->not->toContain('theme-controller')
+        ->and($drawerContentPosition)->toBeInt()->toBeLessThan($topbarPosition)
+        ->and($topbarPosition)->toBeInt()->toBeLessThan($drawerSidePosition);
+});
+
 it('renders button iconName and accessible loading state', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.inputs.button icon-name="bi-check" icon-position="right" loading>
