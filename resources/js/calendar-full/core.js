@@ -80,8 +80,6 @@ function buildInstanceApi(el, state){
     let events = [];
     try { events = await state.source.loadRange(start, end); } catch (_) { events = []; }
 
-    // Prépare le conteneur visuel
-    el.style.minHeight = state.options.height === 'auto' ? '' : `${parseInt(state.options.height,10)||600}px`;
     // Construire le contenu
     const container = document.createElement('div');
     function onEventClick(ev){ if (state.options.detail === 'modal') openEventModal(ev); el.dispatchEvent(new CustomEvent('calendar:detail', { detail: ev })); }
@@ -181,5 +179,4 @@ function formatRange(start, end, allDay){
   const e = sameDay ? end.toLocaleTimeString(undefined,{ hour:'2-digit', minute:'2-digit' }) : `${end.toLocaleDateString(undefined,{ month:'short', day:'numeric' })} ${end.toLocaleTimeString(undefined,{ hour:'2-digit', minute:'2-digit' })}`;
   return `${s} – ${e}`;
 }
-
 

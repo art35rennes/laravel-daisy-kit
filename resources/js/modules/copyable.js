@@ -198,8 +198,7 @@ function fallbackCopyText(text) {
         const textarea = document.createElement('textarea');
         textarea.value = text;
         textarea.setAttribute('readonly', '');
-        textarea.style.position = 'absolute';
-        textarea.style.left = '-9999px';
+        textarea.className = 'daisy-copyable-offscreen';
         document.body.appendChild(textarea);
         textarea.select();
         const successful = document.execCommand('copy');
@@ -297,9 +296,7 @@ function initCopyableElement(element) {
     
     // Créer et ajouter l'icône
     const icon = createIcon(iconSize);
-    if (!element.style.getPropertyValue('--copyable-icon-size')) {
-        element.style.setProperty('--copyable-icon-size', icon.dataset.iconDimension || '1rem');
-    }
+    element.classList.add(`copyable-icon-size-${icon.dataset.iconSize || 'sm'}`);
     
     // Positionner l'icône selon iconPosition
     if (iconPosition === 'left') {
@@ -319,62 +316,6 @@ function initCopyableElement(element) {
     // Créer et ajouter le feedback
     const feedback = createFeedback(successMessage || 'Copié!');
     element.appendChild(feedback);
-    
-    // Ajouter les styles CSS si pas déjà présents
-    if (!document.getElementById('copyable-styles')) {
-        const style = document.createElement('style');
-        style.id = 'copyable-styles';
-        style.textContent = `
-            .copyable-has-icon-right,
-            .copyable-has-icon-left {
-                transition: padding 150ms ease;
-            }
-            .copyable-has-icon-right .copyable-icon,
-            .copyable-has-icon-left .copyable-icon {
-                opacity: 0;
-                pointer-events: none;
-                transition: opacity 150ms ease;
-            }
-            .copyable:focus-visible {
-                outline: 2px solid hsl(var(--p));
-                outline-offset: 2px;
-            }
-            .copyable-feedback.show {
-                display: block;
-                animation: copyableFadeInOut 2s ease-in-out;
-            }
-            .copyable-icon-left {
-                left: 0;
-            }
-            .copyable-icon-right {
-                right: 0;
-            }
-            .copyable-has-icon-right:is(:hover, :focus-visible) {
-                padding-right: calc(var(--copyable-icon-size, 1rem) + 0.3rem);
-            }
-            .copyable-has-icon-left:is(:hover, :focus-visible) {
-                padding-left: calc(var(--copyable-icon-size, 1rem) + 0.3rem);
-            }
-            .copyable-has-icon-right:is(:hover, :focus-visible) .copyable-icon,
-            .copyable-has-icon-left:is(:hover, :focus-visible) .copyable-icon {
-                opacity: 1;
-            }
-            .copyable-inline-icon {
-                opacity: 0;
-                pointer-events: none;
-                transition: opacity 150ms ease;
-            }
-            .copyable:hover .copyable-inline-icon,
-            .copyable:focus-visible .copyable-inline-icon {
-                opacity: 1;
-            }
-            @keyframes copyableFadeInOut {
-                0%, 100% { opacity: 0; transform: translate(-50%, -4px); }
-                10%, 90% { opacity: 1; transform: translate(-50%, 0); }
-            }
-        `;
-        document.head.appendChild(style);
-    }
     
     /**
      * Gère le clic ou l'appui sur Entrée/Espace pour copier.

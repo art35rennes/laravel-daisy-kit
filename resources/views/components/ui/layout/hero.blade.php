@@ -37,8 +37,10 @@
 
     $imageUrl = $normalizeImageUrl($imageUrl);
 
-    $rootClasses = 'hero ' . ($fullScreen ? 'min-h-screen' : $minH);
-    if ($bg) $rootClasses .= ' bg-'.$bg;
+    $rootClasses = 'hero relative overflow-hidden ' . ($fullScreen ? 'min-h-screen' : $minH);
+    if ($bg) {
+        $rootClasses .= ' bg-'.$bg;
+    }
 
     $contentClasses = 'hero-content';
     if ($row) $contentClasses .= ' flex-col lg:flex-row';
@@ -51,11 +53,14 @@
     if ($contentClass) $contentClasses .= ' '.$contentClass;
 @endphp
 
-<div {{ $attributes->merge(['class' => $rootClasses]) }} @if($imageUrl) style="background-image: url('{{ $imageUrl }}');" @endif>
+<div {{ $attributes->merge(['class' => $rootClasses]) }}>
+  @if($imageUrl)
+    <img src="{{ $imageUrl }}" alt="" aria-hidden="true" class="pointer-events-none absolute inset-0 h-full w-full object-cover">
+  @endif
   @if($overlay)
     <div class="hero-overlay {{ $overlayClass }}"></div>
   @endif
-  <div class="{{ $contentClasses }}">
+  <div class="{{ $contentClasses }} relative z-10">
     @isset($figure)
       <div class="w-full max-w-sm">
         {{ $figure }}

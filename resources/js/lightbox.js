@@ -125,6 +125,20 @@ function resetTransform(root) {
   applyTransform(root);
 }
 
+function setImageFrame(img, frame) {
+  if (!img || typeof img.animate !== 'function') return;
+
+  const previousAnimation = img.__daisyLightboxFrameAnimation;
+  const animation = img.animate([frame], { duration: 1, fill: 'forwards' });
+  previousAnimation?.cancel?.();
+  img.__daisyLightboxFrameAnimation = animation;
+}
+
+function updateCursorState(img, state) {
+  img.classList.toggle('daisy-lightbox-image-grab', state === 'grab');
+  img.classList.toggle('daisy-lightbox-image-grabbing', state === 'grabbing');
+}
+
 /**
  * Applique la transformation CSS (zoom et déplacement) à l'image.
  * @param {HTMLElement} root
@@ -132,8 +146,8 @@ function resetTransform(root) {
 function applyTransform(root) {
   const img = root.querySelector('[data-image]');
   const s = root.__scale || 1, x = root.__tx || 0, y = root.__ty || 0;
-  img.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
-  img.style.cursor = s > 1 ? 'grab' : 'default';
+  setImageFrame(img, { transform: `translate(${x}px, ${y}px) scale(${s})` });
+  updateCursorState(img, s > 1 ? 'grab' : null);
   // Événement de zoom
   root.dispatchEvent(new CustomEvent('lightbox:zoom', { detail: { scale: s }, bubbles: true }));
 }
@@ -171,7 +185,7 @@ function bindGestures(root) {
   // Drag souris pour déplacer l'image si zoomée
   img.addEventListener('mousedown', (e) => {
     if ((root.__scale || 1) <= 1) return;
-    dragging = true; sx = e.clientX; sy = e.clientY; img.style.cursor = 'grabbing';
+    dragging = true; sx = e.clientX; sy = e.clientY; updateCursorState(img, 'grabbing');
   });
 
   // Déplacement de l'image lors du drag
@@ -183,7 +197,7 @@ function bindGestures(root) {
 
   // Fin du drag
   window.addEventListener('mouseup', () => {
-    if (dragging) { dragging = false; img.style.cursor = 'grab'; }
+    if (dragging) { dragging = false; updateCursorState(img, 'grab'); }
   });
 
   // Zoom à la molette

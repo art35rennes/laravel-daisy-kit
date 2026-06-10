@@ -67,4 +67,31 @@ describe('Floating menu component rendering', function () {
             ->toContain('Allowed')
             ->not->toContain('onclick="alert(1)"');
     });
+
+    it('renders spacing through csp safe classes', function () {
+        $html = View::make('daisy::components.ui.navigation.floating-menu', [
+            'orientation' => 'horizontal',
+            'itemSpacing' => 0.5,
+            'groupSpacing' => 1.5,
+            'groups' => [
+                [
+                    'items' => [
+                        ['icon' => 'bi-pencil', 'label' => 'Edit'],
+                    ],
+                ],
+                [
+                    'items' => [
+                        ['icon' => 'bi-eye', 'label' => 'Preview'],
+                    ],
+                ],
+            ],
+        ])->render();
+
+        expect($html)
+            ->toContain('daisy-floating-menu-gap-rem-2')
+            ->toContain('daisy-floating-menu-divider-spacing-rem-6')
+            ->not->toContain('data-daisy-css-gap')
+            ->not->toContain('data-daisy-css-divider-margin')
+            ->not->toContain('style=');
+    });
 });

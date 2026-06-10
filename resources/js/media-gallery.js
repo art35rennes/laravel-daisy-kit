@@ -45,6 +45,15 @@ function initMediaGallery(root) {
   // Détermine si le zoom est activé
   const zoom = root.dataset.zoom === 'true';
 
+  const setMainFrame = (frame) => {
+    if (!main || typeof main.animate !== 'function') return;
+
+    const previousAnimation = main.__daisyMediaGalleryFrameAnimation;
+    const animation = main.animate([frame], { duration: 1, fill: 'forwards' });
+    previousAnimation?.cancel?.();
+    main.__daisyMediaGalleryFrameAnimation = animation;
+  };
+
   /**
    * Met à jour l'image principale et l'état actif des vignettes.
    * @param {number} idx - Index de l'image à activer
@@ -84,12 +93,17 @@ function initMediaGallery(root) {
       const rect = wrapper.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 100;
       const y = ((e.clientY - rect.top) / rect.height) * 100;
-      main.style.transformOrigin = `${x}% ${y}%`;
-      main.style.transform = `scale(${scale})`;
+      setMainFrame({
+        transform: `scale(${scale})`,
+        transformOrigin: `${x}% ${y}%`,
+      });
     });
     // Réinitialise le zoom lorsque la souris quitte la zone
     wrapper.addEventListener('mouseleave', () => {
-      main.style.transform = 'scale(1)';
+      setMainFrame({
+        transform: 'scale(1)',
+        transformOrigin: '50% 50%',
+      });
     });
   }
 }

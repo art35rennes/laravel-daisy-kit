@@ -25,6 +25,7 @@
 @php
     $id = $attributes->get('id') ?? 'colorpicker-'.uniqid();
     $isNative = ($mode === 'native');
+    $chipValue = preg_match('/^#[0-9a-fA-F]{6}$/', (string) $value) === 1 ? (string) $value : '#563d7c';
 @endphp
 
 @if($isNative)
@@ -49,7 +50,7 @@
         @if($dropdown)
             <div class="dropdown">
                 <div tabindex="0" role="button" class="btn btn-sm btn-ghost" data-colorpicker-trigger>
-                    <span class="w-4 h-4 rounded-box mr-2 inline-block align-middle border" data-colorchip style="background: {{ $value }}"></span>
+                    <input type="color" value="{{ $chipValue }}" disabled class="daisy-color-chip-input daisy-color-chip-input-sm mr-2 align-middle" data-colorchip aria-hidden="true" tabindex="-1">
                     <span data-colortext class="align-middle text-sm">{{ $value }}</span>
                 </div>
                 <div tabindex="0" class="dropdown-content bg-base-100 rounded-box shadow p-3 z-[1] w-72 max-w-[calc(100vw-2rem)]" data-colorpicker-panel></div>

@@ -6,6 +6,7 @@
             $hasManifest = $assetManager::hasManifest();
             $hasPublishedSource = $assetManager::hasPublishedSource('css');
             $buildDirectory = $assetManager::buildDirectory();
+            $cspNonce = config('daisy-kit.csp_nonce');
         @endphp
         @if(config('daisy-kit.use_vite'))
             @if($hasManifest)
@@ -13,10 +14,10 @@
             @elseif($hasPublishedSource)
                 @vite($cssEntry)
             @else
-                {!! $assetManager::stylesheetTags($cssEntry) !!}
+                {!! $assetManager::stylesheetTags($cssEntry, $cspNonce) !!}
             @endif
         @else
-            {!! $assetManager::stylesheetTags($cssEntry) !!}
+            {!! $assetManager::stylesheetTags($cssEntry, $cspNonce) !!}
         @endif
     @endif
 @endPushOnce
@@ -29,6 +30,7 @@
             $hasManifest = $assetManager::hasManifest();
             $hasPublishedSource = $assetManager::hasPublishedSource('js');
             $buildDirectory = $assetManager::buildDirectory();
+            $cspNonce = config('daisy-kit.csp_nonce');
         @endphp
         @if(config('daisy-kit.use_vite'))
             @if($hasManifest)
@@ -36,11 +38,10 @@
             @elseif($hasPublishedSource)
                 @vite($jsEntry)
             @else
-                {!! $assetManager::scriptTags($jsEntry) !!}
+                {!! $assetManager::scriptTags($jsEntry, $cspNonce) !!}
             @endif
         @else
-            {!! $assetManager::scriptTags($jsEntry) !!}
+            {!! $assetManager::scriptTags($jsEntry, $cspNonce) !!}
         @endif
     @endif
 @endPushOnce
-

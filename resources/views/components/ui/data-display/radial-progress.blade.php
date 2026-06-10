@@ -10,20 +10,46 @@
 ])
 
 @php
-    $classes = 'radial-progress';
-    if ($color) $classes .= ' text-'.$color;
+    $lengthToken = function ($value, string $prefix, int $remMultiplier, int $maxRemToken, int $maxPxToken) {
+        if (! is_string($value) && ! $value instanceof \Stringable && ! is_numeric($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+
+        if (preg_match('/^(\d+(?:\.\d+)?)rem$/', $value, $matches) === 1) {
+            $token = (int) round(((float) $matches[1]) * $remMultiplier);
+
+            return $token >= 1 && $token <= $maxRemToken ? "{$prefix}-rem-{$token}" : null;
+        }
+
+        if (preg_match('/^(\d+(?:\.\d+)?)px$/', $value, $matches) === 1) {
+            $token = (int) round((float) $matches[1]);
+
+            return $token >= 1 && $token <= $maxPxToken ? "{$prefix}-px-{$token}" : null;
+        }
+
+        return null;
+    };
 
     $min = (int) $min;
     $max = max($min + 1, (int) $max);
     $rawValue = is_numeric($value) ? (float) $value : 0.0;
     $percent = (int) round(max(0, min(100, (($rawValue - $min) / ($max - $min)) * 100)));
 
-    $style = "--value: {$percent};";
-    if ($size) $style .= " --size: {$size};";
-    if ($thickness) $style .= " --thickness: {$thickness};";
+    $classes = 'radial-progress daisy-radial-value-'.$percent;
+    if ($color) $classes .= ' text-'.$color;
+
+    if ($sizeClass = $lengthToken($size, 'daisy-radial-size', 4, 128, 512)) {
+        $classes .= ' '.$sizeClass;
+    }
+
+    if ($thicknessClass = $lengthToken($thickness, 'daisy-radial-thickness', 100, 200, 64)) {
+        $classes .= ' '.$thicknessClass;
+    }
 @endphp
 
-<div style="{{ $style }}" {{ $attributes->merge(['class' => $classes, 'role' => 'progressbar', 'aria-valuemin' => $min, 'aria-valuemax' => $max, 'aria-valuenow' => $rawValue]) }}>
+<div {{ $attributes->merge(['class' => $classes, 'role' => 'progressbar', 'aria-valuemin' => $min, 'aria-valuemax' => $max, 'aria-valuenow' => $rawValue]) }}>
     @if($showValue)
         {{ $slot->isNotEmpty() ? $slot : $percent.'%' }}
     @endif

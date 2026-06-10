@@ -35,8 +35,10 @@ class PackageAsset
         return "resources/{$type}/app.{$type}";
     }
 
-    public static function stylesheetTags(string $entry): HtmlString
+    public static function stylesheetTags(string $entry, mixed $nonce = null): HtmlString
     {
+        $nonceAttribute = self::nonceAttribute($nonce);
+
         if (self::hasManifest()) {
             $manifest = self::manifest();
             $chunk = $manifest[$entry] ?? null;
@@ -56,7 +58,7 @@ class PackageAsset
 
                 if ($paths !== []) {
                     return new HtmlString(collect($paths)
-                        ->map(fn (string $path) => '<link rel="stylesheet" href="'.e(asset(self::buildDirectory().'/'.$path)).'">')
+                        ->map(fn (string $path) => '<link rel="stylesheet" href="'.e(asset(self::buildDirectory().'/'.$path)).'"'.$nonceAttribute.'>')
                         ->implode("\n"));
                 }
             }
@@ -68,18 +70,20 @@ class PackageAsset
             return new HtmlString('');
         }
 
-        return new HtmlString('<link rel="stylesheet" href="'.e(asset($bundle)).'">');
+        return new HtmlString('<link rel="stylesheet" href="'.e(asset($bundle)).'"'.$nonceAttribute.'>');
     }
 
-    public static function scriptTags(string $entry): HtmlString
+    public static function scriptTags(string $entry, mixed $nonce = null): HtmlString
     {
+        $nonceAttribute = self::nonceAttribute($nonce);
+
         if (self::hasManifest()) {
             $manifest = self::manifest();
             $chunk = $manifest[$entry] ?? null;
 
             if (is_array($chunk) && ($chunk['file'] ?? null)) {
                 return new HtmlString(
-                    '<script type="module" src="'.e(asset(self::buildDirectory().'/'.$chunk['file'])).'"></script>'
+                    '<script type="module" src="'.e(asset(self::buildDirectory().'/'.$chunk['file'])).'"'.$nonceAttribute.'></script>'
                 );
             }
         }
@@ -90,7 +94,7 @@ class PackageAsset
             return new HtmlString('');
         }
 
-        return new HtmlString('<script src="'.e(asset($bundle)).'" defer></script>');
+        return new HtmlString('<script src="'.e(asset($bundle)).'" defer'.$nonceAttribute.'></script>');
     }
 
     /**
@@ -101,5 +105,24 @@ class PackageAsset
         $manifest = json_decode((string) file_get_contents(self::manifestPath()), true);
 
         return is_array($manifest) ? $manifest : [];
+    }
+
+    public static function nonceAttribute(mixed $nonce = null): string
+    {
+        $resolvedNonce = $nonce ?? config('daisy-kit.csp_nonce');
+
+        if (is_callable($resolvedNonce)) {
+            $resolvedNonce = $resolvedNonce();
+        }
+
+        $resolvedNonce = is_string($resolvedNonce) || is_numeric($resolvedNonce)
+            ? trim((string) $resolvedNonce)
+            : '';
+
+        if ($resolvedNonce === '') {
+            return '';
+        }
+
+        return ' nonce="'.e($resolvedNonce).'"';
     }
 }

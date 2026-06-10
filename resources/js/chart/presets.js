@@ -178,6 +178,7 @@ export function buildChartOption(config, theme) {
     const tooltip = {
         trigger: config.isCircular ? 'item' : 'axis',
         triggerOn: 'mousemove|click',
+        renderMode: 'richText',
         transitionDuration: 0,
         backgroundColor: theme.tooltipBackground,
         borderColor: theme.axisColor,

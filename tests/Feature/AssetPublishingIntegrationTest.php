@@ -34,3 +34,39 @@ it('renders published manifest assets when vite helper integration is disabled',
         ->toContain('vendor/art35rennes/laravel-daisy-kit/assets/app.css')
         ->toContain('vendor/art35rennes/laravel-daisy-kit/assets/app.js');
 });
+
+it('renders published manifest assets with configured csp nonce when vite helper integration is disabled', function () {
+    $buildPath = public_path('vendor/art35rennes/laravel-daisy-kit');
+    $assetsPath = $buildPath.'/assets';
+
+    File::ensureDirectoryExists($assetsPath);
+
+    File::put($buildPath.'/manifest.json', json_encode([
+        'resources/css/app.css' => [
+            'file' => 'assets/app.css',
+        ],
+        'resources/js/app.js' => [
+            'file' => 'assets/app.js',
+        ],
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+    config([
+        'daisy-kit.use_vite' => false,
+        'daisy-kit.auto_assets' => true,
+        'daisy-kit.vite_build_directory' => 'vendor/art35rennes/laravel-daisy-kit',
+        'daisy-kit.csp_nonce' => fn () => 'integration-nonce',
+    ]);
+
+    $html = Blade::render(<<<'BLADE'
+        @include('daisy::components.partials.assets')
+        @stack('styles')
+        @stack('scripts')
+    BLADE);
+
+    expect($html)
+        ->toContain('<link rel="stylesheet"')
+        ->toContain('<script type="module"')
+        ->toContain('nonce="integration-nonce"');
+
+    expect(substr_count($html, 'nonce="integration-nonce"'))->toBe(2);
+});

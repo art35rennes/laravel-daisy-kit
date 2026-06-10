@@ -165,7 +165,7 @@
                             <span class="text-sm font-medium text-success">Stable</span>
                         </div>
                         <div class="flex flex-1 items-center justify-center">
-                            <div class="radial-progress text-primary" style="--value:92; --size:7rem; --thickness:0.7rem;" role="progressbar">92%</div>
+                            <x-daisy::ui.data-display.radial-progress :value="92" size="7rem" thickness="0.7rem" color="primary">92%</x-daisy::ui.data-display.radial-progress>
                         </div>
                     </section>
                 </x-daisy::ui.layout.editable-grid-item>

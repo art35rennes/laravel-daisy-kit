@@ -9,6 +9,15 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function applyElementFrame(element, frame, animationKey = '__daisyOnboardingFrameAnimation') {
+  if (!element || typeof element.animate !== 'function') return;
+
+  const previousAnimation = element[animationKey];
+  const animation = element.animate([frame], { duration: 1, fill: 'forwards' });
+  previousAnimation?.cancel?.();
+  element[animationKey] = animation;
+}
+
 function readConfig(root) {
   try {
     const script = root.querySelector('script[data-onboarding-config]');
@@ -20,17 +29,15 @@ function readConfig(root) {
 
 function createOverlay() {
   const overlay = document.createElement('div');
-  overlay.className = 'fixed inset-0 z-[70] pointer-events-none';
-  overlay.style.transition = 'opacity 200ms ease';
-  overlay.style.opacity = '0';
+  overlay.className = 'daisy-onboarding-overlay fixed inset-0 z-[70] pointer-events-none';
   return overlay;
 }
 
 function createDimLayer(maskMode) {
   const layer = document.createElement('div');
-  layer.className = 'absolute inset-0';
+  layer.className = 'daisy-onboarding-dim absolute inset-0';
   if (maskMode === 'dim' || maskMode === 'dim-blur') {
-    layer.style.backgroundColor = 'hsla(var(--bc), 0.6)';
+    layer.dataset.mask = 'dim';
     layer.classList.add('backdrop-blur-0');
     if (maskMode === 'dim-blur') layer.classList.add('backdrop-blur-sm');
   }
@@ -139,8 +146,10 @@ function positionPopover(pop, rect, placement, offset) {
   if (place === 'right' && left < x + w + 10) left = x + w + 10;
   if (place === 'left' && left + pw > x - 10) left = x - pw - 10;
   
-  panel.style.top = `${top}px`;
-  panel.style.left = `${left}px`;
+  applyElementFrame(panel, {
+    top: `${top}px`,
+    left: `${left}px`,
+  });
 }
 
 function updateSpotlightMask(spotlightLayer, rect, radius) {
@@ -154,9 +163,11 @@ function updateSpotlightMask(spotlightLayer, rect, radius) {
   const docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight, window.innerHeight);
   
   const path = `path('M0 0 H${docWidth} V${docHeight} H0 Z M${x - r} ${y - r} H${x + w + r} V${y + h + r} H${x - r} Z')`;
-  spotlightLayer.style.clipPath = path;
-  spotlightLayer.style.WebkitClipPath = path;
-  spotlightLayer.style.background = 'rgba(0,0,0,0.4)';
+  applyElementFrame(spotlightLayer, {
+    clipPath: path,
+    WebkitClipPath: path,
+    background: 'rgba(0,0,0,0.4)',
+  }, '__daisyOnboardingSpotlightAnimation');
 }
 
 function ringHighlight(targetEl, enable, highlightedTargets = null) {
@@ -164,20 +175,12 @@ function ringHighlight(targetEl, enable, highlightedTargets = null) {
   
   if (enable) {
     // Ajouter le ring de mise en évidence
-    targetEl.classList.add('ring', 'ring-primary', 'ring-offset-2', 'ring-offset-base-100');
-    
-    // Ajouter un z-index élevé pour s'assurer que l'élément est visible au-dessus du voile
-    targetEl.style.position = 'relative';
-    targetEl.style.zIndex = '80';
+    targetEl.classList.add('daisy-onboarding-highlight', 'ring', 'ring-primary', 'ring-offset-2', 'ring-offset-base-100');
     
     if (highlightedTargets) highlightedTargets.add(targetEl);
   } else {
     // Nettoyer le ring
-    targetEl.classList.remove('ring', 'ring-primary', 'ring-offset-2', 'ring-offset-base-100');
-    
-    // Restaurer le style original
-    targetEl.style.position = '';
-    targetEl.style.zIndex = '';
+    targetEl.classList.remove('daisy-onboarding-highlight', 'ring', 'ring-primary', 'ring-offset-2', 'ring-offset-base-100');
     
     if (highlightedTargets) highlightedTargets.delete(targetEl);
   }
@@ -225,8 +228,7 @@ function setupOnboarding(root) {
 
   function setOverlayVisible(visible) {
     if (!overlay) return;
-    overlay.style.pointerEvents = visible ? 'auto' : 'none';
-    overlay.style.opacity = visible ? '1' : '0';
+    overlay.toggleAttribute('data-visible', visible);
   }
 
   function clearTimer() { if (timer) { clearTimeout(timer); timer = null; } }
@@ -288,9 +290,7 @@ function setupOnboarding(root) {
     popover.btnSkip.textContent = config.labels.skip;
     popover.btnSkip.classList.toggle('hidden', !config.allowSkip);
 
-    overlay.style.pointerEvents = stepInteractive ? 'none' : 'auto';
-    dim.style.pointerEvents = 'auto';
-    spotlight.style.pointerEvents = 'none';
+    overlay.toggleAttribute('data-interactive-step', stepInteractive);
 
     positionPopover(popover, rect, placement, config.offset);
 
@@ -351,7 +351,7 @@ function setupOnboarding(root) {
 
     const wrapper = document.createElement('span');
     wrapper.setAttribute('data-popconfirm', '');
-    wrapper.className = 'relative inline-block';
+    wrapper.className = 'daisy-onboarding-confirm-wrapper relative inline-block';
 
     const trigger = document.createElement('button');
     trigger.type = 'button';
@@ -372,9 +372,10 @@ function setupOnboarding(root) {
     document.body.appendChild(wrapper);
 
     const ref = popover.btnSkip.getBoundingClientRect();
-    wrapper.style.position = 'absolute';
-    wrapper.style.top = `${window.scrollY + ref.bottom + 6}px`;
-    wrapper.style.left = `${window.scrollX + ref.right - 260}px`;
+    applyElementFrame(wrapper, {
+      top: `${window.scrollY + ref.bottom + 6}px`,
+      left: `${window.scrollX + ref.right - 260}px`,
+    }, '__daisyOnboardingConfirmAnimation');
 
     const afterLoad = () => {
       try { window.DaisyPopconfirm?.initAll?.(); } catch(_) {}
@@ -493,5 +494,4 @@ if (document.readyState === 'loading') {
 } else {
   initAllOnboarding();
 }
-
 

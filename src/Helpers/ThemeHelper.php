@@ -5,6 +5,22 @@ namespace Art35rennes\DaisyKit\Helpers;
 class ThemeHelper
 {
     /**
+     * Récupère le thème global configuré pour les layouts et contrôleurs Daisy Kit.
+     */
+    public static function getDefaultTheme(): ?string
+    {
+        $theme = config('daisy-kit.themes.default');
+
+        if (! is_string($theme) && ! $theme instanceof \Stringable) {
+            return null;
+        }
+
+        $theme = trim((string) $theme);
+
+        return $theme === '' ? null : $theme;
+    }
+
+    /**
      * Génère le CSS pour les thèmes personnalisés daisyUI.
      */
     public static function generateCustomThemesCss(): string

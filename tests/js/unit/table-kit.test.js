@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_FILTER_DEBOUNCE_MS,
+  DEFAULT_MIN_SEARCH_CHARS,
   DEFAULT_PAGE_SIZE_OPTIONS,
+  DEFAULT_SEARCH_DEBOUNCE_MS,
   applyClientFilters,
   buildRequestPayload,
   buildServerRequest,
   buildSpatieRequestParams,
   getPersistedStateKey,
+  isTextSearchReady,
   mergeState,
   normalizeColumns,
   normalizeConfig,
@@ -15,6 +19,7 @@ import {
   parseConfig,
   parseStateFromLocalStorage,
   parseStateFromUrl,
+  resolveSearchInputValue,
   serializeRequestPayload,
   serializeStateToParams,
   toggleSorting,
@@ -123,6 +128,34 @@ describe('table-kit helpers', () => {
       columnVisibility: { name: true },
     });
     expect(serializeRequestPayload(payload).toString()).toContain('sorting=%5B%7B%22id%22%3A%22name%22%2C%22desc%22%3Atrue%7D%5D');
+  });
+
+  it('normalizes search pacing defaults and overrides', () => {
+    const defaultConfig = normalizeConfig({
+      columns: [{ key: 'name', label: 'Name' }],
+    });
+    const customConfig = normalizeConfig({
+      columns: [{ key: 'name', label: 'Name' }],
+      searchDebounceMs: 700,
+      filterDebounceMs: 650,
+      minSearchChars: 4,
+    });
+
+    expect(defaultConfig.searchDebounceMs).toBe(DEFAULT_SEARCH_DEBOUNCE_MS);
+    expect(defaultConfig.filterDebounceMs).toBe(DEFAULT_FILTER_DEBOUNCE_MS);
+    expect(defaultConfig.minSearchChars).toBe(DEFAULT_MIN_SEARCH_CHARS);
+    expect(customConfig.searchDebounceMs).toBe(700);
+    expect(customConfig.filterDebounceMs).toBe(650);
+    expect(customConfig.minSearchChars).toBe(4);
+  });
+
+  it('waits for enough characters before applying text search', () => {
+    expect(isTextSearchReady('', 3)).toBe(true);
+    expect(isTextSearchReady('ab', 3)).toBe(false);
+    expect(isTextSearchReady('abc', 3)).toBe(true);
+    expect(resolveSearchInputValue('ab', '', 3)).toBeNull();
+    expect(resolveSearchInputValue('ab', 'previous', 3)).toBe('');
+    expect(resolveSearchInputValue('abcd', '', 3)).toBe('abcd');
   });
 
   it('filters client rows with global and column filters', () => {

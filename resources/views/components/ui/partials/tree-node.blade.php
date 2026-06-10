@@ -34,8 +34,8 @@
     $isMulti = $selection === 'multiple';
     // Génération d'un ID unique pour le nœud (utilisé pour l'accessibilité et le ciblage JS).
     $liId = $treeId.'-item-'.($id ?? uniqid());
-    // Calcul de l'indentation visuelle : 16px par niveau (niveau 1 = 0px, niveau 2 = 16px, etc.).
-    $levelPad = max(0, ($level - 1)) * 16;
+    // Indentation visuelle : 1rem par niveau, couverte par des classes statiques CSP-safe.
+    $indentLevel = min(64, max(0, ($level - 1)));
 @endphp
 
 <li id="{{ $liId }}"
@@ -48,8 +48,7 @@
     class="outline-none">
 
     {{-- En-tête du nœud : bouton toggle, contrôle de sélection, label --}}
-    <div class="flex items-center gap-2 px-2 py-1 rounded hover:bg-base-200 focus:bg-base-200"
-         style="padding-left: {{ $levelPad }}px"
+    <div class="flex items-center gap-2 px-2 py-1 rounded hover:bg-base-200 focus:bg-base-200 daisy-tree-indent-{{ $indentLevel }}"
          data-node-header="1">
         {{-- Bouton toggle pour expand/collapse (uniquement si le nœud a des enfants) --}}
         @if($hasChildren)

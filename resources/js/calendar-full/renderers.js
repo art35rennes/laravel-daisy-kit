@@ -60,9 +60,8 @@ export function renderWeek(container, ctx){
   frag.appendChild(grid);
 
   // En-tête heures colonne 0
-  const hoursCol = el('div');
-  hoursCol.style.display = 'grid';
-  hoursCol.style.gridTemplateRows = `repeat(${hourEnd-hourStart}, 3rem)`;
+  const hourCountClass = calendarHoursClass(hourEnd - hourStart);
+  const hoursCol = el('div', `cf-hours-col ${hourCountClass}`);
   for (let h = hourStart; h < hourEnd; h++) {
     const hr = el('div','cf-hour');
     hr.textContent = `${h}:00`;
@@ -72,10 +71,7 @@ export function renderWeek(container, ctx){
 
   // 7 colonnes jour
   for (let i=0;i<7;i++){
-    const col = el('div');
-    col.style.position = 'relative';
-    col.style.display = 'grid';
-    col.style.gridTemplateRows = `repeat(${hourEnd-hourStart}, 3rem)`;
+    const col = el('div', `cf-day-col ${hourCountClass}`);
     const day = addDays(start,i);
     const dayEvents = events.filter((e) => e.allDay ? intersectsDay(e, day) : intersects(e, day, addDays(day,1)));
     // Slots horizontaux (lignes)
@@ -85,15 +81,13 @@ export function renderWeek(container, ctx){
       if (ev.allDay) continue; // all-day non géré visuel ici pour simplicité
       const top = posFromTime(maxDate(ev.start, day)) - hourStart;
       const bottom = posFromTime(minDate(ev.end || ev.start, addDays(day,1))) - hourStart;
-      const block = el('div','cf-block');
-      block.style.top = `${(top) * 3}rem`;
-      block.style.height = `${Math.max(0.8, bottom - top) * 3}rem`;
-      if (ev.color) block.style.background = ev.color;
+      const block = el('div', `cf-block ${calendarTimeClass('daisy-calendar-top', top)} ${calendarTimeClass('daisy-calendar-height', Math.max(0.8, bottom - top))}`);
       // Contenu enrichi via template "block"
       const tpl = queryEventTemplate('block');
       const payload = {
         title: ev.title || '(untitled)',
-        timeRange: formatDateTime(ev.start, ev.end)
+        timeRange: formatDateTime(ev.start, ev.end),
+        dotColor: colorInputValue(ev.color),
       };
       block.appendChild(applyEventTemplate(tpl, payload));
       block.addEventListener('click', () => ctx.onEventClick(ev));
@@ -132,7 +126,7 @@ export function renderList(container, ctx){
     for (const ev of sorted){
       const li = el('div','cf-li');
       const tpl = queryEventTemplate('list');
-      const payload = { title: ev.title || '(untitled)', timeRange: formatDateTime(ev.start, ev.end) };
+      const payload = { title: ev.title || '(untitled)', timeRange: formatDateTime(ev.start, ev.end), dotColor: colorInputValue(ev.color) };
       li.appendChild(applyEventTemplate(tpl, payload));
       li.addEventListener('click', () => ctx.onEventClick(ev));
       list.appendChild(li);
@@ -149,10 +143,7 @@ export function renderYear(container, ctx){
   const year = currentDate.getFullYear();
   const frag = document.createDocumentFragment();
   frag.appendChild(toolbarSpacer(ctx));
-  const wrap = el('div','cf-grid');
-  wrap.style.display = 'grid';
-  wrap.style.gridTemplateColumns = 'repeat(4, minmax(0, 1fr))';
-  wrap.style.gap = '.75rem';
+  const wrap = el('div','cf-grid cf-year');
   for (let m=0;m<12;m++){
     const box = el('div');
     const title = el('div','text-center font-medium mb-1');
@@ -201,6 +192,18 @@ function weekLabel(start){
 function posFromTime(d){ return d.getHours() + d.getMinutes()/60; }
 function maxDate(a,b){ return a > b ? a : b; }
 function minDate(a,b){ return a < b ? a : b; }
+function calendarHoursClass(count){
+  const token = Math.max(1, Math.min(24, parseInt(count, 10) || 1));
+  return `daisy-calendar-hours-${token}`;
+}
+function calendarTimeClass(prefix, hours){
+  const token = Math.max(0, Math.min(288, Math.round((Number(hours) * 60) / 5)));
+  return `${prefix}-step-${token}`;
+}
+function colorInputValue(value){
+  const color = String(value || '').trim();
+  return /^#[0-9a-f]{6}$/i.test(color) ? color : '#563d7c';
+}
 function escapeHtml(s){ return String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function formatDateTime(start, end){
   const sameDay = !end || (start.toDateString() === end.toDateString());
@@ -218,10 +221,9 @@ function intersectsDay(ev, day){
 
 function eventChip(ev, ctx){
   const a = el('a','cf-event');
-  if (ev.color) a.style.background = ev.color;
   a.href = ev.url || '#';
   const tpl = queryEventTemplate('chip');
-  const payload = { title: ev.title || '(untitled)', dotColor: ev.color || 'currentColor' };
+  const payload = { title: ev.title || '(untitled)', dotColor: colorInputValue(ev.color) };
   a.appendChild(applyEventTemplate(tpl, payload));
   a.addEventListener('click', (e) => { if (!ev.url) e.preventDefault(); ctx.onEventClick(ev); });
   return a;
@@ -248,5 +250,3 @@ function toolbarSpacer(ctx){
   // Les barres d'outils sont construites dans core.js. Ce noeud est un espace réservé.
   const d = el('div'); d.className = 'cf-toolbar-space'; return d;
 }
-
-

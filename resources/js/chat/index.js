@@ -323,7 +323,7 @@ export function initChatInput(root, options = {}) {
         removeBtn.className = 'btn btn-ghost btn-xs btn-circle btn-error flex-shrink-0';
         removeBtn.innerHTML = '×';
         removeBtn.title = 'Remove file';
-        removeBtn.onclick = () => {
+        removeBtn.addEventListener('click', () => {
             selectedFiles = selectedFiles.filter(f => f !== file);
             preview.remove();
             updateFileIndicator();
@@ -332,7 +332,7 @@ export function initChatInput(root, options = {}) {
                 selectedFiles.forEach(f => dt.items.add(f));
                 fileInput.files = dt.files;
             }
-        };
+        });
         content.appendChild(removeBtn);
         
         preview.appendChild(content);
@@ -569,4 +569,3 @@ export default function initChat(root, options = {}) {
         initChatWidget(widgetContainer, options);
     }
 }
-

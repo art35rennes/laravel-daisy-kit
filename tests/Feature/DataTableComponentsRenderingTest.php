@@ -14,7 +14,7 @@ it('renders a client table with DaisyUI classes and serialized config', function
             pin-cols
             caption="Users"
             :columns="[
-                ['key' => 'name', 'label' => 'Name', 'sortable' => true],
+                ['key' => 'name', 'label' => 'Name', 'sortable' => true, 'width' => '180px'],
                 ['key' => 'role', 'label' => 'Role', 'cellClass' => 'text-right'],
             ]"
             :rows="[
@@ -29,12 +29,14 @@ it('renders a client table with DaisyUI classes and serialized config', function
         ->toContain('data-daisy-table="1"')
         ->toContain('table table-zebra table-sm table-pin-rows table-pin-cols w-full')
         ->toContain('daisy-table-shell')
+        ->toContain('daisy-table-width-px-180')
         ->toContain('Users')
         ->toContain('"mode":"client"')
         ->toContain('"pageSizeOptions":[10,25]')
         ->toContain('"columnVisibility":true')
         ->toContain('Jane')
-        ->toContain('Admin');
+        ->toContain('Admin')
+        ->not->toContain('data-daisy-css-width');
 });
 
 it('renders a server table with endpoint config', function () {
@@ -58,7 +60,28 @@ it('renders a server table with endpoint config', function () {
         ->toContain('"method":"POST"')
         ->toContain('"url":"\/api\/users"')
         ->toContain('"pageSize":25')
+        ->toContain('"searchDebounceMs":500')
+        ->toContain('"filterDebounceMs":500')
+        ->toContain('"minSearchChars":3')
         ->toContain('Loading');
+});
+
+it('allows table search pacing to be configured explicitly', function () {
+    $html = View::make('daisy::components.ui.data-display.table', [
+        'mode' => 'server',
+        'endpoint' => '/api/users',
+        'searchDebounce' => 750,
+        'filterDebounce' => 650,
+        'minSearchChars' => 4,
+        'columns' => [
+            ['key' => 'name', 'label' => 'Name', 'filterable' => true, 'filter' => ['type' => 'text']],
+        ],
+    ])->render();
+
+    expect($html)
+        ->toContain('"searchDebounceMs":750')
+        ->toContain('"filterDebounceMs":650')
+        ->toContain('"minSearchChars":4');
 });
 
 it('renders spatie query builder adapter config and filter controls', function () {
@@ -90,6 +113,51 @@ it('renders spatie query builder adapter config and filter controls', function (
         ->toContain('data-table-filter="name"')
         ->toContain('data-table-filter="status"')
         ->toContain('data-table-filter="is_published"');
+});
+
+it('renders table filters in a stable responsive grid before technical controls', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            mode="server"
+            endpoint="/interventions"
+            column-visibility
+            :columns="[
+                ['key' => 'external_note', 'label' => 'External note', 'filterable' => true, 'filter' => ['type' => 'text']],
+                ['key' => 'compile_status', 'label' => 'Compile status', 'filterable' => true, 'filter' => ['type' => 'select']],
+                ['key' => 'name', 'label' => 'Name', 'filterable' => true, 'filter' => ['type' => 'text']],
+                ['key' => 'company', 'label' => 'Company', 'filterable' => true, 'filter' => ['type' => 'text']],
+                ['key' => 'city', 'label' => 'City', 'filterable' => true, 'filter' => ['type' => 'text']],
+                ['key' => 'reference_internal', 'label' => 'Reference', 'filterable' => true, 'filter' => ['type' => 'text']],
+            ]"
+            :filters="[
+                ['key' => 'intervention_type_code', 'label' => 'Intervention type', 'type' => 'text'],
+            ]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('daisy-table-toolbar grid gap-3')
+        ->toContain('daisy-table-filters grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4')
+        ->toContain('data-table-search')
+        ->toContain('data-table-filter="reference_internal"')
+        ->toContain('data-table-filter="name"')
+        ->toContain('data-table-filter="city"')
+        ->toContain('data-table-filter="company"')
+        ->toContain('data-table-filter="compile_status"')
+        ->toContain('data-table-filter="intervention_type_code"')
+        ->toContain('data-table-filter="external_note"')
+        ->toContain('data-table-page-size')
+        ->toContain('data-table-column-menu');
+
+    expect(strpos($html, 'data-table-search'))->toBeLessThan(strpos($html, 'data-table-filter="reference_internal"'))
+        ->and(strpos($html, 'data-table-filter="reference_internal"'))->toBeLessThan(strpos($html, 'data-table-filter="name"'))
+        ->and(strpos($html, 'data-table-filter="name"'))->toBeLessThan(strpos($html, 'data-table-filter="city"'))
+        ->and(strpos($html, 'data-table-filter="city"'))->toBeLessThan(strpos($html, 'data-table-filter="company"'))
+        ->and(strpos($html, 'data-table-filter="company"'))->toBeLessThan(strpos($html, 'data-table-filter="compile_status"'))
+        ->and(strpos($html, 'data-table-filter="compile_status"'))->toBeLessThan(strpos($html, 'data-table-filter="intervention_type_code"'))
+        ->and(strpos($html, 'data-table-filter="intervention_type_code"'))->toBeLessThan(strpos($html, 'data-table-filter="external_note"'))
+        ->and(strpos($html, 'data-table-filter="external_note"'))->toBeLessThan(strpos($html, 'data-table-page-size'))
+        ->and(strpos($html, 'data-table-page-size'))->toBeLessThan(strpos($html, 'data-table-column-menu'));
 });
 
 it('renders a client table with trusted html cells', function () {

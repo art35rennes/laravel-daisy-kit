@@ -119,14 +119,24 @@
 
         return preg_match('/^(https?:|mailto:|tel:)/i', $url) === 1 ? $url : null;
     };
+
+    $remSpacingClass = function ($value, string $prefix) {
+        if (! is_numeric($value)) {
+            return null;
+        }
+
+        $token = (int) round(((float) $value) * 4);
+
+        return $token >= 0 && $token <= 64 ? "{$prefix}-rem-{$token}" : null;
+    };
+
+    $itemSpacingClass = $remSpacingClass($itemSpacing, 'daisy-floating-menu-gap');
+    $groupSpacingClass = $remSpacingClass($groupSpacing, 'daisy-floating-menu-divider-spacing');
 @endphp
 
 <div {{ $attributes->merge(['class' => $containerClasses . ' ' . $positionClasses]) }}>
     @forelse($groups as $groupIndex => $group)
-        <div 
-            class="flex {{ $flexClasses }}"
-            style="gap: {{ $itemSpacing }}rem;"
-        >
+        <div class="daisy-floating-menu-group flex {{ $flexClasses }} {{ $itemSpacingClass }}">
             @foreach($group['items'] ?? [] as $item)
                 @php
                     $isActive = $item['active'] ?? false;
@@ -162,12 +172,8 @@
         @if($groupIndex < count($groups) - 1)
             @php
                 $dividerDirection = $orientation === 'horizontal' ? 'vertical' : 'horizontal';
-                $dividerMargin = $orientation === 'horizontal' ? '0 ' . $groupSpacing . 'rem' : $groupSpacing . 'rem 0';
             @endphp
-            <div 
-                class="divider divider-{{ $dividerDirection }}"
-                style="margin: {{ $dividerMargin }};"
-            ></div>
+            <div class="daisy-floating-menu-divider divider divider-{{ $dividerDirection }} {{ $groupSpacingClass }}"></div>
         @endif
     @empty
         {{ $slot }}

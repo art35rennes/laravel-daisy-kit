@@ -16,6 +16,19 @@
 ])
 
 @php
+    $heightClass = null;
+    if ($height) {
+        $heightValue = trim((string) $height);
+
+        if (preg_match('/^(\d+(?:\.\d+)?)px$/', $heightValue, $matches) === 1) {
+            $token = (int) round((float) $matches[1]);
+            $heightClass = $token >= 1 && $token <= 1200 ? 'daisy-wysiwyg-min-height-px-'.$token : null;
+        } elseif (preg_match('/^(\d+(?:\.\d+)?)rem$/', $heightValue, $matches) === 1) {
+            $token = (int) round(((float) $matches[1]) * 4);
+            $heightClass = $token >= 1 && $token <= 400 ? 'daisy-wysiwyg-min-height-rem-'.$token : null;
+        }
+    }
+
     $inputId = $inputId ?: ($name ? 'trix-'.str_replace(['[',']','.'], '-', $name).'-'.uniqid() : 'trix-'.uniqid());
     $classes = 'trix-wrapper';
     $attachmentsAttr = $attachments ? '1' : '0';
@@ -35,15 +48,13 @@
         @if($name)
             <input id="{{ $inputId }}-input" type="hidden" name="{{ $name }}" value="{{ $value }}" />
             <trix-editor input="{{ $inputId }}-input" placeholder="{{ $placeholder }}" @disabled($disabled)
-                @if($toolbar) toolbar="{{ $inputId }}-toolbar" @endif
-                style="{{ $height ? 'min-height: '.$height.';' : '' }}"></trix-editor>
+                class="{{ $heightClass }}"
+                @if($toolbar) toolbar="{{ $inputId }}-toolbar" @endif></trix-editor>
         @else
             <trix-editor placeholder="{{ $placeholder }}" @disabled($disabled)
-                style="{{ $height ? 'min-height: '.$height.';' : '' }}">{!! $value ?? $slot !!}</trix-editor>
+                class="{{ $heightClass }}">{!! $value ?? $slot !!}</trix-editor>
         @endif
     </div>
 
     @include('daisy::components.partials.assets')
 </div>
-
-

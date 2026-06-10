@@ -19,8 +19,39 @@
 ])
 
 @php
+    $dimensionClass = function ($value, string $prefix, int $remMultiplier = 100) {
+        if (! is_string($value) && ! $value instanceof \Stringable && ! is_numeric($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+
+        if (preg_match('/^(\d+(?:\.\d+)?)px$/', $value, $matches) === 1) {
+            $token = (int) round((float) $matches[1]);
+
+            return $token >= 1 && $token <= 1200 ? "{$prefix}-px-{$token}" : null;
+        }
+
+        if (preg_match('/^(\d+(?:\.\d+)?)rem$/', $value, $matches) === 1) {
+            $token = (int) round(((float) $matches[1]) * $remMultiplier);
+
+            return $token >= 1 && $token <= 400 ? "{$prefix}-rem-{$token}" : null;
+        }
+
+        if (preg_match('/^(\d+(?:\.\d+)?)%$/', $value, $matches) === 1) {
+            $token = (int) round((float) $matches[1]);
+
+            return $token >= 1 && $token <= 100 ? "{$prefix}-percent-{$token}" : null;
+        }
+
+        return null;
+    };
+
     $id = $attributes->get('id') ?? 'code-'.uniqid();
-    $classes = 'bg-base-100 card-border rounded-box overflow-hidden';
+    $widthClass = $width === '100%' ? null : $dimensionClass($width, 'daisy-code-editor-width');
+    $heightClass = $height === '320px' ? null : $dimensionClass($height, 'daisy-code-editor-height');
+    $fontSizeClass = $fontSize === '0.9rem' ? null : $dimensionClass($fontSize, 'daisy-code-editor-font-size');
+    $classes = trim('bg-base-100 card-border rounded-box overflow-hidden '.$widthClass);
     $toolbar = [
         'fold' => $showFoldAll,
         'unfold' => $showUnfoldAll,
@@ -72,7 +103,6 @@
             'data-readonly' => $readonly ? 'true' : 'false',
             'data-theme' => $theme ?? '',
             'data-tab-size' => (int) $tabSize,
-            'style' => 'width: '.$width.';',
         ]) }}
 >
     @if($showToolbar)
@@ -94,20 +124,11 @@
             </div>
         </div>
     @endif
-    <div class="cm-host" style="height: {{ $height }}; font-size: {{ $fontSize }}"></div>
+    <div class="cm-host {{ $heightClass }} {{ $fontSizeClass }}"></div>
     <textarea class="hidden" data-sync @if($name) name="{{ $name }}" @endif>{{ $value }}</textarea>
     <script type="application/json" data-options>{{ json_encode($options) }}</script>
     <script type="application/json" data-initial>@json(['value' => $value])</script>
     <script type="application/json" data-i18n>@json($i18n)</script>
 </div>
-
-@pushOnce('styles')
-<style>
-/* Composant code-editor: hauteur et scroll internes */
-.code-editor .cm-editor { height: 100%; }
-.code-editor .cm-scroller { overflow: auto; }
-</style>
-@endPushOnce
-
 
 @include('daisy::components.partials.assets')

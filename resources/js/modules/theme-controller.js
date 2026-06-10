@@ -30,9 +30,13 @@ function readSavedTheme() {
   }
 }
 
+function readDefaultTheme() {
+  return document.querySelector('[data-module="theme-controller"][data-default-theme]')?.dataset.defaultTheme || null;
+}
+
 function initThemeController() {
   const saved = readSavedTheme();
-  const current = saved || document.documentElement.getAttribute('data-theme') || 'light';
+  const current = saved || document.documentElement.getAttribute('data-theme') || readDefaultTheme() || 'light';
 
   applyTheme(current);
 }

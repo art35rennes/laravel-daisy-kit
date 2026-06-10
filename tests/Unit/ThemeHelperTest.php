@@ -11,6 +11,23 @@ it('returns an empty CSS payload when no custom themes are configured', function
     expect(ThemeHelper::generateCustomThemesCss())->toBe('');
 });
 
+it('returns the configured default theme', function () {
+    config(['daisy-kit.themes.default' => ' suez ']);
+
+    expect(ThemeHelper::getDefaultTheme())->toBe('suez');
+});
+
+it('returns null when the default theme is empty or not stringable', function (mixed $theme) {
+    config(['daisy-kit.themes.default' => $theme]);
+
+    expect(ThemeHelper::getDefaultTheme())->toBeNull();
+})->with([
+    'null' => null,
+    'empty string' => '',
+    'blank string' => '   ',
+    'array' => [[]],
+]);
+
 it('generates daisyUI theme CSS from custom theme configuration', function () {
     config([
         'daisy-kit.themes.custom' => [
@@ -75,7 +92,7 @@ it('returns built-in and custom themes without duplicates', function () {
     ]);
 });
 
-it('pushes generated custom themes into the public partial output', function () {
+it('does not push generated custom themes into the public partial output by default', function () {
     config([
         'daisy-kit.themes.custom' => [
             'brand' => [
@@ -91,7 +108,28 @@ it('pushes generated custom themes into the public partial output', function () 
         @stack('styles')
     BLADE);
 
+    expect($html)->not->toContain('<style');
+});
+
+it('pushes generated custom themes with a csp nonce when inline custom css is enabled', function () {
+    config([
+        'daisy-kit.csp_nonce' => 'request-nonce',
+        'daisy-kit.themes.inline_custom_css' => true,
+        'daisy-kit.themes.custom' => [
+            'brand' => [
+                'colors' => [
+                    'primary' => '#123456',
+                ],
+            ],
+        ],
+    ]);
+
+    $html = Blade::render(<<<'BLADE'
+        @include('daisy::components.partials.custom-themes')
+        @stack('styles')
+    BLADE);
+
     expect($html)
-        ->toContain('<style>')
+        ->toContain('<style nonce="request-nonce">')
         ->toContain('--color-primary: #123456;');
 });

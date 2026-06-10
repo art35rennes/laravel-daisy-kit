@@ -21,13 +21,13 @@ function createProbe(root) {
 
     const probe = document.createElement('span');
     probe.textContent = '\u200b';
-    probe.style.position = 'absolute';
-    probe.style.left = '-99999px';
-    probe.style.top = '-99999px';
-    probe.style.pointerEvents = 'none';
-    probe.style.opacity = '0';
+    probe.className = 'daisy-chart-probe';
     (root || document.body).appendChild(probe);
     return probe;
+}
+
+function withProbeClass(probe, className) {
+    probe.className = ['daisy-chart-probe', className].filter(Boolean).join(' ');
 }
 
 function resolveColorToken(token, contextEl, role = 'text') {
@@ -36,17 +36,6 @@ function resolveColorToken(token, contextEl, role = 'text') {
     }
 
     if (isCssColorLike(token)) {
-        if (token.startsWith('var(')) {
-            const probe = createProbe(contextEl || document.body);
-            if (!probe) {
-                return null;
-            }
-            probe.style.color = token;
-            const color = getComputedStyle(probe).color;
-            probe.remove();
-            return color || null;
-        }
-
         return token;
     }
 
@@ -65,12 +54,40 @@ function resolveColorToken(token, contextEl, role = 'text') {
     if (!probe) {
         return null;
     }
-    probe.className = className;
+    withProbeClass(probe, className);
     const computed = getComputedStyle(probe);
     const color = computed[readProp] || computed.color;
     probe.remove();
 
     return color || null;
+}
+
+function normalizeHexChannel(value) {
+    return value.length === 1 ? `${value}${value}` : value;
+}
+
+function hexToRgbaString(color, alpha) {
+    const value = color.replace('#', '').trim();
+
+    if (![3, 4, 6, 8].includes(value.length)) {
+        return color;
+    }
+
+    const channels = value.length <= 4
+        ? [
+            normalizeHexChannel(value[0]),
+            normalizeHexChannel(value[1]),
+            normalizeHexChannel(value[2]),
+        ]
+        : [value.slice(0, 2), value.slice(2, 4), value.slice(4, 6)];
+
+    const [r, g, b] = channels.map((channel) => Number.parseInt(channel, 16));
+
+    if ([r, g, b].some((channel) => Number.isNaN(channel))) {
+        return color;
+    }
+
+    return `rgba(${r}, ${g}, ${b}, ${Math.max(0, Math.min(1, Number(alpha)))})`;
 }
 
 function toRgbaString(rgbString, alpha) {
@@ -106,14 +123,11 @@ export function applyAlpha(color, alpha) {
         return toRgbaString(color, alpha);
     }
 
-    const probe = createProbe(document.body);
-    if (!probe) {
-        return color;
+    if (color.startsWith('#')) {
+        return hexToRgbaString(color, alpha);
     }
-    probe.style.color = color;
-    const rgb = getComputedStyle(probe).color;
-    probe.remove();
-    return toRgbaString(rgb, alpha);
+
+    return color;
 }
 
 function getBaseContentColor(contextEl) {
@@ -125,7 +139,7 @@ function getBase300Color(contextEl) {
     if (!probe) {
         return 'rgb(200, 200, 200)';
     }
-    probe.className = 'card-border';
+    withProbeClass(probe, 'card-border');
     const style = getComputedStyle(probe);
     const color = style.borderTopColor || style.color;
     probe.remove();

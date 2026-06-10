@@ -9,6 +9,14 @@
 ])
 
 @php
+    $resolvedTheme = $theme === null
+        ? \Art35rennes\DaisyKit\Helpers\ThemeHelper::getDefaultTheme()
+        : $theme;
+
+    $resolvedTheme = is_string($resolvedTheme) || $resolvedTheme instanceof \Stringable
+        ? trim((string) $resolvedTheme)
+        : null;
+
     $normalizeStylesheetUrl = function($url) {
         if (!is_string($url) && !$url instanceof \Stringable) {
             return null;
@@ -31,7 +39,7 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @if($theme) data-theme="{{ $theme }}" @endif @if($htmlClass) class="{{ $htmlClass }}" @endif>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @if($resolvedTheme !== null && $resolvedTheme !== '') data-theme="{{ $resolvedTheme }}" @endif @if($htmlClass) class="{{ $htmlClass }}" @endif>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

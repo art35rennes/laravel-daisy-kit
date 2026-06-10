@@ -12,6 +12,9 @@
     'initialState' => [],
     'pageSizeOptions' => [10, 25, 50],
     'search' => true,
+    'searchDebounce' => 500,
+    'filterDebounce' => 500,
+    'minSearchChars' => 3,
     'columnVisibility' => false,
     'caption' => null,
     'size' => null,
@@ -29,6 +32,9 @@
     $resolvedMode = $mode === 'server' ? 'server' : 'client';
     $resolvedServerAdapter = $serverAdapter === 'spatie-query-builder' ? 'spatie-query-builder' : null;
     $resolvedPersistState = in_array($persistState, ['url', 'local'], true) ? $persistState : false;
+    $resolvedSearchDebounce = max(0, (int) $searchDebounce);
+    $resolvedFilterDebounce = max(0, (int) $filterDebounce);
+    $resolvedMinSearchChars = max(0, (int) $minSearchChars);
 
     if ($resolvedMode === 'server' && blank($endpoint)) {
         throw new InvalidArgumentException('The table component requires an endpoint prop when mode is set to server.');
@@ -62,12 +68,35 @@
 
     // `key` stays the stable client-side identifier, while `sortKey` / `filterKey`
     // allow the host app to point server requests at different backend field names.
-    $normalizeColumn = static function (array $column): array {
+    $columnWidthClass = static function ($value): ?string {
+        if (! is_string($value) && ! $value instanceof \Stringable && ! is_numeric($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+
+        if (preg_match('/^(\d+(?:\.\d+)?)px$/', $value, $matches) === 1) {
+            $token = (int) round((float) $matches[1]);
+
+            return $token >= 1 && $token <= 1200 ? 'daisy-table-width-px-'.$token : null;
+        }
+
+        if (preg_match('/^(\d+(?:\.\d+)?)%$/', $value, $matches) === 1) {
+            $token = (int) round((float) $matches[1]);
+
+            return $token >= 1 && $token <= 100 ? 'daisy-table-width-percent-'.$token : null;
+        }
+
+        return null;
+    };
+
+    $normalizeColumn = static function (array $column) use ($columnWidthClass): array {
         $key = is_string($column['key'] ?? null) ? trim($column['key']) : '';
         $filterConfig = is_array($column['filter'] ?? null) ? $column['filter'] : [];
         $filterType = in_array($filterConfig['type'] ?? null, ['text', 'select', 'boolean'], true)
             ? $filterConfig['type']
             : null;
+        $width = $column['width'] ?? null;
 
         return [
             'key' => $key,
@@ -77,7 +106,8 @@
             'sortKey' => is_string($column['sortKey'] ?? null) && filled($column['sortKey']) ? $column['sortKey'] : $key,
             'filterKey' => is_string($column['filterKey'] ?? null) && filled($column['filterKey']) ? $column['filterKey'] : $key,
             'visible' => (bool) ($column['visible'] ?? true),
-            'width' => $column['width'] ?? null,
+            'width' => $width,
+            'widthClass' => $columnWidthClass($width),
             'cellClass' => $column['cellClass'] ?? '',
             'headerClass' => $column['headerClass'] ?? '',
             'html' => (bool) ($column['html'] ?? false),
@@ -130,9 +160,53 @@
         ->map($normalizeToolbarFilter)
         ->filter(fn (array $filter) => $filter['id'] !== '' && $filter['type'] !== null);
 
+    $filterPriority = static function (array $filter): int {
+        $id = strtolower(str_replace(['-', '.'], '_', (string) ($filter['id'] ?? '')));
+
+        $priorities = [
+            'reference_internal' => 10,
+            'reference' => 11,
+            'code' => 12,
+            'name' => 13,
+            'email' => 14,
+            'city' => 20,
+            'agent_affected' => 21,
+            'compliance' => 22,
+            'company' => 30,
+            'country' => 31,
+            'contract_tree_path' => 32,
+            'contract_scope_path' => 33,
+            'document_kind' => 40,
+            'compile_status' => 41,
+            'version' => 42,
+            'guard_name' => 43,
+            'description' => 44,
+        ];
+
+        if (array_key_exists($id, $priorities)) {
+            return $priorities[$id];
+        }
+
+        return str_contains($id, 'intervention') ? 45 : 99;
+    };
+
     $resolvedFilters = $columnFilters
         ->merge($toolbarFilters)
+        ->values()
+        ->map(fn (array $filter, int $index) => $filter + ['_originalIndex' => $index])
         ->unique('id')
+        ->sort(fn (array $first, array $second) => [
+            $filterPriority($first),
+            $first['_originalIndex'],
+        ] <=> [
+            $filterPriority($second),
+            $second['_originalIndex'],
+        ])
+        ->map(function (array $filter): array {
+            unset($filter['_originalIndex']);
+
+            return $filter;
+        })
         ->values()
         ->all();
 
@@ -202,6 +276,9 @@
         'initialState' => $resolvedInitialState,
         'pageSizeOptions' => $resolvedPageSizeOptions,
         'search' => (bool) $search,
+        'searchDebounceMs' => $resolvedSearchDebounce,
+        'filterDebounceMs' => $resolvedFilterDebounce,
+        'minSearchChars' => $resolvedMinSearchChars,
         'columnVisibility' => (bool) $columnVisibility,
         'emptyLabel' => $emptyLabel ?: __('daisy::common.no_results'),
         'loadingLabel' => $loadingLabel ?: __('daisy::common.loading'),
@@ -225,7 +302,7 @@
     data-table-config='@json($config)'
     class="{{ $wrapperClasses }}"
 >
-    <div class="daisy-table-toolbar flex flex-wrap items-center justify-between gap-3">
+    <div class="daisy-table-toolbar grid gap-3">
         @isset($toolbar)
             <div class="flex flex-wrap items-center gap-3">
                 {{ $toolbar }}
@@ -244,14 +321,11 @@
             <div></div>
         @endif
 
-        <div class="flex flex-wrap items-center gap-3">
-            @isset($actions)
-                {{ $actions }}
-            @endisset
-
+        @if(count($resolvedFilters) > 0)
+            <div class="daisy-table-filters grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             @foreach($resolvedFilters as $filter)
                 @if($filter['type'] === 'text')
-                    <label class="input input-sm flex items-center gap-2">
+                    <label class="input input-sm flex w-full min-w-0 items-center gap-2">
                         <span class="text-base-content/70">{{ $filter['label'] }}</span>
                         <input
                             type="text"
@@ -262,10 +336,10 @@
                         >
                     </label>
                 @elseif($filter['type'] === 'select')
-                    <label class="label flex items-center gap-2">
+                    <label class="label flex w-full min-w-0 items-center gap-2">
                         <span class="label-text text-sm text-base-content/70">{{ $filter['label'] }}</span>
                         <select
-                            class="select select-sm"
+                            class="select select-sm min-w-0 flex-1"
                             data-table-filter="{{ $filter['id'] }}"
                             data-table-filter-type="select"
                         >
@@ -276,7 +350,7 @@
                         </select>
                     </label>
                 @elseif($filter['type'] === 'boolean')
-                    <label class="label cursor-pointer gap-2">
+                    <label class="label w-full cursor-pointer gap-2">
                         <span class="label-text text-sm text-base-content/70">{{ $filter['label'] }}</span>
                         <input
                             type="checkbox"
@@ -287,6 +361,13 @@
                     </label>
                 @endif
             @endforeach
+            </div>
+        @endif
+
+        <div class="daisy-table-controls flex flex-wrap items-center justify-end gap-3">
+            @isset($actions)
+                {{ $actions }}
+            @endisset
 
             <label class="label flex items-center gap-2">
                 <span class="label-text text-sm text-base-content/70">{{ __('daisy::components.rows_per_page') }}</span>
@@ -318,8 +399,7 @@
                         @continue(data_get($resolvedInitialState, 'columnVisibility.'.$column['key']) === false)
 
                         <th
-                            @class([$column['headerClass']])
-                            @if($column['width']) style="width: {{ $column['width'] }}" @endif
+                            @class([$column['headerClass'], $column['widthClass']])
                         >
                             @if($column['sortable'])
                                 <button

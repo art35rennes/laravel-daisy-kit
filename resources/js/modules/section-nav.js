@@ -63,17 +63,18 @@ export default function init(root) {
   }
 
   function adjustOverflow() {
-    const viewportH = window.innerHeight;
     const viewportW = window.innerWidth;
-
-    box.style.maxHeight = `${Math.max(240, Math.floor(viewportH * 0.7))}px`;
-    box.style.maxWidth = `${Math.max(240, viewportW - 32)}px`;
-    box.style.overflowY = box.scrollHeight > box.clientHeight ? 'auto' : 'visible';
 
     const rect = panel.getBoundingClientRect();
     const shift = Math.max(0, rect.right - viewportW + 16);
+    const previousAnimation = panel.__daisySectionNavFrameAnimation;
+    const animation = panel.animate(
+      [{ transform: shift ? `translateX(-${shift}px)` : 'translateX(0)' }],
+      { duration: 1, fill: 'forwards' },
+    );
 
-    panel.style.transform = shift ? `translateX(-${shift}px)` : '';
+    previousAnimation?.cancel?.();
+    panel.__daisySectionNavFrameAnimation = animation;
   }
 
   function render(filter = '') {

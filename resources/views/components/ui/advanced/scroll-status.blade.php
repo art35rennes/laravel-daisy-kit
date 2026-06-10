@@ -33,8 +33,8 @@
     if ($openOnce === false) $attrs['data-open-once'] = 'false';
 @endphp
 
-<div {{ $attributes->merge(['class' => trim('w-full '.$class), 'data-module' => ($module ?? 'scroll-status')])->merge($attrs) }}>
-    <div data-scrollstatus-progress></div>
+<div {{ $attributes->merge(['class' => trim('daisy-scroll-status w-full '.$class), 'data-module' => ($module ?? 'scroll-status')])->merge($attrs) }}>
+    <progress class="daisy-scroll-status-progress" data-scrollstatus-progress max="100" value="0"></progress>
 </div>
 
 

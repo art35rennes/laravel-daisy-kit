@@ -27,6 +27,61 @@ it('renders a badge component', function () {
         ->toContain('New');
 });
 
+it('renders radial progress values through csp safe classes', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.radial-progress :value="70" size="7rem" thickness="0.7rem">70%</x-daisy::ui.data-display.radial-progress>
+    BLADE);
+
+    expect($html)
+        ->toContain('radial-progress')
+        ->toContain('daisy-radial-value-70')
+        ->toContain('daisy-radial-size-rem-28')
+        ->toContain('daisy-radial-thickness-rem-70')
+        ->not->toContain('data-daisy-css-value')
+        ->not->toContain('data-daisy-css-size')
+        ->not->toContain('data-daisy-css-thickness')
+        ->not->toContain('style=');
+});
+
+it('renders media embed aspect ratios through csp safe classes', function () {
+    $html = View::make('daisy::components.ui.media.embed', [
+        'src' => '/frame',
+        'ratio' => '16x9',
+    ])->render();
+
+    expect($html)
+        ->toContain('daisy-embed-ratio-16x9')
+        ->not->toContain('data-daisy-css-ar')
+        ->not->toContain('style=');
+});
+
+it('renders range no-fill through a csp safe class', function () {
+    $html = View::make('daisy::components.ui.inputs.range', [
+        'noFill' => true,
+    ])->render();
+
+    expect($html)
+        ->toContain('range')
+        ->toContain('daisy-range-no-fill')
+        ->not->toContain('data-daisy-css-range-fill')
+        ->not->toContain('style=');
+});
+
+it('renders range fill through a csp safe class and ignores arbitrary color vars', function () {
+    $html = View::make('daisy::components.ui.inputs.range', [
+        'fill' => 42,
+        'bg' => '#123456',
+        'thumb' => '#abcdef',
+    ])->render();
+
+    expect($html)
+        ->toContain('daisy-range-fill-42')
+        ->not->toContain('data-daisy-css-range-fill')
+        ->not->toContain('data-daisy-css-range-bg')
+        ->not->toContain('data-daisy-css-range-thumb')
+        ->not->toContain('style=');
+});
+
 it('renders an alert component', function () {
     $html = View::make('daisy::components.ui.feedback.alert', [
         'slot' => 'Alert message',
@@ -45,6 +100,36 @@ it('renders an input component', function () {
     expect($html)
         ->toContain('input')
         ->toContain('Type here');
+});
+
+it('renders native picker inputs with type specific csp safe spacing classes', function (string $type, string $class) {
+    $html = View::make('daisy::components.ui.inputs.input', [
+        'type' => $type,
+        'attributes' => new ComponentAttributeBag(['placeholder' => 'Publish date']),
+    ])->render();
+
+    expect($html)
+        ->toContain('type="'.$type.'"')
+        ->toContain($class)
+        ->not->toContain('daisy-native-picker-input"')
+        ->not->toContain('style=');
+})->with([
+    'date' => ['date', 'daisy-native-picker-date'],
+    'datetime-local' => ['datetime-local', 'daisy-native-picker-datetime'],
+    'month' => ['month', 'daisy-native-picker-month'],
+    'time' => ['time', 'daisy-native-picker-time'],
+    'week' => ['week', 'daisy-native-picker-week'],
+]);
+
+it('renders calendar-native with csp safe picker spacing classes', function () {
+    $html = View::make('daisy::components.ui.advanced.calendar-native', [
+        'value' => '2026-06-10',
+    ])->render();
+
+    expect($html)
+        ->toContain('type="date"')
+        ->toContain('daisy-native-picker-date')
+        ->not->toContain('style=');
 });
 
 it('renders a token-input component with prefilled values and hidden inputs', function () {
@@ -82,7 +167,22 @@ it('renders localized code-editor toolbar and CodeMirror phrases', function () {
         ->toContain('Tout plier récursivement')
         ->toContain('Rechercher')
         ->toContain('"regexp"')
-        ->toContain('data-i18n');
+        ->toContain('data-i18n')
+        ->not->toContain('data-daisy-css-width')
+        ->not->toContain('data-daisy-css-height')
+        ->not->toContain('data-daisy-css-font-size');
+});
+
+it('renders wysiwyg custom height through a csp safe class', function () {
+    $html = View::make('daisy::components.ui.advanced.wysiwyg', [
+        'height' => '20rem',
+        'value' => 'Hello',
+    ])->render();
+
+    expect($html)
+        ->toContain('daisy-wysiwyg-min-height-rem-80')
+        ->not->toContain('data-daisy-css-min-height')
+        ->not->toContain('style=');
 });
 
 it('renders localized default labels for public UI components', function () {
@@ -163,6 +263,25 @@ it('renders token-input suggestion and endpoint payloads for js enhancement', fu
         ->toContain('data-min-chars="1"');
 });
 
+it('renders conservative default pacing for autocomplete controls', function () {
+    $select = View::make('daisy::components.ui.inputs.select', [
+        'name' => 'contract',
+        'endpoint' => '/contracts/autocomplete',
+    ])->render();
+    $tokenInput = View::make('daisy::components.ui.inputs.token-input', [
+        'name' => 'recipients',
+        'endpoint' => '/users/autocomplete',
+    ])->render();
+
+    expect($select)
+        ->toContain('data-debounce="500"')
+        ->toContain('data-min-chars="3"');
+
+    expect($tokenInput)
+        ->toContain('data-debounce="500"')
+        ->toContain('data-min-chars="3"');
+});
+
 it('does not render unsafe tab hrefs', function () {
     $html = View::make('daisy::components.ui.navigation.tabs', [
         'items' => [
@@ -197,7 +316,9 @@ it('renders a charts.bar component', function () {
         ->toContain('data-daisy-chart="1"')
         ->toContain('"preset":"bar"')
         ->toContain('"categories":["Jan","Feb"]')
-        ->toContain('Revenue');
+        ->toContain('Revenue')
+        ->not->toContain('data-daisy-css-width')
+        ->not->toContain('data-daisy-css-height');
 });
 
 it('renders a charts.sparkline component without legend by default', function () {
@@ -209,7 +330,8 @@ it('renders a charts.sparkline component without legend by default', function ()
 
     expect($html)
         ->toContain('"preset":"sparkline"')
-        ->toContain('"legend":false');
+        ->toContain('"legend":false')
+        ->toContain('daisy-chart-height-px-120');
 });
 
 it('renders a link component', function () {
@@ -256,7 +378,7 @@ it('renders the grid layout with correct classes', function () {
         ->toContain('Col 1');
 });
 
-it('injects grid layout CSS utilities only once', function () {
+it('renders grid layout utilities without inline style injection', function () {
     $blade = <<<'BLADE'
 <x-daisy::ui.layout.grid-layout>
   <div class="col-12">A</div>
@@ -270,12 +392,10 @@ BLADE;
     $html = Blade::render($blade);
 
     expect($html)
-        ->toContain('.col-12')
-        ->toContain('@media (min-width: 1280px)')
-        ->toContain('.offset-md-3');
-
-    $styleCount = substr_count($html, '<style>');
-    expect($styleCount)->toBe(1);
+        ->toContain('daisy-grid grid grid-cols-12')
+        ->toContain('col-12')
+        ->not->toContain('<style')
+        ->not->toContain('style=');
 });
 
 it('renders transfer dnd hooks without breaking the existing API', function () {
@@ -459,7 +579,11 @@ it('renders a sign component', function () {
     expect($html)
         ->toContain('data-sign="1"')
         ->toContain('data-module="sign"')
+        ->toContain('daisy-sign-card')
+        ->toContain('daisy-sign-canvas-wrapper')
         ->toContain('data-sign-canvas')
+        ->toContain('width="400"')
+        ->toContain('height="200"')
         ->toContain('name="signature"');
 });
 
@@ -474,6 +598,9 @@ it('renders a sign component with custom dimensions', function () {
     expect($html)
         ->toContain('data-width="600"')
         ->toContain('data-height="300"')
+        ->toContain('width="600"')
+        ->toContain('height="300"')
+        ->not->toContain('style=')
         ->toContain('value="data:image/png;base64,abc"');
 });
 
@@ -554,6 +681,12 @@ it('renders inline countdown with one daisyUI countdown wrapper per segment', fu
     ])->render();
 
     expect(substr_count($html, '<span class="countdown">'))->toBe(3);
+    expect($html)
+        ->toContain('daisy-countdown-value-10')
+        ->toContain('daisy-countdown-value-24')
+        ->toContain('daisy-countdown-value-59')
+        ->not->toContain('data-daisy-css-value')
+        ->not->toContain('style=');
 });
 
 it('renders inline-colon countdown with one daisyUI countdown wrapper per segment', function () {
@@ -563,6 +696,20 @@ it('renders inline-colon countdown with one daisyUI countdown wrapper per segmen
     ])->render();
 
     expect(substr_count($html, '<span class="countdown">'))->toBe(3);
+});
+
+it('renders scroll status with a native progress element', function () {
+    $html = View::make('daisy::components.ui.advanced.scroll-status', [
+        'global' => true,
+    ])->render();
+
+    expect($html)
+        ->toContain('data-scrollstatus="1"')
+        ->toContain('daisy-scroll-status')
+        ->toContain('<progress')
+        ->toContain('max="100"')
+        ->toContain('data-scrollstatus-progress')
+        ->not->toContain('style=');
 });
 
 it('renders a tree view parent with an explicit mixed checkbox state', function () {
@@ -584,8 +731,12 @@ it('renders a tree view parent with an explicit mixed checkbox state', function 
     expect($html)
         ->toContain('data-indeterminate="true"')
         ->toContain('aria-checked="mixed"')
+        ->toContain('daisy-tree-indent-0')
+        ->toContain('daisy-tree-indent-1')
         ->toContain('Draft.md')
-        ->toContain('Notes.md');
+        ->toContain('Notes.md')
+        ->not->toContain('data-daisy-css-tree-indent')
+        ->not->toContain('style=');
 });
 
 it('renders tree nodes from checked aliases used by APIs', function () {
@@ -701,5 +852,7 @@ it('renders color picker as a submittable form control', function () {
         ->toContain('value="#123456"')
         ->toContain('data-dropdown="true"')
         ->toContain('data-show-alpha="false"')
-        ->toContain('#abcdef');
+        ->toContain('#abcdef')
+        ->not->toContain('data-daisy-css-color')
+        ->not->toContain('style=');
 });

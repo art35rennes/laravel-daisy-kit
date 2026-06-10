@@ -11,6 +11,9 @@ const DEFAULT_METHOD = 'GET';
 const DEFAULT_SERVER_ADAPTER = 'default';
 const DEFAULT_PERSIST_STATE = false;
 const DEFAULT_GLOBAL_FILTER_KEY = 'global';
+const DEFAULT_SEARCH_DEBOUNCE_MS = 500;
+const DEFAULT_FILTER_DEBOUNCE_MS = 500;
+const DEFAULT_MIN_SEARCH_CHARS = 3;
 const ALLOWED_FILTER_TYPES = ['text', 'select', 'boolean'];
 
 function isPlainObject(value) {
@@ -137,6 +140,30 @@ function normalizePageSizeOptions(options = []) {
   return values
     .map((value) => Number.parseInt(value, 10))
     .filter((value, index, all) => Number.isInteger(value) && value > 0 && all.indexOf(value) === index);
+}
+
+function normalizeIntegerOption(value, fallback, minimum = 0) {
+  const parsed = Number.parseInt(value, 10);
+
+  if (!Number.isInteger(parsed)) {
+    return fallback;
+  }
+
+  return Math.max(minimum, parsed);
+}
+
+function isTextSearchReady(value, minChars) {
+  const term = String(value ?? '').trim();
+
+  return term === '' || term.length >= minChars;
+}
+
+function resolveSearchInputValue(value, activeValue = '', minChars = DEFAULT_MIN_SEARCH_CHARS) {
+  if (isTextSearchReady(value, minChars)) {
+    return String(value ?? '');
+  }
+
+  return String(activeValue ?? '') === '' ? null : '';
 }
 
 function normalizeSorting(sorting = [], columns = []) {
@@ -272,6 +299,9 @@ function normalizeConfig(raw = {}) {
     rows: Array.isArray(raw.rows) ? raw.rows : [],
     endpoint,
     search: raw.search !== false,
+    searchDebounceMs: normalizeIntegerOption(raw.searchDebounceMs ?? raw.searchDebounce ?? raw.debounce, DEFAULT_SEARCH_DEBOUNCE_MS),
+    filterDebounceMs: normalizeIntegerOption(raw.filterDebounceMs ?? raw.filterDebounce ?? raw.debounce, DEFAULT_FILTER_DEBOUNCE_MS),
+    minSearchChars: normalizeIntegerOption(raw.minSearchChars ?? raw.minChars, DEFAULT_MIN_SEARCH_CHARS),
     columnVisibility: raw.columnVisibility === true,
     pageSizeOptions: pageSizeOptions.length > 0 ? pageSizeOptions : DEFAULT_PAGE_SIZE_OPTIONS,
     emptyLabel: typeof raw.emptyLabel === 'string' && raw.emptyLabel !== '' ? raw.emptyLabel : 'No results',
@@ -564,6 +594,27 @@ function toggleSorting(state, columnKey) {
   return [];
 }
 
+function tableWidthClass(value) {
+  const raw = String(value || '').trim();
+  let match = raw.match(/^(\d+(?:\.\d+)?)px$/);
+
+  if (match) {
+    const token = Math.round(Number(match[1]));
+
+    return token >= 1 && token <= 1200 ? `daisy-table-width-px-${token}` : '';
+  }
+
+  match = raw.match(/^(\d+(?:\.\d+)?)%$/);
+
+  if (match) {
+    const token = Math.round(Number(match[1]));
+
+    return token >= 1 && token <= 100 ? `daisy-table-width-percent-${token}` : '';
+  }
+
+  return '';
+}
+
 function renderHeader(context) {
   const headRow = context.root.querySelector('[data-table-head-row]');
 
@@ -576,12 +627,14 @@ function renderHeader(context) {
   getVisibleColumns(context.config, context.state).forEach((column) => {
     const th = document.createElement('th');
 
-    if (column.width) {
-      th.style.width = column.width;
-    }
-
     if (column.headerClass) {
       th.className = column.headerClass;
+    }
+
+    const widthClass = tableWidthClass(column.width);
+
+    if (widthClass) {
+      th.classList.add(widthClass);
     }
 
     if (column.sortable) {
@@ -912,6 +965,28 @@ function updateFilterState(context, nextFilter) {
   context.state.columnFilters = filters;
 }
 
+function resolveFilterInputState(context, input) {
+  const filterId = input.dataset.tableFilter;
+  const type = input.dataset.tableFilterType || 'text';
+
+  if (type !== 'text') {
+    return createFilterState(filterId, type, input);
+  }
+
+  const activeFilter = context.state.columnFilters.find((filter) => filter.id === filterId);
+  const value = resolveSearchInputValue(input.value, activeFilter?.value ?? '', context.config.minSearchChars);
+
+  if (value === null) {
+    return null;
+  }
+
+  return {
+    id: filterId,
+    type,
+    value,
+  };
+}
+
 function renderTable(context) {
   const filteredRows = context.config.mode === 'client'
     ? applyClientFilters(context.config.rows, context.config.columns, context.state)
@@ -947,16 +1022,33 @@ function renderTable(context) {
 
 async function fetchServerRows(context) {
   const request = buildServerRequest(context.config, context.state);
-  const response = await fetch(request.url, request.requestInit);
+  const abortController = new AbortController();
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+  if (context.abortController) {
+    context.abortController.abort();
   }
 
-  return request.responseNormalizer(await response.json());
+  context.abortController = abortController;
+  request.requestInit.signal = abortController.signal;
+
+  try {
+    const response = await fetch(request.url, request.requestInit);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    return request.responseNormalizer(await response.json());
+  } finally {
+    if (context.abortController === abortController) {
+      context.abortController = null;
+    }
+  }
 }
 
 async function refreshTable(context) {
+  const refreshId = ++context.refreshId;
+
   context.loading = true;
   context.error = '';
   renderTable(context);
@@ -971,6 +1063,10 @@ async function refreshTable(context) {
   try {
     const response = await fetchServerRows(context);
 
+    if (refreshId !== context.refreshId) {
+      return;
+    }
+
     context.rows = response.rows;
     context.rowCount = response.rowCount;
     context.pageCount = response.pageCount;
@@ -979,7 +1075,11 @@ async function refreshTable(context) {
     context.loading = false;
     persistState(context);
     renderTable(context);
-  } catch (_) {
+  } catch (error) {
+    if (error?.name === 'AbortError' || refreshId !== context.refreshId) {
+      return;
+    }
+
     context.loading = false;
     context.error = context.config.errorLabel;
     context.rows = [];
@@ -995,6 +1095,7 @@ function attachEvents(context) {
   const previousButton = context.root.querySelector('[data-table-prev]');
   const nextButton = context.root.querySelector('[data-table-next]');
   let searchTimeout;
+  let filterTimeout;
 
   context.root.addEventListener('click', (event) => {
     const button = event.target instanceof Element ? event.target.closest('[data-table-sort]') : null;
@@ -1019,20 +1120,57 @@ function attachEvents(context) {
     }
 
     if ((target instanceof HTMLInputElement || target instanceof HTMLSelectElement) && target.matches('[data-table-filter]')) {
+      if (target.dataset.tableFilterType === 'text') {
+        return;
+      }
+
       updateFilterState(context, createFilterState(target.dataset.tableFilter, target.dataset.tableFilterType || 'text', target));
       context.state.pagination.pageIndex = 0;
       void refreshTable(context);
     }
   });
 
+  context.root.addEventListener('input', (event) => {
+    const target = event.target;
+
+    if (!((target instanceof HTMLInputElement || target instanceof HTMLSelectElement) && target.matches('[data-table-filter]'))) {
+      return;
+    }
+
+    if ((target.dataset.tableFilterType || 'text') !== 'text') {
+      return;
+    }
+
+    const nextFilter = resolveFilterInputState(context, target);
+
+    clearTimeout(filterTimeout);
+
+    if (nextFilter === null) {
+      return;
+    }
+
+    updateFilterState(context, nextFilter);
+    context.state.pagination.pageIndex = 0;
+    filterTimeout = setTimeout(() => {
+      void refreshTable(context);
+    }, context.config.filterDebounceMs);
+  });
+
   if (searchInput instanceof HTMLInputElement) {
     searchInput.addEventListener('input', () => {
+      const nextValue = resolveSearchInputValue(searchInput.value, context.state.globalFilter, context.config.minSearchChars);
+
       clearTimeout(searchTimeout);
+
+      if (nextValue === null || nextValue === context.state.globalFilter) {
+        return;
+      }
+
       searchTimeout = setTimeout(() => {
-        context.state.globalFilter = searchInput.value;
+        context.state.globalFilter = nextValue;
         context.state.pagination.pageIndex = 0;
         void refreshTable(context);
-      }, 150);
+      }, context.config.searchDebounceMs);
     });
   }
 
@@ -1079,6 +1217,8 @@ async function initTable(root) {
     loading: config.mode === 'server',
     error: '',
     table: null,
+    abortController: null,
+    refreshId: 0,
   };
 
   context.state = mergeState(
@@ -1122,7 +1262,10 @@ if (typeof document !== 'undefined') {
 }
 
 export {
+  DEFAULT_FILTER_DEBOUNCE_MS,
+  DEFAULT_MIN_SEARCH_CHARS,
   DEFAULT_PAGE_SIZE_OPTIONS,
+  DEFAULT_SEARCH_DEBOUNCE_MS,
   applyClientFilters,
   buildRequestPayload,
   buildServerRequest,
@@ -1131,6 +1274,7 @@ export {
   getSortDirection,
   initAllTables,
   initTable,
+  isTextSearchReady,
   mergeState,
   normalizeColumns,
   normalizeConfig,
@@ -1140,6 +1284,7 @@ export {
   parseConfig,
   parseStateFromLocalStorage,
   parseStateFromUrl,
+  resolveSearchInputValue,
   serializeRequestPayload,
   serializeStateToParams,
   toggleSorting,

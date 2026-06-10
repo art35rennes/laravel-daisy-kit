@@ -140,6 +140,26 @@ function hslToHex(hsla) {
   return rgbToHex(r, g, b, a);
 }
 
+function hslToInputHex(hsla) {
+  return hslToHex({ ...hsla, a: 1 }).slice(0, 7);
+}
+
+function colorToInputHex(color) {
+  return hslToInputHex(parseColor(color));
+}
+
+function createColorChip(value, className = 'daisy-color-chip-input') {
+  const chip = document.createElement('input');
+  chip.type = 'color';
+  chip.disabled = true;
+  chip.tabIndex = -1;
+  chip.setAttribute('aria-hidden', 'true');
+  chip.className = className;
+  chip.value = value;
+
+  return chip;
+}
+
 /**
  * Parse une string CSS hsla()/rgba() en objet HSL(A)
  * @param {string} css 
@@ -235,14 +255,6 @@ function buildPanel(root, state) {
   if (!panel) return;
   panel.innerHTML = ''; // Nettoyage du contenu
   
-  // Ajustement responsive simple
-  if (!panel.closest('.dropdown-content')) {
-    // Mode inline : responsive via CSS avec fallback JS
-    const isMobile = window.innerWidth < 640;
-    panel.style.width = isMobile ? '100%' : '288px';
-    panel.style.maxWidth = '100%';
-  }
-
   // Format de sortie courant (hsla, rgba, hex)
   state.__format = state.__format || 'hsla'; // 'hsla' | 'rgba' | 'hex'
 
@@ -250,9 +262,7 @@ function buildPanel(root, state) {
   const preview = document.createElement('div');
   preview.className = 'flex items-center gap-2 mb-2';
   // Pastille de couleur
-  const chip = document.createElement('span');
-  chip.className = 'w-6 h-6 rounded-box border';
-  chip.style.background = hslToCss(state);
+  const chip = createColorChip(hslToInputHex(state), 'daisy-color-chip-input daisy-color-chip-input-md');
   // Champ texte pour la valeur couleur
   const text = document.createElement('input');
   text.type = 'text';
@@ -368,11 +378,12 @@ function buildPanel(root, state) {
       const swatches = JSON.parse(root.dataset.swatches || '[]');
       if (Array.isArray(swatches) && swatches.length) {
         const wrap = document.createElement('div');
-        wrap.className = 'mt-2 grid gap-2';
+        wrap.className = 'mt-2 grid gap-2 overflow-auto';
         // Limite la hauteur de la palette si précisé
-        if (+root.dataset.swatchesHeight > 0) 
-          wrap.style.maxHeight = root.dataset.swatchesHeight + 'px';
-        wrap.style.overflow = 'auto';
+        const swatchesHeight = Math.max(0, Math.min(600, parseInt(root.dataset.swatchesHeight || '0', 10) || 0));
+        if (swatchesHeight > 0) {
+          wrap.classList.add(`daisy-color-swatches-height-px-${swatchesHeight}`);
+        }
         // Pour chaque ligne de swatches
         swatches.forEach((row) => {
           const rowEl = document.createElement('div');
@@ -380,8 +391,8 @@ function buildPanel(root, state) {
           (row || []).forEach((col) => {
             const b = document.createElement('button');
             b.type = 'button';
-            b.className = 'w-5 h-5 rounded border hover:scale-110 transition-transform';
-            b.style.background = col;
+            b.className = 'daisy-color-swatch-button hover:scale-110 transition-transform';
+            b.append(createColorChip(colorToInputHex(col), 'daisy-color-chip-input daisy-color-chip-input-sm'));
             b.addEventListener('click', () => { 
               Object.assign(state, parseColor(col)); 
               fastUpdate();
@@ -412,10 +423,12 @@ function buildPanel(root, state) {
    */
   function updateDisplay() {
     const css = hslToCss(state);
-    chip.style.background = css;
+    chip.value = hslToInputHex(state);
     
     // Mise à jour des sorties facultatives (utilisation du cache)
-    if (chipOut) chipOut.style.background = css;
+    if (chipOut && chipOut.type === 'color') {
+      chipOut.value = hslToInputHex(state);
+    }
     
     // Calcul des formats seulement si nécessaire
     const stateKey = `${state.h}-${state.s}-${state.l}-${state.a}-${state.__format}`;

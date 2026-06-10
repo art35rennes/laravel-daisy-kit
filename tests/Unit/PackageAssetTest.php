@@ -48,6 +48,24 @@ it('renders stylesheet tags from the manifest contract', function () {
     expect(substr_count($html, 'assets/app.css'))->toBe(1);
 });
 
+it('renders stylesheet tags with a csp nonce from the manifest contract', function () {
+    $buildPath = public_path('vendor/art35rennes/laravel-daisy-kit');
+    File::ensureDirectoryExists($buildPath);
+    File::put($buildPath.'/manifest.json', json_encode([
+        'resources/css/app.css' => [
+            'file' => 'assets/app.css',
+            'css' => ['assets/vendor.css'],
+        ],
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+    $html = PackageAsset::stylesheetTags('resources/css/app.css', 'request-nonce')->toHtml();
+
+    expect($html)
+        ->toContain('nonce="request-nonce"')
+        ->toContain('vendor/art35rennes/laravel-daisy-kit/assets/app.css')
+        ->toContain('vendor/art35rennes/laravel-daisy-kit/assets/vendor.css');
+});
+
 it('renders script tags from the manifest contract', function () {
     $buildPath = public_path('vendor/art35rennes/laravel-daisy-kit');
     File::ensureDirectoryExists($buildPath);
@@ -61,6 +79,23 @@ it('renders script tags from the manifest contract', function () {
 
     expect($html)
         ->toContain('<script type="module"')
+        ->toContain('vendor/art35rennes/laravel-daisy-kit/assets/app.js');
+});
+
+it('renders script tags with a csp nonce from the manifest contract', function () {
+    $buildPath = public_path('vendor/art35rennes/laravel-daisy-kit');
+    File::ensureDirectoryExists($buildPath);
+    File::put($buildPath.'/manifest.json', json_encode([
+        'resources/js/app.js' => [
+            'file' => 'assets/app.js',
+        ],
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+    $html = PackageAsset::scriptTags('resources/js/app.js', 'request-nonce')->toHtml();
+
+    expect($html)
+        ->toContain('<script type="module"')
+        ->toContain('nonce="request-nonce"')
         ->toContain('vendor/art35rennes/laravel-daisy-kit/assets/app.js');
 });
 
@@ -80,4 +115,26 @@ it('falls back to configured bundle assets when the manifest cannot provide entr
     expect(PackageAsset::scriptTags('resources/js/app.js')->toHtml())
         ->toContain('vendor/daisy-kit/fallback.js')
         ->toContain('defer');
+});
+
+it('resolves configured csp nonce callbacks for fallback assets', function () {
+    config([
+        'daisy-kit.bundle.css' => 'vendor/daisy-kit/fallback.css',
+        'daisy-kit.bundle.js' => 'vendor/daisy-kit/fallback.js',
+        'daisy-kit.csp_nonce' => fn () => 'callback-nonce',
+    ]);
+
+    expect(PackageAsset::stylesheetTags('resources/css/app.css')->toHtml())
+        ->toContain('nonce="callback-nonce"');
+
+    expect(PackageAsset::scriptTags('resources/js/app.js')->toHtml())
+        ->toContain('nonce="callback-nonce"');
+});
+
+it('renders a reusable csp nonce attribute', function () {
+    config(['daisy-kit.csp_nonce' => fn () => 'callback-nonce']);
+
+    expect(PackageAsset::nonceAttribute())->toBe(' nonce="callback-nonce"')
+        ->and(PackageAsset::nonceAttribute('explicit-nonce'))->toBe(' nonce="explicit-nonce"')
+        ->and(PackageAsset::nonceAttribute(''))->toBe('');
 });

@@ -11,13 +11,13 @@
   - {{startTime}}      : Heure début (ex: 10:30)
   - {{endTime}}        : Heure fin (ex: 12:30)
   - {{timeRange}}      : Plage horaire formatée (selon allDay)
-  - {{dotColor}}       : Couleur CSS pour le badge/dot
+  - {{dotColor}}       : Couleur hexadécimale pour le badge/dot natif
 --}}
 
 @verbatim
   <template data-calendar-event="chip">
       <span class="inline-flex items-center gap-1.5 truncate">
-          <span class="cf-dot" style="background: {{dotColor}}"></span>
+          <input type="color" value="{{dotColor}}" disabled class="cf-dot" aria-hidden="true" tabindex="-1">
           <span class="truncate">{{title}}</span>
       </span>
       <!-- L'enveloppe (lien .cf-event) est fournie par le JS -->
@@ -25,7 +25,7 @@
 
   <template data-calendar-event="block">
       <div class="flex items-center gap-2">
-          <span class="cf-dot" style="background: {{dotColor}}"></span>
+          <input type="color" value="{{dotColor}}" disabled class="cf-dot" aria-hidden="true" tabindex="-1">
           <div class="min-w-0">
               <div class="font-medium leading-tight truncate">{{title}}</div>
               <div class="text-xs opacity-80 leading-tight">{{timeRange}}</div>
@@ -35,7 +35,7 @@
 
   <template data-calendar-event="list">
       <div class="flex items-center gap-3 w-full">
-          <span class="cf-dot" style="background: {{dotColor}}"></span>
+          <input type="color" value="{{dotColor}}" disabled class="cf-dot" aria-hidden="true" tabindex="-1">
           <div class="min-w-0">
               <div class="font-medium truncate">{{title}}</div>
               <div class="text-xs opacity-70">{{timeRange}}</div>
@@ -43,5 +43,3 @@
       </div>
   </template>
 @endverbatim
-
-

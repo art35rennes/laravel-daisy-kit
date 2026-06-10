@@ -1,13 +1,15 @@
 @php
     use Art35rennes\DaisyKit\Helpers\ThemeHelper;
+    use Art35rennes\DaisyKit\Support\PackageAsset;
+
     $customThemesCss = ThemeHelper::generateCustomThemesCss();
+    $shouldRenderInlineCustomCss = (bool) config('daisy-kit.themes.inline_custom_css', false);
 @endphp
 
-@if($customThemesCss)
+@if($shouldRenderInlineCustomCss && $customThemesCss)
     @pushOnce('styles')
-        <style>
+        <style{!! PackageAsset::nonceAttribute() !!}>
             {!! $customThemesCss !!}
         </style>
     @endPushOnce
 @endif
-

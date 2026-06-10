@@ -4,6 +4,4 @@
     'placeholder' => null,
 ])
 
-<input type="date" id="{{ $inputId }}" value="{{ $value }}" placeholder="{{ $placeholder }}" {{ $attributes->merge(['class' => 'input']) }} />
-
-
+<input type="date" id="{{ $inputId }}" value="{{ $value }}" placeholder="{{ $placeholder }}" {{ $attributes->merge(['class' => 'input daisy-native-picker-date']) }} />

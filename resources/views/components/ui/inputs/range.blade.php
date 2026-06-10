@@ -17,12 +17,13 @@
     if ($color) $classes .= ' range-'.$color;
     if (in_array($size, ['xs','sm','md','lg','xl'], true)) $classes .= ' range-'.$size;
 
-    $style = '';
-    if (!is_null($bg)) $style .= " --range-bg: {$bg};";
-    if (!is_null($thumb)) $style .= " --range-thumb: {$thumb};";
-    if (!is_null($fill)) $style .= " --range-fill: {$fill};";
-    elseif ($noFill) $style .= ' --range-fill: 0;';
-    $style = trim($style);
+    $dynamicAttributes = [];
+    if (is_numeric($fill)) {
+        $fillToken = (int) round(max(0, min(100, (float) $fill)));
+        $classes .= ' daisy-range-fill-'.$fillToken;
+    } elseif ($noFill) {
+        $classes .= ' daisy-range-no-fill';
+    }
 @endphp
 
-<input type="range" min="{{ $min }}" max="{{ $max }}" step="{{ $step }}" @if(!is_null($value)) value="{{ $value }}" @endif {{ $attributes->merge(['class' => $classes, 'style' => $style ?: null]) }} />
+<input type="range" min="{{ $min }}" max="{{ $max }}" step="{{ $step }}" @if(!is_null($value)) value="{{ $value }}" @endif {{ $attributes->merge($dynamicAttributes + ['class' => $classes]) }} />

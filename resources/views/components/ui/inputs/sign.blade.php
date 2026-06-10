@@ -32,6 +32,8 @@
 
 @php
     $id = $attributes->get('id') ?? 'sign-'.uniqid();
+    $canvasWidth = max(1, (int) $width);
+    $canvasHeight = max(1, (int) $height);
     $clearLabel = $clearLabel ?? __('daisy::common.clear');
     $downloadLabel = $downloadLabel ?? __('daisy::common.download');
 @endphp
@@ -39,8 +41,8 @@
 <div id="{{ $id }}" 
      data-module="{{ $module ?? 'sign' }}" 
      data-sign="1"
-     data-width="{{ (int)$width }}"
-     data-height="{{ (int)$height }}"
+     data-width="{{ $canvasWidth }}"
+     data-height="{{ $canvasHeight }}"
      data-pen-color="{{ $penColor }}"
      data-min-width="{{ (float)$minWidth }}"
      data-max-width="{{ (float)$maxWidth }}"
@@ -52,16 +54,16 @@
      data-download-label="{{ $downloadLabel }}"
      data-download-format="{{ $downloadFormat }}"
      data-download-filename="{{ $downloadFilename }}"
-     {{ $attributes->merge(['class' => 'sign-container']) }}>
+     {{ $attributes->merge(['class' => 'sign-container daisy-sign-container']) }}>
     
-    <div class="card card-border bg-base-100">
+    <div class="card card-border bg-base-100 daisy-sign-card">
         <div class="card-body p-4">
-            <div class="relative w-full overflow-hidden rounded-box card-border bg-base-200" 
-                 data-sign-canvas-wrapper
-                 style="max-width: 100%;">
-                <canvas data-sign-canvas 
-                        class="w-full h-auto touch-none"
-                        style="display: block; max-width: 100%; height: auto;"></canvas>
+            <div class="daisy-sign-canvas-wrapper relative overflow-hidden rounded-box card-border bg-base-200"
+                 data-sign-canvas-wrapper>
+                <canvas data-sign-canvas
+                        width="{{ $canvasWidth }}"
+                        height="{{ $canvasHeight }}"
+                        class="daisy-sign-canvas"></canvas>
             </div>
             
             @if($showActions)

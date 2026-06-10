@@ -35,6 +35,13 @@
     ];
 
     $classes = 'input w-full';
+    $nativePickerClasses = [
+        'date' => 'daisy-native-picker-date',
+        'datetime-local' => 'daisy-native-picker-datetime',
+        'month' => 'daisy-native-picker-month',
+        'time' => 'daisy-native-picker-time',
+        'week' => 'daisy-native-picker-week',
+    ];
 
     if ($variant === 'ghost') {
         $classes .= ' input-ghost';
@@ -58,6 +65,10 @@
 
     if (isset($sizeMap[$size])) {
         $classes .= ' '.$sizeMap[$size];
+    }
+
+    if (isset($nativePickerClasses[$type])) {
+        $classes .= ' '.$nativePickerClasses[$type];
     }
 
     $inputId = $id ?: ($name ? preg_replace('/[^A-Za-z0-9_-]+/', '-', trim((string) $name, '[]')) : null);

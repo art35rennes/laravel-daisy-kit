@@ -38,7 +38,7 @@
     data-heading-selector="{{ $headingSelector }}"
 >
     <div class="{{ $panelAnchorClasses }} hidden" data-section-nav-panel>
-        <div class="bg-base-200 rounded-box shadow-lg p-3 {{ $panelWidth }} max-w-[calc(100vw-2rem)]" data-section-nav-box>
+        <div class="daisy-section-nav-box bg-base-200 rounded-box shadow-lg p-3 {{ $panelWidth }} max-w-[calc(100vw-2rem)]" data-section-nav-box>
             <div class="font-semibold mb-2">{{ $title }}</div>
             <div class="mb-2">
                 <label class="input flex w-full items-center gap-2">

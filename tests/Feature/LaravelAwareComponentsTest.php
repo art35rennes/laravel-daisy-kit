@@ -42,6 +42,61 @@ it('does not render unsafe hero image URLs', function () {
         ->not->toContain('javascript:alert(1)');
 });
 
+it('renders hero backgrounds with cover utilities when an image is provided', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.layout.hero image-url="/img/example.jpg">
+            Content
+        </x-daisy::ui.layout.hero>
+    BLADE);
+
+    expect($html)
+        ->toContain('src="/img/example.jpg"')
+        ->toContain('object-cover')
+        ->not->toContain('background-image')
+        ->not->toContain('style=');
+});
+
+it('renders auth shell with optional background cover and overlay mask', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::layout.auth-shell background-image="/img/auth.jpg" overlay-class="bg-black/45">
+            <p>Sign in</p>
+        </x-daisy::layout.auth-shell>
+    BLADE);
+
+    expect($html)
+        ->toContain('src="/img/auth.jpg"')
+        ->toContain('object-cover')
+        ->not->toContain('background-image')
+        ->not->toContain('style=')
+        ->toContain('bg-black/45')
+        ->toContain('Sign in');
+});
+
+it('does not render unsafe auth shell image URLs', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::layout.auth-shell background-image="javascript:alert(1)">
+            Content
+        </x-daisy::layout.auth-shell>
+    BLADE);
+
+    expect($html)
+        ->not->toContain("background-image: url('javascript:alert(1)')")
+        ->not->toContain('javascript:alert(1)');
+});
+
+it('renders auth shell with a host background class', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::layout.auth-shell background-class="auth-brand-background">
+            Content
+        </x-daisy::layout.auth-shell>
+    BLADE);
+
+    expect($html)
+        ->toContain('auth-brand-background')
+        ->toContain('bg-cover')
+        ->toContain('Content');
+});
+
 it('lets the navbar sidebar layout hide and configure theme controls', function () {
     $hidden = Blade::render('<x-daisy::layout.navbar-sidebar-layout :show-theme-controller="false">Content</x-daisy::layout.navbar-sidebar-layout>');
 

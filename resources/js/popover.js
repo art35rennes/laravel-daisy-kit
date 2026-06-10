@@ -44,6 +44,20 @@ function setupPopover(root) {
   const isCoarsePointer = (('maxTouchPoints' in navigator && navigator.maxTouchPoints > 0) ||
     (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
   let pinnedByClick = false;
+  let panelFrameAnimation = null;
+
+  function clearPanelFrame() {
+    panelFrameAnimation?.cancel?.();
+    panelFrameAnimation = null;
+  }
+
+  function applyPanelFrame(frame) {
+    if (typeof panel.animate !== 'function') return;
+
+    const animation = panel.animate([frame], { duration: 1, fill: 'forwards' });
+    panelFrameAnimation?.cancel?.();
+    panelFrameAnimation = animation;
+  }
 
   // Mappings de classes utilitaires par position
   const POSITION_CLASSES = {
@@ -88,6 +102,7 @@ function setupPopover(root) {
   }
 
   function adjustPlacement() {
+    clearPanelFrame();
     const desired = root.getAttribute('data-position') || 'top';
     const list = candidatesFor(desired);
     let chosen = list[0];
@@ -102,9 +117,9 @@ function setupPopover(root) {
 
   function clampIntoViewport() {
     const margin = 8;
-    try {
-      panel.style.maxWidth = `${Math.max(0, window.innerWidth - margin * 2)}px`;
-    } catch (_) {}
+    const frame = {
+      maxWidth: `${Math.max(0, window.innerWidth - margin * 2)}px`,
+    };
     const r = panel.getBoundingClientRect();
     const pos = panel.dataset.currentPosition || (root.getAttribute('data-position') || 'top');
     if (pos === 'top' || pos === 'bottom') {
@@ -112,41 +127,31 @@ function setupPopover(root) {
       if (r.left < margin) dx += (margin - r.left);
       if (r.right > window.innerWidth - margin) dx -= (r.right - (window.innerWidth - margin));
       if (dx !== 0) {
-        panel.style.left = `calc(50% + ${Math.round(dx)}px)`;
-      } else {
-        panel.style.left = '';
+        frame.left = `calc(50% + ${Math.round(dx)}px)`;
       }
-      // Nettoyer styles non utilisés
-      panel.style.right = '';
     } else if (pos === 'left' || pos === 'right') {
       // Clamp vertical (déjà existant)
       let dy = 0;
       if (r.top < margin) dy += (margin - r.top);
       if (r.bottom > window.innerHeight - margin) dy -= (r.bottom - (window.innerHeight - margin));
       if (dy !== 0) {
-        panel.style.top = `calc(50% + ${Math.round(dy)}px)`;
-      } else {
-        panel.style.top = '';
+        frame.top = `calc(50% + ${Math.round(dy)}px)`;
       }
       // Clamp horizontal spécifique left/right
       if (pos === 'right') {
         const overflowRight = r.right - (window.innerWidth - margin);
         if (overflowRight > 0) {
-          panel.style.left = `calc(100% - ${Math.round(overflowRight)}px)`;
-        } else {
-          panel.style.left = '';
+          frame.left = `calc(100% - ${Math.round(overflowRight)}px)`;
         }
-        panel.style.right = '';
       } else if (pos === 'left') {
         const overflowLeft = margin - r.left;
         if (overflowLeft > 0) {
-          panel.style.right = `calc(100% - ${Math.round(overflowLeft)}px)`;
-        } else {
-          panel.style.right = '';
+          frame.right = `calc(100% - ${Math.round(overflowLeft)}px)`;
         }
-        panel.style.left = '';
       }
     }
+
+    applyPanelFrame(frame);
   }
 
   const positionNow = () => {
@@ -179,10 +184,7 @@ function setupPopover(root) {
       window.removeEventListener('scroll', onReposition, true);
       onReposition = null;
     }
-    panel.style.left = '';
-    panel.style.top = '';
-    panel.style.maxWidth = '';
-    panel.style.right = '';
+    clearPanelFrame();
   };
 
   /**

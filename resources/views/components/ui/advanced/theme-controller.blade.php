@@ -1,5 +1,5 @@
 @props([
-    'themes' => ['light','dark','cupcake','bumblebee','emerald','corporate','synthwave','retro','cyberpunk','valentine','halloween','garden','forest','aqua','lofi','pastel','fantasy','wireframe','black','luxury','dracula','cmyk','autumn','business','acid','lemonade','night','coffee','winter'],
+    'themes' => null,
     'value' => null,
     'name' => 'theme',
     // Variant d'affichage: buttons (join) | dropdown
@@ -13,6 +13,9 @@
 ])
 
 @php
+    $themes = $themes ?? \Art35rennes\DaisyKit\Helpers\ThemeHelper::getAllThemes();
+    $value = $value ?? \Art35rennes\DaisyKit\Helpers\ThemeHelper::getDefaultTheme();
+
     $sizeMap = [
         'sm' => 'btn-sm',
         'md' => 'btn-md',
@@ -23,10 +26,16 @@
     if ($ghost) {
         $itemBase .= ' btn-ghost';
     }
+
+    $controllerAttributes = ['data-module' => 'theme-controller'];
+
+    if (is_string($value) && trim($value) !== '') {
+        $controllerAttributes['data-default-theme'] = trim($value);
+    }
 @endphp
 
 @if($variant === 'dropdown')
-    <div {{ $attributes->merge(['class' => 'dropdown', 'data-module' => 'theme-controller']) }}>
+    <div {{ $attributes->merge(array_merge(['class' => 'dropdown'], $controllerAttributes)) }}>
         <div tabindex="0" role="button" class="btn m-1">
             {{ $label }}
             <svg width="12" height="12" class="inline-block h-2 w-2 fill-current opacity-60" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048"><path d="M1799 349l242 241-1017 1017L7 590l242-241 775 775 775-775z"></path></svg>
@@ -40,7 +49,7 @@
         </ul>
     </div>
 @else
-    <div {{ $attributes->merge(['class' => 'join', 'data-module' => 'theme-controller']) }}>
+    <div {{ $attributes->merge(array_merge(['class' => 'join'], $controllerAttributes)) }}>
         @foreach($themes as $t)
             <input type="radio" name="{{ $name }}" value="{{ $t }}" class="join-item {{ $itemBase }}" aria-label="{{ ucfirst($t) }}" @checked($value === $t) />
         @endforeach

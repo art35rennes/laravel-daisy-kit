@@ -14,25 +14,30 @@
 ])
 
 @php
-    // wrapper avec aspect-ratio via variable CSS
-    $style = '';
+    $ratioClass = null;
+
     if (!empty($ratioPercent)) {
-        $style = "--ar: {$ratioPercent};";
+        $ratioPercentValue = trim((string) $ratioPercent);
+
+        if (preg_match('/^(\d+(?:\.\d+)?)%$/', $ratioPercentValue, $matches) === 1) {
+            $ratioToken = (int) round((float) $matches[1]);
+            $ratioClass = $ratioToken >= 1 && $ratioToken <= 300 ? 'daisy-embed-ratio-percent-'.$ratioToken : null;
+        }
     } elseif ($ratio) {
-        $map = [
-            '1x1' => '100%',
-            '4x3' => 'calc(3/4*100%)',
-            '16x9' => 'calc(9/16*100%)',
-            '21x9' => 'calc(9/21*100%)',
+        $ratioClasses = [
+            '1x1' => 'daisy-embed-ratio-1x1',
+            '4x3' => 'daisy-embed-ratio-4x3',
+            '16x9' => 'daisy-embed-ratio-16x9',
+            '21x9' => 'daisy-embed-ratio-21x9',
         ];
-        $style = isset($map[$ratio]) ? "--ar: {$map[$ratio]};" : '';
+        $ratioClass = $ratioClasses[$ratio] ?? null;
     }
 
-    $wrapperClasses = trim('relative w-full '.$wrapperClass);
+    $wrapperClasses = trim('relative w-full '.$ratioClass.' '.$wrapperClass);
 @endphp
 
-<div {{ $attributes->merge(['class' => $wrapperClasses]) }} style="{{ $style }}">
-    <div class="block w-full" style="position:relative; padding-bottom: var(--ar, 56.25%); height:0;">
+<div {{ $attributes->merge(['class' => $wrapperClasses]) }}>
+    <div class="daisy-embed-aspect block w-full">
         <div class="absolute inset-0">
             @if($tag === 'iframe')
                 <iframe src="{{ $src }}" class="h-full w-full" @if($allow) allow="{{ $allow }}" @endif @if($allowfullscreen) allowfullscreen @endif></iframe>
@@ -48,5 +53,3 @@
         </div>
     </div>
 </div>
-
-

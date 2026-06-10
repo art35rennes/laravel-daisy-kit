@@ -19,7 +19,8 @@
 
     $normalized = [];
     foreach ($values as $k => $v) {
-        $normalized[] = ['label' => (string)$k, 'value' => (int)$v];
+        $value = max(0, min(999, (int) $v));
+        $normalized[] = ['label' => (string)$k, 'value' => $value, 'class' => 'daisy-countdown-value-'.$value];
     }
 @endphp
 
@@ -27,7 +28,7 @@
     <span class="inline-flex flex-wrap items-center font-mono {{ $textSize }}">
         @foreach($normalized as $i => $item)
             <span class="countdown">
-                <span style="--value: {{ $item['value'] }};" aria-live="polite" aria-label="{{ $item['value'] }}">{{ $item['value'] }}</span>
+                <span class="{{ $item['class'] }}" aria-live="polite" aria-label="{{ $item['value'] }}">{{ $item['value'] }}</span>
             </span>
             @if($i < count($normalized) - 1)
                 @if($mode === 'inline-colon')
@@ -45,7 +46,7 @@
         @foreach($normalized as $item)
             <div class="flex flex-col">
                 <span class="countdown font-mono {{ $textSize }}">
-                    <span style="--value: {{ $item['value'] }};" aria-live="polite" aria-label="{{ $item['value'] }}">{{ $item['value'] }}</span>
+                    <span class="{{ $item['class'] }}" aria-live="polite" aria-label="{{ $item['value'] }}">{{ $item['value'] }}</span>
                 </span>
                 @if($labels)
                     <span class="text-xs uppercase">{{ $item['label'] }}</span>

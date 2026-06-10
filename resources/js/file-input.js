@@ -40,7 +40,7 @@ function createPreview(file) {
     const url = URL.createObjectURL(file);
     img.src = url;
     // Libère l'URL objet après chargement de l'image pour éviter les fuites mémoire
-    img.onload = () => URL.revokeObjectURL(url);
+    img.addEventListener('load', () => URL.revokeObjectURL(url), { once: true });
     wrap.append(img);
 
   // Prévisualisation pour les vidéos

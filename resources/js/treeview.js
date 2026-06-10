@@ -327,13 +327,13 @@ function updateEllipsisMarkers(root) {
     const parentLi = ul.closest('li[role="treeitem"]');
     const parentLevel = parentLi ? (parseInt(parentLi.getAttribute('aria-level') || '0', 10) || 0) : 0;
     const level = parentLi ? (parentLevel + 1) : 1;
-    const indentPx = Math.max(0, (level - 1)) * 16;
+    const indentLevel = Math.max(0, Math.min(64, level - 1));
     // Construit l'élément d'ellipses
     const li = document.createElement('li');
     li.setAttribute('data-search-ellipsis', '1');
     li.setAttribute('role', 'presentation');
     li.innerHTML = `
-      <div class="flex items-center gap-2 px-2 py-1 rounded-box opacity-60" data-node-header="1" style="padding-left: ${indentPx}px">
+      <div class="flex items-center gap-2 px-2 py-1 rounded-box opacity-60 daisy-tree-indent-${indentLevel}" data-node-header="1">
         <span class="inline-block w-6"></span>
         <span class="flex-1 select-none">…</span>
       </div>
@@ -821,7 +821,7 @@ function attachInteractions(root) {
       const children = Array.isArray(item.children) ? item.children : [];
       const hasChildren = isLazy || children.length > 0;
       const isExpanded = !isLazy && hasChildren && !!item.expanded;
-      const indentPx = Math.max(0, (level - 1)) * 16;
+      const indentLevel = Math.max(0, Math.min(64, level - 1));
       const inputHtml = selectionMode === 'multiple'
         ? `<input type="checkbox" class="${sampleCheckboxClass}" tabindex="-1"${disabledAttr}${isSelected && !isIndeterminate ? ' checked' : ''}${isIndeterminate ? ' aria-checked="mixed" data-indeterminate="true"' : ''} />`
         : `<input type="radio" name="${radioName}" class="${sampleRadioClass}" tabindex="-1"${disabledAttr}${isSelected ? ' checked' : ''} />`;
@@ -830,7 +830,7 @@ function attachInteractions(root) {
         : `<span class="inline-block w-6"></span>`;
       let html = '';
       html += `<li role="treeitem" aria-level="${level}" aria-expanded="${hasChildren ? (isExpanded ? 'true' : 'false') : 'false'}" aria-selected="${isSelected ? 'true' : 'false'}" data-id="${String(id)}" class="outline-none"${isLazy ? ' data-lazy-node="1"' : ''}>`;
-      html += `  <div class="flex items-center gap-2 px-2 py-1 rounded hover:bg-base-200 focus:bg-base-200" data-node-header="1" style="padding-left: ${indentPx}px">`;
+      html += `  <div class="flex items-center gap-2 px-2 py-1 rounded hover:bg-base-200 focus:bg-base-200 daisy-tree-indent-${indentLevel}" data-node-header="1">`;
       html += `    ${toggleHtml}`;
       html += `    ${inputHtml}`;
       const labelClasses = `flex-1 cursor-default select-none${isDisabled ? ' opacity-50' : ''}`;

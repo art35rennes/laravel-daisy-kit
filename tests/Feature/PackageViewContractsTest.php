@@ -20,6 +20,56 @@ it('renders the package layout component through its public alias', function () 
         ->toContain('name="csrf-token"');
 });
 
+it('applies the configured default theme to the package layout', function () {
+    config([
+        'daisy-kit.auto_assets' => false,
+        'daisy-kit.themes.default' => 'suez',
+    ]);
+
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::layout.app title="Package Test">
+            <p>Package body</p>
+        </x-daisy::layout.app>
+    BLADE);
+
+    expect($html)->toContain('data-theme="suez"');
+});
+
+it('lets an explicit package layout theme override the configured default theme', function () {
+    config([
+        'daisy-kit.auto_assets' => false,
+        'daisy-kit.themes.default' => 'suez',
+    ]);
+
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::layout.app title="Package Test" theme="dark">
+            <p>Package body</p>
+        </x-daisy::layout.app>
+    BLADE);
+
+    expect($html)
+        ->toContain('data-theme="dark"')
+        ->not->toContain('data-theme="suez"');
+});
+
+it('allows package layout themes to be disabled explicitly', function (string $themeExpression) {
+    config([
+        'daisy-kit.auto_assets' => false,
+        'daisy-kit.themes.default' => 'suez',
+    ]);
+
+    $html = Blade::render(<<<BLADE
+        <x-daisy::layout.app title="Package Test" {$themeExpression}>
+            <p>Package body</p>
+        </x-daisy::layout.app>
+    BLADE);
+
+    expect($html)->not->toContain('data-theme=');
+})->with([
+    'empty string' => 'theme=""',
+    'false' => ':theme="false"',
+]);
+
 it('renders token-input through its public alias', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.inputs.token-input name="recipients" :values="['alice@example.com']" />
@@ -75,4 +125,26 @@ it('renders the ui theme selector only when the package dev toggle is enabled', 
         ->toContain('brand')
         ->toContain('data-module="theme-controller"')
         ->not->toContain("const THEME_KEY = 'daisy-theme';");
+});
+
+it('renders the theme controller from configured themes and default theme', function () {
+    config([
+        'daisy-kit.themes.default' => 'brand',
+        'daisy-kit.themes.builtin' => ['light', 'dark'],
+        'daisy-kit.themes.custom' => [
+            'brand' => ['name' => 'brand'],
+        ],
+    ]);
+
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.advanced.theme-controller />
+    BLADE);
+
+    expect($html)
+        ->toContain('data-module="theme-controller"')
+        ->toContain('data-default-theme="brand"')
+        ->toContain('value="light"')
+        ->toContain('value="dark"')
+        ->toContain('value="brand"')
+        ->toContain('value="brand" class="join-item btn theme-controller btn-sm btn-ghost" aria-label="Brand" checked');
 });
