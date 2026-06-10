@@ -9,8 +9,8 @@
     // Options autocomplete
     'endpoint' => null,             // URL de l'endpoint qui renvoie les options [{ value, label, disabled? }]
     'param' => 'q',                 // Nom du paramètre de recherche (par défaut: q)
-    'debounce' => 300,              // Délais de debounce en ms pour la saisie
-    'minChars' => 2,                // Nombre minimal de caractères avant de déclencher l'appel
+    'debounce' => 500,              // Délais de debounce en ms pour la saisie
+    'minChars' => 3,                // Nombre minimal de caractères avant de déclencher l'appel
     'default' => null,              // Données par défaut (array d'items {value,label,disabled?,subtitle?,avatar?}) quand vide en remote
     'fetchOnEmpty' => true,         // Si true, quand input vide en remote, on interroge endpoint avec q=''
     'placeholder' => null,          // Placeholder à utiliser pour l'input unifié (sinon 1ère option vide ou défaut)
@@ -88,8 +88,8 @@
     if ($shouldEnhance) {
         $dataAttributes['data-module'] = $module ?: 'select';
         // Options communes
-        $dataAttributes['data-debounce'] = (string) (is_numeric($debounce) ? $debounce : 300);
-        $dataAttributes['data-min-chars'] = (string) (is_numeric($minChars) ? $minChars : 2);
+        $dataAttributes['data-debounce'] = (string) (is_numeric($debounce) ? $debounce : 500);
+        $dataAttributes['data-min-chars'] = (string) (is_numeric($minChars) ? $minChars : 3);
         // Options spécifiques à l'autocomplete
         if ($endpoint) {
             $dataAttributes['data-endpoint'] = (string) $endpoint;

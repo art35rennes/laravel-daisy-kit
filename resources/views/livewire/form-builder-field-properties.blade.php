@@ -55,7 +55,6 @@
 
     <div
         class="tabs tabs-border daisy-form-builder-editor-tabs"
-        x-data="{ customFieldId: @js($hasCustomId) }"
         data-builder-editor-tabs
     >
         @foreach($editorSections as $sectionIndex => $section)
@@ -84,7 +83,7 @@
                                     type="text"
                                     size="sm"
                                     value="{{ $fieldName }}"
-                                    x-on:change="$wire.updateSelectedPath('name', $event.target.value); if (! customFieldId) $wire.updateSelectedPath('id', $event.target.value)"
+                                    data-builder-field-name
                                 />
                                 <x-slot:hintSlot>
                                     {{ $property['help'] ?? 'name' }}
@@ -94,7 +93,7 @@
 
                             <div class="space-y-3 rounded-box border border-base-300 p-3">
                                 <label class="flex items-start gap-3 text-sm">
-                                    <x-daisy::ui.inputs.toggle x-model="customFieldId" data-builder-custom-id />
+                                    <x-daisy::ui.inputs.toggle :checked="$hasCustomId" data-builder-custom-id />
                                     <span>
                                         <span class="block font-medium">{{ __('daisy::form.builder.custom_field_id') }}</span>
                                         <span class="block text-xs text-base-content/60">{{ __('daisy::form.builder.custom_field_id_help') }}</span>
@@ -104,7 +103,7 @@
                                 @php
                                     $property = $propertiesByPath->get('id');
                                 @endphp
-                                <div x-show="customFieldId" x-cloak>
+                                <div data-builder-custom-id-panel @if(! $hasCustomId) hidden @endif>
                                     <x-daisy::ui.partials.form-field :label="$property['label']">
                                         <x-daisy::ui.inputs.input type="text" size="sm" value="{{ $fieldId }}" wire:change="updateSelectedPath('id', $event.target.value)" />
                                         <x-slot:hintSlot>
@@ -197,9 +196,8 @@
                             :show-copy="true"
                             wire:ignore
                             wire:key="daisy-form-builder-field-json-{{ $selectedField['id'] ?? 'field' }}-{{ str_replace('.', '-', $path) }}"
-                            x-data
-                            x-on:code:change.debounce.500ms="$wire.updateSelectedJson('{{ $path }}', $event.detail.value)"
                             data-builder-json-property="{{ $path }}"
+                            data-builder-json-debounce="500"
                         />
                         <x-slot:hintSlot>
                             {{ $property['help'] ?? $path }}

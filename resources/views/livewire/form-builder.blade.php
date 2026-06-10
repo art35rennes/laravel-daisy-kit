@@ -248,7 +248,7 @@
                                                 <button
                                                     type="button"
                                                     class="daisy-form-builder-drop-zone daisy-form-builder-drop-zone-position"
-                                                    style="--builder-drop-depth: {{ $depth }};"
+                                                    data-builder-drop-depth="{{ min($depth, 12) }}"
                                                     data-builder-drop-tone="{{ $depth % 16 }}"
                                                     data-builder-drop-target="{{ $fieldId }}"
                                                     data-builder-drop-descendants='@json($fieldDescendants[$fieldId] ?? [])'
@@ -275,7 +275,6 @@
                                             <td>
                                                 <div
                                                     class="daisy-form-builder-field-main min-w-0"
-                                                    style="padding-inline-start: {{ $depth * 1.1 }}rem"
                                                 >
                                                     <span
                                                         class="daisy-form-builder-drag-handle relative z-10 flex size-10 cursor-grab select-none items-center justify-center rounded-btn border border-base-300 bg-base-100 text-base-content/55 transition hover:border-primary hover:bg-primary/10 hover:text-primary active:cursor-grabbing group-hover:text-base-content"
@@ -345,7 +344,7 @@
                                                     <button
                                                         type="button"
                                                         class="daisy-form-builder-drop-zone daisy-form-builder-drop-zone-position"
-                                                        style="--builder-drop-depth: {{ $depth + 1 }};"
+                                                        data-builder-drop-depth="{{ min($depth + 1, 12) }}"
                                                         data-builder-drop-tone="{{ ($depth + 1) % 16 }}"
                                                         data-builder-drop-target="{{ $fieldId }}"
                                                         data-builder-drop-descendants='@json($fieldDescendants[$fieldId] ?? [])'
@@ -368,7 +367,7 @@
                                                     <button
                                                         type="button"
                                                         class="daisy-form-builder-drop-zone daisy-form-builder-drop-zone-position"
-                                                        style="--builder-drop-depth: {{ $depth }};"
+                                                        data-builder-drop-depth="{{ min($depth, 12) }}"
                                                         data-builder-drop-tone="{{ $depth % 16 }}"
                                                         data-builder-drop-target="{{ $fieldId }}"
                                                         data-builder-drop-descendants='@json($fieldDescendants[$fieldId] ?? [])'
@@ -412,9 +411,8 @@
                                 :show-copy="true"
                                 wire:ignore
                                 wire:key="daisy-form-builder-schema-json-{{ md5($canonicalJson) }}"
-                                x-data
-                                x-on:code:change.debounce.700ms="$wire.updateFromJsonPayload($event.detail.value)"
                                 data-builder-json
+                                data-builder-json-debounce="700"
                             />
                         </div>
                     @endif
@@ -495,343 +493,3 @@
         </x-daisy::ui.overlay.modal>
     @endif
 </div>
-
-@pushOnce('styles')
-    <style>
-        @media (min-width: 1024px) {
-            .daisy-form-builder > .tabs {
-                display: grid !important;
-                grid-template-columns: minmax(0, 1.25fr) minmax(28rem, 1fr);
-                gap: 1rem;
-                align-items: start;
-                border: 0;
-                background: transparent;
-                padding: 0;
-            }
-
-            .daisy-form-builder > .tabs > input.tab {
-                display: none !important;
-            }
-
-            .daisy-form-builder > .tabs > .tab-content {
-                display: block !important;
-                min-width: 0;
-            }
-        }
-
-        .daisy-form-builder {
-            max-width: 100%;
-            overflow: clip;
-        }
-
-        .daisy-form-builder [data-builder-palette] > .dropdown-content {
-            width: min(30rem, calc(100vw - 2rem));
-            max-width: calc(100vw - 2rem);
-        }
-
-        .daisy-form-builder [data-builder-schema-settings] > .dropdown-content {
-            width: min(44rem, calc(100vw - 2rem));
-            max-width: calc(100vw - 2rem);
-        }
-
-        .daisy-form-builder [data-builder-schema-settings] > summary {
-            list-style: none;
-        }
-
-        .daisy-form-builder [data-builder-schema-settings] > summary::-webkit-details-marker {
-            display: none;
-        }
-
-        @media (max-width: 767px) {
-            .daisy-form-builder [data-builder-palette] > .dropdown-content,
-            .daisy-form-builder [data-builder-schema-settings] > .dropdown-content {
-                left: 0;
-                width: min(22rem, calc(100vw - 2rem));
-                max-width: calc(100vw - 2rem);
-                transform: none;
-            }
-        }
-
-        .daisy-form-builder :where([data-builder-authoring], [data-builder-preview-panel], [data-builder-preview]) {
-            min-width: 0;
-        }
-
-        .daisy-form-builder [data-builder-outline] {
-            max-width: 100%;
-        }
-
-        .daisy-form-builder-table {
-            min-width: 100%;
-            table-layout: auto;
-            width: 100%;
-        }
-
-        .daisy-form-builder-table tbody tr {
-            position: relative;
-        }
-
-        .daisy-form-builder-table :where(th, td) {
-            padding: 0.25rem 0.75rem !important;
-            vertical-align: middle;
-        }
-
-        .daisy-form-builder-table tbody :where(tr, td) {
-            height: 4rem;
-            min-height: 4rem;
-        }
-
-        .daisy-form-builder-field-main {
-            display: grid;
-            grid-template-columns: 2.5rem minmax(0, 1fr);
-            gap: 0.5rem;
-            align-items: center;
-        }
-
-        .daisy-form-builder-drag-handle {
-            touch-action: none;
-            box-shadow: none !important;
-        }
-
-        .daisy-form-builder-field-label {
-            display: grid;
-            grid-template-columns: 1.25rem minmax(0, 1fr);
-            gap: 0.375rem;
-            align-items: center;
-        }
-
-        .daisy-form-builder-table :where([data-builder-edit], [data-builder-move], [data-builder-delete]) {
-            width: 2.5rem !important;
-            height: 2.5rem !important;
-            min-height: 2.5rem !important;
-        }
-
-        .daisy-form-builder-table :where([data-builder-edit], [data-builder-move]) svg {
-            width: 1.125rem;
-            height: 1.125rem;
-        }
-
-        .daisy-form-builder-table [data-builder-delete] svg {
-            width: 1.25rem;
-            height: 1.25rem;
-        }
-
-        .daisy-form-builder-table :where(th:nth-child(1), td:nth-child(1)) {
-            width: 100%;
-            min-width: 16rem;
-        }
-
-        .daisy-form-builder-table :where(th:nth-child(2), td:nth-child(2)),
-        .daisy-form-builder-table :where(th:nth-child(3), td:nth-child(3)),
-        .daisy-form-builder-table :where(th:nth-child(4), td:nth-child(4)) {
-            width: 1%;
-            white-space: nowrap;
-        }
-
-        .daisy-form-builder-table :where(th:nth-child(4), td:nth-child(4)) {
-            text-align: center;
-        }
-
-        .daisy-form-builder-table thead :where(th) {
-            color: color-mix(in oklab, currentColor 65%, transparent);
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .daisy-form-builder[data-dragging] .daisy-form-builder-drop-zone[data-builder-drop-disabled] {
-            display: none;
-        }
-
-        .daisy-form-builder[data-dragging] [data-builder-dragging-row] {
-            opacity: 0.62;
-        }
-
-        .daisy-form-builder-drag-ghost {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 9999;
-            display: grid;
-            grid-template-columns: auto minmax(0, 1fr) auto;
-            max-width: min(22rem, calc(100vw - 2rem));
-            pointer-events: none;
-            align-items: center;
-            gap: 0.5rem;
-            border-radius: var(--radius-box, 0.5rem);
-            border: 1px solid color-mix(in oklab, var(--color-primary) 55%, transparent);
-            background: color-mix(in oklab, var(--color-base-100) 94%, var(--color-primary));
-            color: var(--color-base-content);
-            padding: 0.5rem 0.75rem;
-            font-size: 0.875rem;
-            line-height: 1.2;
-            opacity: 0.96;
-            transform: translate3d(-9999px, -9999px, 0);
-            will-change: transform;
-            box-shadow: none !important;
-        }
-
-        .daisy-form-builder-drag-ghost::before {
-            content: "⋮⋮";
-            color: color-mix(in oklab, var(--color-primary) 85%, var(--color-base-content));
-            font-weight: 700;
-            letter-spacing: -0.25em;
-        }
-
-        .daisy-form-builder-drag-ghost > [data-builder-drag-ghost-label] {
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .daisy-form-builder-drag-ghost > [data-builder-drag-ghost-type] {
-            border-radius: 999px;
-            border: 1px solid color-mix(in oklab, var(--color-primary) 42%, transparent);
-            color: color-mix(in oklab, var(--color-primary) 82%, var(--color-base-content));
-            padding: 0.05rem 0.45rem;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: 0.75rem;
-            line-height: 1.25;
-        }
-
-        .daisy-form-builder-drop-row {
-            display: none;
-        }
-
-        .daisy-form-builder[data-dragging] .daisy-form-builder-drop-row {
-            display: table-row;
-        }
-
-        .daisy-form-builder[data-dragging] .daisy-form-builder-drop-row[data-builder-drop-disabled-row] {
-            display: none;
-        }
-
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="0"] { --builder-drop-color: var(--color-primary); }
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="1"] { --builder-drop-color: var(--color-warning); }
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="2"] { --builder-drop-color: var(--color-secondary); }
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="3"] { --builder-drop-color: var(--color-info); }
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="4"] { --builder-drop-color: var(--color-error); }
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="5"] { --builder-drop-color: var(--color-success); }
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="6"] { --builder-drop-color: var(--color-accent); }
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="7"] { --builder-drop-color: var(--color-neutral); }
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="8"] { --builder-drop-color: color-mix(in oklab, var(--color-primary) 60%, var(--color-base-content)); }
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="9"] { --builder-drop-color: color-mix(in oklab, var(--color-warning) 60%, var(--color-base-content)); }
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="10"] { --builder-drop-color: color-mix(in oklab, var(--color-secondary) 60%, var(--color-base-content)); }
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="11"] { --builder-drop-color: color-mix(in oklab, var(--color-info) 60%, var(--color-base-content)); }
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="12"] { --builder-drop-color: color-mix(in oklab, var(--color-error) 60%, var(--color-base-content)); }
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="13"] { --builder-drop-color: color-mix(in oklab, var(--color-success) 60%, var(--color-base-content)); }
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="14"] { --builder-drop-color: color-mix(in oklab, var(--color-accent) 60%, var(--color-base-content)); }
-        .daisy-form-builder-drop-zone[data-builder-drop-tone="15"] { --builder-drop-color: color-mix(in oklab, var(--color-neutral) 60%, var(--color-base-content)); }
-
-        .daisy-form-builder-drop-row > td {
-            height: auto !important;
-            min-height: 0 !important;
-            padding: 0 !important;
-            border: 0 !important;
-        }
-
-        .daisy-form-builder-drop-row .daisy-form-builder-drop-zone {
-            position: relative;
-            inset: auto;
-            display: flex;
-            width: calc(100% - 2rem - (var(--builder-drop-depth, 0) * 1.1rem));
-            min-height: 3rem;
-            margin-inline: calc(1rem + (var(--builder-drop-depth, 0) * 1.1rem)) 1rem;
-            align-items: center;
-            gap: 0.45rem;
-            border-radius: 0.65rem;
-            border: 1px dashed color-mix(in oklab, var(--builder-drop-color, var(--color-primary)) 45%, transparent);
-            background: color-mix(in oklab, var(--builder-drop-color, var(--color-primary)) 7%, var(--color-base-100, transparent));
-            color: color-mix(in oklab, var(--builder-drop-color, var(--color-primary)) 82%, var(--color-base-content, currentColor));
-            padding: 0.5rem 0.75rem;
-            text-align: left;
-            opacity: 0.78;
-        }
-
-        .daisy-form-builder-drop-row .daisy-form-builder-drop-zone::before {
-            position: static;
-            width: 100%;
-            height: 0;
-            flex: 1;
-            order: 2;
-            transform: none;
-            border-top: 2px dotted currentColor;
-            background: transparent;
-            box-shadow: none;
-            opacity: 0.42;
-        }
-
-        .daisy-form-builder-drop-row .daisy-form-builder-drop-zone > span {
-            position: static;
-            display: inline-flex;
-            max-width: none;
-            transform: none;
-            align-items: center;
-            border-radius: 999px;
-            background: var(--color-base-100, #fff);
-            padding: 0.25rem 0.55rem;
-            box-shadow: 0 0 0 1px color-mix(in oklab, currentColor 18%, transparent);
-            pointer-events: none;
-            white-space: nowrap;
-        }
-
-        .daisy-form-builder-drop-row .daisy-form-builder-drop-icon {
-            display: inline-flex;
-            width: 1.15rem;
-            height: 1.15rem;
-            align-items: center;
-            justify-content: center;
-            border-radius: 999px;
-            background: color-mix(in oklab, currentColor 14%, transparent);
-            font-weight: 700;
-            line-height: 1;
-        }
-
-        .daisy-form-builder-drop-row .daisy-form-builder-drop-zone:hover,
-        .daisy-form-builder-drop-row .daisy-form-builder-drop-zone:focus-visible,
-        .daisy-form-builder-drop-row .daisy-form-builder-drop-zone[data-builder-drop-active] {
-            opacity: 1;
-            background: color-mix(in oklab, var(--builder-drop-color, var(--color-primary)) 12%, var(--color-base-100, transparent));
-            box-shadow: inset 0 0 0 1px color-mix(in oklab, currentColor 30%, transparent);
-        }
-
-        [data-builder-editor-modal] .modal-box {
-            display: flex;
-            height: min(46rem, calc(100dvh - 2rem));
-            max-height: calc(100dvh - 2rem);
-            flex-direction: column;
-            padding: 0;
-        }
-
-        [data-builder-editor-modal] .modal-box > :not(.modal-action) {
-            min-height: 0;
-            flex: 1 1 auto;
-            overflow: hidden;
-            padding: 1.5rem 1.5rem 0;
-        }
-
-        [data-builder-editor-modal] .daisy-form-builder-editor {
-            display: flex;
-            min-height: 0;
-            height: 100%;
-            flex-direction: column;
-        }
-
-        [data-builder-editor-modal] [data-builder-field-editor] {
-            min-height: 0;
-            flex: 1 1 auto;
-            overflow-y: auto;
-            padding-right: 0.25rem;
-        }
-
-        [data-builder-editor-modal] .modal-action {
-            position: sticky;
-            bottom: 0;
-            z-index: 3;
-            flex: 0 0 auto;
-            margin: 0;
-            padding: 1rem 1.5rem;
-            border-top: 1px solid color-mix(in oklab, currentColor 14%, transparent);
-            background: var(--color-base-100, #fff);
-        }
-    </style>
-@endPushOnce

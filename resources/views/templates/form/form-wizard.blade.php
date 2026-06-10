@@ -69,8 +69,7 @@
     data-wizard-instance-id="{{ $instanceId }}"
     data-linear="{{ $linear ? 'true' : 'false' }}"
     data-current-step="{{ $current }}"
-    class="space-y-6"
-    {{ $attributes->except(['id']) }}
+    {{ $attributes->except(['id'])->class('space-y-6') }}
 >
     @if(!$isGet)
         @csrf
@@ -150,4 +149,3 @@
         </div>
     </div>
 </form>
-

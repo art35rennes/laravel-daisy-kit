@@ -30,7 +30,7 @@
     id="{{ $formId }}"
     action="{{ $action }}"
     method="{{ $htmlMethod }}"
-    class="space-y-6"
+    {{ $attributes->except(['id'])->class('space-y-6') }}
 >
     {{-- Protection CSRF : requise pour toutes les méthodes sauf GET --}}
     @if($htmlMethod !== 'GET')
@@ -66,4 +66,3 @@
         </div>
     @endif
 </form>
-

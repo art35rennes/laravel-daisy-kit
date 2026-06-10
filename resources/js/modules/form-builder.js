@@ -14,6 +14,17 @@ export default function initFormBuilder(root) {
   let autoScrollFrame = null;
   let autoScrollDelta = 0;
   const dragStartTolerance = 4;
+  const debounceTimers = new WeakMap();
+
+  const callLivewire = (method, ...args) => {
+    const componentRoot = findLivewireComponent(root);
+
+    if (!componentRoot || !window.Livewire) {
+      return;
+    }
+
+    window.Livewire.find(componentRoot.getAttribute('wire:id'))?.call(method, ...args);
+  };
 
   root.addEventListener('click', (event) => {
     const closeMenu = event.target.closest('[data-builder-close-menu]');
@@ -38,6 +49,53 @@ export default function initFormBuilder(root) {
       anchor.click();
       URL.revokeObjectURL(url);
     }
+  }, true);
+
+  root.addEventListener('change', (event) => {
+    const customIdToggle = event.target.closest('[data-builder-custom-id]');
+    if (customIdToggle && root.contains(customIdToggle)) {
+      const panel = root.querySelector('[data-builder-custom-id-panel]');
+      panel?.toggleAttribute('hidden', !customIdToggle.checked);
+      return;
+    }
+
+    const nameInput = event.target.closest('[data-builder-field-name]');
+    if (nameInput && root.contains(nameInput)) {
+      callLivewire('updateSelectedPath', 'name', nameInput.value);
+
+      const customIdToggle = root.querySelector('[data-builder-custom-id]');
+      if (!customIdToggle?.checked) {
+        callLivewire('updateSelectedPath', 'id', nameInput.value);
+      }
+    }
+  }, true);
+
+  root.addEventListener('code:change', (event) => {
+    const editor = event.target.closest('[data-builder-json], [data-builder-json-property]');
+
+    if (!editor || !root.contains(editor)) {
+      return;
+    }
+
+    const delay = Number.parseInt(editor.dataset.builderJsonDebounce || '0', 10);
+    const run = () => {
+      if (editor.matches('[data-builder-json-property]')) {
+        callLivewire('updateSelectedJson', editor.dataset.builderJsonProperty, event.detail?.value ?? '');
+
+        return;
+      }
+
+      callLivewire('updateFromJsonPayload', event.detail?.value ?? '');
+    };
+
+    if (delay > 0) {
+      window.clearTimeout(debounceTimers.get(editor));
+      debounceTimers.set(editor, window.setTimeout(run, delay));
+
+      return;
+    }
+
+    run();
   }, true);
 
   root.addEventListener('pointerdown', (event) => {
@@ -88,7 +146,7 @@ export default function initFormBuilder(root) {
       });
     });
 
-    document.body.style.removeProperty('cursor');
+    document.body.classList.remove('daisy-form-builder-grabbing');
   };
 
   const parseJsonAttribute = (value, fallback = []) => {
@@ -167,7 +225,7 @@ export default function initFormBuilder(root) {
     if (state.dragStarted) return;
 
     state.dragStarted = true;
-    document.body.style.cursor = 'grabbing';
+    document.body.classList.add('daisy-form-builder-grabbing');
     state.draggedRow?.setAttribute('data-builder-dragging-row', 'true');
 
     const activeGhost = prepareDragGhost(state.handle, state.draggedId);
@@ -251,6 +309,15 @@ export default function initFormBuilder(root) {
     return ghost;
   };
 
+  const setDragGhostFrame = (ghostElement, transform) => {
+    if (!ghostElement || typeof ghostElement.animate !== 'function') return;
+
+    const previousAnimation = ghostElement.__daisyFormBuilderFrameAnimation;
+    const animation = ghostElement.animate([{ transform }], { duration: 1, fill: 'forwards' });
+    previousAnimation?.cancel?.();
+    ghostElement.__daisyFormBuilderFrameAnimation = animation;
+  };
+
   const setHandleCaptured = (handle, pointerId, captured) => {
     try {
       if (captured) {
@@ -277,14 +344,14 @@ export default function initFormBuilder(root) {
   const moveDragGhost = (ghost, event) => {
     if (!ghost) return;
 
-    ghost.style.transform = `translate3d(${event.clientX + 14}px, ${event.clientY + 14}px, 0)`;
+    setDragGhostFrame(ghost, `translate3d(${event.clientX + 14}px, ${event.clientY + 14}px, 0)`);
   };
 
   const hideDragGhost = (ghost) => {
     if (!ghost) return;
 
     ghost.hidden = true;
-    ghost.style.transform = 'translate3d(-9999px, -9999px, 0)';
+    setDragGhostFrame(ghost, 'translate3d(-9999px, -9999px, 0)');
   };
 
   getDragGhost().hidden = true;

@@ -1,13 +1,11 @@
 /**
- * AJV-backed Daisy Form schema normalization, structural validation, and dependency analysis utilities.
+ * Daisy Form schema normalization, structural validation, and dependency analysis utilities.
  *
  * Mirrors server-side guarantees so builders and viewers stay aligned before submission.
  *
  * @module form-kit/schema
  */
 
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
 import {
     CONTAINER_FIELD_TYPES,
     FIELD_TYPES,
@@ -22,40 +20,6 @@ export const FORM_SCHEMA_VERSION = '1.0';
 
 const identifierPattern = /^[A-Za-z][A-Za-z0-9_-]*$/;
 const namePattern = /^[A-Za-z_][A-Za-z0-9_.\-[\]]*$/;
-
-const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
-addFormats(ajv);
-
-const schemaDefinition = {
-    type: 'object',
-    required: ['version', 'id', 'fields'],
-    additionalProperties: true,
-    properties: {
-        version: { const: FORM_SCHEMA_VERSION },
-        id: { type: 'string', minLength: 1 },
-        meta: { type: 'object' },
-        jsonata: {
-            type: 'object',
-            additionalProperties: true,
-            properties: {
-                engine: { const: 'jsonata' },
-                minVersion: { type: 'string' },
-                functions: {
-                    type: 'array',
-                    items: { type: 'string' },
-                },
-            },
-        },
-        layout: { type: 'object' },
-        fields: {
-            type: 'array',
-            items: { type: 'object' },
-        },
-        submit: { type: 'object' },
-    },
-};
-
-const validateBaseSchema = ajv.compile(schemaDefinition);
 
 /**
  * @returns {Object} Starter schema aligned with {@link FORM_SCHEMA_VERSION} containing one text field.
@@ -310,17 +274,7 @@ export function flattenFields(fields, parent = null) {
  */
 export function validateSchema(schema) {
     const canonical = canonicalizeSchema(schema);
-    const errors = [];
-
-    if (!validateBaseSchema(canonical)) {
-        validateBaseSchema.errors.forEach((error) => {
-            errors.push({
-                path: error.instancePath || '/',
-                code: 'schema_invalid',
-                message: error.message ?? 'The form schema is invalid.',
-            });
-        });
-    }
+    const errors = validateBaseSchema(canonical);
 
     if (canonical.version !== FORM_SCHEMA_VERSION) {
         errors.push({
@@ -338,6 +292,112 @@ export function validateSchema(schema) {
         errors,
         schema: canonical,
     };
+}
+
+function validateBaseSchema(schema) {
+    const errors = [];
+
+    if (!schema || typeof schema !== 'object' || Array.isArray(schema)) {
+        errors.push({
+            path: '/',
+            code: 'schema_invalid',
+            message: 'The form schema must be an object.',
+        });
+
+        return errors;
+    }
+
+    if (typeof schema.version !== 'string' || schema.version.trim() === '') {
+        errors.push({
+            path: '/version',
+            code: 'schema_invalid',
+            message: 'The form schema version must be a string.',
+        });
+    }
+
+    if (typeof schema.id !== 'string' || schema.id.trim() === '') {
+        errors.push({
+            path: '/id',
+            code: 'schema_invalid',
+            message: 'The form schema id must be a non-empty string.',
+        });
+    }
+
+    if (!Array.isArray(schema.fields)) {
+        errors.push({
+            path: '/fields',
+            code: 'schema_invalid',
+            message: 'The form schema fields must be an array.',
+        });
+    }
+
+    if (schema.meta !== undefined && (!schema.meta || typeof schema.meta !== 'object' || Array.isArray(schema.meta))) {
+        errors.push({
+            path: '/meta',
+            code: 'schema_invalid',
+            message: 'The form schema meta value must be an object.',
+        });
+    }
+
+    if (schema.layout !== undefined && (!schema.layout || typeof schema.layout !== 'object' || Array.isArray(schema.layout))) {
+        errors.push({
+            path: '/layout',
+            code: 'schema_invalid',
+            message: 'The form schema layout value must be an object.',
+        });
+    }
+
+    if (schema.submit !== undefined && (!schema.submit || typeof schema.submit !== 'object' || Array.isArray(schema.submit))) {
+        errors.push({
+            path: '/submit',
+            code: 'schema_invalid',
+            message: 'The form schema submit value must be an object.',
+        });
+    }
+
+    validateJsonataConfig(schema.jsonata, errors);
+
+    return errors;
+}
+
+function validateJsonataConfig(jsonataConfig, errors) {
+    if (jsonataConfig === undefined) {
+        return;
+    }
+
+    if (!jsonataConfig || typeof jsonataConfig !== 'object' || Array.isArray(jsonataConfig)) {
+        errors.push({
+            path: '/jsonata',
+            code: 'schema_invalid',
+            message: 'The form schema JSONata config must be an object.',
+        });
+
+        return;
+    }
+
+    if (jsonataConfig.engine !== undefined && jsonataConfig.engine !== 'jsonata') {
+        errors.push({
+            path: '/jsonata/engine',
+            code: 'schema_invalid',
+            message: 'The form schema JSONata engine must be jsonata.',
+        });
+    }
+
+    if (jsonataConfig.minVersion !== undefined && typeof jsonataConfig.minVersion !== 'string') {
+        errors.push({
+            path: '/jsonata/minVersion',
+            code: 'schema_invalid',
+            message: 'The form schema JSONata minVersion must be a string.',
+        });
+    }
+
+    if (jsonataConfig.functions !== undefined && !Array.isArray(jsonataConfig.functions)) {
+        errors.push({
+            path: '/jsonata/functions',
+            code: 'schema_invalid',
+            message: 'The form schema JSONata functions value must be an array.',
+        });
+    }
 }
 
 function validateFields(fields, errors) {

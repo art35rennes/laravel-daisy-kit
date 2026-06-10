@@ -8,8 +8,8 @@
  * - Sinon → suggestions locales construites depuis les <option> du <select>.
  *
  * Accessibilité & Qualité :
- * - Debounce sur la saisie (options.debounce, default 300ms)
- * - minChars avant requête distante (options.minChars, default 2)
+ * - Debounce sur la saisie (options.debounce, default 500ms)
+ * - minChars avant requête distante (options.minChars, default 3)
  * - Annulation des requêtes en cours (AbortController)
  * - Navigation clavier ↑/↓/Enter/Escape
  * - Ouverture de la liste uniquement si propositions; sinon affiche "Aucun résultat" uniquement si saisie non vide
@@ -44,8 +44,8 @@ export default function initSelect(rootEl, options = {}) {
     const endpoint = String(options.endpoint || '').trim();
     const defaultData = Array.isArray(options.default) ? options.default : [];
     const paramName = String(options.param || 'q');
-    const debounceMs = Number.parseInt(options.debounce ?? 300, 10) || 300;
-    const minChars = Number.parseInt(options.minChars ?? 2, 10) || 2;
+    const debounceMs = Number.parseInt(options.debounce ?? 500, 10) || 500;
+    const minChars = Number.parseInt(options.minChars ?? 3, 10) || 3;
     const fetchOnEmpty = String(options.fetchOnEmpty ?? (selectEl.dataset.fetchOnEmpty ?? rootEl.dataset?.fetchOnEmpty) ?? 'true') === 'true';
     const userPlaceholder = (rootEl.dataset?.placeholder || selectEl.dataset?.placeholder) || selectEl.getAttribute('placeholder') || '';
 
@@ -439,5 +439,4 @@ export default function initSelect(rootEl, options = {}) {
         }
     });
 }
-
 

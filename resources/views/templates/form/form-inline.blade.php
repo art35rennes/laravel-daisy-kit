@@ -41,8 +41,7 @@
     method="{{ $htmlMethod }}" 
     data-module="inline"
     data-inline-instance-id="{{ $instanceId }}"
-    class="space-y-4"
-    {{ $attributes->except(['id']) }}
+    {{ $attributes->except(['id'])->class('space-y-4') }}
 >
     @if(!$isGet)
         @csrf
