@@ -1,9 +1,9 @@
 {
-    "generated_at": "2026-06-09T08:52:25+00:00",
+    "generated_at": "2026-06-10T07:37:16+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
-        "component_count": 148,
+        "component_count": 149,
         "template_count": 30,
         "excluded_component_template_mirrors": 0
     },
@@ -257,6 +257,20 @@
                 "bodyClass",
                 "fontUrl",
                 "loadDefaultFont"
+            ]
+        },
+        {
+            "alias": "x-daisy::layout.auth-shell",
+            "group": "layout",
+            "name": "auth-shell",
+            "relative_path": "resources/views/components/layout/auth-shell.blade.php",
+            "props": [
+                "backgroundImage",
+                "backgroundClass",
+                "overlay",
+                "overlayClass",
+                "padding",
+                "cardClass"
             ]
         },
         {
@@ -1304,6 +1318,9 @@
                 "initialState",
                 "pageSizeOptions",
                 "search",
+                "searchDebounce",
+                "filterDebounce",
+                "minSearchChars",
                 "columnVisibility",
                 "caption",
                 "size",
@@ -2124,7 +2141,6 @@
                 "label",
                 "active",
                 "href",
-                "onclick",
                 "groups",
                 "allowInlineHandlers",
                 "groupSpacing",

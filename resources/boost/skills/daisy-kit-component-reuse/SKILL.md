@@ -73,6 +73,9 @@ Do not rebuild a component, page shell, or layout that already exists in the pac
 - Prefer composition over copying package markup into a host Blade file.
 - Prefer vendor overrides over host-local clones when the change is mostly visual, structural, or textual.
 - Before adding new JavaScript, check whether the target package component already ships a package module, a `data-module` hook, or a package entrypoint that covers the behavior.
+- Treat HTML `autocomplete` as host-controlled markup: use semantic values where Daisy Kit owns the field meaning, and let hosts disable it at the form/page or field level for business or sensitive workflows.
+- For broad autocomplete conventions, prefer host layouts, wrappers, or published Daisy Kit overrides instead of adding a package-wide switch.
+- Do not confuse browser/password-manager autocomplete with Daisy Kit remote autocomplete widgets such as enhanced selects or token inputs.
 - Keep host-specific business logic in the host application and reusable presentation in the package.
 - If you create a new host component anyway, explain why the package aliases and overrides were not sufficient.
 

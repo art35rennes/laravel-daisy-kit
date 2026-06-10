@@ -17,6 +17,10 @@ return [
         'js' => 'vendor/daisy-kit/daisy-kit.js',
     ],
 
+    // Nonce CSP optionnel applique aux balises assets statiques generees hors @vite.
+    // Peut etre une chaine ou un callable resolu par requete.
+    'csp_nonce' => null,
+
     // Contrat d'exposition de la route de rafraîchissement du token CSRF.
     'csrf_refresh' => [
         'enabled' => true,
@@ -53,6 +57,15 @@ return [
 
     // Configuration des thèmes daisyUI
     'themes' => [
+        // Thème global appliqué automatiquement par les layouts Daisy Kit.
+        // Mettez null ou une chaîne vide pour laisser les layouts sans data-theme par défaut.
+        'default' => 'light',
+
+        // Injection CSS dynamique des thèmes personnalisés.
+        // Désactivée par défaut pour rester compatible avec style-src 'self'.
+        // Si activée, la balise <style> peut recevoir le nonce défini par daisy-kit.csp_nonce.
+        'inline_custom_css' => false,
+
         // Thèmes intégrés daisyUI activés par défaut
         'builtin' => [
             'light' => ['default' => true],
