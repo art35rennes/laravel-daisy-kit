@@ -105,6 +105,42 @@ it('renders ordered-list through its public alias', function () {
         ->toContain('data-ordered-list="1"');
 });
 
+it('renders truncate text through its public alias', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.utilities.truncate-text
+            text="REF-2026-000001"
+            max-width="max-w-48"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('data-module="truncate-text"')
+        ->toContain('data-truncate-text-title="REF-2026-000001"')
+        ->toContain('class="min-w-0 max-w-48 truncate"')
+        ->toContain('REF-2026-000001');
+});
+
+it('renders multiline truncate text and native title fallback', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.utilities.truncate-text
+            text="A long customer-facing label"
+            title="Full label"
+            tag="p"
+            :tooltip="false"
+            :lines="3"
+            class="text-sm"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('<p')
+        ->toContain('class="min-w-0 max-w-full line-clamp-3 text-sm"')
+        ->toContain('title="Full label"')
+        ->toContain('aria-label="A long customer-facing label"')
+        ->not->toContain('data-module="truncate-text"')
+        ->not->toContain('data-tip=');
+});
+
 it('renders the ui theme selector only when the package dev toggle is enabled', function () {
     config([
         'daisy-kit.dev.show_theme_selector' => true,
