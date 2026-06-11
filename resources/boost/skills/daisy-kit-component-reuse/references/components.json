@@ -1,9 +1,9 @@
 {
-    "generated_at": "2026-06-10T21:24:05+00:00",
+    "generated_at": "2026-06-11T15:19:59+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
-        "component_count": 149,
+        "component_count": 151,
         "template_count": 30,
         "excluded_component_template_mirrors": 0
     },
@@ -1235,14 +1235,42 @@
             "name": "file-preview",
             "relative_path": "resources/views/components/ui/data-display/file-preview.blade.php",
             "props": [
+                "file",
                 "url",
                 "name",
                 "type",
+                "mimeType",
+                "extension",
                 "fileSize",
                 "thumbnail",
                 "downloadable",
                 "size",
-                "openMode"
+                "openMode",
+                "previewUrl",
+                "downloadUrl",
+                "previewType",
+                "previewMode",
+                "showPreviewAction",
+                "showDownloadAction",
+                "downloadFromPreview",
+                "showMeta",
+                "maxTextPreviewBytes",
+                "docxPreview"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.data-display.file-preview-trigger",
+            "group": "ui.data-display",
+            "name": "file-preview-trigger",
+            "relative_path": "resources/views/components/ui/data-display/file-preview-trigger.blade.php",
+            "props": [
+                "file",
+                "url",
+                "type",
+                "mimeType",
+                "extension",
+                "label",
+                "disabledWhenUnavailable"
             ]
         },
         {
@@ -1937,8 +1965,7 @@
             "props": [
                 "gap",
                 "align",
-                "class",
-                "styleStack"
+                "class"
             ]
         },
         {
@@ -2623,6 +2650,22 @@
                 "contentClass",
                 "contentTopBorder",
                 "contentTopBorderColor"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.utilities.truncate-text",
+            "group": "ui.utilities",
+            "name": "truncate-text",
+            "relative_path": "resources/views/components/ui/utilities/truncate-text.blade.php",
+            "props": [
+                "text",
+                "maxWidth",
+                "tag",
+                "tooltip",
+                "tooltipPosition",
+                "tooltipOnlyWhenTruncated",
+                "lines",
+                "title"
             ]
         }
     ],
