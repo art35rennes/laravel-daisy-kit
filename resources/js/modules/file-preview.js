@@ -34,6 +34,93 @@ async function downloadFile(button) {
   }
 }
 
+async function loadTextPreview(element) {
+  if (element.dataset.filePreviewLoaded === 'true') {
+    return;
+  }
+
+  element.dataset.filePreviewLoaded = 'true';
+  const url = element.dataset.url;
+  const maxBytes = Number.parseInt(element.dataset.maxBytes || '65536', 10);
+  const errorLabel = element.dataset.errorLabel || 'Preview unavailable';
+
+  if (!url) {
+    element.textContent = errorLabel;
+    return;
+  }
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'text/plain, text/*, application/json, application/xml, */*',
+        Range: `bytes=0-${Math.max(maxBytes - 1, 0)}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Unable to load text preview');
+    }
+
+    const text = await response.text();
+    element.textContent = text.length > maxBytes ? `${text.slice(0, maxBytes)}…` : text;
+  } catch (error) {
+    console.error('Error loading text preview:', error);
+    element.textContent = errorLabel;
+  }
+}
+
+async function loadDocxPreview(element) {
+  if (element.dataset.filePreviewLoaded === 'true') {
+    return;
+  }
+
+  element.dataset.filePreviewLoaded = 'true';
+  const url = element.dataset.url;
+  const errorLabel = element.dataset.errorLabel || 'Preview unavailable';
+
+  if (!url) {
+    element.textContent = errorLabel;
+    return;
+  }
+
+  try {
+    const [{ renderAsync }, response] = await Promise.all([
+      import('docx-preview'),
+      fetch(url, {
+        headers: {
+          Accept: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/octet-stream, */*',
+        },
+      }),
+    ]);
+
+    if (!response.ok) {
+      throw new Error('Unable to load DOCX preview');
+    }
+
+    const blob = await response.blob();
+    element.replaceChildren();
+
+    await renderAsync(blob, element, element, {
+      className: 'daisy-docx-preview',
+      inWrapper: true,
+      ignoreWidth: false,
+      ignoreHeight: false,
+      breakPages: true,
+      renderHeaders: true,
+      renderFooters: true,
+      renderFootnotes: true,
+      renderEndnotes: true,
+    });
+  } catch (error) {
+    console.error('Error loading DOCX preview:', error);
+    element.replaceChildren();
+    const message = document.createElement('div');
+    message.className = 'flex min-h-48 items-center justify-center text-sm text-base-content/70';
+    message.textContent = errorLabel;
+    element.append(message);
+  }
+}
+
 export default function init(root) {
   root.querySelectorAll('[data-file-preview-open-modal]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -53,4 +140,14 @@ export default function init(root) {
       void downloadFile(button);
     });
   });
+
+  root.querySelectorAll('[data-file-preview-text]').forEach((element) => {
+    void loadTextPreview(element);
+  });
+
+  root.querySelectorAll('[data-file-preview-docx]').forEach((element) => {
+    void loadDocxPreview(element);
+  });
 }
+
+export { downloadFile, loadDocxPreview, loadTextPreview };

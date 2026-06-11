@@ -66,6 +66,13 @@ return [
     'lightbox' => 'Lightbox',
     'media-gallery' => 'Media gallery',
     'embed' => 'Embed',
+    'file_preview' => [
+        'preview' => 'Preview',
+        'open' => 'Open',
+        'preview_unavailable' => 'Preview unavailable',
+        'video_unsupported' => 'Your browser does not support the video tag.',
+        'audio_unsupported' => 'Your browser does not support the audio tag.',
+    ],
     'leaflet' => 'Map',
     'calendar-full' => 'Full calendar',
     'chart' => 'Chart',

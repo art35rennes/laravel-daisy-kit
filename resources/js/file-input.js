@@ -3,7 +3,7 @@
  *
  * Fonctionnalités principales :
  * - Zone drag & drop optionnelle, reliée au vrai <input type="file">
- * - Prévisualisations basiques (image / vidéo / audio / autre)
+ * - Prévisualisations basiques (image / vidéo / audio / PDF / texte / DOCX / autre)
  * - Respecte l'attribut accept (types MIME et extensions)
  *
  * Intégration (Blade) : voir le composant `ui/file-input.blade.php` qui injecte :
@@ -26,14 +26,59 @@
  * @param {File} file - Le fichier à prévisualiser
  * @returns {HTMLElement} - L'élément DOM de prévisualisation
  */
+function previewType(file) {
+  const name = (file.name || '').toLowerCase();
+  const extension = name.includes('.') ? name.split('.').pop() : '';
+  const type = (file.type || '').toLowerCase();
+
+  if (type.startsWith('image/')) return 'image';
+  if (type.startsWith('video/')) return 'video';
+  if (type.startsWith('audio/')) return 'audio';
+  if (type === 'application/pdf' || extension === 'pdf') return 'pdf';
+  if (type.startsWith('text/') || ['txt', 'md', 'csv', 'json', 'xml', 'log'].includes(extension)) return 'text';
+  if (type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || extension === 'docx') return 'docx';
+
+  return 'other';
+}
+
+async function renderTextPreview(file, container) {
+  try {
+    const text = await file.slice(0, 65536).text();
+    container.textContent = text;
+  } catch (error) {
+    console.error('Error loading text preview:', error);
+    container.textContent = file.name || 'Fichier';
+  }
+}
+
+async function renderDocxPreview(file, container) {
+  try {
+    const { renderAsync } = await import('docx-preview');
+    container.replaceChildren();
+
+    await renderAsync(file, container, container, {
+      className: 'daisy-docx-preview',
+      inWrapper: true,
+      breakPages: true,
+      renderHeaders: true,
+      renderFooters: true,
+      renderFootnotes: true,
+      renderEndnotes: true,
+    });
+  } catch (error) {
+    console.error('Error loading DOCX preview:', error);
+    container.textContent = file.name || 'Fichier';
+  }
+}
+
 function createPreview(file) {
   const wrap = document.createElement('div');
   // Style général du conteneur de prévisualisation
   wrap.className = 'relative rounded-box overflow-hidden card-border bg-base-200/50 aspect-video';
-  const ext = (file.name || '').toLowerCase();
+  const type = previewType(file);
 
   // Prévisualisation pour les images
-  if (file.type.startsWith('image/')) {
+  if (type === 'image') {
     const img = document.createElement('img');
     img.className = 'h-full w-full object-cover';
     img.alt = file.name;
@@ -44,7 +89,7 @@ function createPreview(file) {
     wrap.append(img);
 
   // Prévisualisation pour les vidéos
-  } else if (file.type.startsWith('video/')) {
+  } else if (type === 'video') {
     const vid = document.createElement('video');
     vid.className = 'h-full w-full object-cover';
     vid.controls = true;
@@ -52,7 +97,7 @@ function createPreview(file) {
     wrap.append(vid);
 
   // Prévisualisation pour les fichiers audio
-  } else if (file.type.startsWith('audio/')) {
+  } else if (type === 'audio') {
     const aud = document.createElement('audio');
     aud.controls = true;
     aud.className = 'w-full';
@@ -62,6 +107,27 @@ function createPreview(file) {
     box.className = 'flex items-center justify-center h-full bg-base-200';
     box.append(aud);
     wrap.append(box);
+
+  } else if (type === 'pdf') {
+    const frame = document.createElement('iframe');
+    frame.className = 'h-full w-full';
+    frame.title = file.name || 'PDF preview';
+    frame.src = URL.createObjectURL(file);
+    wrap.append(frame);
+
+  } else if (type === 'text') {
+    const pre = document.createElement('pre');
+    pre.className = 'h-full w-full overflow-auto whitespace-pre-wrap break-words p-2 text-xs';
+    pre.textContent = file.name || 'Fichier';
+    wrap.append(pre);
+    void renderTextPreview(file, pre);
+
+  } else if (type === 'docx') {
+    const box = document.createElement('div');
+    box.className = 'h-full w-full overflow-auto bg-base-100 p-2 text-xs';
+    box.textContent = file.name || 'Fichier';
+    wrap.append(box);
+    void renderDocxPreview(file, box);
 
   // Prévisualisation générique pour les autres types de fichiers
   } else {

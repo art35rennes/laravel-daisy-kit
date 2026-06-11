@@ -53,6 +53,10 @@ export default defineConfig({
                         return 'jsonata';
                     }
 
+                    if (id.includes('docx-preview') || id.includes('jszip')) {
+                        return 'docx-preview';
+                    }
+
                     if (id.includes('form-kit')) {
                         return 'form-kit';
                     }

@@ -572,7 +572,100 @@ describe('Communication Components Rendering', function () {
             expect($html)
                 ->toContain('file-preview')
                 ->toContain('test-document.pdf')
-                ->toContain('bi-file-pdf');
+                ->toContain('type="application/pdf"');
+        });
+
+        it('renders file-preview component with multipage pdf embed and download action', function () {
+            $html = View::make('daisy::components.ui.data-display.file-preview', [
+                'url' => 'https://example.com/document.pdf',
+                'name' => 'test-document.pdf',
+                'type' => 'pdf',
+                'previewMode' => 'inline',
+                'downloadUrl' => 'https://example.com/download/document.pdf',
+            ])->render();
+
+            expect($html)
+                ->toContain('type="application/pdf"')
+                ->toContain('data-url="https://example.com/download/document.pdf"')
+                ->toContain('file-download');
+        });
+
+        it('renders docx preview containers when enabled', function () {
+            $html = View::make('daisy::components.ui.data-display.file-preview', [
+                'url' => 'https://example.com/document.docx',
+                'name' => 'document.docx',
+                'previewMode' => 'inline',
+            ])->render();
+
+            expect($html)
+                ->toContain('data-file-preview-docx')
+                ->toContain('data-url="https://example.com/document.docx"')
+                ->toContain('document.docx');
+        });
+
+        it('uses previewUrl for preview and downloadUrl for downloads', function () {
+            $html = View::make('daisy::components.ui.data-display.file-preview', [
+                'url' => 'https://example.com/document.docx',
+                'previewUrl' => 'https://example.com/document-preview.pdf',
+                'downloadUrl' => 'https://example.com/document-download.docx',
+                'name' => 'document.docx',
+                'previewMode' => 'inline',
+            ])->render();
+
+            expect($html)
+                ->toContain('data="https://example.com/document-preview.pdf"')
+                ->toContain('data-url="https://example.com/document-download.docx"')
+                ->not->toContain('data-file-preview-docx');
+        });
+
+        it('hides preview and download actions when disabled', function () {
+            $html = View::make('daisy::components.ui.data-display.file-preview', [
+                'url' => 'https://example.com/document.pdf',
+                'type' => 'pdf',
+                'showPreviewAction' => false,
+                'showDownloadAction' => false,
+            ])->render();
+
+            expect($html)
+                ->toContain('file-preview')
+                ->not->toContain('data-file-preview-open-modal')
+                ->not->toContain('file-download');
+        });
+
+        it('omits modal download action when downloadFromPreview is false', function () {
+            $html = View::make('daisy::components.ui.data-display.file-preview', [
+                'url' => 'https://example.com/image.jpg',
+                'type' => 'image',
+                'previewMode' => 'modal',
+                'downloadFromPreview' => false,
+            ])->render();
+
+            expect($html)
+                ->toContain('data-file-preview-open-modal')
+                ->not->toContain('btn btn-primary file-download');
+        });
+
+        it('renders a preview trigger according to eligibility', function () {
+            $previewable = View::make('daisy::components.ui.data-display.file-preview-trigger', [
+                'url' => 'https://example.com/document.docx',
+            ])->render();
+
+            $hidden = View::make('daisy::components.ui.data-display.file-preview-trigger', [
+                'url' => 'https://example.com/archive.zip',
+                'disabledWhenUnavailable' => false,
+            ])->render();
+
+            $disabled = View::make('daisy::components.ui.data-display.file-preview-trigger', [
+                'url' => 'https://example.com/archive.zip',
+            ])->render();
+
+            expect($previewable)
+                ->toContain('data-file-preview-trigger')
+                ->toContain('data-file-preview-renderer="docx-preview"')
+                ->and($hidden)->toBe('')
+                ->and($disabled)
+                ->toContain('disabled')
+                ->toContain('data-file-preview-reason="archive_not_previewable"');
         });
 
         it('renders file-preview component with auto-detected type from extension', function () {

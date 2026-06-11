@@ -81,6 +81,13 @@ return [
     'lightbox' => 'Lightbox',
     'media-gallery' => 'Galerie média',
     'embed' => 'Intégration',
+    'file_preview' => [
+        'preview' => 'Prévisualiser',
+        'open' => 'Ouvrir',
+        'preview_unavailable' => 'Prévisualisation indisponible',
+        'video_unsupported' => 'Votre navigateur ne prend pas en charge la balise vidéo.',
+        'audio_unsupported' => 'Votre navigateur ne prend pas en charge la balise audio.',
+    ],
     'leaflet' => 'Leaflet',
     'calendar-full' => 'Calendrier complet',
     'chart' => 'Graphique',

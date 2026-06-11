@@ -1,15 +1,30 @@
 @props([
+    'file' => null,
     'url' => null,
     'name' => null,
-    'type' => null, // image|video|audio|pdf|document|other
-    'fileSize' => null, // Format: "1.5 MB" ou nombre en bytes
-    'thumbnail' => null, // URL de la miniature pour les non-images
+    'type' => null,
+    'mimeType' => null,
+    'extension' => null,
+    'fileSize' => null,
+    'thumbnail' => null,
     'downloadable' => true,
-    'size' => 'md', // xs|sm|md|lg|xl
-    'openMode' => null, // null|blank|modal - null = auto (modal pour images, blank pour autres)
+    'size' => 'md',
+    'openMode' => null,
+    'previewUrl' => null,
+    'downloadUrl' => null,
+    'previewType' => null,
+    'previewMode' => 'auto',
+    'showPreviewAction' => true,
+    'showDownloadAction' => true,
+    'downloadFromPreview' => true,
+    'showMeta' => true,
+    'maxTextPreviewBytes' => 65536,
+    'docxPreview' => true,
 ])
 
 @php
+    use Art35rennes\DaisyKit\Support\FilePreview;
+
     $normalizeUrl = function($value) {
         if (!is_string($value) && !$value instanceof \Stringable) {
             return null;
@@ -21,241 +36,198 @@
             return null;
         }
 
-        if (str_starts_with($value, '/')) {
+        if (str_starts_with($value, '/') || str_starts_with($value, '#') || str_starts_with($value, 'blob:')) {
             return $value;
         }
 
         return preg_match('/^https?:\/\//i', $value) === 1 ? $value : null;
     };
 
-    $url = $normalizeUrl($url);
-    $thumbnail = $normalizeUrl($thumbnail);
-    $downloadable = $downloadable && filled($url);
-
-    // Détection automatique du type si non fourni
-    if (!$type && $url) {
-        $extension = strtolower(pathinfo($url, PATHINFO_EXTENSION));
-        $imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
-        $videoExts = ['mp4', 'webm', 'ogg', 'mov', 'avi'];
-        $audioExts = ['mp3', 'wav', 'ogg', 'm4a', 'aac'];
-        $pdfExts = ['pdf'];
-        $docExts = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf'];
-        
-        if (in_array($extension, $imageExts)) {
-            $type = 'image';
-        } elseif (in_array($extension, $videoExts)) {
-            $type = 'video';
-        } elseif (in_array($extension, $audioExts)) {
-            $type = 'audio';
-        } elseif (in_array($extension, $pdfExts)) {
-            $type = 'pdf';
-        } elseif (in_array($extension, $docExts)) {
-            $type = 'document';
-        } else {
-            $type = 'other';
+    $formatSize = function($value) {
+        if (!is_numeric($value)) {
+            return $value;
         }
+
+        $bytes = (float) $value;
+        $units = ['B', 'KB', 'MB', 'GB'];
+
+        foreach ($units as $unit) {
+            if ($bytes < 1024 || $unit === 'GB') {
+                return rtrim(rtrim(number_format($bytes, $unit === 'B' ? 0 : 1), '0'), '.').' '.$unit;
+            }
+
+            $bytes /= 1024;
+        }
+
+        return $value;
+    };
+
+    $fileMetadata = FilePreview::metadata($file);
+    $metadata = array_filter([
+        'url' => $url,
+        'name' => $name,
+        'type' => $type,
+        'mimeType' => $mimeType,
+        'extension' => $extension,
+        'size' => $fileSize,
+        'previewUrl' => $previewUrl,
+        'downloadUrl' => $downloadUrl,
+    ], fn ($value) => $value !== null);
+    $metadata = array_replace($fileMetadata, $metadata);
+
+    $resolvedUrl = $normalizeUrl($metadata['url'] ?? null);
+    $resolvedPreviewUrl = $normalizeUrl($metadata['previewUrl'] ?? null) ?: $resolvedUrl;
+    $resolvedDownloadUrl = $normalizeUrl($metadata['downloadUrl'] ?? null) ?: $resolvedUrl;
+    $thumbnail = $normalizeUrl($thumbnail);
+    $name = $metadata['name'] ?? ($resolvedUrl ? basename(parse_url($resolvedUrl, PHP_URL_PATH) ?: $resolvedUrl) : null);
+    $fileSize = $formatSize($metadata['size'] ?? $fileSize);
+
+    $type = FilePreview::type($metadata);
+    $previewType = $previewType ?: FilePreview::type([
+        'url' => $resolvedPreviewUrl,
+        'type' => $previewType,
+        'mimeType' => $mimeType,
+        'extension' => $extension,
+    ]);
+
+    if ($previewType === 'other') {
+        $previewType = $type;
     }
-    
-    $type = $type ?? 'other';
-    
-    // Détermination automatique du mode d'ouverture
-    // Si openMode n'est pas spécifié : modal pour les images, blank pour les autres
-    if ($openMode === null) {
-        $openMode = ($type === 'image') ? 'modal' : 'blank';
+
+    $capabilities = FilePreview::capabilities([
+        'url' => $resolvedPreviewUrl,
+        'type' => $previewType,
+        'mimeType' => $mimeType,
+        'extension' => $extension,
+    ]);
+    $isPreviewable = $showPreviewAction && $resolvedPreviewUrl && $capabilities['isPreviewable'] && ($previewType !== 'docx' || $docxPreview);
+    $canDownload = $downloadable && $showDownloadAction && $resolvedDownloadUrl;
+
+    if ($openMode !== null && $previewMode === 'auto') {
+        $previewMode = $openMode === 'blank' ? 'download' : $openMode;
     }
-    
-    // Tailles pour les différents types
+
+    if ($previewMode === 'auto') {
+        $previewMode = in_array($previewType, ['image'], true) ? 'modal' : 'inline';
+    }
+
+    if (!in_array($previewMode, ['inline', 'modal', 'download'], true)) {
+        $previewMode = 'inline';
+    }
+
     $sizeMap = [
-        'xs' => ['container' => 'max-w-32', 'image' => 'max-h-24', 'icon' => 'w-6 h-6'],
-        'sm' => ['container' => 'max-w-48', 'image' => 'max-h-32', 'icon' => 'w-8 h-8'],
-        'md' => ['container' => 'max-w-64', 'image' => 'max-h-48', 'icon' => 'w-10 h-10'],
-        'lg' => ['container' => 'max-w-96', 'image' => 'max-h-64', 'icon' => 'w-12 h-12'],
-        'xl' => ['container' => 'max-w-[32rem]', 'image' => 'max-h-96', 'icon' => 'w-16 h-16'],
+        'xs' => ['container' => 'max-w-32', 'media' => 'max-h-24', 'frame' => 'h-48', 'icon' => 'w-6 h-6'],
+        'sm' => ['container' => 'max-w-48', 'media' => 'max-h-32', 'frame' => 'h-64', 'icon' => 'w-8 h-8'],
+        'md' => ['container' => 'max-w-64', 'media' => 'max-h-48', 'frame' => 'h-80', 'icon' => 'w-10 h-10'],
+        'lg' => ['container' => 'max-w-96', 'media' => 'max-h-64', 'frame' => 'h-[28rem]', 'icon' => 'w-12 h-12'],
+        'xl' => ['container' => 'max-w-[32rem]', 'media' => 'max-h-96', 'frame' => 'h-[36rem]', 'icon' => 'w-16 h-16'],
     ];
-    
     $sizes = $sizeMap[$size] ?? $sizeMap['md'];
-    
-    // Icônes par type
+
     $icons = [
         'image' => 'bi-image',
         'video' => 'bi-play-circle',
         'audio' => 'bi-music-note-beamed',
         'pdf' => 'bi-file-pdf',
+        'text' => 'bi-file-text',
+        'docx' => 'bi-file-word',
         'document' => 'bi-file-text',
+        'spreadsheet' => 'bi-file-spreadsheet',
+        'presentation' => 'bi-file-slides',
+        'archive' => 'bi-file-zip',
         'other' => 'bi-file-earmark',
     ];
-    
     $icon = $icons[$type] ?? $icons['other'];
-    
-    // ID unique pour le modal si mode modal
-    $modalId = $openMode === 'modal' ? 'file-preview-modal-'.\Illuminate\Support\Str::uuid() : null;
+    $modalId = $previewMode === 'modal' && $isPreviewable ? 'file-preview-modal-'.\Illuminate\Support\Str::uuid() : null;
+
+    $downloadLabel = __('daisy::common.download');
+    $closeLabel = __('daisy::common.close');
+    $previewLabel = __('daisy::components.file_preview.preview');
+    $openLabel = __('daisy::components.file_preview.open');
+    $loadingLabel = __('daisy::common.loading');
+    $fallbackLabel = __('daisy::components.file_preview.preview_unavailable');
 @endphp
 
-<div {{ $attributes->merge(['class' => 'file-preview inline-block '.$sizes['container'], 'data-module' => 'file-preview']) }}>
-    @if($type === 'image')
-        <div class="relative rounded-box overflow-hidden card-border hover:border-primary transition-colors">
-            @if($openMode === 'modal')
-                <button 
-                    type="button"
-                    data-file-preview-open-modal="{{ $modalId }}"
-                    class="block w-full cursor-pointer"
-                >
-                    <img 
-                        src="{{ $url }}" 
-                        alt="{{ $name ?? 'Image' }}"
-                        class="w-full h-auto {{ $sizes['image'] }} object-cover"
-                        loading="lazy"
-                    />
-                </button>
-            @else
-                <a 
-                    href="{{ $url }}" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    class="block"
-                >
-                    <img 
-                        src="{{ $url }}" 
-                        alt="{{ $name ?? 'Image' }}"
-                        class="w-full h-auto {{ $sizes['image'] }} object-cover"
-                        loading="lazy"
-                    />
-                </a>
-            @endif
-            @if($downloadable)
-                <button 
-                    type="button"
-                    class="absolute top-2 right-2 btn btn-sm btn-circle btn-primary opacity-80 hover:opacity-100 file-download"
-                    data-file-download
-                    data-url="{{ $url }}"
-                    data-filename="{{ $name ?? 'image' }}"
-                    title="{{ __('Download') }}"
-                >
-                    <x-icon name="bi-download" class="w-4 h-4" />
-                </button>
-            @endif
-        </div>
-        @if($name)
-            <p class="text-xs text-base-content/70 mt-1 truncate">{{ $name }}</p>
-        @endif
-        
-        @if($openMode === 'modal' && $modalId)
-            <x-daisy::ui.overlay.modal 
-                :id="$modalId" 
-                :title="$name ?? 'Image'"
-                size="7xl"
-                :boxClass="'p-0'"
-            >
-                <div class="flex items-center justify-center bg-base-200">
-                    <img 
-                        src="{{ $url }}" 
-                        alt="{{ $name ?? 'Image' }}"
-                        class="max-w-full max-h-[calc(100svh-8rem)] object-contain"
-                    />
-                </div>
-                <x-slot:actions>
-                    @if($downloadable)
-                        <button 
-                            type="button"
-                            class="btn btn-primary file-download"
-                            data-file-download
-                            data-url="{{ $url }}"
-                            data-filename="{{ $name ?? 'image' }}"
-                            title="{{ __('Download') }}"
-                        >
-                            <x-icon name="bi-download" class="w-4 h-4 mr-2" />
-                            {{ __('Download') }}
-                        </button>
-                    @endif
-                    <form method="dialog">
-                        <button type="submit" class="btn">{{ __('Close') }}</button>
-                    </form>
-                </x-slot:actions>
-            </x-daisy::ui.overlay.modal>
-        @endif
-    @elseif($type === 'video')
-        <div class="rounded-box overflow-hidden card-border bg-base-200">
-            <video 
-                src="{{ $url }}" 
-                controls
-                class="w-full {{ $sizes['image'] }} object-contain"
-            >
-                {{ __('Your browser does not support the video tag.') }}
-            </video>
-        </div>
-        @if($name)
-            <div class="flex items-center justify-between mt-1">
-                <p class="text-xs text-base-content/70 truncate flex-1">{{ $name }}</p>
-                @if($downloadable)
-                    <button 
-                        type="button"
-                        class="btn btn-ghost btn-xs file-download"
-                        data-file-download
-                        data-url="{{ $url }}"
-                        data-filename="{{ $name }}"
-                        title="{{ __('Download') }}"
-                    >
-                        <x-icon name="bi-download" class="w-4 h-4" />
-                    </button>
-                @endif
-            </div>
-        @endif
-    @elseif($type === 'audio')
-        <div class="rounded-box card-border bg-base-200 p-3">
-            <div class="flex items-center gap-3">
-                <x-icon name="{{ $icon }}" class="{{ $sizes['icon'] }} text-primary" />
-                <div class="flex-1 min-w-0">
+@once
+    @include('daisy::components.partials.assets')
+@endonce
+
+<div
+    {{ $attributes->merge(['class' => 'file-preview inline-block w-full '.$sizes['container'], 'data-module' => 'file-preview']) }}
+    data-file-preview-type="{{ $previewType }}"
+>
+    @if($isPreviewable && $previewMode === 'inline')
+        <div class="overflow-hidden rounded-box card-border bg-base-100">
+            <div class="flex items-center justify-between gap-3 border-b border-base-300/60 bg-base-200/70 px-3 py-2">
+                <div class="min-w-0">
                     @if($name)
-                        <p class="text-sm font-medium truncate">{{ $name }}</p>
+                        <p class="truncate text-sm font-medium">{{ $name }}</p>
                     @endif
-                    <audio src="{{ $url }}" controls class="w-full mt-1">
-                        {{ __('Your browser does not support the audio tag.') }}
-                    </audio>
+                    @if($showMeta && $fileSize)
+                        <p class="text-xs text-base-content/70">{{ $fileSize }}</p>
+                    @endif
                 </div>
+                <div class="flex shrink-0 items-center gap-1">
+                    @include('daisy::partials.file-preview-actions', ['buttonSize' => 'btn-xs'])
+                </div>
+            </div>
+            <div class="bg-base-100">
+                @include('daisy::partials.file-preview-body', ['previewContext' => 'inline'])
             </div>
         </div>
     @else
-        {{-- PDF, Document, Other --}}
-        <div class="rounded-box card-border bg-base-200 hover:bg-base-300 transition-colors p-3">
+        <div class="rounded-box card-border bg-base-200 p-3 transition-colors hover:bg-base-300">
             <div class="flex items-center gap-3">
-                <button 
-                    type="button"
-                    class="shrink-0 file-download hover:opacity-80 transition-opacity cursor-pointer"
-                    data-file-download
-                    data-url="{{ $url }}"
-                    data-filename="{{ $name ?? 'file' }}"
-                    title="{{ __('Download') }}"
-                >
-                    <x-icon name="{{ $icon }}" class="{{ $sizes['icon'] }} text-primary" />
-                </button>
-                <button 
-                    type="button"
-                    class="flex-1 min-w-0 text-left file-download hover:opacity-80 transition-opacity cursor-pointer"
-                    data-file-download
-                    data-url="{{ $url }}"
-                    data-filename="{{ $name ?? 'file' }}"
-                    title="{{ __('Download') }}"
-                >
+                @if($thumbnail)
+                    <img src="{{ $thumbnail }}" alt="" class="{{ $sizes['icon'] }} rounded object-cover" loading="lazy" />
+                @else
+                    <x-icon name="{{ $icon }}" class="{{ $sizes['icon'] }} shrink-0 text-primary" />
+                @endif
+
+                <div class="min-w-0 flex-1">
                     @if($name)
-                        <p class="text-sm font-medium truncate">{{ $name }}</p>
+                        <p class="truncate text-sm font-medium">{{ $name }}</p>
                     @endif
-                    @if($fileSize)
+                    @if($showMeta && $fileSize)
                         <p class="text-xs text-base-content/70">{{ $fileSize }}</p>
                     @endif
-                </button>
-                @if($downloadable)
-                    <button 
-                        type="button"
-                        class="btn btn-ghost btn-xs btn-circle file-download shrink-0"
-                        data-file-download
-                        data-url="{{ $url }}"
-                        data-filename="{{ $name ?? 'file' }}"
-                        title="{{ __('Download') }}"
-                    >
-                        <x-icon name="bi-download" class="w-4 h-4" />
-                    </button>
-                @endif
+                </div>
+
+                <div class="flex shrink-0 items-center gap-1">
+                    @include('daisy::partials.file-preview-actions', ['buttonSize' => 'btn-xs'])
+                </div>
             </div>
         </div>
+    @endif
+
+    @if($modalId)
+        <x-daisy::ui.overlay.modal
+            :id="$modalId"
+            :title="$name ?? $previewLabel"
+            size="7xl"
+            :boxClass="'p-0'"
+        >
+            <div class="bg-base-100">
+                @include('daisy::partials.file-preview-body', ['previewContext' => 'modal'])
+            </div>
+            <x-slot:actions>
+                @if($downloadFromPreview && $canDownload)
+                    <button
+                        type="button"
+                        class="btn btn-primary file-download"
+                        data-file-download
+                        data-url="{{ $resolvedDownloadUrl }}"
+                        data-filename="{{ $name ?? 'file' }}"
+                        title="{{ $downloadLabel }}"
+                    >
+                        <x-icon name="bi-download" class="w-4 h-4 mr-2" />
+                        {{ $downloadLabel }}
+                    </button>
+                @endif
+                <form method="dialog">
+                    <button type="submit" class="btn">{{ $closeLabel }}</button>
+                </form>
+            </x-slot:actions>
+        </x-daisy::ui.overlay.modal>
     @endif
 </div>
