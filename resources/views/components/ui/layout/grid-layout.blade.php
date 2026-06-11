@@ -2,7 +2,6 @@
     'gap' => 4,
     'align' => 'start',   // start|center|end
     'class' => '',
-    'styleStack' => 'styles',
 ])
 
 @php
@@ -25,4 +24,3 @@
     {{-- Enfants libres: utilisent .col-*, .offset-* --}}
     {{-- Exemple: <div class="col-sm-12 col-xl-4">...</div> --}}
 </div>
-
