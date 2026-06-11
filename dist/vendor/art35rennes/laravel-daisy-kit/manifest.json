@@ -20,6 +20,13 @@
       "_rolldown-runtime-aKtaBQYM.js"
     ]
   },
+  "_docx-preview-CXEC76g1.js": {
+    "file": "assets/docx-preview-CXEC76g1.js",
+    "name": "docx-preview",
+    "imports": [
+      "_rolldown-runtime-aKtaBQYM.js"
+    ]
+  },
   "_form-kit-fAcbUCjD.js": {
     "file": "assets/form-kit-fAcbUCjD.js",
     "name": "form-kit",
@@ -128,7 +135,7 @@
     "src": "node_modules/leaflet/dist/images/marker-shadow.png"
   },
   "resources/css/app.css": {
-    "file": "assets/app-BKI4Nvi5.css",
+    "file": "assets/app-Cwc9AV7d.css",
     "name": "app",
     "names": [
       "app.css"
@@ -137,7 +144,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-Ueiq8OTl.js",
+    "file": "assets/app-DRV6mOAN.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -172,6 +179,7 @@
       "resources/js/modules/table-of-contents.js",
       "resources/js/modules/theme-controller.js",
       "resources/js/modules/token-input.js",
+      "resources/js/modules/truncate-text.js",
       "resources/js/modules/forms/inline.js",
       "resources/js/modules/forms/tabs.js",
       "resources/js/modules/forms/wizard.js",
@@ -200,7 +208,7 @@
     ]
   },
   "resources/js/calendar-full/index.js": {
-    "file": "assets/calendar-full-C9kBlWUL.js",
+    "file": "assets/calendar-full-DAus67GA.js",
     "name": "calendar-full",
     "src": "resources/js/calendar-full/index.js",
     "isDynamicEntry": true,
@@ -209,7 +217,7 @@
     ]
   },
   "resources/js/chat/index.js": {
-    "file": "assets/chat-CnhfQOgS.js",
+    "file": "assets/chat-DEhpq9XA.js",
     "name": "chat",
     "src": "resources/js/chat/index.js",
     "isDynamicEntry": true,
@@ -224,10 +232,16 @@
     "isDynamicEntry": true
   },
   "resources/js/file-input.js": {
-    "file": "assets/file-input-BV1UGDv0.js",
+    "file": "assets/file-input-CNf-m2MJ.js",
     "name": "file-input",
     "src": "resources/js/file-input.js",
-    "isDynamicEntry": true
+    "isDynamicEntry": true,
+    "imports": [
+      "_form-kit-fAcbUCjD.js"
+    ],
+    "dynamicImports": [
+      "_docx-preview-CXEC76g1.js"
+    ]
   },
   "resources/js/input-mask.js": {
     "file": "assets/input-mask-DHVe-54J.js",
@@ -279,7 +293,7 @@
     "isDynamicEntry": true
   },
   "resources/js/modules/chat-input.js": {
-    "file": "assets/chat-input-CIbQRjoy.js",
+    "file": "assets/chat-input-BAYkyr6h.js",
     "name": "chat-input",
     "src": "resources/js/modules/chat-input.js",
     "isDynamicEntry": true,
@@ -288,7 +302,7 @@
     ]
   },
   "resources/js/modules/chat-messages.js": {
-    "file": "assets/chat-messages-IKincke3.js",
+    "file": "assets/chat-messages-BIGtZL6o.js",
     "name": "chat-messages",
     "src": "resources/js/modules/chat-messages.js",
     "isDynamicEntry": true,
@@ -297,7 +311,7 @@
     ]
   },
   "resources/js/modules/chat-widget.js": {
-    "file": "assets/chat-widget-CGAIGlPb.js",
+    "file": "assets/chat-widget-C-eCrXNF.js",
     "name": "chat-widget",
     "src": "resources/js/modules/chat-widget.js",
     "isDynamicEntry": true,
@@ -327,10 +341,16 @@
     ]
   },
   "resources/js/modules/file-preview.js": {
-    "file": "assets/file-preview-dPOUSAmU.js",
+    "file": "assets/file-preview-Cz_yd6G4.js",
     "name": "file-preview",
     "src": "resources/js/modules/file-preview.js",
-    "isDynamicEntry": true
+    "isDynamicEntry": true,
+    "imports": [
+      "_form-kit-fAcbUCjD.js"
+    ],
+    "dynamicImports": [
+      "_docx-preview-CXEC76g1.js"
+    ]
   },
   "resources/js/modules/form-builder.js": {
     "file": "assets/form-builder-De3pYQSS.js",
@@ -385,7 +405,7 @@
     "isDynamicEntry": true
   },
   "resources/js/modules/notifications.js": {
-    "file": "assets/notifications-CvO4THn6.js",
+    "file": "assets/notifications-DpbSwejn.js",
     "name": "notifications",
     "src": "resources/js/modules/notifications.js",
     "isDynamicEntry": true,
@@ -454,6 +474,12 @@
     "file": "assets/token-input-CVbKemk_.js",
     "name": "token-input",
     "src": "resources/js/modules/token-input.js",
+    "isDynamicEntry": true
+  },
+  "resources/js/modules/truncate-text.js": {
+    "file": "assets/truncate-text-D6asYLrq.js",
+    "name": "truncate-text",
+    "src": "resources/js/modules/truncate-text.js",
     "isDynamicEntry": true
   },
   "resources/js/onboarding.js": {
