@@ -108,14 +108,18 @@ onReady(async () => {
       // Masquer/afficher les labels
       aside.querySelectorAll('.sidebar-label').forEach((el) => el.classList.toggle('hidden', collapsed));
       aside.querySelector('[data-sidebar-brand]')?.classList.toggle('justify-center', collapsed);
-      aside.querySelector('[data-sidebar-brand]')?.classList.toggle('justify-between', !collapsed);
+      aside.querySelector('[data-sidebar-brand]')?.classList.toggle('justify-start', !collapsed);
       aside.querySelector('[data-sidebar-brand]')?.classList.toggle('px-2', collapsed);
-      aside.querySelector('[data-sidebar-brand]')?.classList.toggle('px-4', !collapsed);
+      aside.querySelector('[data-sidebar-brand]')?.classList.toggle('px-3', !collapsed);
       aside.querySelector('[data-sidebar-brand-expanded]')?.classList.toggle('hidden', collapsed);
       aside.querySelector('[data-sidebar-brand-expanded]')?.classList.toggle('flex', !collapsed);
       aside.querySelector('[data-sidebar-brand-collapsed]')?.classList.toggle('hidden', !collapsed);
       aside.querySelector('[data-sidebar-brand-collapsed]')?.classList.toggle('flex', collapsed);
+      aside.querySelector('[data-sidebar-brand-collapsed]')?.classList.toggle('w-full', collapsed);
       aside.querySelector('[data-sidebar-brand-collapsed]')?.setAttribute('aria-hidden', collapsed ? 'false' : 'true');
+      aside.querySelector('[data-sidebar-footer]')?.classList.toggle('flex', collapsed);
+      aside.querySelector('[data-sidebar-footer]')?.classList.toggle('justify-center', collapsed);
+      aside.querySelector('[data-sidebar-menu]')?.classList.toggle('sidebar-menu-collapsed', collapsed);
       aside.querySelectorAll('[data-sidebar-row]').forEach((row) => {
         row.classList.toggle('justify-center', collapsed);
         row.classList.toggle('gap-0', collapsed);
@@ -137,7 +141,8 @@ onReady(async () => {
         button.classList.toggle('mx-auto', collapsed);
         button.classList.toggle('justify-center', collapsed);
         button.classList.toggle('w-full', !collapsed);
-        button.classList.toggle('justify-between', !collapsed);
+        button.classList.toggle('justify-start', !collapsed);
+        button.classList.toggle('gap-2', !collapsed);
         button.querySelector('[data-sidebar-icon-collapsed]')?.classList.toggle('hidden', !collapsed);
         button.querySelector('[data-sidebar-icon-expanded]')?.classList.toggle('hidden', collapsed);
       }

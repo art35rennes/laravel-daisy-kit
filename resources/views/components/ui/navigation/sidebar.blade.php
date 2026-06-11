@@ -83,8 +83,10 @@
     $collapsedWidthClass = $collapsedWidth ?: 'w-20';
     $widthClass = $effectiveCollapsed ? $collapsedWidthClass : $wideWidthClass;
     $collapsedItemClasses = $effectiveCollapsed ? 'justify-center gap-0' : 'gap-2';
-    $collapsedPanelClasses = $effectiveCollapsed ? 'px-2 justify-center' : 'px-4 justify-between';
-    $collapsedToggleClasses = $effectiveCollapsed ? 'btn-square mx-auto justify-center' : 'w-full justify-between';
+    $collapsedPanelClasses = $effectiveCollapsed ? 'px-2 justify-center' : 'px-3 justify-start';
+    $collapsedToggleClasses = $effectiveCollapsed ? 'btn-square mx-auto justify-center' : 'w-full justify-start gap-2';
+    $collapsedFooterClasses = $effectiveCollapsed ? 'flex justify-center' : '';
+    $collapsedMenuClasses = $effectiveCollapsed ? 'sidebar-menu-collapsed' : '';
 
     // Classes de base pour le conteneur sidebar.
     $rootClasses = 'bg-base-200 text-base-content';
@@ -105,7 +107,7 @@
 
     // === CLASSES DE CONTENEUR ===
     // Classes pour le conteneur du menu (utilise le composant menu de daisyUI).
-    $menuContainerClass = 'menu p-2 flex-1';
+    $menuContainerClass = trim('menu p-2 flex-1 '.$collapsedMenuClasses);
     
     // Optimisations spécifiques pour le mode fit (ajustement dynamique de la largeur).
     if ($isFit) {
@@ -170,9 +172,13 @@
        @if($isFit) data-sidebar-fit @endif
        @if($storageKey) data-storage-key="{{ $storageKey }}" @endif>
     @if($showBrand)
-        <div class="h-14 border-b border-base-content/10 flex items-center gap-2 {{ $collapsedPanelClasses }}" data-sidebar-brand>
+        <div class="h-14 border-b border-base-content/10 flex w-full items-center gap-2 {{ $collapsedPanelClasses }}" data-sidebar-brand>
             <div class="{{ $effectiveCollapsed ? 'hidden' : 'flex' }} min-w-0 flex-1 items-center gap-2" data-sidebar-brand-expanded>
-                @if($hasBrandLink)
+                @if($hasBrandLink && $hasCustomBrandSlot)
+                    <a href="{{ $normalizedBrandHref }}" class="flex min-w-0 items-center gap-2">
+                        {{ $brand }}
+                    </a>
+                @elseif($hasBrandLink)
                     <a href="{{ $normalizedBrandHref }}" class="flex min-w-0 items-center gap-2">
                         <div class="font-bold text-lg truncate">{{ $brand ?: config('app.name', 'App') }}</div>
                     </a>
@@ -184,7 +190,7 @@
                     <div class="font-bold text-lg truncate sidebar-label {{ $effectiveCollapsed ? 'hidden' : '' }}">{{ config('app.name', 'App') }}</div>
                 @endif
             </div>
-            <div class="{{ $effectiveCollapsed ? 'flex' : 'hidden' }} size-10 items-center justify-center" data-sidebar-brand-collapsed aria-hidden="{{ $effectiveCollapsed ? 'false' : 'true' }}">
+            <div class="{{ $effectiveCollapsed ? 'flex w-full' : 'hidden' }} min-h-10 items-center justify-center" data-sidebar-brand-collapsed aria-hidden="{{ $effectiveCollapsed ? 'false' : 'true' }}">
                 @if($hasCollapsedBrand)
                     {{ $brandCollapsed }}
                 @elseif($isSlim)
@@ -206,7 +212,7 @@
         </div>
     @endif
     {{-- Menu de navigation : structure hiérarchique (sections > items > children) --}}
-    <ul class="{{ $menuContainerClass }}" @if($needsFilterModule) data-menu-filter-target @else data-sidebar-menu @endif>
+    <ul class="{{ $menuContainerClass }}" data-sidebar-menu @if($needsFilterModule) data-menu-filter-target @endif>
         @forelse($sections as $section)
             {{-- Titre de section optionnel --}}
             @if(!empty($section['label']))
@@ -289,7 +295,7 @@
         @endforelse
     </ul>
     {{-- Contrôle de collapse : bouton pour plier/déplier la sidebar (si autorisé et non forcé) --}}
-    <div class="p-2 border-t border-base-content/10">
+    <div class="border-t border-base-content/10 p-2 {{ $collapsedFooterClasses }}" data-sidebar-footer>
         @php $showToggle = $collapsible && !isset($forceCollapsed) && ! $hoverExpandable; @endphp
         @if($showToggle)
             <button type="button" class="btn btn-ghost btn-sm sidebar-toggle {{ $collapsedToggleClasses }}" title="{{ $toggleLabel }}" aria-label="{{ $toggleLabel }}" aria-expanded="{{ $effectiveCollapsed ? 'false' : 'true' }}">

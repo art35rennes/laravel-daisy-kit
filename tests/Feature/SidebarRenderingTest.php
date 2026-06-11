@@ -85,7 +85,24 @@ it('renders configured collapsed widths and collapsed brand content', function (
         ->toContain('data-sidebar-brand-collapsed')
         ->toContain('data-collapsed-brand')
         ->toContain('justify-center gap-0')
-        ->toContain('btn-square mx-auto justify-center');
+        ->toContain('btn-square mx-auto justify-center')
+        ->toContain('sidebar-menu-collapsed')
+        ->toContain('data-sidebar-footer');
+});
+
+it('wraps a custom brand slot when a brand url is provided', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.navigation.sidebar brand-url="/dashboard">
+            <x-slot:brand>
+                <span data-expanded-brand>Expanded brand</span>
+            </x-slot:brand>
+        </x-daisy::ui.navigation.sidebar>
+    BLADE);
+
+    expect($html)
+        ->toContain('href="/dashboard"')
+        ->toContain('data-expanded-brand')
+        ->not->toContain('href="#"');
 });
 
 it('renders expand on hover as a temporary compact state', function () {
