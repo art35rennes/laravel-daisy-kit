@@ -645,6 +645,68 @@ describe('Communication Components Rendering', function () {
                 ->not->toContain('btn btn-primary file-download');
         });
 
+        it('renders configurable sticky modal chrome and ordered actions', function () {
+            $html = View::make('daisy::components.ui.data-display.file-preview', [
+                'url' => 'https://example.com/report.pdf',
+                'name' => 'very-long-business-report-name.pdf',
+                'type' => 'pdf',
+                'previewMode' => 'modal',
+                'modalTitle' => 'Business report',
+                'modalActionOrder' => ['open', 'download', 'close'],
+                'modalDownloadButtonVariant' => 'info',
+                'modalOpenButtonVariant' => 'outline',
+                'modalFooterSticky' => true,
+            ])->render();
+
+            expect($html)
+                ->toContain('sticky top-0')
+                ->toContain('truncate text-base font-semibold')
+                ->toContain('Business report')
+                ->toContain('overflow-x-auto overflow-y-auto')
+                ->toContain('sticky bottom-0')
+                ->toContain('btn btn-outline btn-sm')
+                ->toContain('btn btn-info btn-sm');
+
+            $footerPosition = strpos($html, 'sticky bottom-0');
+
+            expect(strpos($html, 'btn btn-outline btn-sm', $footerPosition))
+                ->toBeLessThan(strpos($html, 'btn btn-info btn-sm', $footerPosition));
+        });
+
+        it('renders compact-list layout without duplicate preview chrome', function () {
+            $html = View::make('daisy::components.ui.data-display.file-preview', [
+                'url' => 'https://example.com/archive.pdf',
+                'name' => 'archive.pdf',
+                'type' => 'pdf',
+                'layout' => 'compact-list',
+                'previewMode' => 'modal',
+            ])->render();
+
+            expect($html)
+                ->toContain('archive.pdf')
+                ->toContain('data-file-preview-open-modal')
+                ->toContain('file-download')
+                ->not->toContain('card-border bg-base-200 p-3')
+                ->not->toContain('bi-file-pdf');
+        });
+
+        it('can hide the compact preview and keep only the preview action', function () {
+            $html = View::make('daisy::components.ui.data-display.file-preview', [
+                'url' => 'https://example.com/image.jpg',
+                'name' => 'image.jpg',
+                'type' => 'image',
+                'previewMode' => 'modal',
+                'showCompactPreview' => false,
+                'showDownloadAction' => false,
+            ])->render();
+
+            expect($html)
+                ->toContain('data-file-preview-open-modal')
+                ->toContain('btn-block')
+                ->not->toContain('image.jpg</p>')
+                ->not->toContain('file-download"');
+        });
+
         it('renders a preview trigger according to eligibility', function () {
             $previewable = View::make('daisy::components.ui.data-display.file-preview-trigger', [
                 'url' => 'https://example.com/document.docx',

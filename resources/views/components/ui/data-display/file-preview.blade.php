@@ -20,6 +20,25 @@
     'showMeta' => true,
     'maxTextPreviewBytes' => 65536,
     'docxPreview' => true,
+    'layout' => 'card',
+    'showCompactPreview' => true,
+    'actionOrder' => ['preview', 'download'],
+    'modalActionOrder' => ['download', 'close', 'open'],
+    'previewButtonVariant' => 'ghost',
+    'downloadButtonVariant' => 'ghost',
+    'openButtonVariant' => 'ghost',
+    'closeButtonVariant' => 'ghost',
+    'modalDownloadButtonVariant' => 'primary',
+    'modalOpenButtonVariant' => 'ghost',
+    'modalCloseButtonVariant' => null,
+    'modalTitle' => null,
+    'modalSize' => '7xl',
+    'modalMaxHeightClass' => 'max-h-[calc(100svh-4rem)]',
+    'modalBoxClass' => '',
+    'modalContentClass' => '',
+    'modalFooter' => true,
+    'modalFooterSticky' => true,
+    'logPreviewErrors' => false,
 ])
 
 @php
@@ -60,6 +79,42 @@
         }
 
         return $value;
+    };
+
+    $normalizeActions = function($value, array $fallback) {
+        if (is_string($value)) {
+            $value = preg_split('/[\s,|]+/', $value, -1, PREG_SPLIT_NO_EMPTY);
+        }
+
+        if (!is_array($value)) {
+            return $fallback;
+        }
+
+        $allowed = ['preview', 'download', 'open', 'close'];
+
+        return collect($value)
+            ->map(fn ($action) => is_string($action) ? trim($action) : null)
+            ->filter(fn ($action) => $action && in_array($action, $allowed, true))
+            ->values()
+            ->all() ?: $fallback;
+    };
+
+    $buttonVariantClass = function($variant, string $fallback = 'ghost') {
+        $variant = is_string($variant) ? $variant : $fallback;
+
+        return match ($variant) {
+            'outline' => 'btn-outline',
+            'info' => 'btn-info',
+            'ghost' => 'btn-ghost',
+            'primary' => 'btn-primary',
+            'secondary' => 'btn-secondary',
+            'accent' => 'btn-accent',
+            'success' => 'btn-success',
+            'warning' => 'btn-warning',
+            'error' => 'btn-error',
+            'neutral' => 'btn-neutral',
+            default => 'btn-'.$fallback,
+        };
     };
 
     $fileMetadata = FilePreview::metadata($file);
@@ -123,6 +178,33 @@
         'xl' => ['container' => 'max-w-[32rem]', 'media' => 'max-h-96', 'frame' => 'h-[36rem]', 'icon' => 'w-16 h-16'],
     ];
     $sizes = $sizeMap[$size] ?? $sizeMap['md'];
+    $modalSizeMap = [
+        'xs' => 'max-w-xs',
+        'sm' => 'max-w-sm',
+        'md' => 'max-w-md',
+        'lg' => 'max-w-lg',
+        'xl' => 'max-w-xl',
+        '2xl' => 'max-w-2xl',
+        '3xl' => 'max-w-3xl',
+        '4xl' => 'max-w-4xl',
+        '5xl' => 'max-w-5xl',
+        '6xl' => 'max-w-6xl',
+        '7xl' => 'max-w-7xl',
+        'full' => 'max-w-[calc(100vw-2rem)]',
+    ];
+    $modalSizeClass = $modalSizeMap[$modalSize] ?? $modalSizeMap['7xl'];
+    $modalMaxHeightClass = is_string($modalMaxHeightClass) && trim($modalMaxHeightClass) !== '' ? trim($modalMaxHeightClass) : 'max-h-[calc(100svh-4rem)]';
+    $modalBoxClass = is_string($modalBoxClass) ? $modalBoxClass : '';
+    $actionOrder = $normalizeActions($actionOrder, ['preview', 'download']);
+    $modalActionOrder = $normalizeActions($modalActionOrder, ['download', 'close', 'open']);
+    $previewButtonClass = $buttonVariantClass($previewButtonVariant);
+    $downloadButtonClass = $buttonVariantClass($downloadButtonVariant);
+    $openButtonClass = $buttonVariantClass($openButtonVariant);
+    $closeButtonClass = $buttonVariantClass($closeButtonVariant);
+    $modalDownloadButtonClass = $buttonVariantClass($modalDownloadButtonVariant, 'primary');
+    $modalOpenButtonClass = $buttonVariantClass($modalOpenButtonVariant);
+    $modalCloseButtonClass = $buttonVariantClass($modalCloseButtonVariant ?? $closeButtonVariant);
+    $isCompactList = $layout === 'compact-list';
 
     $icons = [
         'image' => 'bi-image',
@@ -146,6 +228,7 @@
     $openLabel = __('daisy::components.file_preview.open');
     $loadingLabel = __('daisy::common.loading');
     $fallbackLabel = __('daisy::components.file_preview.preview_unavailable');
+    $modalTitleText = $modalTitle ?? $name ?? $previewLabel;
 @endphp
 
 @once
@@ -153,8 +236,9 @@
 @endonce
 
 <div
-    {{ $attributes->merge(['class' => 'file-preview inline-block w-full '.$sizes['container'], 'data-module' => 'file-preview']) }}
+    {{ $attributes->merge(['class' => 'file-preview inline-block w-full '.($isCompactList ? '' : $sizes['container']), 'data-module' => 'file-preview']) }}
     data-file-preview-type="{{ $previewType }}"
+    data-log-preview-errors="{{ $logPreviewErrors ? 'true' : 'false' }}"
 >
     @if($isPreviewable && $previewMode === 'inline')
         <div class="overflow-hidden rounded-box card-border bg-base-100">
@@ -168,12 +252,31 @@
                     @endif
                 </div>
                 <div class="flex shrink-0 items-center gap-1">
-                    @include('daisy::partials.file-preview-actions', ['buttonSize' => 'btn-xs'])
+                    @include('daisy::partials.file-preview-actions', ['buttonSize' => 'btn-xs', 'actions' => $actionOrder])
                 </div>
             </div>
             <div class="bg-base-100">
                 @include('daisy::partials.file-preview-body', ['previewContext' => 'inline'])
             </div>
+        </div>
+    @elseif($isCompactList)
+        <div class="flex min-w-0 items-center gap-2 rounded-box px-2 py-1.5 transition-colors hover:bg-base-200">
+            <div class="min-w-0 flex-1">
+                @if($name)
+                    <p class="truncate text-sm font-medium">{{ $name }}</p>
+                @endif
+                @if($showMeta && $fileSize)
+                    <p class="truncate text-xs text-base-content/70">{{ $fileSize }}</p>
+                @endif
+            </div>
+
+            <div class="flex shrink-0 items-center gap-1">
+                @include('daisy::partials.file-preview-actions', ['buttonSize' => 'btn-xs', 'actions' => $actionOrder])
+            </div>
+        </div>
+    @elseif(! $showCompactPreview && $isPreviewable)
+        <div class="flex w-full">
+            @include('daisy::partials.file-preview-actions', ['buttonSize' => 'btn-md', 'buttonExtraClass' => 'btn-block', 'actions' => ['preview'], 'labelled' => true])
         </div>
     @else
         <div class="rounded-box card-border bg-base-200 p-3 transition-colors hover:bg-base-300">
@@ -194,40 +297,37 @@
                 </div>
 
                 <div class="flex shrink-0 items-center gap-1">
-                    @include('daisy::partials.file-preview-actions', ['buttonSize' => 'btn-xs'])
+                    @include('daisy::partials.file-preview-actions', ['buttonSize' => 'btn-xs', 'actions' => $actionOrder])
                 </div>
             </div>
         </div>
     @endif
 
     @if($modalId)
-        <x-daisy::ui.overlay.modal
-            :id="$modalId"
-            :title="$name ?? $previewLabel"
-            size="7xl"
-            :boxClass="'p-0'"
-        >
-            <div class="bg-base-100">
-                @include('daisy::partials.file-preview-body', ['previewContext' => 'modal'])
-            </div>
-            <x-slot:actions>
-                @if($downloadFromPreview && $canDownload)
-                    <button
-                        type="button"
-                        class="btn btn-primary file-download"
-                        data-file-download
-                        data-url="{{ $resolvedDownloadUrl }}"
-                        data-filename="{{ $name ?? 'file' }}"
-                        title="{{ $downloadLabel }}"
-                    >
-                        <x-icon name="bi-download" class="w-4 h-4 mr-2" />
-                        {{ $downloadLabel }}
-                    </button>
+        <dialog id="{{ $modalId }}" class="modal" aria-labelledby="{{ $modalId }}-title">
+            <div class="modal-box flex w-11/12 {{ $modalSizeClass }} {{ $modalMaxHeightClass }} {{ $modalBoxClass }} flex-col overflow-hidden p-0">
+                <div class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-base-300/60 bg-base-100 px-4 py-3">
+                    <h3 id="{{ $modalId }}-title" class="min-w-0 truncate text-base font-semibold">{{ $modalTitleText }}</h3>
+                    <form method="dialog" class="shrink-0">
+                        <button type="submit" class="btn btn-sm btn-circle {{ $modalCloseButtonClass }}" aria-label="{{ $closeLabel }}" title="{{ $closeLabel }}">
+                            <x-icon name="bi-x" class="w-4 h-4" />
+                        </button>
+                    </form>
+                </div>
+
+                <div class="min-h-0 flex-1 overflow-x-auto overflow-y-auto bg-base-100 {{ $modalContentClass }}">
+                    @include('daisy::partials.file-preview-body', ['previewContext' => 'modal'])
+                </div>
+
+                @if($modalFooter)
+                    <div class="{{ $modalFooterSticky ? 'sticky bottom-0 z-10' : '' }} flex flex-wrap justify-end gap-2 border-t border-base-300/60 bg-base-100 px-4 py-3">
+                        @include('daisy::partials.file-preview-actions', ['buttonSize' => 'btn-sm', 'actions' => $modalActionOrder, 'labelled' => true, 'modalActions' => true])
+                    </div>
                 @endif
-                <form method="dialog">
-                    <button type="submit" class="btn">{{ $closeLabel }}</button>
-                </form>
-            </x-slot:actions>
-        </x-daisy::ui.overlay.modal>
+            </div>
+            <form method="dialog" class="modal-backdrop">
+                <button>{{ $closeLabel }}</button>
+            </form>
+        </dialog>
     @endif
 </div>

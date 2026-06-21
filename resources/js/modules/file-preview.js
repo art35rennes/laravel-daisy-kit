@@ -34,17 +34,40 @@ async function downloadFile(button) {
   }
 }
 
+function shouldLogPreviewErrors(element) {
+  return element.closest('[data-module="file-preview"]')?.dataset.logPreviewErrors === 'true';
+}
+
+function markPreviewError(element, error, type) {
+  element.dataset.filePreviewError = 'true';
+
+  element.dispatchEvent(new CustomEvent('daisy:file-preview:error', {
+    bubbles: true,
+    detail: {
+      error,
+      type,
+      url: element.dataset.url || null,
+    },
+  }));
+
+  if (shouldLogPreviewErrors(element)) {
+    console.error(`Error loading ${type} preview:`, error);
+  }
+}
+
 async function loadTextPreview(element) {
   if (element.dataset.filePreviewLoaded === 'true') {
     return;
   }
 
   element.dataset.filePreviewLoaded = 'true';
+  element.dataset.filePreviewError = 'false';
   const url = element.dataset.url;
   const maxBytes = Number.parseInt(element.dataset.maxBytes || '65536', 10);
   const errorLabel = element.dataset.errorLabel || 'Preview unavailable';
 
   if (!url) {
+    markPreviewError(element, new Error('Missing preview URL'), 'text');
     element.textContent = errorLabel;
     return;
   }
@@ -64,7 +87,7 @@ async function loadTextPreview(element) {
     const text = await response.text();
     element.textContent = text.length > maxBytes ? `${text.slice(0, maxBytes)}…` : text;
   } catch (error) {
-    console.error('Error loading text preview:', error);
+    markPreviewError(element, error, 'text');
     element.textContent = errorLabel;
   }
 }
@@ -75,10 +98,12 @@ async function loadDocxPreview(element) {
   }
 
   element.dataset.filePreviewLoaded = 'true';
+  element.dataset.filePreviewError = 'false';
   const url = element.dataset.url;
   const errorLabel = element.dataset.errorLabel || 'Preview unavailable';
 
   if (!url) {
+    markPreviewError(element, new Error('Missing preview URL'), 'docx');
     element.textContent = errorLabel;
     return;
   }
@@ -112,7 +137,7 @@ async function loadDocxPreview(element) {
       renderEndnotes: true,
     });
   } catch (error) {
-    console.error('Error loading DOCX preview:', error);
+    markPreviewError(element, error, 'docx');
     element.replaceChildren();
     const message = document.createElement('div');
     message.className = 'flex min-h-48 items-center justify-center text-sm text-base-content/70';
@@ -150,4 +175,4 @@ export default function init(root) {
   });
 }
 
-export { downloadFile, loadDocxPreview, loadTextPreview };
+export { downloadFile, loadDocxPreview, loadTextPreview, markPreviewError };
