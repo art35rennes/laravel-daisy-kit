@@ -75,15 +75,20 @@
         '7xl' => 'max-w-7xl',
     ];
     $maxWidthClass = $sizeToMax[$size] ?? 'max-w-lg';
+    $isSideModal = in_array($horizontal, ['start','end'], true);
     // Classes responsive : w-11/12 sur mobile + max-width sur desktop (si responsive activé).
     $boxResponsiveClasses = $responsive ? ('w-11/12 ' . $maxWidthClass) : $maxWidthClass;
-    // Classes de scroll : limite la hauteur et active le scroll vertical si le contenu dépasse.
-    $scrollClasses = $scrollable ? ' max-h-[calc(100svh-4rem)] overflow-y-auto' : '';
+    // Les placements start/end se comportent comme des panneaux latéraux pleine hauteur.
+    $sideClasses = $isSideModal ? ' h-[100svh] max-h-[100svh] rounded-none' : '';
+    // Classes de scroll : limite la hauteur des modales classiques, ou scrolle le panneau latéral.
+    $scrollClasses = $scrollable
+        ? ($isSideModal ? ' overflow-y-auto' : ' max-h-[calc(100svh-4rem)] overflow-y-auto')
+        : '';
 @endphp
 
 <dialog {{ $dialogAttrs }} @if($id) id="{{ $id }}" @endif>
     {{-- Conteneur principal de la modal : responsive, scrollable, taille personnalisable --}}
-    <div class="modal-box {{ $boxResponsiveClasses }}{{ $scrollClasses }} {{ $boxClass }}">
+    <div class="modal-box {{ $boxResponsiveClasses }}{{ $sideClasses }}{{ $scrollClasses }} {{ $boxClass }}">
         {{-- En-tête : titre et bouton de fermeture (si l'un ou l'autre est présent) --}}
         @if(isset($header) || $title || $closeButton)
             <div class="flex items-start justify-between gap-4 mb-4">

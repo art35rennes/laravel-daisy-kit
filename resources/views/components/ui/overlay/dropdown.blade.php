@@ -2,7 +2,7 @@
     'label' => null,
     'end' => false,
     'hover' => false,
-    /** @var bool Add dropdown-close to force the menu closed until hover/focus (daisyUI 5.5+). */
+    /** @var bool Add daisyUI dropdown-close. Ignored with hover because it forces the menu closed. */
     'forceClose' => false,
     // Classes du bouton trigger (par défaut adapté à la navbar)
     'buttonClass' => 'btn btn-ghost',
@@ -13,9 +13,9 @@
     // Classes du contenu (prioritaire). Si null, on déduit selon type
     'contentClass' => null,
     // Compat: classes du menu (héritage v1)
-    'menuClass' => 'menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52',
+    'menuClass' => 'menu menu-sm dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm',
     // Classes pour le helper dropdown (carte)
-    'cardClass' => 'card card-sm dropdown-content bg-base-100 rounded-box z-[1] w-64 shadow',
+    'cardClass' => 'card card-sm dropdown-content bg-base-100 z-1 w-64 shadow-md',
     'cardBodyClass' => 'card-body',
     'id' => null,
     'triggerLabel' => null,
@@ -31,7 +31,7 @@
     if ($hover) {
         $root .= ' dropdown-hover';
     }
-    if ($forceClose) {
+    if ($forceClose && ! $hover) {
         $root .= ' dropdown-close';
     }
 

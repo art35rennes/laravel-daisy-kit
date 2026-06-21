@@ -383,3 +383,17 @@ it('renders modal header footer and accessible labels', function () {
         ->not->toContain('focusInitialTarget')
         ->not->toContain('document.body.appendChild');
 });
+
+it('renders start and end modals as full-height side panels', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.overlay.modal id="side-panel" title="Side panel" horizontal="end" :teleport="false" open>
+            Body
+        </x-daisy::ui.overlay.modal>
+    BLADE);
+
+    expect($html)
+        ->toContain('modal modal-middle modal-end')
+        ->toContain('h-[100svh] max-h-[100svh] rounded-none')
+        ->toContain('overflow-y-auto')
+        ->not->toContain('max-h-[calc(100svh-4rem)]');
+});

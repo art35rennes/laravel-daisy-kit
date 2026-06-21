@@ -79,6 +79,32 @@ it('renders dropdown with dropdown-close when forceClose is true', function () {
         ->toContain('dropdown-close');
 });
 
+it('renders hover dropdown content without a dead hover gap', function () {
+    $html = View::make('daisy::components.ui.overlay.dropdown', [
+        'label' => 'Hover',
+        'hover' => true,
+        'slot' => new HtmlString('<li><a>Item</a></li>'),
+    ])->render();
+
+    expect($html)
+        ->toContain('dropdown-hover')
+        ->toContain('dropdown-content bg-base-100 rounded-box z-1')
+        ->not->toContain('dropdown-content mt-3');
+});
+
+it('does not combine hover dropdown with force close', function () {
+    $html = View::make('daisy::components.ui.overlay.dropdown', [
+        'label' => 'Hover',
+        'hover' => true,
+        'forceClose' => true,
+        'slot' => new HtmlString('<li><a>Item</a></li>'),
+    ])->render();
+
+    expect($html)
+        ->toContain('dropdown dropdown-hover')
+        ->not->toContain('dropdown-close');
+});
+
 it('maps card compact to card-sm instead of removed card-compact', function () {
     $html = View::make('daisy::components.ui.layout.card', [
         'compact' => true,
