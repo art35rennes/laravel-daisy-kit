@@ -16,7 +16,7 @@
 ])
 
 @php
-    $rootAttrs = $attributes->class('relative inline-block');
+    $rootAttrs = $attributes->class('popover-root relative inline-flex w-fit align-middle');
     $posMap = [
         'top' => 'bottom-full left-1/2 -translate-x-1/2 mb-2',
         'right' => 'left-full top-1/2 -translate-y-1/2 ml-2',

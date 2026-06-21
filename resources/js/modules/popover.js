@@ -46,10 +46,19 @@ function hideAllPopoversExcept(exceptionPanel) {
  * @param {Object} options - Options extraites du dataset
  */
 export default function initPopover(root, options = {}) {
+  if (root.dataset.popoverInitialized === 'true') {
+    return;
+  }
+
+  root.dataset.popoverInitialized = 'true';
+  root.classList.add('relative', 'inline-flex', 'w-fit', 'align-middle');
+
   // Sélectionne le déclencheur et le panneau du popover
   const trigger = root.querySelector('.popover-trigger');
   const panel = root.querySelector('.popover-panel');
-  if (!trigger || !panel) return; // Si l'un des deux est absent, on ne fait rien
+  if (!trigger || !panel) {
+    return; // Si l'un des deux est absent, on ne fait rien
+  }
 
   // Détermine le mode d'ouverture du popover ('click', 'hover', 'focus')
   const triggerMode = options.trigger || root.getAttribute('data-trigger') || 'click';
@@ -187,9 +196,15 @@ export default function initPopover(root, options = {}) {
     root.addEventListener('mouseenter', enter);
     root.addEventListener('mouseleave', leave);
   } else if (triggerMode === 'focus') {
-    // Mode focus : ouverture au focus, fermeture au blur
-    trigger.addEventListener('focus', open);
-    trigger.addEventListener('blur', close);
+    // Mode focus : focus/blur ne remontent pas depuis un bouton imbriqué, focusin/focusout oui.
+    root.addEventListener('focusin', open);
+    root.addEventListener('focusout', () => {
+      setTimeout(() => {
+        if (!root.contains(document.activeElement)) {
+          close();
+        }
+      }, 0);
+    });
   }
 
   // Accessibilité : fermeture du popover à la touche "Escape"
