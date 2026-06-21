@@ -15,6 +15,11 @@
     <x-daisy::ui.navigation.navbar :bg="$navbarBg" :text="$navbarText" :shadow="$navbarShadow" :fixed="$navbarFixed" :fixedPosition="$navbarFixedPosition">
         <x-slot:start>
             {{ $navbarStart ?? ($brand ?? null) }}
+            @isset($navbarHeading)
+                <div class="ms-3 hidden min-w-0 max-w-xs flex-col justify-center leading-tight text-base-content sm:flex lg:max-w-md xl:max-w-xl [&>h1]:truncate [&>h1]:text-sm [&>h1]:font-semibold [&>h1]:leading-tight [&>p]:truncate [&>p]:text-xs [&>p]:leading-tight [&>p]:text-base-content/70" data-navbar-heading>
+                    {{ $navbarHeading }}
+                </div>
+            @endisset
         </x-slot:start>
         <x-slot:center>
             {{ $navbarCenter ?? ($nav ?? null) }}
@@ -35,4 +40,3 @@
     </main>
 
 </x-daisy::layout.app>
-

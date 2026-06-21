@@ -34,16 +34,23 @@
         <x-daisy::ui.overlay.drawer :id="$drawerId" :end="$end" :responsiveOpen="$responsiveOpen" :sideIsMenu="false" sideClass="w-auto" class="">
             <x-slot:content>
                 @if(!$hasNavbar)
-                    <div class="bg-base-100 px-4 h-14 flex items-center justify-between lg:justify-end">
-                        <div class="flex items-center gap-2 lg:hidden">
-                            <label for="{{ $drawerId }}" aria-label="open sidebar" class="btn btn-square btn-ghost">
-                                <x-daisy::ui.advanced.icon :name="$menuIcon" size="lg" />
-                            </label>
-                            @if($title)
-                                <div class="font-semibold">{{ __($title) }}</div>
-                            @endif
+                    <div class="bg-base-100 px-4 h-14 flex items-center justify-between gap-4 lg:justify-end">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <div class="flex items-center gap-2 lg:hidden">
+                                <label for="{{ $drawerId }}" aria-label="open sidebar" class="btn btn-square btn-ghost">
+                                    <x-daisy::ui.advanced.icon :name="$menuIcon" size="lg" />
+                                </label>
+                                @if($title)
+                                    <div class="font-semibold">{{ __($title) }}</div>
+                                @endif
+                            </div>
+                            @isset($navbarHeading)
+                                <div class="hidden min-w-0 max-w-xs flex-col justify-center leading-tight text-base-content md:flex lg:max-w-md xl:max-w-xl [&>h1]:truncate [&>h1]:text-sm [&>h1]:font-semibold [&>h1]:leading-tight [&>p]:truncate [&>p]:text-xs [&>p]:leading-tight [&>p]:text-base-content/70" data-navbar-heading>
+                                    {{ $navbarHeading }}
+                                </div>
+                            @endisset
                         </div>
-                        <div class="hidden lg:flex items-center gap-2">
+                        <div class="hidden shrink-0 lg:flex items-center gap-2">
                             @if($showThemeController)
                                 <x-daisy::ui.advanced.theme-controller
                                     variant="dropdown"

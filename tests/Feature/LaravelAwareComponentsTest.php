@@ -138,6 +138,79 @@ it('renders navbar sidebar layout topbar inside drawer content with independent 
         ->and($topbarPosition)->toBeInt()->toBeLessThan($drawerSidePosition);
 });
 
+it('renders optional navbar headings before navbar center content', function (string $component) {
+    $html = Blade::render(<<<BLADE
+        <x-daisy::layout.{$component} :show-theme-controller="false">
+            <x-slot:navbarStart><span data-navbar-start>Start</span></x-slot:navbarStart>
+            <x-slot:navbarHeading>
+                <h1>Suivi et validation des interventions</h1>
+                <p>Controlez la qualite des donnees recues</p>
+            </x-slot:navbarHeading>
+            <x-slot:navbarCenter><span data-navbar-center>Search</span></x-slot:navbarCenter>
+            Content
+        </x-daisy::layout.{$component}>
+    BLADE);
+
+    $startPosition = strpos($html, 'data-navbar-start');
+    $headingPosition = strpos($html, 'data-navbar-heading');
+    $centerPosition = strpos($html, 'data-navbar-center');
+
+    expect($html)
+        ->toContain('Suivi et validation des interventions')
+        ->toContain('Controlez la qualite des donnees recues')
+        ->toContain('data-navbar-heading')
+        ->toContain('sm:flex')
+        ->and($startPosition)->toBeInt()->toBeLessThan($headingPosition)
+        ->and($headingPosition)->toBeInt()->toBeLessThan($centerPosition);
+})->with([
+    'navbar-layout',
+    'navbar-sidebar-layout',
+]);
+
+it('ships navbar heading display rules in package css', function () {
+    $css = file_get_contents(__DIR__.'/../../resources/css/app.css');
+
+    expect($css)
+        ->toContain('[data-navbar-heading]')
+        ->toContain('@media (min-width: 640px)')
+        ->toContain('display: flex');
+});
+
+it('keeps navbar headings absent unless a host provides the slot', function (string $component) {
+    $html = Blade::render(<<<BLADE
+        <x-daisy::layout.{$component} :show-theme-controller="false">
+            <x-slot:navbarCenter><span data-navbar-center>Search</span></x-slot:navbarCenter>
+            Content
+        </x-daisy::layout.{$component}>
+    BLADE);
+
+    expect($html)
+        ->not->toContain('data-navbar-heading')
+        ->toContain('data-navbar-center');
+})->with([
+    'navbar-layout',
+    'navbar-sidebar-layout',
+]);
+
+it('renders optional navbar heading in the sidebar layout topbar', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::layout.sidebar-layout :show-theme-controller="false">
+            <x-slot:navbarHeading>
+                <h1>Interventions</h1>
+                <p>Suivi operationnel</p>
+            </x-slot:navbarHeading>
+            Content
+        </x-daisy::layout.sidebar-layout>
+    BLADE);
+
+    expect($html)
+        ->toContain('Interventions')
+        ->toContain('Suivi operationnel')
+        ->toContain('data-navbar-heading')
+        ->toContain('md:flex')
+        ->not->toContain('theme-controller');
+});
+
 it('renders button iconName and accessible loading state', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.inputs.button icon-name="bi-check" icon-position="right" loading>
