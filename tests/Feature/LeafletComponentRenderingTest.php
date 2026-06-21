@@ -177,6 +177,7 @@ describe('Leaflet component rendering', function () {
             'draw' => [
                 'polygon' => true,
                 'rectangle' => false,
+                'selectionDetails' => ['label' => 'Détails sélection'],
                 'actionBadge' => ['label' => 'Mode actif'],
                 'styles' => [
                     'line' => ['color' => '#2563eb', 'width' => 4, 'dashArray' => [6, 3]],
@@ -192,6 +193,7 @@ describe('Leaflet component rendering', function () {
             ->and($config['draw']['rectangle'])->toBeFalse()
             ->and($config['draw']['groupedToolbar'])->toBeTrue()
             ->and($config['draw']['actionBadge']['label'])->toBe('Mode actif')
+            ->and($config['draw']['selectionDetails']['label'])->toBe('Détails sélection')
             ->and($config['draw']['styles']['line']['color'])->toBe('#2563eb')
             ->and($config['measure']['display'])->toBe('metric')
             ->and($config['measure']['maxLabels'])->toBe(8)
@@ -207,6 +209,7 @@ describe('Leaflet component rendering', function () {
                 'persist' => true,
                 'storageKey' => 'project-map-controls',
                 'overlays' => false,
+                'geolocation' => false,
             ],
         ]);
         $config = extractConfig($html);
@@ -215,7 +218,29 @@ describe('Leaflet component rendering', function () {
             ->and($config['controls']['storageKey'])->toBe('project-map-controls')
             ->and($config['controls']['overlays'])->toBeFalse()
             ->and($config['controls']['basemaps'])->toBeTrue()
+            ->and($config['controls']['geolocation'])->toBeFalse()
             ->and($config['controls']['measurements'])->toBeTrue();
+    });
+
+    it('renders geolocation config for on-demand and realtime modes', function () {
+        $html = renderLeaflet([
+            'geolocation' => [
+                'auto' => true,
+                'watch' => true,
+                'zoom' => 17,
+                'enableHighAccuracy' => true,
+                'showAccuracy' => false,
+            ],
+        ]);
+        $config = extractConfig($html);
+
+        expect($config['geolocation']['enabled'])->toBeTrue()
+            ->and($config['geolocation']['button'])->toBeTrue()
+            ->and($config['geolocation']['auto'])->toBeTrue()
+            ->and($config['geolocation']['watch'])->toBeTrue()
+            ->and($config['geolocation']['zoom'])->toBe(17)
+            ->and($config['geolocation']['enableHighAccuracy'])->toBeTrue()
+            ->and($config['geolocation']['showAccuracy'])->toBeFalse();
     });
 
     it('serializes custom SIG object types', function () {
@@ -252,6 +277,36 @@ describe('Leaflet component rendering', function () {
             ->and($config['objectTypes'][0]['properties']['category'])->toBe('asset')
             ->and($config['objectTypes'][1]['geometry'])->toBe('line')
             ->and($config['objectTypes'][2]['geometry'])->toBe('polygon');
+    });
+
+    it('serializes drawing layer assignment config', function () {
+        $html = renderLeaflet([
+            'drawLayers' => [
+                'mode' => 'select',
+                'current' => 'aep',
+                'allowNone' => true,
+                'noneLabel' => 'Sans couche',
+                'layers' => [
+                    [
+                        'id' => 'aep',
+                        'label' => 'Réseau AEP',
+                        'properties' => ['network' => 'water'],
+                    ],
+                    [
+                        'id' => 'works',
+                        'label' => 'Travaux',
+                    ],
+                ],
+            ],
+        ]);
+        $config = extractConfig($html);
+
+        expect($config['drawLayers']['mode'])->toBe('select')
+            ->and($config['drawLayers']['current'])->toBe('aep')
+            ->and($config['drawLayers']['allowNone'])->toBeTrue()
+            ->and($config['drawLayers']['noneLabel'])->toBe('Sans couche')
+            ->and($config['drawLayers']['layers'])->toHaveCount(2)
+            ->and($config['drawLayers']['layers'][0]['properties']['network'])->toBe('water');
     });
 });
 

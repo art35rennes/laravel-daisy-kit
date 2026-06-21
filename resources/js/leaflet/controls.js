@@ -3,6 +3,7 @@ import { addLayer, removeLayer } from './layers.js';
 
 const CONTROL_ICONS = {
     fit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>',
+    locate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v3"/><path d="M12 19v3"/><path d="M2 12h3"/><path d="M19 12h3"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/></svg>',
     layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/></svg>',
     settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.04.04a2 2 0 1 1-2.83 2.83l-.04-.04a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.1 1.65V21a2 2 0 1 1-4 0v-.06a1.8 1.8 0 0 0-1.1-1.65 1.8 1.8 0 0 0-1.98.36l-.04.04a2 2 0 1 1-2.83-2.83l.04-.04A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-1.65-1.1H3a2 2 0 1 1 0-4h.06A1.8 1.8 0 0 0 4.7 8.8a1.8 1.8 0 0 0-.36-1.98l-.04-.04a2 2 0 1 1 2.83-2.83l.04.04a1.8 1.8 0 0 0 1.98.36h.01A1.8 1.8 0 0 0 10.25 2.7V2.6a2 2 0 1 1 4 0v.06a1.8 1.8 0 0 0 1.1 1.65 1.8 1.8 0 0 0 1.98-.36l.04-.04a2 2 0 1 1 2.83 2.83l-.04.04a1.8 1.8 0 0 0-.36 1.98v.01a1.8 1.8 0 0 0 1.65 1.1H21a2 2 0 1 1 0 4h-.06A1.8 1.8 0 0 0 19.4 15Z"/></svg>',
 };
@@ -13,6 +14,7 @@ const DEFAULT_CONTROLS_CONFIG = {
     overlays: true,
     draw: true,
     measurements: true,
+    geolocation: true,
     fitBounds: true,
     persist: false,
     storageKey: null,
@@ -107,13 +109,51 @@ function getControlsPositionClasses(position, hasLayerControl = false) {
     return positions[position] || positions.topright;
 }
 
+function getControlStackPositionClasses(position) {
+    const positions = {
+        bottomleft: ['left-2', 'bottom-12', 'items-start'],
+        bottomright: ['right-2', 'bottom-12', 'items-end'],
+        topleft: ['left-12', 'top-2', 'items-start'],
+        topright: ['right-2', 'top-14', 'items-end'],
+    };
+
+    return positions[position] || positions.topright;
+}
+
+function getOrCreateControlStack(root, position = 'topright') {
+    const normalizedPosition = ['bottomleft', 'bottomright', 'topleft', 'topright'].includes(position)
+        ? position
+        : 'topright';
+    const existing = root.querySelector(`.daisy-leaflet-control-stack[data-position="${normalizedPosition}"]`);
+
+    if (existing) {
+        return existing;
+    }
+
+    const stack = document.createElement('div');
+
+    stack.className = [
+        'daisy-leaflet-control-stack',
+        'absolute',
+        'z-[1100]',
+        'flex',
+        'flex-col',
+        'gap-2',
+        ...getControlStackPositionClasses(normalizedPosition),
+    ].join(' ');
+    stack.dataset.position = normalizedPosition;
+    root.appendChild(stack);
+
+    return stack;
+}
+
 function createIconButton(parent, icon, label, className = 'btn btn-xs btn-square') {
     const button = document.createElement('button');
     const iconWrapper = document.createElement('span');
     const labelWrapper = document.createElement('span');
 
     button.type = 'button';
-    button.className = className;
+    button.className = `${className} group relative`;
     button.title = label;
     button.setAttribute('aria-label', label);
 
@@ -124,7 +164,33 @@ function createIconButton(parent, icon, label, className = 'btn btn-xs btn-squar
     labelWrapper.className = 'sr-only';
     labelWrapper.textContent = label;
 
-    button.append(iconWrapper, labelWrapper);
+    const tooltipWrapper = document.createElement('span');
+
+    tooltipWrapper.className = [
+        'pointer-events-none',
+        'absolute',
+        'right-full',
+        'top-1/2',
+        'z-[1200]',
+        'mr-2',
+        'hidden',
+        '-translate-y-1/2',
+        'whitespace-nowrap',
+        'rounded-box',
+        'bg-neutral',
+        'px-2',
+        'py-1',
+        'text-xs',
+        'font-medium',
+        'text-neutral-content',
+        'shadow',
+        'group-hover:inline-flex',
+        'group-focus-visible:inline-flex',
+    ].join(' ');
+    tooltipWrapper.setAttribute('aria-hidden', 'true');
+    tooltipWrapper.textContent = label;
+
+    button.append(iconWrapper, labelWrapper, tooltipWrapper);
     parent.appendChild(button);
 
     return button;
@@ -214,18 +280,17 @@ function addUserControls(L, map, cfg, context) {
     const root = context.root;
     const storageKey = context.controlsStorageKey;
     const state = context.controlsState || createDefaultControlsState();
+    const stack = getOrCreateControlStack(root, controlsConfig.position);
     const wrapper = document.createElement('div');
     const panel = document.createElement('div');
-    const positionClasses = getControlsPositionClasses(controlsConfig.position, Boolean(context.layerMenuControl));
 
     wrapper.className = [
         'daisy-leaflet-controls',
-        'absolute',
-        'z-[1100]',
+        'relative',
         'flex',
         'flex-col',
         'gap-2',
-        ...positionClasses,
+        'items-end',
     ].join(' ');
 
     const trigger = createIconButton(wrapper, 'settings', 'Réglages de carte');
@@ -290,10 +355,10 @@ function addUserControls(L, map, cfg, context) {
 
     if (controlsConfig.fitBounds) {
         const section = createControlsSection(panel, 'Vue');
-        const button = createIconButton(section, 'fit', 'Voir les objets', 'btn btn-xs w-full justify-start gap-2');
+        const button = createIconButton(section, 'fit', 'Ajuster la vue aux objets', 'btn btn-xs w-full justify-start gap-2');
         const buttonText = document.createElement('span');
 
-        buttonText.textContent = 'Voir les objets';
+        buttonText.textContent = 'Ajuster la vue aux objets';
         button.appendChild(buttonText);
         button.addEventListener('click', () => {
             const fitLayers = [context.geojsonLayer, ...(context.renderedOverlayLayers || [])].filter(Boolean);
@@ -304,7 +369,7 @@ function addUserControls(L, map, cfg, context) {
     }
 
     wrapper.appendChild(panel);
-    root.appendChild(wrapper);
+    stack.appendChild(wrapper);
 
     applyControlsState(root, map, cfg, context, state);
 
@@ -317,8 +382,10 @@ export {
     createControlChoice,
     createControlsSection,
     createDefaultControlsState,
+    getControlStackPositionClasses,
     createIconButton,
     getControlsPositionClasses,
+    getOrCreateControlStack,
     getControlsStorageKey,
     loadControlsState,
     normalizeControlsConfig,

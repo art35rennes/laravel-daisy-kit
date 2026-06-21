@@ -15,6 +15,7 @@ const DEFAULT_DRAW_CONFIG = {
     undoRedo: true,
     groupedToolbar: true,
     actionBadge: true,
+    selectionDetails: true,
     styles: {},
 };
 
@@ -22,11 +23,23 @@ const DEFAULT_MEASURE_CONFIG = {
     display: 'metric',
     showTooltip: true,
     maxLabels: 16,
+    maxLabelOffsetPx: 96,
+};
+
+const DEFAULT_DRAW_LAYERS_CONFIG = {
+    mode: 'none',
+    current: null,
+    allowNone: false,
+    noneLabel: 'Aucune couche',
+    property: 'drawLayerId',
+    labelProperty: 'drawLayerLabel',
+    layers: [],
 };
 
 const TOOL_ICONS = {
     area: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 19 19 5"/><path d="M6 5h13v13"/><path d="M6 15h4"/><path d="M6 11h8"/><path d="M6 7h12"/></svg>',
     delete: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>',
+    details: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>',
     equipment: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-3-3 2.8-2.8Z"/><path d="m6 18 2 2"/></svg>',
     line: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 19 19 5"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/></svg>',
     pipe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h8a4 4 0 0 1 4 4v4"/><path d="M14 16h6"/><path d="M4 6v4"/><path d="M18 14v4"/><path d="M7 6v4"/></svg>',
@@ -127,6 +140,19 @@ function normalizeActionBadgeConfig(actionBadge) {
     };
 }
 
+function normalizeSelectionDetailsConfig(selectionDetails) {
+    if (selectionDetails === false || selectionDetails?.enabled === false) {
+        return { enabled: false, label: 'Détail de la sélection' };
+    }
+
+    return {
+        enabled: true,
+        label: typeof selectionDetails?.label === 'string' && selectionDetails.label.trim()
+            ? selectionDetails.label.trim()
+            : 'Détail de la sélection',
+    };
+}
+
 function normalizeDrawConfig(draw) {
     if (!draw) {
         return false;
@@ -140,6 +166,7 @@ function normalizeDrawConfig(draw) {
     return {
         ...config,
         actionBadge: normalizeActionBadgeConfig(config.actionBadge),
+        selectionDetails: normalizeSelectionDetailsConfig(config.selectionDetails),
     };
 }
 
@@ -151,6 +178,108 @@ function normalizeMeasureConfig(measure) {
     return {
         ...DEFAULT_MEASURE_CONFIG,
         ...(measure === true ? {} : measure),
+    };
+}
+
+function normalizeDrawLayer(layer, index = 0) {
+    if (!layer || typeof layer !== 'object') {
+        return null;
+    }
+
+    const id = String(layer.id || `draw-layer-${index + 1}`).trim() || `draw-layer-${index + 1}`;
+    const label = String(layer.label || id).trim() || id;
+
+    return {
+        ...layer,
+        id,
+        label,
+        properties: layer.properties && typeof layer.properties === 'object' ? layer.properties : {},
+        default: Boolean(layer.default || layer.active),
+        disabled: Boolean(layer.disabled),
+    };
+}
+
+function normalizeDrawLayersConfig(drawLayers) {
+    if (!drawLayers) {
+        return false;
+    }
+
+    const rawConfig = Array.isArray(drawLayers) ? { layers: drawLayers, mode: 'select' } : drawLayers;
+
+    if (!rawConfig || typeof rawConfig !== 'object') {
+        return false;
+    }
+
+    const layers = Array.isArray(rawConfig.layers)
+        ? rawConfig.layers.map(normalizeDrawLayer).filter(Boolean)
+        : [];
+    const rawMode = String(rawConfig.mode || '').toLowerCase();
+    const mode = ['fixed', 'none', 'select'].includes(rawMode) ? rawMode : (layers.length > 0 ? 'select' : 'none');
+    const property = typeof rawConfig.property === 'string' && rawConfig.property.trim()
+        ? rawConfig.property.trim()
+        : DEFAULT_DRAW_LAYERS_CONFIG.property;
+    const labelProperty = typeof rawConfig.labelProperty === 'string' && rawConfig.labelProperty.trim()
+        ? rawConfig.labelProperty.trim()
+        : DEFAULT_DRAW_LAYERS_CONFIG.labelProperty;
+    const noneLabel = typeof rawConfig.noneLabel === 'string' && rawConfig.noneLabel.trim()
+        ? rawConfig.noneLabel.trim()
+        : DEFAULT_DRAW_LAYERS_CONFIG.noneLabel;
+    const hasRequestedCurrent = ['current', 'layerId', 'value']
+        .some(key => Object.prototype.hasOwnProperty.call(rawConfig, key));
+    const requestedCurrent = Object.prototype.hasOwnProperty.call(rawConfig, 'current')
+        ? rawConfig.current
+        : (Object.prototype.hasOwnProperty.call(rawConfig, 'layerId') ? rawConfig.layerId : rawConfig.value);
+    const requestedId = requestedCurrent === null || requestedCurrent === undefined ? null : String(requestedCurrent);
+    const defaultLayer = layers.find(layer => layer.default && !layer.disabled) || layers.find(layer => !layer.disabled) || null;
+    const requestedLayer = requestedId ? layers.find(layer => layer.id === requestedId && !layer.disabled) : null;
+    const allowNone = mode === 'none' || Boolean(rawConfig.allowNone || rawConfig.allowNoLayer);
+    const current = mode === 'none'
+        ? null
+        : (requestedLayer?.id ?? (allowNone && hasRequestedCurrent && requestedId === null ? null : defaultLayer?.id ?? null));
+
+    return {
+        ...DEFAULT_DRAW_LAYERS_CONFIG,
+        ...rawConfig,
+        mode,
+        current,
+        allowNone,
+        noneLabel,
+        property,
+        labelProperty,
+        layers,
+    };
+}
+
+function resolveDrawLayer(drawLayersConfig, layerId = undefined) {
+    if (!drawLayersConfig || drawLayersConfig.mode === 'none') {
+        return null;
+    }
+
+    const id = layerId === undefined ? drawLayersConfig.current : layerId;
+
+    return drawLayersConfig.layers.find(layer => layer.id === id && !layer.disabled) || null;
+}
+
+function propertiesFromDrawLayer(drawLayersConfig, layerId = undefined) {
+    if (!drawLayersConfig) {
+        return {};
+    }
+
+    const layer = resolveDrawLayer(drawLayersConfig, layerId);
+
+    if (!layer) {
+        return drawLayersConfig.mode === 'none' || drawLayersConfig.allowNone
+            ? {
+                [drawLayersConfig.property]: null,
+                [drawLayersConfig.labelProperty]: null,
+            }
+            : {};
+    }
+
+    return {
+        ...layer.properties,
+        [drawLayersConfig.property]: layer.id,
+        [drawLayersConfig.labelProperty]: layer.label,
     };
 }
 
@@ -303,11 +432,15 @@ export {
     modeFromObjectType,
     normalizeActionBadgeConfig,
     normalizeDrawConfig,
+    normalizeDrawLayersConfig,
     normalizeDrawStyles,
     normalizeFeatureStyle,
     normalizeMeasureConfig,
     normalizeObjectTypes,
+    normalizeSelectionDetailsConfig,
     objectTypeUsesMarkerMode,
+    propertiesFromDrawLayer,
     propertiesFromObjectType,
+    resolveDrawLayer,
     resolveToolIcon,
 };

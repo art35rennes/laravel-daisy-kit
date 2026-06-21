@@ -4,6 +4,7 @@ import { isPersistableFeature } from './features.js';
 
 const DEFAULT_MEASURE_CONFIG = {
     maxLabels: 16,
+    maxLabelOffsetPx: 96,
 };
 
 function formatDistance(kilometers) {
@@ -166,7 +167,7 @@ function rectanglesOverlap(first, second) {
     );
 }
 
-function resolveMeasurementLabelPlacement(map, feature, label, occupiedRects = []) {
+function resolveMeasurementLabelPlacement(map, feature, label, occupiedRects = [], options = {}) {
     const latLngCoordinates = collectLatLngCoordinates(feature);
 
     if (!map || latLngCoordinates.length === 0 || typeof map.latLngToLayerPoint !== 'function') {
@@ -199,7 +200,11 @@ function resolveMeasurementLabelPlacement(map, feature, label, occupiedRects = [
     });
 
     const x = (bounds.minX + bounds.maxX) / 2;
-    let y = bounds.maxY + 12;
+    const anchorY = bounds.maxY;
+    const maxOffsetPx = Number.isFinite(Number(options.maxLabelOffsetPx))
+        ? Math.max(0, Number(options.maxLabelOffsetPx))
+        : DEFAULT_MEASURE_CONFIG.maxLabelOffsetPx;
+    let y = anchorY + 12;
     let rect = {
         left: x - (size.width / 2),
         right: x + (size.width / 2),
@@ -217,6 +222,11 @@ function resolveMeasurementLabelPlacement(map, feature, label, occupiedRects = [
         }
 
         y += size.height + 6;
+
+        if ((y - anchorY) > maxOffsetPx) {
+            return null;
+        }
+
         rect = {
             ...rect,
             top: y,
@@ -291,7 +301,7 @@ function syncMeasurementLayer(L, map, measurementLayer, collection, measureConfi
         .slice(0, maxLabels);
 
     measuredFeatures.forEach(({ feature, measurement }) => {
-        const placement = resolveMeasurementLabelPlacement(map, feature, measurement.label, occupiedRects);
+        const placement = resolveMeasurementLabelPlacement(map, feature, measurement.label, occupiedRects, measureConfig);
 
         if (!placement) {
             return;

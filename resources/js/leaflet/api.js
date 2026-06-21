@@ -26,8 +26,23 @@ function createLeafletApi(root, map, cfg, context) {
                 : emptyCollection()
         ),
         setMode: mode => context.drawApi?.setMode?.(mode) ?? false,
+        getDrawLayer: () => context.drawApi?.getDrawLayer?.() ?? null,
+        setDrawLayer: layerId => context.drawApi?.setDrawLayer?.(layerId) ?? false,
+        getSelectionDetails: () => context.drawApi?.getSelectionDetails?.() ?? {
+            count: 0,
+            featureIds: [],
+            features: [],
+            primaryFeature: null,
+            primaryFeatureId: null,
+        },
+        showSelectionDetails: () => context.drawApi?.showSelectionDetails?.() ?? false,
         clearSelection: () => context.drawApi?.clearSelection?.() ?? false,
         deleteSelected: () => context.drawApi?.deleteSelected?.() ?? false,
+        getGeolocation: () => context.geolocationApi?.getLastPosition?.() ?? null,
+        locate: () => context.geolocationApi?.locate?.() ?? false,
+        startGeolocation: () => context.geolocationApi?.start?.() ?? false,
+        stopGeolocation: () => context.geolocationApi?.stop?.() ?? false,
+        isGeolocationWatching: () => context.geolocationApi?.isWatching?.() ?? false,
         undo: () => context.drawApi?.undo?.() ?? false,
         redo: () => context.drawApi?.redo?.() ?? false,
         destroy: () => {

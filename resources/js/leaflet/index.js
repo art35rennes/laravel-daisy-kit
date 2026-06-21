@@ -37,6 +37,7 @@ import {
     createDefaultControlsState,
     createIconButton,
     getControlsPositionClasses,
+    getOrCreateControlStack,
     getControlsStorageKey,
     loadControlsState,
     normalizeControlsConfig,
@@ -68,6 +69,7 @@ const PLUGINS = {
     scale: () => import('./plugins/scale.js'),
     gestureHandling: () => import('./plugins/gesture-handling.js'),
     fullscreen: () => import('./plugins/fullscreen.js'),
+    geolocation: () => import('./plugins/geolocation.js'),
     cluster: () => import('./plugins/cluster.js'),
     draw: () => import('./plugins/draw.js'),
 };
@@ -201,18 +203,17 @@ function addLayerMenuControl(L, map, cfg, context) {
     const root = context.root;
     const storageKey = context.controlsStorageKey;
     const state = context.controlsState || createDefaultControlsState();
+    const stack = getOrCreateControlStack(root, layerConfig.position);
     const wrapper = document.createElement('div');
     const panel = document.createElement('div');
-    const positionClasses = getControlsPositionClasses(layerConfig.position, false);
 
     wrapper.className = [
         'daisy-leaflet-layer-controls',
-        'absolute',
-        'z-[1100]',
+        'relative',
         'flex',
         'flex-col',
         'gap-2',
-        ...positionClasses,
+        'items-end',
     ].join(' ');
 
     const trigger = createIconButton(wrapper, 'layers', 'Couches');
@@ -340,7 +341,7 @@ function addLayerMenuControl(L, map, cfg, context) {
     }
 
     wrapper.appendChild(panel);
-    root.appendChild(wrapper);
+    stack.appendChild(wrapper);
 
     return wrapper;
 }
@@ -564,6 +565,7 @@ export {
     loadControlsState,
     loadGeoJsonData,
     getControlsPositionClasses,
+    getOrCreateControlStack,
     normalizeLayerControlConfig,
     normalizeControlsConfig,
     persistControlsState,

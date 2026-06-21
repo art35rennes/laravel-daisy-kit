@@ -17,6 +17,7 @@
     'cluster' => false,
     'clusterOptions' => [],
     'fullscreen' => false,
+    'geolocation' => false,
     'markers' => [],
     'geojson' => null,
     'basemaps' => [],
@@ -26,6 +27,7 @@
     'measure' => false,
     'controls' => false,
     'objectTypes' => [],
+    'drawLayers' => false,
     'name' => null,
     'value' => null,
     'module' => null,
@@ -110,6 +112,38 @@
             ->values()
             ->all();
     };
+    $normalizeDrawLayers = function($drawLayers) {
+        if (!$drawLayers || !is_array($drawLayers)) {
+            return false;
+        }
+
+        $isList = array_is_list($drawLayers);
+        $config = $isList ? ['mode' => 'select', 'layers' => $drawLayers] : $drawLayers;
+        $mode = strtolower((string) ($config['mode'] ?? 'select'));
+
+        if (!in_array($mode, ['fixed', 'none', 'select'], true)) {
+            $mode = 'select';
+        }
+
+        $layers = collect($config['layers'] ?? [])
+            ->filter(fn ($layer) => is_array($layer))
+            ->map(function ($layer, $index) {
+                $id = trim((string) ($layer['id'] ?? 'draw-layer-'.($index + 1)));
+
+                return array_merge($layer, [
+                    'id' => $id !== '' ? $id : 'draw-layer-'.($index + 1),
+                    'label' => (string) ($layer['label'] ?? ($id !== '' ? $id : 'Couche '.($index + 1))),
+                    'properties' => is_array($layer['properties'] ?? null) ? $layer['properties'] : [],
+                ]);
+            })
+            ->values()
+            ->all();
+
+        return array_merge($config, [
+            'mode' => $mode,
+            'layers' => $layers,
+        ]);
+    };
 
     $tileUrl = $normalizeMapUrl($tileUrl);
     $tilesEnabled = $tiles ?? filled($tileUrl) || filled($provider);
@@ -125,12 +159,26 @@
         'undoRedo' => true,
         'groupedToolbar' => true,
         'actionBadge' => true,
+        'selectionDetails' => true,
         'styles' => [],
     ];
     $defaultMeasureConfig = [
         'display' => 'metric',
         'showTooltip' => true,
         'maxLabels' => 16,
+        'maxLabelOffsetPx' => 96,
+    ];
+    $defaultGeolocationConfig = [
+        'enabled' => true,
+        'button' => true,
+        'auto' => false,
+        'watch' => false,
+        'setView' => true,
+        'zoom' => null,
+        'maximumAge' => 10000,
+        'timeout' => 10000,
+        'enableHighAccuracy' => false,
+        'showAccuracy' => true,
     ];
     $defaultControlsConfig = [
         'position' => 'topright',
@@ -138,12 +186,14 @@
         'overlays' => true,
         'draw' => true,
         'measurements' => true,
+        'geolocation' => true,
         'fitBounds' => true,
         'persist' => false,
         'storageKey' => null,
     ];
     $drawConfig = $draw ? array_merge($defaultDrawConfig, is_array($draw) ? $draw : []) : false;
     $measureConfig = $measure ? array_merge($defaultMeasureConfig, is_array($measure) ? $measure : []) : false;
+    $geolocationConfig = $geolocation ? array_merge($defaultGeolocationConfig, is_array($geolocation) ? $geolocation : []) : false;
     $controlsConfig = $controls ? array_merge($defaultControlsConfig, is_array($controls) ? $controls : []) : false;
 
     $config = [
@@ -163,6 +213,7 @@
         'cluster' => (bool) $cluster,
         'clusterOptions' => $clusterOptions,
         'fullscreen' => (bool) $fullscreen,
+        'geolocation' => $geolocationConfig,
         'markers' => $markers,
         'geojson' => $geojson,
         'basemaps' => $normalizeLayerCollection($basemaps),
@@ -172,6 +223,7 @@
         'measure' => $measureConfig,
         'controls' => $controlsConfig,
         'objectTypes' => $normalizeObjectTypes($objectTypes),
+        'drawLayers' => $normalizeDrawLayers($drawLayers),
         'value' => $fieldValue,
         'valueInputName' => $name,
     ];

@@ -3,30 +3,40 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     applyObjectTypeToFeature,
+    applyDrawLayerToFeature,
     applyZoneSelection,
     collectInitialFeatures,
     createActionBadge,
+    createDrawLayerSelector,
+    createSelectionDetailsPayload,
     createToolButton,
     createToolMenu,
     formatArea,
     formatDistance,
     getMeasurementAnchor,
+    hasValidGeometryCoordinates,
+    isPersistableFeature,
     measureFeature,
     modeFromFeature,
     modeFromObjectType,
     normalizeActionBadgeConfig,
     normalizeDrawConfig,
+    normalizeDrawLayersConfig,
     normalizeDrawStyles,
     normalizeFeatureStyle,
     normalizeIconUrl,
     normalizeMeasureConfig,
     normalizeObjectTypes,
+    normalizeSelectionDetailsConfig,
     objectTypeUsesMarkerMode,
     pointInLatLngPolygon,
     prepareFeature,
+    propertiesFromDrawLayer,
     propertiesFromObjectType,
+    resolveDrawLayer,
     resolveMeasurementLabelPlacement,
     resolveModeStyles,
+    resolveSelectStyles,
     resolveToolIcon,
     sanitizeIconMarkup,
     syncMeasurementLayer,
@@ -110,6 +120,98 @@ describe('Leaflet draw helpers', () => {
         expect(objectTypeUsesMarkerMode(hydrant)).toBe(true);
         expect(modeFromObjectType(hydrant)).toBe('marker');
         expect(propertiesFromObjectType(hydrant).style.markerUrl).toContain('data:image/svg+xml');
+    });
+
+    it('normalizes selectable drawing layers and derives persisted properties', () => {
+        const config = normalizeDrawLayersConfig({
+            mode: 'select',
+            allowNone: true,
+            current: 'aep',
+            layers: [
+                { id: 'aep', label: 'Réseau AEP', properties: { network: 'water' } },
+                { id: 'works', label: 'Travaux' },
+            ],
+        });
+
+        expect(config.mode).toBe('select');
+        expect(config.current).toBe('aep');
+        expect(config.allowNone).toBe(true);
+        expect(resolveDrawLayer(config, 'works').label).toBe('Travaux');
+        expect(propertiesFromDrawLayer(config, 'aep')).toEqual({
+            network: 'water',
+            drawLayerId: 'aep',
+            drawLayerLabel: 'Réseau AEP',
+        });
+        expect(propertiesFromDrawLayer(config, null)).toEqual({
+            drawLayerId: null,
+            drawLayerLabel: null,
+        });
+    });
+
+    it('supports fixed and no-layer drawing layer modes', () => {
+        const fixed = normalizeDrawLayersConfig({
+            mode: 'fixed',
+            layerId: 'assets',
+            layers: [{ id: 'assets', label: 'Patrimoine' }],
+        });
+        const none = normalizeDrawLayersConfig({ mode: 'none' });
+
+        expect(fixed.current).toBe('assets');
+        expect(propertiesFromDrawLayer(fixed)).toEqual({
+            drawLayerId: 'assets',
+            drawLayerLabel: 'Patrimoine',
+        });
+        expect(propertiesFromDrawLayer(none)).toEqual({
+            drawLayerId: null,
+            drawLayerLabel: null,
+        });
+    });
+
+    it('uses the first available drawing layer unless no-layer is explicitly selected', () => {
+        const implicitDefault = normalizeDrawLayersConfig({
+            mode: 'SELECT',
+            allowNone: true,
+            layers: [{ id: 'aep', label: 'Réseau AEP' }],
+        });
+        const explicitNone = normalizeDrawLayersConfig({
+            mode: 'select',
+            current: null,
+            allowNone: true,
+            layers: [{ id: 'aep', label: 'Réseau AEP' }],
+        });
+
+        expect(implicitDefault.current).toBe('aep');
+        expect(explicitNone.current).toBeNull();
+    });
+
+    it('normalizes selection details config', () => {
+        expect(normalizeSelectionDetailsConfig(false)).toEqual({ enabled: false, label: 'Détail de la sélection' });
+        expect(normalizeSelectionDetailsConfig({ enabled: false, label: 'Inspecter' })).toEqual({ enabled: false, label: 'Détail de la sélection' });
+        expect(normalizeSelectionDetailsConfig({ label: 'Inspecter la sélection' })).toEqual({ enabled: true, label: 'Inspecter la sélection' });
+    });
+
+    it('creates a drawing layer selector when the user can choose the current layer', () => {
+        const toolbar = document.createElement('div');
+        const changes = [];
+        const selector = createDrawLayerSelector(toolbar, normalizeDrawLayersConfig({
+            mode: 'select',
+            allowNone: true,
+            current: 'aep',
+            noneLabel: 'Sans couche',
+            layers: [
+                { id: 'aep', label: 'Réseau AEP' },
+                { id: 'works', label: 'Travaux' },
+            ],
+        }), layerId => changes.push(layerId));
+
+        expect(selector.select.options).toHaveLength(3);
+        expect(selector.select.value).toBe('aep');
+        expect(selector.select.options[0].textContent).toBe('Sans couche');
+
+        selector.select.value = 'works';
+        selector.select.dispatchEvent(new Event('change'));
+
+        expect(changes).toEqual(['works']);
     });
 
     it('normalizes line, polygon and rectangle style aliases for Terra Draw', () => {
@@ -198,6 +300,30 @@ describe('Leaflet draw helpers', () => {
         expect(collection.features[0].properties).toEqual({ mode: 'point', name: 'A' });
     });
 
+    it('filters phantom point features without valid coordinates', () => {
+        const validPoint = {
+            type: 'Feature',
+            properties: { mode: 'point', name: 'A' },
+            geometry: { type: 'Point', coordinates: [2, 48] },
+        };
+        const phantomPoint = {
+            type: 'Feature',
+            properties: { mode: 'point', name: 'phantom' },
+            geometry: { type: 'Point', coordinates: [] },
+        };
+        const missingPoint = {
+            type: 'Feature',
+            properties: { mode: 'point', name: 'missing' },
+            geometry: { type: 'Point' },
+        };
+        const collection = toFeatureCollection([validPoint, phantomPoint, missingPoint]);
+
+        expect(hasValidGeometryCoordinates(validPoint.geometry)).toBe(true);
+        expect(isPersistableFeature(phantomPoint)).toBe(false);
+        expect(isPersistableFeature(missingPoint)).toBe(false);
+        expect(collection.features).toEqual([validPoint]);
+    });
+
     it('keeps editable polygons while removing Terra Draw coordinate metadata', () => {
         const feature = prepareFeature({
             type: 'Feature',
@@ -254,7 +380,7 @@ describe('Leaflet draw helpers', () => {
             action: 'measure-line',
         });
 
-        expect(button.title).toBe('');
+        expect(button.title).toBe('Mesurer une distance');
         expect(button.getAttribute('aria-label')).toBe('Mesurer une distance');
         expect(button.dataset.action).toBe('measure-line');
         expect(button.dataset.mode).toBe('polyline');
@@ -353,7 +479,7 @@ describe('Leaflet draw helpers', () => {
         expect(events[0].featureIds).toEqual(['inside']);
     });
 
-    it('keeps every zone-selected feature id even when Terra Draw focuses only one feature', () => {
+    it('keeps every zone-selected feature id and asks Terra Draw to select each one', () => {
         const root = document.createElement('div');
         const selectedFeatureIds = new Set();
         const features = [
@@ -386,8 +512,9 @@ describe('Leaflet draw helpers', () => {
         const selected = applyZoneSelection(draw, root, {}, selectedFeatureIds, 'rectangle', ([lat, lng]) => lat < 48.5 && lng < 2.5);
 
         expect(selected).toEqual(['inside-a', 'inside-b']);
-        expect(draw.selectFeature).toHaveBeenCalledTimes(1);
+        expect(draw.selectFeature).toHaveBeenCalledTimes(2);
         expect(draw.selectFeature).toHaveBeenCalledWith('inside-a');
+        expect(draw.selectFeature).toHaveBeenCalledWith('inside-b');
         expect([...selectedFeatureIds]).toEqual(['inside-a', 'inside-b']);
     });
 
@@ -436,6 +563,74 @@ describe('Leaflet draw helpers', () => {
         });
     });
 
+    it('applies the active drawing layer to a persisted feature', () => {
+        const feature = {
+            id: 'feature-1',
+            type: 'Feature',
+            properties: { mode: 'point' },
+            geometry: { type: 'Point', coordinates: [2, 48] },
+        };
+        const draw = {
+            getSnapshot: vi.fn(() => [feature]),
+            getSnapshotFeature: vi.fn(() => ({
+                ...feature,
+                properties: {
+                    ...feature.properties,
+                    drawLayerId: 'aep',
+                    drawLayerLabel: 'Réseau AEP',
+                },
+            })),
+            updateFeatureProperties: vi.fn(),
+        };
+        const config = normalizeDrawLayersConfig({
+            mode: 'select',
+            current: 'aep',
+            layers: [{ id: 'aep', label: 'Réseau AEP' }],
+        });
+
+        const applied = applyDrawLayerToFeature(draw, config, 'aep', 'feature-1');
+
+        expect(draw.updateFeatureProperties).toHaveBeenCalledWith('feature-1', {
+            drawLayerId: 'aep',
+            drawLayerLabel: 'Réseau AEP',
+        });
+        expect(applied.properties.drawLayerId).toBe('aep');
+    });
+
+    it('creates a multi-feature selection details payload', () => {
+        const selectedFeatureIds = new Set(['pipe-1', 'hydrant-1']);
+        const features = [
+            {
+                id: 'hydrant-1',
+                type: 'Feature',
+                properties: { mode: 'point', objectType: 'hydrant' },
+                geometry: { type: 'Point', coordinates: [2, 48] },
+            },
+            {
+                id: 'pipe-1',
+                type: 'Feature',
+                properties: { mode: 'polyline', objectType: 'water_main' },
+                geometry: { type: 'LineString', coordinates: [[2, 48], [2.1, 48.1]] },
+            },
+            {
+                id: 'phantom',
+                type: 'Feature',
+                properties: { mode: 'point' },
+                geometry: { type: 'Point', coordinates: [] },
+            },
+        ];
+        const draw = {
+            getSnapshot: vi.fn(() => features),
+        };
+        const payload = createSelectionDetailsPayload(draw, selectedFeatureIds, { id: 'map' });
+
+        expect(payload.count).toBe(2);
+        expect(payload.featureIds).toEqual(['pipe-1', 'hydrant-1']);
+        expect(payload.primaryFeatureId).toBe('pipe-1');
+        expect(payload.features.map(feature => feature.properties.objectType)).toEqual(['water_main', 'hydrant']);
+        expect(payload.exportGeoJSON().features).toHaveLength(2);
+    });
+
     it('places measurement labels on feature anchors', () => {
         expect(getMeasurementAnchor({
             type: 'Feature',
@@ -474,6 +669,26 @@ describe('Leaflet draw helpers', () => {
         expect(firstPlacement.latLng[0]).toBeGreaterThan(2);
         expect(secondPlacement.latLng[0]).toBeGreaterThan(firstPlacement.latLng[0]);
         expect(occupiedRects).toHaveLength(2);
+    });
+
+    it('hides measurement labels when collision placement moves them too far from the feature', () => {
+        const map = {
+            latLngToLayerPoint: ([lat, lng]) => ({ x: lng * 10, y: lat * 10 }),
+            layerPointToLatLng: ([x, y]) => [y / 10, x / 10],
+        };
+        const point = {
+            type: 'Feature',
+            properties: { mode: 'point' },
+            geometry: { type: 'Point', coordinates: [0, 0] },
+        };
+        const occupiedRects = Array.from({ length: 4 }, (_, index) => ({
+            left: -100,
+            right: 100,
+            top: 10 + (index * 30),
+            bottom: 40 + (index * 30),
+        }));
+
+        expect(resolveMeasurementLabelPlacement(map, point, '48.000000, 2.000000', occupiedRects, { maxLabelOffsetPx: 60 })).toBeNull();
     });
 
     it('gives up on measurement placement after too many collisions', () => {
@@ -612,9 +827,11 @@ describe('Leaflet draw helpers', () => {
         });
 
         expect(menu.button.getAttribute('aria-haspopup')).toBe('menu');
+        expect(menu.button.title).toBe('Dessin');
         expect(menu.button.querySelector('.group-hover\\:inline-flex').textContent).toBe('Dessin');
         expect(menu.panel.getAttribute('role')).toBe('menu');
         expect(menu.buttons).toHaveLength(2);
+        expect(menu.buttons[0].title).toBe('Dessiner une ligne');
         expect(toolbar.querySelectorAll('button')).toHaveLength(3);
 
         expect(menu.button.getAttribute('aria-expanded')).toBe('false');
@@ -623,8 +840,11 @@ describe('Leaflet draw helpers', () => {
         menu.button.click();
 
         expect(menu.button.getAttribute('aria-expanded')).toBe('true');
+        expect(menu.button.title).toBe('');
+        expect(menu.button.closest('[data-leaflet-tool-menu]').dataset.open).toBe('true');
         expect(menu.panel.classList.contains('hidden')).toBe(false);
         expect(menu.panel.classList.contains('flex')).toBe(true);
+        expect(menu.panel.classList.contains('overflow-visible')).toBe(true);
 
         menu.button.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
 
@@ -636,6 +856,60 @@ describe('Leaflet draw helpers', () => {
         expect(menu.panel.classList.contains('hidden')).toBe(true);
 
         toolbar.remove();
+    });
+
+    it('keeps already opened grouped toolbar menus open when another menu opens', () => {
+        const toolbar = document.createElement('div');
+        document.body.appendChild(toolbar);
+        const drawMenu = createToolMenu(toolbar, {
+            action: 'draw-tools',
+            icon: 'polygon',
+            label: 'Dessin',
+            items: [{ icon: 'line', label: 'Dessiner une ligne', mode: 'polyline' }],
+        });
+        const measureMenu = createToolMenu(toolbar, {
+            action: 'measure-tools',
+            icon: 'ruler',
+            label: 'Mesures',
+            items: [{ icon: 'ruler', label: 'Mesurer une distance', mode: 'polyline' }],
+        });
+
+        drawMenu.button.click();
+        measureMenu.button.click();
+
+        expect(drawMenu.button.getAttribute('aria-expanded')).toBe('true');
+        expect(measureMenu.button.getAttribute('aria-expanded')).toBe('true');
+
+        toolbar.remove();
+    });
+
+    it('provides visible selection feedback for custom marker points and vector features', () => {
+        const styles = resolveSelectStyles({
+            select: {
+                selectedLineStringColor: '#ef4444',
+            },
+        }, [
+            {
+                id: 'hydrant',
+                style: {
+                    markerUrl: '/markers/hydrant.svg',
+                    markerWidth: 24,
+                    markerHeight: 30,
+                },
+            },
+        ]);
+        const feature = {
+            properties: {
+                objectType: 'hydrant',
+            },
+        };
+
+        expect(styles.selectedMarkerUrl(feature)).toBe('/markers/hydrant.svg');
+        expect(styles.selectedMarkerWidth(feature)).toBe(32);
+        expect(styles.selectedMarkerHeight(feature)).toBe(38);
+        expect(styles.selectedPointColor).toBe('#2563eb');
+        expect(styles.selectedPolygonOutlineColor).toBe('#2563eb');
+        expect(styles.selectedLineStringColor).toBe('#ef4444');
     });
 
     it('closes grouped toolbar menus on escape and outside pointer interactions', () => {

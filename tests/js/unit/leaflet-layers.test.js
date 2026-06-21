@@ -13,6 +13,7 @@ import initLeaflet, {
     createMap,
     createOverlayLayer,
     getControlsPositionClasses,
+    getOrCreateControlStack,
     loadControlsState,
     loadGeoJsonData,
     normalizeLayerControlConfig,
@@ -442,9 +443,57 @@ describe('Leaflet GIS layer helpers', () => {
         });
     });
 
-    it('offsets the top-right settings menu when the dedicated layer menu is visible', () => {
+    it('keeps legacy top-right offsets available for native Leaflet controls', () => {
         expect(getControlsPositionClasses('topright', false)).toContain('top-14');
         expect(getControlsPositionClasses('topright', true)).toContain('top-28');
+    });
+
+    it('groups layer and settings controls in the same top-right column', () => {
+        const root = document.createElement('div');
+        const map = createMapMock();
+        const baseLayer = createLayer('xyz');
+        const overlayLayer = createLayer('geojson');
+        const controlsState = loadControlsState(null);
+        const controlsConfig = normalizeControlsConfig(true);
+
+        baseLayer.addTo(map);
+        overlayLayer.addTo(map);
+
+        addLayerMenuControl({}, map, {
+            containerId: 'map',
+        }, {
+            root,
+            baseLayers: { Plan: baseLayer },
+            overlayLayers: { Cadastre: overlayLayer },
+            lockedOverlayLayers: {},
+            layerControlConfig: normalizeLayerControlConfig(true),
+            controlsState,
+            controlsStorageKey: null,
+        });
+        addUserControls({}, map, {
+            containerId: 'map',
+            controls: controlsConfig,
+            draw: true,
+            measure: true,
+        }, {
+            root,
+            markers: [],
+            renderedOverlayLayers: [],
+            editableCollections: [],
+            controlsConfig,
+            controlsStorageKey: null,
+            controlsState,
+        });
+
+        const stack = getOrCreateControlStack(root, 'topright');
+        const layerMenu = root.querySelector('.daisy-leaflet-layer-controls');
+        const settingsMenu = root.querySelector('.daisy-leaflet-controls');
+
+        expect(root.querySelectorAll('.daisy-leaflet-control-stack')).toHaveLength(1);
+        expect(stack.children[0]).toBe(layerMenu);
+        expect(stack.children[1]).toBe(settingsMenu);
+        expect(layerMenu.classList.contains('absolute')).toBe(false);
+        expect(settingsMenu.classList.contains('absolute')).toBe(false);
     });
 
     it('creates a user controls menu and dispatches persisted state changes', () => {
@@ -597,8 +646,17 @@ describe('Leaflet GIS layer helpers', () => {
 
         expect(api.exportGeoJSON()).toEqual({ type: 'FeatureCollection', features: [] });
         expect(api.setMode('select')).toBe(false);
+        expect(api.getDrawLayer()).toBeNull();
+        expect(api.setDrawLayer('aep')).toBe(false);
+        expect(api.getSelectionDetails()).toMatchObject({ count: 0, featureIds: [], features: [] });
+        expect(api.showSelectionDetails()).toBe(false);
         expect(api.clearSelection()).toBe(false);
         expect(api.deleteSelected()).toBe(false);
+        expect(api.getGeolocation()).toBeNull();
+        expect(api.locate()).toBe(false);
+        expect(api.startGeolocation()).toBe(false);
+        expect(api.stopGeolocation()).toBe(false);
+        expect(api.isGeolocationWatching()).toBe(false);
         expect(api.undo()).toBe(false);
         expect(api.redo()).toBe(false);
         expect(api.destroy()).toBe(true);
@@ -613,6 +671,10 @@ describe('Leaflet GIS layer helpers', () => {
         const map = createMapMock();
         const drawApi = {
             setMode: vi.fn(() => true),
+            getDrawLayer: vi.fn(() => ({ id: 'aep', label: 'Réseau AEP' })),
+            setDrawLayer: vi.fn(() => true),
+            getSelectionDetails: vi.fn(() => ({ count: 2, featureIds: ['a', 'b'], features: [{ id: 'a' }, { id: 'b' }] })),
+            showSelectionDetails: vi.fn(() => true),
             clearSelection: vi.fn(() => true),
             deleteSelected: vi.fn(() => true),
             undo: vi.fn(() => true),
@@ -627,10 +689,40 @@ describe('Leaflet GIS layer helpers', () => {
 
         expect(api.exportGeoJSON().features).toHaveLength(1);
         expect(api.setMode('polygon')).toBe(true);
+        expect(api.getDrawLayer()).toEqual({ id: 'aep', label: 'Réseau AEP' });
+        expect(api.setDrawLayer(null)).toBe(true);
+        expect(api.getSelectionDetails().count).toBe(2);
+        expect(api.showSelectionDetails()).toBe(true);
         expect(api.clearSelection()).toBe(true);
         expect(api.deleteSelected()).toBe(true);
         expect(api.undo()).toBe(true);
         expect(api.redo()).toBe(true);
         expect(drawApi.setMode).toHaveBeenCalledWith('polygon');
+        expect(drawApi.setDrawLayer).toHaveBeenCalledWith(null);
+        expect(drawApi.showSelectionDetails).toHaveBeenCalledOnce();
+    });
+
+    it('delegates public geolocation API methods when geolocation API is available', () => {
+        const root = document.createElement('div');
+        const map = createMapMock();
+        const lastPosition = { method: 'manual', accuracy: 8 };
+        const geolocationApi = {
+            getLastPosition: vi.fn(() => lastPosition),
+            isWatching: vi.fn(() => true),
+            locate: vi.fn(() => true),
+            start: vi.fn(() => true),
+            stop: vi.fn(() => true),
+        };
+
+        const api = createLeafletApi(root, map, { containerId: 'map' }, {
+            geolocationApi,
+            cleanups: [],
+        });
+
+        expect(api.getGeolocation()).toBe(lastPosition);
+        expect(api.locate()).toBe(true);
+        expect(api.startGeolocation()).toBe(true);
+        expect(api.stopGeolocation()).toBe(true);
+        expect(api.isGeolocationWatching()).toBe(true);
     });
 });

@@ -91,6 +91,40 @@ function modeFromFeature(feature, objectTypes = []) {
     return null;
 }
 
+function isPosition(coordinates) {
+    return Array.isArray(coordinates)
+        && coordinates.length >= 2
+        && Number.isFinite(Number(coordinates[0]))
+        && Number.isFinite(Number(coordinates[1]));
+}
+
+function hasValidGeometryCoordinates(geometry) {
+    if (!geometry) {
+        return false;
+    }
+
+    if (geometry.type === 'Point') {
+        return isPosition(geometry.coordinates);
+    }
+
+    if (geometry.type === 'LineString') {
+        return Array.isArray(geometry.coordinates)
+            && geometry.coordinates.length >= 2
+            && geometry.coordinates.every(isPosition);
+    }
+
+    if (geometry.type === 'Polygon') {
+        return Array.isArray(geometry.coordinates)
+            && geometry.coordinates.some(ring => (
+                Array.isArray(ring)
+                && ring.length >= 4
+                && ring.every(isPosition)
+            ));
+    }
+
+    return false;
+}
+
 function isPersistableFeature(feature) {
     if (!feature || feature.type !== 'Feature' || !feature.geometry) {
         return false;
@@ -100,7 +134,8 @@ function isPersistableFeature(feature) {
         return false;
     }
 
-    return !TECHNICAL_FEATURE_PROPERTIES.some(property => feature.properties?.[property]);
+    return hasValidGeometryCoordinates(feature.geometry)
+        && !TECHNICAL_FEATURE_PROPERTIES.some(property => feature.properties?.[property]);
 }
 
 function prepareFeature(feature, objectTypes = []) {
@@ -153,7 +188,9 @@ export {
     collectInitialFeatures,
     createFeatureId,
     featuresFromCollection,
+    hasValidGeometryCoordinates,
     isPersistableFeature,
+    isPosition,
     modeFromFeature,
     parseCollection,
     prepareFeature,

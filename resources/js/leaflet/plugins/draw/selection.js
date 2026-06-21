@@ -70,11 +70,14 @@ function applyZoneSelection(draw, root, map, selectedFeatureIds, selectionType, 
         }
     });
 
+    selectedIds.forEach(featureId => {
+        try {
+            draw.selectFeature(featureId);
+        } catch {
+            // Some adapters may only focus one feature; Daisy still keeps the full multi-selection set.
+        }
+    });
     selectedIds.forEach(featureId => selectedFeatureIds.add(featureId));
-
-    if (selectedIds.length > 0) {
-        draw.selectFeature(selectedIds[0]);
-    }
 
     root.dispatchEvent(new CustomEvent('daisy:leaflet:zone-select', {
         detail: {

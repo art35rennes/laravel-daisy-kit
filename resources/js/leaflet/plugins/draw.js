@@ -17,17 +17,23 @@ import {
     modeFromObjectType,
     normalizeActionBadgeConfig,
     normalizeDrawConfig,
+    normalizeDrawLayersConfig,
     normalizeDrawStyles,
     normalizeFeatureStyle,
     normalizeMeasureConfig,
     normalizeObjectTypes,
+    normalizeSelectionDetailsConfig,
     objectTypeUsesMarkerMode,
+    propertiesFromDrawLayer,
     propertiesFromObjectType,
+    resolveDrawLayer,
     resolveToolIcon,
 } from './draw/config.js';
 import {
     collectInitialFeatures,
+    hasValidGeometryCoordinates,
     isPersistableFeature,
+    isPosition,
     modeFromFeature,
     prepareFeature,
     toFeatureCollection,
@@ -45,6 +51,7 @@ import {
 } from './draw/measurements.js';
 import {
     createActionBadge,
+    createDrawLayerSelector,
     createToolButton,
     createToolMenu,
     createToolbar,
@@ -79,7 +86,7 @@ import { TerraDrawLeafletAdapter } from 'terra-draw-leaflet-adapter';
  * @param {string|null} featureId
  * @returns {Object|null}
  */
-function applyObjectTypeToFeature(draw, root, map, objectType, featureId) {
+function applyObjectTypeToFeature(draw, root, map, objectType, featureId, extraDetail = {}) {
     if (!draw || !root || !objectType || !featureId || typeof draw.updateFeatureProperties !== 'function') {
         return null;
     }
@@ -98,6 +105,7 @@ function applyObjectTypeToFeature(draw, root, map, objectType, featureId) {
             featureId,
             objectType,
             objectTypeId: objectType.id,
+            ...extraDetail,
             map,
             draw,
             exportGeoJSON: () => toFeatureCollection(draw.getSnapshot()),
@@ -105,6 +113,42 @@ function applyObjectTypeToFeature(draw, root, map, objectType, featureId) {
     }));
 
     return feature || null;
+}
+
+function applyDrawLayerToFeature(draw, drawLayersConfig, layerId, featureId) {
+    if (!draw || !drawLayersConfig || !featureId || typeof draw.updateFeatureProperties !== 'function') {
+        return null;
+    }
+
+    const properties = propertiesFromDrawLayer(drawLayersConfig, layerId);
+
+    if (Object.keys(properties).length > 0) {
+        draw.updateFeatureProperties(featureId, properties);
+    }
+
+    return typeof draw.getSnapshotFeature === 'function'
+        ? draw.getSnapshotFeature(featureId)
+        : draw.getSnapshot().find(snapshotFeature => snapshotFeature.id === featureId) || null;
+}
+
+function createSelectionDetailsPayload(draw, selectedFeatureIds, map = null) {
+    const featureIds = [...selectedFeatureIds];
+    const snapshot = typeof draw?.getSnapshot === 'function' ? draw.getSnapshot() : [];
+    const featuresById = new Map(snapshot.map(feature => [feature.id, feature]));
+    const features = featureIds
+        .map(featureId => featuresById.get(featureId))
+        .filter(isPersistableFeature);
+
+    return {
+        count: features.length,
+        featureIds: features.map(feature => feature.id),
+        features,
+        primaryFeature: features[0] || null,
+        primaryFeatureId: features[0]?.id || null,
+        map,
+        draw,
+        exportGeoJSON: () => toFeatureCollection(features),
+    };
 }
 
 /**
@@ -135,6 +179,29 @@ function resolveModeStyles(drawStyles, objectTypes, mode) {
             },
         ]),
     );
+}
+
+function resolveSelectStyles(drawStyles, objectTypes) {
+    const objectTypeStyles = new Map(objectTypes.map(objectType => [objectType.id, objectType.style || {}]));
+
+    return {
+        selectedPointColor: '#2563eb',
+        selectedPointOutlineColor: '#ffffff',
+        selectedPointOutlineWidth: 3,
+        selectedPointWidth: feature => Number(feature?.properties?.style?.pointWidth || 8) + 4,
+        selectedLineStringColor: '#2563eb',
+        selectedLineStringWidth: feature => Number(feature?.properties?.style?.lineStringWidth || 3) + 2,
+        selectedPolygonFillOpacity: 0.24,
+        selectedPolygonOutlineColor: '#2563eb',
+        selectedPolygonOutlineWidth: feature => Number(feature?.properties?.style?.polygonOutlineWidth || 2) + 2,
+        selectedMarkerHeight: feature => Number(feature?.properties?.style?.markerHeight || objectTypeStyles.get(feature?.properties?.objectType)?.markerHeight || 28) + 8,
+        selectedMarkerUrl: feature => feature?.properties?.style?.markerUrl || objectTypeStyles.get(feature?.properties?.objectType)?.markerUrl,
+        selectedMarkerWidth: feature => Number(feature?.properties?.style?.markerWidth || objectTypeStyles.get(feature?.properties?.objectType)?.markerWidth || 28) + 8,
+        selectionPointColor: '#2563eb',
+        selectionPointOutlineColor: '#ffffff',
+        selectionPointOutlineWidth: 2,
+        ...drawStyles.select,
+    };
 }
 
 /**
@@ -182,6 +249,7 @@ function buildModes(drawConfig, objectTypes = []) {
 
     if (drawConfig.select) {
         modes.push(new TerraDrawSelectMode({
+            styles: resolveSelectStyles(drawStyles, objectTypes),
             keyEvents: {
                 deselect: 'Escape',
                 delete: drawConfig.delete ? 'Backspace' : null,
@@ -189,6 +257,7 @@ function buildModes(drawConfig, objectTypes = []) {
                 scale: null,
             },
             flags: {
+                marker: { feature: { draggable: true } },
                 point: { feature: { draggable: true } },
                 polyline: {
                     feature: {
@@ -299,6 +368,7 @@ export async function apply(L, map, cfg, context) {
     }
 
     const objectTypes = normalizeObjectTypes(cfg.objectTypes);
+    const drawLayersConfig = normalizeDrawLayersConfig(cfg.drawLayers);
     const modes = buildModes(drawConfig, objectTypes);
 
     if (modes.length === 0) {
@@ -331,6 +401,7 @@ export async function apply(L, map, cfg, context) {
     const selectedFeatureIds = new Set();
     let activeToolbarAction = drawConfig.select ? 'select' : null;
     let activeObjectType = null;
+    let activeDrawLayerId = drawLayersConfig?.current ?? null;
     let actionBadge = null;
 
     draw.start();
@@ -345,26 +416,111 @@ export async function apply(L, map, cfg, context) {
 
     const buttons = [];
     const objectCreatedFeatureIds = new Set();
+    const layerAssignedFeatureIds = new Set();
     const cleanupCallbacks = [];
+    let selectionDetailsButton = null;
 
-    const finishObjectFeature = (featureId) => {
-        if (!activeObjectType || !featureId || objectCreatedFeatureIds.has(featureId)) {
-            return typeof draw.getSnapshotFeature === 'function' ? draw.getSnapshotFeature(featureId) : null;
+    const getSelectionDetails = () => createSelectionDetailsPayload(draw, selectedFeatureIds, map);
+    const updateSelectionActions = () => {
+        if (!selectionDetailsButton) {
+            return;
         }
 
-        const feature = typeof draw.getSnapshotFeature === 'function' ? draw.getSnapshotFeature(featureId) : null;
+        const disabled = selectedFeatureIds.size === 0;
+
+        selectionDetailsButton.disabled = disabled;
+        selectionDetailsButton.classList.toggle('btn-disabled', disabled);
+    };
+    const dispatchSelectionDetails = () => {
+        const detail = getSelectionDetails();
+
+        if (detail.count === 0) {
+            updateSelectionActions();
+            return false;
+        }
+
+        root.dispatchEvent(new CustomEvent('daisy:leaflet:selection-details', { detail }));
+
+        return true;
+    };
+    const getActiveDrawLayer = () => resolveDrawLayer(drawLayersConfig, activeDrawLayerId);
+    const setDrawLayer = (layerId) => {
+        if (!drawLayersConfig || drawLayersConfig.mode !== 'select') {
+            return false;
+        }
+
+        if (layerId === null && !drawLayersConfig.allowNone) {
+            return false;
+        }
+
+        if (layerId !== null && !drawLayersConfig.layers.some(layer => layer.id === layerId && !layer.disabled)) {
+            return false;
+        }
+
+        activeDrawLayerId = layerId;
+        drawLayersConfig.current = layerId;
+        root.dispatchEvent(new CustomEvent('daisy:leaflet:draw-layer-change', {
+            detail: {
+                layer: getActiveDrawLayer(),
+                layerId: activeDrawLayerId,
+                draw,
+                map,
+            },
+        }));
+
+        return true;
+    };
+    const finishDrawnFeature = (featureId) => {
+        if (!featureId) {
+            return { feature: null, drawLayer: getActiveDrawLayer() };
+        }
+
+        let feature = typeof draw.getSnapshotFeature === 'function' ? draw.getSnapshotFeature(featureId) : null;
 
         if (!isPersistableFeature(feature)) {
-            return feature || null;
+            return { feature: feature || null, drawLayer: getActiveDrawLayer() };
+        }
+
+        if (drawLayersConfig && !layerAssignedFeatureIds.has(featureId)) {
+            feature = applyDrawLayerToFeature(draw, drawLayersConfig, activeDrawLayerId, featureId) || feature;
+            layerAssignedFeatureIds.add(featureId);
+        }
+
+        const drawLayer = getActiveDrawLayer();
+
+        if (!activeObjectType || objectCreatedFeatureIds.has(featureId)) {
+            return { feature, drawLayer };
         }
 
         objectCreatedFeatureIds.add(featureId);
 
-        return applyObjectTypeToFeature(draw, root, map, activeObjectType, featureId);
+        return {
+            feature: applyObjectTypeToFeature(draw, root, map, activeObjectType, featureId, {
+                drawLayer,
+                drawLayerId: drawLayer?.id ?? null,
+            }) || feature,
+            drawLayer,
+        };
+    };
+    const activateSelectionMode = () => {
+        if (!drawConfig.select) {
+            return;
+        }
+
+        draw.setMode('select');
+        activeToolbarAction = 'select';
+        activeObjectType = null;
+        setActiveButton(buttons, activeToolbarAction);
+        actionBadge?.hide();
+        updateSelectionActions();
     };
 
     if (toolbar) {
         toolbar.classList.toggle('hidden', context.controlsState?.drawToolbar === false);
+
+        const drawLayerSelector = createDrawLayerSelector(toolbar, drawLayersConfig, layerId => {
+            setDrawLayer(layerId);
+        });
 
         const completeZoneSelection = () => {
             if (drawConfig.select) {
@@ -372,6 +528,7 @@ export async function apply(L, map, cfg, context) {
                 activeObjectType = null;
                 setActiveButton(buttons, activeToolbarAction);
                 actionBadge?.hide();
+                updateSelectionActions();
             }
         };
         const startZoneSelection = selectionType => {
@@ -430,17 +587,6 @@ export async function apply(L, map, cfg, context) {
             ...measureButtonDefinitions,
         ].filter(Boolean);
 
-        const activateSelectionMode = () => {
-            if (!drawConfig.select) {
-                return;
-            }
-
-            draw.setMode('select');
-            activeToolbarAction = 'select';
-            activeObjectType = null;
-            setActiveButton(buttons, activeToolbarAction);
-            actionBadge?.hide();
-        };
         actionBadge = createActionBadge(root, drawConfig.actionBadge, activateSelectionMode);
         const handleToolActivation = (definition) => {
             const nextAction = definition.action || definition.mode;
@@ -523,6 +669,7 @@ export async function apply(L, map, cfg, context) {
                 if (selectedFeatureIds.size > 0) {
                     draw.removeFeatures([...selectedFeatureIds]);
                     selectedFeatureIds.clear();
+                    updateSelectionActions();
                     syncValue(draw, root, cfg, measureConfig, measurePanel, measurementContext);
                 }
 
@@ -532,7 +679,26 @@ export async function apply(L, map, cfg, context) {
                     activeObjectType = null;
                     setActiveButton(buttons, activeToolbarAction);
                     actionBadge?.hide();
+                    updateSelectionActions();
                 }
+            });
+        }
+
+        if (drawConfig.selectionDetails?.enabled) {
+            selectionDetailsButton = createToolButton(toolbar, {
+                action: 'selection-details',
+                icon: 'details',
+                label: drawConfig.selectionDetails.label,
+                mode: 'selection-details',
+            });
+            selectionDetailsButton.disabled = true;
+            selectionDetailsButton.classList.add('btn-disabled');
+            buttons.push(selectionDetailsButton);
+
+            selectionDetailsButton.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                dispatchSelectionDetails();
             });
         }
 
@@ -563,6 +729,10 @@ export async function apply(L, map, cfg, context) {
         }
 
         setActiveButton(buttons, activeToolbarAction || draw.getMode());
+
+        if (drawLayerSelector) {
+            drawLayerSelector.setValue(activeDrawLayerId);
+        }
     }
 
     const onControlsChange = event => {
@@ -587,13 +757,28 @@ export async function apply(L, map, cfg, context) {
     root.addEventListener('daisy:leaflet:controls-change', onControlsChange);
     cleanupCallbacks.push(() => root.removeEventListener('daisy:leaflet:controls-change', onControlsChange));
 
-    draw.on('select', id => selectedFeatureIds.add(id));
-    draw.on('deselect', id => selectedFeatureIds.delete(id));
+    draw.on('select', id => {
+        selectedFeatureIds.add(id);
+        updateSelectionActions();
+    });
+    draw.on('deselect', id => {
+        selectedFeatureIds.delete(id);
+        updateSelectionActions();
+    });
     draw.on('change', (featureIds = [], changeType = null) => {
         const changedFeatureIds = Array.isArray(featureIds) ? featureIds : [featureIds].filter(Boolean);
+        const shouldReturnToSelection = activeObjectType?.geometry === 'point';
 
-        if (activeObjectType?.geometry === 'point' && changeType === 'create') {
-            changedFeatureIds.forEach(featureId => finishObjectFeature(featureId));
+        if (changeType === 'create') {
+            changedFeatureIds.forEach(featureId => {
+                if (shouldReturnToSelection || drawLayersConfig) {
+                    finishDrawnFeature(featureId);
+                }
+            });
+
+            if (shouldReturnToSelection) {
+                activateSelectionMode();
+            }
         }
 
         syncValue(draw, root, cfg, measureConfig, measurePanel, measurementContext);
@@ -601,7 +786,7 @@ export async function apply(L, map, cfg, context) {
     map.on('zoomend moveend', onMapMove);
     cleanupCallbacks.push(() => map.off?.('zoomend moveend', onMapMove));
     draw.on('finish', (featureId, finishContext = null) => {
-        const feature = finishObjectFeature(featureId);
+        const { feature, drawLayer } = finishDrawnFeature(featureId);
 
         root.dispatchEvent(new CustomEvent('daisy:leaflet:draw-finish', {
             detail: {
@@ -609,6 +794,8 @@ export async function apply(L, map, cfg, context) {
                 featureId,
                 objectType: activeObjectType,
                 objectTypeId: activeObjectType?.id || null,
+                drawLayer,
+                drawLayerId: drawLayer?.id ?? null,
                 finishContext,
                 map,
                 draw,
@@ -622,6 +809,7 @@ export async function apply(L, map, cfg, context) {
             activeObjectType = null;
             setActiveButton(buttons, activeToolbarAction);
             actionBadge?.hide();
+            updateSelectionActions();
         }
 
         syncValue(draw, root, cfg, measureConfig, measurePanel, measurementContext);
@@ -647,6 +835,7 @@ export async function apply(L, map, cfg, context) {
             }
 
             clearSelectedFeatures(draw, selectedFeatureIds);
+            updateSelectionActions();
 
             return true;
         },
@@ -657,6 +846,7 @@ export async function apply(L, map, cfg, context) {
 
             draw.removeFeatures([...selectedFeatureIds]);
             selectedFeatureIds.clear();
+            updateSelectionActions();
             syncValue(draw, root, cfg, measureConfig, measurePanel, measurementContext);
 
             return true;
@@ -685,6 +875,10 @@ export async function apply(L, map, cfg, context) {
 
             return changed;
         },
+        getDrawLayer: () => getActiveDrawLayer(),
+        setDrawLayer,
+        getSelectionDetails,
+        showSelectionDetails: dispatchSelectionDetails,
         destroy: () => {
             cleanupCallbacks.splice(0).reverse().forEach(cleanup => cleanup());
             toolbar?.querySelectorAll('[data-leaflet-tool-menu]').forEach(wrapper => wrapper.__daisyCloseToolMenu?.());
@@ -709,28 +903,39 @@ export {
     collectInitialFeatures,
     applyZoneSelection,
     createActionBadge,
+    createDrawLayerSelector,
+    createSelectionDetailsPayload,
     createToolButton,
     createToolMenu,
     formatArea,
     formatDistance,
     getMeasurementAnchor,
+    hasValidGeometryCoordinates,
+    isPersistableFeature,
+    isPosition,
     normalizeDrawStyles,
     normalizeFeatureStyle,
     objectTypeUsesMarkerMode,
     resolveMeasurementLabelPlacement,
     resolveModeStyles,
+    resolveSelectStyles,
     measureFeature,
     modeFromFeature,
     modeFromObjectType,
     normalizeActionBadgeConfig,
     normalizeDrawConfig,
+    normalizeDrawLayersConfig,
     normalizeIconUrl,
     normalizeMeasureConfig,
     normalizeObjectTypes,
+    normalizeSelectionDetailsConfig,
+    applyDrawLayerToFeature,
     applyObjectTypeToFeature,
     pointInLatLngPolygon,
     prepareFeature,
+    propertiesFromDrawLayer,
     propertiesFromObjectType,
+    resolveDrawLayer,
     resolveToolIcon,
     sanitizeIconMarkup,
     syncValue,

@@ -27,6 +27,59 @@ function createToolbar(root) {
     return toolbar;
 }
 
+function createDrawLayerSelector(toolbar, config, onChange) {
+    if (!config || config.mode !== 'select' || config.layers.length === 0) {
+        return null;
+    }
+
+    const wrapper = document.createElement('label');
+    const label = document.createElement('span');
+    const select = document.createElement('select');
+
+    wrapper.className = 'join-item flex min-w-32 flex-col gap-1 bg-base-100 p-1';
+    label.className = 'sr-only';
+    label.textContent = 'Couche de dessin';
+    select.className = 'select select-bordered select-xs w-full max-w-44 text-xs';
+    select.setAttribute('aria-label', 'Couche de dessin');
+    select.dataset.leafletDrawLayerSelect = '1';
+
+    if (config.allowNone) {
+        const option = document.createElement('option');
+
+        option.value = '';
+        option.textContent = config.noneLabel;
+        select.appendChild(option);
+    }
+
+    config.layers
+        .filter(layer => !layer.disabled)
+        .forEach(layer => {
+            const option = document.createElement('option');
+
+            option.value = layer.id;
+            option.textContent = layer.label;
+            select.appendChild(option);
+        });
+
+    select.value = config.current || '';
+    select.addEventListener('change', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        onChange?.(select.value || null);
+    });
+
+    wrapper.append(label, select);
+    toolbar.appendChild(wrapper);
+
+    return {
+        element: wrapper,
+        select,
+        setValue: value => {
+            select.value = value || '';
+        },
+    };
+}
+
 function createToolTooltip(label) {
     const tooltipWrapper = document.createElement('span');
 
@@ -52,6 +105,7 @@ function createToolTooltip(label) {
         'group-focus-visible:inline-flex',
     ].join(' ');
     tooltipWrapper.setAttribute('aria-hidden', 'true');
+    tooltipWrapper.dataset.leafletToolTooltip = '1';
     tooltipWrapper.textContent = label;
 
     return tooltipWrapper;
@@ -68,6 +122,7 @@ function createToolButton(toolbar, definition) {
     button.className = definition.className || 'btn btn-xs btn-square join-item group relative';
     button.dataset.action = action || mode;
     button.dataset.mode = mode;
+    button.title = label;
     button.setAttribute('aria-label', label);
 
     iconWrapper.className = 'inline-flex size-4';
@@ -108,6 +163,7 @@ function createToolMenu(toolbar, group) {
     button.type = 'button';
     button.className = 'btn btn-xs btn-square group relative';
     button.dataset.action = group.action;
+    button.title = group.label;
     button.setAttribute('aria-label', group.label);
     button.setAttribute('aria-haspopup', 'menu');
     button.setAttribute('aria-expanded', 'false');
@@ -130,8 +186,7 @@ function createToolMenu(toolbar, group) {
         'max-w-[calc(100vw-5rem)]',
         'min-w-max',
         'flex-col',
-        'overflow-x-auto',
-        'overflow-y-auto',
+        'overflow-visible',
         'overscroll-contain',
         'rounded-box',
         'bg-base-100',
@@ -158,13 +213,10 @@ function createToolMenu(toolbar, group) {
             return;
         }
 
-        if (nextOpen) {
-            closeSiblingToolMenus(toolbar, wrapper);
-        }
-
         isOpen = nextOpen;
         wrapper.dataset.open = nextOpen ? 'true' : 'false';
         button.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+        button.title = nextOpen ? '' : group.label;
         button.classList.toggle('btn-active', nextOpen);
         panel.classList.toggle('hidden', !nextOpen);
         panel.classList.toggle('flex', nextOpen);
@@ -289,6 +341,7 @@ function setActiveButton(buttons, activeMode) {
 export {
     closeSiblingToolMenus,
     createActionBadge,
+    createDrawLayerSelector,
     createToolButton,
     createToolMenu,
     createToolTooltip,
