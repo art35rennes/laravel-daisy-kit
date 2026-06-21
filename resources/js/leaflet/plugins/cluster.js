@@ -22,7 +22,20 @@
  * @returns {Promise<void>}
  */
 export async function apply(L, map, cfg, context) {
-    await import('leaflet.markercluster');
+    window.L = L;
+    globalThis.L = L;
+
+    try {
+        await import('leaflet.markercluster');
+    } catch (error) {
+        console.warn('[DaisyLeaflet] Marker cluster plugin unavailable; rendering markers without clustering.', error);
+
+        for (const marker of (context.markers || [])) {
+            marker.addTo(map);
+        }
+
+        return;
+    }
 
     try {
         await import('leaflet.markercluster/dist/MarkerCluster.css');
@@ -31,7 +44,20 @@ export async function apply(L, map, cfg, context) {
         // CSS may be bundled separately.
     }
 
-    const group = L.markerClusterGroup(cfg.clusterOptions || {});
+    const maxZoom = typeof map.getMaxZoom === 'function' ? map.getMaxZoom() : null;
+
+    if (typeof L.markerClusterGroup !== 'function') {
+        for (const marker of (context.markers || [])) {
+            marker.addTo(map);
+        }
+
+        return;
+    }
+
+    const group = L.markerClusterGroup({
+        disableClusteringAtZoom: maxZoom || 18,
+        ...(cfg.clusterOptions || {}),
+    });
 
     for (const marker of (context.markers || [])) {
         group.addLayer(marker);

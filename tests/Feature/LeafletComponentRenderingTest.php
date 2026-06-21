@@ -81,6 +81,178 @@ describe('Leaflet component rendering', function () {
 
         expect($config['geojson'])->toBe($geojson);
     });
+
+    it('renders custom basemaps and overlays in the config', function () {
+        $basemaps = [[
+            'id' => 'ortho',
+            'label' => 'Orthophoto',
+            'type' => 'wms',
+            'url' => 'https://maps.example.test/wms',
+            'options' => ['layers' => 'ortho'],
+            'active' => true,
+        ]];
+        $overlays = [[
+            'id' => 'parcels',
+            'label' => 'Parcelles',
+            'type' => 'geojson',
+            'data' => ['type' => 'FeatureCollection', 'features' => []],
+            'editable' => true,
+        ]];
+
+        $html = renderLeaflet([
+            'basemaps' => $basemaps,
+            'overlays' => $overlays,
+            'layerControl' => true,
+        ]);
+        $config = extractConfig($html);
+
+        expect($config['basemaps'])->toBe($basemaps)
+            ->and($config['overlays'])->toBe($overlays)
+            ->and($config['layerControl'])->toBeTrue();
+    });
+
+    it('renders layer control options for single mode and locked overlays', function () {
+        $html = renderLeaflet([
+            'layerControl' => [
+                'mode' => 'single',
+                'lockedOverlays' => ['sector'],
+                'native' => true,
+            ],
+            'overlays' => [[
+                'id' => 'sector',
+                'label' => 'Secteur imposé',
+                'type' => 'geojson',
+                'data' => ['type' => 'FeatureCollection', 'features' => []],
+                'control' => false,
+            ]],
+        ]);
+        $config = extractConfig($html);
+
+        expect($config['layerControl']['mode'])->toBe('single')
+            ->and($config['layerControl']['lockedOverlays'])->toBe(['sector'])
+            ->and($config['layerControl']['native'])->toBeTrue()
+            ->and($config['overlays'][0]['control'])->toBeFalse();
+    });
+
+    it('filters unsafe basemap and overlay urls', function () {
+        $html = renderLeaflet([
+            'basemaps' => [[
+                'id' => 'bad',
+                'type' => 'xyz',
+                'url' => 'javascript:alert(1)',
+            ]],
+            'overlays' => [[
+                'id' => 'bad-overlay',
+                'type' => 'wms',
+                'url' => 'javascript:alert(1)',
+            ]],
+        ]);
+        $config = extractConfig($html);
+
+        expect($html)->not->toContain('javascript:alert(1)')
+            ->and($config['basemaps'])->toBe([])
+            ->and($config['overlays'])->toBe([]);
+    });
+
+    it('serializes remote geojson overlay urls', function () {
+        $html = renderLeaflet([
+            'overlays' => [[
+                'id' => 'remote-parcels',
+                'label' => 'Remote parcels',
+                'type' => 'geojson',
+                'url' => '/geo/parcels.geojson',
+                'editable' => true,
+            ]],
+        ]);
+        $config = extractConfig($html);
+
+        expect($config['overlays'])->toHaveCount(1)
+            ->and($config['overlays'][0]['url'])->toBe('/geo/parcels.geojson')
+            ->and($config['overlays'][0]['editable'])->toBeTrue();
+    });
+
+    it('renders draw and measure config with a hidden GeoJSON input', function () {
+        $value = ['type' => 'FeatureCollection', 'features' => []];
+        $html = renderLeaflet([
+            'draw' => [
+                'polygon' => true,
+                'rectangle' => false,
+                'actionBadge' => ['label' => 'Mode actif'],
+                'styles' => [
+                    'line' => ['color' => '#2563eb', 'width' => 4, 'dashArray' => [6, 3]],
+                ],
+            ],
+            'measure' => ['maxLabels' => 8],
+            'name' => 'geometry',
+            'value' => $value,
+        ]);
+        $config = extractConfig($html);
+
+        expect($config['draw']['polygon'])->toBeTrue()
+            ->and($config['draw']['rectangle'])->toBeFalse()
+            ->and($config['draw']['groupedToolbar'])->toBeTrue()
+            ->and($config['draw']['actionBadge']['label'])->toBe('Mode actif')
+            ->and($config['draw']['styles']['line']['color'])->toBe('#2563eb')
+            ->and($config['measure']['display'])->toBe('metric')
+            ->and($config['measure']['maxLabels'])->toBe(8)
+            ->and($config['value'])->toBe($value)
+            ->and($config['valueInputName'])->toBe('geometry')
+            ->and($html)->toContain('name="geometry"')
+            ->and($html)->toContain('data-leaflet-value');
+    });
+
+    it('renders user controls config with optional persistence', function () {
+        $html = renderLeaflet([
+            'controls' => [
+                'persist' => true,
+                'storageKey' => 'project-map-controls',
+                'overlays' => false,
+            ],
+        ]);
+        $config = extractConfig($html);
+
+        expect($config['controls']['persist'])->toBeTrue()
+            ->and($config['controls']['storageKey'])->toBe('project-map-controls')
+            ->and($config['controls']['overlays'])->toBeFalse()
+            ->and($config['controls']['basemaps'])->toBeTrue()
+            ->and($config['controls']['measurements'])->toBeTrue();
+    });
+
+    it('serializes custom SIG object types', function () {
+        $html = renderLeaflet([
+            'objectTypes' => [
+                [
+                    'id' => 'equipment',
+                    'label' => 'Équipement',
+                    'geometry' => 'point',
+                    'markerSvg' => '<svg viewBox="0 0 24 24"></svg>',
+                    'markerWidth' => 30,
+                    'style' => ['color' => '#ef4444', 'outlineWidth' => 2],
+                    'properties' => ['category' => 'asset'],
+                ],
+                [
+                    'id' => 'pipe',
+                    'label' => 'Canalisation',
+                    'geometry' => 'linestring',
+                ],
+                [
+                    'id' => 'structure',
+                    'label' => 'Ouvrage',
+                    'geometry' => 'polygon',
+                ],
+            ],
+        ]);
+        $config = extractConfig($html);
+
+        expect($config['objectTypes'])->toHaveCount(3)
+            ->and($config['objectTypes'][0]['geometry'])->toBe('point')
+            ->and($config['objectTypes'][0]['markerSvg'])->toBe('<svg viewBox="0 0 24 24"></svg>')
+            ->and($config['objectTypes'][0]['markerWidth'])->toBe(30)
+            ->and($config['objectTypes'][0]['style']['color'])->toBe('#ef4444')
+            ->and($config['objectTypes'][0]['properties']['category'])->toBe('asset')
+            ->and($config['objectTypes'][1]['geometry'])->toBe('line')
+            ->and($config['objectTypes'][2]['geometry'])->toBe('polygon');
+    });
 });
 
 // ============================================================================

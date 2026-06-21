@@ -8,65 +8,48 @@
  * @module leaflet
  */
 
-// ============================================================================
-// Tile providers (built-in lookup, zero external dependency)
-// ============================================================================
-
-/**
- * Built-in tile provider definitions.
- *
- * Each entry provides a URL template and default options (attribution, subdomains).
- * This replaces the heavy `leaflet-providers` package (~460 providers) with only
- * the most commonly used ones. For exotic providers, use the `tileUrl` prop.
- *
- * @type {Object<string, {url: string, options: Object}>}
- */
-const TILE_PROVIDERS = {
-    osm: {
-        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        options: {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        },
-    },
-    'cartodb.positron': {
-        url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-        options: {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20,
-        },
-    },
-    'cartodb.darkmatter': {
-        url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        options: {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20,
-        },
-    },
-    'cartodb.voyager': {
-        url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-        options: {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20,
-        },
-    },
-    'stamen.toner': {
-        url: 'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}{r}.png',
-        options: {
-            attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://stamen.com/">Stamen Design</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-            maxZoom: 20,
-        },
-    },
-    'stamen.watercolor': {
-        url: 'https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg',
-        options: {
-            attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://stamen.com/">Stamen Design</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-            maxZoom: 16,
-        },
-    },
-};
+import { createLeafletApi } from './api.js';
+import {
+    addGeoJson,
+    addMarkersToMap,
+    applyFitBounds,
+    createMap,
+    createMarkers,
+    parseGeoJson,
+} from './core.js';
+import {
+    TILE_PROVIDERS,
+    addBasemaps,
+    addLayerControl,
+    addOverlays,
+    createLegacyBasemapDefinition,
+    createOverlayLayer,
+    createRasterLayer,
+    loadGeoJsonData,
+    normalizeLayerControlConfig,
+    shouldUseNativeLayerControl,
+} from './map-layers.js';
+import {
+    addUserControls,
+    applyControlsState,
+    createControlChoice,
+    createControlsSection,
+    createDefaultControlsState,
+    createIconButton,
+    getControlsPositionClasses,
+    getControlsStorageKey,
+    loadControlsState,
+    normalizeControlsConfig,
+    persistControlsState,
+} from './controls.js';
+import {
+    addLayer,
+    bindLayerToggleEvents,
+    collectActiveLayerNames,
+    dispatchLayerToggle,
+    mapHasLayer,
+    removeLayer,
+} from './layers.js';
 
 // ============================================================================
 // Plugin registry
@@ -86,6 +69,7 @@ const PLUGINS = {
     gestureHandling: () => import('./plugins/gesture-handling.js'),
     fullscreen: () => import('./plugins/fullscreen.js'),
     cluster: () => import('./plugins/cluster.js'),
+    draw: () => import('./plugins/draw.js'),
 };
 
 // ============================================================================
@@ -181,182 +165,184 @@ async function loadLeaflet() {
 }
 
 // ============================================================================
-// Map creation
+// User controls menu
 // ============================================================================
 
 /**
- * Creates a Leaflet map instance with options from the Blade component config.
- *
- * @param {L} L - The Leaflet namespace.
- * @param {HTMLElement} container - The inner map container element.
- * @param {Object} cfg - Parsed JSON configuration from the Blade component.
- * @returns {L.Map}
- */
-function createMap(L, container, cfg) {
-    const mapOptions = {};
-
-    if (cfg.minZoom != null) {
-        mapOptions.minZoom = cfg.minZoom;
-    }
-    if (cfg.maxZoom != null) {
-        mapOptions.maxZoom = cfg.maxZoom;
-    }
-    if (cfg.preferCanvas) {
-        mapOptions.preferCanvas = true;
-    }
-
-    return L.map(container, mapOptions).setView(
-        [cfg.center?.lat ?? 0, cfg.center?.lng ?? 0],
-        cfg.zoom ?? 2,
-    );
-}
-
-/**
- * Adds a tile layer to the map using the built-in provider lookup or a custom URL.
- *
- * Priority: cfg.tileUrl (explicit URL) > cfg.provider (named lookup) > OSM fallback.
- * No tile layer is added unless cfg.tiles is truthy; this keeps the default
- * component compatible with strict CSP img-src/connect-src self policies.
- *
- * @param {L} L
- * @param {L.Map} map
- * @param {Object} cfg
+ * @param {Object} map
+ * @param {Object<string, Object>} overlayLayers
+ * @param {string} selectedName
  * @returns {void}
  */
-function addTileLayer(L, map, cfg) {
-    if (!cfg.tiles) {
-        return;
-    }
-
-    if (cfg.tileUrl) {
-        L.tileLayer(cfg.tileUrl, cfg.tileOptions || {}).addTo(map);
-        return;
-    }
-
-    const providerKey = (cfg.provider || 'osm').toLowerCase();
-    const provider = TILE_PROVIDERS[providerKey] || TILE_PROVIDERS.osm;
-
-    L.tileLayer(provider.url, { ...provider.options, ...(cfg.tileOptions || {}) }).addTo(map);
-}
-
-// ============================================================================
-// Data layers
-// ============================================================================
-
-/**
- * Creates Leaflet markers from the config without adding them to the map.
- *
- * Returns the array of L.Marker instances so the cluster plugin can
- * intercept them if clustering is enabled.
- *
- * Accepts both array format [[lat, lng, popup?]] and object format [{lat, lng, popup?}].
- *
- * @param {L} L
- * @param {Array} markers - Raw marker definitions from Blade config.
- * @returns {L.Marker[]}
- */
-function createMarkers(L, markers) {
-    if (!Array.isArray(markers) || markers.length === 0) {
-        return [];
-    }
-
-    const result = [];
-
-    for (const m of markers) {
-        let lat, lng, popup;
-
-        if (Array.isArray(m)) {
-            [lat, lng, popup] = m;
+function activateSingleOverlay(map, overlayLayers, selectedName) {
+    Object.entries(overlayLayers).forEach(([name, layer]) => {
+        if (name === selectedName) {
+            addLayer(map, layer);
         } else {
-            ({ lat, lng, popup } = m);
+            removeLayer(map, layer);
         }
-
-        if (typeof lat !== 'number' || typeof lng !== 'number') {
-            continue;
-        }
-
-        const marker = L.marker([lat, lng]);
-
-        if (popup) {
-            marker.bindPopup(String(popup));
-        }
-
-        result.push(marker);
-    }
-
-    return result;
+    });
 }
 
-/**
- * Adds markers directly to the map (used when clustering is disabled).
- *
- * @param {L.Map} map
- * @param {L.Marker[]} markers
- * @returns {void}
- */
-function addMarkersToMap(map, markers) {
-    for (const marker of markers) {
-        marker.addTo(map);
-    }
-}
+function addLayerMenuControl(L, map, cfg, context) {
+    const layerConfig = context.layerControlConfig;
 
-/**
- * Adds a GeoJSON layer to the map.
- *
- * @param {L} L
- * @param {L.Map} map
- * @param {Object|string|null} geojson
- * @returns {L.GeoJSON|null}
- */
-function addGeoJson(L, map, geojson) {
-    if (!geojson) {
+    if (!layerConfig?.enabled || layerConfig.native) {
         return null;
     }
 
-    const data = typeof geojson === 'string' ? JSON.parse(geojson) : geojson;
-    const layer = L.geoJSON(data);
-    layer.addTo(map);
+    const hasBasemaps = Object.keys(context.baseLayers || {}).length > 0;
+    const hasOverlays = Object.keys(context.overlayLayers || {}).length > 0;
 
-    return layer;
-}
-
-// ============================================================================
-// Fit bounds
-// ============================================================================
-
-/**
- * Auto-fits the map viewport to encompass all markers and GeoJSON features.
- *
- * Only applies when cfg.fitBounds is truthy and there is content to fit.
- *
- * @param {L} L
- * @param {L.Map} map
- * @param {Object} cfg
- * @param {L.Marker[]} markers
- * @param {L.GeoJSON|null} geojsonLayer
- * @returns {void}
- */
-function applyFitBounds(L, map, cfg, markers, geojsonLayer) {
-    if (!cfg.fitBounds) {
-        return;
+    if (!hasBasemaps && !hasOverlays) {
+        return null;
     }
 
-    const bounds = L.latLngBounds([]);
+    const root = context.root;
+    const storageKey = context.controlsStorageKey;
+    const state = context.controlsState || createDefaultControlsState();
+    const wrapper = document.createElement('div');
+    const panel = document.createElement('div');
+    const positionClasses = getControlsPositionClasses(layerConfig.position, false);
 
-    for (const marker of markers) {
-        bounds.extend(marker.getLatLng());
-    }
+    wrapper.className = [
+        'daisy-leaflet-layer-controls',
+        'absolute',
+        'z-[1100]',
+        'flex',
+        'flex-col',
+        'gap-2',
+        ...positionClasses,
+    ].join(' ');
 
-    if (geojsonLayer) {
-        const geoBounds = geojsonLayer.getBounds();
-        if (geoBounds.isValid()) {
-            bounds.extend(geoBounds);
+    const trigger = createIconButton(wrapper, 'layers', 'Couches');
+    trigger.classList.add('bg-base-100', 'shadow');
+    trigger.setAttribute('aria-expanded', 'false');
+
+    panel.className = [
+        'hidden',
+        'w-64',
+        'max-w-[calc(100vw-2rem)]',
+        'space-y-3',
+        'rounded-box',
+        'bg-base-100',
+        'p-3',
+        'text-base-content',
+        'shadow-lg',
+        'ring-1',
+        'ring-base-300',
+    ].join(' ');
+
+    const title = document.createElement('div');
+    title.className = 'text-sm font-semibold';
+    title.textContent = 'Couches';
+    panel.appendChild(title);
+
+    if (layerConfig.mode === 'single' && hasOverlays) {
+        const overlayEntries = Object.entries(context.overlayLayers);
+        const storedOverlay = Object.entries(state.overlays || {}).find(([name, visible]) => visible && context.overlayLayers[name])?.[0];
+        const visibleOverlay = overlayEntries.find(([, layer]) => mapHasLayer(map, layer))?.[0];
+        const activeOverlay = storedOverlay || visibleOverlay || overlayEntries[0]?.[0];
+
+        if (activeOverlay) {
+            activateSingleOverlay(map, context.overlayLayers, activeOverlay);
+            state.overlays = Object.fromEntries(overlayEntries.map(([name]) => [name, name === activeOverlay]));
         }
     }
 
-    if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [30, 30] });
+    trigger.addEventListener('click', () => {
+        const open = panel.classList.toggle('hidden') === false;
+        trigger.setAttribute('aria-expanded', String(open));
+    });
+
+    const updateState = (patch) => {
+        Object.assign(state, patch);
+        persistControlsState(storageKey, state);
+        applyControlsState(root, map, cfg, context, state);
+    };
+
+    if (hasBasemaps) {
+        const section = createControlsSection(panel, 'Fonds');
+        const radioName = `daisy-leaflet-basemap-${cfg.containerId}`;
+
+        Object.entries(context.baseLayers).forEach(([name, layer]) => {
+            createControlChoice(section, {
+                type: 'radio',
+                name: radioName,
+                value: name,
+                label: name,
+                checked: state.basemap ? state.basemap === name : mapHasLayer(map, layer),
+                onChange(input) {
+                    if (input.checked) {
+                        updateState({ basemap: name });
+                        dispatchLayerToggle(root, map, name, 'baselayerchange', layer, context);
+                    }
+                },
+            });
+        });
     }
+
+    if (hasOverlays) {
+        const section = createControlsSection(panel, layerConfig.mode === 'single' ? 'Couche active' : 'Couches');
+        const radioName = `daisy-leaflet-overlay-${cfg.containerId}`;
+
+        Object.entries(context.overlayLayers).forEach(([name, layer]) => {
+            const checked = Object.prototype.hasOwnProperty.call(state.overlays || {}, name)
+                ? state.overlays[name]
+                : mapHasLayer(map, layer);
+
+            createControlChoice(section, {
+                type: layerConfig.mode === 'single' ? 'radio' : 'checkbox',
+                name: layerConfig.mode === 'single' ? radioName : '',
+                value: name,
+                label: name,
+                checked,
+                onChange(input) {
+                    if (layerConfig.mode === 'single') {
+                        if (!input.checked) {
+                            return;
+                        }
+
+                        const previouslyActive = collectActiveLayerNames(map, context.overlayLayers).filter(layerName => layerName !== name);
+                        const overlays = Object.fromEntries(Object.keys(context.overlayLayers).map(layerName => [layerName, layerName === name]));
+                        activateSingleOverlay(map, context.overlayLayers, name);
+                        updateState({ overlays });
+                        previouslyActive.forEach(layerName => {
+                            dispatchLayerToggle(root, map, layerName, 'overlayremove', context.overlayLayers[layerName], context);
+                        });
+                        dispatchLayerToggle(root, map, name, 'overlayadd', layer, context);
+
+                        return;
+                    }
+
+                    updateState({
+                        overlays: {
+                            ...(state.overlays || {}),
+                            [name]: input.checked,
+                        },
+                    });
+                    dispatchLayerToggle(root, map, name, input.checked ? 'overlayadd' : 'overlayremove', layer, context);
+                },
+            });
+        });
+    }
+
+    if (Object.keys(context.lockedOverlayLayers || {}).length > 0) {
+        const section = createControlsSection(panel, 'Couches imposées');
+
+        Object.keys(context.lockedOverlayLayers).forEach(name => {
+            const row = document.createElement('div');
+
+            row.className = 'flex min-h-7 items-center gap-2 rounded px-1 text-xs text-base-content/70';
+            row.textContent = name;
+            section.appendChild(row);
+        });
+    }
+
+    wrapper.appendChild(panel);
+    root.appendChild(wrapper);
+
+    return wrapper;
 }
 
 // ============================================================================
@@ -410,14 +396,15 @@ async function init(root) {
         return null;
     }
 
-    if (root.dataset.leafletReady === '1') {
+    if (root.__daisyLeafletInitializing || root.daisyLeaflet) {
         return null;
     }
-    root.dataset.leafletReady = '1';
+    root.__daisyLeafletInitializing = true;
 
     const cfg = readConfig(root);
     if (!cfg) {
         showError(root);
+        delete root.__daisyLeafletInitializing;
         return null;
     }
 
@@ -427,6 +414,7 @@ async function init(root) {
     } catch (error) {
         console.warn('[DaisyLeaflet] Failed to load Leaflet:', error);
         showError(root);
+        delete root.__daisyLeafletInitializing;
         return null;
     }
 
@@ -434,16 +422,38 @@ async function init(root) {
     if (!container) {
         console.warn('[DaisyLeaflet] Container not found:', cfg.containerId);
         showError(root);
+        delete root.__daisyLeafletInitializing;
         return null;
     }
 
     let map;
+    let baseLayers = {};
+    let overlayLayers = {};
+    let lockedOverlayLayers = {};
+    let renderedOverlayLayers = [];
+    let editableCollections = [];
+    let layerControl = null;
+    const layerControlConfig = normalizeLayerControlConfig(cfg.layerControl);
+    cfg.layerControl = layerControlConfig;
+
     try {
         map = createMap(L, container, cfg);
-        addTileLayer(L, map, cfg);
+        ({ baseLayers } = addBasemaps(L, map, cfg));
+        ({
+            overlayLayers,
+            lockedOverlayLayers,
+            renderedLayers: renderedOverlayLayers,
+            editableCollections,
+        } = await addOverlays(L, map, cfg));
+        layerControl = addLayerControl(L, map, cfg, baseLayers, overlayLayers);
+
+        if (layerControl) {
+            bindLayerToggleEvents(root, map);
+        }
     } catch (error) {
         console.warn('[DaisyLeaflet] Map creation failed:', error);
         showError(root);
+        delete root.__daisyLeafletInitializing;
         return null;
     }
 
@@ -462,10 +472,42 @@ async function init(root) {
     }
 
     // Shared context passed to plugins (cluster needs the markers array).
-    const context = { markers, geojsonLayer };
+    const controlsConfig = normalizeControlsConfig(cfg.controls);
+    const controlsStorageKey = getControlsStorageKey(root, cfg, controlsConfig);
+    const controlsState = loadControlsState(controlsStorageKey);
+
+    cfg.controls = controlsConfig;
+    cfg.controlsState = controlsState;
+
+    const context = {
+        root,
+        container,
+        markers,
+        baseLayers,
+        geojsonLayer,
+        overlayLayers,
+        lockedOverlayLayers,
+        renderedOverlayLayers,
+        editableCollections,
+        layerControl,
+        layerControlConfig,
+        controlsConfig,
+        controlsStorageKey,
+        controlsState,
+        cleanups: [],
+    };
 
     try {
         await applyPlugins(L, map, cfg, context);
+        context.layerMenuControl = addLayerMenuControl(L, map, cfg, context);
+        if (context.layerMenuControl) {
+            context.cleanups.push(() => context.layerMenuControl?.remove());
+        }
+
+        context.userControls = addUserControls(L, map, cfg, context);
+        if (context.userControls) {
+            context.cleanups.push(() => context.userControls?.remove());
+        }
     } catch (error) {
         console.warn('[DaisyLeaflet] Plugins failed:', error);
     }
@@ -475,15 +517,29 @@ async function init(root) {
         addMarkersToMap(map, markers);
     }
 
-    applyFitBounds(L, map, cfg, markers, geojsonLayer);
+    const fitLayers = [geojsonLayer, ...renderedOverlayLayers].filter(Boolean);
+    const fitCollections = [cfg.value, ...editableCollections].filter(Boolean);
 
-    requestAnimationFrame(() => map.invalidateSize({ animate: false }));
-    window.setTimeout(() => map.invalidateSize({ animate: false }), 200);
+    applyFitBounds(L, map, cfg, markers, fitLayers, fitCollections);
+
+    const animationFrame = requestAnimationFrame(() => map.invalidateSize({ animate: false }));
+    const resizeTimeout = window.setTimeout(() => map.invalidateSize({ animate: false }), 200);
+
+    context.cleanups.push(() => {
+        cancelAnimationFrame(animationFrame);
+        window.clearTimeout(resizeTimeout);
+    });
 
     hideLoading(root);
 
+    const api = createLeafletApi(root, map, cfg, context);
+
+    root.daisyLeaflet = api;
+    root.dataset.leafletReady = '1';
+    delete root.__daisyLeafletInitializing;
+
     root.dispatchEvent(new CustomEvent('daisy:leaflet:init', {
-        detail: { map, config: cfg },
+        detail: api,
     }));
 
     return map;
@@ -491,4 +547,27 @@ async function init(root) {
 
 export default init;
 
-export { TILE_PROVIDERS, readConfig };
+export {
+    TILE_PROVIDERS,
+    addBasemaps,
+    addLayerControl,
+    addLayerMenuControl,
+    addOverlays,
+    addUserControls,
+    bindLayerToggleEvents,
+    createMap,
+    createLeafletApi,
+    createLegacyBasemapDefinition,
+    createOverlayLayer,
+    createRasterLayer,
+    collectActiveLayerNames,
+    loadControlsState,
+    loadGeoJsonData,
+    getControlsPositionClasses,
+    normalizeLayerControlConfig,
+    normalizeControlsConfig,
+    persistControlsState,
+    parseGeoJson,
+    readConfig,
+    shouldUseNativeLayerControl,
+};

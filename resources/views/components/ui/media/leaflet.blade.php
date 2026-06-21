@@ -19,12 +19,21 @@
     'fullscreen' => false,
     'markers' => [],
     'geojson' => null,
+    'basemaps' => [],
+    'overlays' => [],
+    'layerControl' => false,
+    'draw' => false,
+    'measure' => false,
+    'controls' => false,
+    'objectTypes' => [],
+    'name' => null,
+    'value' => null,
     'module' => null,
 ])
 
 @php
     $mapId = $id ?: 'leaflet-'.\Illuminate\Support\Str::uuid()->toString();
-    $normalizeTileUrl = function($value) {
+    $normalizeMapUrl = function($value) {
         if (!is_string($value) && !$value instanceof \Stringable) {
             return null;
         }
@@ -42,8 +51,100 @@
         return preg_match('/^https?:\/\//i', $value) === 1 ? $value : null;
     };
 
-    $tileUrl = $normalizeTileUrl($tileUrl);
+    $normalizeLayerCollection = function($layers) use ($normalizeMapUrl) {
+        if (!is_array($layers)) {
+            return [];
+        }
+
+        return collect($layers)
+            ->filter(fn ($layer) => is_array($layer))
+            ->map(function ($layer) use ($normalizeMapUrl) {
+                $type = strtolower((string) ($layer['type'] ?? 'xyz'));
+                $allowedTypes = ['geojson', 'wms', 'xyz'];
+
+                if (!in_array($type, $allowedTypes, true)) {
+                    $type = 'xyz';
+                }
+
+                $normalized = array_merge($layer, [
+                    'type' => $type,
+                ]);
+
+                if (isset($normalized['url'])) {
+                    $normalized['url'] = $normalizeMapUrl($normalized['url']);
+                }
+
+                return $normalized;
+            })
+            ->filter(fn ($layer) => ($layer['type'] === 'geojson') || filled($layer['url'] ?? null))
+            ->values()
+            ->all();
+    };
+
+    $normalizeObjectTypes = function($types) {
+        if (!is_array($types)) {
+            return [];
+        }
+
+        return collect($types)
+            ->filter(fn ($type) => is_array($type))
+            ->map(function ($type, $index) {
+                $id = trim((string) ($type['id'] ?? 'object-'.($index + 1)));
+                $geometry = strtolower((string) ($type['geometry'] ?? 'point'));
+                $allowedGeometries = ['point', 'line', 'polygon'];
+
+                if (in_array($geometry, ['polyline', 'linestring'], true)) {
+                    $geometry = 'line';
+                }
+
+                if (!in_array($geometry, $allowedGeometries, true)) {
+                    $geometry = 'point';
+                }
+
+                return array_merge($type, [
+                    'id' => $id !== '' ? $id : 'object-'.($index + 1),
+                    'label' => (string) ($type['label'] ?? ($id !== '' ? $id : 'Objet '.($index + 1))),
+                    'geometry' => $geometry,
+                ]);
+            })
+            ->values()
+            ->all();
+    };
+
+    $tileUrl = $normalizeMapUrl($tileUrl);
     $tilesEnabled = $tiles ?? filled($tileUrl) || filled($provider);
+    $fieldValue = $value ?: ['type' => 'FeatureCollection', 'features' => []];
+    $defaultDrawConfig = [
+        'toolbar' => true,
+        'point' => true,
+        'line' => true,
+        'polygon' => true,
+        'rectangle' => true,
+        'select' => true,
+        'delete' => true,
+        'undoRedo' => true,
+        'groupedToolbar' => true,
+        'actionBadge' => true,
+        'styles' => [],
+    ];
+    $defaultMeasureConfig = [
+        'display' => 'metric',
+        'showTooltip' => true,
+        'maxLabels' => 16,
+    ];
+    $defaultControlsConfig = [
+        'position' => 'topright',
+        'basemaps' => true,
+        'overlays' => true,
+        'draw' => true,
+        'measurements' => true,
+        'fitBounds' => true,
+        'persist' => false,
+        'storageKey' => null,
+    ];
+    $drawConfig = $draw ? array_merge($defaultDrawConfig, is_array($draw) ? $draw : []) : false;
+    $measureConfig = $measure ? array_merge($defaultMeasureConfig, is_array($measure) ? $measure : []) : false;
+    $controlsConfig = $controls ? array_merge($defaultControlsConfig, is_array($controls) ? $controls : []) : false;
 
     $config = [
         'containerId' => $mapId,
@@ -64,6 +165,15 @@
         'fullscreen' => (bool) $fullscreen,
         'markers' => $markers,
         'geojson' => $geojson,
+        'basemaps' => $normalizeLayerCollection($basemaps),
+        'overlays' => $normalizeLayerCollection($overlays),
+        'layerControl' => is_array($layerControl) ? $layerControl : (bool) $layerControl,
+        'draw' => $drawConfig,
+        'measure' => $measureConfig,
+        'controls' => $controlsConfig,
+        'objectTypes' => $normalizeObjectTypes($objectTypes),
+        'value' => $fieldValue,
+        'valueInputName' => $name,
     ];
 
     $hasHeightClass = preg_match('/(?:^|\s)(?:(?:sm|md|lg|xl|2xl):)?(?:h-(?:\d+|full|screen|dvh|svh|lvh|\[.+?\])|min-h-|max-h-|aspect-(?:\[|[\d]+\/[\d]+))/u', (string) $class) === 1;
@@ -85,5 +195,8 @@
     </div>
 
     <script type="application/json" data-config>@json($config)</script>
+    @if (filled($name))
+        <input type="hidden" name="{{ $name }}" value="{{ json_encode($fieldValue) }}" data-leaflet-value>
+    @endif
     {{ $slot }}
 </div>

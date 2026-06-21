@@ -61,7 +61,32 @@ Daisy Kit is designed to work by default with strict host Content Security Polic
 - Custom theme CSS is not emitted by default. If a host explicitly enables `daisy-kit.themes.inline_custom_css`, the generated `<style>` tag is nonceable through `daisy-kit.csp_nonce`.
 - Daisy Kit does not require `unsafe-inline` or `unsafe-eval` globally. Any future module that needs runtime compilation must be loaded explicitly and documented.
 - `x-daisy::layout.app` links Instrument Sans from Bunny Fonts by default. Hosts using that default font must allow `https://fonts.bunny.net` in `font-src`; pass `font-url=""` to avoid the external font link.
-- `x-daisy::ui.media.leaflet` does not load external map tiles by default. To render a tiled map, pass a same-origin `tile-url`, or explicitly opt into a provider / external `tile-url` and open the matching host CSP directives, usually `img-src` and sometimes `connect-src`.
+- `x-daisy::ui.media.leaflet` does not load external map tiles by default. To render a tiled map, pass a same-origin `tile-url`, define `basemaps`, or explicitly opt into a provider / external `tile-url` and open the matching host CSP directives, usually `img-src` and sometimes `connect-src`. Custom WMS/XYZ overlays and remote GeoJSON overlay URLs follow the same host policy.
+- Leaflet drawing uses the MIT-licensed Terra Draw runtime when the `draw` prop is enabled. Hosts using drawing and measurement must include the package assets and allow the map/tile endpoints they configure; persisted geometry is emitted as GeoJSON through the optional hidden input configured with `name`. The MVP supports points, lines, polygons, and rectangles; rectangle editing is limited to selection and dragging until vertex-level rectangle editing is supported cleanly.
+
+### Leaflet SIG API
+
+`x-daisy::ui.media.leaflet` keeps Leaflet as the display engine and exposes a lightweight GIS surface without Geoman:
+
+- `basemaps` accepts XYZ and WMS backgrounds with one active base layer; `overlays` accepts GeoJSON, XYZ, and WMS layers with `visible`, `editable`, `style`, and provider `options`.
+- `layerControl` exposes a dedicated Daisy `Couches` menu for basemaps and overlays. `layerControl.mode` can be `multiple` for stackable overlays or `single` for one active overlay at a time. Overlays with `control: false`, `controllable: false`, `locked: true`, or an id/label listed in `layerControl.lockedOverlays` are forced visible and hidden from the user toggles. Set `layerControl.native` to `true` only when you explicitly want Leaflet's native layer control instead of the Daisy menu.
+- `draw` enables the Terra Draw toolbar. `draw.groupedToolbar` groups tools into submenus, `draw.actionBadge` shows or customizes the active-tool badge, `draw.styles` defines default point/line/polygon/rectangle/marker styles, and clicking the active tool again returns to selection.
+- `objectTypes` adds business tools for point, line, or polygon objects. Toolbar icons can be supplied with `icon`, sanitized `iconSvg`, or sanitized `iconHtml`; point markers can render custom map icons with safe `markerUrl` values or sanitized `markerSvg` plus `markerWidth` and `markerHeight`. Treat custom icon markup as integrator-controlled content, not end-user input.
+- `objectTypes[].style` overrides drawing style per business object. Public aliases include `color`, `width`, `dashArray`, `strokeColor`, `strokeWidth`, `fillColor`, `fillOpacity`, `markerUrl`, and `markerSvg`; the package maps them to Terra Draw adapter options.
+- `measure` uses Turf from GeoJSON coordinates, not screen pixels. `measure.maxLabels` limits labels rendered on dense maps while every measurement remains available in emitted event payloads.
+- `name` creates the hidden GeoJSON field; `value` seeds editable features. Read-only overlays stay outside the Terra Draw store unless `editable: true`.
+
+The root element exposes `root.daisyLeaflet` after initialization. Public methods include `map`, `context`, `exportGeoJSON()`, `setMode(mode)`, `clearSelection()`, `deleteSelected()`, `undo()`, `redo()`, and `destroy()`. Drawing methods are safe no-ops when drawing is disabled.
+
+Public events are dispatched from the root `[data-module="leaflet"]` element:
+
+- `daisy:leaflet:init` with `{ map, config, context, exportGeoJSON, setMode, clearSelection, deleteSelected, undo, redo, destroy }`
+- `daisy:leaflet:change` with `{ value, measurements, draw }`
+- `daisy:leaflet:measure` with `{ measurements, latest, draw }`
+- `daisy:leaflet:object-created` with `{ feature, featureId, objectType, exportGeoJSON }`
+- `daisy:leaflet:draw-finish` with `{ feature, featureId, objectType, draw }`
+- `daisy:leaflet:zone-select` with `{ type, featureIds, features, map, draw }`
+- `daisy:leaflet:layer-toggle` with `{ name, type, layer, activeBasemap, activeOverlays, lockedOverlays }`
 
 | Component family | Default CSP compatibility | Host responsibility |
 | --- | --- | --- |
@@ -70,7 +95,7 @@ Daisy Kit is designed to work by default with strict host Content Security Polic
 | Charts | Package renderer uses published JS and JSON data payloads. | Open `connect-src` only for host-provided remote data endpoints. |
 | Scroll status | Uses a native `<progress>` element; package JS only updates its `value`. | For custom colors, heights, or offsets beyond package defaults, provide a host CSS class instead of relying on runtime inline styles. |
 | Floating overlays, media zoom, and builder drag helpers | Published JS uses classes, attributes, and Web Animations API frames instead of inline style attributes. | Keep package assets enabled; custom host positioning or animation should be implemented in host CSS classes. |
-| Leaflet maps | Same-origin by default, no external tiles unless configured. | Open `img-src`/`connect-src` for explicit external tile providers. |
+| Leaflet maps | Same-origin by default, no external tiles unless configured; drawing is lazy-loaded only when `draw` is enabled. | Open `img-src`/`connect-src` for explicit external tile providers, WMS/XYZ overlays, remote GeoJSON overlays, and basemaps. |
 | Custom themes | No inline custom theme CSS by default. | Prefer build-time themes; if `themes.inline_custom_css` is enabled, provide `daisy-kit.csp_nonce`. |
 | Editors | CodeMirror/Trix chunks load from `self`; editor options are JSON payloads. | Include the package assets; avoid host-side inline editor boot code. |
 

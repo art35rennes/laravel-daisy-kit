@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TILE_PROVIDERS } from '../../../resources/js/leaflet/index.js';
+import { TILE_PROVIDERS, createLegacyBasemapDefinition } from '../../../resources/js/leaflet/index.js';
 
 describe('TILE_PROVIDERS lookup', () => {
     it('contains the osm provider', () => {
@@ -48,5 +48,17 @@ describe('TILE_PROVIDERS lookup', () => {
             expect(provider.url, `${name} URL should contain {x}`).toContain('{x}');
             expect(provider.url, `${name} URL should contain {y}`).toContain('{y}');
         }
+    });
+
+    it('builds a legacy basemap definition from provider props', () => {
+        const definition = createLegacyBasemapDefinition({
+            tiles: true,
+            provider: 'cartodb.positron',
+            tileOptions: { maxZoom: 18 },
+        });
+
+        expect(definition.id).toBe('cartodb.positron');
+        expect(definition.active).toBe(true);
+        expect(definition.options.maxZoom).toBe(18);
     });
 });
