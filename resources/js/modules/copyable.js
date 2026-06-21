@@ -153,12 +153,12 @@ function createFeedback(message = 'Copié!') {
  * @returns {Promise<boolean>}
  */
 async function copyToClipboard(text) {
-    if (navigator.clipboard?.writeText) {
+    if (canUseClipboardApi() && navigator.clipboard?.writeText) {
         try {
             await navigator.clipboard.writeText(text);
             return true;
         } catch (error) {
-            console.error('[Copyable] Erreur lors de la copie:', error);
+            console.warn('[Copyable] Clipboard API failed, falling back to execCommand:', error);
         }
     }
     
@@ -171,7 +171,7 @@ async function copyToClipboard(text) {
  * @returns {Promise<boolean>}
  */
 async function copyHtmlToClipboard(html) {
-    if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+    if (canUseClipboardApi() && typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
         try {
             const clipboardItem = new ClipboardItem({
                 'text/html': new Blob([html], { type: 'text/html' }),
@@ -422,7 +422,6 @@ async function requestClipboardPermissionOnLoad() {
     
     const clipboardAvailable = canUseClipboardApi();
     if (!clipboardAvailable) {
-        console.warn('[Copyable] Clipboard API indisponible (page non sécurisée ?). Passage en fallback.');
         return;
     }
     
