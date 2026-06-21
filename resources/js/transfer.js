@@ -152,8 +152,11 @@ function renderList(listEl, items, opts) {
   // Affichage du message "aucune donnée" si la liste est vide
   if (!pageItems.length) {
     const li = document.createElement('li');
-    li.className = 'px-2 py-2 opacity-70';
-    li.textContent = sortableEnabled ? (dropPlaceholder || noDataText || 'Drop here') : (noDataText || 'No Data');
+    li.className = 'menu-title';
+
+    const emptyLabel = document.createElement('span');
+    emptyLabel.textContent = sortableEnabled ? (dropPlaceholder || noDataText || 'Drop here') : (noDataText || 'No Data');
+    li.append(emptyLabel);
     listEl.appendChild(li);
   } else {
     // Pour chaque item à afficher, on crée un <li> avec une case à cocher et le label
@@ -165,10 +168,11 @@ function renderList(listEl, items, opts) {
       li.setAttribute('data-label', it.label);
       li.setAttribute('data-disabled', it.disabled ? 'true' : 'false');
       li.setAttribute('data-checked', it.checked ? 'true' : 'false');
-      const row = document.createElement('div');
-      row.className = 'flex items-center gap-2';
+      const hasHandle = sortableEnabled && useHandle;
+      const row = document.createElement(hasHandle ? 'div' : 'label');
+      row.className = hasHandle ? 'flex items-center gap-2' : 'flex cursor-pointer items-center gap-3';
 
-      if (sortableEnabled && useHandle) {
+      if (hasHandle) {
         const handle = document.createElement('button');
         handle.type = 'button';
         handle.className = 'btn btn-ghost btn-xs btn-square daisy-drag-handle cursor-grab';
@@ -179,13 +183,10 @@ function renderList(listEl, items, opts) {
         row.append(handle);
       }
 
-      // Création du label contenant la checkbox et le texte
-      const label = document.createElement('label');
-      label.className = 'label cursor-pointer grow';
       // Création de la checkbox
       const cb = document.createElement('input');
       cb.type = 'checkbox';
-      cb.className = 'checkbox';
+      cb.className = 'checkbox checkbox-sm';
       cb.checked = !!it.checked;
       cb.disabled = !!it.disabled;
       // Synchronisation de l'état checked de l'objet métier lors du changement
@@ -193,13 +194,22 @@ function renderList(listEl, items, opts) {
         it.checked = cb.checked;
         if (typeof opts.onItemChange === 'function') opts.onItemChange(it, cb);
       });
+
       // Ajout du texte du label
       const span = document.createElement('span');
-      span.className = 'font-medium truncate';
+      span.className = 'min-w-0 flex-1 truncate';
       span.textContent = it.label;
+
       // Assemblage
-      label.append(cb, span);
-      row.append(label);
+      if (hasHandle) {
+        const label = document.createElement('label');
+        label.className = 'flex min-w-0 flex-1 cursor-pointer items-center gap-3 p-0';
+        label.append(cb, span);
+        row.append(label);
+      } else {
+        row.append(cb, span);
+      }
+
       li.append(row);
       listEl.append(li);
     });

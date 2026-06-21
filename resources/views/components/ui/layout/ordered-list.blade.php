@@ -23,6 +23,7 @@
     data-module="{{ $module ?? 'ordered-list' }}"
     data-ordered-list="1"
     data-sortable="{{ $resolvedSortable ? 'true' : 'false' }}"
+    data-handle="{{ $handle ? 'true' : 'false' }}"
     data-disabled="{{ $disabled ? 'true' : 'false' }}"
     data-persist="{{ $resolvedPersist ? 'true' : 'false' }}"
 >

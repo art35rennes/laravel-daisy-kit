@@ -1,5 +1,44 @@
 import Sortable from 'sortablejs';
 
+function createOrderedListHandle(label) {
+  const handle = document.createElement('span');
+
+  handle.className = 'btn btn-ghost btn-xs btn-square mt-0.5 cursor-grab select-none daisy-drag-handle';
+  handle.setAttribute('data-ordered-list-handle', '');
+  handle.setAttribute('aria-hidden', 'true');
+  handle.innerHTML = '<span aria-hidden="true">⋮⋮</span>';
+
+  if (label) {
+    handle.setAttribute('title', label);
+  }
+
+  return handle;
+}
+
+function normalizeOrderedListItems(root, sortableEnabled) {
+  const useHandle = root.dataset.handle !== 'false';
+
+  Array.from(root.children).forEach((item, index) => {
+    if (!(item instanceof HTMLElement) || item.matches('[data-ordered-list-input]')) {
+      return;
+    }
+
+    if (!item.hasAttribute('data-ordered-list-item')) {
+      item.setAttribute('data-ordered-list-item', '');
+    }
+
+    if (!item.hasAttribute('data-id')) {
+      item.setAttribute('data-id', item.id || `ordered-item-${index}`);
+    }
+
+    item.classList.add('list-row', 'daisy-ordered-list-item');
+
+    if (sortableEnabled && useHandle && !item.querySelector('[data-ordered-list-handle]')) {
+      item.prepend(createOrderedListHandle(item.textContent?.trim() || ''));
+    }
+  });
+}
+
 export function serializeOrderedList(root) {
   if (!(root instanceof HTMLElement)) {
     return [];
@@ -45,10 +84,12 @@ export default function initOrderedList(root) {
   const sortableEnabled = root.dataset.sortable === 'true' && root.dataset.disabled !== 'true';
   let sortable = null;
 
+  normalizeOrderedListItems(root, sortableEnabled);
+
   if (sortableEnabled) {
     sortable = Sortable.create(root, {
       animation: 150,
-      handle: '[data-ordered-list-handle]',
+      handle: root.dataset.handle === 'false' ? undefined : '[data-ordered-list-handle]',
       draggable: '[data-ordered-list-item]:not([data-disabled="true"])',
       ghostClass: 'daisy-sortable-ghost',
       chosenClass: 'daisy-sortable-chosen',

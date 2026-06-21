@@ -31,6 +31,7 @@ it('renders ordered list persistence hooks when requested', function () {
 
     expect($html)
         ->toContain('data-sortable="true"')
+        ->toContain('data-handle="true"')
         ->toContain('data-persist="true"')
         ->toContain('data-ordered-list-handle')
         ->toContain('aria-hidden="true"')

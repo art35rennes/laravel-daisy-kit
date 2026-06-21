@@ -57,4 +57,27 @@ describe('ordered-list module', () => {
     expect(api.sortable).not.toBeNull();
     expect(root.__daisyOrderedList).toBe(api);
   });
+
+  it('normalizes free slot children into sortable rows with handles', () => {
+    document.body.innerHTML = `
+      <ol data-ordered-list="1" data-sortable="true" data-handle="true">
+        <li id="first">First</li>
+        <li>Second</li>
+      </ol>
+    `;
+
+    const root = document.querySelector('[data-ordered-list="1"]');
+    const api = initOrderedList(root);
+    const rows = root.querySelectorAll('[data-ordered-list-item]');
+
+    expect(api.sortable).not.toBeNull();
+    expect(rows).toHaveLength(2);
+    expect(rows[0].getAttribute('data-id')).toBe('first');
+    expect(rows[1].getAttribute('data-id')).toBe('ordered-item-1');
+    expect(root.querySelectorAll('[data-ordered-list-handle]')).toHaveLength(2);
+    expect(serializeOrderedList(root)).toEqual([
+      { id: 'first', index: 0, disabled: false },
+      { id: 'ordered-item-1', index: 1, disabled: false },
+    ]);
+  });
 });
