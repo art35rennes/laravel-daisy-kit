@@ -289,6 +289,7 @@ onReady(async () => {
   // Ces modules ont un impact performance important donc chargés un par un
   importWhenNearViewport('[data-lightbox="1"]', () => { heavyQueue(() => import('./lightbox')); }, { rootMargin: '600px 0px' });
   importWhenNearViewport('[data-media-gallery="1"]', () => { heavyQueue(() => import('./media-gallery')); }, { rootMargin: '600px 0px' });
+  importWhenNearViewport('[data-blueprint="1"]', () => { heavyQueue(() => import('./modules/blueprint')); }, { rootMargin: '800px 0px' });
   
   // Éditeurs lazy (CodeMirror & Trix) seulement quand on approche de leur zone
   importWhenNearViewport('.code-editor, trix-editor, details.collapse', () => { heavyQueue(() => import('./lazy-editors')); }, { rootMargin: '800px 0px' });

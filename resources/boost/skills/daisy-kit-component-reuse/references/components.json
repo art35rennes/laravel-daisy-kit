@@ -1,10 +1,10 @@
 {
-    "generated_at": "2026-06-11T15:19:59+00:00",
+    "generated_at": "2026-06-21T08:08:12+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
-        "component_count": 151,
-        "template_count": 30,
+        "component_count": 152,
+        "template_count": 31,
         "excluded_component_template_mirrors": 0
     },
     "components": [
@@ -398,6 +398,31 @@
                 "itemClass",
                 "titleClass",
                 "contentClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.blueprint",
+            "group": "ui.advanced",
+            "name": "blueprint",
+            "relative_path": "resources/views/components/ui/advanced/blueprint.blade.php",
+            "props": [
+                "value",
+                "nodeTypes",
+                "mode",
+                "readonly",
+                "name",
+                "height",
+                "toolbar",
+                "palette",
+                "details",
+                "dock",
+                "autoLink",
+                "minimap",
+                "autoArrange",
+                "fitOnInit",
+                "history",
+                "reroute",
+                "module"
             ]
         },
         {
@@ -1378,8 +1403,13 @@
             "props": [
                 "items",
                 "orientation",
+                "responsiveAt",
                 "compact",
                 "snapIcon",
+                "showIcons",
+                "side",
+                "lineClass",
+                "iconClass",
                 "boxOn"
             ]
         },
@@ -2096,6 +2126,15 @@
                 "fullscreen",
                 "markers",
                 "geojson",
+                "basemaps",
+                "overlays",
+                "layerControl",
+                "draw",
+                "measure",
+                "controls",
+                "objectTypes",
+                "name",
+                "value",
                 "module"
             ]
         },
@@ -2670,6 +2709,42 @@
         }
     ],
     "templates": [
+        {
+            "component_alias": "x-daisy::templates.advanced.blueprint",
+            "view_alias": "daisy::templates.advanced.blueprint",
+            "group": "advanced",
+            "name": "blueprint",
+            "relative_path": "resources/views/templates/advanced/blueprint.blade.php",
+            "props": [
+                "title",
+                "description",
+                "showHeader",
+                "showThemeStress",
+                "showFeatureCoverage",
+                "showContract",
+                "showThemeTokens",
+                "showReadonly",
+                "showTyped",
+                "showSchema",
+                "showIntegration",
+                "showMinimal",
+                "namePrefix",
+                "themeStressThemes",
+                "workflowHeight",
+                "exampleHeight",
+                "workflowNodeTypes",
+                "workflowValue",
+                "typedNodeTypes",
+                "typedValue",
+                "themeNodeTypes",
+                "themeValue",
+                "schemaNodeTypes",
+                "schemaValue",
+                "minimalNodeTypes",
+                "integrationNodeTypes",
+                "integrationValue"
+            ]
+        },
         {
             "component_alias": "x-daisy::templates.auth.forgot-password",
             "view_alias": "daisy::templates.auth.forgot-password",

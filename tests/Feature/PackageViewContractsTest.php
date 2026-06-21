@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\MessageBag;
 
 it('renders the package layout component through its public alias', function () {
     config([
@@ -18,6 +20,41 @@ it('renders the package layout component through its public alias', function () 
         ->toContain('<title>Package Test | Laravel</title>')
         ->toContain('Package body')
         ->toContain('name="csrf-token"');
+});
+
+it('renders every catalogued public template view directly', function () {
+    config([
+        'daisy-kit.auto_assets' => false,
+        'daisy-kit.themes.custom' => [],
+    ]);
+    View::share('errors', new MessageBag);
+
+    $catalog = json_decode(
+        file_get_contents(packagePath('resources/boost/skills/daisy-kit-component-reuse/references/components.json')),
+        true,
+        flags: JSON_THROW_ON_ERROR,
+    );
+
+    $viewAliases = collect($catalog['templates'] ?? [])
+        ->pluck('view_alias')
+        ->filter()
+        ->values();
+
+    expect($viewAliases)->not->toBeEmpty();
+
+    $viewAliases->each(function (string $viewAlias): void {
+        try {
+            $html = View::make($viewAlias)->render();
+        } catch (Throwable $exception) {
+            test()->fail(sprintf(
+                'The public template view [%s] failed to render directly: %s',
+                $viewAlias,
+                $exception->getMessage(),
+            ));
+        }
+
+        expect($html)->toBeString();
+    });
 });
 
 it('applies the configured default theme to the package layout', function () {

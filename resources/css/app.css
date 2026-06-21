@@ -11,6 +11,8 @@
 @source inline("daisy-calendar-hours-{1..24}");
 @source inline("daisy-calendar-min-height-px-{10..1200..10}");
 @source inline("daisy-calendar-top-step-{0..288}");
+@source inline("daisy-blueprint-height-px-{10..1200..10}");
+@source inline("daisy-blueprint-height-rem-{1..400}");
 @source inline("daisy-color-swatches-height-px-{1..600}");
 @source inline("daisy-code-editor-font-size-rem-{1..400}");
 @source inline("daisy-code-editor-height-px-{10..1200..10}");
@@ -41,6 +43,14 @@
 @import "trix/dist/trix.css";
 @import "./table.css";
 
+.popover-root {
+  position: relative;
+  display: inline-block;
+  width: max-content;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
 /* Code editor */
 .code-editor .cm-editor {
   height: 100%;
@@ -65,6 +75,132 @@
 
 .daisy-chart-frame {
   height: var(--daisy-height, 320px);
+}
+
+.daisy-blueprint {
+  --daisy-blueprint-height: 520px;
+}
+
+.daisy-blueprint > .grid {
+  min-height: var(--daisy-blueprint-height);
+}
+
+.daisy-blueprint-panel {
+  max-height: var(--daisy-blueprint-height);
+  overflow: auto;
+}
+
+.daisy-blueprint [data-blueprint-palette-menu] > .dropdown-content {
+  width: min(30rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+}
+
+.daisy-blueprint-canvas-wrap,
+.daisy-blueprint-canvas {
+  min-height: var(--daisy-blueprint-height);
+}
+
+.daisy-blueprint-canvas {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-base-200);
+  background-image:
+    linear-gradient(color-mix(in oklch, currentColor 8%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklch, currentColor 8%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.daisy-blueprint rete-node {
+  --node-color: var(--color-base-100);
+  --node-color-hover: var(--color-base-100);
+  --node-color-selected: var(--color-primary);
+  --socket-color: var(--color-primary);
+  --node-width: 220px;
+  color: var(--color-base-content);
+  filter: drop-shadow(0 8px 14px color-mix(in oklch, var(--color-base-content) 8%, transparent));
+}
+
+.daisy-blueprint rete-connection path {
+  stroke: var(--color-primary);
+  stroke-width: 3px;
+}
+
+.daisy-blueprint rete-node[data-blueprint-theme="primary"],
+.daisy-blueprint [data-blueprint-theme="primary"] rete-node,
+.daisy-blueprint [data-blueprint-connection-theme="primary"] rete-connection {
+  --socket-color: var(--color-primary);
+  --daisy-blueprint-connection-color: var(--color-primary);
+}
+
+.daisy-blueprint rete-node[data-blueprint-theme="secondary"],
+.daisy-blueprint [data-blueprint-theme="secondary"] rete-node,
+.daisy-blueprint [data-blueprint-connection-theme="secondary"] rete-connection {
+  --socket-color: var(--color-secondary);
+  --daisy-blueprint-connection-color: var(--color-secondary);
+}
+
+.daisy-blueprint rete-node[data-blueprint-theme="accent"],
+.daisy-blueprint [data-blueprint-theme="accent"] rete-node,
+.daisy-blueprint [data-blueprint-connection-theme="accent"] rete-connection {
+  --socket-color: var(--color-accent);
+  --daisy-blueprint-connection-color: var(--color-accent);
+}
+
+.daisy-blueprint rete-node[data-blueprint-theme="neutral"],
+.daisy-blueprint [data-blueprint-theme="neutral"] rete-node,
+.daisy-blueprint [data-blueprint-connection-theme="neutral"] rete-connection {
+  --socket-color: var(--color-neutral);
+  --daisy-blueprint-connection-color: var(--color-neutral);
+}
+
+.daisy-blueprint rete-node[data-blueprint-theme="info"],
+.daisy-blueprint [data-blueprint-theme="info"] rete-node,
+.daisy-blueprint [data-blueprint-connection-theme="info"] rete-connection {
+  --socket-color: var(--color-info);
+  --daisy-blueprint-connection-color: var(--color-info);
+}
+
+.daisy-blueprint rete-node[data-blueprint-theme="success"],
+.daisy-blueprint [data-blueprint-theme="success"] rete-node,
+.daisy-blueprint [data-blueprint-connection-theme="success"] rete-connection {
+  --socket-color: var(--color-success);
+  --daisy-blueprint-connection-color: var(--color-success);
+}
+
+.daisy-blueprint rete-node[data-blueprint-theme="warning"],
+.daisy-blueprint [data-blueprint-theme="warning"] rete-node,
+.daisy-blueprint [data-blueprint-connection-theme="warning"] rete-connection {
+  --socket-color: var(--color-warning);
+  --daisy-blueprint-connection-color: var(--color-warning);
+}
+
+.daisy-blueprint rete-node[data-blueprint-theme="error"],
+.daisy-blueprint [data-blueprint-theme="error"] rete-node,
+.daisy-blueprint [data-blueprint-connection-theme="error"] rete-connection {
+  --socket-color: var(--color-error);
+  --daisy-blueprint-connection-color: var(--color-error);
+}
+
+.daisy-blueprint [data-blueprint-connection-theme] rete-connection path {
+  stroke: var(--daisy-blueprint-connection-color);
+}
+
+.daisy-blueprint rete-minimap {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  z-index: 10;
+}
+
+.daisy-blueprint rete-context-menu {
+  color: var(--color-base-content);
+}
+
+.daisy-blueprint rete-context-menu,
+.daisy-blueprint rete-context-menu-item {
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  border-color: var(--color-base-300);
 }
 
 .daisy-native-picker-date,
@@ -168,6 +304,14 @@
 
 @utility daisy-calendar-top-step-* {
   --daisy-top: calc(--value(integer) * 0.25rem);
+}
+
+@utility daisy-blueprint-height-px-* {
+  --daisy-blueprint-height: calc(--value(integer) * 1px);
+}
+
+@utility daisy-blueprint-height-rem-* {
+  --daisy-blueprint-height: calc(--value(integer) * 0.01rem);
 }
 
 @utility daisy-color-swatches-height-px-* {
@@ -989,13 +1133,12 @@ calendar-month::part(button) {
 }
 
 .daisy-editable-grid .grid-stack-item {
-  border-radius: var(--rounded-box, 1rem);
+  border-radius: var(--radius-box, var(--rounded-box, 1rem));
+  overflow: visible;
 }
 
 .daisy-editable-grid .grid-stack-item-content {
   display: flex;
-  width: 100%;
-  height: 100%;
   min-width: 0;
   min-height: 0;
   background: transparent;
@@ -1013,6 +1156,7 @@ calendar-month::part(button) {
   height: 100%;
   min-width: 0;
   min-height: 0;
+  border-radius: inherit;
 }
 
 .daisy-editable-grid .grid-stack-item-content > .card,
@@ -1030,13 +1174,14 @@ calendar-month::part(button) {
   min-height: 0;
 }
 
-.daisy-editable-grid .daisy-editable-grid-item-content > .card {
+.daisy-editable-grid .daisy-editable-grid-item-content > :where(.card, section, article, [data-editable-grid-panel]) {
   border: 1px solid color-mix(in srgb, var(--color-base-content, currentColor) 10%, transparent);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+  overflow: hidden;
 }
 
-.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item:hover .daisy-editable-grid-item-content > .card,
-.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item:focus-within .daisy-editable-grid-item-content > .card {
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item:hover .daisy-editable-grid-item-content > :where(.card, section, article, [data-editable-grid-panel]),
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item:focus-within .daisy-editable-grid-item-content > :where(.card, section, article, [data-editable-grid-panel]) {
   border-color: color-mix(in srgb, var(--color-primary, currentColor) 22%, transparent);
   box-shadow: 0 10px 24px rgb(0 0 0 / 0.08);
 }
@@ -1065,7 +1210,7 @@ calendar-month::part(button) {
 .daisy-editable-grid .grid-stack-placeholder > .placeholder-content,
 .daisy-editable-grid .grid-stack-item-placeholder > .placeholder-content {
   inset: 0;
-  border-radius: var(--rounded-box, 1rem);
+  border-radius: var(--radius-box, var(--rounded-box, 1rem));
   border: 2px dashed color-mix(in srgb, var(--color-primary, currentColor) 32%, transparent);
   background: color-mix(in srgb, var(--color-base-200, currentColor) 72%, transparent);
 }
@@ -1075,8 +1220,8 @@ calendar-month::part(button) {
   z-index: 30;
 }
 
-.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item.ui-draggable-dragging .daisy-editable-grid-item-content > .card,
-.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item.ui-resizable-resizing .daisy-editable-grid-item-content > .card {
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item.ui-draggable-dragging .daisy-editable-grid-item-content > :where(.card, section, article, [data-editable-grid-panel]),
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item.ui-resizable-resizing .daisy-editable-grid-item-content > :where(.card, section, article, [data-editable-grid-panel]) {
   border-color: color-mix(in srgb, var(--color-primary, currentColor) 28%, transparent);
   box-shadow: 0 14px 30px rgb(0 0 0 / 0.1);
 }
@@ -1089,16 +1234,65 @@ calendar-month::part(button) {
   z-index: 31;
 }
 
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item > :where(.ui-resizable-se, .ui-resizable-sw, .ui-resizable-ne, .ui-resizable-nw) {
+  width: 1rem;
+  height: 1rem;
+  background-image: none;
+  border-color: color-mix(in srgb, var(--color-primary, currentColor) 62%, transparent);
+  opacity: 0.42;
+  transform: none;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item > .ui-resizable-se {
+  border-right-width: 2px;
+  border-bottom-width: 2px;
+  border-right-style: solid;
+  border-bottom-style: solid;
+  border-bottom-right-radius: calc(var(--radius-box, var(--rounded-box, 1rem)) / 2);
+}
+
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item > .ui-resizable-sw {
+  border-bottom-width: 2px;
+  border-left-width: 2px;
+  border-bottom-style: solid;
+  border-left-style: solid;
+  border-bottom-left-radius: calc(var(--radius-box, var(--rounded-box, 1rem)) / 2);
+}
+
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item > .ui-resizable-ne {
+  border-top-width: 2px;
+  border-right-width: 2px;
+  border-top-style: solid;
+  border-right-style: solid;
+  border-top-right-radius: calc(var(--radius-box, var(--rounded-box, 1rem)) / 2);
+}
+
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item > .ui-resizable-nw {
+  border-top-width: 2px;
+  border-left-width: 2px;
+  border-top-style: solid;
+  border-left-style: solid;
+  border-top-left-radius: calc(var(--radius-box, var(--rounded-box, 1rem)) / 2);
+}
+
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item:hover > :where(.ui-resizable-se, .ui-resizable-sw, .ui-resizable-ne, .ui-resizable-nw),
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item:focus-within > :where(.ui-resizable-se, .ui-resizable-sw, .ui-resizable-ne, .ui-resizable-nw),
+.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item.ui-resizable-resizing > :where(.ui-resizable-se, .ui-resizable-sw, .ui-resizable-ne, .ui-resizable-nw) {
+  border-color: color-mix(in srgb, var(--color-primary, currentColor) 82%, transparent);
+  opacity: 1;
+}
+
 .daisy-editable-grid .grid-stack-item-content :where(.card-body, .stat, .stats, .list, .overflow-auto, .overflow-y-auto, .overflow-x-auto) {
   min-height: 0;
   min-width: 0;
 }
 
-.daisy-editable-grid .ui-resizable-handle {
+.daisy-editable-grid .ui-resizable-handle:not(.ui-resizable-se):not(.ui-resizable-sw):not(.ui-resizable-ne):not(.ui-resizable-nw) {
   opacity: 0.55;
 }
 
-.daisy-editable-grid .ui-resizable-handle:hover {
+.daisy-editable-grid .ui-resizable-handle:not(.ui-resizable-se):not(.ui-resizable-sw):not(.ui-resizable-ne):not(.ui-resizable-nw):hover {
   opacity: 1;
 }
 
@@ -1561,6 +1755,25 @@ calendar-month::part(button) {
 .leaflet-compact .leaflet-control-container .leaflet-top, 
 .leaflet-compact .leaflet-control-container .leaflet-bottom {
   padding: 6px;
+}
+
+/* Leaflet fullscreen must target the Daisy root so package controls remain visible. */
+.daisy-leaflet-fullscreen-active,
+.daisy-leaflet-fullscreen-active:fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  background: var(--color-base-200, #e5e7eb) !important;
+}
+
+.daisy-leaflet-fullscreen-active > .leaflet-container,
+.daisy-leaflet-fullscreen-active > [id^="leaflet-"] {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* === SIDEBAR ADAPTIVE SIZING === */

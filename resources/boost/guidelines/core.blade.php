@@ -61,6 +61,8 @@ If a host app only needs a light visual or content adjustment, prefer published 
 
 Before adding Alpine, vanilla JavaScript, or a new host-side widget, check whether the target package component already ships the required behavior through package assets, `window.DaisyKit`, or `data-module` hooks.
 
+For visual node editors, workflows, blueprints, and schema graphs, prefer `x-daisy::ui.advanced.blueprint` and its `value`/`nodeTypes` JSON contract before creating a custom graph editor.
+
 ### Browser Autocomplete
 
 - Treat the HTML `autocomplete` attribute as host-controlled markup, not package business policy.
