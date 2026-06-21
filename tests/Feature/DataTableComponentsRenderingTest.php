@@ -27,7 +27,8 @@ it('renders a client table with DaisyUI classes and serialized config', function
 
     expect($html)
         ->toContain('data-daisy-table="1"')
-        ->toContain('table table-zebra table-sm table-pin-rows table-pin-cols w-full')
+        ->toContain('data-table-layout="auto"')
+        ->toContain('table table-zebra table-sm table-pin-rows table-pin-cols table-auto w-full')
         ->toContain('daisy-table-shell')
         ->toContain('daisy-table-width-px-180')
         ->toContain('Users')
@@ -37,6 +38,66 @@ it('renders a client table with DaisyUI classes and serialized config', function
         ->toContain('Jane')
         ->toContain('Admin')
         ->not->toContain('data-daisy-css-width');
+});
+
+it('renders configurable table layout, scroll and native action column attributes', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            table-layout="auto"
+            min-width="128rem"
+            scroll-x="always"
+            external-filters
+            livewire-mode="ignore"
+            :columns="[
+                ['key' => '_action', 'label' => 'Actions', 'type' => 'actions'],
+                ['key' => 'status_badge', 'label' => 'Status', 'align' => 'center', 'width' => '140px', 'html' => true],
+                ['key' => 'postal_address', 'label' => 'Address', 'truncate' => 2, 'width' => '260px', 'minWidth' => 'max-content', 'nowrap' => true],
+            ]"
+            :rows="[
+                ['_action' => '<button class=&quot;btn btn-xs&quot;>Open</button>', 'status_badge' => '<span class=&quot;badge&quot;>Open</span>', 'postal_address' => '12 rue longue'],
+            ]"
+            :filters="[
+                ['key' => 'status', 'label' => 'Status', 'type' => 'text'],
+            ]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('data-table-layout="auto"')
+        ->toContain('data-table-scroll-x="always"')
+        ->toContain('data-table-livewire-mode="ignore"')
+        ->toContain('data-table-min-width="128rem"')
+        ->toContain('wire:ignore')
+        ->toContain('daisy-table-scroll-always overflow-x-scroll')
+        ->toContain('daisy-table-root-min-width-rem-512')
+        ->toContain('daisy-table-width-fit')
+        ->toContain('daisy-table-actions-cell')
+        ->toContain('daisy-table-actions-content')
+        ->toContain('text-center')
+        ->toContain('daisy-table-width-px-140')
+        ->toContain('daisy-table-width-px-260')
+        ->toContain('daisy-table-min-width-max')
+        ->toContain('whitespace-nowrap')
+        ->toContain('line-clamp-2')
+        ->toContain('"externalFilters":true')
+        ->toContain('"livewireMode":"ignore"')
+        ->not->toContain('table-auto w-full daisy-table-min-width-rem-512')
+        ->not->toContain('width:1%')
+        ->not->toContain('daisy-table-filters')
+        ->not->toContain('data-table-filter="status"');
+
+    preg_match('/<table[^>]+class="([^"]+)"/', $html, $tableClassMatches);
+    preg_match('/<colgroup[^>]*>(.*?)<\/colgroup>/s', $html, $colgroupMatches);
+
+    expect($tableClassMatches[1] ?? '')
+        ->toContain('daisy-table-root-min-width-rem-512')
+        ->not->toContain('daisy-table-min-width-rem-512');
+
+    expect($colgroupMatches[1] ?? '')
+        ->toContain('daisy-table-width-px-140')
+        ->toContain('daisy-table-width-px-260')
+        ->not->toContain('daisy-table-root-min-width-rem-512')
+        ->not->toContain('daisy-table-min-width-rem-512');
 });
 
 it('renders a server table with endpoint config', function () {
@@ -158,6 +219,30 @@ it('renders table filters in a stable responsive grid before technical controls'
         ->and(strpos($html, 'data-table-filter="intervention_type_code"'))->toBeLessThan(strpos($html, 'data-table-filter="external_note"'))
         ->and(strpos($html, 'data-table-filter="external_note"'))->toBeLessThan(strpos($html, 'data-table-page-size'))
         ->and(strpos($html, 'data-table-page-size'))->toBeLessThan(strpos($html, 'data-table-column-menu'));
+});
+
+it('keeps table filter configuration separate from the external filters slot', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            mode="server"
+            endpoint="/interventions"
+            :columns="[
+                ['key' => 'name', 'label' => 'Name'],
+            ]"
+            :filters="[
+                ['key' => 'reference_internal', 'label' => 'Reference', 'type' => 'text'],
+            ]"
+        >
+            <x-slot:filtersSlot>
+                <div data-external-filters>External filters</div>
+            </x-slot:filtersSlot>
+        </x-daisy::ui.data-display.table>
+    BLADE);
+
+    expect($html)
+        ->toContain('data-external-filters')
+        ->toContain('data-table-filter="reference_internal"')
+        ->not->toContain('Array');
 });
 
 it('renders a client table with trusted html cells', function () {

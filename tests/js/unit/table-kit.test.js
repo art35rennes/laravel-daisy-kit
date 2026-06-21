@@ -5,9 +5,12 @@ import {
   DEFAULT_PAGE_SIZE_OPTIONS,
   DEFAULT_SEARCH_DEBOUNCE_MS,
   applyClientFilters,
+  applyExternalRefreshState,
   buildRequestPayload,
   buildServerRequest,
   buildSpatieRequestParams,
+  getColumnClasses,
+  getColumnWrapperClasses,
   getPersistedStateKey,
   isTextSearchReady,
   mergeState,
@@ -53,6 +56,7 @@ describe('table-kit helpers', () => {
     expect(columns).toEqual([
       {
         key: 'name',
+        type: null,
         label: 'Name',
         sortable: true,
         filterable: true,
@@ -60,6 +64,16 @@ describe('table-kit helpers', () => {
         sortKey: 'users.name',
         filterKey: 'users.name',
         width: null,
+        minWidth: null,
+        maxWidth: null,
+        align: null,
+        verticalAlign: null,
+        padding: null,
+        density: null,
+        nowrap: false,
+        truncate: false,
+        cellWrapperClass: '',
+        headerWrapperClass: '',
         cellClass: '',
         headerClass: '',
         html: false,
@@ -73,6 +87,7 @@ describe('table-kit helpers', () => {
       },
       {
         key: 'email',
+        type: null,
         label: 'email',
         sortable: false,
         filterable: false,
@@ -80,6 +95,16 @@ describe('table-kit helpers', () => {
         sortKey: 'email',
         filterKey: 'email',
         width: null,
+        minWidth: null,
+        maxWidth: null,
+        align: null,
+        verticalAlign: null,
+        padding: null,
+        density: null,
+        nowrap: false,
+        truncate: false,
+        cellWrapperClass: '',
+        headerWrapperClass: '',
         cellClass: '',
         headerClass: '',
         html: false,
@@ -100,6 +125,34 @@ describe('table-kit helpers', () => {
         email: true,
       },
     });
+  });
+
+  it('normalizes ECA table column presentation options', () => {
+    const [actions, address] = normalizeColumns([
+      { key: '_action', type: 'actions' },
+      { key: 'postal_address', width: '260px', minWidth: 'max-content', align: 'center', nowrap: true, truncate: 2 },
+    ]);
+
+    expect(actions).toMatchObject({
+      type: 'actions',
+      width: 'fit',
+      align: 'center',
+      nowrap: true,
+      density: 'compact',
+    });
+    expect(address).toMatchObject({
+      width: '260px',
+      minWidth: 'max-content',
+      align: 'center',
+      nowrap: true,
+      truncate: 2,
+    });
+    expect(getColumnClasses(actions, 'cell')).toContain('daisy-table-width-fit');
+    expect(getColumnClasses(actions, 'cell')).toContain('daisy-table-actions-cell');
+    expect(getColumnWrapperClasses(actions, 'cell')).toContain('daisy-table-actions-content');
+    expect(getColumnClasses(address, 'cell')).toContain('daisy-table-width-px-260');
+    expect(getColumnClasses(address, 'cell')).toContain('daisy-table-min-width-max');
+    expect(getColumnWrapperClasses(address, 'cell')).toContain('line-clamp-2');
   });
 
   it('builds a clean server config and request payload', () => {
@@ -130,6 +183,38 @@ describe('table-kit helpers', () => {
     expect(serializeRequestPayload(payload).toString()).toContain('sorting=%5B%7B%22id%22%3A%22name%22%2C%22desc%22%3Atrue%7D%5D');
   });
 
+  it('applies external refresh filters without discarding pagination or sorting', () => {
+    const config = normalizeConfig({
+      mode: 'server',
+      endpoint: '/users/table',
+      columns: [
+        { key: 'name', label: 'Name', sortable: true },
+        { key: 'status', label: 'Status', filterable: true, filter: { type: 'text' } },
+      ],
+      initialState: {
+        sorting: [{ id: 'name', desc: true }],
+        pagination: { pageIndex: 2, pageSize: 25 },
+      },
+      pageSizeOptions: [10, 25, 50],
+    });
+    const context = {
+      config,
+      state: structuredClone(config.initialState),
+    };
+
+    applyExternalRefreshState(context, {
+      filters: { status: 'active' },
+    });
+
+    expect(context.state).toEqual({
+      sorting: [{ id: 'name', desc: true }],
+      pagination: { pageIndex: 2, pageSize: 25 },
+      globalFilter: '',
+      columnFilters: [{ id: 'status', type: 'text', value: 'active' }],
+      columnVisibility: { name: true, status: true },
+    });
+  });
+
   it('normalizes search pacing defaults and overrides', () => {
     const defaultConfig = normalizeConfig({
       columns: [{ key: 'name', label: 'Name' }],
@@ -147,6 +232,17 @@ describe('table-kit helpers', () => {
     expect(customConfig.searchDebounceMs).toBe(700);
     expect(customConfig.filterDebounceMs).toBe(650);
     expect(customConfig.minSearchChars).toBe(4);
+  });
+
+  it('normalizes external filters and livewire table mode flags', () => {
+    const config = normalizeConfig({
+      columns: [{ key: 'name', label: 'Name' }],
+      externalFilters: true,
+      livewireMode: 'morph',
+    });
+
+    expect(config.externalFilters).toBe(true);
+    expect(config.livewireMode).toBe('morph');
   });
 
   it('waits for enough characters before applying text search', () => {

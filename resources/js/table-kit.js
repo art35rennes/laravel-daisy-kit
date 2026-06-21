@@ -15,6 +15,9 @@ const DEFAULT_SEARCH_DEBOUNCE_MS = 500;
 const DEFAULT_FILTER_DEBOUNCE_MS = 500;
 const DEFAULT_MIN_SEARCH_CHARS = 3;
 const ALLOWED_FILTER_TYPES = ['text', 'select', 'boolean'];
+const ALLOWED_ALIGNMENTS = ['left', 'center', 'right'];
+const ALLOWED_VERTICAL_ALIGNMENTS = ['top', 'middle', 'bottom'];
+const ALLOWED_TRUNCATE_VALUES = ['line', 2, 3];
 
 function isPlainObject(value) {
   return Object.prototype.toString.call(value) === '[object Object]';
@@ -85,16 +88,31 @@ function normalizeColumns(columns = []) {
       const key = typeof column.key === 'string' ? column.key.trim() : '';
       const sortKey = typeof column.sortKey === 'string' && column.sortKey !== '' ? column.sortKey : key;
       const filterKey = typeof column.filterKey === 'string' && column.filterKey !== '' ? column.filterKey : key;
+      const type = column.type === 'actions' ? 'actions' : null;
+      const width = typeof column.width === 'string' ? column.width : (type === 'actions' ? 'fit' : null);
+      const align = ALLOWED_ALIGNMENTS.includes(column.align) ? column.align : (type === 'actions' ? 'center' : null);
+      const density = ['compact', 'normal'].includes(column.density) ? column.density : (type === 'actions' ? 'compact' : null);
 
       return {
         key,
+        type,
         label: typeof column.label === 'string' && column.label !== '' ? column.label : key,
         sortable: column.sortable === true,
         filterable: column.filterable === true,
         visible: column.visible !== false,
         sortKey,
         filterKey,
-        width: typeof column.width === 'string' ? column.width : null,
+        width,
+        minWidth: typeof column.minWidth === 'string' ? column.minWidth : null,
+        maxWidth: typeof column.maxWidth === 'string' ? column.maxWidth : null,
+        align,
+        verticalAlign: ALLOWED_VERTICAL_ALIGNMENTS.includes(column.verticalAlign) ? column.verticalAlign : null,
+        padding: ['none', 'compact', 'normal'].includes(column.padding) ? column.padding : null,
+        density,
+        nowrap: column.nowrap === true || type === 'actions',
+        truncate: ALLOWED_TRUNCATE_VALUES.includes(column.truncate) ? column.truncate : false,
+        cellWrapperClass: typeof column.cellWrapperClass === 'string' ? column.cellWrapperClass : '',
+        headerWrapperClass: typeof column.headerWrapperClass === 'string' ? column.headerWrapperClass : '',
         cellClass: typeof column.cellClass === 'string' ? column.cellClass : '',
         headerClass: typeof column.headerClass === 'string' ? column.headerClass : '',
         html: column.html === true,
@@ -299,6 +317,8 @@ function normalizeConfig(raw = {}) {
     rows: Array.isArray(raw.rows) ? raw.rows : [],
     endpoint,
     search: raw.search !== false,
+    externalFilters: raw.externalFilters === true,
+    livewireMode: ['ignore', 'morph', 'none'].includes(raw.livewireMode) ? raw.livewireMode : 'none',
     searchDebounceMs: normalizeIntegerOption(raw.searchDebounceMs ?? raw.searchDebounce ?? raw.debounce, DEFAULT_SEARCH_DEBOUNCE_MS),
     filterDebounceMs: normalizeIntegerOption(raw.filterDebounceMs ?? raw.filterDebounce ?? raw.debounce, DEFAULT_FILTER_DEBOUNCE_MS),
     minSearchChars: normalizeIntegerOption(raw.minSearchChars ?? raw.minChars, DEFAULT_MIN_SEARCH_CHARS),
@@ -596,12 +616,40 @@ function toggleSorting(state, columnKey) {
 
 function tableWidthClass(value) {
   const raw = String(value || '').trim();
+
+  if (raw === 'fit') {
+    return 'daisy-table-width-fit';
+  }
+
+  return tableDimensionClass(raw, 'daisy-table-width');
+}
+
+function tableMinWidthClass(value) {
+  const raw = String(value || '').trim();
+
+  if (raw === 'max-content') {
+    return 'daisy-table-min-width-max';
+  }
+
+  if (raw === 'full') {
+    return 'min-w-full';
+  }
+
+  return tableDimensionClass(raw, 'daisy-table-min-width');
+}
+
+function tableMaxWidthClass(value) {
+  return tableDimensionClass(value, 'daisy-table-max-width');
+}
+
+function tableDimensionClass(value, prefix) {
+  const raw = String(value || '').trim();
   let match = raw.match(/^(\d+(?:\.\d+)?)px$/);
 
   if (match) {
     const token = Math.round(Number(match[1]));
 
-    return token >= 1 && token <= 1200 ? `daisy-table-width-px-${token}` : '';
+    return token >= 1 && token <= 1200 ? `${prefix}-px-${token}` : '';
   }
 
   match = raw.match(/^(\d+(?:\.\d+)?)%$/);
@@ -609,10 +657,66 @@ function tableWidthClass(value) {
   if (match) {
     const token = Math.round(Number(match[1]));
 
-    return token >= 1 && token <= 100 ? `daisy-table-width-percent-${token}` : '';
+    return token >= 1 && token <= 100 ? `${prefix}-percent-${token}` : '';
+  }
+
+  match = raw.match(/^(\d+(?:\.\d+)?)rem$/);
+
+  if (match) {
+    const token = Math.round(Number(match[1]) * 4);
+
+    return token >= 1 && token <= 512 ? `${prefix}-rem-${token}` : '';
   }
 
   return '';
+}
+
+function getColumnClasses(column, target) {
+  return [
+    target === 'header' ? column.headerClass : column.cellClass,
+    tableWidthClass(column.width),
+    tableMinWidthClass(column.minWidth),
+    tableMaxWidthClass(column.maxWidth),
+    column.align === 'center' ? 'text-center' : '',
+    column.align === 'right' ? 'text-right' : '',
+    column.align === 'left' ? 'text-left' : '',
+    column.verticalAlign === 'top' ? 'align-top' : '',
+    column.verticalAlign === 'middle' ? 'align-middle' : '',
+    column.verticalAlign === 'bottom' ? 'align-bottom' : '',
+    column.padding === 'none' ? 'p-0' : '',
+    column.padding === 'compact' ? 'px-2 py-1' : '',
+    column.density === 'compact' ? 'daisy-table-cell-compact' : '',
+    column.nowrap ? 'whitespace-nowrap' : '',
+    column.type === 'actions' ? 'daisy-table-actions-cell' : '',
+  ].filter(Boolean).join(' ');
+}
+
+function getColumnWrapperClasses(column, target) {
+  return [
+    target === 'header' ? 'daisy-table-header-content' : 'daisy-table-cell-content',
+    target === 'header' ? column.headerWrapperClass : column.cellWrapperClass,
+    target === 'cell' && column.type === 'actions' ? 'daisy-table-actions-content' : '',
+    target === 'cell' && column.truncate === 'line' ? 'truncate' : '',
+    target === 'cell' && (column.truncate === 2 || column.truncate === 3) ? `line-clamp-${column.truncate}` : '',
+  ].filter(Boolean).join(' ');
+}
+
+function renderColgroup(context) {
+  const colgroup = context.root.querySelector('[data-table-colgroup]');
+
+  if (!(colgroup instanceof HTMLElement)) {
+    return;
+  }
+
+  colgroup.innerHTML = getVisibleColumns(context.config, context.state).map((column) => {
+    const classes = [
+      tableWidthClass(column.width),
+      tableMinWidthClass(column.minWidth),
+      tableMaxWidthClass(column.maxWidth),
+    ].filter(Boolean).join(' ');
+
+    return classes ? `<col class="${escapeHtml(classes)}">` : '<col>';
+  }).join('');
 }
 
 function renderHeader(context) {
@@ -626,15 +730,11 @@ function renderHeader(context) {
 
   getVisibleColumns(context.config, context.state).forEach((column) => {
     const th = document.createElement('th');
+    const thClasses = getColumnClasses(column, 'header');
+    const wrapperClass = escapeHtml(getColumnWrapperClasses(column, 'header'));
 
-    if (column.headerClass) {
-      th.className = column.headerClass;
-    }
-
-    const widthClass = tableWidthClass(column.width);
-
-    if (widthClass) {
-      th.classList.add(widthClass);
+    if (thClasses) {
+      th.className = thClasses;
     }
 
     if (column.sortable) {
@@ -645,10 +745,10 @@ function renderHeader(context) {
       button.className = 'daisy-table-head-button';
       button.dataset.tableSort = column.key;
       button.setAttribute('aria-sort', direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none');
-      button.innerHTML = `${escapeHtml(column.label)} <span class="daisy-table-sort-indicator" aria-hidden="true">${direction === 'asc' ? '&uarr;' : direction === 'desc' ? '&darr;' : '&harr;'}</span>`;
+      button.innerHTML = `<span class="${wrapperClass}">${escapeHtml(column.label)} <span class="daisy-table-sort-indicator" aria-hidden="true">${direction === 'asc' ? '&uarr;' : direction === 'desc' ? '&darr;' : '&harr;'}</span></span>`;
       th.append(button);
     } else {
-      th.textContent = column.label;
+      th.innerHTML = `<span class="${wrapperClass}">${escapeHtml(column.label)}</span>`;
     }
 
     headRow.append(th);
@@ -682,11 +782,13 @@ function renderBody(context, rows) {
 
   tbody.innerHTML = rows.map((row) => {
     const cells = visibleColumns.map((column) => {
-      const className = column.cellClass ? ` class="${escapeHtml(column.cellClass)}"` : '';
+      const classes = getColumnClasses(column, 'cell');
+      const className = classes ? ` class="${escapeHtml(classes)}"` : '';
+      const wrapperClass = escapeHtml(getColumnWrapperClasses(column, 'cell'));
       const value = getDisplayValue(row.original ?? row, column);
       const content = column.html ? value : escapeHtml(value);
 
-      return `<td${className}>${content}</td>`;
+      return `<td${className}><span class="${wrapperClass}">${content}</span></td>`;
     }).join('');
 
     return `<tr>${cells}</tr>`;
@@ -988,6 +1090,8 @@ function resolveFilterInputState(context, input) {
 }
 
 function renderTable(context) {
+  renderColgroup(context);
+
   const filteredRows = context.config.mode === 'client'
     ? applyClientFilters(context.config.rows, context.config.columns, context.state)
     : context.rows;
@@ -1094,8 +1198,12 @@ function attachEvents(context) {
   const pageSize = context.root.querySelector('[data-table-page-size]');
   const previousButton = context.root.querySelector('[data-table-prev]');
   const nextButton = context.root.querySelector('[data-table-next]');
+  const eventController = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const listenerOptions = eventController ? { signal: eventController.signal } : undefined;
   let searchTimeout;
   let filterTimeout;
+
+  context.eventController = eventController;
 
   context.root.addEventListener('click', (event) => {
     const button = event.target instanceof Element ? event.target.closest('[data-table-sort]') : null;
@@ -1107,7 +1215,7 @@ function attachEvents(context) {
     context.state.sorting = toggleSorting(context.state, button.dataset.tableSort);
     context.state.pagination.pageIndex = 0;
     void refreshTable(context);
-  });
+  }, listenerOptions);
 
   context.root.addEventListener('change', (event) => {
     const target = event.target;
@@ -1128,7 +1236,7 @@ function attachEvents(context) {
       context.state.pagination.pageIndex = 0;
       void refreshTable(context);
     }
-  });
+  }, listenerOptions);
 
   context.root.addEventListener('input', (event) => {
     const target = event.target;
@@ -1154,7 +1262,7 @@ function attachEvents(context) {
     filterTimeout = setTimeout(() => {
       void refreshTable(context);
     }, context.config.filterDebounceMs);
-  });
+  }, listenerOptions);
 
   if (searchInput instanceof HTMLInputElement) {
     searchInput.addEventListener('input', () => {
@@ -1171,7 +1279,7 @@ function attachEvents(context) {
         context.state.pagination.pageIndex = 0;
         void refreshTable(context);
       }, context.config.searchDebounceMs);
-    });
+    }, listenerOptions);
   }
 
   if (pageSize instanceof HTMLSelectElement) {
@@ -1179,22 +1287,87 @@ function attachEvents(context) {
       context.state.pagination.pageSize = Number.parseInt(pageSize.value, 10) || context.state.pagination.pageSize;
       context.state.pagination.pageIndex = 0;
       void refreshTable(context);
-    });
+    }, listenerOptions);
   }
 
   if (previousButton instanceof HTMLButtonElement) {
     previousButton.addEventListener('click', () => {
       context.state.pagination.pageIndex = Math.max(0, context.state.pagination.pageIndex - 1);
       void refreshTable(context);
-    });
+    }, listenerOptions);
   }
 
   if (nextButton instanceof HTMLButtonElement) {
     nextButton.addEventListener('click', () => {
       context.state.pagination.pageIndex += 1;
       void refreshTable(context);
-    });
+    }, listenerOptions);
   }
+}
+
+function normalizeExternalFilters(filters, definitions = []) {
+  if (Array.isArray(filters)) {
+    return normalizeColumnFilters(filters, definitions);
+  }
+
+  if (!isPlainObject(filters)) {
+    return null;
+  }
+
+  return normalizeColumnFilters(
+    Object.entries(filters).map(([id, value]) => ({ id, value })),
+    definitions
+  );
+}
+
+function applyExternalRefreshState(context, options = {}) {
+  if (!isPlainObject(options)) {
+    return;
+  }
+
+  const nextFilters = normalizeExternalFilters(options.filters, context.config.filters);
+
+  if (nextFilters !== null) {
+    context.state.columnFilters = nextFilters;
+  }
+
+  if (Array.isArray(options.sorting)) {
+    context.state.sorting = normalizeSorting(options.sorting, context.config.columns);
+  }
+
+  if (isPlainObject(options.pagination)) {
+    context.state.pagination = {
+      pageIndex: Math.max(0, Number.parseInt(options.pagination.pageIndex ?? context.state.pagination.pageIndex, 10) || 0),
+      pageSize: context.config.pageSizeOptions.includes(Number.parseInt(options.pagination.pageSize, 10))
+        ? Number.parseInt(options.pagination.pageSize, 10)
+        : context.state.pagination.pageSize,
+    };
+  }
+}
+
+function destroyTable(root) {
+  const container = root?.matches?.('[data-daisy-table="1"]')
+    ? root
+    : root?.querySelector?.('[data-daisy-table="1"]');
+
+  if (!(container instanceof HTMLElement) || !container.__daisyTableContext) {
+    return false;
+  }
+
+  const context = container.__daisyTableContext;
+
+  if (context.abortController) {
+    context.abortController.abort();
+  }
+
+  if (context.eventController) {
+    context.eventController.abort();
+  }
+
+  delete container.__daisyTableInit;
+  delete container.__daisyTableContext;
+
+  return true;
 }
 
 async function initTable(root) {
@@ -1202,8 +1375,12 @@ async function initTable(root) {
     ? root
     : root?.querySelector?.('[data-daisy-table="1"]');
 
-  if (!(container instanceof HTMLElement) || container.__daisyTableInit) {
+  if (!(container instanceof HTMLElement)) {
     return null;
+  }
+
+  if (container.__daisyTableInit && container.__daisyTableContext) {
+    return container.__daisyTableContext;
   }
 
   const config = normalizeConfig(parseConfig(container));
@@ -1218,6 +1395,7 @@ async function initTable(root) {
     error: '',
     table: null,
     abortController: null,
+    eventController: null,
     refreshId: 0,
   };
 
@@ -1246,11 +1424,90 @@ async function initAllTables() {
   );
 }
 
+function reinitMorphTables(scope = null) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const root = typeof Element !== 'undefined' && scope instanceof Element ? scope : document;
+  const tables = root.matches?.('[data-daisy-table="1"]')
+    ? [root]
+    : Array.from(root.querySelectorAll?.('[data-daisy-table="1"]') ?? []);
+
+  tables.forEach((table) => {
+    const raw = parseConfig(table);
+
+    if (raw.livewireMode === 'morph') {
+      destroyTable(table);
+    }
+
+    void initTable(table);
+  });
+}
+
+function resolveTableRoot(idOrRoot) {
+  if (typeof HTMLElement !== 'undefined' && idOrRoot instanceof HTMLElement) {
+    return idOrRoot.matches('[data-daisy-table="1"]')
+      ? idOrRoot
+      : idOrRoot.querySelector('[data-daisy-table="1"]');
+  }
+
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  if (typeof idOrRoot === 'string' && idOrRoot !== '') {
+    const escaped = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+      ? CSS.escape(idOrRoot)
+      : idOrRoot.replaceAll('"', '\\"');
+
+    return document.getElementById(idOrRoot)
+      ?? document.querySelector(`[data-daisy-table-id="${escaped}"]`);
+  }
+
+  return null;
+}
+
+function tableApi(idOrRoot) {
+  const root = resolveTableRoot(idOrRoot);
+
+  return {
+    async refresh(options = {}) {
+      const context = await initTable(root);
+
+      if (!context) {
+        return null;
+      }
+
+      applyExternalRefreshState(context, options);
+      await refreshTable(context);
+
+      return context;
+    },
+    async reinit() {
+      destroyTable(root);
+
+      return initTable(root);
+    },
+    destroy() {
+      return destroyTable(root);
+    },
+    get context() {
+      return root?.__daisyTableContext ?? null;
+    },
+  };
+}
+
 if (typeof window !== 'undefined') {
   window.DaisyTable = {
     init: initTable,
     initAll: initAllTables,
+    destroy: destroyTable,
+    table: tableApi,
   };
+
+  window.DaisyKit = window.DaisyKit || {};
+  window.DaisyKit.table = tableApi;
 }
 
 if (typeof document !== 'undefined') {
@@ -1259,6 +1516,9 @@ if (typeof document !== 'undefined') {
   } else {
     initAllTables();
   }
+
+  document.addEventListener('livewire:navigated', (event) => reinitMorphTables(event.target));
+  document.addEventListener('livewire:morph.updated', (event) => reinitMorphTables(event.target));
 }
 
 export {
@@ -1267,10 +1527,13 @@ export {
   DEFAULT_PAGE_SIZE_OPTIONS,
   DEFAULT_SEARCH_DEBOUNCE_MS,
   applyClientFilters,
+  applyExternalRefreshState,
   buildRequestPayload,
   buildServerRequest,
   buildSpatieRequestParams,
   getPersistedStateKey,
+  getColumnClasses,
+  getColumnWrapperClasses,
   getSortDirection,
   initAllTables,
   initTable,
