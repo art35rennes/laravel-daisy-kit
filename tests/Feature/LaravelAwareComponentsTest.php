@@ -217,6 +217,72 @@ it('wires form field ids descriptions old input and validation state into inputs
         ->toContain('id="email-error"');
 });
 
+it('renders form fields with constrained grid alignment classes for labels inputs selects and dates', function () {
+    $html = Blade::render(<<<'BLADE'
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            <x-daisy::ui.partials.form-field
+                name="filter[query]"
+                id="dashboard-filter-query"
+                label="Libelle de recherche volontairement tres long pour verifier la troncature"
+            >
+                <x-daisy::ui.inputs.input
+                    id="dashboard-filter-query"
+                    name="filter[query]"
+                />
+            </x-daisy::ui.partials.form-field>
+
+            <x-daisy::ui.partials.form-field
+                name="filter[intervention_type]"
+                id="dashboard-filter-intervention-type"
+                label="Type d'enquete tres detaille"
+            >
+                <x-daisy::ui.inputs.select
+                    id="dashboard-filter-intervention-type"
+                    name="filter[intervention_type]"
+                >
+                    <option value="long">Option select avec un libelle tres long qui doit rester dans le champ</option>
+                </x-daisy::ui.inputs.select>
+            </x-daisy::ui.partials.form-field>
+
+            <x-daisy::ui.partials.form-field
+                name="filter[started_on]"
+                id="dashboard-filter-started-on"
+                label="Date de debut"
+            >
+                <x-daisy::ui.inputs.input
+                    type="date"
+                    id="dashboard-filter-started-on"
+                    name="filter[started_on]"
+                />
+            </x-daisy::ui.partials.form-field>
+        </div>
+    BLADE);
+
+    expect(substr_count($html, 'daisy-form-field min-w-0 max-w-full'))->toBe(3)
+        ->and(substr_count($html, 'daisy-form-field-control w-full min-w-0 max-w-full'))->toBe(3)
+        ->and(substr_count($html, 'daisy-form-field-label'))->toBe(3)
+        ->and(substr_count($html, 'data-label-wrap="truncate"'))->toBe(3)
+        ->and($html)->toContain('for="dashboard-filter-intervention-type"')
+        ->and($html)->toContain('id="dashboard-filter-intervention-type"')
+        ->and($html)->toContain('select w-full')
+        ->and($html)->toContain('input w-full')
+        ->and($html)->toContain('daisy-native-picker-date')
+        ->and($html)->toContain('Option select avec un libelle tres long qui doit rester dans le champ');
+});
+
+it('ships scoped form field containment styles without targeting host pages', function () {
+    $css = file_get_contents(dirname(__DIR__, 2).'/resources/css/app.css');
+
+    expect($css)
+        ->toContain('.daisy-form-field {')
+        ->toContain('.daisy-form-field-control {')
+        ->toContain('.daisy-form-field-control > :is(.input, .select, .textarea, .file-input, input, select, textarea, .dropdown)')
+        ->toContain('.daisy-form-field-control > :is(select, .select),')
+        ->toContain('text-overflow: ellipsis;')
+        ->toContain('.daisy-form-field-label[data-label-wrap="truncate"]')
+        ->toContain('min-inline-size: 0;');
+});
+
 it('renders Laravel aware select options selected value and validation state', function () {
     $html = View::make('daisy::components.ui.inputs.select', [
         'name' => 'role',

@@ -11,11 +11,17 @@
     'full' => true,          // Apply w-full on wrapper
     'class' => '',           // Extra classes on wrapper
     'id' => null,            // Explicit control id; defaults from name
+    'gap' => 'gap-1',        // Vertical spacing between label, control, hint, and error
+    'labelWrap' => 'truncate', // truncate|wrap|normal label overflow behavior
+    'controlClass' => null,  // Extra classes on the control containment wrapper
 ])
 
 @php
     // Determine final wrapper classes.
-    $wrapperClasses = trim(($full ? 'w-full ' : '').'flex flex-col gap-1 '.$class);
+    $wrapperClasses = trim(($full ? 'w-full ' : '')."daisy-form-field min-w-0 max-w-full flex flex-col {$gap} {$class}");
+    $controlClasses = trim('daisy-form-field-control w-full min-w-0 max-w-full '.$controlClass);
+    $labelClasses = trim('daisy-form-field-label '.$labelClass);
+    $resolvedLabelWrap = in_array((string) $labelWrap, ['truncate', 'wrap', 'normal'], true) ? (string) $labelWrap : 'truncate';
     $fieldId = $id ?: ($name ? preg_replace('/[^A-Za-z0-9_-]+/', '-', trim((string) $name, '[]')) : null);
     $labelFor = $for === '__name' ? $fieldId : $for;
 
@@ -52,7 +58,8 @@
         <x-daisy::ui.advanced.label
             :for="$labelFor"
             :srOnly="$srOnly"
-            class="{{ $labelClass }}"
+            class="{{ $labelClasses }}"
+            data-label-wrap="{{ $resolvedLabelWrap }}"
         >
             @php($labelText = $label)
             @isset($labelSlot)
@@ -68,7 +75,9 @@
 
     {{-- Control slot: templates should use old($name) and $errors->has($name) directly --}}
     {{-- The $name prop is available in the component context for templates to use --}}
-    {{ $slot }}
+    <div class="{{ $controlClasses }}">
+        {{ $slot }}
+    </div>
 
     @if(isset($hintSlot) || $hint)
         <p @if($hintId) id="{{ $hintId }}" @endif class="mt-1 text-sm text-base-content/70">
@@ -92,9 +101,3 @@
         />
     @endif
 </{{ $as }}>
-
-@once
-    @push('styles')
-        {{-- No custom CSS – rely only on Tailwind v4 + daisyUI v5 as per guidelines. --}}
-    @endpush
-@endonce
