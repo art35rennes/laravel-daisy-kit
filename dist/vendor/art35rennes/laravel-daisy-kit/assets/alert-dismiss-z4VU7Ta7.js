@@ -1,1 +1,0 @@
-function e(e){e.addEventListener(`click`,t=>{let n=t.target.closest(`[data-alert-dismiss]`);!n||!e.contains(n)||(t.preventDefault(),e.remove())})}export{e as default};

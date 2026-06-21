@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-CMxvf4Kt.js";function t(e,t={}){let n=document.getElementById(t.drawerId||`chat-sidebar-drawer`);e.querySelectorAll(`.chat-sidebar [data-conversation-id]`).forEach(e=>{e.addEventListener(`click`,()=>{window.innerWidth<1024&&n&&(n.checked=!1)})})}e((()=>{}))();export{t as default};
