@@ -1,3 +1,5 @@
+{{-- @template-route templates.layouts.grid --}}
+
 @props([
     'title' => null,
     'theme' => null,
@@ -7,6 +9,10 @@
     'container' => true,
     'containerClass' => 'container mx-auto p-6',
 ])
+
+@php
+    $slot = $slot ?? '';
+@endphp
 
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="false">
     @if($container)
@@ -21,5 +27,3 @@
         </x-daisy::ui.layout.grid-layout>
     @endif
 </x-daisy::layout.app>
-
-

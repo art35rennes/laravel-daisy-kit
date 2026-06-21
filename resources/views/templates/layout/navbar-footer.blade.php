@@ -1,3 +1,5 @@
+{{-- @template-route templates.layouts.navbar-footer --}}
+
 @props([
     'title' => null,
     'theme' => null,
@@ -32,6 +34,10 @@
     'footerShowDivider' => true,
     'footerDividerColor' => null,
 ])
+
+@php
+    $slot = $slot ?? '';
+@endphp
 
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="false">
     {{-- Navbar --}}

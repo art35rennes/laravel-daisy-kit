@@ -1,3 +1,5 @@
+{{-- @template-route templates.layouts.navbar --}}
+
 @props([
     'title' => null,
     'theme' => null,
@@ -11,6 +13,10 @@
     'container' => 'container mx-auto p-6',
 ])
 
+@php
+    $slot = $slot ?? '';
+@endphp
+
 <x-daisy::layout.navbar-layout
     :title="$title"
     :theme="$theme"
@@ -23,5 +29,3 @@
 >
     {{ $slot }}
 </x-daisy::layout.navbar-layout>
-
-

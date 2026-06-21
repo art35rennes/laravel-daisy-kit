@@ -1,3 +1,5 @@
+{{-- @template-route templates.layouts.footer --}}
+
 @props([
     'title' => null,
     'theme' => null,
@@ -26,6 +28,10 @@
     'footerShowDivider' => true,
     'footerDividerColor' => null,
 ])
+
+@php
+    $slot = $slot ?? '';
+@endphp
 
 <x-daisy::layout.app :title="$title" :theme="$theme" :container="false">
     {{-- Main content --}}
@@ -68,5 +74,3 @@
         @endif
     </x-daisy::ui.layout.footer-layout>
 </x-daisy::layout.app>
-
-
