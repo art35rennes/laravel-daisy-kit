@@ -83,5 +83,6 @@ For visual node editors, workflows, blueprints, and schema graphs, prefer `x-dai
 
 - Keep reusable presentation in the package and business logic in the host application.
 - Preserve concise public Blade usage such as `x-daisy::charts.line`, `x-daisy::ui.inputs.button`, and `x-daisy::templates.auth.login-simple`.
+- Use `x-daisy::ui.partials.form-field` as the default wrapper for label + input/select pairs, especially in constrained grids. Keep host CSS from targeting package `.label`, `.input`, or `.select` just to fix field alignment.
 - Use `x-daisy::ui.layout.editable-grid` only for explicitly editable dashboards or builder-style surfaces; keep `x-daisy::ui.layout.grid-layout` as the default static grid.
 - Treat reusing and composing package components as the default path, not the fallback.

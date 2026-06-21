@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-06-21T08:08:12+00:00",
+    "generated_at": "2026-06-21T21:41:25+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
@@ -1280,7 +1280,26 @@
                 "downloadFromPreview",
                 "showMeta",
                 "maxTextPreviewBytes",
-                "docxPreview"
+                "docxPreview",
+                "layout",
+                "showCompactPreview",
+                "actionOrder",
+                "modalActionOrder",
+                "previewButtonVariant",
+                "downloadButtonVariant",
+                "openButtonVariant",
+                "closeButtonVariant",
+                "modalDownloadButtonVariant",
+                "modalOpenButtonVariant",
+                "modalCloseButtonVariant",
+                "modalTitle",
+                "modalSize",
+                "modalMaxHeightClass",
+                "modalBoxClass",
+                "modalContentClass",
+                "modalFooter",
+                "modalFooterSticky",
+                "logPreviewErrors"
             ]
         },
         {
@@ -1383,6 +1402,12 @@
                 "filterDebounce",
                 "minSearchChars",
                 "columnVisibility",
+                "tableLayout",
+                "minWidth",
+                "scrollX",
+                "externalFilters",
+                "toolbarLayout",
+                "livewireMode",
                 "caption",
                 "size",
                 "zebra",
@@ -2124,6 +2149,7 @@
                 "cluster",
                 "clusterOptions",
                 "fullscreen",
+                "geolocation",
                 "markers",
                 "geojson",
                 "basemaps",
@@ -2133,6 +2159,7 @@
                 "measure",
                 "controls",
                 "objectTypes",
+                "drawLayers",
                 "name",
                 "value",
                 "module"
@@ -2550,7 +2577,10 @@
                 "as",
                 "full",
                 "class",
-                "id"
+                "id",
+                "gap",
+                "labelWrap",
+                "controlClass"
             ]
         },
         {

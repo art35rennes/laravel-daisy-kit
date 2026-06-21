@@ -70,21 +70,30 @@ Daisy Kit is designed to work by default with strict host Content Security Polic
 
 - `basemaps` accepts XYZ and WMS backgrounds with one active base layer; `overlays` accepts GeoJSON, XYZ, and WMS layers with `visible`, `editable`, `style`, and provider `options`.
 - `layerControl` exposes a dedicated Daisy `Couches` menu for basemaps and overlays. `layerControl.mode` can be `multiple` for stackable overlays or `single` for one active overlay at a time. Overlays with `control: false`, `controllable: false`, `locked: true`, or an id/label listed in `layerControl.lockedOverlays` are forced visible and hidden from the user toggles. Set `layerControl.native` to `true` only when you explicitly want Leaflet's native layer control instead of the Daisy menu.
-- `draw` enables the Terra Draw toolbar. `draw.groupedToolbar` groups tools into submenus, `draw.actionBadge` shows or customizes the active-tool badge, `draw.styles` defines default point/line/polygon/rectangle/marker styles, and clicking the active tool again returns to selection.
+- `draw` enables the Terra Draw toolbar. `draw.groupedToolbar` groups tools into submenus, `draw.actionBadge` shows or customizes the active-tool badge, `draw.selectionDetails` shows or hides the `Détail de la sélection` action, `draw.styles` defines default point/line/polygon/rectangle/marker styles, and clicking the active tool again returns to selection.
 - `objectTypes` adds business tools for point, line, or polygon objects. Toolbar icons can be supplied with `icon`, sanitized `iconSvg`, or sanitized `iconHtml`; point markers can render custom map icons with safe `markerUrl` values or sanitized `markerSvg` plus `markerWidth` and `markerHeight`. Treat custom icon markup as integrator-controlled content, not end-user input.
 - `objectTypes[].style` overrides drawing style per business object. Public aliases include `color`, `width`, `dashArray`, `strokeColor`, `strokeWidth`, `fillColor`, `fillOpacity`, `markerUrl`, and `markerSvg`; the package maps them to Terra Draw adapter options.
-- `measure` uses Turf from GeoJSON coordinates, not screen pixels. `measure.maxLabels` limits labels rendered on dense maps while every measurement remains available in emitted event payloads.
+- `drawLayers` associates newly drawn features with logical drawing layers, independently from display overlays. Use `mode: "fixed"` with `current`/`layerId` to force one layer, `mode: "select"` to let the user pick the current drawing layer in the toolbar, or `mode: "none"` to explicitly persist no layer. Set `allowNone: true` in select mode to offer a no-layer choice. Exported features receive `properties.drawLayerId` and `properties.drawLayerLabel` by default; `property` and `labelProperty` can rename those keys.
+- `measure` uses Turf from GeoJSON coordinates, not screen pixels. `measure.maxLabels` limits labels rendered on dense maps and `measure.maxLabelOffsetPx` hides labels that would be placed too far from their feature; every measurement remains available in emitted event payloads.
+- `geolocation` enables browser Geolocation API support. Use `geolocation: true` for an on-demand button, `geolocation.auto` to locate once on initialization, and `geolocation.watch` for realtime tracking until stopped. Options include `setView`, `zoom`, `maximumAge`, `timeout`, `enableHighAccuracy`, `showAccuracy`, and `button`. The browser permission prompt is only triggered by an explicit locate/watch request; coordinates stay client-side unless the host consumes and persists emitted events.
+- Geolocation success payloads are stable integration objects with `source`, `method` (`manual`, `auto`, or `watch`), `watch`, `watching`, `lat`, `lng`, `accuracy`, `altitude`, `altitudeAccuracy`, `heading`, `speed`, `timestamp`, normalized `coords`, the request `options`, the raw browser `position`, and a GeoJSON `feature` point carrying the same metadata in `properties`.
 - `name` creates the hidden GeoJSON field; `value` seeds editable features. Read-only overlays stay outside the Terra Draw store unless `editable: true`.
 
-The root element exposes `root.daisyLeaflet` after initialization. Public methods include `map`, `context`, `exportGeoJSON()`, `setMode(mode)`, `clearSelection()`, `deleteSelected()`, `undo()`, `redo()`, and `destroy()`. Drawing methods are safe no-ops when drawing is disabled.
+The root element exposes `root.daisyLeaflet` after initialization. Public methods include `map`, `context`, `exportGeoJSON()`, `setMode(mode)`, `getDrawLayer()`, `setDrawLayer(layerId|null)`, `getSelectionDetails()`, `showSelectionDetails()`, `clearSelection()`, `deleteSelected()`, `getGeolocation()`, `locate()`, `startGeolocation()`, `stopGeolocation()`, `isGeolocationWatching()`, `undo()`, `redo()`, and `destroy()`. Drawing and geolocation methods are safe no-ops when the corresponding feature is disabled.
 
 Public events are dispatched from the root `[data-module="leaflet"]` element:
 
-- `daisy:leaflet:init` with `{ map, config, context, exportGeoJSON, setMode, clearSelection, deleteSelected, undo, redo, destroy }`
+- `daisy:leaflet:init` with `{ map, config, context, exportGeoJSON, setMode, getDrawLayer, setDrawLayer, getSelectionDetails, showSelectionDetails, clearSelection, deleteSelected, getGeolocation, locate, startGeolocation, stopGeolocation, isGeolocationWatching, undo, redo, destroy }`
 - `daisy:leaflet:change` with `{ value, measurements, draw }`
 - `daisy:leaflet:measure` with `{ measurements, latest, draw }`
-- `daisy:leaflet:object-created` with `{ feature, featureId, objectType, exportGeoJSON }`
-- `daisy:leaflet:draw-finish` with `{ feature, featureId, objectType, draw }`
+- `daisy:leaflet:geolocation:request` with `{ method, watch, options, map }`
+- `daisy:leaflet:geolocation:success` with `{ source, method, watch, watching, lat, lng, accuracy, altitude, altitudeAccuracy, heading, speed, timestamp, coords, options, feature, position, map }`
+- `daisy:leaflet:geolocation:error` with `{ error, method, watch, options, map }`
+- `daisy:leaflet:geolocation:stop` with `{ map }`
+- `daisy:leaflet:draw-layer-change` with `{ layer, layerId, draw, map }`
+- `daisy:leaflet:selection-details` with `{ count, featureIds, features, primaryFeature, primaryFeatureId, exportGeoJSON, draw, map }`
+- `daisy:leaflet:object-created` with `{ feature, featureId, objectType, drawLayer, drawLayerId, exportGeoJSON }`
+- `daisy:leaflet:draw-finish` with `{ feature, featureId, objectType, drawLayer, drawLayerId, draw }`
 - `daisy:leaflet:zone-select` with `{ type, featureIds, features, map, draw }`
 - `daisy:leaflet:layer-toggle` with `{ name, type, layer, activeBasemap, activeOverlays, lockedOverlays }`
 
@@ -258,14 +267,16 @@ The core layout, form, feedback, and action components expose small Laravel-frie
         />
     </x-daisy::ui.partials.form-field>
 
-    <x-daisy::ui.inputs.select
-        name="role"
-        :value="$user->role"
-        :options="[
-            ['value' => 'user', 'label' => 'User'],
-            ['value' => 'admin', 'label' => 'Administrator'],
-        ]"
-    />
+    <x-daisy::ui.partials.form-field name="role" label="Role">
+        <x-daisy::ui.inputs.select
+            name="role"
+            :value="$user->role"
+            :options="[
+                ['value' => 'user', 'label' => 'User'],
+                ['value' => 'admin', 'label' => 'Administrator'],
+            ]"
+        />
+    </x-daisy::ui.partials.form-field>
 
     <x-daisy::ui.inputs.button icon-name="bi-check" loading>
         Save
@@ -277,6 +288,7 @@ Useful defaults:
 
 - `layout.app` accepts `htmlClass`, `bodyClass`, `fontUrl`, and `loadDefaultFont`.
 - `layout.navbar-sidebar-layout` and `layout.sidebar-layout` accept `showThemeController`, `themes`, and `themeLabel`.
+- `form-field` is the recommended wrapper for every label + input/select pair. It contains labels and controls in constrained grids and defaults to truncated labels; use `label-wrap="wrap"` when multiline labels are preferred.
 - `input` and `select` accept `name`, `id`, `value`, `bindOld`, `error`, and accessibility attributes.
 - `textarea` mirrors the Laravel-aware input props for old input, validation state, and described-by wiring.
 - `checkbox` accepts `name`, `value`, `uncheckedValue`, `bindOld`, and validation state for common form submissions.
@@ -290,6 +302,48 @@ Useful defaults:
 - `table` accepts `toolbar` and `actions` slots for page-level controls.
 - `crud-layout` and `crud-section` provide `header`, `aside`, `headerActions`, and aligned `actions` slots.
 - `modal` supports `header`, `footer`, `actions`, `closeLabel`, and labelled dialog markup.
+
+Constrained filter grids should compose controls through `form-field` instead of adding host CSS for `.label`, `.input`, or `.select`:
+
+```blade
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+    <x-daisy::ui.partials.form-field
+        name="filter[query]"
+        id="dashboard-filter-query"
+        label="Search label with a deliberately long text"
+    >
+        <x-daisy::ui.inputs.input
+            id="dashboard-filter-query"
+            name="filter[query]"
+        />
+    </x-daisy::ui.partials.form-field>
+
+    <x-daisy::ui.partials.form-field
+        name="filter[intervention_type]"
+        id="dashboard-filter-intervention-type"
+        label="Type d'enquete"
+    >
+        <x-daisy::ui.inputs.select
+            id="dashboard-filter-intervention-type"
+            name="filter[intervention_type]"
+        >
+            <option value="long">Long select option label that remains contained</option>
+        </x-daisy::ui.inputs.select>
+    </x-daisy::ui.partials.form-field>
+
+    <x-daisy::ui.partials.form-field
+        name="filter[started_on]"
+        id="dashboard-filter-started-on"
+        label="Start date"
+    >
+        <x-daisy::ui.inputs.input
+            type="date"
+            id="dashboard-filter-started-on"
+            name="filter[started_on]"
+        />
+    </x-daisy::ui.partials.form-field>
+</div>
+```
 
 ## Browser autocomplete
 
