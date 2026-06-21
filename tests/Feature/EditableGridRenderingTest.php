@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\HtmlString;
 
@@ -104,4 +103,15 @@ it('renders the editable dashboard template view', function () {
         ->toContain('Release checklist')
         ->toContain('data-module="editable-grid"')
         ->toContain('"static":true');
+});
+
+it('keeps editable grid panels and resize corners styled', function () {
+    $css = (string) file_get_contents(__DIR__.'/../../resources/css/app.css');
+
+    expect($css)
+        ->toContain(':where(.card, section, article, [data-editable-grid-panel])')
+        ->toContain('.daisy-editable-grid[data-editable-grid-enabled="1"] .grid-stack-item > :where(.ui-resizable-se, .ui-resizable-sw, .ui-resizable-ne, .ui-resizable-nw)')
+        ->toContain('border-bottom-right-radius')
+        ->toContain('background-image: none')
+        ->toContain('transform: none');
 });

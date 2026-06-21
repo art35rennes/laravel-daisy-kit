@@ -103,8 +103,13 @@ export default function initEditableGrid(host) {
     staticGrid: !isEditable,
     disableDrag: !isEditable,
     disableResize: !isEditable,
+    alwaysShowResizeHandle: isEditable,
     acceptWidgets: config.acceptWidgets ?? false,
     columnOpts: config.responsive || undefined,
+    resizable: {
+      handles: 'se,sw,ne,nw',
+      autoHide: false,
+    },
     layout: config.layout || 'list',
     float: Boolean(config.float),
     animate: true,
