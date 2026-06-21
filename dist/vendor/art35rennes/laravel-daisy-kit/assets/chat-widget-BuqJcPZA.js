@@ -1,1 +1,0 @@
-import{n as e}from"./rolldown-runtime-CMxvf4Kt.js";import{initChatWidget as t,t as n}from"./chat-BUNZo_JD.js";function r(e,n={}){return t(e,n)}e((()=>{n()}))();export{r as default};
