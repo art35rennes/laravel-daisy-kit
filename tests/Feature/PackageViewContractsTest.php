@@ -151,6 +151,8 @@ it('renders truncate text through its public alias', function () {
     BLADE);
 
     expect($html)
+        ->toContain('data-tip="REF-2026-000001"')
+        ->toContain('class="tooltip tooltip-top"')
         ->toContain('data-module="truncate-text"')
         ->toContain('data-truncate-text-title="REF-2026-000001"')
         ->toContain('class="min-w-0 max-w-48 truncate"')

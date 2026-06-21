@@ -28,7 +28,7 @@
 @endphp
 
 @if($usesMeasuredTooltip)
-    <x-daisy::ui.overlay.tooltip :position="$position">
+    <x-daisy::ui.overlay.tooltip :text="$tooltipText" :position="$position">
         <{{ $elementTag }}
             {{ $contentAttributes->merge([
                 'data-module' => 'truncate-text',
