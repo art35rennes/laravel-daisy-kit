@@ -116,10 +116,17 @@
             'aria-invalid' => $hasError ? 'true' : null,
             'aria-describedby' => $describedBy,
         ], static fn ($attributeValue) => ! is_null($attributeValue)));
+
+    $wrapperAttributes = $attributes
+        ->except(['id', 'name'])
+        ->class('dropdown w-full')
+        ->merge($dataAttributes);
+
+    $nativeSelectAttributes = $selectAttributes->except(array_keys($dataAttributes));
 @endphp
 
 @if($shouldEnhance)
-    <div class="dropdown w-full" {{ $attributes->class('w-full')->only('class')->merge($dataAttributes) }}>
+    <div {{ $wrapperAttributes }}>
         <label class="input flex w-full items-center gap-2">
             <input type="text"
                    data-role="input"
@@ -128,7 +135,7 @@
                    placeholder="{{ is_string($placeholder ?? null) ? $placeholder : 'Tapez pour rechercher...' }}" />
         </label>
         <ul class="dropdown-content z-10 menu bg-base-100 rounded-box w-full shadow hidden" role="listbox" data-role="list"></ul>
-        <select data-role="native" @disabled($disabled) {{ $selectAttributes->merge(['hidden' => true]) }}>
+        <select data-role="native" @disabled($disabled) {{ $nativeSelectAttributes->merge(['hidden' => true]) }}>
             @foreach($normalizedOptions as $option)
                 <option value="{{ $option['value'] }}" @selected((string) $selectedValue === (string) $option['value']) @disabled($option['disabled'])>
                     {{ $option['label'] }}

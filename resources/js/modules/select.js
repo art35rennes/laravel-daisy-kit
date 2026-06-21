@@ -36,18 +36,65 @@ function matches(text, query) {
     return normalizeText(text).includes(normalizeText(query));
 }
 
+function readOption(options, rootEl, selectEl, key, fallback = undefined) {
+    if (options[key] !== undefined) {
+        return options[key];
+    }
+
+    if (rootEl.dataset?.[key] !== undefined) {
+        return rootEl.dataset[key];
+    }
+
+    if (selectEl.dataset?.[key] !== undefined) {
+        return selectEl.dataset[key];
+    }
+
+    return fallback;
+}
+
+function readArrayOption(options, rootEl, selectEl, key) {
+    const value = readOption(options, rootEl, selectEl, key, []);
+
+    if (Array.isArray(value)) {
+        return value;
+    }
+
+    if (typeof value === 'string' && value.trim() !== '') {
+        try {
+            const parsed = JSON.parse(value);
+
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    return [];
+}
+
 export default function initSelect(rootEl, options = {}) {
+    if (rootEl.tagName === 'SELECT' && rootEl.parentElement?.closest('[data-module="select"]')) {
+        return;
+    }
+
+    if (rootEl.dataset.selectInitialized === 'true') {
+        return;
+    }
+
     // Déterminer l'élément <select> (rootEl peut être un wrapper SSR ou le select)
     const selectEl = rootEl.tagName === 'SELECT' ? rootEl : rootEl.querySelector('select');
     if (!selectEl) return;
 
-    const endpoint = String(options.endpoint || '').trim();
-    const defaultData = Array.isArray(options.default) ? options.default : [];
-    const paramName = String(options.param || 'q');
-    const debounceMs = Number.parseInt(options.debounce ?? 500, 10) || 500;
-    const minChars = Number.parseInt(options.minChars ?? 3, 10) || 3;
-    const fetchOnEmpty = String(options.fetchOnEmpty ?? (selectEl.dataset.fetchOnEmpty ?? rootEl.dataset?.fetchOnEmpty) ?? 'true') === 'true';
-    const userPlaceholder = (rootEl.dataset?.placeholder || selectEl.dataset?.placeholder) || selectEl.getAttribute('placeholder') || '';
+    rootEl.dataset.selectInitialized = 'true';
+    selectEl.dataset.selectInitialized = 'true';
+
+    const endpoint = String(readOption(options, rootEl, selectEl, 'endpoint', '') || '').trim();
+    const defaultData = readArrayOption(options, rootEl, selectEl, 'default');
+    const paramName = String(readOption(options, rootEl, selectEl, 'param', 'q') || 'q');
+    const debounceMs = Number.parseInt(readOption(options, rootEl, selectEl, 'debounce', 500), 10) || 500;
+    const minChars = Number.parseInt(readOption(options, rootEl, selectEl, 'minChars', 3), 10) || 3;
+    const fetchOnEmpty = String(readOption(options, rootEl, selectEl, 'fetchOnEmpty', 'true')) === 'true';
+    const userPlaceholder = readOption(options, rootEl, selectEl, 'placeholder', selectEl.getAttribute('placeholder') || '') || '';
 
     // Cacher le select original (il sert de champ de formulaire)
     selectEl.setAttribute('hidden', 'hidden');
@@ -163,6 +210,7 @@ export default function initSelect(rootEl, options = {}) {
             newOpt.selected = true;
         }
         input.value = label;
+        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
         setOpen(false);
     }
 
@@ -322,6 +370,10 @@ export default function initSelect(rootEl, options = {}) {
                 return;
             }
             const data = await res.json();
+            if (signal.aborted || input.value !== q) {
+                return;
+            }
+
             let items = [];
             let groups = null;
             let meta = null;
@@ -439,4 +491,3 @@ export default function initSelect(rootEl, options = {}) {
         }
     });
 }
-
