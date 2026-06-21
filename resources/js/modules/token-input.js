@@ -1,10 +1,17 @@
 function debounce(fn, wait) {
     let timeout = null;
 
-    return function debounced(...args) {
+    function debounced(...args) {
         clearTimeout(timeout);
         timeout = window.setTimeout(() => fn.apply(this, args), wait);
+    }
+
+    debounced.cancel = () => {
+        clearTimeout(timeout);
+        timeout = null;
     };
+
+    return debounced;
 }
 
 export function normalizeText(text) {
@@ -375,8 +382,7 @@ export default function initTokenInput(root, options = {}) {
                 button.addEventListener('mousedown', (event) => event.preventDefault());
                 button.addEventListener('click', () => {
                     if (addToken(item)) {
-                        input.value = '';
-                        renderList([]);
+                        refreshAfterSelection();
                     }
                 });
             }
@@ -477,6 +483,23 @@ export default function initTokenInput(root, options = {}) {
         }
     }
 
+    function refreshAfterSelection() {
+        debouncedRefresh.cancel();
+        if (aborter) {
+            aborter.abort();
+            aborter = null;
+        }
+        input.value = '';
+        input.focus();
+
+        if (hasReachedLimit()) {
+            renderList([]);
+            return;
+        }
+
+        void refreshSuggestions('');
+    }
+
     const debouncedRefresh = debounce((value) => {
         void refreshSuggestions(value);
     }, debounceMs);
@@ -530,8 +553,7 @@ export default function initTokenInput(root, options = {}) {
             const activeItem = currentItems[activeIndex];
 
             if (activeItem && !activeItem.disabled && addToken(activeItem)) {
-                input.value = '';
-                renderList([]);
+                refreshAfterSelection();
             }
 
             return;

@@ -129,6 +129,36 @@ describe('token-input module', () => {
     expect(root.querySelector('[data-role="message"]').textContent).toBe('Limit reached');
   });
 
+  it('keeps local suggestions open after selecting an item while focused', async () => {
+    const root = createRoot(`
+      data-preset="text"
+      data-max-items="3"
+      data-suggestions='[{"value":"laravel","label":"Laravel"},{"value":"livewire","label":"Livewire"},{"value":"alpine","label":"Alpine.js"}]'
+    `);
+    initTokenInput(root, { debounce: 20, preset: 'text' });
+
+    const input = root.querySelector('[data-role="input"]');
+    input.focus();
+    input.dispatchEvent(new Event('focus', { bubbles: true }));
+    input.value = 'la';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    const firstSuggestion = root.querySelector('button[role="option"]');
+    expect(firstSuggestion?.textContent).toContain('Laravel');
+
+    firstSuggestion.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    firstSuggestion.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    const remainingSuggestions = Array.from(root.querySelectorAll('button[role="option"]'))
+      .map((button) => button.textContent);
+
+    expect(input.value).toBe('');
+    expect(document.activeElement).toBe(input);
+    expect(root.classList.contains('dropdown-open')).toBe(true);
+    expect(remainingSuggestions).toEqual(['Livewire', 'Alpine.js']);
+  });
+
   it('loads remote suggestions and commits the active option with Enter', async () => {
     const root = createRoot(`
       data-preset="text"
