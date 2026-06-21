@@ -129,7 +129,7 @@
                         :label="__('daisy::components.blueprint_editor.actions.add_node')"
                         buttonClass="btn btn-sm btn-primary"
                         type="card"
-                        contentClass="dropdown-content z-20 mt-2 max-h-96 overflow-y-auto rounded-box border border-base-300 bg-base-100 shadow"
+                        contentClass="dropdown-content z-50 mt-2 max-h-96 overflow-y-auto rounded-box border border-base-300 bg-base-100 shadow"
                         cardBodyClass="p-3"
                         data-blueprint-palette-menu
                     >

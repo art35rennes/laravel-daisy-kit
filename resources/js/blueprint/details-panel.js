@@ -1,4 +1,4 @@
-import { getControlType, syncNodePreviewControls } from './nodes.js';
+import { getControlType } from './nodes.js';
 
 export function setDetailsOpen(root, open) {
   root.querySelector('[data-blueprint-details-panel]')?.classList.toggle('hidden', !open);
@@ -126,7 +126,6 @@ export function collectPropertyInputData(root, draftData = {}) {
 
 export function applyNodeData(node, data) {
   node.__blueprint.data = { ...data };
-  syncNodePreviewControls(node);
 }
 
 function renderBlueprintFeedback(validation, i18n) {

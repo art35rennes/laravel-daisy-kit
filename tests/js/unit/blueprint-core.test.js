@@ -23,7 +23,6 @@ import {
 import { bindNodeClickToggle, isInteractiveNodeTarget } from '../../../resources/js/blueprint/interactions.js';
 import {
   createNode,
-  createReadonlyPreviewControl,
   createSocketRegistry,
   findAutoConnection,
   generateNodeLabel,
@@ -72,6 +71,7 @@ describe('blueprint graph contract', () => {
         icon: '',
         theme: 'default',
         nameStrategy: { mode: 'free', prefix: '', value: '' },
+        previewFields: [],
         inputs: [{ key: 'id', label: 'id', kind: 'default', type: 'any', multiple: false }],
         outputs: [{ key: 'out', label: 'out', kind: 'default', type: 'any', multiple: true }],
         controls: [],
@@ -86,6 +86,7 @@ describe('blueprint graph contract', () => {
         icon: '',
         theme: 'default',
         nameStrategy: { mode: 'free', prefix: '', value: '' },
+        previewFields: [],
         inputs: [{ key: 'from', label: 'from', kind: 'any', type: 'any', multiple: false }],
         outputs: [],
         controls: [],
@@ -100,6 +101,7 @@ describe('blueprint graph contract', () => {
         type: 'http',
         display: 'minimal',
         icon: 'H',
+        previewFields: ['method', { key: 'url', label: 'Endpoint' }],
         controls: [
           { id: 'url', type: 'url', label: 'URL', placeholder: 'https://example.test' },
           { name: 'method', type: 'select', options: ['GET', { value: 'post', label: 'POST' }] },
@@ -110,6 +112,10 @@ describe('blueprint graph contract', () => {
       type: 'http',
       display: 'minimal',
       icon: 'H',
+      previewFields: [
+        { key: 'method', label: '' },
+        { key: 'url', label: 'Endpoint' },
+      ],
       controls: [
         {
           key: 'url',
@@ -667,7 +673,7 @@ describe('blueprint graph contract', () => {
     expect(root.querySelector('[data-blueprint-details-backdrop]').classList.contains('hidden')).toBe(true);
   });
 
-  it('reads property input values and applies node data through refreshed Rete preview controls', () => {
+  it('reads property input values and applies node data for refreshed previews', () => {
     document.body.innerHTML = `
       <input type="checkbox" checked data-blueprint-property-input="enabled">
       <input type="number" value="7" data-blueprint-property-input="count">
@@ -675,19 +681,12 @@ describe('blueprint graph contract', () => {
       <input type="text" value="ops" data-blueprint-property-input="channel">
     `;
     const node = {
-      __blueprint: { data: { enabled: false } },
-      controls: {
-        count: createReadonlyPreviewControl(2, 0),
-        channel: createReadonlyPreviewControl('support', 1),
+      __blueprint: {
+        data: { enabled: false, count: 2, channel: 'support' },
+        previewFields: [{ key: 'count', label: 'Count' }, { key: 'channel', label: 'Channel' }],
       },
-      addControl(key, control) {
-        Object.defineProperty(this.controls, key, { value: control, enumerable: true, configurable: true });
-      },
-      removeControl(key) {
-        delete this.controls[key];
-      },
+      controls: {},
     };
-    const previousCountControl = node.controls.count;
 
     expect(readPropertyInputValue(document.querySelector('[data-blueprint-property-input="enabled"]'))).toBe(true);
     expect(readPropertyInputValue(document.querySelector('[data-blueprint-property-input="count"]'))).toBe(7);
@@ -697,10 +696,11 @@ describe('blueprint graph contract', () => {
     applyNodeData(node, { enabled: true, count: 7, channel: 'ops' });
 
     expect(node.__blueprint.data).toEqual({ enabled: true, count: 7, channel: 'ops' });
-    expect(node.controls.count).not.toBe(previousCountControl);
-    expect(node.controls.count.readonly).toBe(true);
-    expect(node.controls.count.value).toBe(7);
-    expect(node.controls.channel.value).toBe('ops');
+    expect(node.__blueprint.previewFields).toEqual([
+      { key: 'count', label: 'Count' },
+      { key: 'channel', label: 'Channel' },
+    ]);
+    expect(node.controls).toEqual({});
   });
 
   it('collects the latest property input values before applying edits', () => {
@@ -718,13 +718,14 @@ describe('blueprint graph contract', () => {
     });
   });
 
-  it('creates Rete preview controls without mutating node data inline', () => {
+  it('creates nodes with non-editable preview field metadata instead of inline Rete controls', () => {
     const normalizedTypes = normalizeNodeTypes([
       {
         type: 'action',
         inputs: [{ key: 'in', kind: 'flow' }],
         outputs: [{ key: 'out', kind: 'flow' }],
         defaults: { title: 'Notify', priority: 2 },
+        previewFields: ['priority'],
       },
     ]);
     const node = createNode({
@@ -735,9 +736,8 @@ describe('blueprint graph contract', () => {
     }, normalizedTypes, createSocketRegistry(normalizedTypes), false);
 
     expect(node.__blueprint.data).toEqual({ title: 'Notify', priority: 2 });
-    expect(node.controls.title.readonly).toBe(true);
-    expect(node.controls.priority.readonly).toBe(true);
-    expect(node.controls.title.change).toBeUndefined();
+    expect(node.__blueprint.previewFields).toEqual([{ key: 'priority', label: '' }]);
+    expect(node.controls).toEqual({});
   });
 
   it('builds palette groups and node factories for Rete context menu and dock', () => {

@@ -51,6 +51,7 @@
             'theme' => 'primary',
             'icon' => 'EV',
             'nameStrategy' => ['mode' => 'auto', 'prefix' => 'Trigger'],
+            'previewFields' => [['key' => 'event', 'label' => 'Event']],
             'outputs' => [['key' => 'next', 'label' => 'Next', 'kind' => 'flow', 'type' => 'flow', 'multiple' => true]],
             'controls' => [
                 ['key' => 'event', 'label' => 'Event', 'type' => 'select', 'options' => ['Order paid', 'Order shipped', 'Refund created']],
@@ -65,6 +66,7 @@
             'theme' => 'info',
             'icon' => 'FN',
             'nameStrategy' => ['mode' => 'auto', 'prefix' => 'Transform'],
+            'previewFields' => [['key' => 'mapping', 'label' => 'Map']],
             'inputs' => [['key' => 'in', 'label' => 'In', 'kind' => 'flow', 'type' => 'flow']],
             'outputs' => [['key' => 'out', 'label' => 'Out', 'kind' => 'flow', 'type' => 'flow', 'multiple' => true]],
             'controls' => [
@@ -80,6 +82,10 @@
             'theme' => 'warning',
             'icon' => 'IF',
             'nameStrategy' => ['mode' => 'auto', 'prefix' => 'Condition'],
+            'previewFields' => [
+                ['key' => 'priority', 'label' => 'Priority'],
+                ['key' => 'rule', 'label' => 'Rule'],
+            ],
             'inputs' => [['key' => 'in', 'label' => 'In', 'kind' => 'flow', 'type' => 'flow']],
             'outputs' => [
                 ['key' => 'success', 'label' => 'Success', 'kind' => 'flow', 'type' => 'flow', 'multiple' => true],
@@ -99,6 +105,10 @@
             'theme' => 'success',
             'icon' => 'OP',
             'nameStrategy' => ['mode' => 'preset', 'value' => __('daisy::components.blueprint_template.workflow.notify')],
+            'previewFields' => [
+                ['key' => 'urgent', 'label' => 'Urgent'],
+                ['key' => 'channel', 'label' => 'Channel'],
+            ],
             'inputs' => [['key' => 'in', 'label' => 'In', 'kind' => 'flow', 'type' => 'flow']],
             'controls' => [
                 ['key' => 'channel', 'label' => 'Channel', 'type' => 'select', 'options' => ['ops', 'support', 'finance']],
@@ -112,9 +122,9 @@
         'version' => 1,
         'nodes' => [
             ['id' => 'trigger-1', 'type' => 'trigger', 'label' => __('daisy::components.blueprint_template.workflow.order_paid'), 'position' => ['x' => 40, 'y' => 90], 'data' => ['event' => 'Order paid']],
-            ['id' => 'transform-1', 'type' => 'transform', 'label' => __('daisy::components.blueprint_template.workflow.normalize_order'), 'position' => ['x' => 340, 'y' => 90], 'data' => ['mapping' => 'normalize-order']],
-            ['id' => 'branch-1', 'type' => 'branch', 'label' => __('daisy::components.blueprint_template.workflow.priority_check'), 'position' => ['x' => 640, 'y' => 90], 'data' => ['rule' => 'total > 500']],
-            ['id' => 'notify-1', 'type' => 'notify', 'label' => __('daisy::components.blueprint_template.workflow.notify_ops'), 'position' => ['x' => 940, 'y' => 90], 'data' => ['channel' => 'ops']],
+            ['id' => 'transform-1', 'type' => 'transform', 'label' => __('daisy::components.blueprint_template.workflow.normalize_order'), 'position' => ['x' => 300, 'y' => 90], 'data' => ['mapping' => 'normalize-order']],
+            ['id' => 'branch-1', 'type' => 'branch', 'label' => __('daisy::components.blueprint_template.workflow.priority_check'), 'position' => ['x' => 560, 'y' => 90], 'data' => ['rule' => 'total > 500']],
+            ['id' => 'notify-1', 'type' => 'notify', 'label' => __('daisy::components.blueprint_template.workflow.notify_ops'), 'position' => ['x' => 820, 'y' => 90], 'data' => ['channel' => 'ops']],
         ],
         'edges' => [
             ['id' => 'edge-1', 'source' => 'trigger-1', 'sourcePort' => 'next', 'target' => 'transform-1', 'targetPort' => 'in', 'data' => []],

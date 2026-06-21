@@ -412,6 +412,16 @@ async function init(root) {
     });
   });
 
+  root.querySelectorAll('[data-blueprint-palette-menu]').forEach((palette) => {
+    palette.addEventListener('pointerdown', () => {
+      suppressDetailsToggle = true;
+      closeDetails();
+      window.setTimeout(() => {
+        suppressDetailsToggle = false;
+      }, 0);
+    });
+  });
+
   root.querySelectorAll('[data-blueprint-action]').forEach((button) => {
     button.addEventListener('click', () => {
       if (readonly && button.dataset.blueprintAction !== 'fit' && button.dataset.blueprintAction !== 'arrange') {

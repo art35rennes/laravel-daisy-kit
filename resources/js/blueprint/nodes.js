@@ -42,50 +42,18 @@ export function createSocketRegistry(nodeTypes) {
 
 export const getControlType = (value) => (typeof value === 'number' ? 'number' : 'text');
 
-export function createReadonlyPreviewControl(value, index = 0) {
-  const controlType = getControlType(value);
-  const control = new ClassicPreset.InputControl(controlType, {
-    readonly: true,
-    initial: value,
-  });
-
-  control.index = index;
-
-  return control;
-}
-
-export function syncNodePreviewControls(node) {
-  Object.entries(node.__blueprint?.data || {}).forEach(([key, value], index) => {
-    if (value === null || value === undefined || typeof value === 'object') {
-      if (node.controls?.[key]) {
-        node.removeControl(key);
-      }
-
-      return;
-    }
-
-    if (node.controls?.[key]) {
-      node.removeControl(key);
-    }
-
-    node.addControl(key, createReadonlyPreviewControl(value, index));
-  });
-}
-
 export function createNode(nodeData, nodeTypes, sockets, readonly) {
   const typeDefinition = nodeTypes.find((nodeType) => nodeType.type === nodeData.type) || nodeTypes[0];
   const node = new ClassicPreset.Node(nodeData.label || typeDefinition?.label || nodeData.type);
-  const scalarControls = Object.values(nodeData.data || {})
-    .filter((value) => value !== null && value !== undefined && typeof value !== 'object')
-    .length;
+  const previewRows = getPreviewFields(typeDefinition, nodeData.data || {}).length;
   const portRows = (typeDefinition?.inputs?.length || 0) + (typeDefinition?.outputs?.length || 0);
   const display = typeDefinition?.display || 'detailed';
 
   node.id = nodeData.id;
-  node.width = display === 'minimal' ? 188 : 220;
+  node.width = display === 'minimal' ? 188 : 248;
   node.height = display === 'minimal'
-    ? Math.max(74, 52 + portRows * 24)
-    : Math.max(132, 46 + portRows * 34 + scalarControls * 42);
+    ? Math.max(74, 52 + Math.max(portRows, 1) * 18)
+    : Math.max(126, 54 + previewRows * 34, 88 + Math.max(portRows, 1) * 28);
   node.__blueprint = {
     type: nodeData.type,
     category: typeDefinition?.category || '',
@@ -95,6 +63,7 @@ export function createNode(nodeData, nodeTypes, sockets, readonly) {
     theme: normalizeBlueprintTheme(typeDefinition?.theme),
     nameStrategy: typeDefinition?.nameStrategy || { mode: 'free' },
     controls: typeDefinition?.controls || [],
+    previewFields: getPreviewFields(typeDefinition, nodeData.data || {}),
     data: { ...(nodeData.data || {}) },
   };
 
@@ -106,9 +75,28 @@ export function createNode(nodeData, nodeTypes, sockets, readonly) {
     node.addOutput(output.key, new ClassicPreset.Output(sockets.get(output.kind), output.label, Boolean(output.multiple)));
   });
 
-  syncNodePreviewControls(node);
-
   return node;
+}
+
+export function getPreviewFields(typeDefinition, data = {}) {
+  if (typeDefinition?.previewFields?.length) {
+    return typeDefinition.previewFields;
+  }
+
+  const controls = typeDefinition?.controls || [];
+  const fields = controls
+    .filter((control) => data[control.key] !== null && data[control.key] !== undefined && typeof data[control.key] !== 'object')
+    .slice(0, 3)
+    .map((control) => ({ key: control.key, label: control.label || control.key }));
+
+  if (fields.length) {
+    return fields;
+  }
+
+  return Object.entries(data)
+    .filter(([, value]) => value !== null && value !== undefined && typeof value !== 'object')
+    .slice(0, 3)
+    .map(([key]) => ({ key, label: key }));
 }
 
 export function createConnection(edge, source, target) {

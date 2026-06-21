@@ -49,6 +49,7 @@ export function normalizeNodeTypes(nodeTypes = []) {
         display: normalizeNodeDisplay(source.display ?? source.variant),
         icon: stringOrFallback(source.icon ?? source.brandIcon),
         nameStrategy: normalizeNameStrategy(source.nameStrategy ?? source.naming),
+        previewFields: normalizePreviewFields(source.previewFields ?? source.displayFields ?? source.visibleFields ?? source.preview),
         inputs: normalizePorts(source.inputs, false),
         outputs: normalizePorts(source.outputs, true),
         controls,
@@ -56,6 +57,28 @@ export function normalizeNodeTypes(nodeTypes = []) {
           ...controlDefaults(controls),
           ...asPlainObject(source.defaults),
         },
+      };
+    })
+    .filter(Boolean);
+}
+
+export function normalizePreviewFields(fields = []) {
+  return asArray(fields)
+    .map((field) => {
+      if (typeof field === 'string') {
+        return { key: stringOrFallback(field), label: '' };
+      }
+
+      const source = asPlainObject(field);
+      const key = stringOrFallback(source.key ?? source.name ?? source.id);
+
+      if (!key) {
+        return null;
+      }
+
+      return {
+        key,
+        label: stringOrFallback(source.label),
       };
     })
     .filter(Boolean);
