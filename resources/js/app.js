@@ -194,10 +194,8 @@ onReady(async () => {
     aside.addEventListener('focusout', closeHoverSidebar);
   });
 
-  // Greffon copyable : chargement direct (léger, s'initialise automatiquement)
-  await dynamicImportIf('.copyable', async () => {
-    await import('./modules/copyable');
-  });
+  // Greffon copyable : chargement direct (léger, observe aussi les contenus injectés après le boot)
+  await import('./modules/copyable');
 
   // Importation du composant web Cally (calendrier) si nécessaire
   await dynamicImportIf('.cally, calendar-date, calendar-range, calendar-month, calendar-multi', async () => {
