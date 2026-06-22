@@ -1,1 +1,0 @@
-import{n as e}from"./rolldown-runtime-CMxvf4Kt.js";function t(e){e.addEventListener(`click`,t=>{let n=t.target.closest(`[data-alert-dismiss]`);!n||!e.contains(n)||(t.preventDefault(),e.remove())})}e((()=>{}))();export{t as default};
