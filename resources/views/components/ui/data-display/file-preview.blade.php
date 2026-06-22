@@ -21,6 +21,9 @@
     'maxTextPreviewBytes' => 65536,
     'docxPreview' => true,
     'layout' => 'card',
+    'actionOnly' => false,
+    'actionButtonClass' => null,
+    'buttonClass' => null,
     'showCompactPreview' => true,
     'actionOrder' => ['preview', 'download'],
     'modalActionOrder' => ['download', 'close', 'open'],
@@ -205,6 +208,14 @@
     $modalOpenButtonClass = $buttonVariantClass($modalOpenButtonVariant);
     $modalCloseButtonClass = $buttonVariantClass($modalCloseButtonVariant ?? $closeButtonVariant);
     $isCompactList = $layout === 'compact-list';
+    $isActionOnly = filter_var($actionOnly, FILTER_VALIDATE_BOOLEAN)
+        || in_array($layout, ['action', 'action-only', 'standalone-action'], true);
+    $previewActionButtonClass = is_string($actionButtonClass) && trim($actionButtonClass) !== ''
+        ? trim($actionButtonClass)
+        : (is_string($buttonClass) && trim($buttonClass) !== '' ? trim($buttonClass) : '');
+    $standaloneActionButtonClass = $previewActionButtonClass !== ''
+        ? $previewActionButtonClass
+        : 'btn-ghost btn-xs btn-circle h-8 min-h-8 w-8';
 
     $icons = [
         'image' => 'bi-image',
@@ -235,12 +246,19 @@
     @include('daisy::components.partials.assets')
 @endonce
 
-<div
-    {{ $attributes->merge(['class' => 'file-preview inline-block w-full '.($isCompactList ? '' : $sizes['container']), 'data-module' => 'file-preview']) }}
+<{{ $isActionOnly ? 'span' : 'div' }}
+    {{ $attributes->merge(['class' => $isActionOnly ? 'file-preview inline-flex items-center' : 'file-preview inline-block w-full '.($isCompactList ? '' : $sizes['container']), 'data-module' => 'file-preview']) }}
     data-file-preview-type="{{ $previewType }}"
     data-log-preview-errors="{{ $logPreviewErrors ? 'true' : 'false' }}"
 >
-    @if($isPreviewable && $previewMode === 'inline')
+    @if($isActionOnly)
+        @include('daisy::partials.file-preview-actions', [
+            'buttonSize' => '',
+            'buttonExtraClass' => '',
+            'previewActionButtonClass' => $standaloneActionButtonClass,
+            'actions' => ['preview'],
+        ])
+    @elseif($isPreviewable && $previewMode === 'inline')
         <div class="overflow-hidden rounded-box card-border bg-base-100">
             <div class="flex items-center justify-between gap-3 border-b border-base-300/60 bg-base-200/70 px-3 py-2">
                 <div class="min-w-0">
@@ -330,4 +348,4 @@
             </form>
         </dialog>
     @endif
-</div>
+</{{ $isActionOnly ? 'span' : 'div' }}>

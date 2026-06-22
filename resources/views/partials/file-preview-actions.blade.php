@@ -2,21 +2,23 @@
     $actions = $actions ?? ['preview', 'download'];
     $buttonSize = $buttonSize ?? 'btn-xs';
     $buttonExtraClass = $buttonExtraClass ?? '';
+    $previewActionButtonClass = $previewActionButtonClass ?? '';
     $labelled = $labelled ?? false;
     $modalActions = $modalActions ?? false;
     $iconOnlyClass = $labelled ? '' : 'btn-circle';
+    $previewExtraClass = trim($buttonExtraClass.' '.$previewActionButtonClass);
 @endphp
 
 @foreach($actions as $action)
     @if($action === 'preview' && $isPreviewable && $previewMode === 'modal' && ! $modalActions)
-        <button type="button" class="btn {{ $previewButtonClass }} {{ $buttonSize }} {{ $iconOnlyClass }} {{ $buttonExtraClass }}" data-file-preview-open-modal="{{ $modalId }}" title="{{ $previewLabel }}">
+        <button type="button" class="btn {{ $previewButtonClass }} {{ $buttonSize }} {{ $iconOnlyClass }} {{ $previewExtraClass }}" data-file-preview-open-modal="{{ $modalId }}" aria-label="{{ $previewLabel }}" title="{{ $previewLabel }}">
             <x-icon name="bi-eye" class="w-4 h-4 {{ $labelled ? 'mr-2' : '' }}" />
             @if($labelled)
                 {{ $previewLabel }}
             @endif
         </button>
     @elseif($action === 'preview' && $isPreviewable && $previewMode === 'download' && ! $modalActions)
-        <a href="{{ $resolvedPreviewUrl }}" target="_blank" rel="noopener noreferrer" class="btn {{ $openButtonClass }} {{ $buttonSize }} {{ $iconOnlyClass }} {{ $buttonExtraClass }}" title="{{ $openLabel }}">
+        <a href="{{ $resolvedPreviewUrl }}" target="_blank" rel="noopener noreferrer" class="btn {{ $openButtonClass }} {{ $buttonSize }} {{ $iconOnlyClass }} {{ $previewExtraClass }}" aria-label="{{ $openLabel }}" title="{{ $openLabel }}">
             <x-icon name="bi-box-arrow-up-right" class="w-4 h-4 {{ $labelled ? 'mr-2' : '' }}" />
             @if($labelled)
                 {{ $openLabel }}
