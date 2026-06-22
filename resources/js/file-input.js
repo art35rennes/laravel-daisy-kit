@@ -159,9 +159,12 @@ function initFileInput(root) {
   const drop = root.querySelector('[data-dropzone]');
   const previews = root.querySelector('[data-previews]');
   const wantPreview = root.dataset.preview === 'true';
-  // Forcer le mode multiple si demandé côté wrapper (fiable même si l'attribut manque)
-  if (root.dataset.multiple === 'true') {
+  const isMultiple = root.dataset.multiple === 'true';
+  // Synchronise le mode multiple demandé côté wrapper avec l'input natif.
+  if (isMultiple) {
     try { input.multiple = true; } catch (_) {}
+  } else {
+    try { input.multiple = false; } catch (_) {}
   }
 
   // Analyse de l'attribut accept pour filtrer les fichiers autorisés
@@ -203,7 +206,7 @@ function initFileInput(root) {
   function render(files) {
     if (!wantPreview || !previews) return;
     previews.innerHTML = '';
-    Array.from(files || []).forEach((f) => previews.append(createPreview(f)));
+    Array.from(files || []).slice(0, isMultiple ? undefined : 1).forEach((f) => previews.append(createPreview(f)));
   }
 
   // Clique sur la zone DnD = déclenche le sélecteur de fichiers natif
@@ -238,10 +241,10 @@ function initFileInput(root) {
         if (window.DataTransfer) {
           const d = new DataTransfer();
           // Si multiple, on conserve les fichiers déjà sélectionnés puis on ajoute les nouveaux
-          if (input.multiple && input.files?.length) {
+          if (isMultiple && input.files?.length) {
             Array.from(input.files).forEach((f) => d.items.add(f));
           }
-          if (input.multiple) accepted.forEach((f) => d.items.add(f));
+          if (isMultiple) accepted.forEach((f) => d.items.add(f));
           else d.items.add(accepted[0]);
           input.files = d.files;
         }
@@ -256,8 +259,8 @@ function initFileInput(root) {
   // Lors d'un changement de fichiers (sélection manuelle ou drop)
   input.addEventListener('change', () => {
     // Filtrage supplémentaire côté JS si accept est défini
-    if (acceptTokens.length && input.files?.length && window.DataTransfer) {
-      const filtered = Array.from(input.files).filter(matchesAccept);
+    if (input.files?.length && window.DataTransfer) {
+      const filtered = Array.from(input.files).filter(matchesAccept).slice(0, isMultiple ? undefined : 1);
       if (filtered.length !== input.files.length) {
         // Remplace la liste des fichiers par ceux acceptés uniquement
         const d = new DataTransfer();
