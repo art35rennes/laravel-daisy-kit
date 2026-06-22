@@ -1,9 +1,9 @@
 {
-    "generated_at": "2026-06-21T21:41:25+00:00",
+    "generated_at": "2026-06-22T08:55:54+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
-        "component_count": 152,
+        "component_count": 155,
         "template_count": 31,
         "excluded_component_template_mirrors": 0
     },
@@ -1255,6 +1255,18 @@
             "props": []
         },
         {
+            "alias": "x-daisy::ui.data-display.description-list",
+            "group": "ui.data-display",
+            "name": "description-list",
+            "relative_path": "resources/views/components/ui/data-display/description-list.blade.php",
+            "props": [
+                "sections",
+                "items",
+                "emptyLabel",
+                "columns"
+            ]
+        },
+        {
             "alias": "x-daisy::ui.data-display.file-preview",
             "group": "ui.data-display",
             "name": "file-preview",
@@ -1282,6 +1294,9 @@
                 "maxTextPreviewBytes",
                 "docxPreview",
                 "layout",
+                "actionOnly",
+                "actionButtonClass",
+                "buttonClass",
                 "showCompactPreview",
                 "actionOrder",
                 "modalActionOrder",
@@ -1509,7 +1524,12 @@
                 "sessionKey",
                 "showErrors",
                 "dismissible",
-                "closeLabel"
+                "closeLabel",
+                "autoDismiss",
+                "autoDismissAfter",
+                "autoDismissMs",
+                "showDismissProgress",
+                "showDismissRemaining"
             ]
         },
         {
@@ -1525,7 +1545,14 @@
                 "text",
                 "inline",
                 "iconInHeading",
-                "horizontalAt"
+                "horizontalAt",
+                "dismissible",
+                "closeLabel",
+                "autoDismiss",
+                "autoDismissAfter",
+                "autoDismissMs",
+                "showDismissProgress",
+                "showDismissRemaining"
             ]
         },
         {
@@ -1687,11 +1714,33 @@
                 "variant",
                 "color",
                 "multiple",
+                "accept",
                 "disabled",
                 "dragdrop",
                 "preview",
                 "dropZoneClass",
+                "dropzoneText",
+                "helpText",
+                "browseText",
                 "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.icon-button",
+            "group": "ui.inputs",
+            "name": "icon-button",
+            "relative_path": "resources/views/components/ui/inputs/icon-button.blade.php",
+            "props": [
+                "icon",
+                "label",
+                "tooltip",
+                "href",
+                "type",
+                "variant",
+                "size",
+                "color",
+                "disabled",
+                "target"
             ]
         },
         {
@@ -2447,6 +2496,25 @@
             ]
         },
         {
+            "alias": "x-daisy::ui.overlay.destructive-confirm",
+            "group": "ui.overlay",
+            "name": "destructive-confirm",
+            "relative_path": "resources/views/components/ui/overlay/destructive-confirm.blade.php",
+            "props": [
+                "id",
+                "title",
+                "message",
+                "detail",
+                "color",
+                "icon",
+                "cancelText",
+                "confirmText",
+                "confirmVariant",
+                "cancelVariant",
+                "module"
+            ]
+        },
+        {
             "alias": "x-daisy::ui.overlay.drawer",
             "group": "ui.overlay",
             "name": "drawer",
@@ -2731,8 +2799,13 @@
                 "maxWidth",
                 "tag",
                 "tooltip",
+                "reveal",
+                "position",
                 "tooltipPosition",
+                "popoverPosition",
+                "onlyWhenTruncated",
                 "tooltipOnlyWhenTruncated",
+                "actionHint",
                 "lines",
                 "title"
             ]
