@@ -152,11 +152,37 @@ it('renders truncate text through its public alias', function () {
 
     expect($html)
         ->toContain('data-tip="REF-2026-000001"')
-        ->toContain('class="tooltip tooltip-top"')
+        ->toContain('tooltip tooltip-top')
         ->toContain('data-module="truncate-text"')
         ->toContain('data-truncate-text-title="REF-2026-000001"')
+        ->toContain('data-truncate-text-reveal="tooltip"')
         ->toContain('class="min-w-0 max-w-48 truncate"')
         ->toContain('REF-2026-000001');
+});
+
+it('renders truncate text with a copyable popover interaction', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.utilities.truncate-text
+            text="ORD-2026-000001 / International customer onboarding reference"
+            max-width="max-w-40"
+            reveal="both"
+            position="bottom"
+            popover-position="right"
+            action-hint
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('data-tip="ORD-2026-000001 / International customer onboarding reference"')
+        ->toContain('tooltip tooltip-bottom')
+        ->toContain('data-truncate-text-reveal="both"')
+        ->toContain('data-truncate-text-only-when-truncated="true"')
+        ->toContain('daisy-truncate-popover')
+        ->toContain('role="dialog"')
+        ->toContain('select-text whitespace-normal break-words')
+        ->toContain('cursor-pointer decoration-dotted underline')
+        ->toContain('left-full')
+        ->toContain('ORD-2026-000001 / International customer onboarding reference');
 });
 
 it('renders multiline truncate text and native title fallback', function () {
