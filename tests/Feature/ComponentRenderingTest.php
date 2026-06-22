@@ -302,9 +302,24 @@ it('renders wysiwyg custom height through a csp safe class', function () {
     ])->render();
 
     expect($html)
+        ->toContain('class="trix-content daisy-wysiwyg-min-height-rem-80"')
         ->toContain('daisy-wysiwyg-min-height-rem-80')
         ->not->toContain('data-daisy-css-min-height')
         ->not->toContain('style=');
+});
+
+it('ships wysiwyg height utilities after trix styles can override defaults', function () {
+    $css = file_get_contents(dirname(__DIR__, 2).'/resources/css/app.css');
+
+    expect($css)
+        ->toContain('trix-editor[class*="daisy-wysiwyg-min-height-"]')
+        ->toContain('min-height: var(--daisy-wysiwyg-min-height);')
+        ->toContain('.trix-content ol')
+        ->toContain('list-style-type: decimal;')
+        ->toContain('.trix-content ul')
+        ->toContain('list-style-type: disc;')
+        ->toContain('--daisy-wysiwyg-min-height: calc(--value(integer) * 1px);')
+        ->toContain('--daisy-wysiwyg-min-height: calc(--value(integer) * 0.25rem);');
 });
 
 it('renders localized default labels for public UI components', function () {
