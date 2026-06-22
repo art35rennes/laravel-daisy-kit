@@ -102,6 +102,13 @@ function themeExtension(root) {
   return currentIsDark(root) ? oneDark : syntaxHighlighting(defaultHighlightStyle);
 }
 
+function cspNonce() {
+  return [...document.querySelectorAll('script[nonce], style[nonce]')]
+    .map(element => element.nonce || element.getAttribute('nonce') || '')
+    .find(nonce => nonce.trim() !== '')
+    ?.trim() || '';
+}
+
 // Compartments pour permettre la reconfiguration dynamique des extensions
 const languageCompartment = new Compartment();
 const readOnlyCompartment = new Compartment();
@@ -141,9 +148,12 @@ function createEditor(root) {
   const readOnly = root.dataset.readonly === 'true';
   const lang = root.dataset.language || 'javascript';
   const tabSize = parseInt(root.dataset.tabSize || '2', 10);
+  const nonce = cspNonce();
   
   // Configuration des extensions CodeMirror
   const extensions = [
+    ...(nonce ? [EditorView.cspNonce.of(nonce)] : []),
+
     // Interface utilisateur
     lineNumbers(),
     highlightActiveLineGutter(),
