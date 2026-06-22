@@ -254,6 +254,39 @@ it('renders alert session messages validation errors roles and dismiss controls'
         ->toContain('Invalid email');
 });
 
+it('renders alert auto dismiss progress and remaining time controls', function () {
+    $html = View::make('daisy::components.ui.feedback.alert', [
+        'color' => 'success',
+        'text' => 'Saved',
+        'autoDismissAfter' => 4,
+        'showDismissRemaining' => true,
+    ])->render();
+
+    expect($html)
+        ->toContain('data-module="alert-dismiss"')
+        ->toContain('data-alert-auto-dismiss="4000"')
+        ->toContain('data-alert-progress')
+        ->toContain('data-alert-remaining')
+        ->toContain('4s')
+        ->not->toContain('style=')
+        ->not->toContain('onclick=');
+});
+
+it('passes callout auto dismiss options to the underlying alert', function () {
+    $html = View::make('daisy::components.ui.feedback.callout', [
+        'variant' => 'success',
+        'text' => 'Saved',
+        'autoDismissMs' => 2500,
+        'dismissible' => true,
+    ])->render();
+
+    expect($html)
+        ->toContain('data-module="alert-dismiss"')
+        ->toContain('data-alert-auto-dismiss="2500"')
+        ->toContain('data-alert-dismiss')
+        ->toContain('progress-success');
+});
+
 it('does not render an alert when the session flash is empty', function () {
     session()->flash('status', '');
 
@@ -498,6 +531,7 @@ it('renders CRUD layout and section ergonomic slots', function () {
         ->toContain('Aside help')
         ->toContain('lg:sticky lg:top-6')
         ->toContain('justify-between')
+        ->toContain('space-y-12')
         ->toContain('Save all');
 });
 

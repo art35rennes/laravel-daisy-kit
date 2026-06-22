@@ -14,6 +14,13 @@
     'iconInHeading' => false,
     // Responsive: vertical par défaut, horizontal à partir du breakpoint donné
     'horizontalAt' => 'sm',
+    'dismissible' => false,
+    'closeLabel' => 'Close alert',
+    'autoDismiss' => false,
+    'autoDismissAfter' => null,
+    'autoDismissMs' => null,
+    'showDismissProgress' => true,
+    'showDismissRemaining' => false,
 ])
 
 @php
@@ -36,6 +43,13 @@
     :heading="$heading"
     :text="$text"
     :horizontalAt="$horizontalAt"
+    :dismissible="$dismissible"
+    :closeLabel="$closeLabel"
+    :autoDismiss="$autoDismiss"
+    :autoDismissAfter="$autoDismissAfter"
+    :autoDismissMs="$autoDismissMs"
+    :showDismissProgress="$showDismissProgress"
+    :showDismissRemaining="$showDismissRemaining"
     {{ $attributes->merge(['class' => $classes]) }}>
     @if($text === null)
         {{ $slot }}
@@ -47,5 +61,4 @@
         <x-slot:controls>{{ $controls }}</x-slot:controls>
     @endisset
 </x-daisy::ui.feedback.alert>
-
 

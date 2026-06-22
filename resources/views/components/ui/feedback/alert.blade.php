@@ -17,6 +17,11 @@
     'showErrors' => false,
     'dismissible' => false,
     'closeLabel' => 'Close alert',
+    'autoDismiss' => false,
+    'autoDismissAfter' => null,
+    'autoDismissMs' => null,
+    'showDismissProgress' => true,
+    'showDismissRemaining' => false,
 ])
 
 @php
@@ -60,6 +65,16 @@
         ? $laravelErrors->all()
         : [];
     $bodyText = filled($text) ? $text : (filled($sessionMessage) ? $sessionMessage : null);
+    $progressClass = [
+        'neutral' => 'progress-neutral',
+        'primary' => 'progress-primary',
+        'secondary' => 'progress-secondary',
+        'accent' => 'progress-accent',
+        'info' => 'progress-info',
+        'success' => 'progress-success',
+        'warning' => 'progress-warning',
+        'error' => 'progress-error',
+    ][$colorKey] ?? 'progress-neutral';
 
     $hasSlotContent = isset($slot)
         && (method_exists($slot, 'isEmpty') ? ! $slot->isEmpty() : filled(trim((string) $slot)));
@@ -68,6 +83,22 @@
         || filled($bodyText)
         || $errorMessages !== []
         || $hasSlotContent;
+
+    $autoDismissDelay = null;
+    if (is_numeric($autoDismissMs) && (int) $autoDismissMs > 0) {
+        $autoDismissDelay = (int) $autoDismissMs;
+    } elseif (is_numeric($autoDismissAfter) && (float) $autoDismissAfter > 0) {
+        $autoDismissDelay = (int) round((float) $autoDismissAfter * 1000);
+    } elseif (is_numeric($autoDismiss) && (float) $autoDismiss > 0) {
+        $autoDismissDelay = (int) round((float) $autoDismiss * 1000);
+    } elseif ($autoDismiss === true) {
+        $autoDismissDelay = 5000;
+    }
+
+    $isAutoDismissible = ! is_null($autoDismissDelay);
+    if ($isAutoDismissible) {
+        $classes .= ' relative overflow-hidden';
+    }
 
     // Gestion de l'icône pour éviter l'erreur BladeUI\Icons\Svg
     $iconHtml = null;
@@ -87,7 +118,8 @@
 @if ($hasContent)
     <div
         {{ $attributes->merge(['role' => $resolvedRole, 'class' => $classes]) }}
-        @if ($dismissible) data-module="alert-dismiss" @endif
+        @if ($dismissible || $isAutoDismissible) data-module="alert-dismiss" @endif
+        @if ($isAutoDismissible) data-alert-auto-dismiss="{{ $autoDismissDelay }}" @endif
     >
         @if ($iconHtml && ! $iconInHeading)
             <span class="shrink-0">{!! $iconHtml !!}</span>
@@ -130,6 +162,20 @@
             >
                 <x-icon name="bi-x" class="w-4 h-4" />
             </button>
+        @endif
+        @if ($isAutoDismissible && $showDismissRemaining)
+            <span class="text-xs tabular-nums opacity-70" aria-live="polite" data-alert-remaining>
+                {{ (int) ceil($autoDismissDelay / 1000) }}s
+            </span>
+        @endif
+        @if ($isAutoDismissible && $showDismissProgress)
+            <progress
+                class="progress {{ $progressClass }} absolute inset-x-0 bottom-0 h-1 w-full rounded-none"
+                max="100"
+                value="100"
+                aria-hidden="true"
+                data-alert-progress
+            ></progress>
         @endif
     </div>
 @endif
