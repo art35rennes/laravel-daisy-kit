@@ -43,6 +43,8 @@
 @source inline("daisy-tree-indent-{0..64}");
 @source inline("daisy-wysiwyg-min-height-px-{10..1200..10}");
 @source inline("daisy-wysiwyg-min-height-rem-{1..400}");
+@source inline("space-y-{1..16}");
+@source inline("gap-{1..12}");
 
 @plugin "daisyui" {
   themes: light --default, dark --prefersdark, cupcake, bumblebee, emerald, corporate, synthwave, retro, cyberpunk, valentine, halloween, garden, forest, aqua, lofi, pastel, fantasy, wireframe, black, luxury, dracula, cmyk, autumn, business, acid, lemonade, night, coffee, winter;
@@ -52,6 +54,18 @@
 @import "gridstack/dist/gridstack.min.css";
 @import "trix/dist/trix.css";
 @import "./table.css";
+
+trix-editor[class*="daisy-wysiwyg-min-height-"] {
+  min-height: var(--daisy-wysiwyg-min-height);
+}
+
+.trix-content ol {
+  list-style-type: decimal;
+}
+
+.trix-content ul {
+  list-style-type: disc;
+}
 
 .popover-root {
   position: relative;
@@ -63,6 +77,9 @@
 
 /* Code editor */
 .code-editor .cm-editor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   height: 100%;
 }
 
@@ -76,7 +93,34 @@
 }
 
 .code-editor .cm-scroller {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  height: 100%;
   overflow: auto;
+}
+
+.code-editor .cm-content {
+  box-sizing: border-box;
+  flex-grow: 2;
+  flex-shrink: 0;
+  min-height: 100%;
+  margin: 0;
+  padding: 4px 0;
+  white-space: pre;
+  outline: none;
+}
+
+.code-editor .cm-line {
+  display: block;
+  padding: 0 2px 0 6px;
+}
+
+.code-editor .cm-gutters {
+  display: flex;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  min-height: 100%;
 }
 
 .daisy-chart {
@@ -493,11 +537,11 @@
 }
 
 @utility daisy-wysiwyg-min-height-px-* {
-  min-height: calc(--value(integer) * 1px);
+  --daisy-wysiwyg-min-height: calc(--value(integer) * 1px);
 }
 
 @utility daisy-wysiwyg-min-height-rem-* {
-  min-height: calc(--value(integer) * 0.25rem);
+  --daisy-wysiwyg-min-height: calc(--value(integer) * 0.25rem);
 }
 
 .daisy-embed-ratio-1x1 {
