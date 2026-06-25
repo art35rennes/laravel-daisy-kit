@@ -2,16 +2,29 @@
  * DaisyKit Core - Bootstrap et router pour les modules JS
  */
 
+import initAlertDismiss from '../modules/alert-dismiss.js';
+import initNotify, {
+    clearNotifications,
+    dismissNotification,
+    installNotifyGlobals,
+    notify,
+} from '../modules/notify.js';
+
 // Utilitaires partagés
 export * from './utils/dom.js';
 export * from './utils/events.js';
 export * from './utils/aria.js';
+export { clearNotifications, dismissNotification, installNotifyGlobals, notify };
 
 // Scanner et initialiser les modules
 const initialized = new WeakSet();
 
 // Précharger tous les modules disponibles pour que Vite puisse les résoudre
-const modulesGlob = import.meta.glob('../modules/*.js', { eager: false });
+const modulesGlob = import.meta.glob([
+    '../modules/*.js',
+    '!../modules/alert-dismiss.js',
+    '!../modules/notify.js',
+], { eager: false });
 const formsModulesGlob = import.meta.glob('../modules/forms/*.js', { eager: false });
 const rootModulesGlob = import.meta.glob(['../*.js', '!../app.js', '!../bootstrap.js'], { eager: false });
 const folderModulesGlob = import.meta.glob(['../*/index.js', '!../kit/index.js'], { eager: false });
@@ -33,6 +46,8 @@ const modulesMap = createModuleMap(modulesGlob, (path) => {
     const match = path.match(/\/modules\/([^/]+)\.js$/);
     return match ? match[1] : null;
 });
+modulesMap.set('alert-dismiss', () => Promise.resolve({ default: initAlertDismiss }));
+modulesMap.set('notify', () => Promise.resolve({ default: initNotify }));
 
 const rootModulesMap = createModuleMap(rootModulesGlob, (path) => {
     const match = path.match(/\/([^/]+)\.js$/);
@@ -210,6 +225,7 @@ if (typeof MutationObserver !== 'undefined') {
 // Exposer globalement pour usage manuel
 if (typeof window !== 'undefined') {
     window.DaisyKit = {
+        ...(window.DaisyKit || {}),
         init,
         reinit,
     };

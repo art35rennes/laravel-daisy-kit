@@ -3,6 +3,9 @@
     'position' => 'end',
     'horizontal' => null, // start|center|end
     'vertical' => 'bottom', // top|middle|bottom
+    'triggerable' => false,
+    'limit' => 4,
+    'module' => null,
 ])
 
 @php
@@ -20,8 +23,20 @@
     ][$vertical] ?? 'toast-bottom';
 @endphp
 
-<div {{ $attributes->merge(['class' => 'toast '.$horizontalClass.' '.$verticalClass]) }}>
-    {{ $slot }}
+@php
+    $dataAttributes = [];
+
+    if ($triggerable) {
+        $dataAttributes = [
+            'data-module' => $module ?? 'notify',
+            'data-daisy-notify-container' => 'true',
+            'data-notify-limit' => $limit,
+            'data-notify-horizontal' => $h,
+            'data-notify-vertical' => $vertical,
+        ];
+    }
+@endphp
+
+<div {{ $attributes->merge(['class' => 'toast '.$horizontalClass.' '.$verticalClass])->merge($dataAttributes) }}>
+    {{ $slot ?? '' }}
 </div>
-
-
