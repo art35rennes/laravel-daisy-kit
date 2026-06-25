@@ -1,6 +1,6 @@
 {
-  "_blueprint-DBRVxCnY.js": {
-    "file": "assets/blueprint-DBRVxCnY.js",
+  "_blueprint-DJIbYgH7.js": {
+    "file": "assets/blueprint-DJIbYgH7.js",
     "name": "blueprint",
     "imports": [
       "_rolldown-runtime-CMxvf4Kt.js",
@@ -9,6 +9,7 @@
       "_blueprint-engine-Dv6sC_C3.js"
     ],
     "dynamicImports": [
+      "resources/js/lazy-editors.js",
       "_blueprint-layout-BOog3gkz.js",
       "_blueprint-engine-Dv6sC_C3.js"
     ]
@@ -56,8 +57,8 @@
       "_trix-DxQbyuLj.js"
     ]
   },
-  "_code-editor-BIzYZH_J.js": {
-    "file": "assets/code-editor-BIzYZH_J.js",
+  "_code-editor-DJBR0q46.js": {
+    "file": "assets/code-editor-DJBR0q46.js",
     "name": "code-editor",
     "imports": [
       "_rolldown-runtime-CMxvf4Kt.js",
@@ -71,23 +72,23 @@
       "_rolldown-runtime-CMxvf4Kt.js"
     ]
   },
-  "_form-kit-CDvUNHWQ.js": {
-    "file": "assets/form-kit-CDvUNHWQ.js",
+  "_form-kit-NfXFmxyB.js": {
+    "file": "assets/form-kit-NfXFmxyB.js",
     "name": "form-kit",
     "imports": [
       "_rolldown-runtime-CMxvf4Kt.js",
-      "_jsonata-CalouHQL.js"
+      "_jsonata-Dmf-DN7X.js"
     ]
   },
-  "_jsonata-CalouHQL.js": {
-    "file": "assets/jsonata-CalouHQL.js",
+  "_jsonata-Dmf-DN7X.js": {
+    "file": "assets/jsonata-Dmf-DN7X.js",
     "name": "jsonata",
     "imports": [
       "_rolldown-runtime-CMxvf4Kt.js",
       "resources/js/app.js"
     ],
     "dynamicImports": [
-      "_jsonata-CalouHQL.js"
+      "_jsonata-Dmf-DN7X.js"
     ]
   },
   "_leaflet-cluster-B7GrQgcQ.js": {
@@ -104,15 +105,15 @@
     "file": "assets/leaflet-cluster-DBCi3mq9.css",
     "src": "_leaflet-cluster-DBCi3mq9.css"
   },
-  "_leaflet-core-BVmeY8j9.js": {
-    "file": "assets/leaflet-core-BVmeY8j9.js",
+  "_leaflet-core-CtiNtfAh.js": {
+    "file": "assets/leaflet-core-CtiNtfAh.js",
     "name": "leaflet-core",
     "imports": [
       "_rolldown-runtime-CMxvf4Kt.js",
       "resources/js/app.js"
     ],
     "dynamicImports": [
-      "_leaflet-core-BVmeY8j9.js",
+      "_leaflet-core-CtiNtfAh.js",
       "_leaflet-draw-CLLL3LBi.js",
       "_leaflet-vendor-CjbauxFb.js",
       "_leaflet-cluster-B7GrQgcQ.js"
@@ -202,7 +203,7 @@
     "src": "node_modules/leaflet/dist/images/marker-shadow.png"
   },
   "resources/css/app.css": {
-    "file": "assets/app-pHkBTL7a.css",
+    "file": "assets/app-V9KbBw4f.css",
     "name": "app",
     "names": [
       "app.css"
@@ -211,7 +212,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-BTgXGENF.js",
+    "file": "assets/app-DArvGd7a.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -220,8 +221,7 @@
       "_vendor-vcnHIpS1.js"
     ],
     "dynamicImports": [
-      "resources/js/modules/alert-dismiss.js",
-      "_blueprint-DBRVxCnY.js",
+      "_blueprint-DJIbYgH7.js",
       "resources/js/modules/changelog-filter.js",
       "resources/js/modules/chat-drawer.js",
       "resources/js/modules/chat-input.js",
@@ -236,6 +236,7 @@
       "resources/js/modules/menu-filter.js",
       "resources/js/modules/mockup-code.js",
       "resources/js/modules/modal.js",
+      "resources/js/modules/multi-select.js",
       "resources/js/modules/notifications.js",
       "resources/js/modules/ordered-list.js",
       "resources/js/modules/otp-code.js",
@@ -251,7 +252,7 @@
       "resources/js/modules/forms/inline.js",
       "resources/js/modules/forms/tabs.js",
       "resources/js/modules/forms/wizard.js",
-      "_code-editor-BIzYZH_J.js",
+      "_code-editor-DJBR0q46.js",
       "resources/js/color-picker.js",
       "resources/js/file-input.js",
       "resources/js/input-mask.js",
@@ -270,13 +271,13 @@
       "resources/js/calendar-full/index.js",
       "_chart-DAS9eOBf.js",
       "resources/js/chat/index.js",
-      "_form-kit-CDvUNHWQ.js",
-      "_leaflet-core-BVmeY8j9.js",
+      "_form-kit-NfXFmxyB.js",
+      "_leaflet-core-CtiNtfAh.js",
       "_calendar-CvsrXDMn.js"
     ]
   },
   "resources/js/calendar-full/index.js": {
-    "file": "assets/calendar-full-Ca5r8nDl.js",
+    "file": "assets/calendar-full-Bcefac84.js",
     "name": "calendar-full",
     "src": "resources/js/calendar-full/index.js",
     "isDynamicEntry": true,
@@ -286,7 +287,7 @@
     ]
   },
   "resources/js/chat/index.js": {
-    "file": "assets/chat-BUa-BkQr.js",
+    "file": "assets/chat-D9x3T4sP.js",
     "name": "chat",
     "src": "resources/js/chat/index.js",
     "isDynamicEntry": true,
@@ -305,7 +306,7 @@
     ]
   },
   "resources/js/file-input.js": {
-    "file": "assets/file-input-Dwm0GEkG.js",
+    "file": "assets/file-input-C_6jO8M5.js",
     "name": "file-input",
     "src": "resources/js/file-input.js",
     "isDynamicEntry": true,
@@ -327,7 +328,7 @@
     ]
   },
   "resources/js/lazy-editors.js": {
-    "file": "assets/lazy-editors-DK1pI-La.js",
+    "file": "assets/lazy-editors-gPrlDCqZ.js",
     "name": "lazy-editors",
     "src": "resources/js/lazy-editors.js",
     "isDynamicEntry": true,
@@ -336,7 +337,7 @@
       "resources/js/app.js"
     ],
     "dynamicImports": [
-      "_code-editor-BIzYZH_J.js",
+      "_code-editor-DJBR0q46.js",
       "_trix-DxQbyuLj.js"
     ]
   },
@@ -353,15 +354,6 @@
     "file": "assets/media-gallery-BL9l1hZM.js",
     "name": "media-gallery",
     "src": "resources/js/media-gallery.js",
-    "isDynamicEntry": true,
-    "imports": [
-      "_rolldown-runtime-CMxvf4Kt.js"
-    ]
-  },
-  "resources/js/modules/alert-dismiss.js": {
-    "file": "assets/alert-dismiss-B3kGfg-H.js",
-    "name": "alert-dismiss",
-    "src": "resources/js/modules/alert-dismiss.js",
     "isDynamicEntry": true,
     "imports": [
       "_rolldown-runtime-CMxvf4Kt.js"
@@ -386,7 +378,7 @@
     ]
   },
   "resources/js/modules/chat-input.js": {
-    "file": "assets/chat-input-DHhFlPGF.js",
+    "file": "assets/chat-input-WAHoDNwz.js",
     "name": "chat-input",
     "src": "resources/js/modules/chat-input.js",
     "isDynamicEntry": true,
@@ -396,7 +388,7 @@
     ]
   },
   "resources/js/modules/chat-messages.js": {
-    "file": "assets/chat-messages-EWfLNZIP.js",
+    "file": "assets/chat-messages-B-w1D-CN.js",
     "name": "chat-messages",
     "src": "resources/js/modules/chat-messages.js",
     "isDynamicEntry": true,
@@ -406,7 +398,7 @@
     ]
   },
   "resources/js/modules/chat-widget.js": {
-    "file": "assets/chat-widget-CXjNLslD.js",
+    "file": "assets/chat-widget-CVaJWoWg.js",
     "name": "chat-widget",
     "src": "resources/js/modules/chat-widget.js",
     "isDynamicEntry": true,
@@ -444,7 +436,7 @@
     ]
   },
   "resources/js/modules/file-preview.js": {
-    "file": "assets/file-preview-lBFn1JSN.js",
+    "file": "assets/file-preview-CDwS4-6q.js",
     "name": "file-preview",
     "src": "resources/js/modules/file-preview.js",
     "isDynamicEntry": true,
@@ -466,14 +458,14 @@
     ]
   },
   "resources/js/modules/form-viewer.js": {
-    "file": "assets/form-viewer-BxN7gvnA.js",
+    "file": "assets/form-viewer-GCTz6YF5.js",
     "name": "form-viewer",
     "src": "resources/js/modules/form-viewer.js",
     "isDynamicEntry": true,
     "imports": [
       "_rolldown-runtime-CMxvf4Kt.js",
       "resources/js/color-picker.js",
-      "_form-kit-CDvUNHWQ.js"
+      "_form-kit-NfXFmxyB.js"
     ]
   },
   "resources/js/modules/forms/inline.js": {
@@ -530,8 +522,17 @@
       "_rolldown-runtime-CMxvf4Kt.js"
     ]
   },
+  "resources/js/modules/multi-select.js": {
+    "file": "assets/multi-select-DLFufg9V.js",
+    "name": "multi-select",
+    "src": "resources/js/modules/multi-select.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-CMxvf4Kt.js"
+    ]
+  },
   "resources/js/modules/notifications.js": {
-    "file": "assets/notifications-C-I86Zu-.js",
+    "file": "assets/notifications-qJ1j28LK.js",
     "name": "notifications",
     "src": "resources/js/modules/notifications.js",
     "isDynamicEntry": true,
@@ -641,7 +642,7 @@
     ]
   },
   "resources/js/onboarding.js": {
-    "file": "assets/onboarding-BxyjnYg1.js",
+    "file": "assets/onboarding-B8auxXsF.js",
     "name": "onboarding",
     "src": "resources/js/onboarding.js",
     "isDynamicEntry": true,
@@ -681,7 +682,7 @@
     ]
   },
   "resources/js/scrollspy.js": {
-    "file": "assets/scrollspy-CE_xFxTm.js",
+    "file": "assets/scrollspy-DLxiroe6.js",
     "name": "scrollspy",
     "src": "resources/js/scrollspy.js",
     "isDynamicEntry": true,
@@ -699,7 +700,7 @@
     ]
   },
   "resources/js/table-kit.js": {
-    "file": "assets/table-kit-BIL2Hw74.js",
+    "file": "assets/table-kit-u3qPd9Pb.js",
     "name": "table-kit",
     "src": "resources/js/table-kit.js",
     "isDynamicEntry": true,
