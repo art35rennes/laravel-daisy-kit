@@ -105,15 +105,23 @@ function computeActive(nav) {
   if (!items.length || !targets.length) return;
   // Récupère le rectangle visible du conteneur (ou du document)
   const rootRect = (container || document.documentElement).getBoundingClientRect();
-  let best = null; let bestRatio = -1;
+  const offset = parseInt(nav.dataset.offset || '0', 10) || 0;
+  const activationLine = rootRect.top + offset + 1;
+  let current = null;
+  let next = null;
   targets.forEach((t) => {
     const r = t.getBoundingClientRect();
-    // Calcule la hauteur visible de la section dans le conteneur
-    const visibleH = Math.max(0, Math.min(r.bottom, rootRect.bottom) - Math.max(r.top, rootRect.top));
-    const ratio = visibleH / Math.max(1, r.height);
-    // On choisit la section la plus visible (ratio le plus élevé)
-    if (r.bottom > rootRect.top && r.top < rootRect.bottom && ratio >= bestRatio) { best = t; bestRatio = ratio; }
+    if (r.bottom <= rootRect.top || r.top >= rootRect.bottom) return;
+
+    if (r.top <= activationLine) {
+      if (!current || r.top > current.getBoundingClientRect().top) current = t;
+
+      return;
+    }
+
+    if (!next || r.top < next.getBoundingClientRect().top) next = t;
   });
+  const best = current || next;
   if (best) {
     const cur = items.find((it) => it.target === best);
     if (cur) setActive(nav, cur.a);
