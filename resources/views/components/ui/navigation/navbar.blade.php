@@ -4,6 +4,7 @@
     'text' => null,            // optional text-* token (ex: base-content, primary-content)
     'shadow' => null,          // null|sm|md|lg
     'rounded' => false,
+    'container' => null,
     // Position
     'fixed' => false,
     'fixedPosition' => 'top',  // top|bottom
@@ -25,13 +26,15 @@
 @endphp
 
 <div {{ $attributes->merge(['class' => $classes]) }}>
-    <div class="navbar-start">
-        {{ $start ?? ($brand ?? '') }}
-    </div>
-    <div class="{{ $centerClasses }}">
-        {{ $center ?? ($nav ?? '') }}
-    </div>
-    <div class="navbar-end">
-        {{ $end ?? ($actions ?? '') }}
+    <div class="{{ trim('daisy-navbar-container '.($container ?: '')) }}" @if($container) data-navbar-container @endif>
+        <div class="navbar-start">
+            {{ $start ?? ($brand ?? '') }}
+        </div>
+        <div class="{{ $centerClasses }}">
+            {{ $center ?? ($nav ?? '') }}
+        </div>
+        <div class="navbar-end">
+            {{ $end ?? ($actions ?? '') }}
+        </div>
     </div>
 </div>

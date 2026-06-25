@@ -145,6 +145,36 @@ it('hides sidebar items marked as not visible', function () {
         ->toContain('Health');
 });
 
+it('opens a parent when a child is active without marking the parent active', function () {
+    $html = View::make('daisy::components.ui.navigation.sidebar', [
+        'sections' => [
+            [
+                'items' => [
+                    [
+                        'label' => 'Configuration applicative',
+                        'icon' => 'gear',
+                        'children' => [
+                            [
+                                'label' => 'Périmètres',
+                                'href' => '/settings/scopes',
+                                'icon' => 'diagram-3',
+                                'active' => true,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ])->render();
+
+    expect($html)
+        ->toContain('<details open>')
+        ->toContain('class="pt-1" data-sidebar-submenu')
+        ->toContain('aria-label="Configuration applicative" data-sidebar-row>')
+        ->not->toContain('summary class="flex items-center gap-2 menu-active" title="Configuration applicative"')
+        ->toContain('href="/settings/scopes" class="flex items-center gap-2 menu-active"');
+});
+
 it('does not render unsafe sidebar hrefs', function () {
     $html = View::make('daisy::components.ui.navigation.sidebar', [
         'brandHref' => 'javascript:alert(1)',

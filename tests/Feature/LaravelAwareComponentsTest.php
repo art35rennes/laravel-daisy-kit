@@ -138,6 +138,22 @@ it('renders navbar sidebar layout topbar inside drawer content with independent 
         ->and($topbarPosition)->toBeInt()->toBeLessThan($drawerSidePosition);
 });
 
+it('can constrain navbar sidebar layout topbar content inside an inner container', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::layout.navbar-sidebar-layout :show-theme-controller="false" navbar-container="mx-auto max-w-screen-xl px-4">
+            <x-slot:navbarStart><span data-navbar-start>Start</span></x-slot:navbarStart>
+            <x-slot:navbarCenter><span data-navbar-center>Center</span></x-slot:navbarCenter>
+            <x-slot:navbarEnd><span data-navbar-end>End</span></x-slot:navbarEnd>
+            Content
+        </x-daisy::layout.navbar-sidebar-layout>
+    BLADE);
+
+    expect($html)
+        ->toContain('data-navbar-container')
+        ->toContain('daisy-navbar-container mx-auto max-w-screen-xl px-4')
+        ->toContain('data-navbar-sidebar-topbar');
+});
+
 it('renders optional navbar headings before navbar center content', function (string $component) {
     $html = Blade::render(<<<BLADE
         <x-daisy::layout.{$component} :show-theme-controller="false">

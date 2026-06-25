@@ -231,8 +231,9 @@
                     $routeIsActive = $routeNames !== [] && collect($routeNames)->contains(fn ($routeName) => \Illuminate\Support\Facades\Route::currentRouteNamed($routeName));
                     // Détection de la présence d'enfants (sous-menu).
                     $hasChildren = !empty($item['children']);
-                    // Un item est actif s'il est marqué actif ou si un de ses enfants est actif.
-                    $isActive = !empty($item['active']) || $routeIsActive || collect($item['children'] ?? [])->contains(function ($child) {
+                    // Un parent actif ouvre son sous-menu, mais l'état visuel actif reste séparé.
+                    $itemIsActive = !empty($item['active']) || $routeIsActive;
+                    $hasActiveChild = collect($item['children'] ?? [])->contains(function ($child) {
                         if (data_get($child, 'visible', true) === false) {
                             return false;
                         }
@@ -244,18 +245,19 @@
 
                         return ! empty($child['active']) || ($childRouteNames !== [] && collect($childRouteNames)->contains(fn ($routeName) => \Illuminate\Support\Facades\Route::currentRouteNamed($routeName)));
                     });
+                    $isOpen = $itemIsActive || $hasActiveChild;
                 @endphp
                 @if($hasChildren)
                     {{-- Item avec sous-menu : utilise <details> pour le collapse natif --}}
                     <li>
-                        <details {{ $isActive ? 'open' : '' }}>
-                            <summary class="flex items-center {{ $collapsedItemClasses }} {{ $isActive ? 'menu-active' : '' }}" title="{{ __($item['label'] ?? '') }}" aria-label="{{ __($item['label'] ?? '') }}" data-sidebar-row>
+                        <details {{ $isOpen ? 'open' : '' }}>
+                            <summary class="flex items-center {{ $collapsedItemClasses }} {{ $itemIsActive ? 'menu-active' : '' }}" title="{{ __($item['label'] ?? '') }}" aria-label="{{ __($item['label'] ?? '') }}" data-sidebar-row>
                                 @if(!empty($item['icon']))
                                     <x-daisy::ui.advanced.icon :name="$item['icon']" :prefix="$iconPrefix" size="md" />
                                 @endif
                                 <span class="sidebar-label {{ $effectiveCollapsed ? 'hidden' : '' }}">{{ __($item['label'] ?? '') }}</span>
                             </summary>
-                            <ul data-sidebar-submenu aria-hidden="{{ $effectiveCollapsed ? 'true' : 'false' }}">
+                            <ul class="pt-1" data-sidebar-submenu aria-hidden="{{ $effectiveCollapsed ? 'true' : 'false' }}">
                                 @foreach($item['children'] as $child)
                                     @continue(data_get($child, 'visible', true) === false)
                                     @php
@@ -280,7 +282,7 @@
                 @else
                     {{-- Item simple : lien direct sans sous-menu --}}
                     <li>
-                        <a href="{{ $normalizeHref($item['href'] ?? '#') }}" class="flex items-center {{ $collapsedItemClasses }} {{ $isActive ? 'menu-active' : '' }}" title="{{ __($item['label'] ?? '') }}" aria-label="{{ __($item['label'] ?? '') }}" data-sidebar-row>
+                        <a href="{{ $normalizeHref($item['href'] ?? '#') }}" class="flex items-center {{ $collapsedItemClasses }} {{ $itemIsActive ? 'menu-active' : '' }}" title="{{ __($item['label'] ?? '') }}" aria-label="{{ __($item['label'] ?? '') }}" data-sidebar-row>
                             @if(!empty($item['icon']))
                                 <x-daisy::ui.advanced.icon :name="$item['icon']" :prefix="$iconPrefix" size="md" />
                             @endif
