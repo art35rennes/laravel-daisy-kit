@@ -29,7 +29,7 @@
  * Éléments enfants requis:
  * - .cm-host : Conteneur où sera monté l'éditeur CodeMirror
  * - textarea[data-sync] (optionnel) : Champ de formulaire synchronisé avec la valeur
- * - script[data-initial] (optionnel) : Données initiales JSON ({ value: "..." })
+ * - template[data-initial] (optionnel) : Données initiales JSON ({ value: "..." })
  */
 
 // Imports des modules principaux de CodeMirror 6
@@ -109,18 +109,32 @@ function cspNonce() {
     ?.trim() || '';
 }
 
+function nodeTextContent(node) {
+  if (!node) return '';
+
+  if (node.tagName?.toLowerCase() === 'template') {
+    return node.content?.textContent ?? '';
+  }
+
+  return node.textContent ?? '';
+}
+
+function readJsonPayload(root, selector, fallback = {}) {
+  try {
+    const raw = nodeTextContent(root.querySelector(selector)).trim();
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (_) {
+    return fallback;
+  }
+}
+
 // Compartments pour permettre la reconfiguration dynamique des extensions
 const languageCompartment = new Compartment();
 const readOnlyCompartment = new Compartment();
 const themeCompartment = new Compartment();
 
 function readI18n(root) {
-  try {
-    const raw = root.querySelector('script[data-i18n]')?.textContent?.trim();
-    return raw ? JSON.parse(raw) : {};
-  } catch (_) {
-    return {};
-  }
+  return readJsonPayload(root, 'template[data-i18n], script[data-i18n]', {});
 }
 
 function phrase(root, key, fallback = key) {
@@ -135,14 +149,8 @@ function createEditor(root) {
   const host = root.querySelector('.cm-host');
   root.__cmI18n = readI18n(root);
   
-  // Lecture des données initiales depuis un script JSON optionnel
-  let initial = {};
-  try {
-    const raw = root.querySelector('script[data-initial]')?.textContent?.trim();
-    initial = raw ? JSON.parse(raw) : {};
-  } catch (e) {
-    initial = {};
-  }
+  // Lecture des données initiales depuis un payload JSON non exécutable.
+  const initial = readJsonPayload(root, 'template[data-initial], script[data-initial]', {});
   
   // Extraction de la configuration depuis les attributs data
   const readOnly = root.dataset.readonly === 'true';
@@ -381,7 +389,7 @@ window.DaisyCodeEditor = {
 
 // Export pour le système data-module (kit/index.js)
 export default init;
-export { init, initAll };
+export { init, initAll, readJsonPayload };
 
 // Auto-initialisation (compatible import tardif)
 if (document.readyState === 'loading') {

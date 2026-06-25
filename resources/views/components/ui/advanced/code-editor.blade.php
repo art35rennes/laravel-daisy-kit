@@ -126,9 +126,9 @@
     @endif
     <div class="cm-host {{ $heightClass }} {{ $fontSizeClass }}"></div>
     <textarea class="hidden" data-sync @if($name) name="{{ $name }}" @endif>{{ $value }}</textarea>
-    <script type="application/json" data-options>{{ json_encode($options) }}</script>
-    <script type="application/json" data-initial>@json(['value' => $value])</script>
-    <script type="application/json" data-i18n>@json($i18n)</script>
+    <template data-options>{{ json_encode($options) }}</template>
+    <template data-initial>@json(['value' => $value])</template>
+    <template data-i18n>@json($i18n)</template>
 </div>
 
 @include('daisy::components.partials.assets')
