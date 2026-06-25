@@ -92,6 +92,24 @@ it('renders an alert component', function () {
         ->toContain('Alert message');
 });
 
+it('renders a triggerable toast notification container', function () {
+    $html = View::make('daisy::components.ui.feedback.toast', [
+        'triggerable' => true,
+        'horizontal' => 'center',
+        'vertical' => 'top',
+        'limit' => 2,
+    ])->render();
+
+    expect($html)
+        ->toContain('toast-top')
+        ->toContain('toast-center')
+        ->toContain('data-module="notify"')
+        ->toContain('data-daisy-notify-container="true"')
+        ->toContain('data-notify-limit="2"')
+        ->toContain('data-notify-horizontal="center"')
+        ->toContain('data-notify-vertical="top"');
+});
+
 it('renders an input component', function () {
     $html = View::make('daisy::components.ui.inputs.input', [
         'attributes' => new ComponentAttributeBag(['placeholder' => 'Type here']),
@@ -149,6 +167,71 @@ it('renders a token-input component with prefilled values and hidden inputs', fu
         ->toContain('name="recipients[]"');
 });
 
+it('renders a multi-select component with selected values and hidden inputs', function () {
+    $html = View::make('daisy::components.ui.inputs.multi-select', [
+        'name' => 'tags',
+        'values' => ['laravel', 'livewire'],
+        'color' => 'primary',
+        'options' => [
+            ['value' => 'laravel', 'label' => 'Laravel'],
+            ['value' => 'livewire', 'label' => 'Livewire'],
+            ['value' => 'alpine', 'label' => 'Alpine.js'],
+        ],
+    ])->render();
+
+    expect($html)
+        ->toContain('data-module="multi-select"')
+        ->toContain('data-submit-name="tags[]"')
+        ->toContain('select daisy-multi-select relative flex')
+        ->toContain('w-10 min-w-8 flex-1 basis-10')
+        ->toContain('min-h-10')
+        ->toContain('badge-primary')
+        ->toContain('data-multi-select-item')
+        ->toContain('name="tags[]"')
+        ->toContain('value="laravel"')
+        ->toContain('value="livewire"')
+        ->toContain('aria-multiselectable="true"');
+});
+
+it('sizes multi-select minimum height consistently with the requested select size', function () {
+    $html = View::make('daisy::components.ui.inputs.multi-select', [
+        'name' => 'statuses',
+        'size' => 'sm',
+        'options' => [
+            ['value' => 'todo', 'label' => 'To do'],
+        ],
+    ])->render();
+
+    expect($html)
+        ->toContain('select-sm')
+        ->toContain('min-h-8')
+        ->toContain('py-1')
+        ->not->toContain('min-h-12');
+});
+
+it('renders a readonly multi-select as display-only tokens', function () {
+    $html = View::make('daisy::components.ui.inputs.multi-select', [
+        'name' => 'roles',
+        'readonly' => true,
+        'values' => ['app-admin'],
+        'options' => [
+            ['value' => 'app-admin', 'label' => 'app-admin'],
+        ],
+    ])->render();
+
+    expect($html)
+        ->toContain('data-readonly="true"')
+        ->toContain('daisy-multi-select-readonly')
+        ->toContain('cursor-default pr-3')
+        ->toContain('readonly')
+        ->toContain('tabindex="-1"')
+        ->toContain('data-multi-select-item')
+        ->toContain('name="roles[]"')
+        ->not->toContain('data-multi-select-remove')
+        ->not->toContain('aria-label="Remove app-admin"')
+        ->not->toContain('cursor-text pr-10');
+});
+
 it('renders localized code-editor toolbar and CodeMirror phrases', function () {
     app()->setLocale('fr');
 
@@ -168,6 +251,11 @@ it('renders localized code-editor toolbar and CodeMirror phrases', function () {
         ->toContain('Rechercher')
         ->toContain('"regexp"')
         ->toContain('data-i18n')
+        ->toContain('<template data-initial>')
+        ->toContain('<template data-i18n>')
+        ->not->toContain('<script type="application/json" data-options>')
+        ->not->toContain('<script type="application/json" data-initial>')
+        ->not->toContain('<script type="application/json" data-i18n>')
         ->not->toContain('data-daisy-css-width')
         ->not->toContain('data-daisy-css-height')
         ->not->toContain('data-daisy-css-font-size');
@@ -213,6 +301,8 @@ it('renders the blueprint editor contract with node types and sync field', funct
         ->toContain('data-mode="workflow"')
         ->toContain('data-readonly="false"')
         ->toContain('data-details="true"')
+        ->toContain('data-details-mode="panel"')
+        ->toContain('data-fullscreen="true"')
         ->toContain('data-dock="false"')
         ->toContain('data-auto-link="true"')
         ->toContain('data-fit-on-init="true"')
@@ -220,9 +310,10 @@ it('renders the blueprint editor contract with node types and sync field', funct
         ->toContain('data-blueprint-canvas')
         ->toContain('data-blueprint-add-node="source"')
         ->toContain('data-blueprint-palette-menu')
-        ->toContain('peer checkbox checkbox-xs')
-        ->toContain('peer-checked:block')
+        ->not->toContain('peer checkbox checkbox-xs')
+        ->not->toContain('peer-checked:block')
         ->toContain('Add node')
+        ->toContain('data-blueprint-action="fullscreen"')
         ->not->toContain('<details open')
         ->not->toContain('collapse collapse-arrow')
         ->not->toContain('data-blueprint-palette-sidebar')
@@ -244,6 +335,24 @@ it('renders the blueprint editor contract with node types and sync field', funct
         ->toContain('Source')
         ->toContain('Sink')
         ->not->toContain('style=');
+});
+
+it('renders blueprint modal details mode for larger property forms', function () {
+    $html = View::make('daisy::components.ui.advanced.blueprint', [
+        'detailsMode' => 'modal',
+        'fullscreen' => true,
+        'nodeTypes' => [
+            ['type' => 'workflow-step', 'label' => 'Workflow step'],
+        ],
+    ])->render();
+
+    expect($html)
+        ->toContain('data-details-mode="modal"')
+        ->toContain('class="modal hidden"')
+        ->toContain('modal-box flex')
+        ->toContain('data-blueprint-details-backdrop')
+        ->toContain('data-blueprint-action="fullscreen"')
+        ->not->toContain('daisy-blueprint-details-panel absolute');
 });
 
 it('renders blueprint view mode without mutation controls', function () {
@@ -318,6 +427,10 @@ it('ships wysiwyg height utilities after trix styles can override defaults', fun
         ->toContain('list-style-type: decimal;')
         ->toContain('.trix-content ul')
         ->toContain('list-style-type: disc;')
+        ->toContain('.daisy-blueprint-wysiwyg trix-toolbar .trix-button-row')
+        ->toContain('flex-wrap: wrap;')
+        ->toContain('.daisy-blueprint-wysiwyg .trix-dialog')
+        ->toContain('position: static;')
         ->toContain('--daisy-wysiwyg-min-height: calc(--value(integer) * 1px);')
         ->toContain('--daisy-wysiwyg-min-height: calc(--value(integer) * 0.25rem);');
 });
@@ -409,6 +522,10 @@ it('renders conservative default pacing for autocomplete controls', function () 
         'name' => 'recipients',
         'endpoint' => '/users/autocomplete',
     ])->render();
+    $multiSelect = View::make('daisy::components.ui.inputs.multi-select', [
+        'name' => 'tags',
+        'endpoint' => '/tags/autocomplete',
+    ])->render();
 
     expect($select)
         ->toContain('data-debounce="500"')
@@ -418,6 +535,11 @@ it('renders conservative default pacing for autocomplete controls', function () 
     expect($tokenInput)
         ->toContain('data-debounce="500"')
         ->toContain('data-min-chars="3"');
+
+    expect($multiSelect)
+        ->toContain('data-debounce="500"')
+        ->toContain('data-min-chars="3"')
+        ->toContain('data-endpoint="/tags/autocomplete"');
 });
 
 it('does not render unsafe tab hrefs', function () {
