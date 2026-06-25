@@ -33,35 +33,87 @@ function updateProgress(element, remaining, delay) {
 }
 
 function initAutoDismiss(element, delay) {
-    const startedAt = Date.now();
-    const interval = window.setInterval(() => {
-        if (! element.isConnected) {
-            window.clearInterval(interval);
-            window.clearTimeout(timeout);
+    let remaining = delay;
+    let startedAt = Date.now();
+    let interval = null;
+    let timeout = null;
+    let dismissed = false;
+
+    const clearTimers = () => {
+        window.clearInterval(interval);
+        window.clearTimeout(timeout);
+        interval = null;
+        timeout = null;
+    };
+
+    const finish = () => {
+        clearTimers();
+        updateProgress(element, 0, delay);
+        dismiss(element);
+    };
+
+    const pause = () => {
+        if (dismissed || ! interval || ! timeout) {
+            return;
+        }
+
+        remaining -= Date.now() - startedAt;
+        clearTimers();
+        updateProgress(element, remaining, delay);
+    };
+
+    const schedule = () => {
+        if (dismissed || remaining <= 0) {
+            finish();
 
             return;
         }
 
-        const remaining = delay - (Date.now() - startedAt);
+        startedAt = Date.now();
+        interval = window.setInterval(() => {
+            if (! element.isConnected) {
+                clearTimers();
 
-        updateProgress(element, remaining, delay);
+                return;
+            }
 
-        if (remaining <= 0) {
-            window.clearInterval(interval);
-            dismiss(element);
+            const currentRemaining = remaining - (Date.now() - startedAt);
+
+            updateProgress(element, currentRemaining, delay);
+
+            if (currentRemaining <= 0) {
+                finish();
+            }
+        }, Math.min(MIN_PROGRESS_INTERVAL, delay));
+
+        timeout = window.setTimeout(finish, remaining);
+    };
+
+    const resume = () => {
+        if (! element.isConnected) {
+            return;
         }
-    }, Math.min(MIN_PROGRESS_INTERVAL, delay));
 
-    const timeout = window.setTimeout(() => {
-        window.clearInterval(interval);
-        updateProgress(element, 0, delay);
-        dismiss(element);
-    }, delay);
+        if (dismissed || interval || timeout) {
+            return;
+        }
+
+        schedule();
+    };
 
     element.addEventListener('daisy:alert-dismiss', () => {
-        window.clearInterval(interval);
-        window.clearTimeout(timeout);
+        dismissed = true;
+        clearTimers();
     }, { once: true });
+
+    if (element.dataset.alertPauseOnHover === 'true') {
+        element.addEventListener('pointerenter', pause);
+        element.addEventListener('focusin', pause);
+        element.addEventListener('pointerleave', resume);
+        element.addEventListener('focusout', resume);
+    }
+
+    schedule();
 }
 
 /**

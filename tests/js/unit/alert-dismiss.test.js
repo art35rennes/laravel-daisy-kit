@@ -74,4 +74,29 @@ describe('alert dismiss module', () => {
 
         expect(alert.isConnected).toBe(false);
     });
+
+    it('pauses and resumes auto dismiss when configured', () => {
+        document.body.innerHTML = `
+            <div data-module="alert-dismiss" data-alert-auto-dismiss="2000" data-alert-pause-on-hover="true">
+                <progress max="100" value="100" data-alert-progress></progress>
+            </div>
+        `;
+
+        const alert = document.querySelector('[data-module="alert-dismiss"]');
+        const progress = alert.querySelector('[data-alert-progress]');
+
+        initAlertDismiss(alert);
+
+        vi.advanceTimersByTime(1000);
+        alert.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
+        vi.advanceTimersByTime(3000);
+
+        expect(alert.isConnected).toBe(true);
+        expect(progress.value).toBe(50);
+
+        alert.dispatchEvent(new PointerEvent('pointerleave', { bubbles: true }));
+        vi.advanceTimersByTime(1000);
+
+        expect(alert.isConnected).toBe(false);
+    });
 });
