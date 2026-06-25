@@ -7,24 +7,32 @@ import {
   applyClientFilters,
   applyExternalRefreshState,
   buildRequestPayload,
+  buildSelectionDetail,
+  buildSelectionActionPayload,
   buildServerRequest,
   buildSpatieRequestParams,
+  createFilterSignature,
   getColumnClasses,
   getColumnWrapperClasses,
   getPersistedStateKey,
+  getSelectionFeedbackNote,
   isTextSearchReady,
   mergeState,
   normalizeColumns,
   normalizeConfig,
   normalizeInitialState,
+  normalizeSelectionState,
   normalizeServerResponse,
   normalizeSpatieResponse,
   parseConfig,
   parseStateFromLocalStorage,
   parseStateFromUrl,
   resolveSearchInputValue,
+  resetSelectionState,
   serializeRequestPayload,
   serializeStateToParams,
+  toggleRowSelection,
+  toggleVisibleRowsSelection,
   toggleSorting,
 } from '../../../resources/js/table-kit.js';
 
@@ -124,6 +132,13 @@ describe('table-kit helpers', () => {
         name: false,
         email: true,
       },
+      selection: {
+        selectedIds: [],
+        excludedIds: [],
+        allFilteredSelected: false,
+        selectionScope: 'page',
+        filterSignature: '',
+      },
     });
   });
 
@@ -212,6 +227,13 @@ describe('table-kit helpers', () => {
       globalFilter: '',
       columnFilters: [{ id: 'status', type: 'text', value: 'active' }],
       columnVisibility: { name: true, status: true },
+      selection: {
+        selectedIds: [],
+        excludedIds: [],
+        allFilteredSelected: false,
+        selectionScope: 'page',
+        filterSignature: '',
+      },
     });
   });
 
@@ -243,6 +265,179 @@ describe('table-kit helpers', () => {
 
     expect(config.externalFilters).toBe(true);
     expect(config.livewireMode).toBe('morph');
+  });
+
+  it('normalizes selection config and initial state', () => {
+    const config = normalizeConfig({
+      selection: 'multiple',
+      rowKey: 'uuid',
+      columns: [{ key: 'name', label: 'Name' }],
+      initialState: {
+        selection: {
+          selectedIds: [1, '2', null],
+          excludedIds: ['3'],
+          allFilteredSelected: true,
+          selectionScope: 'filtered',
+          filterSignature: 'saved',
+        },
+      },
+    });
+
+    expect(config.selection).toMatchObject({
+      enabled: true,
+      mode: 'multiple',
+      rowKey: 'uuid',
+    });
+    expect(config.initialState.selection).toEqual({
+      selectedIds: [],
+      excludedIds: ['3'],
+      allFilteredSelected: true,
+      selectionScope: 'filtered',
+      filterSignature: 'saved',
+    });
+  });
+
+  it('toggles row and visible page selection without losing off-page ids', () => {
+    const config = normalizeConfig({
+      selection: 'multiple',
+      rowKey: 'id',
+      columns: [{ key: 'name', label: 'Name' }],
+    });
+    const state = structuredClone(config.initialState);
+    const visibleRows = [{ id: 1 }, { id: 2 }];
+
+    toggleRowSelection(state, config, { id: 1 });
+    expect(state.selection.selectedIds).toEqual(['1']);
+
+    toggleVisibleRowsSelection(state, config, visibleRows, true);
+    expect(state.selection.selectedIds).toEqual(['1', '2']);
+
+    state.selection.selectedIds.push('99');
+    toggleVisibleRowsSelection(state, config, visibleRows, false);
+    expect(state.selection.selectedIds).toEqual(['99']);
+  });
+
+  it('resets selection state when filters or search change', () => {
+    const selection = normalizeSelectionState({
+      selectedIds: ['1'],
+      excludedIds: ['2'],
+      allFilteredSelected: true,
+      selectionScope: 'filtered',
+      filterSignature: 'abc',
+    });
+
+    expect(resetSelectionState(selection)).toEqual({
+      selectedIds: [],
+      excludedIds: [],
+      allFilteredSelected: false,
+      selectionScope: 'page',
+      filterSignature: '',
+    });
+  });
+
+  it('builds explicit and filtered bulk action payloads', () => {
+    const config = normalizeConfig({
+      selection: 'multiple',
+      rowKey: 'id',
+      columns: [{ key: 'name', label: 'Name', sortable: true, filterable: true, filter: { type: 'text' } }],
+    });
+    const tableState = {
+      ...structuredClone(config.initialState),
+      sorting: [{ id: 'name', desc: true }],
+      globalFilter: 'jane',
+      columnFilters: [{ id: 'name', type: 'text', value: 'ja' }],
+      selection: {
+        selectedIds: ['1'],
+        excludedIds: [],
+        allFilteredSelected: false,
+        selectionScope: 'page',
+        filterSignature: '',
+      },
+    };
+
+    expect(buildSelectionActionPayload(config, tableState)).toEqual({
+      mode: 'ids',
+      ids: ['1'],
+    });
+
+    tableState.selection = {
+      selectedIds: [],
+      excludedIds: ['2'],
+      allFilteredSelected: true,
+      selectionScope: 'filtered',
+      filterSignature: createFilterSignature(tableState),
+    };
+
+    expect(buildSelectionActionPayload(config, tableState)).toEqual({
+      mode: 'filtered',
+      filters: [{ id: 'name', type: 'text', value: 'ja' }],
+      sorting: [{ id: 'name', desc: true }],
+      globalFilter: 'jane',
+      excludedIds: ['2'],
+    });
+  });
+
+  it('uses global filtered feedback only while no rows are excluded', () => {
+    const labels = {
+      allFilteredRowsSelected: 'All filtered results are selected',
+      selectedOffPageCount: ':count selected off page',
+    };
+
+    expect(getSelectionFeedbackNote({
+      allFilteredSelected: true,
+      excludedCount: 1,
+      offPageCount: 6,
+      visibleSelectedCount: 4,
+      visibleRowsCount: 5,
+    }, labels)).toBe('6 selected off page');
+
+    expect(getSelectionFeedbackNote({
+      allFilteredSelected: true,
+      excludedCount: 0,
+      offPageCount: 7,
+      visibleSelectedCount: 5,
+      visibleRowsCount: 5,
+    }, labels)).toBe('All filtered results are selected');
+  });
+
+  it('builds a complete selection detail for custom selection bars', () => {
+    const config = normalizeConfig({
+      selection: 'multiple',
+      rowKey: 'id',
+      columns: [{ key: 'name', label: 'Name', sortable: true, filterable: true, filter: { type: 'text' } }],
+    });
+    const context = {
+      config,
+      state: {
+        ...structuredClone(config.initialState),
+        sorting: [{ id: 'name', desc: false }],
+        pagination: { pageIndex: 1, pageSize: 10 },
+        globalFilter: 'jane',
+        selection: {
+          selectedIds: ['1', '2', '9'],
+          excludedIds: [],
+          allFilteredSelected: false,
+          selectionScope: 'page',
+          filterSignature: '',
+        },
+      },
+    };
+
+    expect(buildSelectionDetail(context, [{ id: 1, name: 'Jane' }, { id: 2, name: 'Janet' }])).toMatchObject({
+      selectedIds: ['1', '2', '9'],
+      selectedCount: 3,
+      visibleSelectedCount: 2,
+      offPageCount: 1,
+      actionPayload: {
+        mode: 'ids',
+        ids: ['1', '2', '9'],
+      },
+      tableState: {
+        sorting: [{ id: 'name', desc: false }],
+        pagination: { pageIndex: 1, pageSize: 10 },
+        globalFilter: 'jane',
+      },
+    });
   });
 
   it('waits for enough characters before applying text search', () => {
@@ -398,7 +593,48 @@ describe('table-kit helpers', () => {
       globalFilter: 'jane',
       columnFilters: [{ id: 'status', type: 'select', value: 'active' }],
       columnVisibility: { name: true, status: true },
+      selection: {
+        selectedIds: [],
+        excludedIds: [],
+        allFilteredSelected: false,
+        selectionScope: 'page',
+        filterSignature: '',
+      },
     });
+
+    global.window = originalWindow;
+  });
+
+  it('hydrates spatie filters submitted as bracket arrays from external forms', () => {
+    const originalWindow = global.window;
+
+    global.window = {
+      location: {
+        search: '?filter%5Bstatus%5D%5B%5D=toSpecify&filter%5Bstatus%5D%5B%5D=finished&filter%5Bcompliance%5D%5B%5D=conforme&page%5Bnumber%5D=1&page%5Bsize%5D=20',
+      },
+    };
+
+    const config = normalizeConfig({
+      mode: 'server',
+      serverAdapter: 'spatie-query-builder',
+      endpoint: '/interventions',
+      columns: [
+        { key: 'status', label: 'Status', filterable: true, filterKey: 'status', filter: { type: 'text' } },
+        { key: 'compliance', label: 'Compliance', filterable: true, filterKey: 'compliance', filter: { type: 'text' } },
+      ],
+      initialState: {
+        pagination: { pageIndex: 0, pageSize: 20 },
+      },
+    });
+
+    const merged = mergeState(config.initialState, parseStateFromUrl(config), config);
+
+    expect(merged.columnFilters).toEqual([
+      { id: 'status', type: 'text', value: 'toSpecify,finished' },
+      { id: 'compliance', type: 'text', value: 'conforme' },
+    ]);
+    expect(serializeStateToParams(config, merged).toString()).toContain('filter%5Bstatus%5D=toSpecify%2Cfinished');
+    expect(serializeStateToParams(config, merged).toString()).toContain('filter%5Bcompliance%5D=conforme');
 
     global.window = originalWindow;
   });

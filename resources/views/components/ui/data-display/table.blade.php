@@ -16,6 +16,8 @@
     'filterDebounce' => 500,
     'minSearchChars' => 3,
     'columnVisibility' => false,
+    'selection' => 'none',
+    'rowKey' => null,
     'tableLayout' => 'auto',
     'minWidth' => null,
     'scrollX' => 'auto',
@@ -46,12 +48,16 @@
     $resolvedToolbarLayout = in_array($toolbarLayout, ['default', 'split', 'hidden'], true) ? $toolbarLayout : 'default';
     $resolvedLivewireMode = in_array($livewireMode, ['ignore', 'morph', 'none'], true) ? $livewireMode : 'none';
     $resolvedExternalFilters = (bool) $externalFilters;
+    $resolvedSelection = $selection === 'multiple' ? 'multiple' : 'none';
+    $resolvedRowKey = is_string($rowKey) && filled($rowKey) ? $rowKey : null;
+    $selectionEnabled = $resolvedSelection === 'multiple';
     $hasToolbarStartSlot = isset($toolbarStart) && $toolbarStart instanceof \Illuminate\View\ComponentSlot;
     $hasToolbarSlot = isset($toolbar) && $toolbar instanceof \Illuminate\View\ComponentSlot;
     $hasToolbarEndSlot = isset($toolbarEnd) && $toolbarEnd instanceof \Illuminate\View\ComponentSlot;
     $hasFiltersSlot = isset($filtersSlot) && $filtersSlot instanceof \Illuminate\View\ComponentSlot;
     $hasActionsSlot = isset($actions) && $actions instanceof \Illuminate\View\ComponentSlot;
     $hasControlsSlot = isset($controls) && $controls instanceof \Illuminate\View\ComponentSlot;
+    $hasBulkActionsSlot = isset($bulkActions) && $bulkActions instanceof \Illuminate\View\ComponentSlot;
 
     if ($resolvedMode === 'server' && blank($endpoint)) {
         throw new InvalidArgumentException('The table component requires an endpoint prop when mode is set to server.');
@@ -59,6 +65,10 @@
 
     if ($resolvedMode !== 'server' && $resolvedServerAdapter !== null) {
         throw new InvalidArgumentException('The table component only allows a serverAdapter when mode is set to server.');
+    }
+
+    if ($selectionEnabled && blank($resolvedRowKey)) {
+        throw new InvalidArgumentException('The table component requires a non-empty rowKey prop when selection is set to multiple.');
     }
 
     $sizeMap = ['xs', 'sm', 'md', 'lg', 'xl'];
@@ -376,6 +386,21 @@
 
             return $carry;
         }, []),
+        'selection' => [
+            'selectedIds' => collect(data_get($initialState, 'selection.selectedIds', []))
+                ->filter(fn ($value) => filled($value))
+                ->map(fn ($value) => (string) $value)
+                ->values()
+                ->all(),
+            'excludedIds' => collect(data_get($initialState, 'selection.excludedIds', []))
+                ->filter(fn ($value) => filled($value))
+                ->map(fn ($value) => (string) $value)
+                ->values()
+                ->all(),
+            'allFilteredSelected' => (bool) data_get($initialState, 'selection.allFilteredSelected', false),
+            'selectionScope' => data_get($initialState, 'selection.selectionScope') === 'filtered' ? 'filtered' : 'page',
+            'filterSignature' => (string) data_get($initialState, 'selection.filterSignature', ''),
+        ],
     ];
 
     $resolvedEndpoint = is_array($endpoint) ? $endpoint : (filled($endpoint) ? ['url' => $endpoint] : null);
@@ -416,6 +441,11 @@
         'filterDebounceMs' => $resolvedFilterDebounce,
         'minSearchChars' => $resolvedMinSearchChars,
         'columnVisibility' => (bool) $columnVisibility,
+        'selection' => [
+            'enabled' => $selectionEnabled,
+            'mode' => $resolvedSelection,
+            'rowKey' => $selectionEnabled ? $resolvedRowKey : null,
+        ],
         'emptyLabel' => $emptyLabel ?: __('daisy::common.no_results'),
         'loadingLabel' => $loadingLabel ?: __('daisy::common.loading'),
         'errorLabel' => $errorLabel ?: __('daisy::components.table_error'),
@@ -429,6 +459,16 @@
             'page' => __('daisy::components.table_page'),
             'filters' => __('daisy::components.table_filters'),
             'all' => __('daisy::common.all'),
+            'selectedRows' => __('daisy::components.selected_rows'),
+            'selectAllRows' => __('daisy::components.select_all_rows'),
+            'selectRow' => __('daisy::components.select_row'),
+            'clearSelection' => __('daisy::components.clear_selection'),
+            'selectFilteredRows' => __('daisy::components.select_filtered_rows'),
+            'selectedCount' => __('daisy::components.selected_count'),
+            'selectedOnPageCount' => __('daisy::components.selected_on_page_count'),
+            'selectedOffPageCount' => __('daisy::components.selected_off_page_count'),
+            'allFilteredRowsSelected' => __('daisy::components.all_filtered_rows_selected'),
+            'selectionResetAfterFilter' => __('daisy::components.selection_reset_after_filter'),
         ],
     ];
 @endphp
@@ -446,7 +486,7 @@
     @if($resolvedToolbarLayout !== 'hidden')
         <div @class([
             'daisy-table-toolbar grid gap-3',
-            'md:grid-cols-[minmax(0,1fr)_auto]' => $resolvedToolbarLayout === 'split',
+            'lg:grid-cols-[minmax(0,1fr)_auto]' => $resolvedToolbarLayout === 'split',
         ])>
             <div class="daisy-table-toolbar-start flex flex-wrap items-center gap-3">
                 @if($hasToolbarStartSlot)
@@ -456,8 +496,8 @@
                 @if($hasToolbarSlot)
                     {{ $toolbar }}
                 @elseif($search)
-                    <label class="input input-sm flex w-full max-w-sm items-center gap-2">
-                        <span class="text-base-content/70">{{ __('daisy::common.search') }}</span>
+                    <label class="input input-bordered input-sm flex w-full max-w-md items-center gap-2 bg-base-100">
+                        <span class="sr-only">{{ __('daisy::common.search') }}</span>
                         <input
                             type="search"
                             class="daisy-table-search grow"
@@ -474,31 +514,61 @@
                 </div>
             @endif
 
+            <div class="daisy-table-controls flex flex-wrap items-center justify-start gap-3 lg:justify-end">
+                @if($hasActionsSlot)
+                    {{ $actions }}
+                @endif
+
+                @if($hasControlsSlot)
+                    {{ $controls }}
+                @endif
+
+                <label class="label flex items-center gap-2 p-0">
+                    <span class="label-text text-sm text-base-content/70">{{ __('daisy::components.rows_per_page') }}</span>
+                    <select class="select select-bordered select-sm bg-base-100" data-table-page-size>
+                        @foreach($resolvedPageSizeOptions as $option)
+                            <option value="{{ $option }}" @selected($option === $resolvedInitialState['pagination']['pageSize'])>{{ $option }}</option>
+                        @endforeach
+                    </select>
+                </label>
+
+                @if($columnVisibility)
+                    <details class="dropdown dropdown-end">
+                        <summary class="btn btn-sm btn-ghost">{{ __('daisy::components.table_columns') }}</summary>
+                        <div class="daisy-table-column-menu dropdown-content rounded-box border border-base-content/10 bg-base-100 p-1 shadow" data-table-column-menu></div>
+                    </details>
+                @endif
+            </div>
+
             @if($hasFiltersSlot)
-                <div class="daisy-table-external-filters">
+                <div class="daisy-table-external-filters lg:col-span-2">
                     {{ $filtersSlot }}
                 </div>
             @endif
 
             @if(! $resolvedExternalFilters && count($resolvedFilters) > 0)
-                <div class="daisy-table-filters grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                <div class="daisy-table-filters rounded-box grid grid-cols-1 gap-3 border border-base-content/10 bg-base-200/40 p-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 lg:col-span-2">
                 @foreach($resolvedFilters as $filter)
                     @if($filter['type'] === 'text')
-                        <label class="input input-sm flex w-full min-w-0 items-center gap-2">
-                            <span class="text-base-content/70">{{ $filter['label'] }}</span>
+                        <label class="form-control w-full min-w-0">
+                            <span class="label px-0 py-0 pb-1">
+                                <span class="label-text text-xs font-medium text-base-content/70">{{ $filter['label'] }}</span>
+                            </span>
                             <input
                                 type="text"
-                                class="grow"
+                                class="input input-bordered input-sm w-full bg-base-100"
                                 data-table-filter="{{ $filter['id'] }}"
                                 data-table-filter-type="text"
                                 placeholder="{{ $filter['label'] }}"
                             >
                         </label>
                     @elseif($filter['type'] === 'select')
-                        <label class="label flex w-full min-w-0 items-center gap-2">
-                            <span class="label-text text-sm text-base-content/70">{{ $filter['label'] }}</span>
+                        <label class="form-control w-full min-w-0">
+                            <span class="label px-0 py-0 pb-1">
+                                <span class="label-text text-xs font-medium text-base-content/70">{{ $filter['label'] }}</span>
+                            </span>
                             <select
-                                class="select select-sm min-w-0 flex-1"
+                                class="select select-bordered select-sm w-full bg-base-100"
                                 data-table-filter="{{ $filter['id'] }}"
                                 data-table-filter-type="select"
                             >
@@ -509,7 +579,7 @@
                             </select>
                         </label>
                     @elseif($filter['type'] === 'boolean')
-                        <label class="label w-full cursor-pointer gap-2">
+                        <label class="label min-h-10 w-full cursor-pointer gap-2 rounded-field border border-base-content/10 bg-base-100 px-3">
                             <span class="label-text text-sm text-base-content/70">{{ $filter['label'] }}</span>
                             <input
                                 type="checkbox"
@@ -522,30 +592,28 @@
                 @endforeach
                 </div>
             @endif
+        </div>
+    @endif
 
-            <div class="daisy-table-controls flex flex-wrap items-center justify-end gap-3">
-                @if($hasActionsSlot)
-                    {{ $actions }}
-                @endif
+    @if($selectionEnabled)
+        <div class="daisy-table-selection-bar flex flex-col items-stretch gap-3 rounded-box border border-base-content/10 bg-base-200/60 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between" data-table-selection-feedback>
+            <div class="flex min-w-0 flex-wrap items-center gap-2">
+                <span class="font-medium" data-table-selection-summary></span>
+                <span class="break-words text-base-content/60" data-table-selection-note></span>
+            </div>
 
-                @if($hasControlsSlot)
-                    {{ $controls }}
-                @endif
+            <div class="flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+                <button type="button" class="btn btn-xs btn-ghost justify-center" data-table-select-filtered>
+                    {{ __('daisy::components.select_filtered_rows') }}
+                </button>
+                <button type="button" class="btn btn-xs btn-ghost justify-center" data-table-clear-selection>
+                    {{ __('daisy::components.clear_selection') }}
+                </button>
 
-                <label class="label flex items-center gap-2">
-                    <span class="label-text text-sm text-base-content/70">{{ __('daisy::components.rows_per_page') }}</span>
-                    <select class="select select-sm" data-table-page-size>
-                        @foreach($resolvedPageSizeOptions as $option)
-                            <option value="{{ $option }}" @selected($option === $resolvedInitialState['pagination']['pageSize'])>{{ $option }}</option>
-                        @endforeach
-                    </select>
-                </label>
-
-                @if($columnVisibility)
-                    <details class="dropdown dropdown-end">
-                        <summary class="btn btn-sm btn-ghost">{{ __('daisy::components.table_columns') }}</summary>
-                        <div class="daisy-table-column-menu dropdown-content rounded-box border border-base-content/10 bg-base-100 p-1 shadow" data-table-column-menu></div>
-                    </details>
+                @if($hasBulkActionsSlot)
+                    <div class="daisy-table-bulk-actions flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end" data-table-bulk-actions>
+                        {{ $bulkActions }}
+                    </div>
                 @endif
             </div>
         </div>
@@ -561,6 +629,10 @@
             @endif
 
             <colgroup data-table-colgroup>
+                @if($selectionEnabled)
+                    <col class="daisy-table-selection-col">
+                @endif
+
                 @foreach($resolvedColumns as $column)
                     @continue(data_get($resolvedInitialState, 'columnVisibility.'.$column['key']) === false)
 
@@ -570,6 +642,17 @@
 
             <thead>
                 <tr data-table-head-row>
+                    @if($selectionEnabled)
+                        <th class="daisy-table-selection-cell">
+                            <input
+                                type="checkbox"
+                                class="checkbox checkbox-sm"
+                                data-table-select-page
+                                aria-label="{{ __('daisy::components.select_all_rows') }}"
+                            >
+                        </th>
+                    @endif
+
                     @foreach($resolvedColumns as $column)
                         @continue(data_get($resolvedInitialState, 'columnVisibility.'.$column['key']) === false)
 
@@ -600,6 +683,20 @@
                 @if($resolvedMode === 'client' && count($resolvedRows) > 0)
                     @foreach($resolvedRows as $row)
                         <tr>
+                            @if($selectionEnabled)
+                                @php
+                                    $rowSelectionId = data_get($row, $resolvedRowKey);
+                                @endphp
+                                <td class="daisy-table-selection-cell">
+                                    <input
+                                        type="checkbox"
+                                        class="checkbox checkbox-sm"
+                                        data-table-row-select="{{ $rowSelectionId }}"
+                                        aria-label="{{ __('daisy::components.select_row') }}"
+                                    >
+                                </td>
+                            @endif
+
                             @foreach($resolvedColumns as $column)
                                 @continue(data_get($resolvedInitialState, 'columnVisibility.'.$column['key']) === false)
 
@@ -621,11 +718,11 @@
                     @endforeach
                 @elseif($resolvedMode === 'server')
                     <tr class="daisy-table-loading-row">
-                        <td colspan="{{ max(1, count($resolvedColumns)) }}">{{ $loadingLabel ?: __('daisy::common.loading') }}</td>
+                        <td colspan="{{ max(1, count($resolvedColumns) + ($selectionEnabled ? 1 : 0)) }}">{{ $loadingLabel ?: __('daisy::common.loading') }}</td>
                     </tr>
                 @else
                     <tr class="daisy-table-empty-row">
-                        <td colspan="{{ max(1, count($resolvedColumns)) }}">{{ $emptyLabel ?: __('daisy::common.no_results') }}</td>
+                        <td colspan="{{ max(1, count($resolvedColumns) + ($selectionEnabled ? 1 : 0)) }}">{{ $emptyLabel ?: __('daisy::common.no_results') }}</td>
                     </tr>
                 @endif
             </tbody>

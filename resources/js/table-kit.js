@@ -14,6 +14,13 @@ const DEFAULT_GLOBAL_FILTER_KEY = 'global';
 const DEFAULT_SEARCH_DEBOUNCE_MS = 500;
 const DEFAULT_FILTER_DEBOUNCE_MS = 500;
 const DEFAULT_MIN_SEARCH_CHARS = 3;
+const DEFAULT_SELECTION_STATE = {
+  selectedIds: [],
+  excludedIds: [],
+  allFilteredSelected: false,
+  selectionScope: 'page',
+  filterSignature: '',
+};
 const ALLOWED_FILTER_TYPES = ['text', 'select', 'boolean'];
 const ALLOWED_ALIGNMENTS = ['left', 'center', 'right'];
 const ALLOWED_VERTICAL_ALIGNMENTS = ['top', 'middle', 'bottom'];
@@ -260,6 +267,226 @@ function normalizeColumnVisibility(visibility = {}, columns = []) {
   );
 }
 
+function normalizeSelectionConfig(raw = {}) {
+  const mode = raw.selection === 'multiple' || raw.selection?.mode === 'multiple' ? 'multiple' : 'none';
+  const rowKey = typeof raw.rowKey === 'string' && raw.rowKey !== ''
+    ? raw.rowKey
+    : (typeof raw.selection?.rowKey === 'string' && raw.selection.rowKey !== '' ? raw.selection.rowKey : null);
+
+  return {
+    enabled: mode === 'multiple' && rowKey !== null,
+    mode,
+    rowKey: mode === 'multiple' ? rowKey : null,
+  };
+}
+
+function uniqueStringArray(values = []) {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+
+  return [...new Set(
+    values
+      .filter((value) => value !== null && value !== undefined && String(value) !== '')
+      .map((value) => String(value))
+  )];
+}
+
+function resetSelectionState(selection = {}) {
+  return {
+    ...DEFAULT_SELECTION_STATE,
+    selectedIds: [],
+    excludedIds: [],
+  };
+}
+
+// Filtered selection is represented as "the current filtered result set minus
+// excludedIds". That keeps bulk-action payloads small in server mode while still
+// letting users opt individual rows out after selecting all filtered results.
+function normalizeSelectionState(selection = {}) {
+  const normalized = {
+    ...DEFAULT_SELECTION_STATE,
+    selectedIds: uniqueStringArray(selection.selectedIds),
+    excludedIds: uniqueStringArray(selection.excludedIds),
+    allFilteredSelected: selection.allFilteredSelected === true,
+    selectionScope: selection.selectionScope === 'filtered' ? 'filtered' : 'page',
+    filterSignature: typeof selection.filterSignature === 'string' ? selection.filterSignature : '',
+  };
+
+  if (!normalized.allFilteredSelected) {
+    normalized.excludedIds = [];
+    normalized.selectionScope = 'page';
+    normalized.filterSignature = '';
+  }
+
+  if (normalized.allFilteredSelected) {
+    normalized.selectedIds = [];
+    normalized.selectionScope = 'filtered';
+  }
+
+  return normalized;
+}
+
+function createFilterSignature(state = {}) {
+  return JSON.stringify({
+    sorting: Array.isArray(state.sorting) ? state.sorting : [],
+    globalFilter: typeof state.globalFilter === 'string' ? state.globalFilter : '',
+    columnFilters: Array.isArray(state.columnFilters) ? state.columnFilters : [],
+  });
+}
+
+function getRowData(row) {
+  return row?.original ?? row;
+}
+
+function getRowSelectionId(config, row) {
+  const rowKey = config.selection?.rowKey;
+
+  if (!config.selection?.enabled || typeof rowKey !== 'string' || rowKey === '') {
+    return null;
+  }
+
+  const value = getRowData(row)?.[rowKey];
+
+  if (value === null || value === undefined || String(value) === '') {
+    return null;
+  }
+
+  return String(value);
+}
+
+function isRowSelected(state, config, row) {
+  const rowId = getRowSelectionId(config, row);
+
+  if (rowId === null) {
+    return false;
+  }
+
+  if (state.selection?.allFilteredSelected === true) {
+    return !state.selection.excludedIds.includes(rowId);
+  }
+
+  return state.selection?.selectedIds.includes(rowId) === true;
+}
+
+function toggleRowSelection(state, config, row, forceSelected = null) {
+  const rowId = typeof row === 'string' ? row : getRowSelectionId(config, row);
+
+  if (rowId === null) {
+    return state.selection;
+  }
+
+  const selection = normalizeSelectionState(state.selection);
+  const selected = selection.allFilteredSelected
+    ? !selection.excludedIds.includes(rowId)
+    : selection.selectedIds.includes(rowId);
+  const nextSelected = forceSelected === null ? !selected : forceSelected === true;
+
+  if (selection.allFilteredSelected) {
+    selection.excludedIds = nextSelected
+      ? selection.excludedIds.filter((id) => id !== rowId)
+      : uniqueStringArray([...selection.excludedIds, rowId]);
+  } else {
+    selection.selectedIds = nextSelected
+      ? uniqueStringArray([...selection.selectedIds, rowId])
+      : selection.selectedIds.filter((id) => id !== rowId);
+  }
+
+  state.selection = selection;
+
+  return selection;
+}
+
+function toggleVisibleRowsSelection(state, config, rows = [], forceSelected = null) {
+  const visibleIds = rows
+    .map((row) => getRowSelectionId(config, row))
+    .filter((rowId) => rowId !== null);
+
+  if (visibleIds.length === 0) {
+    return state.selection;
+  }
+
+  const selection = normalizeSelectionState(state.selection);
+  const allVisibleSelected = visibleIds.every((rowId) => {
+    if (selection.allFilteredSelected) {
+      return !selection.excludedIds.includes(rowId);
+    }
+
+    return selection.selectedIds.includes(rowId);
+  });
+  const nextSelected = forceSelected === null ? !allVisibleSelected : forceSelected === true;
+
+  if (selection.allFilteredSelected) {
+    selection.excludedIds = nextSelected
+      ? selection.excludedIds.filter((rowId) => !visibleIds.includes(rowId))
+      : uniqueStringArray([...selection.excludedIds, ...visibleIds]);
+  } else if (nextSelected) {
+    selection.selectedIds = uniqueStringArray([...selection.selectedIds, ...visibleIds]);
+  } else {
+    selection.selectedIds = selection.selectedIds.filter((rowId) => !visibleIds.includes(rowId));
+  }
+
+  state.selection = selection;
+
+  return selection;
+}
+
+function selectAllFilteredRows(state) {
+  state.selection = {
+    ...DEFAULT_SELECTION_STATE,
+    selectedIds: [],
+    excludedIds: [],
+    allFilteredSelected: true,
+    selectionScope: 'filtered',
+    filterSignature: createFilterSignature(state),
+  };
+
+  return state.selection;
+}
+
+function buildSelectionActionPayload(config, state) {
+  const selection = normalizeSelectionState(state.selection);
+
+  if (selection.allFilteredSelected) {
+    return {
+      mode: 'filtered',
+      filters: normalizeColumnFilters(state.columnFilters, config.filters),
+      sorting: normalizeSorting(state.sorting, config.columns),
+      globalFilter: typeof state.globalFilter === 'string' ? state.globalFilter : '',
+      excludedIds: selection.excludedIds,
+    };
+  }
+
+  return {
+    mode: 'ids',
+    ids: selection.selectedIds,
+  };
+}
+
+function buildSelectionDetail(context, visibleRows = []) {
+  const selection = normalizeSelectionState(context.state.selection);
+  const summary = getSelectionSummary(context, visibleRows);
+
+  return {
+    selectedIds: selection.selectedIds,
+    excludedIds: selection.excludedIds,
+    allFilteredSelected: selection.allFilteredSelected,
+    selectionScope: selection.selectionScope,
+    selectedCount: summary.selectedCount,
+    visibleSelectedCount: summary.visibleSelectedCount,
+    offPageCount: summary.offPageCount,
+    excludedCount: summary.excludedCount,
+    filterSignature: selection.filterSignature,
+    tableState: {
+      sorting: normalizeSorting(context.state.sorting, context.config.columns),
+      pagination: { ...context.state.pagination },
+      globalFilter: context.state.globalFilter,
+      columnFilters: normalizeColumnFilters(context.state.columnFilters, context.config.filters),
+    },
+    actionPayload: buildSelectionActionPayload(context.config, context.state),
+  };
+}
+
 function normalizeInitialState(initialState = {}, columns = [], filterDefinitions = [], pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS) {
   const safePageSizes = normalizePageSizeOptions(pageSizeOptions);
   const defaultPageSize = safePageSizes[0] ?? DEFAULT_PAGE_SIZE_OPTIONS[0];
@@ -278,6 +505,7 @@ function normalizeInitialState(initialState = {}, columns = [], filterDefinition
     // UI can stay identical while the transport layer changes underneath.
     columnFilters: normalizeColumnFilters(initialState.columnFilters, filterDefinitions),
     columnVisibility: normalizeColumnVisibility(initialState.columnVisibility, columns),
+    selection: normalizeSelectionState(initialState.selection),
   };
 }
 
@@ -305,6 +533,7 @@ function normalizeConfig(raw = {}) {
   const endpoint = normalizeEndpoint(raw.endpoint);
   const serverAdapter = raw.serverAdapter === 'spatie-query-builder' ? 'spatie-query-builder' : DEFAULT_SERVER_ADAPTER;
   const persistState = raw.persistState === 'url' || raw.persistState === 'local' ? raw.persistState : DEFAULT_PERSIST_STATE;
+  const selection = normalizeSelectionConfig(raw);
   const config = {
     mode,
     method: typeof raw.method === 'string' && raw.method !== '' ? raw.method.toUpperCase() : DEFAULT_METHOD,
@@ -323,6 +552,7 @@ function normalizeConfig(raw = {}) {
     filterDebounceMs: normalizeIntegerOption(raw.filterDebounceMs ?? raw.filterDebounce ?? raw.debounce, DEFAULT_FILTER_DEBOUNCE_MS),
     minSearchChars: normalizeIntegerOption(raw.minSearchChars ?? raw.minChars, DEFAULT_MIN_SEARCH_CHARS),
     columnVisibility: raw.columnVisibility === true,
+    selection,
     pageSizeOptions: pageSizeOptions.length > 0 ? pageSizeOptions : DEFAULT_PAGE_SIZE_OPTIONS,
     emptyLabel: typeof raw.emptyLabel === 'string' && raw.emptyLabel !== '' ? raw.emptyLabel : 'No results',
     loadingLabel: typeof raw.loadingLabel === 'string' && raw.loadingLabel !== '' ? raw.loadingLabel : 'Loading...',
@@ -708,7 +938,8 @@ function renderColgroup(context) {
     return;
   }
 
-  colgroup.innerHTML = getVisibleColumns(context.config, context.state).map((column) => {
+  const selectionCol = context.config.selection.enabled ? '<col class="daisy-table-selection-col">' : '';
+  const columnMarkup = getVisibleColumns(context.config, context.state).map((column) => {
     const classes = [
       tableWidthClass(column.width),
       tableMinWidthClass(column.minWidth),
@@ -717,6 +948,8 @@ function renderColgroup(context) {
 
     return classes ? `<col class="${escapeHtml(classes)}">` : '<col>';
   }).join('');
+
+  colgroup.innerHTML = `${selectionCol}${columnMarkup}`;
 }
 
 function renderHeader(context) {
@@ -727,6 +960,21 @@ function renderHeader(context) {
   }
 
   headRow.innerHTML = '';
+
+  if (context.config.selection.enabled) {
+    const th = document.createElement('th');
+
+    th.className = 'daisy-table-selection-cell';
+    th.innerHTML = `
+      <input
+        type="checkbox"
+        class="checkbox checkbox-sm"
+        data-table-select-page
+        aria-label="${escapeHtml(context.config.labels.selectAllRows || 'Select all rows on this page')}"
+      >
+    `;
+    headRow.append(th);
+  }
 
   getVisibleColumns(context.config, context.state).forEach((column) => {
     const th = document.createElement('th');
@@ -763,7 +1011,7 @@ function renderBody(context, rows) {
   }
 
   const visibleColumns = getVisibleColumns(context.config, context.state);
-  const colspan = Math.max(1, visibleColumns.length);
+  const colspan = Math.max(1, visibleColumns.length + (context.config.selection.enabled ? 1 : 0));
 
   if (context.loading) {
     tbody.innerHTML = `<tr class="daisy-table-loading-row"><td colspan="${colspan}">${escapeHtml(context.config.loadingLabel)}</td></tr>`;
@@ -781,6 +1029,19 @@ function renderBody(context, rows) {
   }
 
   tbody.innerHTML = rows.map((row) => {
+    const rowId = getRowSelectionId(context.config, row);
+    const selectionCell = context.config.selection.enabled
+      ? `<td class="daisy-table-selection-cell">
+          <input
+            type="checkbox"
+            class="checkbox checkbox-sm"
+            data-table-row-select="${escapeHtml(rowId || '')}"
+            aria-label="${escapeHtml(context.config.labels.selectRow || 'Select row')}"
+            ${rowId === null ? 'disabled' : ''}
+            ${isRowSelected(context.state, context.config, row) ? 'checked' : ''}
+          >
+        </td>`
+      : '';
     const cells = visibleColumns.map((column) => {
       const classes = getColumnClasses(column, 'cell');
       const className = classes ? ` class="${escapeHtml(classes)}"` : '';
@@ -791,7 +1052,7 @@ function renderBody(context, rows) {
       return `<td${className}><span class="${wrapperClass}">${content}</span></td>`;
     }).join('');
 
-    return `<tr>${cells}</tr>`;
+    return `<tr>${selectionCell}${cells}</tr>`;
   }).join('');
 }
 
@@ -830,6 +1091,160 @@ function renderFooter(context, currentRowsLength) {
   if (nextButton instanceof HTMLButtonElement) {
     nextButton.disabled = pageIndex >= pageCount - 1 || context.loading;
   }
+}
+
+function getSelectionSummary(context, visibleRows = []) {
+  const selection = normalizeSelectionState(context.state.selection);
+  const visibleSelectedCount = visibleRows.filter((row) => isRowSelected(context.state, context.config, row)).length;
+  const selectedCount = selection.allFilteredSelected
+    ? Math.max(0, context.rowCount - selection.excludedIds.length)
+    : selection.selectedIds.length;
+
+  return {
+    selectedCount,
+    visibleSelectedCount,
+    offPageCount: Math.max(0, selectedCount - visibleSelectedCount),
+    excludedCount: selection.excludedIds.length,
+    allFilteredSelected: selection.allFilteredSelected,
+    selectionScope: selection.selectionScope,
+    filterSignature: selection.filterSignature,
+  };
+}
+
+function formatLabel(template, count) {
+  return String(template || ':count selected').replace(':count', String(count));
+}
+
+function getSelectionFeedbackNote(summary, labels = {}) {
+  if (summary.allFilteredSelected && summary.excludedCount === 0) {
+    return labels.allFilteredRowsSelected || '';
+  }
+
+  if (summary.offPageCount > 0) {
+    return formatLabel(labels.selectedOffPageCount, summary.offPageCount);
+  }
+
+  return '';
+}
+
+function setSelectionDataset(root, summary) {
+  root.dataset.tableSelectionSelectedCount = String(summary.selectedCount);
+  root.dataset.tableSelectionVisibleSelectedCount = String(summary.visibleSelectedCount);
+  root.dataset.tableSelectionOffPageCount = String(summary.offPageCount);
+  root.dataset.tableSelectionExcludedCount = String(summary.excludedCount);
+  root.dataset.tableSelectionAllFiltered = summary.allFilteredSelected ? '1' : '0';
+  root.dataset.tableSelectionHasSelection = summary.selectedCount > 0 ? '1' : '0';
+}
+
+function setBulkActionsDisabled(container, disabled) {
+  if (!(container instanceof HTMLElement)) {
+    return;
+  }
+
+  container.querySelectorAll('[data-table-bulk-action]').forEach((action) => {
+    if (action instanceof HTMLButtonElement || action instanceof HTMLInputElement || action instanceof HTMLSelectElement) {
+      action.disabled = disabled;
+    }
+
+    action.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+  });
+}
+
+function updateSelectionFeedback(context, visibleRows = []) {
+  const bar = context.root.querySelector('[data-table-selection-feedback]');
+  const summaryElement = context.root.querySelector('[data-table-selection-summary]');
+  const noteElement = context.root.querySelector('[data-table-selection-note]');
+  const bulkActions = context.root.querySelector('[data-table-bulk-actions]');
+  const selectFilteredButton = context.root.querySelector('[data-table-select-filtered]');
+
+  if (!context.config.selection.enabled || !(bar instanceof HTMLElement)) {
+    return;
+  }
+
+  const summary = getSelectionSummary(context, visibleRows);
+  summary.visibleRowsCount = visibleRows.length;
+  setSelectionDataset(context.root, summary);
+
+  if (summaryElement instanceof HTMLElement) {
+    const usesPageScopedPrimary = summary.offPageCount > 0 && !(summary.allFilteredSelected && summary.excludedCount === 0);
+    const primaryCount = usesPageScopedPrimary ? summary.visibleSelectedCount : summary.selectedCount;
+    const primaryLabel = usesPageScopedPrimary
+      ? context.config.labels.selectedOnPageCount
+      : context.config.labels.selectedCount;
+
+    summaryElement.textContent = formatLabel(primaryLabel, primaryCount);
+  }
+
+  if (noteElement instanceof HTMLElement) {
+    if (context.selectionNotice) {
+      noteElement.textContent = context.selectionNotice;
+    } else {
+      noteElement.textContent = getSelectionFeedbackNote(summary, context.config.labels);
+    }
+  }
+
+  setBulkActionsDisabled(bulkActions, summary.selectedCount === 0);
+
+  if (selectFilteredButton instanceof HTMLButtonElement) {
+    selectFilteredButton.disabled = context.loading
+      || context.rowCount === 0
+      || visibleRows.length === 0
+      || (summary.allFilteredSelected && summary.excludedCount === 0);
+  }
+
+  const clearSelectionButton = context.root.querySelector('[data-table-clear-selection]');
+
+  if (clearSelectionButton instanceof HTMLButtonElement) {
+    clearSelectionButton.disabled = summary.selectedCount === 0;
+  }
+}
+
+function updateSelectionControls(context, visibleRows = []) {
+  if (!context.config.selection.enabled) {
+    return;
+  }
+
+  const selectPageInput = context.root.querySelector('[data-table-select-page]');
+  const visibleSelectableRows = visibleRows.filter((row) => getRowSelectionId(context.config, row) !== null);
+  const visibleSelectedCount = visibleSelectableRows.filter((row) => isRowSelected(context.state, context.config, row)).length;
+
+  if (selectPageInput instanceof HTMLInputElement) {
+    selectPageInput.checked = visibleSelectableRows.length > 0 && visibleSelectedCount === visibleSelectableRows.length;
+    selectPageInput.indeterminate = visibleSelectedCount > 0 && visibleSelectedCount < visibleSelectableRows.length;
+    selectPageInput.disabled = visibleSelectableRows.length === 0 || context.loading;
+  }
+
+  context.root.querySelectorAll('[data-table-row-select]').forEach((input) => {
+    if (!(input instanceof HTMLInputElement)) {
+      return;
+    }
+
+    const rowId = input.dataset.tableRowSelect || null;
+
+    input.checked = rowId !== null && (
+      context.state.selection.allFilteredSelected
+        ? !context.state.selection.excludedIds.includes(rowId)
+        : context.state.selection.selectedIds.includes(rowId)
+    );
+  });
+
+  updateSelectionFeedback(context, visibleRows);
+}
+
+function dispatchTableSelectionChanged(context, visibleRows = []) {
+  if (!context.config.selection.enabled) {
+    return;
+  }
+
+  context.root.dispatchEvent(new CustomEvent('daisy:table-selection-changed', {
+    bubbles: true,
+    detail: buildSelectionDetail(context, visibleRows),
+  }));
+}
+
+function clearSelection(context, notice = '') {
+  context.state.selection = resetSelectionState(context.state.selection);
+  context.selectionNotice = notice;
 }
 
 function renderColumnVisibility(context) {
@@ -924,7 +1339,7 @@ function parseStateFromUrl(config) {
   if (config.serverAdapter === 'spatie-query-builder') {
     const sort = params.get('sort');
     const columnFilters = config.filters.map((filter) => {
-      const value = params.get(`filter[${filter.filterKey}]`);
+      const value = readSpatieFilterParam(params, filter.filterKey);
 
       if (value == null) {
         return null;
@@ -967,6 +1382,20 @@ function parseStateFromUrl(config) {
     columnFilters: columnFilters ? JSON.parse(columnFilters) : [],
     columnVisibility: columnVisibility ? JSON.parse(columnVisibility) : {},
   };
+}
+
+function readSpatieFilterParam(params, filterKey) {
+  const directValues = params.getAll(`filter[${filterKey}]`);
+  const arrayValues = params.getAll(`filter[${filterKey}][]`);
+  const values = [...directValues, ...arrayValues]
+    .map((value) => String(value ?? '').trim())
+    .filter((value) => value !== '');
+
+  if (values.length === 0) {
+    return null;
+  }
+
+  return values.join(',');
 }
 
 function parseStateFromLocalStorage(context) {
@@ -1032,6 +1461,10 @@ function mergeState(baseState, overrideState = {}, config) {
 
   if (isPlainObject(overrideState.columnVisibility)) {
     nextState.columnVisibility = normalizeColumnVisibility(overrideState.columnVisibility, config.columns);
+  }
+
+  if (config.selection.enabled && isPlainObject(overrideState.selection)) {
+    nextState.selection = normalizeSelectionState(overrideState.selection);
   }
 
   return nextState;
@@ -1117,11 +1550,13 @@ function renderTable(context) {
 
   const rowModel = context.table.getRowModel().rows;
 
+  context.visibleRows = rowModel;
   renderHeader(context);
   renderColumnVisibility(context);
   syncControls(context);
   renderBody(context, rowModel);
   renderFooter(context, rowModel.length);
+  updateSelectionControls(context, rowModel);
 }
 
 async function fetchServerRows(context) {
@@ -1206,19 +1641,83 @@ function attachEvents(context) {
   context.eventController = eventController;
 
   context.root.addEventListener('click', (event) => {
-    const button = event.target instanceof Element ? event.target.closest('[data-table-sort]') : null;
+    const sortButton = event.target instanceof Element ? event.target.closest('[data-table-sort]') : null;
+    const selectFilteredButton = event.target instanceof Element ? event.target.closest('[data-table-select-filtered]') : null;
+    const clearSelectionButton = event.target instanceof Element ? event.target.closest('[data-table-clear-selection]') : null;
+    const bulkActionButton = event.target instanceof Element ? event.target.closest('[data-table-bulk-action]') : null;
 
-    if (!(button instanceof HTMLElement)) {
+    if (selectFilteredButton instanceof HTMLElement) {
+      if (selectFilteredButton instanceof HTMLButtonElement && selectFilteredButton.disabled) {
+        return;
+      }
+
+      context.selectionNotice = '';
+      selectAllFilteredRows(context.state);
+      persistState(context);
+      updateSelectionControls(context, context.visibleRows);
+      dispatchTableSelectionChanged(context, context.visibleRows);
       return;
     }
 
-    context.state.sorting = toggleSorting(context.state, button.dataset.tableSort);
+    if (clearSelectionButton instanceof HTMLElement) {
+      if (clearSelectionButton instanceof HTMLButtonElement && clearSelectionButton.disabled) {
+        return;
+      }
+
+      clearSelection(context);
+      persistState(context);
+      updateSelectionControls(context, context.visibleRows);
+      dispatchTableSelectionChanged(context, context.visibleRows);
+      return;
+    }
+
+    if (bulkActionButton instanceof HTMLElement) {
+      if (
+        bulkActionButton.getAttribute('aria-disabled') === 'true'
+        || (bulkActionButton instanceof HTMLButtonElement && bulkActionButton.disabled)
+      ) {
+        return;
+      }
+
+      context.root.dispatchEvent(new CustomEvent('daisy:table-bulk-action', {
+        bubbles: true,
+        detail: {
+          action: bulkActionButton.dataset.tableBulkAction,
+          payload: buildSelectionActionPayload(context.config, context.state),
+        },
+      }));
+      return;
+    }
+
+    if (!(sortButton instanceof HTMLElement)) {
+      return;
+    }
+
+    context.state.sorting = toggleSorting(context.state, sortButton.dataset.tableSort);
     context.state.pagination.pageIndex = 0;
     void refreshTable(context);
   }, listenerOptions);
 
   context.root.addEventListener('change', (event) => {
     const target = event.target;
+
+    if (target instanceof HTMLInputElement && target.matches('[data-table-select-page]')) {
+      context.selectionNotice = '';
+      toggleVisibleRowsSelection(context.state, context.config, context.visibleRows, target.checked);
+      persistState(context);
+      updateSelectionControls(context, context.visibleRows);
+      dispatchTableSelectionChanged(context, context.visibleRows);
+      return;
+    }
+
+    if (target instanceof HTMLInputElement && target.matches('[data-table-row-select]')) {
+      context.selectionNotice = '';
+      toggleRowSelection(context.state, context.config, target.dataset.tableRowSelect || null, target.checked);
+      persistState(context);
+      updateSelectionControls(context, context.visibleRows);
+      dispatchTableSelectionChanged(context, context.visibleRows);
+      return;
+    }
 
     if (target instanceof HTMLInputElement && target.matches('[data-table-column-toggle]')) {
       context.state.columnVisibility[target.dataset.tableColumnToggle] = target.checked;
@@ -1234,6 +1733,7 @@ function attachEvents(context) {
 
       updateFilterState(context, createFilterState(target.dataset.tableFilter, target.dataset.tableFilterType || 'text', target));
       context.state.pagination.pageIndex = 0;
+      clearSelection(context, context.config.labels.selectionResetAfterFilter || '');
       void refreshTable(context);
     }
   }, listenerOptions);
@@ -1259,6 +1759,7 @@ function attachEvents(context) {
 
     updateFilterState(context, nextFilter);
     context.state.pagination.pageIndex = 0;
+    clearSelection(context, context.config.labels.selectionResetAfterFilter || '');
     filterTimeout = setTimeout(() => {
       void refreshTable(context);
     }, context.config.filterDebounceMs);
@@ -1277,6 +1778,7 @@ function attachEvents(context) {
       searchTimeout = setTimeout(() => {
         context.state.globalFilter = nextValue;
         context.state.pagination.pageIndex = 0;
+        clearSelection(context, context.config.labels.selectionResetAfterFilter || '');
         void refreshTable(context);
       }, context.config.searchDebounceMs);
     }, listenerOptions);
@@ -1329,6 +1831,7 @@ function applyExternalRefreshState(context, options = {}) {
 
   if (nextFilters !== null) {
     context.state.columnFilters = nextFilters;
+    clearSelection(context, context.config.labels.selectionResetAfterFilter || '');
   }
 
   if (Array.isArray(options.sorting)) {
@@ -1394,9 +1897,11 @@ async function initTable(root) {
     loading: config.mode === 'server',
     error: '',
     table: null,
+    visibleRows: [],
     abortController: null,
     eventController: null,
     refreshId: 0,
+    selectionNotice: '',
   };
 
   context.state = mergeState(
@@ -1489,6 +1994,45 @@ function tableApi(idOrRoot) {
 
       return initTable(root);
     },
+    selection() {
+      const context = root?.__daisyTableContext ?? null;
+
+      return context ? buildSelectionDetail(context, context.visibleRows) : null;
+    },
+    selectionPayload() {
+      const context = root?.__daisyTableContext ?? null;
+
+      return context ? buildSelectionActionPayload(context.config, context.state) : null;
+    },
+    selectAllFiltered() {
+      const context = root?.__daisyTableContext ?? null;
+
+      if (!context || !context.config.selection.enabled) {
+        return null;
+      }
+
+      context.selectionNotice = '';
+      selectAllFilteredRows(context.state);
+      persistState(context);
+      updateSelectionControls(context, context.visibleRows);
+      dispatchTableSelectionChanged(context, context.visibleRows);
+
+      return buildSelectionDetail(context, context.visibleRows);
+    },
+    clearSelection() {
+      const context = root?.__daisyTableContext ?? null;
+
+      if (!context || !context.config.selection.enabled) {
+        return null;
+      }
+
+      clearSelection(context);
+      persistState(context);
+      updateSelectionControls(context, context.visibleRows);
+      dispatchTableSelectionChanged(context, context.visibleRows);
+
+      return buildSelectionDetail(context, context.visibleRows);
+    },
     destroy() {
       return destroyTable(root);
     },
@@ -1529,12 +2073,16 @@ export {
   applyClientFilters,
   applyExternalRefreshState,
   buildRequestPayload,
+  buildSelectionActionPayload,
+  buildSelectionDetail,
   buildServerRequest,
   buildSpatieRequestParams,
+  createFilterSignature,
   getPersistedStateKey,
   getColumnClasses,
   getColumnWrapperClasses,
   getSortDirection,
+  getSelectionFeedbackNote,
   initAllTables,
   initTable,
   isTextSearchReady,
@@ -1542,14 +2090,18 @@ export {
   normalizeColumns,
   normalizeConfig,
   normalizeInitialState,
+  normalizeSelectionState,
   normalizeServerResponse,
   normalizeSpatieResponse,
   parseConfig,
   parseStateFromLocalStorage,
   parseStateFromUrl,
   resolveSearchInputValue,
+  resetSelectionState,
   serializeRequestPayload,
   serializeStateToParams,
+  toggleRowSelection,
+  toggleVisibleRowsSelection,
   toggleSorting,
 };
 

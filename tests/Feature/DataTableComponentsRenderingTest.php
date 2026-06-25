@@ -100,6 +100,31 @@ it('renders configurable table layout, scroll and native action column attribute
         ->not->toContain('daisy-table-min-width-rem-512');
 });
 
+it('provides a content-width table helper for wide containers', function (): void {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            table-class="daisy-table-width-content"
+            :columns="[
+                ['key' => '_action', 'label' => 'Actions', 'type' => 'actions'],
+                ['key' => 'name', 'label' => 'Name'],
+            ]"
+            :rows="[
+                ['_action' => '<button class=&quot;btn btn-xs&quot;>Open</button>', 'name' => 'Jane'],
+            ]"
+        />
+    BLADE);
+
+    $css = file_get_contents(dirname(__DIR__, 2).'/resources/css/table.css');
+
+    expect($html)
+        ->toContain('table table-auto daisy-table-width-content')
+        ->toContain('daisy-table-width-fit')
+        ->and($css)
+        ->toContain('table.daisy-table-width-content')
+        ->toContain('width: max-content')
+        ->toContain('margin-inline: auto');
+});
+
 it('renders a server table with endpoint config', function () {
     $html = View::make('daisy::components.ui.data-display.table', [
         'mode' => 'server',
@@ -198,7 +223,8 @@ it('renders table filters in a stable responsive grid before technical controls'
 
     expect($html)
         ->toContain('daisy-table-toolbar grid gap-3')
-        ->toContain('daisy-table-filters grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4')
+        ->toContain('daisy-table-controls flex flex-wrap items-center justify-start gap-3 lg:justify-end')
+        ->toContain('daisy-table-filters rounded-box grid grid-cols-1 gap-3 border border-base-content/10 bg-base-200/40 p-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 lg:col-span-2')
         ->toContain('data-table-search')
         ->toContain('data-table-filter="reference_internal"')
         ->toContain('data-table-filter="name"')
@@ -210,15 +236,16 @@ it('renders table filters in a stable responsive grid before technical controls'
         ->toContain('data-table-page-size')
         ->toContain('data-table-column-menu');
 
-    expect(strpos($html, 'data-table-search'))->toBeLessThan(strpos($html, 'data-table-filter="reference_internal"'))
+    expect(strpos($html, 'data-table-search'))->toBeLessThan(strpos($html, 'data-table-page-size'))
+        ->and(strpos($html, 'data-table-page-size'))->toBeLessThan(strpos($html, 'data-table-column-menu'))
+        ->and(strpos($html, 'data-table-column-menu'))->toBeLessThan(strpos($html, 'data-table-filter="reference_internal"'))
         ->and(strpos($html, 'data-table-filter="reference_internal"'))->toBeLessThan(strpos($html, 'data-table-filter="name"'))
         ->and(strpos($html, 'data-table-filter="name"'))->toBeLessThan(strpos($html, 'data-table-filter="city"'))
         ->and(strpos($html, 'data-table-filter="city"'))->toBeLessThan(strpos($html, 'data-table-filter="company"'))
         ->and(strpos($html, 'data-table-filter="company"'))->toBeLessThan(strpos($html, 'data-table-filter="compile_status"'))
         ->and(strpos($html, 'data-table-filter="compile_status"'))->toBeLessThan(strpos($html, 'data-table-filter="intervention_type_code"'))
         ->and(strpos($html, 'data-table-filter="intervention_type_code"'))->toBeLessThan(strpos($html, 'data-table-filter="external_note"'))
-        ->and(strpos($html, 'data-table-filter="external_note"'))->toBeLessThan(strpos($html, 'data-table-page-size'))
-        ->and(strpos($html, 'data-table-page-size'))->toBeLessThan(strpos($html, 'data-table-column-menu'));
+        ->and(strpos($html, 'data-table-filter="external_note"'))->toBeGreaterThan(strpos($html, 'data-table-column-menu'));
 });
 
 it('keeps table filter configuration separate from the external filters slot', function () {
@@ -260,6 +287,50 @@ it('renders a client table with trusted html cells', function () {
     expect($html)
         ->toContain('badge badge-success')
         ->toContain('Active');
+});
+
+it('renders row selection controls and deferred bulk actions', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            selection="multiple"
+            row-key="uuid"
+            :columns="[
+                ['key' => 'name', 'label' => 'Name'],
+            ]"
+            :rows="[
+                ['uuid' => 'user-1', 'name' => 'Jane'],
+                ['uuid' => 'user-2', 'name' => 'John'],
+            ]"
+        >
+            <x-slot:bulkActions>
+                <button type="button" data-table-bulk-action="archive">Archive</button>
+            </x-slot:bulkActions>
+        </x-daisy::ui.data-display.table>
+    BLADE);
+
+    expect($html)
+        ->toContain('"selection":{"enabled":true,"mode":"multiple","rowKey":"uuid"')
+        ->toContain('data-table-select-page')
+        ->toContain('data-table-row-select="user-1"')
+        ->toContain('data-table-row-select="user-2"')
+        ->toContain('data-table-selection-feedback')
+        ->toContain('daisy-table-selection-bar flex flex-col items-stretch gap-3')
+        ->toContain('sm:flex-row sm:items-center sm:justify-between')
+        ->toContain('btn btn-xs btn-ghost justify-center')
+        ->toContain('data-table-bulk-actions')
+        ->toContain('sm:flex-row sm:flex-wrap sm:items-center sm:justify-end')
+        ->toContain('data-table-bulk-action="archive"');
+});
+
+it('requires a row key when table selection is enabled', function () {
+    $render = fn () => View::make('daisy::components.ui.data-display.table', [
+        'selection' => 'multiple',
+        'columns' => [
+            ['key' => 'name', 'label' => 'Name'],
+        ],
+    ])->render();
+
+    expect($render)->toThrow(ViewException::class, 'rowKey prop when selection is set to multiple');
 });
 
 it('requires an endpoint when mode is server', function () {

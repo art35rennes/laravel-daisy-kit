@@ -28,6 +28,11 @@
   table-layout: auto;
 }
 
+.daisy-table-scroll :where(table.daisy-table-width-content) {
+  width: max-content;
+  margin-inline: auto;
+}
+
 .daisy-table-scroll :where(table[data-table-layout="fixed"]) {
   table-layout: fixed;
 }
