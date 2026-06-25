@@ -50,6 +50,45 @@ If the host renders the Form Kit builder, make sure Livewire 3 is installed and 
 - **JavaScript** — a small bootstrap (`window.DaisyKit`) that initializes modules marked with `data-module`; Alpine.js-friendly patterns are used for simple interactions.
 - **Optional heavy UI** — components like maps (Leaflet) rely on lazy-loaded chunks; publish built assets so those entry points resolve correctly.
 
+### Triggerable toast notifications
+
+Daisy Kit exposes reusable toast notifications through the package JavaScript runtime. Render a single configurable container when you want server-controlled placement:
+
+```blade
+<x-daisy::ui.feedback.toast triggerable vertical="top" horizontal="end" :limit="4" />
+```
+
+The runtime also creates that container on demand when none exists. Host code can trigger notifications with the global API or a DOM event:
+
+```js
+window.DaisyKit.notify({
+    type: 'success',
+    title: 'Saved',
+    message: 'Changes persisted.',
+    autoDismissMs: 4000,
+    actions: [
+        {
+            label: 'Undo',
+            name: 'undo',
+            callback: ({ id }) => console.log(id),
+        },
+    ],
+});
+
+document.dispatchEvent(new CustomEvent('daisy:notify', {
+    detail: {
+        type: 'warning',
+        title: 'Export queued',
+        message: 'You can keep working.',
+        actions: [{ label: 'Open', name: 'open' }],
+    },
+}));
+```
+
+Supported notification `type` values are `info`, `success`, `warning`, and `error`. `title` and `message` are rendered as text. Pass `html` only for host-trusted HTML; never pass unsanitized user input. `actions` accepts up to two buttons. Each action may provide a `callback`, or it dispatches `notify:action` with `{ id, action, notification, detail }`.
+
+Notifications are manually dismissible by default, auto-dismiss after five seconds unless `autoDismiss: false` is passed, show the reusable alert-dismiss progress bar, pause while hovered or focused, and enforce the visible `limit`. Use popconfirm or a modal confirmation for critical destructive actions; toast actions are for reversible, low-risk follow-ups.
+
 ## Security Headers And CSP
 
 Daisy Kit is designed to work by default with strict host Content Security Policy rules such as `script-src 'self'`, `style-src 'self'`, `connect-src 'self'`, `form-action 'self'`, `object-src 'none'`, and `frame-ancestors 'none'`.
@@ -737,6 +776,84 @@ Add page-level controls without forking the table:
 </x-daisy::ui.data-display.table>
 ```
 
+### Row selection and bulk actions
+
+Enable row selection with `selection="multiple"` and a stable `row-key`. The key must exist on every selectable row and is the only value Daisy Kit stores or emits for selection.
+
+```blade
+<x-daisy::ui.data-display.table
+    selection="multiple"
+    row-key="id"
+    :columns="$columns"
+    :rows="$users"
+>
+    <x-slot:bulkActions>
+        <button type="button" class="btn btn-sm btn-primary" data-table-bulk-action="export">
+            Export selected
+        </button>
+    </x-slot:bulkActions>
+</x-daisy::ui.data-display.table>
+```
+
+Selection works in client and server mode:
+
+- selecting the page toggles only currently visible rows;
+- selecting all filtered results switches to a compact filtered-selection mode;
+- unchecking a row after selecting all filtered results adds that row to `excludedIds`;
+- the feedback says all filtered results are selected only while there are no manual exclusions;
+- changing filters or search resets selection because the result set has changed;
+- changing page, page size, sorting, or refreshing server data keeps selection.
+
+The runtime emits `daisy:table-selection-changed` with:
+
+```json
+{
+  "selectedIds": ["1", "2"],
+  "excludedIds": [],
+  "allFilteredSelected": false,
+  "selectionScope": "page",
+  "selectedCount": 2,
+  "visibleSelectedCount": 2,
+  "tableState": {
+    "sorting": [],
+    "pagination": { "pageIndex": 0, "pageSize": 25 },
+    "globalFilter": "",
+    "columnFilters": []
+  },
+  "actionPayload": {
+    "mode": "ids",
+    "ids": ["1", "2"]
+  }
+}
+```
+
+When all filtered results are selected, bulk action buttons receive an action payload shaped for the host backend:
+
+```json
+{
+  "mode": "filtered",
+  "filters": [{ "id": "status", "type": "select", "value": "active" }],
+  "sorting": [{ "id": "name", "desc": false }],
+  "globalFilter": "jane",
+  "excludedIds": ["42"]
+}
+```
+
+Daisy Kit never executes the business action itself. Buttons inside `bulkActions` should use `data-table-bulk-action`; the table emits `daisy:table-bulk-action` with the action name and payload so the host app can call Livewire, submit a form, or send a request.
+
+The built-in selection bar stays visible when selection is enabled. Controls that do not apply to the current state are disabled instead of removed, so users keep a stable action surface. Hosts that need a fully custom bar can listen to `daisy:table-selection-changed` or use the public runtime API:
+
+```js
+const table = window.DaisyTable.table('users-table');
+
+table.selection(); // Full UI detail: counts, ids, exclusions, table state, actionPayload.
+table.selectionPayload(); // Business payload only: { mode: 'ids' } or { mode: 'filtered' }.
+table.selectAllFiltered(); // Switches to filtered-selection mode.
+table.clearSelection(); // Clears the current selection.
+```
+
+Custom bars should use these APIs instead of reading internal table markup. The root element also exposes `data-table-selection-*` counters for lightweight CSS states.
+
 ### Example: Spatie Query Builder backend
 
 ```php
@@ -848,6 +965,6 @@ Notes:
 ### Upgrade notes
 
 - There is no compatibility layer for DataTables requests or responses.
-- Responsive details rows, export buttons, row selection, and virtualization are out of scope for v1.
+- Responsive details rows, export buttons, and virtualization are out of scope for v1.
 - The runtime keeps auto-bootstrap semantics, but the global API is now `window.DaisyTable`.
 - `serverAdapter="spatie-query-builder"` is additive; the package JSON server contract remains the default.

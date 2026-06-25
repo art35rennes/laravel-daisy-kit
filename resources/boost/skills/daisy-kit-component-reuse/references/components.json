@@ -1,10 +1,10 @@
 {
-    "generated_at": "2026-06-22T08:55:54+00:00",
+    "generated_at": "2026-06-25T15:32:12+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
-        "component_count": 155,
-        "template_count": 31,
+        "component_count": 156,
+        "template_count": 32,
         "excluded_component_template_mirrors": 0
     },
     "components": [
@@ -415,7 +415,9 @@
                 "toolbar",
                 "palette",
                 "details",
+                "detailsMode",
                 "dock",
+                "fullscreen",
                 "autoLink",
                 "minimap",
                 "autoArrange",
@@ -1417,6 +1419,8 @@
                 "filterDebounce",
                 "minSearchChars",
                 "columnVisibility",
+                "selection",
+                "rowKey",
                 "tableLayout",
                 "minWidth",
                 "scrollX",
@@ -1614,7 +1618,10 @@
             "props": [
                 "position",
                 "horizontal",
-                "vertical"
+                "vertical",
+                "triggerable",
+                "limit",
+                "module"
             ]
         },
         {
@@ -1771,6 +1778,40 @@
                 "bindOld",
                 "error",
                 "describedBy"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.multi-select",
+            "group": "ui.inputs",
+            "name": "multi-select",
+            "relative_path": "resources/views/components/ui/inputs/multi-select.blade.php",
+            "props": [
+                "name",
+                "id",
+                "size",
+                "variant",
+                "color",
+                "disabled",
+                "readonly",
+                "options",
+                "value",
+                "values",
+                "bindOld",
+                "error",
+                "describedBy",
+                "placeholder",
+                "endpoint",
+                "param",
+                "debounce",
+                "minChars",
+                "fetchOnEmpty",
+                "default",
+                "maxItems",
+                "noResultsText",
+                "loadingText",
+                "errorText",
+                "selectedText",
+                "module"
             ]
         },
         {
@@ -3572,6 +3613,31 @@
                 "showContact",
                 "isOwnProfile",
                 "compareProfile"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.reporting.operations-dashboard",
+            "view_alias": "daisy::templates.reporting.operations-dashboard",
+            "group": "reporting",
+            "name": "operations-dashboard",
+            "relative_path": "resources/views/templates/reporting/operations-dashboard.blade.php",
+            "props": [
+                "title",
+                "subtitle",
+                "theme",
+                "brand",
+                "product",
+                "updatedAt",
+                "perimeter",
+                "period",
+                "contract",
+                "surveyType",
+                "detailedUrl",
+                "terrainUrl",
+                "officeUrl",
+                "managementUrl",
+                "userName",
+                "userRole"
             ]
         }
     ]

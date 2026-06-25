@@ -1,11 +1,11 @@
 {
-    "generated_at": "2026-05-03T11:00:35+00:00",
+    "generated_at": "2026-06-25T15:32:12+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
-        "component_count": 148,
-        "template_count": 29,
-        "excluded_component_template_mirrors": 13
+        "component_count": 156,
+        "template_count": 32,
+        "excluded_component_template_mirrors": 0
     },
     "components": [
         {
@@ -211,7 +211,10 @@
                 "functionCatalog",
                 "preview",
                 "jsonEditor",
-                "name"
+                "name",
+                "value",
+                "errors",
+                "viewerSubmitMode"
             ]
         },
         {
@@ -222,7 +225,8 @@
             "props": [
                 "value",
                 "errors",
-                "readonly"
+                "readonly",
+                "formId"
             ]
         },
         {
@@ -248,7 +252,25 @@
             "props": [
                 "title",
                 "container",
-                "theme"
+                "theme",
+                "htmlClass",
+                "bodyClass",
+                "fontUrl",
+                "loadDefaultFont"
+            ]
+        },
+        {
+            "alias": "x-daisy::layout.auth-shell",
+            "group": "layout",
+            "name": "auth-shell",
+            "relative_path": "resources/views/components/layout/auth-shell.blade.php",
+            "props": [
+                "backgroundImage",
+                "backgroundClass",
+                "overlay",
+                "overlayClass",
+                "padding",
+                "cardClass"
             ]
         },
         {
@@ -280,9 +302,13 @@
                 "navbarShadow",
                 "variant",
                 "sideClass",
+                "expandedWidth",
+                "collapsedWidth",
                 "stickyAt",
                 "brand",
                 "brandHref",
+                "brandUrl",
+                "brandCollapsed",
                 "showBrand",
                 "sections",
                 "drawerId",
@@ -290,7 +316,10 @@
                 "end",
                 "menuIcon",
                 "iconPrefix",
-                "container"
+                "container",
+                "showThemeController",
+                "themes",
+                "themeLabel"
             ]
         },
         {
@@ -303,9 +332,13 @@
                 "theme",
                 "variant",
                 "sideClass",
+                "expandedWidth",
+                "collapsedWidth",
                 "stickyAt",
                 "brand",
                 "brandHref",
+                "brandUrl",
+                "brandCollapsed",
                 "showBrand",
                 "sections",
                 "drawerId",
@@ -314,7 +347,10 @@
                 "menuIcon",
                 "iconPrefix",
                 "container",
-                "hasNavbar"
+                "hasNavbar",
+                "showThemeController",
+                "themes",
+                "themeLabel"
             ]
         },
         {
@@ -362,6 +398,33 @@
                 "itemClass",
                 "titleClass",
                 "contentClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.blueprint",
+            "group": "ui.advanced",
+            "name": "blueprint",
+            "relative_path": "resources/views/components/ui/advanced/blueprint.blade.php",
+            "props": [
+                "value",
+                "nodeTypes",
+                "mode",
+                "readonly",
+                "name",
+                "height",
+                "toolbar",
+                "palette",
+                "details",
+                "detailsMode",
+                "dock",
+                "fullscreen",
+                "autoLink",
+                "minimap",
+                "autoArrange",
+                "fitOnInit",
+                "history",
+                "reroute",
+                "module"
             ]
         },
         {
@@ -1194,19 +1257,81 @@
             "props": []
         },
         {
+            "alias": "x-daisy::ui.data-display.description-list",
+            "group": "ui.data-display",
+            "name": "description-list",
+            "relative_path": "resources/views/components/ui/data-display/description-list.blade.php",
+            "props": [
+                "sections",
+                "items",
+                "emptyLabel",
+                "columns"
+            ]
+        },
+        {
             "alias": "x-daisy::ui.data-display.file-preview",
             "group": "ui.data-display",
             "name": "file-preview",
             "relative_path": "resources/views/components/ui/data-display/file-preview.blade.php",
             "props": [
+                "file",
                 "url",
                 "name",
                 "type",
+                "mimeType",
+                "extension",
                 "fileSize",
                 "thumbnail",
                 "downloadable",
                 "size",
-                "openMode"
+                "openMode",
+                "previewUrl",
+                "downloadUrl",
+                "previewType",
+                "previewMode",
+                "showPreviewAction",
+                "showDownloadAction",
+                "downloadFromPreview",
+                "showMeta",
+                "maxTextPreviewBytes",
+                "docxPreview",
+                "layout",
+                "actionOnly",
+                "actionButtonClass",
+                "buttonClass",
+                "showCompactPreview",
+                "actionOrder",
+                "modalActionOrder",
+                "previewButtonVariant",
+                "downloadButtonVariant",
+                "openButtonVariant",
+                "closeButtonVariant",
+                "modalDownloadButtonVariant",
+                "modalOpenButtonVariant",
+                "modalCloseButtonVariant",
+                "modalTitle",
+                "modalSize",
+                "modalMaxHeightClass",
+                "modalBoxClass",
+                "modalContentClass",
+                "modalFooter",
+                "modalFooterSticky",
+                "logPreviewErrors"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.data-display.file-preview-trigger",
+            "group": "ui.data-display",
+            "name": "file-preview-trigger",
+            "relative_path": "resources/views/components/ui/data-display/file-preview-trigger.blade.php",
+            "props": [
+                "file",
+                "url",
+                "type",
+                "mimeType",
+                "extension",
+                "label",
+                "disabledWhenUnavailable"
             ]
         },
         {
@@ -1290,7 +1415,18 @@
                 "initialState",
                 "pageSizeOptions",
                 "search",
+                "searchDebounce",
+                "filterDebounce",
+                "minSearchChars",
                 "columnVisibility",
+                "selection",
+                "rowKey",
+                "tableLayout",
+                "minWidth",
+                "scrollX",
+                "externalFilters",
+                "toolbarLayout",
+                "livewireMode",
                 "caption",
                 "size",
                 "zebra",
@@ -1311,8 +1447,13 @@
             "props": [
                 "items",
                 "orientation",
+                "responsiveAt",
                 "compact",
                 "snapIcon",
+                "showIcons",
+                "side",
+                "lineClass",
+                "iconClass",
                 "boxOn"
             ]
         },
@@ -1382,7 +1523,17 @@
                 "iconInHeading",
                 "vertical",
                 "horizontal",
-                "horizontalAt"
+                "horizontalAt",
+                "role",
+                "sessionKey",
+                "showErrors",
+                "dismissible",
+                "closeLabel",
+                "autoDismiss",
+                "autoDismissAfter",
+                "autoDismissMs",
+                "showDismissProgress",
+                "showDismissRemaining"
             ]
         },
         {
@@ -1398,7 +1549,14 @@
                 "text",
                 "inline",
                 "iconInHeading",
-                "horizontalAt"
+                "horizontalAt",
+                "dismissible",
+                "closeLabel",
+                "autoDismiss",
+                "autoDismissAfter",
+                "autoDismissMs",
+                "showDismissProgress",
+                "showDismissRemaining"
             ]
         },
         {
@@ -1412,7 +1570,10 @@
                 "message",
                 "actionLabel",
                 "actionUrl",
-                "size"
+                "actionColor",
+                "size",
+                "preset",
+                "iconName"
             ]
         },
         {
@@ -1457,7 +1618,10 @@
             "props": [
                 "position",
                 "horizontal",
-                "vertical"
+                "vertical",
+                "triggerable",
+                "limit",
+                "module"
             ]
         },
         {
@@ -1480,7 +1644,9 @@
                 "disabled",
                 "tag",
                 "href",
-                "target"
+                "target",
+                "iconName",
+                "iconPosition"
             ]
         },
         {
@@ -1493,7 +1659,14 @@
                 "size",
                 "checked",
                 "disabled",
-                "indeterminate"
+                "indeterminate",
+                "name",
+                "id",
+                "value",
+                "uncheckedValue",
+                "bindOld",
+                "error",
+                "describedBy"
             ]
         },
         {
@@ -1525,6 +1698,7 @@
             "props": [
                 "mode",
                 "value",
+                "name",
                 "disabled",
                 "dropdown",
                 "swatches",
@@ -1547,11 +1721,33 @@
                 "variant",
                 "color",
                 "multiple",
+                "accept",
                 "disabled",
                 "dragdrop",
                 "preview",
                 "dropZoneClass",
+                "dropzoneText",
+                "helpText",
+                "browseText",
                 "module"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.icon-button",
+            "group": "ui.inputs",
+            "name": "icon-button",
+            "relative_path": "resources/views/components/ui/inputs/icon-button.blade.php",
+            "props": [
+                "icon",
+                "label",
+                "tooltip",
+                "href",
+                "type",
+                "variant",
+                "size",
+                "color",
+                "disabled",
+                "target"
             ]
         },
         {
@@ -1575,7 +1771,47 @@
                 "inputPlaceholder",
                 "clearIncomplete",
                 "customMask",
-                "customValidator"
+                "customValidator",
+                "name",
+                "id",
+                "value",
+                "bindOld",
+                "error",
+                "describedBy"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.inputs.multi-select",
+            "group": "ui.inputs",
+            "name": "multi-select",
+            "relative_path": "resources/views/components/ui/inputs/multi-select.blade.php",
+            "props": [
+                "name",
+                "id",
+                "size",
+                "variant",
+                "color",
+                "disabled",
+                "readonly",
+                "options",
+                "value",
+                "values",
+                "bindOld",
+                "error",
+                "describedBy",
+                "placeholder",
+                "endpoint",
+                "param",
+                "debounce",
+                "minChars",
+                "fetchOnEmpty",
+                "default",
+                "maxItems",
+                "noResultsText",
+                "loadingText",
+                "errorText",
+                "selectedText",
+                "module"
             ]
         },
         {
@@ -1630,7 +1866,14 @@
                 "default",
                 "fetchOnEmpty",
                 "placeholder",
-                "module"
+                "module",
+                "name",
+                "id",
+                "value",
+                "bindOld",
+                "error",
+                "describedBy",
+                "options"
             ]
         },
         {
@@ -1652,7 +1895,8 @@
                 "downloadLabel",
                 "downloadFormat",
                 "downloadFilename",
-                "module"
+                "module",
+                "value"
             ]
         },
         {
@@ -1665,7 +1909,13 @@
                 "variant",
                 "color",
                 "disabled",
-                "rows"
+                "rows",
+                "name",
+                "id",
+                "value",
+                "bindOld",
+                "error",
+                "describedBy"
             ]
         },
         {
@@ -1739,7 +1989,8 @@
                 "container",
                 "gap",
                 "categoryWidth",
-                "contentWidth"
+                "contentWidth",
+                "actionsAlignment"
             ]
         },
         {
@@ -1755,7 +2006,9 @@
                 "categoryWidth",
                 "contentWidth",
                 "gap",
-                "borderTop"
+                "borderTop",
+                "stickyAside",
+                "actionsAlignment"
             ]
         },
         {
@@ -1857,8 +2110,7 @@
             "props": [
                 "gap",
                 "align",
-                "class",
-                "styleStack"
+                "class"
             ]
         },
         {
@@ -1979,6 +2231,7 @@
                 "fitBounds",
                 "scale",
                 "preferCanvas",
+                "tiles",
                 "tileUrl",
                 "tileOptions",
                 "provider",
@@ -1986,8 +2239,19 @@
                 "cluster",
                 "clusterOptions",
                 "fullscreen",
+                "geolocation",
                 "markers",
                 "geojson",
+                "basemaps",
+                "overlays",
+                "layerControl",
+                "draw",
+                "measure",
+                "controls",
+                "objectTypes",
+                "drawLayers",
+                "name",
+                "value",
                 "module"
             ]
         },
@@ -2044,11 +2308,12 @@
             "relative_path": "resources/views/components/ui/navigation/breadcrumbs.blade.php",
             "props": [
                 "items",
-                "label",
-                "href",
-                "icon",
                 "size",
-                "as"
+                "as",
+                "label",
+                "truncate",
+                "ellipsisLabel",
+                "schema"
             ]
         },
         {
@@ -2067,8 +2332,8 @@
                 "label",
                 "active",
                 "href",
-                "onclick",
                 "groups",
+                "allowInlineHandlers",
                 "groupSpacing",
                 "itemSpacing",
                 "bg",
@@ -2126,7 +2391,8 @@
                 "responsive",
                 "mobileLabel",
                 "color",
-                "outline"
+                "outline",
+                "paginator"
             ]
         },
         {
@@ -2160,11 +2426,15 @@
                 "forceCollapsed",
                 "stickyAt",
                 "sideClass",
+                "expandedWidth",
+                "collapsedWidth",
                 "minWidth",
                 "maxWidth",
                 "storageKey",
                 "brand",
                 "brandHref",
+                "brandUrl",
+                "brandCollapsed",
                 "showBrand",
                 "label",
                 "items",
@@ -2214,6 +2484,7 @@
                 "nextText",
                 "finishText",
                 "controlsClass",
+                "validateBeforeNext",
                 "module"
             ]
         },
@@ -2230,7 +2501,9 @@
                 "horizontalAt",
                 "color",
                 "allowClickNav",
-                "rootId"
+                "rootId",
+                "indicatorAttribute",
+                "indicatorOffset"
             ]
         },
         {
@@ -2259,7 +2532,27 @@
                 "size",
                 "placement",
                 "radioName",
-                "contentClass"
+                "contentClass",
+                "errorBag"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.overlay.destructive-confirm",
+            "group": "ui.overlay",
+            "name": "destructive-confirm",
+            "relative_path": "resources/views/components/ui/overlay/destructive-confirm.blade.php",
+            "props": [
+                "id",
+                "title",
+                "message",
+                "detail",
+                "color",
+                "icon",
+                "cancelText",
+                "confirmText",
+                "confirmVariant",
+                "cancelVariant",
+                "module"
             ]
         },
         {
@@ -2294,7 +2587,10 @@
                 "contentClass",
                 "menuClass",
                 "cardClass",
-                "cardBodyClass"
+                "cardBodyClass",
+                "id",
+                "triggerLabel",
+                "contentRole"
             ]
         },
         {
@@ -2314,7 +2610,9 @@
                 "responsive",
                 "size",
                 "scrollable",
-                "teleport"
+                "teleport",
+                "closeLabel",
+                "initialFocus"
             ]
         },
         {
@@ -2378,6 +2676,7 @@
             "relative_path": "resources/views/components/ui/partials/form-field.blade.php",
             "props": [
                 "name",
+                "for",
                 "label",
                 "labelClass",
                 "error",
@@ -2386,7 +2685,11 @@
                 "srOnly",
                 "as",
                 "full",
-                "class"
+                "class",
+                "id",
+                "gap",
+                "labelWrap",
+                "controlClass"
             ]
         },
         {
@@ -2526,9 +2829,66 @@
                 "contentTopBorder",
                 "contentTopBorderColor"
             ]
+        },
+        {
+            "alias": "x-daisy::ui.utilities.truncate-text",
+            "group": "ui.utilities",
+            "name": "truncate-text",
+            "relative_path": "resources/views/components/ui/utilities/truncate-text.blade.php",
+            "props": [
+                "text",
+                "maxWidth",
+                "tag",
+                "tooltip",
+                "reveal",
+                "position",
+                "tooltipPosition",
+                "popoverPosition",
+                "onlyWhenTruncated",
+                "tooltipOnlyWhenTruncated",
+                "actionHint",
+                "lines",
+                "title"
+            ]
         }
     ],
     "templates": [
+        {
+            "component_alias": "x-daisy::templates.advanced.blueprint",
+            "view_alias": "daisy::templates.advanced.blueprint",
+            "group": "advanced",
+            "name": "blueprint",
+            "relative_path": "resources/views/templates/advanced/blueprint.blade.php",
+            "props": [
+                "title",
+                "description",
+                "showHeader",
+                "showThemeStress",
+                "showFeatureCoverage",
+                "showContract",
+                "showThemeTokens",
+                "showReadonly",
+                "showTyped",
+                "showSchema",
+                "showIntegration",
+                "showMinimal",
+                "namePrefix",
+                "themeStressThemes",
+                "workflowHeight",
+                "exampleHeight",
+                "workflowNodeTypes",
+                "workflowValue",
+                "typedNodeTypes",
+                "typedValue",
+                "themeNodeTypes",
+                "themeValue",
+                "schemaNodeTypes",
+                "schemaValue",
+                "minimalNodeTypes",
+                "integrationNodeTypes",
+                "integrationValue"
+            ]
+        },
         {
             "component_alias": "x-daisy::templates.auth.forgot-password",
             "view_alias": "daisy::templates.auth.forgot-password",
@@ -2558,7 +2918,8 @@
                 "rememberMe",
                 "rememberMeDays",
                 "forgotPasswordUrl",
-                "signupUrl"
+                "signupUrl",
+                "showSignup"
             ]
         },
         {
@@ -2576,6 +2937,7 @@
                 "rememberMeDays",
                 "forgotPasswordUrl",
                 "signupUrl",
+                "showSignup",
                 "backgroundImage",
                 "showTestimonial",
                 "testimonial",
@@ -2598,10 +2960,13 @@
                 "action",
                 "method",
                 "loginUrl",
+                "showName",
+                "showFirstName",
                 "passwordConfirmation",
                 "termsUrl",
                 "privacyUrl",
-                "acceptTerms"
+                "acceptTerms",
+                "submitButtonText"
             ]
         },
         {
@@ -2616,10 +2981,13 @@
                 "action",
                 "method",
                 "loginUrl",
+                "showName",
+                "showFirstName",
                 "passwordConfirmation",
                 "termsUrl",
                 "privacyUrl",
                 "acceptTerms",
+                "submitButtonText",
                 "backgroundImage",
                 "showTestimonial",
                 "testimonial",
@@ -2658,10 +3026,11 @@
                 "description",
                 "action",
                 "method",
+                "token",
+                "email",
                 "backToLoginUrl",
                 "backToLoginText",
-                "submitButtonText",
-                "emailSent"
+                "passwordConfirmation"
             ]
         },
         {
@@ -2678,7 +3047,9 @@
                 "recoveryUrl",
                 "logoutUrl",
                 "showRecovery",
-                "showLogout"
+                "showLogout",
+                "useRecoveryCode",
+                "submitButtonText"
             ]
         },
         {
@@ -2693,6 +3064,7 @@
                 "message",
                 "resendUrl",
                 "logoutUrl",
+                "showResend",
                 "showLogout",
                 "resendButtonText",
                 "logoutText"
@@ -2711,9 +3083,11 @@
                 "currentVersion",
                 "rssUrl",
                 "atomUrl",
+                "documentationUrl",
                 "showFilters",
                 "showSearch",
                 "showVersionBadge",
+                "showDocumentationCta",
                 "groupByMonth",
                 "highlightCurrent",
                 "expandLatest",
@@ -2849,6 +3223,7 @@
             "name": "loading-state",
             "relative_path": "resources/views/templates/errors/loading-state.blade.php",
             "props": [
+                "title",
                 "type",
                 "message",
                 "size",
@@ -2868,7 +3243,28 @@
                 "theme",
                 "message",
                 "retryAfter",
-                "allowedIps"
+                "allowedIps",
+                "showAllowedIps"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.form.builder",
+            "view_alias": "daisy::templates.form.builder",
+            "group": "form",
+            "name": "builder",
+            "relative_path": "resources/views/templates/form/builder.blade.php",
+            "props": [
+                "title",
+                "description",
+                "schema",
+                "value",
+                "errors",
+                "schemaName",
+                "fieldTypes",
+                "functionCatalog",
+                "viewerSubmitMode",
+                "preview",
+                "jsonEditor"
             ]
         },
         {
@@ -3176,6 +3572,9 @@
                 "preferences",
                 "language",
                 "timezone",
+                "availableLanguages",
+                "availableTimezones",
+                "availableThemes",
                 "readonly"
             ]
         },
@@ -3214,6 +3613,31 @@
                 "showContact",
                 "isOwnProfile",
                 "compareProfile"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.reporting.operations-dashboard",
+            "view_alias": "daisy::templates.reporting.operations-dashboard",
+            "group": "reporting",
+            "name": "operations-dashboard",
+            "relative_path": "resources/views/templates/reporting/operations-dashboard.blade.php",
+            "props": [
+                "title",
+                "subtitle",
+                "theme",
+                "brand",
+                "product",
+                "updatedAt",
+                "perimeter",
+                "period",
+                "contract",
+                "surveyType",
+                "detailedUrl",
+                "terrainUrl",
+                "officeUrl",
+                "managementUrl",
+                "userName",
+                "userRole"
             ]
         }
     ]

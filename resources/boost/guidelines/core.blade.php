@@ -12,6 +12,7 @@ This package is the default reusable UI layer when it is installed in a host Lar
   - published overrides in `resources/views/vendor/daisy/...`
 - Compose existing package components before creating a host component or layout that duplicates them.
 - Create a new host-side Blade component only when the package surface and vendor overrides cannot cover the requirement cleanly.
+- For operations dashboards with KPI cards, filters, charts, and quick actions, start from `x-daisy::templates.reporting.operations-dashboard` before composing a host-only reporting page.
 
 ### Skill
 
@@ -46,6 +47,7 @@ Use the package namespace and aliases directly:
 </x-daisy::layout.app>
 
 <x-daisy::templates.auth.login-simple />
+<x-daisy::templates.reporting.operations-dashboard />
 </code-snippet>
 @endverbatim
 
@@ -61,6 +63,8 @@ If a host app only needs a light visual or content adjustment, prefer published 
 
 Before adding Alpine, vanilla JavaScript, or a new host-side widget, check whether the target package component already ships the required behavior through package assets, `window.DaisyKit`, or `data-module` hooks.
 
+Use `window.DaisyKit.notify(...)`, the `daisy:notify` event, and a single triggerable `x-daisy::ui.feedback.toast` container for on-demand toast notifications with actions and auto-dismiss behavior. Do not add host-side toast scripts for standard business feedback. Keep critical destructive confirmations on `x-daisy::ui.overlay.popconfirm` or modal flows instead of toast actions.
+
 For visual node editors, workflows, blueprints, and schema graphs, prefer `x-daisy::ui.advanced.blueprint` and its `value`/`nodeTypes` JSON contract before creating a custom graph editor.
 
 ### Browser Autocomplete
@@ -69,7 +73,7 @@ For visual node editors, workflows, blueprints, and schema graphs, prefer `x-dai
 - Keep semantic values in package-owned identity templates where the field meaning is known, such as auth, profile, password, one-time code, and contact fields.
 - For business or sensitive host forms, prefer `autocomplete="off"` on the form/page template or on the specific field that needs it.
 - For broad host conventions, use a host wrapper, layout, or published Daisy Kit override; do not add a global Daisy Kit switch that forces autocomplete behavior.
-- Do not confuse browser/password-manager autocomplete with Daisy Kit remote autocomplete widgets such as enhanced selects or token inputs.
+- Do not confuse browser/password-manager autocomplete with Daisy Kit remote autocomplete widgets such as enhanced selects, multi-selects, or token inputs.
 
 ### CSP Compatibility
 
