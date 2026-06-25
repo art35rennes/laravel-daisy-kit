@@ -55,6 +55,29 @@
 @import "trix/dist/trix.css";
 @import "./table.css";
 
+:root {
+  --daisy-z-tooltip: 35;
+  --daisy-z-tooltip-content: 36;
+}
+
+:where(.tooltip):where(:hover, :focus-within, .tooltip-open) {
+  position: relative;
+  z-index: var(--daisy-z-tooltip);
+}
+
+:where(.tooltip):where(:hover, :focus-within, .tooltip-open)::before,
+:where(.tooltip):where(:hover, :focus-within, .tooltip-open)::after,
+:where(.tooltip):where(:hover, :focus-within, .tooltip-open) > .tooltip-content {
+  z-index: var(--daisy-z-tooltip-content);
+}
+
+.daisy-navbar-container {
+  display: flex;
+  width: 100%;
+  min-height: inherit;
+  align-items: center;
+}
+
 trix-editor[class*="daisy-wysiwyg-min-height-"] {
   min-height: var(--daisy-wysiwyg-min-height);
 }
@@ -73,6 +96,27 @@ trix-editor[class*="daisy-wysiwyg-min-height-"] {
   width: max-content;
   max-width: 100%;
   vertical-align: middle;
+}
+
+.daisy-multi-select > [data-role="selected"] {
+  height: auto !important;
+  min-height: 100%;
+  margin-inline: 0 !important;
+  padding-inline: 0 !important;
+  border-inline: 0 !important;
+}
+
+.daisy-multi-select > [data-role="selected"] > [data-role="input"] {
+  height: auto !important;
+  padding-inline: 0 !important;
+}
+
+.daisy-multi-select-readonly {
+  background-image: none !important;
+}
+
+.daisy-multi-select-readonly > [data-role="selected"] {
+  overflow: hidden;
 }
 
 /* Code editor */
@@ -133,15 +177,44 @@ trix-editor[class*="daisy-wysiwyg-min-height-"] {
 
 .daisy-blueprint {
   --daisy-blueprint-height: 520px;
+  inline-size: 100%;
 }
 
 .daisy-blueprint > .grid {
   min-height: var(--daisy-blueprint-height);
 }
 
+.daisy-blueprint:fullscreen,
+.daisy-blueprint-fullscreen-fallback {
+  --daisy-blueprint-height: 100dvh;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  border-radius: 0;
+}
+
+.daisy-blueprint-fullscreen-fallback {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+.daisy-blueprint:fullscreen > [data-blueprint-layout],
+.daisy-blueprint-fullscreen-fallback > [data-blueprint-layout] {
+  height: calc(100dvh - 3.25rem);
+}
+
 .daisy-blueprint-panel {
   max-height: var(--daisy-blueprint-height);
   overflow: auto;
+}
+
+.daisy-blueprint .modal[data-blueprint-details-panel] {
+  position: fixed;
+}
+
+.daisy-blueprint .modal[data-blueprint-details-panel] [data-blueprint-properties] {
+  min-width: 0;
 }
 
 .daisy-blueprint [data-blueprint-palette-menu] > .dropdown-content {
@@ -1866,6 +1939,46 @@ calendar-month::part(button) {
 /* 1) Cacher l’icone d’attache quand attachments=0 (comportement du composant) */
 /* 2) Assurer que le popup de lien passe au-dessus des éléments environnants */
 .trix-wrapper .trix-dialog { z-index: 60; }
+
+/* WYSIWYG embedded in the narrow Blueprint properties panel. */
+.daisy-blueprint-wysiwyg trix-toolbar {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 0.25rem;
+}
+
+.daisy-blueprint-wysiwyg trix-toolbar .trix-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.daisy-blueprint-wysiwyg trix-toolbar .trix-button-group {
+  margin: 0;
+}
+
+.daisy-blueprint-wysiwyg .trix-dialogs {
+  position: relative;
+}
+
+.daisy-blueprint-wysiwyg .trix-dialog {
+  position: static;
+  max-width: 100%;
+  margin-top: 0.25rem;
+  transform: none;
+}
+
+.daisy-blueprint-wysiwyg .trix-dialog__link-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+}
+
+.daisy-blueprint-wysiwyg .trix-dialog__link-fields .trix-input {
+  width: 100%;
+  min-width: 0;
+}
 
 /* Mobile nested scroll improvements */
 .overflow-x-auto,
