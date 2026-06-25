@@ -40,7 +40,7 @@ export function normalizeNodeTypes(nodeTypes = []) {
         return null;
       }
 
-      return {
+      const normalizedNodeType = {
         type: normalizedType,
         label: stringOrFallback(source.label, normalizedType),
         category: stringOrFallback(source.category, 'General'),
@@ -58,6 +58,14 @@ export function normalizeNodeTypes(nodeTypes = []) {
           ...asPlainObject(source.defaults),
         },
       };
+
+      const colorField = stringOrFallback(source.colorField ?? source.color_field);
+
+      if (colorField) {
+        normalizedNodeType.colorField = colorField;
+      }
+
+      return normalizedNodeType;
     })
     .filter(Boolean);
 }
@@ -117,13 +125,14 @@ export function normalizeControls(controls = []) {
 
       const type = stringOrFallback(source.type, 'text');
 
-      return {
+      const normalizedControl = {
         key,
         name: stringOrFallback(source.name, key),
         label: stringOrFallback(source.label, key),
         type: normalizeControlType(type),
         placeholder: stringOrFallback(source.placeholder),
         help: stringOrFallback(source.help ?? source.description),
+        section: stringOrFallback(source.section ?? source.group ?? source.tab),
         required: Boolean(source.required),
         pattern: stringOrFallback(source.pattern),
         minLength: source.minLength ?? source.minlength ?? null,
@@ -134,6 +143,16 @@ export function normalizeControls(controls = []) {
         options: normalizeControlOptions(source.options),
         default: source.default ?? source.value ?? null,
       };
+
+      if (['code-editor', 'wysiwyg'].includes(normalizedControl.type)) {
+        normalizedControl.height = stringOrFallback(source.height);
+      }
+
+      if (normalizedControl.type === 'code-editor') {
+        normalizedControl.language = stringOrFallback(source.language, 'javascript');
+      }
+
+      return normalizedControl;
     })
     .filter(Boolean);
 }
@@ -165,9 +184,22 @@ export function normalizeControlOptions(options = []) {
       return {
         value: String(value),
         label: stringOrFallback(source.label, String(value)),
+        color: normalizeHexColor(source.color),
       };
     })
     .filter(Boolean);
+}
+
+export function normalizeHexColor(value) {
+  const normalized = stringOrFallback(value);
+
+  if (!normalized) {
+    return '';
+  }
+
+  const hex = normalized.startsWith('#') ? normalized.slice(1) : normalized;
+
+  return /^(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(hex) ? `#${hex.toLowerCase()}` : '';
 }
 
 export function normalizeControlType(type) {
@@ -175,22 +207,30 @@ export function normalizeControlType(type) {
   const aliases = {
     boolean: 'checkbox',
     bool: 'checkbox',
+    code: 'code-editor',
+    codeeditor: 'code-editor',
     dropdown: 'select',
     email: 'email',
     integer: 'number',
+    multiple: 'multiselect',
+    multi_select: 'multiselect',
     string: 'text',
     toggle: 'checkbox',
+    richtext: 'wysiwyg',
+    wysiwyg_html: 'wysiwyg',
   };
   const resolved = aliases[normalized] || normalized;
 
   return [
     'checkbox',
+    'code-editor',
     'color',
     'date',
     'datetime-local',
     'email',
     'hidden',
     'month',
+    'multiselect',
     'number',
     'password',
     'radio',
@@ -202,6 +242,7 @@ export function normalizeControlType(type) {
     'time',
     'url',
     'week',
+    'wysiwyg',
   ].includes(resolved) ? resolved : 'text';
 }
 

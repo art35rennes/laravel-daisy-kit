@@ -59,6 +59,7 @@ export function createNode(nodeData, nodeTypes, sockets, readonly) {
     category: typeDefinition?.category || '',
     description: typeDefinition?.description || '',
     display,
+    colorField: typeDefinition?.colorField || '',
     icon: typeDefinition?.icon || '',
     theme: normalizeBlueprintTheme(typeDefinition?.theme),
     nameStrategy: typeDefinition?.nameStrategy || { mode: 'free' },

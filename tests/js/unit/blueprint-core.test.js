@@ -14,6 +14,7 @@ import {
 } from '../../../resources/js/blueprint/core.js';
 import {
   applyNodeData,
+  activateDetailsTab,
   collectPropertyInputData,
   getNodeControls,
   readPropertyInputValue,
@@ -29,6 +30,7 @@ import {
   getControlType,
 } from '../../../resources/js/blueprint/nodes.js';
 import { createPaletteRegistry } from '../../../resources/js/blueprint/palette.js';
+import { formatPreviewValue, resolveNodeColor } from '../../../resources/js/blueprint/rendering.js';
 import { serializeEditor } from '../../../resources/js/blueprint/serialization.js';
 import { normalizeBlueprintTheme, resolveThemeTokens } from '../../../resources/js/blueprint/theme.js';
 
@@ -149,12 +151,12 @@ describe('blueprint graph contract', () => {
   it('normalizes standalone blueprint controls', () => {
     expect(normalizeControls([
       { key: 'notes', type: 'textarea', help: 'Internal notes' },
-      { key: 'count', type: 'integer', min: 0, max: 10, step: 1 },
+      { key: 'count', type: 'integer', min: 0, max: 10, step: 1, section: 'Limits' },
       { key: 'ignored' },
       { label: 'Missing key' },
     ])).toMatchObject([
       { key: 'notes', type: 'textarea', help: 'Internal notes' },
-      { key: 'count', type: 'number', min: 0, max: 10, step: 1 },
+      { key: 'count', type: 'number', min: 0, max: 10, step: 1, section: 'Limits' },
       { key: 'ignored', type: 'text' },
     ]);
   });
@@ -538,45 +540,64 @@ describe('blueprint graph contract', () => {
   });
 
   it('renders the details panel with editable controls and feedback', () => {
-    document.body.innerHTML = `
-      <div>
-        <aside class="hidden" data-blueprint-details-panel></aside>
-        <button class="hidden" data-blueprint-details-backdrop></button>
-        <div data-blueprint-properties></div>
-      </div>
-    `;
-    const root = document.querySelector('div');
-    const node = {
-      id: 'notify-1',
-      label: 'Notify <ops>',
-      __blueprint: {
-        type: 'notify',
-        theme: 'success',
-        description: 'Send alert',
-        data: { channel: 'ops', priority: 3, enabled: true },
-        controls: normalizeControls([
-          { key: 'channel', label: 'Channel', type: 'select', options: ['ops', 'support'] },
-          { key: 'priority', label: 'Priority', type: 'range', min: 1, max: 5 },
-          { key: 'enabled', label: 'Enabled', type: 'checkbox' },
-        ]),
-      },
-    };
+    const requestAnimationFrame = window.requestAnimationFrame;
+    window.requestAnimationFrame = () => {};
 
-    renderProperties(root, node, {
-      applyNode: 'Apply',
-      deleteNode: 'Delete',
-      applySuccess: 'Saved',
-    }, false, { channel: 'support', priority: 4, enabled: false }, { valid: true, errors: {} });
+    try {
+      document.body.innerHTML = `
+        <div>
+          <aside class="hidden" data-blueprint-details-panel></aside>
+          <button class="hidden" data-blueprint-details-backdrop></button>
+          <div data-blueprint-properties></div>
+        </div>
+      `;
+      const root = document.querySelector('div');
+      const node = {
+        id: 'notify-1',
+        label: 'Notify <ops>',
+        __blueprint: {
+          type: 'notify',
+          theme: 'success',
+          description: 'Send alert',
+          data: { channel: 'ops', targets: ['review'], priority: 3, enabled: true },
+          controls: normalizeControls([
+            { key: 'channel', label: 'Channel', type: 'select', options: ['ops', 'support'] },
+            { key: 'targets', label: 'Targets', type: 'multiselect', options: ['review', 'done'] },
+            { key: 'rule', label: 'Rule', type: 'code-editor', language: 'jsonata', section: 'Rules' },
+            { key: 'body', label: 'Body', type: 'wysiwyg', section: 'Rules' },
+            { key: 'priority', label: 'Priority', type: 'range', min: 1, max: 5, section: 'Settings' },
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' },
+          ]),
+        },
+      };
 
-    expect(root.querySelector('[data-blueprint-details-panel]').classList.contains('hidden')).toBe(false);
-    expect(root.querySelector('[data-blueprint-details-backdrop]').classList.contains('hidden')).toBe(false);
-    expect(root.querySelector('[data-blueprint-properties]').textContent).toContain('Notify <ops>');
-    expect(root.querySelector('[data-blueprint-details-feedback]').textContent).toContain('Saved');
-    expect(root.querySelector('select[data-blueprint-property-input="channel"]').value).toBe('support');
-    expect(root.querySelector('input[data-blueprint-property-input="priority"]').value).toBe('4');
-    expect(root.querySelector('input[data-blueprint-property-input="enabled"]').checked).toBe(false);
-    expect(root.querySelector('[data-blueprint-apply-node]')).not.toBeNull();
-    expect(root.querySelector('[data-blueprint-delete-node]')).not.toBeNull();
+      renderProperties(root, node, {
+        applyNode: 'Apply',
+        deleteNode: 'Delete',
+        applySuccess: 'Saved',
+      }, false, { channel: 'support', targets: ['review'], priority: 4, enabled: false }, { valid: true, errors: {} });
+
+      expect(root.querySelector('[data-blueprint-details-panel]').classList.contains('hidden')).toBe(false);
+      expect(root.querySelector('[data-blueprint-details-backdrop]').classList.contains('hidden')).toBe(false);
+      expect(root.querySelector('[data-blueprint-properties]').textContent).toContain('Notify <ops>');
+      expect(root.querySelector('[data-blueprint-details-feedback]').textContent).toContain('Saved');
+      expect(root.querySelector('select[data-blueprint-property-input="channel"]').value).toBe('support');
+      expect([...root.querySelector('select[data-blueprint-property-input="targets"]').selectedOptions].map(option => option.value)).toEqual(['review']);
+      expect(root.querySelector('.code-editor[data-blueprint-property-input="rule"]')).not.toBeNull();
+      expect(root.querySelector('.trix-wrapper.daisy-blueprint-wysiwyg[data-blueprint-property-input="body"]')).not.toBeNull();
+      expect([...root.querySelectorAll('[data-blueprint-details-tab]')].map(tab => tab.textContent)).toEqual(['Général', 'Rules', 'Settings']);
+      expect(root.querySelector('[data-blueprint-details-tab="general"]').classList.contains('tab-active')).toBe(true);
+      activateDetailsTab(root, 'rules');
+      expect(root.querySelector('[data-blueprint-details-tab="rules"]').classList.contains('tab-active')).toBe(true);
+      expect(root.querySelector('[data-blueprint-details-section="general"]').classList.contains('hidden')).toBe(true);
+      expect(root.querySelector('[data-blueprint-details-section="rules"]').classList.contains('hidden')).toBe(false);
+      expect(root.querySelector('input[data-blueprint-property-input="priority"]').value).toBe('4');
+      expect(root.querySelector('input[data-blueprint-property-input="enabled"]').checked).toBe(false);
+      expect(root.querySelector('[data-blueprint-apply-node]')).not.toBeNull();
+      expect(root.querySelector('[data-blueprint-delete-node]')).not.toBeNull();
+    } finally {
+      window.requestAnimationFrame = requestAnimationFrame;
+    }
   });
 
   it('renders details errors with copyable JSON details', () => {
@@ -679,6 +700,16 @@ describe('blueprint graph contract', () => {
       <input type="number" value="7" data-blueprint-property-input="count">
       <input type="range" value="3" data-blueprint-property-input="priority">
       <input type="text" value="ops" data-blueprint-property-input="channel">
+      <select multiple data-blueprint-property-input="targets">
+        <option value="review" selected>Review</option>
+        <option value="done" selected>Done</option>
+      </select>
+      <div class="code-editor" data-blueprint-property-input="rule">
+        <textarea data-sync>status = "done"</textarea>
+      </div>
+      <div class="trix-wrapper" data-blueprint-property-input="body">
+        <input type="hidden" value="<p>Recommendation</p>">
+      </div>
     `;
     const node = {
       __blueprint: {
@@ -692,6 +723,9 @@ describe('blueprint graph contract', () => {
     expect(readPropertyInputValue(document.querySelector('[data-blueprint-property-input="count"]'))).toBe(7);
     expect(readPropertyInputValue(document.querySelector('[data-blueprint-property-input="priority"]'))).toBe(3);
     expect(readPropertyInputValue(document.querySelector('[data-blueprint-property-input="channel"]'))).toBe('ops');
+    expect(readPropertyInputValue(document.querySelector('[data-blueprint-property-input="targets"]'))).toEqual(['review', 'done']);
+    expect(readPropertyInputValue(document.querySelector('[data-blueprint-property-input="rule"]'))).toBe('status = "done"');
+    expect(readPropertyInputValue(document.querySelector('[data-blueprint-property-input="body"]'))).toBe('<p>Recommendation</p>');
 
     applyNodeData(node, { enabled: true, count: 7, channel: 'ops' });
 
@@ -738,6 +772,25 @@ describe('blueprint graph contract', () => {
     expect(node.__blueprint.data).toEqual({ title: 'Notify', priority: 2 });
     expect(node.__blueprint.previewFields).toEqual([{ key: 'priority', label: '' }]);
     expect(node.controls).toEqual({});
+  });
+
+  it('renders select option labels in node preview instead of technical values', () => {
+    const node = {
+      __blueprint: {
+        colorField: 'status_uuid',
+        data: { status_uuid: '019e8f7d-status-uuid' },
+        controls: normalizeControls([
+          {
+            key: 'status_uuid',
+            type: 'select',
+            options: [{ value: '019e8f7d-status-uuid', label: 'À valider', color: '#2563eb' }],
+          },
+        ]),
+      },
+    };
+
+    expect(formatPreviewValue('019e8f7d-status-uuid', node, { key: 'status_uuid' })).toBe('À valider');
+    expect(resolveNodeColor(node)).toBe('#2563eb');
   });
 
   it('builds palette groups and node factories for Rete context menu and dock', () => {

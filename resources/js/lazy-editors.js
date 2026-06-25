@@ -100,7 +100,7 @@ async function ensureTrix() {
  * Initialise tous les éditeurs présents dans un conteneur donné
  * @param {Element} root - Conteneur racine
  */
-async function initEditorsIn(root) {
+export async function initEditorsIn(root) {
   if (!root) return;
   
   // Initialisation des éditeurs CodeMirror

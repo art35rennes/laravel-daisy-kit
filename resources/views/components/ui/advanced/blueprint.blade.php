@@ -8,7 +8,9 @@
     'toolbar' => true,
     'palette' => true,
     'details' => true,
+    'detailsMode' => 'panel',
     'dock' => false,
+    'fullscreen' => true,
     'autoLink' => true,
     'minimap' => true,
     'autoArrange' => true,
@@ -52,7 +54,7 @@
     $resolvedMode = in_array($mode, ['view', 'edit', 'workflow'], true) ? $mode : 'workflow';
     $isReadonly = (bool) $readonly || $resolvedMode === 'view';
     $heightClass = $height === '520px' ? null : $dimensionClass($height, 'daisy-blueprint-height');
-    $classes = trim('daisy-blueprint bg-base-100 card-border rounded-box overflow-hidden '.$heightClass);
+    $classes = trim('daisy-blueprint w-full bg-base-100 card-border rounded-box overflow-hidden '.$heightClass);
     $resolvedNodeTypes = filled($nodeTypes) ? $nodeTypes : [[
         'type' => 'task',
         'label' => __('daisy::components.blueprint_editor.default_node'),
@@ -66,6 +68,7 @@
         ->groupBy(fn ($type) => filled($type['category'] ?? null) ? (string) $type['category'] : __('daisy::components.blueprint_editor.general_category'));
     $showsPalette = (bool) $palette && ! $isReadonly;
     $showsDetails = (bool) $details;
+    $resolvedDetailsMode = in_array($detailsMode, ['panel', 'modal'], true) ? $detailsMode : 'panel';
     $themeBadgeClasses = [
         'primary' => 'badge-primary',
         'secondary' => 'badge-secondary',
@@ -107,7 +110,9 @@
             'data-readonly' => $isReadonly ? 'true' : 'false',
             'data-palette' => $palette ? 'true' : 'false',
             'data-details' => $showsDetails ? 'true' : 'false',
+            'data-details-mode' => $resolvedDetailsMode,
             'data-dock' => $dock ? 'true' : 'false',
+            'data-fullscreen' => $fullscreen ? 'true' : 'false',
             'data-auto-link' => $autoLink ? 'true' : 'false',
             'data-minimap' => $minimap ? 'true' : 'false',
             'data-auto-arrange' => $autoArrange ? 'true' : 'false',
@@ -133,54 +138,39 @@
                         cardBodyClass="p-3"
                         data-blueprint-palette-menu
                     >
-                        <div class="grid gap-2">
-                            @forelse($nodeTypeGroups as $category => $types)
+                        <div class="grid gap-1">
+                            @forelse(collect($nodeTypeGroups)->flatten(1) as $type)
                                 @php
-                                    $groupId = $id.'-palette-'.md5((string) $category);
+                                    $theme = filled($type['theme'] ?? null) ? (string) $type['theme'] : 'default';
+                                    $badgeClass = $themeBadgeClasses[$theme] ?? 'badge-neutral';
+                                    $portSummary = collect($type['inputs'] ?? [])
+                                        ->merge($type['outputs'] ?? [])
+                                        ->pluck('type')
+                                        ->filter()
+                                        ->unique()
+                                        ->implode(' · ');
                                 @endphp
-                                <div class="rounded-box border border-base-300 bg-base-100">
-                                    <input id="{{ $groupId }}" type="checkbox" class="peer checkbox checkbox-xs ms-3 mt-3 align-middle">
-                                    <label for="{{ $groupId }}" class="-ms-8 flex cursor-pointer items-center justify-between gap-2 px-3 py-2 ps-10 text-xs font-semibold uppercase tracking-wide text-base-content/60 hover:bg-base-200">
-                                        <span>{{ $category }}</span>
-                                    </label>
-                                    <div class="hidden px-3 pb-3 pt-1 peer-checked:block">
-                                        <div class="grid gap-1">
-                                            @foreach($types as $type)
-                                                @php
-                                                    $theme = filled($type['theme'] ?? null) ? (string) $type['theme'] : 'default';
-                                                    $badgeClass = $themeBadgeClasses[$theme] ?? 'badge-neutral';
-                                                    $portSummary = collect($type['inputs'] ?? [])
-                                                        ->merge($type['outputs'] ?? [])
-                                                        ->pluck('type')
-                                                        ->filter()
-                                                        ->unique()
-                                                        ->implode(' · ');
-                                                @endphp
-                                                <button
-                                                    type="button"
-                                                    class="rounded-btn px-2 py-1.5 text-left text-sm hover:bg-base-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                                                    data-blueprint-add-node="{{ $type['type'] }}"
-                                                    @if(filled($type['description'] ?? null)) title="{{ $type['description'] }}" @endif
-                                                >
-                                                    <span class="flex min-w-0 items-center justify-between gap-2">
-                                                        <span class="truncate font-medium">{{ $type['label'] ?? $type['type'] }}</span>
-                                                        <span @class(['badge badge-xs shrink-0', $badgeClass])>{{ $theme }}</span>
-                                                    </span>
-                                                    @if(filled($type['description'] ?? null) || filled($portSummary))
-                                                        <span class="mt-0.5 grid min-w-0 gap-0.5">
-                                                            @if(filled($type['description'] ?? null))
-                                                                <span class="line-clamp-2 text-xs font-normal opacity-60">{{ $type['description'] }}</span>
-                                                            @endif
-                                                            @if(filled($portSummary))
-                                                                <span class="text-[0.6875rem] font-normal uppercase tracking-wide opacity-50">{{ $portSummary }}</span>
-                                                            @endif
-                                                        </span>
-                                                    @endif
-                                                </button>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
+                                <button
+                                    type="button"
+                                    class="rounded-btn px-2 py-1.5 text-left text-sm hover:bg-base-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                                    data-blueprint-add-node="{{ $type['type'] }}"
+                                    @if(filled($type['description'] ?? null)) title="{{ $type['description'] }}" @endif
+                                >
+                                    <span class="flex min-w-0 items-center justify-between gap-2">
+                                        <span class="truncate font-medium">{{ $type['label'] ?? $type['type'] }}</span>
+                                        <span @class(['badge badge-xs shrink-0', $badgeClass])>{{ $theme }}</span>
+                                    </span>
+                                    @if(filled($type['description'] ?? null) || filled($portSummary))
+                                        <span class="mt-0.5 grid min-w-0 gap-0.5">
+                                            @if(filled($type['description'] ?? null))
+                                                <span class="line-clamp-2 text-xs font-normal opacity-60">{{ $type['description'] }}</span>
+                                            @endif
+                                            @if(filled($portSummary))
+                                                <span class="text-[0.6875rem] font-normal uppercase tracking-wide opacity-50">{{ $portSummary }}</span>
+                                            @endif
+                                        </span>
+                                    @endif
+                                </button>
                             @empty
                                 <p class="text-sm opacity-70">{{ __('daisy::components.blueprint_editor.empty_palette') }}</p>
                             @endforelse
@@ -198,6 +188,9 @@
                     <button type="button" class="btn btn-xs join-item" data-blueprint-action="arrange">{{ __('daisy::components.blueprint_editor.actions.arrange') }}</button>
                 @endif
                 <button type="button" class="btn btn-xs join-item" data-blueprint-action="fit">{{ __('daisy::components.blueprint_editor.actions.fit') }}</button>
+                @if($fullscreen)
+                    <button type="button" class="btn btn-xs join-item" data-blueprint-action="fullscreen">{{ __('daisy::components.blueprint_editor.actions.fullscreen') }}</button>
+                @endif
             </div>
         </div>
     @endif
@@ -215,16 +208,32 @@
                 aria-label="{{ __('daisy::components.blueprint_editor.actions.close_properties') }}"
             ></button>
 
-            <aside
-                class="daisy-blueprint-panel daisy-blueprint-details-panel absolute inset-y-0 end-0 z-40 hidden w-full max-w-sm border-s border-base-300 bg-base-100 p-3 shadow-xl"
-                data-blueprint-details-panel="true"
-            >
-                <div class="mb-3 flex items-center justify-between gap-2">
-                    <p class="text-xs font-semibold uppercase tracking-wide opacity-70">{{ __('daisy::components.blueprint_editor.properties') }}</p>
-                    <button type="button" class="btn btn-ghost btn-xs" data-blueprint-details-close>{{ __('daisy::components.blueprint_editor.actions.close') }}</button>
+            @if($resolvedDetailsMode === 'modal')
+                <div
+                    class="modal hidden"
+                    data-blueprint-details-panel="true"
+                >
+                    <div class="modal-box flex max-h-[calc(100dvh-3rem)] w-11/12 max-w-6xl flex-col p-0">
+                        <div class="flex items-center justify-between gap-2 border-b border-base-300 px-5 py-3">
+                            <p class="text-xs font-semibold uppercase tracking-wide opacity-70">{{ __('daisy::components.blueprint_editor.properties') }}</p>
+                            <button type="button" class="btn btn-ghost btn-xs" data-blueprint-details-close>{{ __('daisy::components.blueprint_editor.actions.close') }}</button>
+                        </div>
+                        <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4" data-blueprint-properties></div>
+                    </div>
+                    <button type="button" class="modal-backdrop" data-blueprint-details-backdrop>{{ __('daisy::components.blueprint_editor.actions.close_properties') }}</button>
                 </div>
-                <div data-blueprint-properties></div>
-            </aside>
+            @else
+                <aside
+                    class="daisy-blueprint-panel daisy-blueprint-details-panel absolute inset-y-0 end-0 z-40 hidden w-full max-w-sm border-s border-base-300 bg-base-100 p-3 shadow-xl"
+                    data-blueprint-details-panel="true"
+                >
+                    <div class="mb-3 flex items-center justify-between gap-2">
+                        <p class="text-xs font-semibold uppercase tracking-wide opacity-70">{{ __('daisy::components.blueprint_editor.properties') }}</p>
+                        <button type="button" class="btn btn-ghost btn-xs" data-blueprint-details-close>{{ __('daisy::components.blueprint_editor.actions.close') }}</button>
+                    </div>
+                    <div data-blueprint-properties></div>
+                </aside>
+            @endif
         @endif
     </div>
 

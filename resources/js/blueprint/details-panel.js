@@ -1,7 +1,10 @@
 import { getControlType } from './nodes.js';
 
 export function setDetailsOpen(root, open) {
-  root.querySelector('[data-blueprint-details-panel]')?.classList.toggle('hidden', !open);
+  const panel = root.querySelector('[data-blueprint-details-panel]');
+
+  panel?.classList.toggle('hidden', !open);
+  panel?.classList.toggle('modal-open', open && panel.classList.contains('modal'));
   root.querySelector('[data-blueprint-details-backdrop]')?.classList.toggle('hidden', !open);
 }
 
@@ -53,10 +56,10 @@ export function renderProperties(root, node, i18n, readonly = false, draftData =
     wrapper.append(renderBlueprintFeedback(validation, i18n));
   }
 
-  const controlsWrap = createElement('div', { className: 'grid gap-2' });
+  const controlsWrap = createElement('div', { className: 'grid gap-3' });
 
   if (controls.length) {
-    controls.forEach((control) => controlsWrap.append(renderBlueprintControl(control, node.id, values, readonly)));
+    controlsWrap.append(renderControlSections(controls, node.id, values, readonly));
   } else {
     controlsWrap.append(createElement('p', {
       className: 'rounded-box border border-dashed border-base-300 bg-base-200/60 p-3 text-sm text-base-content/70',
@@ -88,6 +91,19 @@ export function renderProperties(root, node, i18n, readonly = false, draftData =
 
   target.append(wrapper);
   setDetailsOpen(root, true);
+  initLazyEditors(target);
+}
+
+export function activateDetailsTab(root, tabName) {
+  root.querySelectorAll('[data-blueprint-details-tab]').forEach((tab) => {
+    const active = tab.dataset.blueprintDetailsTab === tabName;
+
+    tab.classList.toggle('tab-active', active);
+    tab.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  root.querySelectorAll('[data-blueprint-details-section]').forEach((section) => {
+    section.classList.toggle('hidden', section.dataset.blueprintDetailsSection !== tabName);
+  });
 }
 
 export function getNodeControls(node) {
@@ -101,8 +117,20 @@ export function getNodeControls(node) {
 }
 
 export function readPropertyInputValue(input) {
+  if (input.classList?.contains('code-editor')) {
+    return input.querySelector('textarea[data-sync]')?.value || '';
+  }
+
+  if (input.classList?.contains('trix-wrapper')) {
+    return input.querySelector('input[type="hidden"]')?.value || '';
+  }
+
   if (input.type === 'checkbox') {
     return input.checked;
+  }
+
+  if (input.tagName === 'SELECT' && input.multiple) {
+    return [...input.selectedOptions].map((option) => option.value);
   }
 
   if (input.type === 'number' || input.type === 'range') {
@@ -177,6 +205,107 @@ function renderBlueprintFeedback(validation, i18n) {
   return alert;
 }
 
+function renderControlSections(controls, nodeId, values, readonly) {
+  const sections = groupControlsBySection(controls);
+
+  if (sections.length <= 1) {
+    const single = createElement('div', { className: 'grid gap-3' });
+
+    sections[0].controls.forEach((control) => single.append(renderBlueprintControl(control, nodeId, values, readonly)));
+
+    return single;
+  }
+
+  const wrapper = createElement('div', { className: 'grid gap-4' });
+  const tabs = createElement('div', {
+    className: 'tabs tabs-border overflow-x-auto',
+    role: 'tablist',
+  });
+  const sectionsWrap = createElement('div', { className: 'grid gap-4' });
+
+  sections.forEach((section, index) => {
+    const active = index === 0;
+
+    tabs.append(createElement('button', {
+      className: `tab ${active ? 'tab-active' : ''}`,
+      dataset: { blueprintDetailsTab: section.key },
+      role: 'tab',
+      type: 'button',
+      text: section.label,
+    }));
+
+    const content = createElement('section', {
+      className: active ? 'grid gap-3' : 'hidden grid gap-3',
+      dataset: { blueprintDetailsSection: section.key },
+      role: 'tabpanel',
+    });
+
+    section.controls.forEach((control) => content.append(renderBlueprintControl(control, nodeId, values, readonly)));
+    sectionsWrap.append(content);
+  });
+
+  wrapper.append(tabs, sectionsWrap);
+
+  return wrapper;
+}
+
+function groupControlsBySection(controls) {
+  const groups = [];
+  const byKey = new Map();
+
+  controls.forEach((control) => {
+    const section = normalizeControlSection(control);
+
+    if (!byKey.has(section.key)) {
+      byKey.set(section.key, { ...section, controls: [] });
+      groups.push(byKey.get(section.key));
+    }
+
+    byKey.get(section.key).controls.push(control);
+  });
+
+  return groups;
+}
+
+function normalizeControlSection(control) {
+  const explicit = control.section || control.group || control.tab;
+
+  if (explicit) {
+    const label = String(explicit);
+
+    return { key: slugify(label), label };
+  }
+
+  const key = String(control.key || '');
+
+  if (['eligibility_rules', 'eligibility_rules_description', 'recommendation'].includes(key) || key.includes('rule')) {
+    return { key: 'rules', label: 'Règles' };
+  }
+
+  if (['forwardable', 'backwardable'].includes(key) || key.includes('transition')) {
+    return { key: 'transitions', label: 'Transitions' };
+  }
+
+  if (key.includes('availability') || key === 'readonly') {
+    return { key: 'permissions', label: 'Droits' };
+  }
+
+  if (key.includes('action') || key.includes('shortcut') || key.includes('generate')) {
+    return { key: 'actions', label: 'Actions' };
+  }
+
+  return { key: 'general', label: 'Général' };
+}
+
+function slugify(value) {
+  return String(value)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') || 'section';
+}
+
 function renderBlueprintControl(control, nodeId, data, readonly) {
   const key = control.key;
   const value = data[key] ?? control.default ?? '';
@@ -196,6 +325,14 @@ function renderBlueprintControl(control, nodeId, data, readonly) {
     return wrapFormControl(control, key, input);
   }
 
+  if (control.type === 'code-editor') {
+    return renderCodeEditorControl(control, key, value, readonly);
+  }
+
+  if (control.type === 'wysiwyg') {
+    return renderWysiwygControl(control, key, value, readonly);
+  }
+
   if (control.type === 'select') {
     const input = createElement('select', {
       className: 'select select-bordered select-sm w-full',
@@ -209,6 +346,30 @@ function renderBlueprintControl(control, nodeId, data, readonly) {
         text: option.label,
         value: option.value,
         selected: String(value) === String(option.value),
+      }));
+    });
+
+    return wrapFormControl(control, key, input);
+  }
+
+  if (control.type === 'multiselect') {
+    const selectedValues = Array.isArray(value)
+      ? value.map((item) => String(item))
+      : String(value ?? '').split(',').map((item) => item.trim()).filter(Boolean);
+    const input = createElement('select', {
+      className: 'select select-bordered select-sm min-h-28 w-full',
+      dataset: { blueprintPropertyInput: key },
+      disabled: readonly,
+      multiple: true,
+      required: control.required,
+      size: Math.min(Math.max(control.options.length, 3), Number(control.size || 8)),
+    });
+
+    control.options.forEach((option) => {
+      input.append(createElement('option', {
+        text: option.label,
+        value: option.value,
+        selected: selectedValues.includes(String(option.value)),
       }));
     });
 
@@ -292,6 +453,94 @@ function renderBlueprintControl(control, nodeId, data, readonly) {
   return wrapFormControl(control, key, input);
 }
 
+function renderCodeEditorControl(control, key, value, readonly) {
+  const editorId = `blueprint-code-${key}-${Math.random().toString(36).slice(2)}`;
+  const wrapper = createElement('div', {
+    className: 'code-editor bg-base-100 card-border rounded-box overflow-hidden',
+    dataset: {
+      blueprintPropertyInput: key,
+      module: 'code-editor',
+      language: control.language || 'javascript',
+      readonly: readonly ? 'true' : 'false',
+      tabSize: 2,
+    },
+  });
+  const toolbar = createElement('div', { className: 'flex items-center justify-between gap-2 border-b bg-base-200 px-2 py-1' });
+  const actions = createElement('div', { className: 'flex items-center gap-1' });
+
+  toolbar.append(
+    createElement('div', { className: 'text-xs opacity-70', text: String(control.language || 'javascript').toUpperCase() }),
+    actions,
+  );
+  actions.append(
+    createElement('button', { className: 'btn btn-xs', dataset: { action: 'fold-all' }, text: 'Tout plier', type: 'button' }),
+    createElement('button', { className: 'btn btn-xs', dataset: { action: 'unfold-all' }, text: 'Tout déplier', type: 'button' }),
+    createElement('button', { className: 'btn btn-xs', dataset: { action: 'format' }, text: 'Formater', type: 'button' }),
+    createElement('button', { className: 'btn btn-xs', dataset: { action: 'copy' }, text: 'Copier', type: 'button' }),
+  );
+  const host = createElement('div', { className: 'cm-host daisy-code-editor-height-px-180' });
+
+  if (control.height) {
+    host.style.height = control.height;
+  }
+
+  wrapper.append(
+    toolbar,
+    host,
+    createElement('textarea', { className: 'hidden', dataset: { sync: '' } }),
+    createJsonScript('options', {}),
+    createJsonScript('initial', { value: String(value ?? '') }),
+    createJsonScript('i18n', {}),
+  );
+  wrapper.id = editorId;
+  wrapper.querySelector('textarea[data-sync]').value = String(value ?? '');
+
+  return wrapFormControl(control, key, wrapper);
+}
+
+function renderWysiwygControl(control, key, value, readonly) {
+  const inputId = `blueprint-trix-${key}-${Math.random().toString(36).slice(2)}`;
+  const wrapper = createElement('div', {
+    className: 'trix-wrapper daisy-blueprint-wysiwyg',
+    dataset: {
+      blueprintPropertyInput: key,
+      module: 'lazy-editors',
+      trixAttachments: '0',
+    },
+  });
+  const container = createElement('div', { dataset: { trixContainer: '' } });
+  const toolbar = createElement('trix-toolbar');
+  const input = createElement('input', { type: 'hidden', value: String(value ?? '') });
+  const editor = createElement('trix-editor', {
+    className: 'trix-content daisy-wysiwyg-min-height-rem-24',
+    disabled: readonly,
+    placeholder: control.placeholder || '',
+  });
+
+  if (control.height) {
+    editor.style.minHeight = control.height;
+  }
+
+  toolbar.id = `${inputId}-toolbar`;
+  input.id = `${inputId}-input`;
+  editor.setAttribute('input', input.id);
+  editor.setAttribute('toolbar', toolbar.id);
+  container.append(toolbar, input, editor);
+  wrapper.append(container);
+
+  return wrapFormControl(control, key, wrapper);
+}
+
+function createJsonScript(name, value) {
+  const script = document.createElement('script');
+
+  script.type = 'application/json';
+  script.dataset[name] = '';
+  script.textContent = JSON.stringify(value);
+
+  return script;
+}
+
 function wrapFormControl(control, key, input) {
   const label = createElement('label', {
     className: 'form-control grid w-full gap-1',
@@ -342,6 +591,20 @@ function setOptionalAttribute(element, name, value) {
   element.setAttribute(name, String(value));
 }
 
+function initLazyEditors(root) {
+  if (!root.querySelector('.code-editor, .trix-wrapper')) {
+    return;
+  }
+
+  const schedule = window.requestAnimationFrame || ((callback) => window.setTimeout(callback, 0));
+
+  schedule(() => {
+    import('../lazy-editors.js')
+      .then((module) => module.initEditorsIn?.(root))
+      .catch(() => {});
+  });
+}
+
 function createElement(tag, options = {}, children = []) {
   const element = document.createElement(tag);
 
@@ -368,7 +631,7 @@ function createElement(tag, options = {}, children = []) {
     element.setAttribute('readonly', '');
   }
 
-  ['name', 'placeholder', 'type', 'value'].forEach((attribute) => {
+  ['id', 'name', 'placeholder', 'type', 'value'].forEach((attribute) => {
     if (options[attribute] !== undefined) {
       element.setAttribute(attribute, String(options[attribute]));
     }

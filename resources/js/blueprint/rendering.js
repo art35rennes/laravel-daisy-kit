@@ -288,10 +288,13 @@ export function decorateNodeViews(root, area, editor) {
 
 function decorateNodeElement(root, element, theme, node) {
   element.querySelectorAll('rete-node').forEach((nodeElement) => {
+    const color = resolveNodeColor(node);
+
     nodeElement.dataset.blueprintTheme = theme;
     nodeElement.dataset.blueprintDisplay = element.dataset.blueprintDisplay || 'detailed';
     nodeElement.dataset.blueprintIcon = element.dataset.blueprintIcon || '';
     nodeElement.dataset.blueprintLabel = element.dataset.blueprintLabel || '';
+    applyNodeColor(nodeElement, color);
     decorateNodeShadow(nodeElement, node);
   });
 }
@@ -315,7 +318,7 @@ function decorateNodeShadow(nodeElement, node) {
   renderNodePreview(shadow, node);
 
   shadow.querySelectorAll('.input-socket rete-ref, .output-socket rete-ref').forEach((socketRef) => {
-    decorateSocketRef(socketRef, nodeElement.dataset.blueprintTheme);
+    decorateSocketRef(socketRef, nodeElement.dataset.blueprintTheme, nodeElement.style.getPropertyValue('--daisy-blueprint-node-theme'));
   });
 }
 
@@ -403,7 +406,7 @@ function renderNodePreview(shadow, node) {
     label.className = 'daisy-blueprint-preview-label';
     output.className = 'daisy-blueprint-preview-value';
     label.textContent = field.label || field.key;
-    output.textContent = formatPreviewValue(value);
+    output.textContent = formatPreviewValue(value, node, field);
     row.append(label, output);
     preview.append(row);
   });
@@ -417,7 +420,14 @@ function renderNodePreview(shadow, node) {
   insertAfter?.after(preview);
 }
 
-function formatPreviewValue(value) {
+export function formatPreviewValue(value, node = null, field = null) {
+  const control = node?.__blueprint?.controls?.find((candidate) => candidate.key === field?.key);
+  const option = control?.options?.find((candidate) => String(candidate.value) === String(value));
+
+  if (option?.label) {
+    return String(option.label);
+  }
+
   if (typeof value === 'boolean') {
     return value ? 'true' : 'false';
   }
@@ -425,7 +435,46 @@ function formatPreviewValue(value) {
   return String(value);
 }
 
-function decorateSocketRef(socketRef, theme) {
+export function resolveNodeColor(node) {
+  const colorField = node?.__blueprint?.colorField;
+
+  if (!colorField) {
+    return '';
+  }
+
+  const value = node?.__blueprint?.data?.[colorField];
+  const control = node?.__blueprint?.controls?.find((candidate) => candidate.key === colorField);
+  const option = control?.options?.find((candidate) => String(candidate.value) === String(value));
+
+  return option?.color || '';
+}
+
+function applyNodeColor(nodeElement, color) {
+  if (!color) {
+    nodeElement.style.removeProperty('--daisy-blueprint-node-theme');
+    nodeElement.style.removeProperty('--daisy-blueprint-node-theme-content');
+
+    return;
+  }
+
+  nodeElement.style.setProperty('--daisy-blueprint-node-theme', color);
+  nodeElement.style.setProperty('--daisy-blueprint-node-theme-content', readableTextColor(color));
+}
+
+function readableTextColor(color) {
+  const hex = color.startsWith('#') ? color.slice(1) : color;
+  const expanded = hex.length === 3
+    ? hex.split('').map((char) => `${char}${char}`).join('')
+    : hex;
+  const red = Number.parseInt(expanded.slice(0, 2), 16);
+  const green = Number.parseInt(expanded.slice(2, 4), 16);
+  const blue = Number.parseInt(expanded.slice(4, 6), 16);
+  const yiqBrightness = ((red * 299) + (green * 587) + (blue * 114)) / 1000;
+
+  return yiqBrightness < 128 ? '#ffffff' : '#030f40';
+}
+
+function decorateSocketRef(socketRef, theme, color = '') {
   const socketElement = socketRef.querySelector?.('rete-socket');
   const socketShadow = socketElement?.shadowRoot;
 
@@ -434,6 +483,12 @@ function decorateSocketRef(socketRef, theme) {
   }
 
   socketElement.dataset.blueprintTheme = theme;
+  if (color) {
+    socketElement.style.setProperty('--daisy-blueprint-node-theme', color);
+  } else {
+    socketElement.style.removeProperty('--daisy-blueprint-node-theme');
+  }
+
   adoptShadowStyles(socketShadow, 'socket', socketShadowCss);
 }
 

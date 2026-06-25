@@ -18,6 +18,7 @@ import {
 } from './core.js';
 import {
   applyNodeData,
+  activateDetailsTab,
   collectPropertyInputData,
   getNodeControls,
   readPropertyInputValue,
@@ -372,6 +373,29 @@ async function init(root) {
     return true;
   }
 
+  async function toggleFullscreen() {
+    if (root.classList.contains('daisy-blueprint-fullscreen-fallback')) {
+      root.classList.remove('daisy-blueprint-fullscreen', 'daisy-blueprint-fullscreen-fallback');
+
+      return;
+    }
+
+    if (document.fullscreenElement === root) {
+      await document.exitFullscreen?.();
+      root.classList.remove('daisy-blueprint-fullscreen');
+
+      return;
+    }
+
+    root.classList.add('daisy-blueprint-fullscreen');
+
+    try {
+      await root.requestFullscreen?.();
+    } catch (_) {
+      root.classList.add('daisy-blueprint-fullscreen-fallback');
+    }
+  }
+
   const api = {
     editor,
     area,
@@ -400,6 +424,9 @@ async function init(root) {
         await AreaExtensions.zoomAt(area, nodes);
       }
     },
+    async fullscreen() {
+      await toggleFullscreen();
+    },
     destroy() {
       area.destroy();
     },
@@ -424,7 +451,7 @@ async function init(root) {
 
   root.querySelectorAll('[data-blueprint-action]').forEach((button) => {
     button.addEventListener('click', () => {
-      if (readonly && button.dataset.blueprintAction !== 'fit' && button.dataset.blueprintAction !== 'arrange') {
+      if (readonly && !['fit', 'arrange', 'fullscreen'].includes(button.dataset.blueprintAction)) {
         return;
       }
 
@@ -434,6 +461,7 @@ async function init(root) {
       if (action === 'redo') void api.redo();
       if (action === 'arrange') void api.arrange();
       if (action === 'fit') void api.fit();
+      if (action === 'fullscreen') void api.fullscreen();
     });
   });
 
@@ -446,6 +474,12 @@ async function init(root) {
           suppressDetailsToggle = false;
         }, 0);
       });
+      return;
+    }
+
+    const tab = event.target.closest?.('[data-blueprint-details-tab]');
+    if (tab && root.contains(tab)) {
+      activateDetailsTab(root, tab.dataset.blueprintDetailsTab);
       return;
     }
 
@@ -486,6 +520,14 @@ async function init(root) {
 
   root.addEventListener('input', updateSelectedProperty);
   root.addEventListener('change', updateSelectedProperty);
+  root.addEventListener('code:change', updateSelectedProperty);
+  root.addEventListener('trix-change', updateSelectedProperty);
+
+  document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement !== root) {
+      root.classList.remove('daisy-blueprint-fullscreen', 'daisy-blueprint-fullscreen-fallback');
+    }
+  });
 
   if (details) {
     renderProperties(root, null, i18n, readonly);
