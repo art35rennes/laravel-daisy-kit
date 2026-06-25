@@ -118,6 +118,21 @@ it('renders token-input through its public alias', function () {
         ->toContain('alice@example.com');
 });
 
+it('renders multi-select through its public alias', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.inputs.multi-select
+            name="tags"
+            :values="['laravel']"
+            :options="[['value' => 'laravel', 'label' => 'Laravel']]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('data-module="multi-select"')
+        ->toContain('name="tags[]"')
+        ->toContain('Laravel');
+});
+
 it('renders table through its public alias', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.data-display.table
