@@ -275,7 +275,7 @@ onReady(async () => {
   importWhenIdle('[data-popover]:not([data-module])', () => { mediumQueue(() => import('./popover')); });
   importWhenIdle('[data-stepper]', () => { mediumQueue(() => import('./stepper')); });
   importWhenIdle('[data-onboarding="1"]', () => { mediumQueue(() => import('./onboarding')); });
-  importWhenIdle('[data-daisy-table="1"]', () => { mediumQueue(() => import('./table-kit')); });
+  importWhenIdle('[data-daisy-table="1"]', () => { mediumQueue(() => import('./table')); });
   importWhenIdle('[data-fileinput="1"]', () => { mediumQueue(() => import('./file-input')); });
   importWhenIdle('input[data-inputmask="1"], input[data-obfuscate="1"]', () => { mediumQueue(() => import('./input-mask')); });
   importWhenIdle('[data-scrollstatus="1"]', () => { mediumQueue(() => import('./scroll-status')); });

@@ -1,47 +1,49 @@
 import {
   createTable,
   getCoreRowModel,
+  getExpandedRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
 } from '@tanstack/table-core';
-
-const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
-const DEFAULT_MODE = 'client';
-const DEFAULT_METHOD = 'GET';
-const DEFAULT_SERVER_ADAPTER = 'default';
-const DEFAULT_PERSIST_STATE = false;
-const DEFAULT_GLOBAL_FILTER_KEY = 'global';
-const DEFAULT_SEARCH_DEBOUNCE_MS = 500;
-const DEFAULT_FILTER_DEBOUNCE_MS = 500;
-const DEFAULT_MIN_SEARCH_CHARS = 3;
-const DEFAULT_SELECTION_STATE = {
-  selectedIds: [],
-  excludedIds: [],
-  allFilteredSelected: false,
-  selectionScope: 'page',
-  filterSignature: '',
-};
-const ALLOWED_FILTER_TYPES = ['text', 'select', 'boolean'];
-const ALLOWED_ALIGNMENTS = ['left', 'center', 'right'];
-const ALLOWED_VERTICAL_ALIGNMENTS = ['top', 'middle', 'bottom'];
-const ALLOWED_TRUNCATE_VALUES = ['line', 2, 3];
-
-function isPlainObject(value) {
-  return Object.prototype.toString.call(value) === '[object Object]';
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
-function cloneState(value) {
-  return JSON.parse(JSON.stringify(value));
-}
+import { rankItem } from '@tanstack/match-sorter-utils';
+import {
+  ALLOWED_ALIGNMENTS,
+  ALLOWED_FILTER_TYPES,
+  ALLOWED_TRUNCATE_VALUES,
+  ALLOWED_VERTICAL_ALIGNMENTS,
+  DEFAULT_FILTER_DEBOUNCE_MS,
+  DEFAULT_GLOBAL_FILTER_KEY,
+  DEFAULT_METHOD,
+  DEFAULT_MIN_SEARCH_CHARS,
+  DEFAULT_MODE,
+  DEFAULT_PAGE_SIZE_OPTIONS,
+  DEFAULT_PERSIST_STATE,
+  DEFAULT_SEARCH_DEBOUNCE_MS,
+  DEFAULT_SELECTION_STATE,
+  DEFAULT_SERVER_ADAPTER,
+  cloneState,
+  escapeHtml,
+  isPlainObject,
+  parseJsonParam,
+} from './table/utils.js';
+import {
+  getDaisyColumnFromCell,
+  getDaisyColumnFromHeader,
+  getRowDetailContent,
+  isSafeHref,
+  normalizeCellDefinition,
+  renderCellContent,
+  renderLinkCell,
+} from './table/renderers.js';
+import {
+  normalizeSelectionState,
+  resetSelectionState,
+  rowSelectionFromSelection,
+  uniqueStringArray,
+} from './table/selection.js';
 
 function parseConfig(source) {
   const raw = typeof source === 'string'
@@ -73,6 +75,8 @@ function normalizeFilterDefinition(filter = {}, fallback = {}) {
     label: typeof fallback.label === 'string' && fallback.label !== '' ? fallback.label : String(filter.label ?? ''),
     type,
     filterKey: typeof fallback.filterKey === 'string' && fallback.filterKey !== '' ? fallback.filterKey : String(filter.filterKey ?? fallback.id ?? ''),
+    filterKeyFrom: typeof filter.filterKeyFrom === 'string' && filter.filterKeyFrom !== '' ? filter.filterKeyFrom : null,
+    filterKeyTo: typeof filter.filterKeyTo === 'string' && filter.filterKeyTo !== '' ? filter.filterKeyTo : null,
     options: Array.isArray(filter.options)
       ? filter.options
         .filter((option) => isPlainObject(option) && option.value != null)
@@ -95,7 +99,8 @@ function normalizeColumns(columns = []) {
       const key = typeof column.key === 'string' ? column.key.trim() : '';
       const sortKey = typeof column.sortKey === 'string' && column.sortKey !== '' ? column.sortKey : key;
       const filterKey = typeof column.filterKey === 'string' && column.filterKey !== '' ? column.filterKey : key;
-      const type = column.type === 'actions' ? 'actions' : null;
+      const type = ['actions', 'link', 'resource-link'].includes(column.type) ? column.type : null;
+      const cell = normalizeCellDefinition(column);
       const width = typeof column.width === 'string' ? column.width : (type === 'actions' ? 'fit' : null);
       const align = ALLOWED_ALIGNMENTS.includes(column.align) ? column.align : (type === 'actions' ? 'center' : null);
       const density = ['compact', 'normal'].includes(column.density) ? column.density : (type === 'actions' ? 'compact' : null);
@@ -122,7 +127,12 @@ function normalizeColumns(columns = []) {
         headerWrapperClass: typeof column.headerWrapperClass === 'string' ? column.headerWrapperClass : '',
         cellClass: typeof column.cellClass === 'string' ? column.cellClass : '',
         headerClass: typeof column.headerClass === 'string' ? column.headerClass : '',
-        html: column.html === true,
+        html: ['html', 'blade', 'actions'].includes(cell.renderer),
+        cell,
+        enableResizing: column.enableResizing !== false,
+        size: Number.isInteger(Number.parseInt(column.size, 10)) ? Number.parseInt(column.size, 10) : undefined,
+        minSize: Number.isInteger(Number.parseInt(column.minSize, 10)) ? Number.parseInt(column.minSize, 10) : undefined,
+        maxSize: Number.isInteger(Number.parseInt(column.maxSize, 10)) ? Number.parseInt(column.maxSize, 10) : undefined,
         // `key` identifies the column in the component, while backend adapters can
         // target a different query name through `sortKey` / `filterKey`.
         filter: normalizeFilterDefinition(column.filter, {
@@ -241,13 +251,30 @@ function normalizeColumnFilters(filters = [], filterDefinitions = []) {
     .filter((entry) => isPlainObject(entry) && typeof entry.id === 'string' && definitions.has(entry.id))
     .map((entry) => {
       const definition = definitions.get(entry.id);
-      const value = definition.type === 'boolean'
-        ? entry.value === true || entry.value === 'true' || entry.value === 1 || entry.value === '1'
-        : String(entry.value ?? '');
+      const rawEntryValue = isPlainObject(entry.value) && ALLOWED_FILTER_TYPES.includes(entry.value.type)
+        ? entry.value.value
+        : entry.value;
+      const rawEntryType = isPlainObject(entry.value) && ALLOWED_FILTER_TYPES.includes(entry.value.type)
+        ? entry.value.type
+        : entry.type;
+      let value = String(rawEntryValue ?? '');
+
+      if (definition.type === 'boolean') {
+        value = rawEntryValue === true || rawEntryValue === 'true' || rawEntryValue === 1 || rawEntryValue === '1';
+      }
+
+      if (definition.type === 'date-range') {
+        const rawValue = isPlainObject(rawEntryValue) ? rawEntryValue : {};
+
+        value = {
+          from: String(rawValue.from ?? '').trim(),
+          to: String(rawValue.to ?? '').trim(),
+        };
+      }
 
       return {
         id: entry.id,
-        type: ALLOWED_FILTER_TYPES.includes(entry.type) ? entry.type : definition.type,
+        type: ALLOWED_FILTER_TYPES.includes(rawEntryType) ? rawEntryType : definition.type,
         value,
       };
     });
@@ -267,6 +294,68 @@ function normalizeColumnVisibility(visibility = {}, columns = []) {
   );
 }
 
+function normalizeColumnOrder(columnOrder = [], columns = []) {
+  const keys = columns.map((column) => column.key);
+
+  if (!Array.isArray(columnOrder)) {
+    return keys;
+  }
+
+  const ordered = columnOrder.filter((key) => keys.includes(key));
+
+  return [...ordered, ...keys.filter((key) => !ordered.includes(key))];
+}
+
+function normalizeColumnPinning(columnPinning = {}, columns = []) {
+  const keys = columns.map((column) => column.key);
+  const normalizeSide = (values = []) => Array.isArray(values)
+    ? values.filter((key, index, all) => keys.includes(key) && all.indexOf(key) === index)
+    : [];
+
+  return {
+    left: normalizeSide(columnPinning.left),
+    right: normalizeSide(columnPinning.right),
+  };
+}
+
+function normalizeColumnSizing(columnSizing = {}, columns = []) {
+  if (!isPlainObject(columnSizing)) {
+    return {};
+  }
+
+  const keys = columns.map((column) => column.key);
+
+  return Object.fromEntries(
+    Object.entries(columnSizing)
+      .map(([key, value]) => [key, Number.parseInt(value, 10)])
+      .filter(([key, value]) => keys.includes(key) && Number.isInteger(value) && value > 0)
+  );
+}
+
+function normalizeExpanded(expanded = {}) {
+  if (expanded === true) {
+    return true;
+  }
+
+  if (!isPlainObject(expanded)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(expanded).filter(([, value]) => value === true)
+  );
+}
+
+function normalizeRowSelection(rowSelection = {}) {
+  if (!isPlainObject(rowSelection)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(rowSelection).filter(([key, value]) => String(key) !== '' && value === true)
+  );
+}
+
 function normalizeSelectionConfig(raw = {}) {
   const mode = raw.selection === 'multiple' || raw.selection?.mode === 'multiple' ? 'multiple' : 'none';
   const rowKey = typeof raw.rowKey === 'string' && raw.rowKey !== ''
@@ -280,51 +369,36 @@ function normalizeSelectionConfig(raw = {}) {
   };
 }
 
-function uniqueStringArray(values = []) {
-  if (!Array.isArray(values)) {
-    return [];
-  }
+function normalizeEditableConfig(raw = {}, columns = []) {
+  const editable = raw.editable === true || raw.editable?.enabled === true;
+  const endpoint = normalizeEndpoint(raw.editEndpoint ?? raw.editable?.endpoint ?? null);
+  const mode = ['cell', 'row'].includes(raw.editMode ?? raw.editable?.mode)
+    ? raw.editMode ?? raw.editable.mode
+    : 'cell';
+  const method = typeof (raw.editMethod ?? raw.editable?.method) === 'string' && (raw.editMethod ?? raw.editable.method) !== ''
+    ? String(raw.editMethod ?? raw.editable.method).toUpperCase()
+    : 'PATCH';
+  const editableColumnKeys = Array.isArray(raw.editableColumns ?? raw.editable?.columns)
+    ? raw.editableColumns ?? raw.editable.columns
+    : [];
+  const columnKeys = columns.map((column) => column.key);
+  const defaultEditableKeys = columns
+    .filter((column) => !column.html && !['actions', 'link', 'resource-link'].includes(column.type))
+    .map((column) => column.key);
+  const requestedEditableKeys = editableColumnKeys.length > 0 ? editableColumnKeys : defaultEditableKeys;
 
-  return [...new Set(
-    values
-      .filter((value) => value !== null && value !== undefined && String(value) !== '')
-      .map((value) => String(value))
-  )];
-}
-
-function resetSelectionState(selection = {}) {
   return {
-    ...DEFAULT_SELECTION_STATE,
-    selectedIds: [],
-    excludedIds: [],
+    enabled: editable,
+    endpoint,
+    method,
+    mode,
+    columns: requestedEditableKeys.filter((key, index, all) => (
+      typeof key === 'string'
+      && columnKeys.includes(key)
+      && all.indexOf(key) === index
+    )),
+    policy: isPlainObject(raw.editPolicy ?? raw.editable?.policy) ? raw.editPolicy ?? raw.editable.policy : {},
   };
-}
-
-// Filtered selection is represented as "the current filtered result set minus
-// excludedIds". That keeps bulk-action payloads small in server mode while still
-// letting users opt individual rows out after selecting all filtered results.
-function normalizeSelectionState(selection = {}) {
-  const normalized = {
-    ...DEFAULT_SELECTION_STATE,
-    selectedIds: uniqueStringArray(selection.selectedIds),
-    excludedIds: uniqueStringArray(selection.excludedIds),
-    allFilteredSelected: selection.allFilteredSelected === true,
-    selectionScope: selection.selectionScope === 'filtered' ? 'filtered' : 'page',
-    filterSignature: typeof selection.filterSignature === 'string' ? selection.filterSignature : '',
-  };
-
-  if (!normalized.allFilteredSelected) {
-    normalized.excludedIds = [];
-    normalized.selectionScope = 'page';
-    normalized.filterSignature = '';
-  }
-
-  if (normalized.allFilteredSelected) {
-    normalized.selectedIds = [];
-    normalized.selectionScope = 'filtered';
-  }
-
-  return normalized;
 }
 
 function createFilterSignature(state = {}) {
@@ -339,10 +413,17 @@ function getRowData(row) {
   return row?.original ?? row;
 }
 
-function getRowSelectionId(config, row) {
-  const rowKey = config.selection?.rowKey;
+function getStableRowKey(config) {
+  return config.selection?.rowKey
+    || config.rowKey
+    || config.editable?.rowKey
+    || null;
+}
 
-  if (!config.selection?.enabled || typeof rowKey !== 'string' || rowKey === '') {
+function getRowSelectionId(config, row) {
+  const rowKey = getStableRowKey(config);
+
+  if (typeof rowKey !== 'string' || rowKey === '') {
     return null;
   }
 
@@ -440,6 +521,7 @@ function selectAllFilteredRows(state) {
     selectionScope: 'filtered',
     filterSignature: createFilterSignature(state),
   };
+  state.rowSelection = {};
 
   return state.selection;
 }
@@ -505,6 +587,19 @@ function normalizeInitialState(initialState = {}, columns = [], filterDefinition
     // UI can stay identical while the transport layer changes underneath.
     columnFilters: normalizeColumnFilters(initialState.columnFilters, filterDefinitions),
     columnVisibility: normalizeColumnVisibility(initialState.columnVisibility, columns),
+    columnOrder: normalizeColumnOrder(initialState.columnOrder, columns),
+    columnPinning: normalizeColumnPinning(initialState.columnPinning, columns),
+    columnSizing: normalizeColumnSizing(initialState.columnSizing, columns),
+    columnSizingInfo: isPlainObject(initialState.columnSizingInfo) ? initialState.columnSizingInfo : {
+      startOffset: null,
+      startSize: null,
+      deltaOffset: null,
+      deltaPercentage: null,
+      isResizingColumn: false,
+      columnSizingStart: [],
+    },
+    expanded: normalizeExpanded(initialState.expanded),
+    rowSelection: normalizeRowSelection(initialState.rowSelection),
     selection: normalizeSelectionState(initialState.selection),
   };
 }
@@ -534,6 +629,10 @@ function normalizeConfig(raw = {}) {
   const serverAdapter = raw.serverAdapter === 'spatie-query-builder' ? 'spatie-query-builder' : DEFAULT_SERVER_ADAPTER;
   const persistState = raw.persistState === 'url' || raw.persistState === 'local' ? raw.persistState : DEFAULT_PERSIST_STATE;
   const selection = normalizeSelectionConfig(raw);
+  const rowKey = typeof raw.rowKey === 'string' && raw.rowKey !== '' ? raw.rowKey : selection.rowKey;
+  const searchMode = raw.searchMode === 'includes' ? 'includes' : 'fuzzy';
+  const subRowsKey = typeof raw.subRowsKey === 'string' && raw.subRowsKey !== '' ? raw.subRowsKey : null;
+  const editable = normalizeEditableConfig(raw, columns);
   const config = {
     mode,
     method: typeof raw.method === 'string' && raw.method !== '' ? raw.method.toUpperCase() : DEFAULT_METHOD,
@@ -541,18 +640,33 @@ function normalizeConfig(raw = {}) {
     persistState,
     stateKey: typeof raw.stateKey === 'string' && raw.stateKey !== '' ? raw.stateKey : null,
     globalFilterKey: typeof raw.globalFilterKey === 'string' && raw.globalFilterKey !== '' ? raw.globalFilterKey : DEFAULT_GLOBAL_FILTER_KEY,
+    rowKey,
+    searchMode,
+    subRowsKey,
     columns,
     filters,
     rows: Array.isArray(raw.rows) ? raw.rows : [],
     endpoint,
     search: raw.search !== false,
     externalFilters: raw.externalFilters === true,
+    linkPolicy: isPlainObject(raw.linkPolicy) ? {
+      allowedSchemes: Array.isArray(raw.linkPolicy.allowedSchemes) ? raw.linkPolicy.allowedSchemes : [],
+    } : { allowedSchemes: [] },
     livewireMode: ['ignore', 'morph', 'none'].includes(raw.livewireMode) ? raw.livewireMode : 'none',
     searchDebounceMs: normalizeIntegerOption(raw.searchDebounceMs ?? raw.searchDebounce ?? raw.debounce, DEFAULT_SEARCH_DEBOUNCE_MS),
     filterDebounceMs: normalizeIntegerOption(raw.filterDebounceMs ?? raw.filterDebounce ?? raw.debounce, DEFAULT_FILTER_DEBOUNCE_MS),
     minSearchChars: normalizeIntegerOption(raw.minSearchChars ?? raw.minChars, DEFAULT_MIN_SEARCH_CHARS),
     columnVisibility: raw.columnVisibility === true,
+    columnResizing: raw.columnResizing === true,
+    rowDetail: isPlainObject(raw.rowDetail) ? {
+      mode: ['none', 'inline', 'modal'].includes(raw.rowDetail.mode) ? raw.rowDetail.mode : 'none',
+      view: typeof raw.rowDetail.view === 'string' && raw.rowDetail.view !== '' ? raw.rowDetail.view : null,
+    } : { mode: 'none', view: null },
     selection,
+    editable: {
+      ...editable,
+      rowKey,
+    },
     pageSizeOptions: pageSizeOptions.length > 0 ? pageSizeOptions : DEFAULT_PAGE_SIZE_OPTIONS,
     emptyLabel: typeof raw.emptyLabel === 'string' && raw.emptyLabel !== '' ? raw.emptyLabel : 'No results',
     loadingLabel: typeof raw.loadingLabel === 'string' && raw.loadingLabel !== '' ? raw.loadingLabel : 'Loading...',
@@ -568,6 +682,14 @@ function normalizeConfig(raw = {}) {
 
   if (mode !== 'server' && serverAdapter !== DEFAULT_SERVER_ADAPTER) {
     throw new Error('The table component only allows a serverAdapter when mode is set to server.');
+  }
+
+  if ((selection.enabled || config.rowDetail.mode !== 'none' || editable.enabled || subRowsKey) && !rowKey) {
+    throw new Error('The table component requires a non-empty rowKey prop for interactive row features.');
+  }
+
+  if (editable.enabled && !editable.endpoint) {
+    throw new Error('The table component requires an editEndpoint when editable is enabled.');
   }
 
   return config;
@@ -589,6 +711,11 @@ function buildRequestPayload(config, state) {
     globalFilter: typeof state.globalFilter === 'string' ? state.globalFilter : '',
     columnFilters: normalizeColumnFilters(state.columnFilters, config.filters),
     columnVisibility: normalizeColumnVisibility(state.columnVisibility, config.columns),
+    columnOrder: normalizeColumnOrder(state.columnOrder, config.columns),
+    columnPinning: normalizeColumnPinning(state.columnPinning, config.columns),
+    columnSizing: normalizeColumnSizing(state.columnSizing, config.columns),
+    expanded: normalizeExpanded(state.expanded),
+    rowSelection: normalizeRowSelection(state.rowSelection),
   };
 }
 
@@ -605,6 +732,11 @@ function serializeRequestPayload(payload) {
   params.set('sorting', JSON.stringify(payload.sorting ?? []));
   params.set('columnFilters', JSON.stringify(payload.columnFilters ?? []));
   params.set('columnVisibility', JSON.stringify(payload.columnVisibility ?? {}));
+  params.set('columnOrder', JSON.stringify(payload.columnOrder ?? []));
+  params.set('columnPinning', JSON.stringify(payload.columnPinning ?? {}));
+  params.set('columnSizing', JSON.stringify(payload.columnSizing ?? {}));
+  params.set('expanded', JSON.stringify(payload.expanded ?? {}));
+  params.set('rowSelection', JSON.stringify(payload.rowSelection ?? {}));
 
   return params;
 }
@@ -633,6 +765,22 @@ function buildSpatieRequestParams(config, state) {
   columnFilters.forEach((filter) => {
     const definition = getFilterDefinition(config.filters, filter.id);
     const filterKey = definition?.filterKey || filter.id;
+
+    if (filter.type === 'date-range') {
+      const value = isPlainObject(filter.value) ? filter.value : {};
+      const from = String(value.from ?? '').trim();
+      const to = String(value.to ?? '').trim();
+
+      if (from !== '') {
+        params.set(`filter[${definition?.filterKeyFrom || `${filterKey}_from`}]`, from);
+      }
+
+      if (to !== '') {
+        params.set(`filter[${definition?.filterKeyTo || `${filterKey}_to`}]`, to);
+      }
+
+      return;
+    }
 
     if (filter.type === 'boolean') {
       params.set(`filter[${filterKey}]`, filter.value ? 'true' : 'false');
@@ -691,7 +839,10 @@ function normalizeSpatieResponse(response) {
 }
 
 function buildServerRequest(config, state) {
-  const endpoint = new URL(config.endpoint.url, typeof window !== 'undefined' ? window.location.href : 'http://localhost');
+  const baseUrl = typeof window !== 'undefined' && typeof window.location?.href === 'string'
+    ? window.location.href
+    : 'http://localhost';
+  const endpoint = new URL(config.endpoint.url, baseUrl);
   const headers = new Headers({
     Accept: 'application/json',
     ...(config.endpoint.headers || {}),
@@ -752,6 +903,22 @@ function applyFilterValue(value, filter) {
     return normalized === filter.value;
   }
 
+  if (filter.type === 'date-range') {
+    const rawValue = String(value ?? '');
+    const from = String(filter.value?.from ?? '');
+    const to = String(filter.value?.to ?? '');
+
+    if (from !== '' && rawValue < from) {
+      return false;
+    }
+
+    if (to !== '' && rawValue > to) {
+      return false;
+    }
+
+    return true;
+  }
+
   return String(value ?? '').toLowerCase().includes(String(filter.value ?? '').toLowerCase());
 }
 
@@ -779,15 +946,70 @@ function applyClientFilters(rows, columns, state) {
   return filteredRows;
 }
 
+function functionalUpdate(updater, previous) {
+  return typeof updater === 'function' ? updater(previous) : updater;
+}
+
+function setControlledState(context, key, updater, normalizer = (value) => value) {
+  context.state[key] = normalizer(functionalUpdate(updater, context.state[key]));
+}
+
+function fuzzyFilter(row, columnId, value, addMeta) {
+  const itemRank = rankItem(row.getValue(columnId), value);
+
+  addMeta({ itemRank });
+
+  return itemRank.passed;
+}
+
+fuzzyFilter.autoRemove = (value) => String(value ?? '') === '';
+
+function daisyColumnFilter(row, columnId, filterValue) {
+  const filter = isPlainObject(filterValue) && ALLOWED_FILTER_TYPES.includes(filterValue.type)
+    ? filterValue
+    : { type: 'text', value: filterValue };
+
+  return applyFilterValue(row.getValue(columnId), filter);
+}
+
+daisyColumnFilter.autoRemove = (filterValue) => {
+  if (!isPlainObject(filterValue)) {
+    return String(filterValue ?? '') === '';
+  }
+
+  if (filterValue.type === 'boolean') {
+    return filterValue.value !== true;
+  }
+
+  if (filterValue.type === 'date-range') {
+    return String(filterValue.value?.from ?? '') === '' && String(filterValue.value?.to ?? '') === '';
+  }
+
+  return String(filterValue.value ?? '') === '';
+};
+
 function createColumnDefs(columns) {
   return columns.map((column) => ({
     id: column.key,
     accessorFn: (row) => row?.[column.key],
     enableSorting: column.sortable === true,
+    enableColumnFilter: column.filterable === true,
+    enableGlobalFilter: column.filterable === true || columns.every((candidate) => candidate.filterable !== true),
+    filterFn: daisyColumnFilter,
+    enableResizing: column.enableResizing !== false,
+    size: column.size,
+    minSize: column.minSize,
+    maxSize: column.maxSize,
+    cell: (context) => context.getValue(),
+    meta: {
+      daisyColumn: column,
+    },
   }));
 }
 
-function createTableModel(config, state, rows, rowCount, pageCount) {
+function createTableModel(context, rows, rowCount, pageCount) {
+  const { config, state } = context;
+
   return createTable({
     data: rows,
     columns: createColumnDefs(config.columns),
@@ -795,19 +1017,78 @@ function createTableModel(config, state, rows, rowCount, pageCount) {
       sorting: state.sorting,
       pagination: state.pagination,
       columnVisibility: state.columnVisibility,
+      columnOrder: state.columnOrder,
+      columnPinning: state.columnPinning,
+      columnSizing: state.columnSizing,
+      columnSizingInfo: state.columnSizingInfo,
+      expanded: state.expanded,
+      rowSelection: state.rowSelection,
+      globalFilter: state.globalFilter,
+      columnFilters: state.columnFilters,
     },
+    getRowId: (row, index) => {
+      const rowKey = getStableRowKey(config);
+      const value = typeof rowKey === 'string' && rowKey !== '' ? row?.[rowKey] : null;
+
+      return value === null || value === undefined || String(value) === '' ? String(index) : String(value);
+    },
+    getSubRows: config.subRowsKey
+      ? (row) => {
+        const subRows = row?.[config.subRowsKey];
+
+        return Array.isArray(subRows) ? subRows : undefined;
+      }
+      : undefined,
     manualPagination: config.mode === 'server',
     manualSorting: config.mode === 'server',
+    manualFiltering: config.mode === 'server',
+    manualExpanding: config.mode === 'server' && !config.subRowsKey,
+    globalFilterFn: config.searchMode === 'includes' ? 'includesString' : 'fuzzy',
+    filterFns: {
+      fuzzy: fuzzyFilter,
+      daisy: daisyColumnFilter,
+    },
+    enableRowSelection: config.selection.enabled === true,
+    enableMultiRowSelection: config.selection.mode === 'multiple',
+    enableSubRowSelection: false,
+    enableColumnResizing: config.columnResizing === true,
+    columnResizeMode: 'onChange',
+    onSortingChange: (updater) => setControlledState(context, 'sorting', updater, (value) => normalizeSorting(value, config.columns)),
+    onPaginationChange: (updater) => setControlledState(context, 'pagination', updater, (value) => ({
+      pageIndex: Math.max(0, Number.parseInt(value?.pageIndex, 10) || 0),
+      pageSize: config.pageSizeOptions.includes(Number.parseInt(value?.pageSize, 10))
+        ? Number.parseInt(value.pageSize, 10)
+        : state.pagination.pageSize,
+    })),
+    onColumnVisibilityChange: (updater) => setControlledState(context, 'columnVisibility', updater, (value) => normalizeColumnVisibility(value, config.columns)),
+    onColumnOrderChange: (updater) => setControlledState(context, 'columnOrder', updater, (value) => normalizeColumnOrder(value, config.columns)),
+    onColumnPinningChange: (updater) => setControlledState(context, 'columnPinning', updater, (value) => normalizeColumnPinning(value, config.columns)),
+    onColumnSizingChange: (updater) => setControlledState(context, 'columnSizing', updater, (value) => normalizeColumnSizing(value, config.columns)),
+    onColumnSizingInfoChange: (updater) => setControlledState(context, 'columnSizingInfo', updater),
+    onExpandedChange: (updater) => setControlledState(context, 'expanded', updater, normalizeExpanded),
+    onRowSelectionChange: (updater) => {
+      setControlledState(context, 'rowSelection', updater, normalizeRowSelection);
+      syncSelectionFromRowSelection(context);
+    },
+    onGlobalFilterChange: (updater) => setControlledState(context, 'globalFilter', updater, (value) => String(value ?? '')),
+    onColumnFiltersChange: (updater) => setControlledState(context, 'columnFilters', updater, (value) => normalizeColumnFilters(value, config.filters)),
     rowCount,
     pageCount,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getExpandedRowModel: getExpandedRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
 }
 
 function getVisibleColumns(config, state) {
-  return config.columns.filter((column) => state.columnVisibility[column.key] !== false);
+  const visibleColumns = config.columns.filter((column) => state.columnVisibility[column.key] !== false);
+  const order = normalizeColumnOrder(state.columnOrder, config.columns);
+
+  return [...visibleColumns].sort((first, second) => order.indexOf(first.key) - order.indexOf(second.key));
 }
 
 function getDisplayValue(row, column) {
@@ -818,6 +1099,16 @@ function getDisplayValue(row, column) {
   }
 
   return String(value);
+}
+
+function getVisibleTanStackColumns(context) {
+  if (!context.table) {
+    return getVisibleColumns(context.config, context.state);
+  }
+
+  return context.table.getVisibleLeafColumns()
+    .map((column) => column.columnDef?.meta?.daisyColumn)
+    .filter(Boolean);
 }
 
 function getSortDirection(state, columnKey) {
@@ -939,17 +1230,30 @@ function renderColgroup(context) {
   }
 
   const selectionCol = context.config.selection.enabled ? '<col class="daisy-table-selection-col">' : '';
-  const columnMarkup = getVisibleColumns(context.config, context.state).map((column) => {
+  const detailCol = context.config.rowDetail.mode !== 'none' ? '<col class="daisy-table-detail-col">' : '';
+  const columns = context.table
+    ? context.table.getVisibleLeafColumns()
+    : getVisibleTanStackColumns(context).map((column) => ({ columnDef: { meta: { daisyColumn: column } } }));
+  const columnMarkup = columns.map((tanStackColumn) => {
+    const column = tanStackColumn.columnDef?.meta?.daisyColumn;
+
+    if (!column) {
+      return '<col>';
+    }
+
     const classes = [
       tableWidthClass(column.width),
       tableMinWidthClass(column.minWidth),
       tableMaxWidthClass(column.maxWidth),
     ].filter(Boolean).join(' ');
+    const width = context.config.columnResizing && typeof tanStackColumn.getSize === 'function'
+      ? ` width="${escapeHtml(tanStackColumn.getSize())}"`
+      : '';
 
-    return classes ? `<col class="${escapeHtml(classes)}">` : '<col>';
+    return classes ? `<col class="${escapeHtml(classes)}"${width}>` : `<col${width}>`;
   }).join('');
 
-  colgroup.innerHTML = `${selectionCol}${columnMarkup}`;
+  colgroup.innerHTML = `${selectionCol}${detailCol}${columnMarkup}`;
 }
 
 function renderHeader(context) {
@@ -976,7 +1280,25 @@ function renderHeader(context) {
     headRow.append(th);
   }
 
-  getVisibleColumns(context.config, context.state).forEach((column) => {
+  if (context.config.rowDetail.mode !== 'none') {
+    const th = document.createElement('th');
+
+    th.className = 'daisy-table-detail-cell';
+    th.innerHTML = '<span class="sr-only">Details</span>';
+    headRow.append(th);
+  }
+
+  const headers = context.table
+    ? context.table.getFlatHeaders().filter((header) => header.column.getIsVisible())
+    : getVisibleColumns(context.config, context.state).map((column) => ({ column: { columnDef: { meta: { daisyColumn: column } } } }));
+
+  headers.forEach((header) => {
+    const column = getDaisyColumnFromHeader(header);
+
+    if (!column) {
+      return;
+    }
+
     const th = document.createElement('th');
     const thClasses = getColumnClasses(column, 'header');
     const wrapperClass = escapeHtml(getColumnWrapperClasses(column, 'header'));
@@ -987,7 +1309,9 @@ function renderHeader(context) {
 
     if (column.sortable) {
       const button = document.createElement('button');
-      const direction = getSortDirection(context.state, column.key);
+      const direction = typeof header.column?.getIsSorted === 'function'
+        ? header.column.getIsSorted()
+        : getSortDirection(context.state, column.key);
 
       button.type = 'button';
       button.className = 'daisy-table-head-button';
@@ -997,6 +1321,17 @@ function renderHeader(context) {
       th.append(button);
     } else {
       th.innerHTML = `<span class="${wrapperClass}">${escapeHtml(column.label)}</span>`;
+    }
+
+    if (context.config.columnResizing && typeof header.getResizeHandler === 'function' && header.column?.getCanResize?.()) {
+      const resizeHandle = document.createElement('button');
+
+      resizeHandle.type = 'button';
+      resizeHandle.className = 'daisy-table-resize-handle';
+      resizeHandle.dataset.tableResize = header.id;
+      resizeHandle.setAttribute('aria-label', `Resize ${column.label}`);
+      resizeHandle.setAttribute('title', `Resize ${column.label}`);
+      th.append(resizeHandle);
     }
 
     headRow.append(th);
@@ -1010,8 +1345,13 @@ function renderBody(context, rows) {
     return;
   }
 
-  const visibleColumns = getVisibleColumns(context.config, context.state);
-  const colspan = Math.max(1, visibleColumns.length + (context.config.selection.enabled ? 1 : 0));
+  const visibleColumns = getVisibleTanStackColumns(context);
+  const colspan = Math.max(
+    1,
+    visibleColumns.length
+      + (context.config.selection.enabled ? 1 : 0)
+      + (context.config.rowDetail.mode !== 'none' ? 1 : 0)
+  );
 
   if (context.loading) {
     tbody.innerHTML = `<tr class="daisy-table-loading-row"><td colspan="${colspan}">${escapeHtml(context.config.loadingLabel)}</td></tr>`;
@@ -1042,18 +1382,304 @@ function renderBody(context, rows) {
           >
         </td>`
       : '';
-    const cells = visibleColumns.map((column) => {
+    const rowData = row.original ?? row;
+    const detailCell = context.config.rowDetail.mode !== 'none'
+      ? `<td class="daisy-table-detail-cell">
+          <button
+            type="button"
+            class="btn btn-xs btn-ghost"
+            data-table-row-detail="${escapeHtml(row.id ?? getRowSelectionId(context.config, row) ?? '')}"
+            aria-expanded="${row.getIsExpanded?.() ? 'true' : 'false'}"
+          >...</button>
+        </td>`
+      : '';
+    const cells = (typeof row.getVisibleCells === 'function' ? row.getVisibleCells() : visibleColumns.map((column) => ({
+      getContext: () => ({ renderValue: () => getDisplayValue(row.original ?? row, column) }),
+      getValue: () => getDisplayValue(row.original ?? row, column),
+      column: { columnDef: { meta: { daisyColumn: column } } },
+    }))).map((cell) => {
+      const column = getDaisyColumnFromCell(cell);
+
+      if (!column) {
+        return '';
+      }
+
       const classes = getColumnClasses(column, 'cell');
       const className = classes ? ` class="${escapeHtml(classes)}"` : '';
       const wrapperClass = escapeHtml(getColumnWrapperClasses(column, 'cell'));
-      const value = getDisplayValue(row.original ?? row, column);
-      const content = column.html ? value : escapeHtml(value);
+      const content = isCellEditing(context, row, column)
+        ? renderEditCellContent(context, row, column)
+        : renderCellContent(cell, context.config.linkPolicy);
+      const editable = context.config.editable.enabled && context.config.editable.columns.includes(column.key);
+      const editAttrs = editable
+        ? ` data-table-edit-cell data-table-row-id="${escapeHtml(row.id)}" data-table-column-id="${escapeHtml(column.key)}"`
+        : '';
 
-      return `<td${className}><span class="${wrapperClass}">${content}</span></td>`;
+      return `<td${className}${editAttrs}><span class="${wrapperClass}">${content}</span></td>`;
     }).join('');
 
-    return `<tr>${selectionCell}${cells}</tr>`;
+    const detailRow = context.config.rowDetail.mode === 'inline' && row.getIsExpanded?.()
+      ? `<tr class="daisy-table-detail-row"><td colspan="${colspan}">${getRowDetailContent(rowData)}</td></tr>`
+      : '';
+
+    return `<tr>${selectionCell}${detailCell}${cells}</tr>${detailRow}`;
   }).join('');
+}
+
+function openDetailModal(context, rowId) {
+  const row = context.visibleRows.find((candidate) => String(candidate.id) === String(rowId));
+  const rowData = row?.original ?? null;
+
+  if (!rowData) {
+    return;
+  }
+
+  let dialog = context.root.querySelector('[data-table-detail-modal]');
+
+  if (!(dialog instanceof HTMLDialogElement)) {
+    dialog = document.createElement('dialog');
+    dialog.className = 'modal';
+    dialog.dataset.tableDetailModal = '1';
+    dialog.innerHTML = `
+      <div class="modal-box max-w-3xl">
+        <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-table-detail-close aria-label="Close modal">&times;</button>
+        <div data-table-detail-content></div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    `;
+    context.root.append(dialog);
+  }
+
+  const content = dialog.querySelector('[data-table-detail-content]');
+
+  if (content instanceof HTMLElement) {
+    content.innerHTML = getRowDetailContent(rowData);
+  }
+
+  if (typeof dialog.showModal === 'function') {
+    dialog.showModal();
+  } else {
+    dialog.setAttribute('open', 'open');
+  }
+}
+
+function getVisibleRowById(context, rowId) {
+  return context.visibleRows.find((candidate) => String(candidate.id) === String(rowId)) ?? null;
+}
+
+function isCellEditing(context, row, column) {
+  if (!context.editing || context.editing.saving) {
+    return false;
+  }
+
+  if (String(context.editing.rowId) !== String(row.id)) {
+    return false;
+  }
+
+  return context.editing.mode === 'row' || context.editing.columnId === column.key;
+}
+
+function renderEditCellContent(context, row, column) {
+  const value = context.editing?.draft?.[column.key] ?? '';
+  const error = context.editing?.errors?.[column.key] ?? '';
+  const saving = context.editing?.saving === true;
+
+  return `
+    <div class="daisy-table-edit-cell">
+      <input
+        type="text"
+        class="input input-bordered input-xs w-full"
+        data-table-edit-input
+        data-table-row-id="${escapeHtml(row.id)}"
+        data-table-column-id="${escapeHtml(column.key)}"
+        value="${escapeHtml(value)}"
+        ${saving ? 'disabled' : ''}
+      >
+      <div class="daisy-table-edit-actions">
+        <button type="button" class="btn btn-xs btn-primary" data-table-edit-save ${saving ? 'disabled' : ''}>Save</button>
+        <button type="button" class="btn btn-xs btn-ghost" data-table-edit-cancel ${saving ? 'disabled' : ''}>Cancel</button>
+      </div>
+      ${error ? `<p class="daisy-table-edit-error text-xs text-error">${escapeHtml(error)}</p>` : ''}
+    </div>
+  `;
+}
+
+function startCellEdit(context, rowId, columnId) {
+  if (!context.config.editable.enabled || !context.config.editable.columns.includes(columnId)) {
+    return null;
+  }
+
+  const row = getVisibleRowById(context, rowId);
+  const rowData = row?.original ?? null;
+
+  if (!row || !rowData) {
+    return null;
+  }
+
+  const editableColumns = context.config.editable.mode === 'row'
+    ? context.config.editable.columns
+    : [columnId];
+
+  context.editing = {
+    mode: context.config.editable.mode,
+    rowId: String(row.id),
+    columnId,
+    original: { ...rowData },
+    draft: Object.fromEntries(editableColumns.map((key) => [key, String(rowData?.[key] ?? '')])),
+    dirty: {},
+    errors: {},
+    saving: false,
+  };
+
+  dispatchTableEditEvent(context, 'daisy:table-edit-started', {
+    rowId: String(row.id),
+    column: columnId,
+    row: rowData,
+    mode: context.editing.mode,
+  });
+
+  renderTable(context);
+
+  return context.editing;
+}
+
+function cancelEdit(context) {
+  context.editing = null;
+  renderTable(context);
+}
+
+function updateEditDraft(context, input) {
+  if (!context.editing) {
+    return;
+  }
+
+  const columnId = input.dataset.tableColumnId;
+
+  if (!context.config.editable.columns.includes(columnId)) {
+    return;
+  }
+
+  context.editing.draft[columnId] = String(input.value ?? '');
+  context.editing.dirty[columnId] = context.editing.draft[columnId] !== String(context.editing.original?.[columnId] ?? '');
+}
+
+function replaceRowInRows(rows = [], rowKey, rowId, nextRow) {
+  return rows.map((row) => {
+    if (String(row?.[rowKey] ?? '') === String(rowId)) {
+      return {
+        ...row,
+        ...nextRow,
+      };
+    }
+
+    return row;
+  });
+}
+
+function applyEditedRow(context, rowId, nextRow) {
+  const rowKey = getStableRowKey(context.config);
+
+  if (!rowKey) {
+    return;
+  }
+
+  if (context.config.mode === 'client') {
+    context.config.rows = replaceRowInRows(context.config.rows, rowKey, rowId, nextRow);
+    return;
+  }
+
+  context.rows = replaceRowInRows(context.rows, rowKey, rowId, nextRow);
+}
+
+async function commitEdit(context) {
+  if (!context.editing || context.editing.saving) {
+    return null;
+  }
+
+  const dirty = Object.fromEntries(
+    Object.entries(context.editing.dirty).filter(([, value]) => value === true)
+  );
+
+  if (Object.keys(dirty).length === 0) {
+    cancelEdit(context);
+    return null;
+  }
+
+  const rowId = context.editing.rowId;
+  const column = context.editing.columnId;
+  const row = getVisibleRowById(context, rowId)?.original ?? context.editing.original;
+  const payload = {
+    rowId,
+    column,
+    value: context.editing.draft[column],
+    row,
+    dirty: Object.fromEntries(Object.keys(dirty).map((key) => [key, context.editing.draft[key]])),
+  };
+  const endpoint = new URL(context.config.editable.endpoint.url, window.location.href);
+  const headers = new Headers({
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    ...(context.config.editable.endpoint.headers || {}),
+  });
+  const csrfToken = typeof document !== 'undefined'
+    ? document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+    : null;
+
+  if (csrfToken && !headers.has('X-CSRF-TOKEN')) {
+    headers.set('X-CSRF-TOKEN', csrfToken);
+  }
+
+  context.editing.saving = true;
+  renderTable(context);
+
+  try {
+    const response = await fetch(endpoint.toString(), {
+      method: context.config.editable.method,
+      headers,
+      credentials: context.config.editable.endpoint.credentials,
+      body: JSON.stringify(payload),
+    });
+    const body = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const errors = isPlainObject(body.errors) ? body.errors : {};
+
+      throw Object.assign(new Error(body.message || `HTTP ${response.status}`), { errors });
+    }
+
+    const nextRow = isPlainObject(body.row)
+      ? body.row
+      : (isPlainObject(body.data) ? body.data : payload.dirty);
+
+    applyEditedRow(context, rowId, nextRow);
+    dispatchTableEditEvent(context, 'daisy:table-edit-committed', {
+      ...payload,
+      response: body,
+      row: {
+        ...row,
+        ...nextRow,
+      },
+    });
+    context.editing = null;
+    renderTable(context);
+
+    return body;
+  } catch (error) {
+    if (context.editing) {
+      context.editing.saving = false;
+      context.editing.errors = isPlainObject(error.errors)
+        ? Object.fromEntries(Object.entries(error.errors).map(([key, value]) => [key, Array.isArray(value) ? value.join(' ') : String(value)]))
+        : { [column]: error.message || context.config.errorLabel };
+    }
+
+    dispatchTableEditEvent(context, 'daisy:table-edit-failed', {
+      ...payload,
+      error,
+    });
+    renderTable(context);
+
+    return null;
+  }
 }
 
 function renderFooter(context, currentRowsLength) {
@@ -1242,9 +1868,55 @@ function dispatchTableSelectionChanged(context, visibleRows = []) {
   }));
 }
 
+function dispatchTableRendered(context) {
+  context.root.dispatchEvent(new CustomEvent('daisy:table-rendered', {
+    bubbles: true,
+    detail: {
+      rows: context.visibleRows,
+      rowCount: context.rowCount,
+      pageCount: context.pageCount,
+      state: cloneState(context.state),
+      meta: context.meta || {},
+      table: context.table,
+    },
+  }));
+}
+
+function dispatchTableEditEvent(context, name, detail = {}) {
+  context.root.dispatchEvent(new CustomEvent(name, {
+    bubbles: true,
+    detail,
+  }));
+}
+
 function clearSelection(context, notice = '') {
   context.state.selection = resetSelectionState(context.state.selection);
+  context.state.rowSelection = {};
   context.selectionNotice = notice;
+}
+
+function syncSelectionFromRowSelection(context) {
+  if (!context.config.selection.enabled || context.state.selection?.allFilteredSelected === true) {
+    return;
+  }
+
+  context.state.selection = {
+    ...normalizeSelectionState(context.state.selection),
+    selectedIds: Object.keys(normalizeRowSelection(context.state.rowSelection)),
+    excludedIds: [],
+    allFilteredSelected: false,
+    selectionScope: 'page',
+    filterSignature: '',
+  };
+}
+
+function syncRowSelectionState(context) {
+  if (!context.config.selection.enabled) {
+    context.state.rowSelection = {};
+    return;
+  }
+
+  context.state.rowSelection = rowSelectionFromSelection(context.state.selection);
 }
 
 function renderColumnVisibility(context) {
@@ -1309,6 +1981,14 @@ function syncControls(context) {
       return;
     }
 
+    if (input instanceof HTMLInputElement && type === 'date-range') {
+      const bound = input.dataset.tableFilterBound;
+      const value = isPlainObject(currentFilter.value) ? currentFilter.value : {};
+
+      input.value = String(value[bound] ?? '');
+      return;
+    }
+
     input.value = String(currentFilter.value ?? '');
   });
 }
@@ -1339,6 +2019,24 @@ function parseStateFromUrl(config) {
   if (config.serverAdapter === 'spatie-query-builder') {
     const sort = params.get('sort');
     const columnFilters = config.filters.map((filter) => {
+      if (filter.type === 'date-range') {
+        const from = readSpatieFilterParam(params, filter.filterKeyFrom || `${filter.filterKey}_from`);
+        const to = readSpatieFilterParam(params, filter.filterKeyTo || `${filter.filterKey}_to`);
+
+        if (from == null && to == null) {
+          return null;
+        }
+
+        return {
+          id: filter.id,
+          type: filter.type,
+          value: {
+            from: from || '',
+            to: to || '',
+          },
+        };
+      }
+
       const value = readSpatieFilterParam(params, filter.filterKey);
 
       if (value == null) {
@@ -1371,16 +2069,26 @@ function parseStateFromUrl(config) {
   const sorting = params.get('sorting');
   const columnFilters = params.get('columnFilters');
   const columnVisibility = params.get('columnVisibility');
+  const columnOrder = params.get('columnOrder');
+  const columnPinning = params.get('columnPinning');
+  const columnSizing = params.get('columnSizing');
+  const expanded = params.get('expanded');
+  const rowSelection = params.get('rowSelection');
 
   return {
-    sorting: sorting ? JSON.parse(sorting) : [],
+    sorting: parseJsonParam(sorting, []),
     pagination: {
       pageIndex: Number.parseInt(params.get('pageIndex'), 10) || 0,
       pageSize: Number.parseInt(params.get('pageSize'), 10) || undefined,
     },
     globalFilter: params.get('globalFilter') || '',
-    columnFilters: columnFilters ? JSON.parse(columnFilters) : [],
-    columnVisibility: columnVisibility ? JSON.parse(columnVisibility) : {},
+    columnFilters: parseJsonParam(columnFilters, []),
+    columnVisibility: parseJsonParam(columnVisibility, {}),
+    columnOrder: parseJsonParam(columnOrder, []),
+    columnPinning: parseJsonParam(columnPinning, {}),
+    columnSizing: parseJsonParam(columnSizing, {}),
+    expanded: parseJsonParam(expanded, {}),
+    rowSelection: parseJsonParam(rowSelection, {}),
   };
 }
 
@@ -1463,6 +2171,26 @@ function mergeState(baseState, overrideState = {}, config) {
     nextState.columnVisibility = normalizeColumnVisibility(overrideState.columnVisibility, config.columns);
   }
 
+  if (Array.isArray(overrideState.columnOrder)) {
+    nextState.columnOrder = normalizeColumnOrder(overrideState.columnOrder, config.columns);
+  }
+
+  if (isPlainObject(overrideState.columnPinning)) {
+    nextState.columnPinning = normalizeColumnPinning(overrideState.columnPinning, config.columns);
+  }
+
+  if (isPlainObject(overrideState.columnSizing)) {
+    nextState.columnSizing = normalizeColumnSizing(overrideState.columnSizing, config.columns);
+  }
+
+  if (overrideState.expanded === true || isPlainObject(overrideState.expanded)) {
+    nextState.expanded = normalizeExpanded(overrideState.expanded);
+  }
+
+  if (isPlainObject(overrideState.rowSelection)) {
+    nextState.rowSelection = normalizeRowSelection(overrideState.rowSelection);
+  }
+
   if (config.selection.enabled && isPlainObject(overrideState.selection)) {
     nextState.selection = normalizeSelectionState(overrideState.selection);
   }
@@ -1479,6 +2207,21 @@ function createFilterState(filterId, type, input) {
     };
   }
 
+  if (type === 'date-range') {
+    const root = input.closest('[data-daisy-table="1"]');
+    const fromInput = root?.querySelector(`[data-table-filter="${filterId}"][data-table-filter-bound="from"]`);
+    const toInput = root?.querySelector(`[data-table-filter="${filterId}"][data-table-filter-bound="to"]`);
+
+    return {
+      id: filterId,
+      type,
+      value: {
+        from: fromInput instanceof HTMLInputElement ? String(fromInput.value ?? '') : '',
+        to: toInput instanceof HTMLInputElement ? String(toInput.value ?? '') : '',
+      },
+    };
+  }
+
   return {
     id: filterId,
     type,
@@ -1492,6 +2235,18 @@ function updateFilterState(context, nextFilter) {
   if (nextFilter.type === 'boolean') {
     if (nextFilter.value === true) {
       filters.push(nextFilter);
+    }
+  } else if (nextFilter.type === 'date-range') {
+    const value = isPlainObject(nextFilter.value) ? nextFilter.value : {};
+
+    if (String(value.from ?? '') !== '' || String(value.to ?? '') !== '') {
+      filters.push({
+        ...nextFilter,
+        value: {
+          from: String(value.from ?? ''),
+          to: String(value.to ?? ''),
+        },
+      });
     }
   } else if (nextFilter.value !== '') {
     filters.push(nextFilter);
@@ -1523,40 +2278,46 @@ function resolveFilterInputState(context, input) {
 }
 
 function renderTable(context) {
-  renderColgroup(context);
-
-  const filteredRows = context.config.mode === 'client'
-    ? applyClientFilters(context.config.rows, context.config.columns, context.state)
-    : context.rows;
-  const rowCount = context.config.mode === 'client' ? filteredRows.length : context.rowCount;
-  const pageCount = context.config.mode === 'client'
-    ? Math.max(1, Math.ceil(Math.max(1, filteredRows.length) / context.state.pagination.pageSize))
+  const tableRows = context.config.mode === 'client' ? context.config.rows : context.rows;
+  const rowCount = context.config.mode === 'client' ? tableRows.length : context.rowCount;
+  let pageCount = context.config.mode === 'client'
+    ? Math.max(1, Math.ceil(Math.max(1, rowCount) / context.state.pagination.pageSize))
     : Math.max(1, context.pageCount);
 
   context.rowCount = rowCount;
   context.pageCount = pageCount;
+  syncRowSelectionState(context);
 
   if (context.state.pagination.pageIndex > pageCount - 1) {
     context.state.pagination.pageIndex = Math.max(0, pageCount - 1);
   }
 
-  context.table = createTableModel(
-    context.config,
-    context.state,
-    filteredRows,
-    rowCount,
-    pageCount
-  );
+  context.table = createTableModel(context, tableRows, rowCount, pageCount);
+
+  if (context.config.mode === 'client') {
+    const filteredRowCount = context.table.getFilteredRowModel().rows.length;
+
+    pageCount = Math.max(1, Math.ceil(Math.max(1, filteredRowCount) / context.state.pagination.pageSize));
+    context.rowCount = filteredRowCount;
+    context.pageCount = pageCount;
+
+    if (context.state.pagination.pageIndex > pageCount - 1) {
+      context.state.pagination.pageIndex = Math.max(0, pageCount - 1);
+      context.table = createTableModel(context, tableRows, filteredRowCount, pageCount);
+    }
+  }
 
   const rowModel = context.table.getRowModel().rows;
 
   context.visibleRows = rowModel;
+  renderColgroup(context);
   renderHeader(context);
   renderColumnVisibility(context);
   syncControls(context);
   renderBody(context, rowModel);
   renderFooter(context, rowModel.length);
   updateSelectionControls(context, rowModel);
+  dispatchTableRendered(context);
 }
 
 async function fetchServerRows(context) {
@@ -1609,6 +2370,7 @@ async function refreshTable(context) {
     context.rows = response.rows;
     context.rowCount = response.rowCount;
     context.pageCount = response.pageCount;
+    context.meta = response.meta || {};
     context.state.pagination.pageIndex = response.state.pageIndex;
     context.state.pagination.pageSize = response.state.pageSize;
     context.loading = false;
@@ -1645,6 +2407,55 @@ function attachEvents(context) {
     const selectFilteredButton = event.target instanceof Element ? event.target.closest('[data-table-select-filtered]') : null;
     const clearSelectionButton = event.target instanceof Element ? event.target.closest('[data-table-clear-selection]') : null;
     const bulkActionButton = event.target instanceof Element ? event.target.closest('[data-table-bulk-action]') : null;
+    const detailButton = event.target instanceof Element ? event.target.closest('[data-table-row-detail]') : null;
+    const detailCloseButton = event.target instanceof Element ? event.target.closest('[data-table-detail-close]') : null;
+    const editCell = event.target instanceof Element ? event.target.closest('[data-table-edit-cell]') : null;
+    const editSaveButton = event.target instanceof Element ? event.target.closest('[data-table-edit-save]') : null;
+    const editCancelButton = event.target instanceof Element ? event.target.closest('[data-table-edit-cancel]') : null;
+
+    if (editSaveButton instanceof HTMLElement) {
+      void commitEdit(context);
+      return;
+    }
+
+    if (editCancelButton instanceof HTMLElement) {
+      cancelEdit(context);
+      return;
+    }
+
+    if (editCell instanceof HTMLElement && !(event.target instanceof HTMLInputElement)) {
+      startCellEdit(context, editCell.dataset.tableRowId, editCell.dataset.tableColumnId);
+      return;
+    }
+
+    if (detailCloseButton instanceof HTMLElement) {
+      const dialog = detailCloseButton.closest('dialog');
+
+      if (dialog instanceof HTMLDialogElement) {
+        dialog.close();
+      }
+
+      return;
+    }
+
+    if (detailButton instanceof HTMLElement) {
+      const rowId = detailButton.dataset.tableRowDetail;
+      const row = getVisibleRowById(context, rowId);
+
+      if (!row) {
+        return;
+      }
+
+      row.toggleExpanded?.();
+
+      if (context.config.rowDetail.mode === 'modal') {
+        openDetailModal(context, rowId);
+      }
+
+      persistState(context);
+      renderTable(context);
+      return;
+    }
 
     if (selectFilteredButton instanceof HTMLElement) {
       if (selectFilteredButton instanceof HTMLButtonElement && selectFilteredButton.disabled) {
@@ -1693,8 +2504,15 @@ function attachEvents(context) {
       return;
     }
 
-    context.state.sorting = toggleSorting(context.state, sortButton.dataset.tableSort);
-    context.state.pagination.pageIndex = 0;
+    const column = context.table?.getColumn(sortButton.dataset.tableSort);
+
+    if (column?.getCanSort?.()) {
+      column.toggleSorting();
+    } else {
+      context.state.sorting = toggleSorting(context.state, sortButton.dataset.tableSort);
+    }
+
+    context.table?.setPageIndex?.(0);
     void refreshTable(context);
   }, listenerOptions);
 
@@ -1703,7 +2521,11 @@ function attachEvents(context) {
 
     if (target instanceof HTMLInputElement && target.matches('[data-table-select-page]')) {
       context.selectionNotice = '';
-      toggleVisibleRowsSelection(context.state, context.config, context.visibleRows, target.checked);
+      if (context.state.selection.allFilteredSelected) {
+        toggleVisibleRowsSelection(context.state, context.config, context.visibleRows, target.checked);
+      } else {
+        context.table?.toggleAllPageRowsSelected?.(target.checked);
+      }
       persistState(context);
       updateSelectionControls(context, context.visibleRows);
       dispatchTableSelectionChanged(context, context.visibleRows);
@@ -1712,7 +2534,11 @@ function attachEvents(context) {
 
     if (target instanceof HTMLInputElement && target.matches('[data-table-row-select]')) {
       context.selectionNotice = '';
-      toggleRowSelection(context.state, context.config, target.dataset.tableRowSelect || null, target.checked);
+      if (context.state.selection.allFilteredSelected) {
+        toggleRowSelection(context.state, context.config, target.dataset.tableRowSelect || null, target.checked);
+      } else {
+        context.table?.getRow(target.dataset.tableRowSelect, true)?.toggleSelected?.(target.checked);
+      }
       persistState(context);
       updateSelectionControls(context, context.visibleRows);
       dispatchTableSelectionChanged(context, context.visibleRows);
@@ -1720,8 +2546,8 @@ function attachEvents(context) {
     }
 
     if (target instanceof HTMLInputElement && target.matches('[data-table-column-toggle]')) {
-      context.state.columnVisibility[target.dataset.tableColumnToggle] = target.checked;
-      context.state.pagination.pageIndex = 0;
+      context.table?.getColumn(target.dataset.tableColumnToggle)?.toggleVisibility?.(target.checked);
+      context.table?.setPageIndex?.(0);
       void refreshTable(context);
       return;
     }
@@ -1731,8 +2557,10 @@ function attachEvents(context) {
         return;
       }
 
-      updateFilterState(context, createFilterState(target.dataset.tableFilter, target.dataset.tableFilterType || 'text', target));
-      context.state.pagination.pageIndex = 0;
+      const nextFilter = createFilterState(target.dataset.tableFilter, target.dataset.tableFilterType || 'text', target);
+
+      context.table?.getColumn(nextFilter.id)?.setFilterValue(nextFilter);
+      context.table?.setPageIndex?.(0);
       clearSelection(context, context.config.labels.selectionResetAfterFilter || '');
       void refreshTable(context);
     }
@@ -1740,6 +2568,11 @@ function attachEvents(context) {
 
   context.root.addEventListener('input', (event) => {
     const target = event.target;
+
+    if (target instanceof HTMLInputElement && target.matches('[data-table-edit-input]')) {
+      updateEditDraft(context, target);
+      return;
+    }
 
     if (!((target instanceof HTMLInputElement || target instanceof HTMLSelectElement) && target.matches('[data-table-filter]'))) {
       return;
@@ -1757,12 +2590,56 @@ function attachEvents(context) {
       return;
     }
 
-    updateFilterState(context, nextFilter);
-    context.state.pagination.pageIndex = 0;
+    context.table?.getColumn(nextFilter.id)?.setFilterValue(nextFilter);
+    context.table?.setPageIndex?.(0);
     clearSelection(context, context.config.labels.selectionResetAfterFilter || '');
     filterTimeout = setTimeout(() => {
       void refreshTable(context);
     }, context.config.filterDebounceMs);
+  }, listenerOptions);
+
+  context.root.addEventListener('keydown', (event) => {
+    const target = event.target;
+
+    if (!(target instanceof HTMLInputElement && target.matches('[data-table-edit-input]'))) {
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      updateEditDraft(context, target);
+      void commitEdit(context);
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      cancelEdit(context);
+    }
+  }, listenerOptions);
+
+  context.root.addEventListener('mousedown', (event) => {
+    const resizeHandle = event.target instanceof Element ? event.target.closest('[data-table-resize]') : null;
+
+    if (!(resizeHandle instanceof HTMLElement)) {
+      return;
+    }
+
+    const header = context.table?.getFlatHeaders?.().find((candidate) => candidate.id === resizeHandle.dataset.tableResize);
+
+    header?.getResizeHandler?.()(event);
+  }, listenerOptions);
+
+  context.root.addEventListener('touchstart', (event) => {
+    const resizeHandle = event.target instanceof Element ? event.target.closest('[data-table-resize]') : null;
+
+    if (!(resizeHandle instanceof HTMLElement)) {
+      return;
+    }
+
+    const header = context.table?.getFlatHeaders?.().find((candidate) => candidate.id === resizeHandle.dataset.tableResize);
+
+    header?.getResizeHandler?.()(event);
   }, listenerOptions);
 
   if (searchInput instanceof HTMLInputElement) {
@@ -1776,8 +2653,8 @@ function attachEvents(context) {
       }
 
       searchTimeout = setTimeout(() => {
-        context.state.globalFilter = nextValue;
-        context.state.pagination.pageIndex = 0;
+        context.table?.setGlobalFilter?.(nextValue);
+        context.table?.setPageIndex?.(0);
         clearSelection(context, context.config.labels.selectionResetAfterFilter || '');
         void refreshTable(context);
       }, context.config.searchDebounceMs);
@@ -1786,22 +2663,22 @@ function attachEvents(context) {
 
   if (pageSize instanceof HTMLSelectElement) {
     pageSize.addEventListener('change', () => {
-      context.state.pagination.pageSize = Number.parseInt(pageSize.value, 10) || context.state.pagination.pageSize;
-      context.state.pagination.pageIndex = 0;
+      context.table?.setPageSize?.(Number.parseInt(pageSize.value, 10) || context.state.pagination.pageSize);
+      context.table?.setPageIndex?.(0);
       void refreshTable(context);
     }, listenerOptions);
   }
 
   if (previousButton instanceof HTMLButtonElement) {
     previousButton.addEventListener('click', () => {
-      context.state.pagination.pageIndex = Math.max(0, context.state.pagination.pageIndex - 1);
+      context.table?.previousPage?.();
       void refreshTable(context);
     }, listenerOptions);
   }
 
   if (nextButton instanceof HTMLButtonElement) {
     nextButton.addEventListener('click', () => {
-      context.state.pagination.pageIndex += 1;
+      context.table?.nextPage?.();
       void refreshTable(context);
     }, listenerOptions);
   }
@@ -1836,6 +2713,22 @@ function applyExternalRefreshState(context, options = {}) {
 
   if (Array.isArray(options.sorting)) {
     context.state.sorting = normalizeSorting(options.sorting, context.config.columns);
+  }
+
+  if (Array.isArray(options.columnOrder)) {
+    context.state.columnOrder = normalizeColumnOrder(options.columnOrder, context.config.columns);
+  }
+
+  if (isPlainObject(options.columnPinning)) {
+    context.state.columnPinning = normalizeColumnPinning(options.columnPinning, context.config.columns);
+  }
+
+  if (isPlainObject(options.columnSizing)) {
+    context.state.columnSizing = normalizeColumnSizing(options.columnSizing, context.config.columns);
+  }
+
+  if (options.expanded === true || isPlainObject(options.expanded)) {
+    context.state.expanded = normalizeExpanded(options.expanded);
   }
 
   if (isPlainObject(options.pagination)) {
@@ -1894,6 +2787,7 @@ async function initTable(root) {
     rows: config.mode === 'client' ? config.rows : [],
     rowCount: config.mode === 'client' ? config.rows.length : 0,
     pageCount: 1,
+    meta: {},
     loading: config.mode === 'server',
     error: '',
     table: null,
@@ -2013,6 +2907,7 @@ function tableApi(idOrRoot) {
 
       context.selectionNotice = '';
       selectAllFilteredRows(context.state);
+      syncRowSelectionState(context);
       persistState(context);
       updateSelectionControls(context, context.visibleRows);
       dispatchTableSelectionChanged(context, context.visibleRows);
@@ -2032,6 +2927,87 @@ function tableApi(idOrRoot) {
       dispatchTableSelectionChanged(context, context.visibleRows);
 
       return buildSelectionDetail(context, context.visibleRows);
+    },
+    async setColumnOrder(columnOrder = []) {
+      const context = await initTable(root);
+
+      if (!context) {
+        return null;
+      }
+
+      context.state.columnOrder = normalizeColumnOrder(columnOrder, context.config.columns);
+      persistState(context);
+      renderTable(context);
+
+      return context.state.columnOrder;
+    },
+    async setColumnPinning(columnPinning = {}) {
+      const context = await initTable(root);
+
+      if (!context) {
+        return null;
+      }
+
+      context.state.columnPinning = normalizeColumnPinning(columnPinning, context.config.columns);
+      persistState(context);
+      renderTable(context);
+
+      return context.state.columnPinning;
+    },
+    async setColumnSizing(columnSizing = {}) {
+      const context = await initTable(root);
+
+      if (!context) {
+        return null;
+      }
+
+      context.state.columnSizing = normalizeColumnSizing(columnSizing, context.config.columns);
+      persistState(context);
+      renderTable(context);
+
+      return context.state.columnSizing;
+    },
+    async setExpanded(expanded = {}) {
+      const context = await initTable(root);
+
+      if (!context) {
+        return null;
+      }
+
+      context.state.expanded = normalizeExpanded(expanded);
+      persistState(context);
+      renderTable(context);
+
+      return context.state.expanded;
+    },
+    async editCell(rowId, columnId) {
+      const context = await initTable(root);
+
+      if (!context) {
+        return null;
+      }
+
+      return startCellEdit(context, rowId, columnId);
+    },
+    async commitEdit() {
+      const context = await initTable(root);
+
+      if (!context) {
+        return null;
+      }
+
+      return commitEdit(context);
+    },
+    cancelEdit() {
+      const context = root?.__daisyTableContext ?? null;
+
+      if (!context) {
+        return null;
+      }
+
+      cancelEdit(context);
+
+      return true;
     },
     destroy() {
       return destroyTable(root);
@@ -2077,6 +3053,7 @@ export {
   buildSelectionDetail,
   buildServerRequest,
   buildSpatieRequestParams,
+  createColumnDefs,
   createFilterSignature,
   getPersistedStateKey,
   getColumnClasses,
@@ -2090,12 +3067,21 @@ export {
   normalizeColumns,
   normalizeConfig,
   normalizeInitialState,
+  normalizeColumnOrder,
+  normalizeColumnPinning,
+  normalizeColumnSizing,
+  normalizeExpanded,
+  normalizeRowSelection,
   normalizeSelectionState,
   normalizeServerResponse,
   normalizeSpatieResponse,
   parseConfig,
+  parseJsonParam,
   parseStateFromLocalStorage,
   parseStateFromUrl,
+  isSafeHref,
+  renderLinkCell,
+  getRowDetailContent,
   resolveSearchInputValue,
   resetSelectionState,
   serializeRequestPayload,

@@ -15,9 +15,11 @@
     'searchDebounce' => 500,
     'filterDebounce' => 500,
     'minSearchChars' => 3,
+    'searchMode' => 'fuzzy',
     'columnVisibility' => false,
     'selection' => 'none',
     'rowKey' => null,
+    'subRowsKey' => null,
     'tableLayout' => 'auto',
     'minWidth' => null,
     'scrollX' => 'auto',
@@ -29,6 +31,16 @@
     'zebra' => false,
     'pinRows' => false,
     'pinCols' => false,
+    'rowDetail' => 'none',
+    'rowDetailView' => null,
+    'columnResizing' => false,
+    'editable' => false,
+    'editEndpoint' => null,
+    'editMethod' => 'PATCH',
+    'editMode' => 'cell',
+    'editableColumns' => [],
+    'editPolicy' => [],
+    'linkPolicy' => [],
     'emptyLabel' => null,
     'loadingLabel' => null,
     'errorLabel' => null,
@@ -43,13 +55,26 @@
     $resolvedSearchDebounce = max(0, (int) $searchDebounce);
     $resolvedFilterDebounce = max(0, (int) $filterDebounce);
     $resolvedMinSearchChars = max(0, (int) $minSearchChars);
+    $resolvedSearchMode = $searchMode === 'includes' ? 'includes' : 'fuzzy';
     $resolvedTableLayout = $tableLayout === 'fixed' ? 'fixed' : 'auto';
     $resolvedScrollX = in_array($scrollX, ['auto', 'always', 'none'], true) ? $scrollX : 'auto';
     $resolvedToolbarLayout = in_array($toolbarLayout, ['default', 'split', 'hidden'], true) ? $toolbarLayout : 'default';
     $resolvedLivewireMode = in_array($livewireMode, ['ignore', 'morph', 'none'], true) ? $livewireMode : 'none';
+    $resolvedRowDetail = in_array($rowDetail, ['none', 'inline', 'modal'], true) ? $rowDetail : 'none';
     $resolvedExternalFilters = (bool) $externalFilters;
     $resolvedSelection = $selection === 'multiple' ? 'multiple' : 'none';
     $resolvedRowKey = is_string($rowKey) && filled($rowKey) ? $rowKey : null;
+    $resolvedSubRowsKey = is_string($subRowsKey) && filled($subRowsKey) ? $subRowsKey : null;
+    $resolvedEditable = (bool) $editable;
+    $resolvedEditEndpoint = is_array($editEndpoint) ? $editEndpoint : (filled($editEndpoint) ? ['url' => $editEndpoint] : null);
+    $resolvedEditMode = in_array($editMode, ['cell', 'row'], true) ? $editMode : 'cell';
+    $resolvedEditMethod = filled($editMethod) ? strtoupper((string) $editMethod) : 'PATCH';
+    $resolvedEditableColumns = collect(is_array($editableColumns) ? $editableColumns : [])
+        ->filter(fn ($key) => is_string($key) && filled($key))
+        ->map(fn ($key) => (string) $key)
+        ->values()
+        ->all();
+    $resolvedLinkPolicy = \Art35rennes\DaisyKit\Support\DaisyTableColumns::normalizeLinkPolicy($linkPolicy);
     $selectionEnabled = $resolvedSelection === 'multiple';
     $hasToolbarStartSlot = isset($toolbarStart) && $toolbarStart instanceof \Illuminate\View\ComponentSlot;
     $hasToolbarSlot = isset($toolbar) && $toolbar instanceof \Illuminate\View\ComponentSlot;
@@ -69,6 +94,14 @@
 
     if ($selectionEnabled && blank($resolvedRowKey)) {
         throw new InvalidArgumentException('The table component requires a non-empty rowKey prop when selection is set to multiple.');
+    }
+
+    if (($resolvedRowDetail !== 'none' || $resolvedSubRowsKey !== null || $resolvedEditable) && blank($resolvedRowKey)) {
+        throw new InvalidArgumentException('The table component requires a non-empty rowKey prop for row details, sub rows, or editable rows.');
+    }
+
+    if ($resolvedEditable && blank($resolvedEditEndpoint)) {
+        throw new InvalidArgumentException('The table component requires an editEndpoint prop when editable is enabled.');
     }
 
     $sizeMap = ['xs', 'sm', 'md', 'lg', 'xl'];
@@ -102,34 +135,6 @@
 
     // `key` stays the stable client-side identifier, while `sortKey` / `filterKey`
     // allow the host app to point server requests at different backend field names.
-    $numericClass = static function ($value, string $prefix): ?string {
-        if (! is_string($value) && ! $value instanceof \Stringable && ! is_numeric($value)) {
-            return null;
-        }
-
-        $value = trim((string) $value);
-
-        if (preg_match('/^(\d+(?:\.\d+)?)px$/', $value, $matches) === 1) {
-            $token = (int) round((float) $matches[1]);
-
-            return $token >= 1 && $token <= 1200 ? $prefix.'-px-'.$token : null;
-        }
-
-        if (preg_match('/^(\d+(?:\.\d+)?)rem$/', $value, $matches) === 1) {
-            $token = (int) round((float) $matches[1] * 4);
-
-            return $token >= 1 && $token <= 512 ? $prefix.'-rem-'.$token : null;
-        }
-
-        if (preg_match('/^(\d+(?:\.\d+)?)%$/', $value, $matches) === 1) {
-            $token = (int) round((float) $matches[1]);
-
-            return $token >= 1 && $token <= 100 ? $prefix.'-percent-'.$token : null;
-        }
-
-        return null;
-    };
-
     $columnClasses = static function (array $column, string $target): string {
         $classes = [];
 
@@ -182,13 +187,14 @@
         return trim(implode(' ', array_unique(array_filter($classes))));
     };
 
-    $normalizeColumn = static function (array $column) use ($numericClass): array {
+    $normalizeColumn = static function (array $column): array {
         $key = is_string($column['key'] ?? null) ? trim($column['key']) : '';
         $filterConfig = is_array($column['filter'] ?? null) ? $column['filter'] : [];
-        $filterType = in_array($filterConfig['type'] ?? null, ['text', 'select', 'boolean'], true)
+        $filterType = in_array($filterConfig['type'] ?? null, ['text', 'select', 'boolean', 'date', 'date-range'], true)
             ? $filterConfig['type']
             : null;
-        $type = ($column['type'] ?? null) === 'actions' ? 'actions' : null;
+        $type = in_array($column['type'] ?? null, ['actions', 'link', 'resource-link'], true) ? $column['type'] : null;
+        $cell = \Art35rennes\DaisyKit\Support\DaisyTableColumns::normalizeCell($column);
         $width = $column['width'] ?? null;
         $minWidth = $column['minWidth'] ?? null;
         $maxWidth = $column['maxWidth'] ?? null;
@@ -217,9 +223,9 @@
             'width' => $width,
             'minWidth' => $minWidth,
             'maxWidth' => $maxWidth,
-            'widthClass' => $width === 'fit' ? 'daisy-table-width-fit' : ($width === 'auto' ? null : $numericClass($width, 'daisy-table-width')),
-            'minWidthClass' => $minWidth === 'max-content' ? 'daisy-table-min-width-max' : ($minWidth === 'full' ? 'min-w-full' : $numericClass($minWidth, 'daisy-table-min-width')),
-            'maxWidthClass' => $numericClass($maxWidth, 'daisy-table-max-width'),
+            'widthClass' => $width === 'fit' ? 'daisy-table-width-fit' : ($width === 'auto' ? null : \Art35rennes\DaisyKit\Support\DaisyTableColumns::numericClass($width, 'daisy-table-width')),
+            'minWidthClass' => $minWidth === 'max-content' ? 'daisy-table-min-width-max' : ($minWidth === 'full' ? 'min-w-full' : \Art35rennes\DaisyKit\Support\DaisyTableColumns::numericClass($minWidth, 'daisy-table-min-width')),
+            'maxWidthClass' => \Art35rennes\DaisyKit\Support\DaisyTableColumns::numericClass($maxWidth, 'daisy-table-max-width'),
             'align' => $align,
             'alignClass' => match ($align) {
                 'center' => 'text-center',
@@ -248,9 +254,16 @@
             'headerWrapperClass' => $column['headerWrapperClass'] ?? '',
             'cellClass' => $column['cellClass'] ?? '',
             'headerClass' => $column['headerClass'] ?? '',
-            'html' => (bool) ($column['html'] ?? false),
+            'html' => in_array($cell['renderer'], ['html', 'blade', 'actions'], true),
+            'cell' => $cell,
+            'enableResizing' => ($column['enableResizing'] ?? true) !== false,
+            'size' => is_numeric($column['size'] ?? null) ? (int) $column['size'] : null,
+            'minSize' => is_numeric($column['minSize'] ?? null) ? (int) $column['minSize'] : null,
+            'maxSize' => is_numeric($column['maxSize'] ?? null) ? (int) $column['maxSize'] : null,
             'filter' => $filterType ? [
                 'type' => $filterType,
+                'filterKeyFrom' => is_string($filterConfig['filterKeyFrom'] ?? null) && filled($filterConfig['filterKeyFrom']) ? $filterConfig['filterKeyFrom'] : null,
+                'filterKeyTo' => is_string($filterConfig['filterKeyTo'] ?? null) && filled($filterConfig['filterKeyTo']) ? $filterConfig['filterKeyTo'] : null,
                 'options' => array_values(array_filter(
                     is_array($filterConfig['options'] ?? null) ? $filterConfig['options'] : [],
                     static fn ($option) => is_array($option) && filled($option['value'] ?? null)
@@ -259,25 +272,9 @@
         ];
     };
 
-    $normalizeToolbarFilter = static function (array $filter): array {
-        $key = is_string($filter['key'] ?? $filter['id'] ?? null) ? trim((string) ($filter['key'] ?? $filter['id'])) : '';
-        $type = in_array($filter['type'] ?? null, ['text', 'select', 'boolean'], true) ? $filter['type'] : null;
-
-        return [
-            'id' => $key,
-            'label' => $filter['label'] ?? $key,
-            'type' => $type,
-            'filterKey' => is_string($filter['filterKey'] ?? null) && filled($filter['filterKey']) ? $filter['filterKey'] : $key,
-            'options' => array_values(array_filter(
-                is_array($filter['options'] ?? null) ? $filter['options'] : [],
-                static fn ($option) => is_array($option) && filled($option['value'] ?? null)
-            )),
-        ];
-    };
-
     $tableMinWidthClass = $minWidth === 'full'
         ? 'min-w-full'
-        : ($numericClass($minWidth, 'daisy-table-root-min-width') ?? null);
+        : (\Art35rennes\DaisyKit\Support\DaisyTableColumns::numericClass($minWidth, 'daisy-table-root-min-width') ?? null);
 
     $tableClasses = trim($tableClasses.' '.$tableMinWidthClass);
 
@@ -290,6 +287,16 @@
         throw new InvalidArgumentException('The table component requires at least one column with a non-empty key.');
     }
 
+    foreach ($resolvedColumns as $column) {
+        if (($column['cell']['renderer'] ?? null) !== 'blade') {
+            continue;
+        }
+
+        if (! is_string($column['cell']['view'] ?? null) || ! View::exists($column['cell']['view'])) {
+            throw new InvalidArgumentException("Daisy table cell view [{$column['cell']['view']}] does not exist.");
+        }
+    }
+
     $columnFilters = collect($resolvedColumns)
         ->filter(fn (array $column) => $column['filterable'] && is_array($column['filter']))
         ->map(fn (array $column) => [
@@ -297,11 +304,13 @@
             'label' => $column['label'],
             'type' => $column['filter']['type'],
             'filterKey' => $column['filterKey'],
+            'filterKeyFrom' => $column['filter']['filterKeyFrom'] ?? null,
+            'filterKeyTo' => $column['filter']['filterKeyTo'] ?? null,
             'options' => $column['filter']['options'] ?? [],
         ]);
 
     $toolbarFilters = collect(is_array($filters) ? $filters : [])
-        ->map($normalizeToolbarFilter)
+        ->map(fn (array $filter) => \Art35rennes\DaisyKit\Support\DaisyTableColumns::normalizeToolbarFilter($filter))
         ->filter(fn (array $filter) => $filter['id'] !== '' && $filter['type'] !== null);
 
     $filterPriority = static function (array $filter): int {
@@ -401,16 +410,55 @@
             'selectionScope' => data_get($initialState, 'selection.selectionScope') === 'filtered' ? 'filtered' : 'page',
             'filterSignature' => (string) data_get($initialState, 'selection.filterSignature', ''),
         ],
+        'expanded' => is_array($initialState['expanded'] ?? null) ? $initialState['expanded'] : [],
+        'columnOrder' => array_values(array_filter(
+            is_array($initialState['columnOrder'] ?? null) ? $initialState['columnOrder'] : [],
+            static fn ($key) => is_string($key) && in_array($key, collect($resolvedColumns)->pluck('key')->all(), true)
+        )),
+        'columnPinning' => [
+            'left' => array_values(array_filter(
+                is_array(data_get($initialState, 'columnPinning.left')) ? data_get($initialState, 'columnPinning.left') : [],
+                static fn ($key) => is_string($key) && in_array($key, collect($resolvedColumns)->pluck('key')->all(), true)
+            )),
+            'right' => array_values(array_filter(
+                is_array(data_get($initialState, 'columnPinning.right')) ? data_get($initialState, 'columnPinning.right') : [],
+                static fn ($key) => is_string($key) && in_array($key, collect($resolvedColumns)->pluck('key')->all(), true)
+            )),
+        ],
+        'columnSizing' => is_array($initialState['columnSizing'] ?? null) ? $initialState['columnSizing'] : [],
+        'columnSizingInfo' => [
+            'startOffset' => null,
+            'startSize' => null,
+            'deltaOffset' => null,
+            'deltaPercentage' => null,
+            'isResizingColumn' => false,
+            'columnSizingStart' => [],
+        ],
+        'rowSelection' => is_array($initialState['rowSelection'] ?? null) ? $initialState['rowSelection'] : [],
     ];
 
     $resolvedEndpoint = is_array($endpoint) ? $endpoint : (filled($endpoint) ? ['url' => $endpoint] : null);
 
     $resolvedRows = $resolvedMode === 'client' && is_iterable($rows)
-        ? collect($rows)->map(fn ($row) => is_array($row) ? $row : (array) $row)->values()->all()
+        ? \Art35rennes\DaisyKit\Support\DaisyTableRows::for($rows, $resolvedColumns)->renderCells()
         : [];
 
-    $renderCell = static function (array $row, array $column) {
+    $renderCell = static function (array $row, array $column) use ($resolvedLinkPolicy) {
         $value = data_get($row, $column['key']);
+
+        if (($column['cell']['renderer'] ?? null) === 'link') {
+            $link = is_array($value) ? $value : ['href' => $value, 'label' => $value];
+            $href = trim((string) ($link['href'] ?? ''));
+            $label = trim((string) ($link['label'] ?? $href));
+            $target = ($link['target'] ?? null) === '_blank' ? '_blank' : null;
+            $targetAttribute = $target ? ' target="'.e($target).'" rel="noopener noreferrer"' : '';
+
+            if ($href === '' || ! \Art35rennes\DaisyKit\Support\DaisyTableUrlPolicy::isSafeHref($href, $resolvedLinkPolicy, $column['cell'] ?? [])) {
+                return $label;
+            }
+
+            return new Illuminate\Support\HtmlString('<a href="'.e($href).'"'.$targetAttribute.' class="link link-hover">'.e($label).($target === '_blank' ? ' <span aria-hidden="true">&nearr;</span>' : '').'</a>');
+        }
 
         if ($column['html']) {
             return new Illuminate\Support\HtmlString((string) $value);
@@ -428,10 +476,14 @@
         'persistState' => $resolvedPersistState,
         'stateKey' => $stateKey,
         'globalFilterKey' => filled($globalFilterKey) ? (string) $globalFilterKey : 'global',
+        'rowKey' => $resolvedRowKey,
+        'searchMode' => $resolvedSearchMode,
+        'subRowsKey' => $resolvedSubRowsKey,
         'endpoint' => $resolvedEndpoint,
         'columns' => $resolvedColumns,
         'filters' => $resolvedFilters,
         'externalFilters' => $resolvedExternalFilters,
+        'linkPolicy' => $resolvedLinkPolicy,
         'livewireMode' => $resolvedLivewireMode,
         'rows' => $resolvedRows,
         'initialState' => $resolvedInitialState,
@@ -445,6 +497,20 @@
             'enabled' => $selectionEnabled,
             'mode' => $resolvedSelection,
             'rowKey' => $selectionEnabled ? $resolvedRowKey : null,
+        ],
+        'rowDetail' => [
+            'mode' => $resolvedRowDetail,
+            'view' => is_string($rowDetailView) && filled($rowDetailView) ? $rowDetailView : null,
+        ],
+        'columnResizing' => (bool) $columnResizing,
+        'editable' => [
+            'enabled' => $resolvedEditable,
+            'endpoint' => $resolvedEditEndpoint,
+            'method' => $resolvedEditMethod,
+            'mode' => $resolvedEditMode,
+            'columns' => $resolvedEditableColumns,
+            'policy' => is_array($editPolicy) ? $editPolicy : [],
+            'rowKey' => $resolvedRowKey,
         ],
         'emptyLabel' => $emptyLabel ?: __('daisy::common.no_results'),
         'loadingLabel' => $loadingLabel ?: __('daisy::common.loading'),
@@ -588,6 +654,38 @@
                                 data-table-filter-type="boolean"
                             >
                         </label>
+                    @elseif($filter['type'] === 'date')
+                        <label class="form-control w-full min-w-0">
+                            <span class="label px-0 py-0 pb-1">
+                                <span class="label-text text-xs font-medium text-base-content/70">{{ $filter['label'] }}</span>
+                            </span>
+                            <input
+                                type="date"
+                                class="input input-bordered input-sm w-full bg-base-100"
+                                data-table-filter="{{ $filter['id'] }}"
+                                data-table-filter-type="date"
+                            >
+                        </label>
+                    @elseif($filter['type'] === 'date-range')
+                        <fieldset class="grid w-full min-w-0 grid-cols-2 gap-2">
+                            <legend class="col-span-2 text-xs font-medium text-base-content/70">{{ $filter['label'] }}</legend>
+                            <input
+                                type="date"
+                                class="input input-bordered input-sm w-full bg-base-100"
+                                data-table-filter="{{ $filter['id'] }}"
+                                data-table-filter-type="date-range"
+                                data-table-filter-bound="from"
+                                aria-label="{{ $filter['label'] }} from"
+                            >
+                            <input
+                                type="date"
+                                class="input input-bordered input-sm w-full bg-base-100"
+                                data-table-filter="{{ $filter['id'] }}"
+                                data-table-filter-type="date-range"
+                                data-table-filter-bound="to"
+                                aria-label="{{ $filter['label'] }} to"
+                            >
+                        </fieldset>
                     @endif
                 @endforeach
                 </div>
@@ -633,6 +731,10 @@
                     <col class="daisy-table-selection-col">
                 @endif
 
+                @if($resolvedRowDetail !== 'none')
+                    <col class="daisy-table-detail-col">
+                @endif
+
                 @foreach($resolvedColumns as $column)
                     @continue(data_get($resolvedInitialState, 'columnVisibility.'.$column['key']) === false)
 
@@ -650,6 +752,12 @@
                                 data-table-select-page
                                 aria-label="{{ __('daisy::components.select_all_rows') }}"
                             >
+                        </th>
+                    @endif
+
+                    @if($resolvedRowDetail !== 'none')
+                        <th class="daisy-table-detail-cell">
+                            <span class="sr-only">Details</span>
                         </th>
                     @endif
 
@@ -674,6 +782,16 @@
                             @else
                                 <span class="{{ $wrapperClassesForColumn($column, 'header') }}">{{ $column['label'] }}</span>
                             @endif
+
+                            @if($columnResizing && $column['enableResizing'])
+                                <button
+                                    type="button"
+                                    class="daisy-table-resize-handle"
+                                    data-table-resize="{{ $column['key'] }}"
+                                    aria-label="Resize {{ $column['label'] }}"
+                                    title="Resize {{ $column['label'] }}"
+                                ></button>
+                            @endif
                         </th>
                     @endforeach
                 </tr>
@@ -697,6 +815,20 @@
                                 </td>
                             @endif
 
+                            @if($resolvedRowDetail !== 'none')
+                                @php
+                                    $rowDetailId = data_get($row, $resolvedRowKey);
+                                @endphp
+                                <td class="daisy-table-detail-cell">
+                                    <button
+                                        type="button"
+                                        class="btn btn-xs btn-ghost"
+                                        data-table-row-detail="{{ $rowDetailId }}"
+                                        aria-expanded="false"
+                                    >...</button>
+                                </td>
+                            @endif
+
                             @foreach($resolvedColumns as $column)
                                 @continue(data_get($resolvedInitialState, 'columnVisibility.'.$column['key']) === false)
 
@@ -704,7 +836,21 @@
                                     $value = $renderCell($row, $column);
                                 @endphp
 
-                                <td class="{{ $columnClasses($column, 'cell') }}">
+                                @php
+                                    $isEditableCell = $resolvedEditable
+                                        && ! $column['html']
+                                        && ! in_array($column['type'], ['actions', 'link', 'resource-link'], true)
+                                        && ($resolvedEditableColumns === [] || in_array($column['key'], $resolvedEditableColumns, true));
+                                @endphp
+
+                                <td
+                                    class="{{ $columnClasses($column, 'cell') }}"
+                                    @if($isEditableCell)
+                                        data-table-edit-cell
+                                        data-table-row-id="{{ data_get($row, $resolvedRowKey) }}"
+                                        data-table-column-id="{{ $column['key'] }}"
+                                    @endif
+                                >
                                     <span class="{{ $wrapperClassesForColumn($column, 'cell') }}">
                                         @if($value instanceof Illuminate\Support\HtmlString)
                                             {!! $value !!}
@@ -718,11 +864,11 @@
                     @endforeach
                 @elseif($resolvedMode === 'server')
                     <tr class="daisy-table-loading-row">
-                        <td colspan="{{ max(1, count($resolvedColumns) + ($selectionEnabled ? 1 : 0)) }}">{{ $loadingLabel ?: __('daisy::common.loading') }}</td>
+                        <td colspan="{{ max(1, count($resolvedColumns) + ($selectionEnabled ? 1 : 0) + ($resolvedRowDetail !== 'none' ? 1 : 0)) }}">{{ $loadingLabel ?: __('daisy::common.loading') }}</td>
                     </tr>
                 @else
                     <tr class="daisy-table-empty-row">
-                        <td colspan="{{ max(1, count($resolvedColumns) + ($selectionEnabled ? 1 : 0)) }}">{{ $emptyLabel ?: __('daisy::common.no_results') }}</td>
+                        <td colspan="{{ max(1, count($resolvedColumns) + ($selectionEnabled ? 1 : 0) + ($resolvedRowDetail !== 'none' ? 1 : 0)) }}">{{ $emptyLabel ?: __('daisy::common.no_results') }}</td>
                     </tr>
                 @endif
             </tbody>

@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { JSDOM } from 'jsdom';
+import { describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_FILTER_DEBOUNCE_MS,
   DEFAULT_MIN_SEARCH_CHARS,
@@ -11,22 +12,33 @@ import {
   buildSelectionActionPayload,
   buildServerRequest,
   buildSpatieRequestParams,
+  createColumnDefs,
   createFilterSignature,
   getColumnClasses,
   getColumnWrapperClasses,
   getPersistedStateKey,
   getSelectionFeedbackNote,
+  isSafeHref,
   isTextSearchReady,
+  initTable,
   mergeState,
   normalizeColumns,
   normalizeConfig,
   normalizeInitialState,
+  normalizeColumnOrder,
+  normalizeColumnPinning,
+  normalizeColumnSizing,
+  normalizeExpanded,
+  normalizeRowSelection,
   normalizeSelectionState,
   normalizeServerResponse,
   normalizeSpatieResponse,
   parseConfig,
+  parseJsonParam,
   parseStateFromLocalStorage,
   parseStateFromUrl,
+  renderLinkCell,
+  getRowDetailContent,
   resolveSearchInputValue,
   resetSelectionState,
   serializeRequestPayload,
@@ -35,6 +47,83 @@ import {
   toggleVisibleRowsSelection,
   toggleSorting,
 } from '../../../resources/js/table-kit.js';
+
+const DEFAULT_COLUMN_SIZING_INFO = {
+  startOffset: null,
+  startSize: null,
+  deltaOffset: null,
+  deltaPercentage: null,
+  isResizingColumn: false,
+  columnSizingStart: [],
+};
+
+function installDom(html = '<div></div>') {
+  const dom = new JSDOM(html, { url: 'https://example.test/users' });
+  const previous = {
+    window: global.window,
+    document: global.document,
+    Element: global.Element,
+    HTMLElement: global.HTMLElement,
+    HTMLInputElement: global.HTMLInputElement,
+    HTMLSelectElement: global.HTMLSelectElement,
+    HTMLButtonElement: global.HTMLButtonElement,
+    HTMLDialogElement: global.HTMLDialogElement,
+    CustomEvent: global.CustomEvent,
+    AbortController: global.AbortController,
+  };
+
+  global.window = dom.window;
+  global.document = dom.window.document;
+  global.Element = dom.window.Element;
+  global.HTMLElement = dom.window.HTMLElement;
+  global.HTMLInputElement = dom.window.HTMLInputElement;
+  global.HTMLSelectElement = dom.window.HTMLSelectElement;
+  global.HTMLButtonElement = dom.window.HTMLButtonElement;
+  global.HTMLDialogElement = dom.window.HTMLDialogElement;
+  global.CustomEvent = dom.window.CustomEvent;
+  global.AbortController = dom.window.AbortController;
+
+  return {
+    dom,
+    restore() {
+      Object.entries(previous).forEach(([key, value]) => {
+        if (value === undefined) {
+          delete global[key];
+        } else {
+          global[key] = value;
+        }
+      });
+    },
+  };
+}
+
+function createTableRoot(config) {
+  document.body.innerHTML = `
+    <div data-daisy-table="1">
+      <input type="search" data-table-search>
+      <div data-table-column-menu></div>
+      <table>
+        <colgroup data-table-colgroup></colgroup>
+        <thead><tr data-table-head-row></tr></thead>
+        <tbody data-table-body></tbody>
+      </table>
+      <span data-table-info></span>
+      <span data-table-page-indicator></span>
+    </div>
+  `;
+
+  const root = document.querySelector('[data-daisy-table="1"]');
+
+  root.dataset.tableConfig = JSON.stringify(config);
+
+  return root;
+}
+
+function nextTick() {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
 
 describe('table-kit helpers', () => {
   it('parses config from a dataset payload', () => {
@@ -48,6 +137,48 @@ describe('table-kit helpers', () => {
       mode: 'server',
       search: true,
     });
+  });
+
+  it('tolerates malformed persisted URL JSON state', () => {
+    expect(parseJsonParam('{bad', [])).toEqual([]);
+
+    const originalWindow = global.window;
+
+    global.window = {
+      location: {
+        search: '?sorting=%7Bbad&columnFilters=%5Bbad&columnVisibility=%7Bbad',
+      },
+    };
+
+    const config = normalizeConfig({
+      columns: [{ key: 'name', label: 'Name' }],
+    });
+
+    expect(parseStateFromUrl(config)).toMatchObject({
+      sorting: [],
+      columnFilters: [],
+      columnVisibility: {},
+    });
+
+    global.window = originalWindow;
+  });
+
+  it('escapes unsafe link cells and non trusted row details', () => {
+    expect(renderLinkCell({ href: 'javascript:alert(1)', label: '<Open>' })).toBe('&lt;Open&gt;');
+    expect(renderLinkCell({ href: '/users/1', label: 'Open', target: '_blank' })).toContain('rel="noopener noreferrer"');
+    expect(getRowDetailContent({ detail: '<img src=x onerror=alert(1)>' })).toBe('&lt;img src=x onerror=alert(1)&gt;');
+    expect(getRowDetailContent({ detailHtml: '<strong>Trusted</strong>' })).toBe('<strong>Trusted</strong>');
+  });
+
+  it('allows deeplink link cells only through explicit policies', () => {
+    expect(renderLinkCell({ href: 'myapp://ticket/123', label: 'Open' })).toBe('Open');
+    expect(renderLinkCell({ href: 'myapp://ticket/123', label: 'Open' }, {}, { allowedSchemes: ['myapp'] }))
+      .toContain('href="myapp://ticket/123"');
+    expect(renderLinkCell({ href: 'intent://scan/#Intent;scheme=zxing;end', label: 'Scan' }, { allowedSchemes: ['intent'] }))
+      .toContain('href="intent://scan/#Intent;scheme=zxing;end"');
+    expect(renderLinkCell({ href: 'intent://scan/#Intent;scheme=zxing;end', label: 'Scan' })).toBe('Scan');
+    expect(renderLinkCell({ href: 'javascript:alert(1)', label: 'Bad' }, { allowedSchemes: ['javascript'] })).toBe('Bad');
+    expect(isSafeHref('https://example.test/\nusers', { allowedSchemes: ['https'] })).toBe(false);
   });
 
   it('normalizes columns and initial state defaults', () => {
@@ -85,11 +216,22 @@ describe('table-kit helpers', () => {
         cellClass: '',
         headerClass: '',
         html: false,
+        cell: {
+          renderer: 'text',
+          view: null,
+          allowedSchemes: [],
+        },
+        enableResizing: true,
+        size: undefined,
+        minSize: undefined,
+        maxSize: undefined,
         filter: {
           id: 'name',
           label: 'Name',
           type: 'text',
           filterKey: 'users.name',
+          filterKeyFrom: null,
+          filterKeyTo: null,
           options: [],
         },
       },
@@ -116,6 +258,15 @@ describe('table-kit helpers', () => {
         cellClass: '',
         headerClass: '',
         html: false,
+        cell: {
+          renderer: 'text',
+          view: null,
+          allowedSchemes: [],
+        },
+        enableResizing: true,
+        size: undefined,
+        minSize: undefined,
+        maxSize: undefined,
         filter: null,
       },
     ]);
@@ -132,6 +283,15 @@ describe('table-kit helpers', () => {
         name: false,
         email: true,
       },
+      columnOrder: ['name', 'email'],
+      columnPinning: {
+        left: [],
+        right: [],
+      },
+      columnSizing: {},
+      columnSizingInfo: DEFAULT_COLUMN_SIZING_INFO,
+      expanded: {},
+      rowSelection: {},
       selection: {
         selectedIds: [],
         excludedIds: [],
@@ -170,6 +330,53 @@ describe('table-kit helpers', () => {
     expect(getColumnWrapperClasses(address, 'cell')).toContain('line-clamp-2');
   });
 
+  it('normalizes cell renderers and builds TanStack column defs with Daisy metadata', () => {
+    const columns = normalizeColumns([
+      { key: 'actions', type: 'actions', view: 'users._actions', size: 96 },
+      { key: 'profile', type: 'resource-link' },
+      { key: 'status', html: true },
+    ]);
+    const columnDefs = createColumnDefs(columns);
+
+    expect(columns[0]).toMatchObject({
+      type: 'actions',
+      html: true,
+      cell: {
+        renderer: 'blade',
+        view: 'users._actions',
+        allowedSchemes: [],
+      },
+      size: 96,
+    });
+    expect(columns[1].cell.renderer).toBe('link');
+    expect(columns[2].cell.renderer).toBe('html');
+    expect(columnDefs[0]).toMatchObject({
+      id: 'actions',
+      size: 96,
+      meta: {
+        daisyColumn: columns[0],
+      },
+    });
+    expect(typeof columnDefs[0].cell).toBe('function');
+  });
+
+  it('normalizes TanStack-adjacent table state', () => {
+    const columns = normalizeColumns([
+      { key: 'name' },
+      { key: 'email' },
+      { key: 'actions' },
+    ]);
+
+    expect(normalizeColumnOrder(['actions', 'missing'], columns)).toEqual(['actions', 'name', 'email']);
+    expect(normalizeColumnPinning({ left: ['name'], right: ['missing', 'actions'] }, columns)).toEqual({
+      left: ['name'],
+      right: ['actions'],
+    });
+    expect(normalizeColumnSizing({ name: '220', email: 0, missing: 100 }, columns)).toEqual({ name: 220 });
+    expect(normalizeExpanded({ 1: true, 2: false })).toEqual({ 1: true });
+    expect(normalizeRowSelection({ 1: true, 2: false })).toEqual({ 1: true });
+  });
+
   it('builds a clean server config and request payload', () => {
     const config = normalizeConfig({
       mode: 'server',
@@ -194,6 +401,11 @@ describe('table-kit helpers', () => {
       globalFilter: '',
       columnFilters: [{ id: 'name', type: 'text', value: 'doe' }],
       columnVisibility: { name: true },
+      columnOrder: ['name'],
+      columnPinning: { left: [], right: [] },
+      columnSizing: {},
+      expanded: {},
+      rowSelection: {},
     });
     expect(serializeRequestPayload(payload).toString()).toContain('sorting=%5B%7B%22id%22%3A%22name%22%2C%22desc%22%3Atrue%7D%5D');
   });
@@ -227,6 +439,12 @@ describe('table-kit helpers', () => {
       globalFilter: '',
       columnFilters: [{ id: 'status', type: 'text', value: 'active' }],
       columnVisibility: { name: true, status: true },
+      columnOrder: ['name', 'status'],
+      columnPinning: { left: [], right: [] },
+      columnSizing: {},
+      columnSizingInfo: DEFAULT_COLUMN_SIZING_INFO,
+      expanded: {},
+      rowSelection: {},
       selection: {
         selectedIds: [],
         excludedIds: [],
@@ -521,6 +739,38 @@ describe('table-kit helpers', () => {
     expect(params.toString()).toContain('filter%5Bstatus%5D=active');
   });
 
+  it('serializes date and date-range filters for default and spatie adapters', () => {
+    const config = normalizeConfig({
+      mode: 'server',
+      endpoint: '/audits',
+      columns: [
+        { key: 'created_at', filterable: true, filter: { type: 'date' } },
+        { key: 'period', filterable: true, filterKey: 'period', filter: { type: 'date-range', filterKeyFrom: 'started_after', filterKeyTo: 'started_before' } },
+      ],
+      initialState: {
+        columnFilters: [
+          { id: 'created_at', type: 'date', value: '2026-06-25' },
+          { id: 'period', type: 'date-range', value: { from: '2026-06-01', to: '2026-06-30' } },
+        ],
+      },
+    });
+    const spatieConfig = normalizeConfig({
+      ...config,
+      serverAdapter: 'spatie-query-builder',
+    });
+
+    expect(buildRequestPayload(config, config.initialState).columnFilters).toEqual([
+      { id: 'created_at', type: 'date', value: '2026-06-25' },
+      { id: 'period', type: 'date-range', value: { from: '2026-06-01', to: '2026-06-30' } },
+    ]);
+
+    const params = buildSpatieRequestParams(spatieConfig, spatieConfig.initialState);
+
+    expect(params.toString()).toContain('filter%5Bcreated_at%5D=2026-06-25');
+    expect(params.toString()).toContain('filter%5Bstarted_after%5D=2026-06-01');
+    expect(params.toString()).toContain('filter%5Bstarted_before%5D=2026-06-30');
+  });
+
   it('normalizes a spatie paginator response', () => {
     const normalized = normalizeSpatieResponse({
       data: [{ name: 'Jane' }],
@@ -593,6 +843,12 @@ describe('table-kit helpers', () => {
       globalFilter: 'jane',
       columnFilters: [{ id: 'status', type: 'select', value: 'active' }],
       columnVisibility: { name: true, status: true },
+      columnOrder: ['name', 'status'],
+      columnPinning: { left: [], right: [] },
+      columnSizing: {},
+      columnSizingInfo: DEFAULT_COLUMN_SIZING_INFO,
+      expanded: {},
+      rowSelection: {},
       selection: {
         selectedIds: [],
         excludedIds: [],
@@ -686,5 +942,216 @@ describe('table-kit helpers', () => {
     });
 
     global.window = originalWindow;
+  });
+
+  it('delegates client global search to TanStack fuzzy or includes filtering', async () => {
+    const env = installDom();
+
+    try {
+      const fuzzyRoot = createTableRoot({
+        searchMode: 'fuzzy',
+        searchDebounceMs: 0,
+        minSearchChars: 1,
+        columns: [{ key: 'name', label: 'Name', filterable: true }],
+        rows: [
+          { id: '1', name: 'Jonathan' },
+          { id: '2', name: 'Jane' },
+        ],
+      });
+      const fuzzyContext = await initTable(fuzzyRoot);
+      const fuzzyInput = fuzzyRoot.querySelector('[data-table-search]');
+
+      fuzzyInput.value = 'jhn';
+      fuzzyInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+      await nextTick();
+      await nextTick();
+
+      expect(fuzzyContext.rowCount).toBe(1);
+      expect(fuzzyRoot.querySelector('[data-table-body]').textContent).toContain('Jonathan');
+      expect(fuzzyRoot.querySelector('[data-table-body]').textContent).not.toContain('Jane');
+
+      const includesRoot = createTableRoot({
+        searchMode: 'includes',
+        searchDebounceMs: 0,
+        minSearchChars: 1,
+        columns: [{ key: 'name', label: 'Name', filterable: true }],
+        rows: [{ id: '1', name: 'Jonathan' }],
+      });
+      const includesContext = await initTable(includesRoot);
+      const includesInput = includesRoot.querySelector('[data-table-search]');
+
+      includesInput.value = 'jhn';
+      includesInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+      await nextTick();
+      await nextTick();
+
+      expect(includesContext.rowCount).toBe(0);
+      expect(includesRoot.querySelector('[data-table-body]').textContent).toContain('No results');
+    } finally {
+      env.restore();
+    }
+  });
+
+  it('renders TanStack expanded row detail and sub rows from the configured key', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        rowKey: 'id',
+        subRowsKey: 'children',
+        rowDetail: { mode: 'inline' },
+        columns: [{ key: 'name', label: 'Name' }],
+        rows: [
+          {
+            id: 'parent',
+            name: 'Parent',
+            detail: 'Parent details',
+            children: [{ id: 'child', name: 'Child' }],
+          },
+        ],
+        initialState: {
+          expanded: { parent: true },
+        },
+      });
+      const context = await initTable(root);
+      const bodyText = root.querySelector('[data-table-body]').textContent;
+
+      expect(context.visibleRows.map((row) => row.id)).toEqual(['parent', 'child']);
+      expect(bodyText).toContain('Parent');
+      expect(bodyText).toContain('Child');
+      expect(bodyText).toContain('Parent details');
+    } finally {
+      env.restore();
+    }
+  });
+
+  it('uses TanStack row selection and column sizing state for interactive controls', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        rowKey: 'id',
+        selection: 'multiple',
+        columnResizing: true,
+        columns: [{ key: 'name', label: 'Name', size: 120 }],
+        rows: [
+          { id: 'a', name: 'Ada' },
+          { id: 'b', name: 'Ben' },
+        ],
+      });
+      const context = await initTable(root);
+      let selectionDetail = null;
+      const firstRowCheckbox = root.querySelector('[data-table-row-select="a"]');
+
+      root.addEventListener('daisy:table-selection-changed', (event) => {
+        selectionDetail = event.detail;
+      });
+
+      firstRowCheckbox.checked = true;
+      firstRowCheckbox.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+      expect(context.state.rowSelection).toEqual({ a: true });
+      expect(context.state.selection.selectedIds).toEqual(['a']);
+      expect(selectionDetail.selectedIds).toEqual(['a']);
+      expect(root.querySelector('[data-table-resize]')).toBeInstanceOf(HTMLElement);
+
+      context.table.setColumnSizing({ name: 180 });
+
+      expect(context.state.columnSizing).toEqual({ name: 180 });
+    } finally {
+      env.restore();
+    }
+  });
+
+  it('updates column filters through TanStack column.setFilterValue', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        columns: [
+          { key: 'name', label: 'Name' },
+          { key: 'status', label: 'Status', filterable: true, filter: { type: 'text' } },
+        ],
+        rows: [
+          { id: '1', name: 'Jane', status: 'active' },
+          { id: '2', name: 'John', status: 'archived' },
+        ],
+      });
+      const context = await initTable(root);
+
+      context.table.getColumn('status').setFilterValue({ id: 'status', type: 'text', value: 'active' });
+
+      expect(context.state.columnFilters).toEqual([{ id: 'status', type: 'text', value: 'active' }]);
+    } finally {
+      env.restore();
+    }
+  });
+
+  it('commits editable cell changes with Daisy payload events and row rollback state', async () => {
+    const env = installDom();
+    const previousFetch = global.fetch;
+
+    try {
+      const fetchMock = vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          row: { id: '1', name: 'Janet', status: 'active' },
+        }),
+      }));
+
+      global.fetch = fetchMock;
+
+      const root = createTableRoot({
+        rowKey: 'id',
+        editable: true,
+        editEndpoint: '/users/1',
+        editableColumns: ['name', 'status'],
+        columns: [
+          { key: 'name', label: 'Name' },
+          { key: 'status', label: 'Status' },
+        ],
+        rows: [{ id: '1', name: 'Jane', status: 'draft' }],
+      });
+      const context = await initTable(root);
+      let committedDetail = null;
+
+      root.addEventListener('daisy:table-edit-committed', (event) => {
+        committedDetail = event.detail;
+      });
+
+      root.querySelector('[data-table-edit-cell][data-table-column-id="name"]')
+        .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+      const input = root.querySelector('[data-table-edit-input][data-table-column-id="name"]');
+
+      input.value = 'Janet';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      root.querySelector('[data-table-edit-save]')
+        .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+      await nextTick();
+      await nextTick();
+
+      const [, request] = fetchMock.mock.calls[0];
+
+      expect(fetchMock).toHaveBeenCalledOnce();
+      expect(JSON.parse(request.body)).toMatchObject({
+        rowId: '1',
+        column: 'name',
+        value: 'Janet',
+        dirty: { name: 'Janet' },
+      });
+      expect(context.config.rows[0].name).toBe('Janet');
+      expect(committedDetail.row.name).toBe('Janet');
+    } finally {
+      if (previousFetch === undefined) {
+        delete global.fetch;
+      } else {
+        global.fetch = previousFetch;
+      }
+
+      env.restore();
+    }
   });
 });

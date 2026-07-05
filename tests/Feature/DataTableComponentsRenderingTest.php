@@ -4,6 +4,10 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
 use Illuminate\View\ViewException;
 
+beforeEach(function (): void {
+    View::addNamespace('table-test', dirname(__DIR__).'/Fixtures/views');
+});
+
 it('renders a client table with DaisyUI classes and serialized config', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.data-display.table
@@ -289,6 +293,171 @@ it('renders a client table with trusted html cells', function () {
         ->toContain('Active');
 });
 
+it('serializes custom cell renderers and renders blade cells in client rows', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            :columns="[
+                ['key' => 'name', 'label' => 'Name'],
+                ['key' => 'actions', 'label' => 'Actions', 'type' => 'actions', 'view' => 'table-test::table.actions'],
+                ['key' => 'profile', 'label' => 'Profile', 'type' => 'resource-link'],
+            ]"
+            :rows="[
+                ['id' => 1, 'name' => 'Jane', 'actions' => 'open', 'profile' => ['label' => 'Profile', 'href' => 'https://example.test/users/1', 'target' => '_blank']],
+            ]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('"renderer":"blade"')
+        ->toContain('"view":"table-test::table.actions"')
+        ->toContain('"renderer":"link"')
+        ->toContain('data-value="open"')
+        ->toContain('Jane actions');
+});
+
+it('escapes unsafe resource link hrefs during initial blade render', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            :columns="[
+                ['key' => 'profile', 'label' => 'Profile', 'type' => 'resource-link'],
+            ]"
+            :rows="[
+                ['profile' => ['label' => '<Open>', 'href' => 'javascript:alert(1)', 'target' => '_blank']],
+            ]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('&lt;Open&gt;')
+        ->not->toContain('<a href=');
+});
+
+it('supports deeplink resource links through table and column policies', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            :link-policy="['allowedSchemes' => ['myapp']]"
+            :columns="[
+                ['key' => 'mobile', 'label' => 'Mobile', 'type' => 'resource-link'],
+                ['key' => 'scan', 'label' => 'Scan', 'type' => 'resource-link', 'cell' => ['allowedSchemes' => ['intent']]],
+            ]"
+            :rows="[
+                ['mobile' => ['label' => 'Open app', 'href' => 'myapp://ticket/123', 'target' => '_blank'], 'scan' => ['label' => 'Scan', 'href' => 'intent://scan/#Intent;scheme=zxing;end']],
+            ]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('href="myapp://ticket/123"')
+        ->toContain('rel="noopener noreferrer"')
+        ->toContain('href="intent://scan/#Intent;scheme=zxing;end"')
+        ->toContain('"linkPolicy":{"allowedSchemes":["myapp"]}')
+        ->toContain('"allowedSchemes":["intent"]');
+});
+
+it('does not allow deeplinks without policy or dangerous schemes with policy', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            :link-policy="['allowedSchemes' => ['javascript']]"
+            :columns="[
+                ['key' => 'mobile', 'label' => 'Mobile', 'type' => 'resource-link'],
+                ['key' => 'danger', 'label' => 'Danger', 'type' => 'resource-link', 'cell' => ['allowedSchemes' => ['javascript']]],
+            ]"
+            :rows="[
+                ['mobile' => ['label' => 'Open app', 'href' => 'myapp://ticket/123'], 'danger' => ['label' => '<Bad>', 'href' => 'javascript:alert(1)']],
+            ]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('Open app')
+        ->toContain('&lt;Bad&gt;')
+        ->not->toContain('href="myapp://ticket/123"')
+        ->not->toContain('href="javascript:alert(1)"')
+        ->not->toContain('"allowedSchemes":["javascript"]');
+});
+
+it('renders date filters and row detail configuration', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            mode="server"
+            endpoint="/audits"
+            row-key="id"
+            row-detail="modal"
+            row-detail-view="table-test::table.actions"
+            column-resizing
+            :columns="[
+                ['key' => 'created_at', 'label' => 'Created', 'filterable' => true, 'filter' => ['type' => 'date']],
+            ]"
+            :filters="[
+                ['key' => 'period', 'label' => 'Period', 'type' => 'date-range', 'filterKeyFrom' => 'started_after', 'filterKeyTo' => 'started_before'],
+            ]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('data-table-filter-type="date"')
+        ->toContain('data-table-filter-type="date-range"')
+        ->toContain('data-table-filter-bound="from"')
+        ->toContain('"rowDetail":{"mode":"modal","view":"table-test::table.actions"}')
+        ->toContain('"columnResizing":true')
+        ->toContain('"filterKeyFrom":"started_after"')
+        ->toContain('"filterKeyTo":"started_before"');
+});
+
+it('serializes TanStack-first search, sub rows, resizing and editable options', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            mode="client"
+            row-key="id"
+            search-mode="includes"
+            sub-rows-key="children"
+            column-resizing
+            editable
+            edit-endpoint="/users/edit"
+            edit-method="PUT"
+            edit-mode="row"
+            :editable-columns="['name']"
+            :edit-policy="['required' => ['name']]"
+            :columns="[
+                ['key' => 'name', 'label' => 'Name', 'size' => 160, 'minSize' => 80, 'maxSize' => 320],
+                ['key' => 'status', 'label' => 'Status'],
+            ]"
+            :rows="[
+                ['id' => 'user-1', 'name' => 'Jane', 'status' => 'draft', 'children' => []],
+            ]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('"rowKey":"id"')
+        ->toContain('"searchMode":"includes"')
+        ->toContain('"subRowsKey":"children"')
+        ->toContain('"columnResizing":true')
+        ->toContain('"size":160')
+        ->toContain('"minSize":80')
+        ->toContain('"maxSize":320')
+        ->toContain('"editable":{"enabled":true,"endpoint":{"url":"\/users\/edit"},"method":"PUT","mode":"row","columns":["name"],"policy":{"required":["name"]},"rowKey":"id"}')
+        ->toContain('data-table-resize="name"')
+        ->toContain('data-table-edit-cell')
+        ->toContain('data-table-row-id="user-1"')
+        ->toContain('data-table-column-id="name"')
+        ->not->toContain('data-table-column-id="status"');
+});
+
+it('fails clearly when a custom blade cell view is missing', function () {
+    $render = fn () => Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            mode="server"
+            endpoint="/audits"
+            :columns="[
+                ['key' => 'actions', 'label' => 'Actions', 'view' => 'table-test::missing'],
+            ]"
+        />
+    BLADE);
+
+    expect($render)->toThrow(ViewException::class, 'Daisy table cell view [table-test::missing] does not exist.');
+});
+
 it('renders row selection controls and deferred bulk actions', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.data-display.table
@@ -331,6 +500,56 @@ it('requires a row key when table selection is enabled', function () {
     ])->render();
 
     expect($render)->toThrow(ViewException::class, 'rowKey prop when selection is set to multiple');
+});
+
+it('requires a row key for row detail, sub rows and editable rows', function () {
+    $rowDetailRender = fn () => View::make('daisy::components.ui.data-display.table', [
+        'rowDetail' => 'inline',
+        'columns' => [
+            ['key' => 'name', 'label' => 'Name'],
+        ],
+        'rows' => [
+            ['name' => 'Jane'],
+        ],
+    ])->render();
+    $subRowsRender = fn () => View::make('daisy::components.ui.data-display.table', [
+        'subRowsKey' => 'children',
+        'columns' => [
+            ['key' => 'name', 'label' => 'Name'],
+        ],
+        'rows' => [
+            ['name' => 'Jane', 'children' => []],
+        ],
+    ])->render();
+    $editableRender = fn () => View::make('daisy::components.ui.data-display.table', [
+        'editable' => true,
+        'editEndpoint' => '/users/edit',
+        'columns' => [
+            ['key' => 'name', 'label' => 'Name'],
+        ],
+        'rows' => [
+            ['name' => 'Jane'],
+        ],
+    ])->render();
+
+    expect($rowDetailRender)->toThrow(ViewException::class, 'rowKey prop for row details, sub rows, or editable rows')
+        ->and($subRowsRender)->toThrow(ViewException::class, 'rowKey prop for row details, sub rows, or editable rows')
+        ->and($editableRender)->toThrow(ViewException::class, 'rowKey prop for row details, sub rows, or editable rows');
+});
+
+it('requires an edit endpoint when editable rows are enabled', function () {
+    $render = fn () => View::make('daisy::components.ui.data-display.table', [
+        'editable' => true,
+        'rowKey' => 'id',
+        'columns' => [
+            ['key' => 'name', 'label' => 'Name'],
+        ],
+        'rows' => [
+            ['id' => 'user-1', 'name' => 'Jane'],
+        ],
+    ])->render();
+
+    expect($render)->toThrow(ViewException::class, 'editEndpoint prop when editable is enabled');
 });
 
 it('requires an endpoint when mode is server', function () {

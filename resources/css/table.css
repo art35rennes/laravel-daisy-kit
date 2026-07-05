@@ -92,6 +92,36 @@
   border-radius: 0.375rem;
 }
 
+.daisy-table-resize-handle {
+  position: absolute;
+  inset-block: 0.35rem;
+  inset-inline-end: 0;
+  width: 0.5rem;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.daisy-table-resize-handle::after {
+  position: absolute;
+  inset-block: 0.15rem;
+  inset-inline-start: 50%;
+  width: 1px;
+  content: "";
+  background: color-mix(in oklab, var(--color-base-content, hsl(var(--bc))) 28%, transparent);
+}
+
+.daisy-table-resize-handle:hover::after,
+.daisy-table-resize-handle:focus-visible::after {
+  background: color-mix(in oklab, var(--color-primary, hsl(var(--p))) 70%, transparent);
+}
+
+.daisy-table-scroll :where(th) {
+  position: relative;
+}
+
 .daisy-table-sort-indicator {
   color: color-mix(in oklab, var(--color-base-content, hsl(var(--bc))) 55%, transparent);
   font-size: 0.75rem;
@@ -99,6 +129,22 @@
 
 .daisy-table-status {
   min-height: 2.5rem;
+}
+
+.daisy-table-edit-cell {
+  display: grid;
+  gap: 0.375rem;
+  min-width: min(18rem, 100%);
+}
+
+.daisy-table-edit-actions {
+  display: inline-flex;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.daisy-table-edit-error {
+  margin: 0;
 }
 
 .daisy-table-empty-row td,
