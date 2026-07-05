@@ -12,12 +12,20 @@
         </span>
     </div>
     <div class="mt-4 flex min-h-9 items-end justify-between gap-3">
-        <p class="text-xs font-semibold {{ $toneClasses[$kpi['tone']]['text'] }}">{{ $kpi['trend'] }}</p>
-        @if(! empty($kpi['sparkline']))
-            <svg class="h-8 w-32 shrink-0 text-success" data-reporting-chart="sparkline" viewBox="0 0 142 28" aria-label="Tendance {{ $kpi['label'] }}" role="img">
-                <polyline points="{{ $kpi['sparkline'] }}" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-                <line x1="0" y1="24" x2="142" y2="24" stroke="currentColor" stroke-width="1" class="opacity-20" />
-            </svg>
+        <p class="min-w-0 text-xs font-semibold leading-snug {{ $toneClasses[$kpi['tone']]['text'] }}">{{ $kpi['trend'] }}</p>
+        @if(! empty($kpi['sparklineData']))
+            <x-daisy::charts.sparkline
+                class="!bg-transparent !p-0 !shadow-none !border-0 shrink-0"
+                height="50px"
+                width="140px"
+                :categories="$kpi['sparklineLabels'] ?? []"
+                :series="[['name' => $kpi['label'], 'data' => $kpi['sparklineData']]]"
+                :drilldown-url="$kpi['drilldownUrl'] ?? null"
+                :drilldown-params="$kpi['drilldownParams'] ?? []"
+                value-format="number"
+                empty-message="Aucune donnée disponible"
+                :aria="true"
+            />
         @endif
     </div>
 </article>

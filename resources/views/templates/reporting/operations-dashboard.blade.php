@@ -21,6 +21,8 @@
     'managementUrl' => '#',
     'userName' => 'Sophie Martin',
     'userRole' => 'Secrétaire technique',
+    'themes' => ['light', 'dark', 'corporate', 'business', 'winter', 'night'],
+    'themeLabel' => 'Thème',
 ])
 
 @php
@@ -49,7 +51,15 @@
             'url' => $terrainUrl,
             'link' => 'Interventions terrain',
             'kpis' => [
-                ['label' => 'À réaliser', 'value' => '38', 'unit' => 'Interventions', 'trend' => '+12% vs période précédente', 'tone' => 'success', 'icon' => 'bi-calendar-check', 'sparkline' => '14,18 34,18 54,13 74,17 94,8 114,14 134,6'],
+                ['label' => 'À réaliser', 'value' => '38', 'unit' => 'Interventions', 'trend' => '+12% vs période précédente', 'tone' => 'success', 'icon' => 'bi-calendar-check', 'sparklineLabels' => ['J-6', 'J-5', 'J-4', 'J-3', 'J-2', 'J-1', 'Aujourd’hui'], 'sparklineData' => [
+                    ['value' => 24, 'drilldown' => ['status' => 'a-realiser', 'day' => 'j-6']],
+                    ['value' => 24, 'drilldown' => ['status' => 'a-realiser', 'day' => 'j-5']],
+                    ['value' => 29, 'drilldown' => ['status' => 'a-realiser', 'day' => 'j-4']],
+                    ['value' => 25, 'drilldown' => ['status' => 'a-realiser', 'day' => 'j-3']],
+                    ['value' => 34, 'drilldown' => ['status' => 'a-realiser', 'day' => 'j-2']],
+                    ['value' => 28, 'drilldown' => ['status' => 'a-realiser', 'day' => 'j-1']],
+                    ['value' => 38, 'drilldown' => ['status' => 'a-realiser', 'day' => 'today']],
+                ], 'drilldownUrl' => $detailedUrl, 'drilldownParams' => ['section' => 'terrain', 'chart' => 'kpi']],
                 ['label' => 'En cours', 'value' => '12', 'unit' => 'Interventions', 'trend' => 'Stable', 'tone' => 'neutral', 'icon' => 'bi-activity'],
                 ['label' => 'À corriger / refaire', 'value' => '7', 'unit' => 'Interventions', 'trend' => '+2 vs période précédente', 'tone' => 'error', 'icon' => 'bi-exclamation-triangle'],
                 ['label' => 'Non conformes', 'value' => '5', 'unit' => 'Interventions', 'trend' => '14% du total terrain', 'tone' => 'error', 'icon' => 'bi-shield-exclamation'],
@@ -57,6 +67,8 @@
             'panels' => [
                 [
                     'type' => 'donut',
+                    'chart' => 'status',
+                    'filter' => 'status',
                     'title' => 'Répartition par statut',
                     'center' => '69',
                     'centerLabel' => 'terrain',
@@ -70,6 +82,8 @@
                 ],
                 [
                     'type' => 'progress',
+                    'chart' => 'commune',
+                    'filter' => 'commune',
                     'title' => 'Interventions à réaliser par commune',
                     'tone' => 'success',
                     'items' => [
@@ -83,6 +97,8 @@
                 ],
                 [
                     'type' => 'progress',
+                    'chart' => 'agent-load',
+                    'filter' => 'agent',
                     'title' => 'Charge par agent',
                     'tone' => 'success',
                     'items' => [
@@ -112,9 +128,15 @@
             'panels' => [
                 [
                     'type' => 'bars',
+                    'chart' => 'validation-queue',
+                    'filter' => 'day',
                     'title' => 'File d’attente de validation',
                     'caption' => 'Nombre d’enquêtes à valider',
                     'tone' => 'primary',
+                    'markers' => [
+                        ['type' => 'line', 'value' => 24, 'name' => 'Capacité cible', 'label' => 'Cible 24'],
+                        ['type' => 'point', 'coord' => ['J-3', 28], 'name' => 'Pic'],
+                    ],
                     'items' => [
                         ['label' => 'J-7', 'value' => '18', 'height' => 'h-16'],
                         ['label' => 'J-6', 'value' => '21', 'height' => 'h-20'],
@@ -128,6 +150,8 @@
                 ],
                 [
                     'type' => 'donut',
+                    'chart' => 'survey-type',
+                    'filter' => 'survey_type',
                     'title' => 'Répartition par type d’enquête',
                     'center' => '91',
                     'centerLabel' => 'enquêtes',
@@ -138,6 +162,8 @@
                 ],
                 [
                     'type' => 'progress',
+                    'chart' => 'contract-validation',
+                    'filter' => 'contract',
                     'title' => 'Répartition par contrat à valider',
                     'tone' => 'primary',
                     'items' => [
@@ -166,6 +192,8 @@
             'panels' => [
                 [
                     'type' => 'progress',
+                    'chart' => 'cycle-step',
+                    'filter' => 'step',
                     'title' => 'Enquêtes par étape du cycle',
                     'tone' => 'secondary',
                     'items' => [
@@ -179,17 +207,27 @@
                 ],
                 [
                     'type' => 'line',
+                    'chart' => 'volume',
+                    'filter' => 'date',
                     'title' => 'Évolution du volume d’interventions',
                     'caption' => 'Total interventions',
-                    'points' => '8,86 68,78 128,72 188,62 248,36',
                     'labels' => ['19/05', '26/05', '02/06', '09/06', '16/06'],
                     'values' => ['96', '102', '106', '110', '128'],
+                    'markers' => [
+                        ['type' => 'point', 'coord' => ['16/06', 128], 'name' => 'Dernier total'],
+                    ],
+                    'zoom' => true,
                 ],
                 [
                     'type' => 'donut',
+                    'chart' => 'contract-compliance',
+                    'filter' => 'contract',
                     'title' => 'Conformité par contrat',
                     'center' => '87%',
                     'centerLabel' => 'taux global',
+                    'markers' => [
+                        ['type' => 'line', 'value' => 85, 'name' => 'Objectif conformité', 'label' => 'Objectif 85%'],
+                    ],
                     'segments' => [
                         ['label' => 'Auray - Pluvigner', 'value' => '92%', 'detail' => '92%', 'dash' => 30, 'offset' => 0, 'class' => 'text-success'],
                         ['label' => 'Vannes Agglo', 'value' => '88%', 'detail' => '88%', 'dash' => 28, 'offset' => 30, 'class' => 'text-lime-500'],
@@ -244,6 +282,14 @@
                             <span class="hidden rounded-full border border-base-300 bg-base-200 px-3 py-1 text-xs font-medium text-base-content/70 md:inline-flex">
                                 Mis à jour {{ $updatedAt }}
                             </span>
+                            <x-daisy::ui.advanced.theme-controller
+                                class="dropdown-end"
+                                variant="dropdown"
+                                size="sm"
+                                :themes="$themes"
+                                :value="$theme"
+                                :label="$themeLabel"
+                            />
                             <button type="button" class="btn btn-circle btn-ghost btn-sm" aria-label="Aide">
                                 <x-daisy::ui.advanced.icon name="bi-question-circle" class="h-5 w-5" />
                             </button>
@@ -334,7 +380,7 @@
 
                         <div class="mt-4 grid gap-4 xl:grid-cols-3">
                             @foreach($section['panels'] as $panel)
-                                @include('daisy::partials.reporting.panel', ['panel' => $panel, 'toneClasses' => $toneClasses])
+                                @include('daisy::partials.reporting.panel', ['panel' => $panel, 'section' => $section, 'toneClasses' => $toneClasses, 'detailedUrl' => $detailedUrl])
                             @endforeach
                         </div>
                     </section>
