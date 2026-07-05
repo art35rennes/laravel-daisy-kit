@@ -149,6 +149,36 @@ Public events are dispatched from the root `[data-module="leaflet"]` element:
 
 Third-party runtime note: built optional chunks may include vendor code paths that manipulate runtime styles internally, notably Trix and GridStack. Keep those surfaces lazy-loaded and treat WYSIWYG/editable-grid usage as an explicit host decision when enforcing `style-src` without `unsafe-inline`. The package chart preset uses ECharts `richText` tooltips by default so normal chart rendering stays canvas-based.
 
+Chart components expose ECharts reporting features through JSON props instead of host-side scripts. Use `drilldownUrl` and enriched points for filtered navigation, `orientation="horizontal"` for ranking bars, `markers` for targets or notable points, and `zoom` only for longer series:
+
+```blade
+<x-daisy::charts.bar
+    title="Charge par agent"
+    orientation="horizontal"
+    drilldown-url="/interventions"
+    :drilldown-params="['section' => 'terrain', 'chart' => 'agent-load']"
+    :categories="['Thomas Bernard', 'Julie Dupont']"
+    :series="[
+        ['name' => 'Interventions', 'data' => [
+            ['value' => 15, 'drilldown' => ['agent' => 'thomas-bernard']],
+            ['value' => 11, 'drilldown' => ['agent' => 'julie-dupont']],
+        ]],
+    ]"
+/>
+
+<x-daisy::charts.line
+    title="Volume"
+    :zoom="true"
+    zoom-mode="slider"
+    :markers="[
+        ['type' => 'line', 'value' => 120, 'name' => 'Objectif', 'label' => 'Objectif 120'],
+        ['type' => 'point', 'coord' => ['16/06', 128], 'name' => 'Dernier total'],
+    ]"
+    :categories="['09/06', '16/06']"
+    :series="[['name' => 'Total', 'data' => [110, 128]]]"
+/>
+```
+
 Example for an ECA3-style host CSP using Bunny Fonts and OpenStreetMap tiles:
 
 ```http
@@ -873,6 +903,70 @@ QueryBuilder::for(User::query())
 ```
 
 For Laravel resources, return the table keys directly in `toArray()` or map them before passing rows to the component. Keep HTML values opt-in with the column `html` flag.
+
+### Custom table cells
+
+Custom cells are configured on columns, so the same UX works with local rows, server rows, or future transport adapters. Use `cell.renderer` for the explicit contract, or `view` as the Blade shorthand:
+
+```php
+$columns = [
+    ['key' => 'causer', 'label' => 'Causer'],
+    [
+        'key' => 'actions',
+        'label' => 'Actions',
+        'type' => 'actions',
+        'cell' => [
+            'renderer' => 'blade',
+            'view' => 'support.audit._actions-cell',
+        ],
+    ],
+    ['key' => 'profile', 'label' => 'Profile', 'type' => 'resource-link'],
+    [
+        'key' => 'mobile',
+        'label' => 'Open in app',
+        'type' => 'resource-link',
+        'cell' => [
+            'renderer' => 'link',
+            'allowedSchemes' => ['myapp'],
+        ],
+    ],
+];
+```
+
+```php
+use Art35rennes\DaisyKit\Support\DaisyTableRows;
+
+$rows = DaisyTableRows::for($audits, $columns)
+    ->map(fn ($audit) => [
+        'id' => $audit->id,
+        'causer' => $audit->causer?->name,
+        'actions' => $audit,
+        'profile' => [
+            'label' => 'Open',
+            'href' => route('audits.show', $audit),
+            'target' => '_blank',
+        ],
+    ])
+    ->renderCells();
+```
+
+Blade cell views receive `item`, `row`, `value`, `column`, and `table`. Supported renderers are `text`, `html`, `blade`, `link`, and `actions`. `blade`, `html`, and `actions` are trusted HTML renderers; keep user content escaped inside the host view.
+
+`link` and `resource-link` escape labels and validate hrefs in both the initial Blade render and JS refreshes. Relative URLs plus `http`, `https`, `mailto`, and `tel` are allowed by default. Deeplink schemes are opt-in with either a table policy or a column policy:
+
+```blade
+<x-daisy::ui.data-display.table
+    :link-policy="['allowedSchemes' => ['myapp', 'intent']]"
+    :columns="$columns"
+    :rows="$rows"
+/>
+```
+
+Column `cell.allowedSchemes` extends the table policy. `javascript:`, `data:`, `vbscript:`, and hrefs containing control characters are always blocked, even if a host configuration tries to allow them. Use `target => '_blank'` when needed; Daisy Kit adds `rel="noopener noreferrer"` for web URLs and deeplinks.
+
+Date filters are supported with `type => 'date'` and `type => 'date-range'`. In the default JSON contract, date ranges are sent as `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }`. In Spatie mode, date ranges use `filter[key_from]` and `filter[key_to]`, configurable with `filterKeyFrom` and `filterKeyTo`.
+
+The runtime emits `daisy:table-rendered` after every stable render with `rows`, `rowCount`, `pageCount`, `state`, `meta`, and the TanStack `table` instance. Column order, column pinning, column sizing, expanded rows, and row selection are part of the normalized state and can be updated through `window.DaisyTable.table(id)`.
 
 ### Server contract
 

@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-06-25T15:32:12+00:00",
+    "generated_at": "2026-06-25T21:45:18+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
@@ -29,7 +29,13 @@
                 "valueFormat",
                 "tooltipFormat",
                 "options",
-                "module"
+                "module",
+                "drilldownUrl",
+                "drilldownParams",
+                "aria",
+                "markers",
+                "zoom",
+                "zoomMode"
             ]
         },
         {
@@ -53,7 +59,14 @@
                 "valueFormat",
                 "tooltipFormat",
                 "options",
-                "module"
+                "module",
+                "drilldownUrl",
+                "drilldownParams",
+                "aria",
+                "markers",
+                "zoom",
+                "zoomMode",
+                "orientation"
             ]
         },
         {
@@ -77,7 +90,13 @@
                 "valueFormat",
                 "tooltipFormat",
                 "options",
-                "module"
+                "module",
+                "drilldownUrl",
+                "drilldownParams",
+                "aria",
+                "markers",
+                "zoom",
+                "zoomMode"
             ]
         },
         {
@@ -101,7 +120,13 @@
                 "valueFormat",
                 "tooltipFormat",
                 "options",
-                "module"
+                "module",
+                "drilldownUrl",
+                "drilldownParams",
+                "aria",
+                "markers",
+                "zoom",
+                "zoomMode"
             ]
         },
         {
@@ -125,7 +150,13 @@
                 "valueFormat",
                 "tooltipFormat",
                 "options",
-                "module"
+                "module",
+                "drilldownUrl",
+                "drilldownParams",
+                "aria",
+                "markers",
+                "zoom",
+                "zoomMode"
             ]
         },
         {
@@ -149,7 +180,13 @@
                 "valueFormat",
                 "tooltipFormat",
                 "options",
-                "module"
+                "module",
+                "drilldownUrl",
+                "drilldownParams",
+                "aria",
+                "markers",
+                "zoom",
+                "zoomMode"
             ]
         },
         {
@@ -173,7 +210,13 @@
                 "valueFormat",
                 "tooltipFormat",
                 "options",
-                "module"
+                "module",
+                "drilldownUrl",
+                "drilldownParams",
+                "aria",
+                "markers",
+                "zoom",
+                "zoomMode"
             ]
         },
         {
@@ -197,7 +240,14 @@
                 "valueFormat",
                 "tooltipFormat",
                 "options",
-                "module"
+                "module",
+                "drilldownUrl",
+                "drilldownParams",
+                "aria",
+                "markers",
+                "zoom",
+                "zoomMode",
+                "orientation"
             ]
         },
         {
@@ -300,6 +350,7 @@
                 "navbarBg",
                 "navbarText",
                 "navbarShadow",
+                "navbarContainer",
                 "variant",
                 "sideClass",
                 "expandedWidth",
@@ -1432,6 +1483,10 @@
                 "zebra",
                 "pinRows",
                 "pinCols",
+                "rowDetail",
+                "rowDetailView",
+                "columnResizing",
+                "linkPolicy",
                 "emptyLabel",
                 "loadingLabel",
                 "errorLabel",
@@ -2368,6 +2423,7 @@
                 "text",
                 "shadow",
                 "rounded",
+                "container",
                 "fixed",
                 "fixedPosition",
                 "centerHiddenBelow"
@@ -3637,7 +3693,9 @@
                 "officeUrl",
                 "managementUrl",
                 "userName",
-                "userRole"
+                "userRole",
+                "themes",
+                "themeLabel"
             ]
         }
     ]
