@@ -25,7 +25,8 @@
     $headerClasses = trim('mb-3 flex items-start justify-between gap-3');
     $chartWidthClass = $width === '100%' ? null : $lengthClass($width, 'daisy-chart-width');
     $chartHeightClass = $height === '320px' ? null : $lengthClass($height, 'daisy-chart-height');
-    $containerClasses = trim('daisy-chart bg-base-100 card-border rounded-box '.($preset === 'sparkline' ? 'p-2' : 'p-3').' '.$chartWidthClass.' '.($attributes->get('class') ?? ''));
+    $isDrilldownEnabled = is_string($drilldownUrl ?? null) && trim($drilldownUrl) !== '' && trim($drilldownUrl) !== '#';
+    $containerClasses = trim('daisy-chart bg-base-100 card-border rounded-box '.($preset === 'sparkline' ? 'p-2' : 'p-3').' '.($isDrilldownEnabled ? 'daisy-chart-clickable' : '').' '.$chartWidthClass.' '.($attributes->get('class') ?? ''));
     $frameClasses = trim('daisy-chart-frame relative '.$chartHeightClass);
     $attributes = $attributes->except('class');
 
@@ -55,6 +56,15 @@
         'valueFormat' => $valueFormat,
         'tooltipFormat' => $tooltipFormat,
         'options' => is_array($options) ? $options : [],
+        'drilldown' => [
+            'url' => $isDrilldownEnabled ? $drilldownUrl : null,
+            'params' => is_array($drilldownParams ?? null) ? $drilldownParams : [],
+        ],
+        'aria' => (bool) ($aria ?? true),
+        'markers' => is_array($markers ?? null) ? $markers : [],
+        'zoom' => (bool) ($zoom ?? false),
+        'zoomMode' => $zoomMode ?? 'inside',
+        'orientation' => $orientation ?? 'vertical',
         'state' => [
             'hasData' => $hasData,
         ],

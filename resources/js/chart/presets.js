@@ -4,6 +4,13 @@ function isPlainObject(value) {
     return value && typeof value === 'object' && !Array.isArray(value);
 }
 
+function shouldMergeArrayByIndex(baseValue, nextValue) {
+    return Array.isArray(baseValue)
+        && Array.isArray(nextValue)
+        && baseValue.every((item) => item === undefined || isPlainObject(item))
+        && nextValue.every((item) => item === undefined || isPlainObject(item));
+}
+
 export function mergeOptions(base, extra) {
     if (!isPlainObject(base)) {
         return isPlainObject(extra) ? { ...extra } : extra;
@@ -17,7 +24,23 @@ export function mergeOptions(base, extra) {
 
     for (const [key, value] of Object.entries(extra)) {
         if (Array.isArray(value)) {
-            output[key] = value.slice();
+            if (shouldMergeArrayByIndex(output[key], value)) {
+                const length = Math.max(output[key].length, value.length);
+                output[key] = Array.from({ length }, (_, index) => {
+                    const item = value[index];
+                    const baseItem = output[key][index];
+
+                    if (item === undefined) {
+                        return baseItem;
+                    }
+
+                    return isPlainObject(item) && isPlainObject(baseItem)
+                        ? mergeOptions(baseItem, item)
+                        : item;
+                });
+            } else {
+                output[key] = value.slice();
+            }
             continue;
         }
 
@@ -81,6 +104,112 @@ function createToolbox(config) {
     };
 }
 
+function createTooltipExtraCss(theme) {
+    const shadow = theme.dark
+        ? '0 18px 45px rgba(0,0,0,0.48), 0 0 0 1px rgba(255,255,255,0.16)'
+        : '0 18px 45px rgba(15,23,42,0.22), 0 0 0 1px rgba(15,23,42,0.10)';
+
+    return `pointer-events:none;z-index:9999;box-shadow:${shadow};`;
+}
+
+function createDataZoom(config) {
+    if (!config.zoom || !config.isCartesian || config.isSparkline) {
+        return undefined;
+    }
+
+    const axisIndex = config.isHorizontal ? { yAxisIndex: 0 } : { xAxisIndex: 0 };
+    const base = {
+        filterMode: 'filter',
+        throttle: 80,
+        ...axisIndex,
+    };
+
+    if (config.zoomMode === 'slider') {
+        return [{
+            ...base,
+            type: 'slider',
+            height: config.isHorizontal ? undefined : 20,
+            width: config.isHorizontal ? 18 : undefined,
+            right: config.isHorizontal ? 0 : undefined,
+            bottom: config.isHorizontal ? undefined : 0,
+        }];
+    }
+
+    return [{
+        ...base,
+        type: 'inside',
+        zoomOnMouseWheel: true,
+        moveOnMouseMove: true,
+        moveOnMouseWheel: false,
+    }];
+}
+
+function createSeriesMarkers(config, seriesName) {
+    if (!Array.isArray(config.markers) || config.markers.length === 0) {
+        return {};
+    }
+
+    const relevantMarkers = config.markers.filter((marker) => !marker.series || marker.series === seriesName);
+    const markLineData = [];
+    const markPointData = [];
+
+    relevantMarkers.forEach((marker) => {
+        if (!marker || typeof marker !== 'object') {
+            return;
+        }
+
+        if (marker.type === 'point') {
+            markPointData.push({
+                name: marker.name,
+                value: marker.value,
+                coord: marker.coord,
+                xAxis: marker.xAxis,
+                yAxis: marker.yAxis,
+            });
+            return;
+        }
+
+        const valueAxis = config.isHorizontal ? 'xAxis' : 'yAxis';
+        const categoryAxis = config.isHorizontal ? 'yAxis' : 'xAxis';
+        const line = {
+            name: marker.name,
+            label: marker.label ? { formatter: marker.label } : undefined,
+        };
+
+        if (marker.axis === 'x') {
+            line.xAxis = marker.value;
+        } else if (marker.axis === 'category') {
+            line[categoryAxis] = marker.value;
+        } else {
+            line[valueAxis] = marker.value;
+        }
+
+        markLineData.push(line);
+    });
+
+    return {
+        ...(markLineData.length > 0 ? {
+            markLine: {
+                symbol: 'none',
+                label: {
+                    color: 'inherit',
+                },
+                lineStyle: {
+                    type: 'dashed',
+                    width: 2,
+                },
+                data: markLineData,
+            },
+        } : {}),
+        ...(markPointData.length > 0 ? {
+            markPoint: {
+                symbolSize: 42,
+                data: markPointData,
+            },
+        } : {}),
+    };
+}
+
 function createCartesianSeries(config, theme) {
     return config.series.map((entry, index) => {
         const color = entry.color || theme.palette[index % theme.palette.length];
@@ -103,6 +232,7 @@ function createCartesianSeries(config, theme) {
                 disabled: true,
             },
             smooth: config.preset === 'sparkline',
+            ...createSeriesMarkers(config, entry.name),
         };
 
         if (config.isStacked) {
@@ -110,17 +240,21 @@ function createCartesianSeries(config, theme) {
         }
 
         if (lineSeries.type === 'line') {
-            lineSeries.symbol = config.isSparkline ? 'none' : 'circle';
+            lineSeries.symbol = 'circle';
             lineSeries.showSymbol = !config.isSparkline;
-            lineSeries.symbolSize = config.isSparkline ? 0 : 6;
+            lineSeries.symbolSize = config.isSparkline ? 10 : 6;
             lineSeries.lineStyle = {
+                color,
                 width: config.isSparkline ? 2 : 3,
             };
             lineSeries.emphasis.lineStyle = {
+                color,
                 width: config.isSparkline ? 2 : 3,
             };
             lineSeries.emphasis.itemStyle = {
                 color,
+                borderColor: theme.tooltipBackground,
+                borderWidth: config.isSparkline ? 3 : 0,
             };
         }
 
@@ -157,16 +291,30 @@ function createCircularSeries(config) {
         radius: config.preset === 'donut' ? ['48%', '72%'] : '72%',
         center: ['50%', '56%'],
         avoidLabelOverlap: true,
+        animation: false,
+        selectedMode: false,
         label: {
             color: 'inherit',
             formatter: createPieLabelFormatter(config.valueFormat),
         },
         data: first.data,
         emphasis: {
+            disabled: true,
+            focus: 'none',
+            scale: false,
+            scaleSize: 0,
             itemStyle: {
-                shadowBlur: 18,
+                shadowBlur: 0,
                 shadowOffsetX: 0,
             },
+        },
+        blur: {
+            itemStyle: {
+                opacity: 1,
+            },
+        },
+        select: {
+            disabled: true,
         },
     }];
 }
@@ -174,14 +322,21 @@ function createCircularSeries(config) {
 export function buildChartOption(config, theme) {
     const legend = createLegend(config, theme);
     const toolbox = createToolbox(config);
+    const dataZoom = createDataZoom(config);
     const title = baseTitle(config);
     const tooltip = {
         trigger: config.isCircular ? 'item' : 'axis',
         triggerOn: 'mousemove|click',
-        renderMode: 'richText',
+        renderMode: 'html',
+        appendTo: typeof document === 'undefined' ? undefined : document.body,
+        confine: false,
+        enterable: false,
+        extraCssText: createTooltipExtraCss(theme),
         transitionDuration: 0,
+        hideDelay: config.isCircular ? 220 : 100,
+        showDelay: 0,
         backgroundColor: theme.tooltipBackground,
-        borderColor: theme.axisColor,
+        borderColor: theme.dark ? 'rgba(255,255,255,0.18)' : 'rgba(15,23,42,0.12)',
         borderWidth: 1,
         textStyle: {
             color: theme.textColor,
@@ -191,8 +346,9 @@ export function buildChartOption(config, theme) {
             animation: false,
             snap: true,
             lineStyle: {
-                color: theme.axisColor,
-                width: 1,
+                color: theme.dark ? 'rgba(255,255,255,0.62)' : 'rgba(15,23,42,0.28)',
+                type: 'dashed',
+                width: theme.dark ? 1.5 : 1,
             },
             shadowStyle: {
                 color: theme.dark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.04)',
@@ -211,6 +367,13 @@ export function buildChartOption(config, theme) {
         tooltip,
         legend,
         toolbox,
+        dataZoom,
+        aria: config.aria ? {
+            enabled: true,
+            decal: {
+                show: false,
+            },
+        } : undefined,
     };
 
     if (config.isCircular) {
@@ -247,64 +410,68 @@ export function buildChartOption(config, theme) {
 
     const usesRightAxis = config.series.some((entry) => entry.axis === 'right');
 
+    const categoryAxis = {
+        type: 'category',
+        data: config.categories,
+        boundaryGap: config.preset === 'bar' || config.preset === 'stacked-bar',
+        axisLabel: {
+            color: theme.textMutedColor,
+        },
+        axisLine: {
+            lineStyle: {
+                color: theme.axisColor,
+            },
+        },
+        axisTick: {
+            lineStyle: {
+                color: theme.axisColor,
+            },
+        },
+    };
+    const valueAxis = {
+        type: 'value',
+        axisLabel: {
+            color: theme.textMutedColor,
+            formatter: createAxisLabelFormatter(config.valueFormat),
+        },
+        splitLine: {
+            lineStyle: {
+                color: theme.gridColor,
+            },
+        },
+        axisLine: {
+            show: false,
+        },
+    };
+    const secondaryValueAxis = {
+        type: 'value',
+        position: 'right',
+        axisLabel: {
+            color: theme.textMutedColor,
+            formatter: createAxisLabelFormatter(config.valueFormat),
+        },
+        splitLine: {
+            show: false,
+        },
+        axisLine: {
+            lineStyle: {
+                color: theme.axisColor,
+            },
+        },
+    };
+
     return mergeOptions(baseOption, {
         grid: {
             top: legend ? 62 : (title ? 34 : 12),
-            right: usesRightAxis ? 56 : 16,
-            bottom: 16,
-            left: 12,
+            right: usesRightAxis || config.isHorizontal ? 56 : 16,
+            bottom: dataZoom && config.zoomMode === 'slider' && !config.isHorizontal ? 36 : 16,
+            left: config.isHorizontal ? 16 : 12,
             containLabel: true,
         },
-        xAxis: {
-            type: 'category',
-            data: config.categories,
-            boundaryGap: config.preset === 'bar' || config.preset === 'stacked-bar',
-            axisLabel: {
-                color: theme.textMutedColor,
-            },
-            axisLine: {
-                lineStyle: {
-                    color: theme.axisColor,
-                },
-            },
-            axisTick: {
-                lineStyle: {
-                    color: theme.axisColor,
-                },
-            },
-        },
-        yAxis: [
-            {
-                type: 'value',
-                axisLabel: {
-                    color: theme.textMutedColor,
-                    formatter: createAxisLabelFormatter(config.valueFormat),
-                },
-                splitLine: {
-                    lineStyle: {
-                        color: theme.gridColor,
-                    },
-                },
-                axisLine: {
-                    show: false,
-                },
-            },
-            ...(usesRightAxis ? [{
-                type: 'value',
-                position: 'right',
-                axisLabel: {
-                    color: theme.textMutedColor,
-                    formatter: createAxisLabelFormatter(config.valueFormat),
-                },
-                splitLine: {
-                    show: false,
-                },
-                axisLine: {
-                    lineStyle: {
-                        color: theme.axisColor,
-                    },
-                },
-            }] : []),
+        xAxis: config.isHorizontal ? valueAxis : categoryAxis,
+        yAxis: config.isHorizontal ? categoryAxis : [
+            valueAxis,
+            ...(usesRightAxis ? [secondaryValueAxis] : []),
         ],
         series: createCartesianSeries(config, theme),
     });

@@ -4,8 +4,12 @@ import {
     CanvasRenderer,
 } from 'echarts/renderers';
 import {
+    AriaComponent,
+    DataZoomComponent,
     GridComponent,
     LegendComponent,
+    MarkLineComponent,
+    MarkPointComponent,
     TitleComponent,
     ToolboxComponent,
     TooltipComponent,
@@ -18,9 +22,13 @@ echarts.use([
     BarChart,
     LineChart,
     PieChart,
+    AriaComponent,
+    DataZoomComponent,
     CanvasRenderer,
     GridComponent,
     LegendComponent,
+    MarkLineComponent,
+    MarkPointComponent,
     TitleComponent,
     ToolboxComponent,
     TooltipComponent,
@@ -28,6 +36,7 @@ echarts.use([
 
 const registry = new WeakMap();
 const observedRoots = new WeakSet();
+const drilldownHandlers = new WeakMap();
 
 function readConfigFromContainer(root) {
     const host = root.querySelector('[data-chart-canvas]');
@@ -63,9 +72,84 @@ function ensureInstance(host) {
     return current || echarts.init(host);
 }
 
+function extractPointDrilldown(params) {
+    const data = params?.data;
+
+    if (data && typeof data === 'object' && !Array.isArray(data) && data.drilldown && typeof data.drilldown === 'object') {
+        return data.drilldown;
+    }
+
+    return null;
+}
+
+export function buildDrilldownUrl(config, params) {
+    const url = config?.drilldown?.url;
+
+    if (!url || url === '#') {
+        return null;
+    }
+
+    const pointParams = extractPointDrilldown(params);
+
+    if (!pointParams) {
+        return null;
+    }
+
+    const baseUrl = typeof window !== 'undefined' ? window.location.href : 'http://localhost/';
+    const nextUrl = new URL(url, baseUrl);
+
+    if (typeof window !== 'undefined' && nextUrl.origin !== window.location.origin) {
+        return null;
+    }
+
+    const mergedParams = {
+        ...(config.drilldown.params || {}),
+        ...pointParams,
+    };
+
+    Object.entries(mergedParams).forEach(([key, value]) => {
+        if (value == null || value === '') {
+            return;
+        }
+
+        nextUrl.searchParams.set(key, String(value));
+    });
+
+    return nextUrl.toString();
+}
+
+function bindDrilldown(root, instance, config) {
+    const previousHandler = drilldownHandlers.get(instance);
+
+    if (previousHandler) {
+        instance.off('click', previousHandler);
+        drilldownHandlers.delete(instance);
+    }
+
+    if (!config.drilldown?.url || config.drilldown.url === '#') {
+        root.toggleAttribute('data-chart-clickable', false);
+        return;
+    }
+
+    root.toggleAttribute('data-chart-clickable', true);
+    const handler = (params) => {
+        const targetUrl = buildDrilldownUrl(config, params);
+
+        if (!targetUrl) {
+            return;
+        }
+
+        window.location.assign(targetUrl);
+    };
+
+    drilldownHandlers.set(instance, handler);
+    instance.on('click', handler);
+}
+
 function applyChart(root, instance, config) {
     const normalized = normalizeChartConfig(config);
     const theme = buildChartTheme(normalized, root);
+    bindDrilldown(root, instance, normalized);
 
     if (!normalized.hasData && !normalized.loading) {
         instance.clear();

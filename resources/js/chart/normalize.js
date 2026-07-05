@@ -2,6 +2,36 @@ const CARTESIAN_PRESETS = new Set(['bar', 'line', 'area', 'stacked-bar', 'stacke
 const CIRCULAR_PRESETS = new Set(['pie', 'donut']);
 const ALLOWED_PRESETS = new Set([...CARTESIAN_PRESETS, ...CIRCULAR_PRESETS]);
 
+function normalizeDrilldown(value) {
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : null;
+}
+
+function normalizePoint(value, index, categories) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+        const point = {
+            ...value,
+            value: value.value,
+        };
+
+        if (!point.name && categories[index]) {
+            point.name = categories[index];
+        }
+
+        if (value.color) {
+            point.itemStyle = {
+                ...(value.itemStyle || {}),
+                color: value.color,
+            };
+        }
+
+        point.drilldown = normalizeDrilldown(value.drilldown);
+
+        return point;
+    }
+
+    return value;
+}
+
 function normalizeSeries(series) {
     if (!Array.isArray(series)) {
         return [];
@@ -35,8 +65,10 @@ function normalizeCircularSeries(series, categories) {
     const data = first.data.map((value, index) => {
         if (value && typeof value === 'object' && value.value != null) {
             return {
+                ...value,
                 name: value.name || categories[index] || `Item ${index + 1}`,
                 value: value.value,
+                drilldown: normalizeDrilldown(value.drilldown),
                 itemStyle: value.color ? { color: value.color } : undefined,
             };
         }
@@ -53,9 +85,19 @@ function normalizeCircularSeries(series, categories) {
 export function normalizeChartConfig(config = {}) {
     const preset = ALLOWED_PRESETS.has(config.preset) ? config.preset : 'bar';
     const categories = Array.isArray(config.categories) ? config.categories : [];
-    const series = normalizeSeries(config.series);
+    const series = normalizeSeries(config.series).map((entry) => ({
+        ...entry,
+        data: entry.data.map((value, index) => normalizePoint(value, index, categories)),
+    }));
     const circularSeries = CIRCULAR_PRESETS.has(preset) ? normalizeCircularSeries(series, categories) : series;
     const normalizedSeries = CIRCULAR_PRESETS.has(preset) ? circularSeries : series;
+    const orientation = config.orientation === 'horizontal' ? 'horizontal' : 'vertical';
+    const drilldown = config.drilldown && typeof config.drilldown === 'object'
+        ? {
+            url: typeof config.drilldown.url === 'string' && config.drilldown.url.trim() !== '' ? config.drilldown.url : null,
+            params: normalizeDrilldown(config.drilldown.params) || {},
+        }
+        : { url: null, params: {} };
 
     return {
         preset,
@@ -72,11 +114,18 @@ export function normalizeChartConfig(config = {}) {
         valueFormat: normalizeFormat(config.valueFormat, 'number'),
         tooltipFormat: normalizeFormat(config.tooltipFormat, config.valueFormat || 'number'),
         options: config.options && typeof config.options === 'object' ? config.options : {},
+        drilldown,
+        aria: config.aria !== false,
+        markers: Array.isArray(config.markers) ? config.markers : [],
+        zoom: Boolean(config.zoom),
+        zoomMode: config.zoomMode === 'slider' ? 'slider' : 'inside',
+        orientation,
         hasData: hasAnyData(normalizedSeries),
         isCartesian: CARTESIAN_PRESETS.has(preset),
         isCircular: CIRCULAR_PRESETS.has(preset),
         isSparkline: preset === 'sparkline',
         isStacked: preset === 'stacked-bar' || preset === 'stacked-area',
         isArea: preset === 'area' || preset === 'stacked-area',
+        isHorizontal: orientation === 'horizontal' && (preset === 'bar' || preset === 'stacked-bar'),
     };
 }

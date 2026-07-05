@@ -96,32 +96,31 @@ export function createAxisLabelFormatter(format) {
     return (value) => formatValue(value, format);
 }
 
+export function createTooltipFormatter(format) {
+    return (params) => {
+        const points = Array.isArray(params) ? params : [params];
+        const rows = points.map((point) => {
+            const label = point.seriesName || point.name || '';
+            const value = Array.isArray(point.value) ? point.value[1] : point.value;
+            return `<div class="daisy-chart-tooltip-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(formatValue(value, format))}</strong></div>`;
+        }).join('');
+
+        const axisLabel = Array.isArray(params) ? params[0]?.axisValueLabel || params[0]?.name || '' : params?.name || '';
+        const title = axisLabel ? `<div class="daisy-chart-tooltip-title">${escapeHtml(axisLabel)}</div>` : '';
+
+        return `<div class="daisy-chart-tooltip">${title}${rows}</div>`;
+    };
+}
+
+export function createPieLabelFormatter(format) {
+    return (params) => `${params.name}: ${formatValue(params.value, format)}`;
+}
+
 function escapeHtml(value) {
     return String(value)
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;');
-}
-
-export function createTooltipFormatter(format) {
-    return (params) => {
-        const points = Array.isArray(params) ? params : [params];
-        const rows = points.map((point) => {
-            const marker = point.marker || '';
-            const label = point.seriesName || point.name || '';
-            const value = Array.isArray(point.value) ? point.value[1] : point.value;
-            return `<div>${marker}<span>${escapeHtml(label)}</span>: <strong>${escapeHtml(formatValue(value, format))}</strong></div>`;
-        }).join('');
-
-        const axisLabel = Array.isArray(params) ? params[0]?.axisValueLabel || params[0]?.name || '' : params?.name || '';
-        const title = axisLabel ? `<div class="mb-1 font-semibold">${escapeHtml(axisLabel)}</div>` : '';
-
-        return `${title}${rows}`;
-    };
-}
-
-export function createPieLabelFormatter(format) {
-    return (params) => `${params.name}: ${formatValue(params.value, format)}`;
+        .replaceAll("'", '&#039;');
 }

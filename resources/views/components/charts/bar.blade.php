@@ -15,6 +15,13 @@
     'tooltipFormat' => null,
     'options' => [],
     'module' => null,
+    'drilldownUrl' => null,
+    'drilldownParams' => [],
+    'aria' => true,
+    'markers' => [],
+    'zoom' => false,
+    'zoomMode' => 'inside',
+    'orientation' => 'vertical',
 ])
 
 @include('daisy::partials.charts.renderer', ['preset' => 'bar'])

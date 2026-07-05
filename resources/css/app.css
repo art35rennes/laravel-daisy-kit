@@ -175,6 +175,42 @@ trix-editor[class*="daisy-wysiwyg-min-height-"] {
   height: var(--daisy-height, 320px);
 }
 
+.daisy-chart-clickable [data-chart-canvas],
+.daisy-chart[data-chart-clickable] [data-chart-canvas] {
+  cursor: pointer;
+}
+
+.daisy-chart-tooltip {
+  display: grid;
+  gap: 0.25rem;
+  max-width: min(18rem, calc(100vw - 2rem));
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
+.daisy-chart-tooltip-title {
+  font-weight: 700;
+}
+
+.daisy-chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.daisy-chart-tooltip-row > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.daisy-chart-tooltip-row > strong {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .daisy-blueprint {
   --daisy-blueprint-height: 520px;
   inline-size: 100%;

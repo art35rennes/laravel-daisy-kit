@@ -15,6 +15,12 @@
     'tooltipFormat' => null,
     'options' => [],
     'module' => null,
+    'drilldownUrl' => null,
+    'drilldownParams' => [],
+    'aria' => true,
+    'markers' => [],
+    'zoom' => false,
+    'zoomMode' => 'inside',
 ])
 
 @include('daisy::partials.charts.renderer', ['preset' => 'donut'])

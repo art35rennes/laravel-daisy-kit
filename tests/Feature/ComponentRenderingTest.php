@@ -570,12 +570,23 @@ it('renders a charts.bar component', function () {
         'series' => [
             ['name' => 'Revenue', 'data' => [12, 24]],
         ],
+        'drilldownUrl' => '/reports',
+        'drilldownParams' => ['section' => 'sales'],
+        'markers' => [['type' => 'line', 'value' => 20, 'name' => 'Target']],
+        'zoom' => true,
+        'orientation' => 'horizontal',
     ])->render();
 
     expect($html)
         ->toContain('data-daisy-chart="1"')
         ->toContain('"preset":"bar"')
         ->toContain('"categories":["Jan","Feb"]')
+        ->toContain('"drilldown":{"url":"\/reports","params":{"section":"sales"}}')
+        ->toContain('"aria":true')
+        ->toContain('"markers":[{"type":"line","value":20,"name":"Target"}]')
+        ->toContain('"zoom":true')
+        ->toContain('"orientation":"horizontal"')
+        ->toContain('daisy-chart-clickable')
         ->toContain('Revenue')
         ->not->toContain('data-daisy-css-width')
         ->not->toContain('data-daisy-css-height');
