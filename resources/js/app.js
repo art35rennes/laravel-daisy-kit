@@ -46,7 +46,12 @@ onReady(async () => {
 
   // Comportement générique des sidebars
   // Gère l'expansion/réduction avec persistance localStorage
-  document.querySelectorAll('[data-sidebar-root]').forEach((aside) => {
+  const sidebars = document.querySelectorAll('[data-sidebar-root]');
+  const sidebarModule = sidebars.length > 0 ? await import('./modules/sidebar') : null;
+
+  sidebars.forEach((aside) => {
+    sidebarModule?.initSidebar(aside);
+
     const button = aside.querySelector('.sidebar-toggle');
     
     // Configuration depuis les data-attributes
