@@ -1,0 +1,66 @@
+{
+  "mode": "client",
+  "rowKey": "id",
+  "searchMode": "fuzzy",
+  "subRowsKey": "children",
+  "columnResizing": true,
+  "editable": {
+    "enabled": true,
+    "endpoint": {
+      "url": "/users/edit"
+    },
+    "method": "PATCH",
+    "mode": "row",
+    "columns": ["name", "status"],
+    "policy": {
+      "required": ["name"]
+    },
+    "rowKey": "id"
+  },
+  "columns": [
+    {
+      "key": "name",
+      "label": "Name",
+      "sortable": true,
+      "filterable": true,
+      "filter": {
+        "type": "text"
+      },
+      "size": 180,
+      "minSize": 120,
+      "maxSize": 320
+    },
+    {
+      "key": "status",
+      "label": "Status",
+      "filterable": true,
+      "filter": {
+        "type": "select",
+        "options": [
+          {
+            "value": "active",
+            "label": "Active"
+          }
+        ]
+      }
+    }
+  ],
+  "rows": [
+    {
+      "id": "user-1",
+      "name": "Jane",
+      "status": "active",
+      "children": []
+    }
+  ],
+  "initialState": {
+    "pagination": {
+      "pageIndex": 0,
+      "pageSize": 10
+    },
+    "columnSizing": {
+      "name": 200
+    }
+  },
+  "pageSizeOptions": [10, 25]
+}

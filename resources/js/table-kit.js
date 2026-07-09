@@ -369,14 +369,30 @@ function normalizeSelectionConfig(raw = {}) {
   };
 }
 
+function normalizeEditPolicy(policy = {}) {
+  if (!isPlainObject(policy)) {
+    return {
+      required: [],
+    };
+  }
+
+  return {
+    ...policy,
+    required: Array.isArray(policy.required)
+      ? policy.required.filter((key, index, all) => typeof key === 'string' && key !== '' && all.indexOf(key) === index)
+      : (policy.required === true ? true : []),
+  };
+}
+
 function normalizeEditableConfig(raw = {}, columns = []) {
   const editable = raw.editable === true || raw.editable?.enabled === true;
   const endpoint = normalizeEndpoint(raw.editEndpoint ?? raw.editable?.endpoint ?? null);
   const mode = ['cell', 'row'].includes(raw.editMode ?? raw.editable?.mode)
     ? raw.editMode ?? raw.editable.mode
     : 'cell';
-  const method = typeof (raw.editMethod ?? raw.editable?.method) === 'string' && (raw.editMethod ?? raw.editable.method) !== ''
-    ? String(raw.editMethod ?? raw.editable.method).toUpperCase()
+  const rawMethod = raw.editMethod ?? raw.editable?.method;
+  const method = typeof rawMethod === 'string' && rawMethod !== ''
+    ? String(rawMethod).toUpperCase()
     : 'PATCH';
   const editableColumnKeys = Array.isArray(raw.editableColumns ?? raw.editable?.columns)
     ? raw.editableColumns ?? raw.editable.columns
@@ -397,7 +413,7 @@ function normalizeEditableConfig(raw = {}, columns = []) {
       && columnKeys.includes(key)
       && all.indexOf(key) === index
     )),
-    policy: isPlainObject(raw.editPolicy ?? raw.editable?.policy) ? raw.editPolicy ?? raw.editable.policy : {},
+    policy: normalizeEditPolicy(raw.editPolicy ?? raw.editable?.policy),
   };
 }
 
@@ -1307,6 +1323,13 @@ function renderHeader(context) {
       th.className = thClasses;
     }
 
+    if (context.config.columnResizing && typeof header.column?.getSize === 'function') {
+      const columnSize = String(header.column.getSize());
+
+      th.setAttribute('width', columnSize);
+      th.dataset.tableColumnSize = columnSize;
+    }
+
     if (column.sortable) {
       const button = document.createElement('button');
       const direction = typeof header.column?.getIsSorted === 'function'
@@ -1406,6 +1429,9 @@ function renderBody(context, rows) {
 
       const classes = getColumnClasses(column, 'cell');
       const className = classes ? ` class="${escapeHtml(classes)}"` : '';
+      const cellWidth = context.config.columnResizing && typeof cell.column?.getSize === 'function'
+        ? ` width="${escapeHtml(cell.column.getSize())}" data-table-column-size="${escapeHtml(cell.column.getSize())}"`
+        : '';
       const wrapperClass = escapeHtml(getColumnWrapperClasses(column, 'cell'));
       const content = isCellEditing(context, row, column)
         ? renderEditCellContent(context, row, column)
@@ -1415,14 +1441,15 @@ function renderBody(context, rows) {
         ? ` data-table-edit-cell data-table-row-id="${escapeHtml(row.id)}" data-table-column-id="${escapeHtml(column.key)}"`
         : '';
 
-      return `<td${className}${editAttrs}><span class="${wrapperClass}">${content}</span></td>`;
+      return `<td${className}${cellWidth}${editAttrs}><span class="${wrapperClass}">${content}</span></td>`;
     }).join('');
 
     const detailRow = context.config.rowDetail.mode === 'inline' && row.getIsExpanded?.()
       ? `<tr class="daisy-table-detail-row"><td colspan="${colspan}">${getRowDetailContent(rowData)}</td></tr>`
       : '';
+    const editActionsRow = renderEditRowActions(context, row, colspan);
 
-    return `<tr>${selectionCell}${detailCell}${cells}</tr>${detailRow}`;
+    return `<tr>${selectionCell}${detailCell}${cells}</tr>${editActionsRow}${detailRow}`;
   }).join('');
 }
 
@@ -1483,6 +1510,14 @@ function renderEditCellContent(context, row, column) {
   const value = context.editing?.draft?.[column.key] ?? '';
   const error = context.editing?.errors?.[column.key] ?? '';
   const saving = context.editing?.saving === true;
+  const actions = context.editing?.mode === 'row'
+    ? ''
+    : `
+      <div class="daisy-table-edit-actions">
+        <button type="button" class="btn btn-xs btn-primary" data-table-edit-save ${saving ? 'disabled' : ''}>Save</button>
+        <button type="button" class="btn btn-xs btn-ghost" data-table-edit-cancel ${saving ? 'disabled' : ''}>Cancel</button>
+      </div>
+    `;
 
   return `
     <div class="daisy-table-edit-cell">
@@ -1493,19 +1528,76 @@ function renderEditCellContent(context, row, column) {
         data-table-row-id="${escapeHtml(row.id)}"
         data-table-column-id="${escapeHtml(column.key)}"
         value="${escapeHtml(value)}"
+        aria-invalid="${error ? 'true' : 'false'}"
         ${saving ? 'disabled' : ''}
       >
-      <div class="daisy-table-edit-actions">
-        <button type="button" class="btn btn-xs btn-primary" data-table-edit-save ${saving ? 'disabled' : ''}>Save</button>
-        <button type="button" class="btn btn-xs btn-ghost" data-table-edit-cancel ${saving ? 'disabled' : ''}>Cancel</button>
-      </div>
+      ${actions}
       ${error ? `<p class="daisy-table-edit-error text-xs text-error">${escapeHtml(error)}</p>` : ''}
     </div>
   `;
 }
 
+function renderEditRowActions(context, row, colspan) {
+  if (!context.editing || context.editing.mode !== 'row' || String(context.editing.rowId) !== String(row.id)) {
+    return '';
+  }
+
+  const saving = context.editing.saving === true;
+  const dirtyCount = Object.values(context.editing.dirty).filter((value) => value === true).length;
+  const hasErrors = Object.keys(context.editing.errors || {}).length > 0;
+  const status = hasErrors
+    ? '<span class="text-error">Please fix the highlighted fields.</span>'
+    : `<span class="text-base-content/60">${dirtyCount} changed field${dirtyCount === 1 ? '' : 's'}</span>`;
+
+  return `
+    <tr class="daisy-table-edit-row-actions">
+      <td colspan="${colspan}">
+        <div class="daisy-table-edit-row-bar">
+          ${status}
+          <span class="daisy-table-edit-actions">
+            <button type="button" class="btn btn-xs btn-primary" data-table-edit-save ${saving ? 'disabled' : ''}>Save row</button>
+            <button type="button" class="btn btn-xs btn-ghost" data-table-edit-cancel ${saving ? 'disabled' : ''}>Cancel</button>
+          </span>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+function getRequiredEditableColumns(context) {
+  const required = context.config.editable.policy?.required;
+
+  if (required === true) {
+    return context.config.editable.columns;
+  }
+
+  if (!Array.isArray(required)) {
+    return [];
+  }
+
+  return required.filter((key) => context.config.editable.columns.includes(key));
+}
+
+function validateEdit(context) {
+  if (!context.editing) {
+    return {};
+  }
+
+  const editedKeys = context.editing.mode === 'row'
+    ? Object.keys(context.editing.draft)
+    : [context.editing.columnId];
+  const requiredKeys = getRequiredEditableColumns(context)
+    .filter((key) => editedKeys.includes(key));
+
+  return Object.fromEntries(
+    requiredKeys
+      .filter((key) => String(context.editing.draft?.[key] ?? '').trim() === '')
+      .map((key) => [key, 'This value is required.'])
+  );
+}
+
 function startCellEdit(context, rowId, columnId) {
-  if (!context.config.editable.enabled || !context.config.editable.columns.includes(columnId)) {
+  if (context.loading || !context.config.editable.enabled || !context.config.editable.columns.includes(columnId)) {
     return null;
   }
 
@@ -1561,6 +1653,10 @@ function updateEditDraft(context, input) {
 
   context.editing.draft[columnId] = String(input.value ?? '');
   context.editing.dirty[columnId] = context.editing.draft[columnId] !== String(context.editing.original?.[columnId] ?? '');
+
+  if (context.editing.errors?.[columnId]) {
+    delete context.editing.errors[columnId];
+  }
 }
 
 function replaceRowInRows(rows = [], rowKey, rowId, nextRow) {
@@ -1593,6 +1689,23 @@ function applyEditedRow(context, rowId, nextRow) {
 
 async function commitEdit(context) {
   if (!context.editing || context.editing.saving) {
+    return null;
+  }
+
+  const validationErrors = validateEdit(context);
+
+  if (Object.keys(validationErrors).length > 0) {
+    context.editing.errors = validationErrors;
+    dispatchTableEditEvent(context, 'daisy:table-edit-failed', {
+      rowId: context.editing.rowId,
+      column: context.editing.columnId,
+      row: getVisibleRowById(context, context.editing.rowId)?.original ?? context.editing.original,
+      dirty: { ...context.editing.dirty },
+      errors: validationErrors,
+      error: new Error('Validation failed.'),
+    });
+    renderTable(context);
+
     return null;
   }
 
@@ -1674,6 +1787,7 @@ async function commitEdit(context) {
 
     dispatchTableEditEvent(context, 'daisy:table-edit-failed', {
       ...payload,
+      errors: context.editing?.errors || {},
       error,
     });
     renderTable(context);
@@ -2227,32 +2341,6 @@ function createFilterState(filterId, type, input) {
     type,
     value: String(input.value ?? ''),
   };
-}
-
-function updateFilterState(context, nextFilter) {
-  const filters = context.state.columnFilters.filter((filter) => filter.id !== nextFilter.id);
-
-  if (nextFilter.type === 'boolean') {
-    if (nextFilter.value === true) {
-      filters.push(nextFilter);
-    }
-  } else if (nextFilter.type === 'date-range') {
-    const value = isPlainObject(nextFilter.value) ? nextFilter.value : {};
-
-    if (String(value.from ?? '') !== '' || String(value.to ?? '') !== '') {
-      filters.push({
-        ...nextFilter,
-        value: {
-          from: String(value.from ?? ''),
-          to: String(value.to ?? ''),
-        },
-      });
-    }
-  } else if (nextFilter.value !== '') {
-    filters.push(nextFilter);
-  }
-
-  context.state.columnFilters = filters;
 }
 
 function resolveFilterInputState(context, input) {

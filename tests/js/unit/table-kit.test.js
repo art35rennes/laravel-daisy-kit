@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -56,6 +58,11 @@ const DEFAULT_COLUMN_SIZING_INFO = {
   isResizingColumn: false,
   columnSizingStart: [],
 };
+
+const tableConfigFixture = JSON.parse(readFileSync(
+  fileURLToPath(new URL('../../Fixtures/table-config/tanstack-first.json', import.meta.url)),
+  'utf8'
+));
 
 function installDom(html = '<div></div>') {
   const dom = new JSDOM(html, { url: 'https://example.test/users' });
@@ -300,6 +307,35 @@ describe('table-kit helpers', () => {
         filterSignature: '',
       },
     });
+  });
+
+  it('normalizes the shared TanStack-first JSON fixture', () => {
+    const config = normalizeConfig(tableConfigFixture);
+
+    expect(config).toMatchObject({
+      mode: 'client',
+      rowKey: 'id',
+      searchMode: 'fuzzy',
+      subRowsKey: 'children',
+      columnResizing: true,
+      editable: {
+        enabled: true,
+        method: 'PATCH',
+        mode: 'row',
+        columns: ['name', 'status'],
+        policy: {
+          required: ['name'],
+        },
+        rowKey: 'id',
+      },
+    });
+    expect(config.columns[0]).toMatchObject({
+      key: 'name',
+      size: 180,
+      minSize: 120,
+      maxSize: 320,
+    });
+    expect(config.initialState.columnSizing).toEqual({ name: 200 });
   });
 
   it('normalizes ECA table column presentation options', () => {
@@ -1054,6 +1090,9 @@ describe('table-kit helpers', () => {
       expect(context.state.selection.selectedIds).toEqual(['a']);
       expect(selectionDetail.selectedIds).toEqual(['a']);
       expect(root.querySelector('[data-table-resize]')).toBeInstanceOf(HTMLElement);
+      expect(root.querySelector('th[width="120"]')).toBeInstanceOf(HTMLElement);
+      expect(root.querySelector('td[width="120"]')).toBeInstanceOf(HTMLElement);
+      expect(root.querySelector('[style*="120px"]')).toBeNull();
 
       context.table.setColumnSizing({ name: 180 });
 
@@ -1083,6 +1122,212 @@ describe('table-kit helpers', () => {
 
       expect(context.state.columnFilters).toEqual([{ id: 'status', type: 'text', value: 'active' }]);
     } finally {
+      env.restore();
+    }
+  });
+
+  it('renders grouped row edit controls in row mode', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        rowKey: 'id',
+        editable: true,
+        editEndpoint: '/users/1',
+        editMode: 'row',
+        editableColumns: ['name', 'status'],
+        columns: [
+          { key: 'name', label: 'Name' },
+          { key: 'status', label: 'Status' },
+        ],
+        rows: [{ id: '1', name: 'Jane', status: 'draft' }],
+      });
+
+      await initTable(root);
+
+      root.querySelector('[data-table-edit-cell][data-table-column-id="name"]')
+        .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+      expect(root.querySelectorAll('[data-table-edit-input]')).toHaveLength(2);
+      expect(root.querySelector('.daisy-table-edit-row-actions [data-table-edit-save]')).toBeInstanceOf(HTMLElement);
+      expect(root.querySelector('.daisy-table-edit-cell [data-table-edit-save]')).toBeNull();
+    } finally {
+      env.restore();
+    }
+  });
+
+  it('commits row mode edits as a grouped dirty payload', async () => {
+    const env = installDom();
+    const previousFetch = global.fetch;
+
+    try {
+      const fetchMock = vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          row: { id: '1', name: 'Janet', status: 'active' },
+        }),
+      }));
+
+      global.fetch = fetchMock;
+
+      const root = createTableRoot({
+        rowKey: 'id',
+        editable: true,
+        editEndpoint: '/users/1',
+        editMode: 'row',
+        editableColumns: ['name', 'status'],
+        columns: [
+          { key: 'name', label: 'Name' },
+          { key: 'status', label: 'Status' },
+        ],
+        rows: [{ id: '1', name: 'Jane', status: 'draft' }],
+      });
+      const context = await initTable(root);
+
+      root.querySelector('[data-table-edit-cell][data-table-column-id="name"]')
+        .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+      const nameInput = root.querySelector('[data-table-edit-input][data-table-column-id="name"]');
+      const statusInput = root.querySelector('[data-table-edit-input][data-table-column-id="status"]');
+
+      nameInput.value = 'Janet';
+      nameInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+      statusInput.value = 'active';
+      statusInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+      root.querySelector('.daisy-table-edit-row-actions [data-table-edit-save]')
+        .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+      await nextTick();
+      await nextTick();
+
+      const [, request] = fetchMock.mock.calls[0];
+
+      expect(JSON.parse(request.body)).toMatchObject({
+        rowId: '1',
+        column: 'name',
+        dirty: {
+          name: 'Janet',
+          status: 'active',
+        },
+      });
+      expect(context.config.rows[0]).toMatchObject({ name: 'Janet', status: 'active' });
+    } finally {
+      if (previousFetch === undefined) {
+        delete global.fetch;
+      } else {
+        global.fetch = previousFetch;
+      }
+
+      env.restore();
+    }
+  });
+
+  it('blocks editable commits locally when required policy fields are blank', async () => {
+    const env = installDom();
+    const previousFetch = global.fetch;
+
+    try {
+      const fetchMock = vi.fn();
+
+      global.fetch = fetchMock;
+
+      const root = createTableRoot({
+        rowKey: 'id',
+        editable: true,
+        editEndpoint: '/users/1',
+        editableColumns: ['name'],
+        editPolicy: { required: ['name'] },
+        columns: [{ key: 'name', label: 'Name' }],
+        rows: [{ id: '1', name: 'Jane' }],
+      });
+      let failedDetail = null;
+
+      await initTable(root);
+      root.addEventListener('daisy:table-edit-failed', (event) => {
+        failedDetail = event.detail;
+      });
+
+      root.querySelector('[data-table-edit-cell][data-table-column-id="name"]')
+        .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+      const input = root.querySelector('[data-table-edit-input]');
+
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      root.querySelector('[data-table-edit-save]')
+        .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+      await nextTick();
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(failedDetail.errors).toEqual({ name: 'This value is required.' });
+      expect(root.querySelector('.daisy-table-edit-error').textContent).toContain('required');
+    } finally {
+      if (previousFetch === undefined) {
+        delete global.fetch;
+      } else {
+        global.fetch = previousFetch;
+      }
+
+      env.restore();
+    }
+  });
+
+  it('keeps original row data and exposes server errors when editable commits fail', async () => {
+    const env = installDom();
+    const previousFetch = global.fetch;
+
+    try {
+      const fetchMock = vi.fn(async () => ({
+        ok: false,
+        status: 422,
+        json: async () => ({
+          message: 'Invalid data.',
+          errors: { name: ['Name is already used.'] },
+        }),
+      }));
+
+      global.fetch = fetchMock;
+
+      const root = createTableRoot({
+        rowKey: 'id',
+        editable: true,
+        editEndpoint: '/users/1',
+        editableColumns: ['name'],
+        columns: [{ key: 'name', label: 'Name' }],
+        rows: [{ id: '1', name: 'Jane' }],
+      });
+      const context = await initTable(root);
+      let failedDetail = null;
+
+      root.addEventListener('daisy:table-edit-failed', (event) => {
+        failedDetail = event.detail;
+      });
+
+      root.querySelector('[data-table-edit-cell][data-table-column-id="name"]')
+        .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+      const input = root.querySelector('[data-table-edit-input]');
+
+      input.value = 'Janet';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      root.querySelector('[data-table-edit-save]')
+        .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+      await nextTick();
+      await nextTick();
+
+      expect(fetchMock).toHaveBeenCalledOnce();
+      expect(context.config.rows[0].name).toBe('Jane');
+      expect(failedDetail.errors).toEqual({ name: 'Name is already used.' });
+      expect(root.querySelector('.daisy-table-edit-error').textContent).toContain('already used');
+    } finally {
+      if (previousFetch === undefined) {
+        delete global.fetch;
+      } else {
+        global.fetch = previousFetch;
+      }
+
       env.restore();
     }
   });

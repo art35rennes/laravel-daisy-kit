@@ -104,6 +104,10 @@
         throw new InvalidArgumentException('The table component requires an editEndpoint prop when editable is enabled.');
     }
 
+    if ($resolvedRowDetail !== 'none' && is_string($rowDetailView) && filled($rowDetailView) && ! View::exists($rowDetailView)) {
+        throw new InvalidArgumentException("Daisy table row detail view [{$rowDetailView}] does not exist.");
+    }
+
     $sizeMap = ['xs', 'sm', 'md', 'lg', 'xl'];
     $tableClasses = 'table';
 
@@ -440,7 +444,10 @@
     $resolvedEndpoint = is_array($endpoint) ? $endpoint : (filled($endpoint) ? ['url' => $endpoint] : null);
 
     $resolvedRows = $resolvedMode === 'client' && is_iterable($rows)
-        ? \Art35rennes\DaisyKit\Support\DaisyTableRows::for($rows, $resolvedColumns)->renderCells()
+        ? \Art35rennes\DaisyKit\Support\DaisyTableRows::for($rows, $resolvedColumns)
+            ->table(['rowKey' => $resolvedRowKey])
+            ->rowDetailView($resolvedRowDetail !== 'none' && is_string($rowDetailView) && filled($rowDetailView) ? $rowDetailView : null)
+            ->renderCells()
         : [];
 
     $renderCell = static function (array $row, array $column) use ($resolvedLinkPolicy) {

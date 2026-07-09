@@ -8,6 +8,13 @@ beforeEach(function (): void {
     View::addNamespace('table-test', dirname(__DIR__).'/Fixtures/views');
 });
 
+function decodeTableConfig(string $html): array
+{
+    preg_match("/data-table-config='([^']+)'/", $html, $matches);
+
+    return json_decode(html_entity_decode($matches[1] ?? '{}', ENT_QUOTES), true, flags: JSON_THROW_ON_ERROR);
+}
+
 it('renders a client table with DaisyUI classes and serialized config', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.data-display.table
@@ -404,6 +411,26 @@ it('renders date filters and row detail configuration', function () {
         ->toContain('"filterKeyTo":"started_before"');
 });
 
+it('renders row detail blade views into client row data', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            row-key="id"
+            row-detail="inline"
+            row-detail-view="table-test::table.detail"
+            :columns="[
+                ['key' => 'name', 'label' => 'Name'],
+            ]"
+            :rows="[
+                ['id' => 'user-1', 'name' => 'Jane'],
+            ]"
+        />
+    BLADE);
+    $config = decodeTableConfig($html);
+
+    expect($config['rows'][0]['_detailHtml'])->toBe('<aside data-row-detail="user-1">Jane Table</aside>')
+        ->and($html)->toContain('data-table-row-detail="user-1"');
+});
+
 it('serializes TanStack-first search, sub rows, resizing and editable options', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.data-display.table
@@ -444,6 +471,54 @@ it('serializes TanStack-first search, sub rows, resizing and editable options', 
         ->not->toContain('data-table-column-id="status"');
 });
 
+it('keeps Blade serialized config compatible with the shared TanStack fixture', function () {
+    $fixture = json_decode(file_get_contents(dirname(__DIR__).'/Fixtures/table-config/tanstack-first.json'), true, flags: JSON_THROW_ON_ERROR);
+    $html = View::make('daisy::components.ui.data-display.table', [
+        'mode' => $fixture['mode'],
+        'rowKey' => $fixture['rowKey'],
+        'searchMode' => $fixture['searchMode'],
+        'subRowsKey' => $fixture['subRowsKey'],
+        'columnResizing' => $fixture['columnResizing'],
+        'editable' => true,
+        'editEndpoint' => $fixture['editable']['endpoint']['url'],
+        'editMethod' => $fixture['editable']['method'],
+        'editMode' => $fixture['editable']['mode'],
+        'editableColumns' => $fixture['editable']['columns'],
+        'editPolicy' => $fixture['editable']['policy'],
+        'columns' => $fixture['columns'],
+        'rows' => $fixture['rows'],
+        'initialState' => $fixture['initialState'],
+        'pageSizeOptions' => $fixture['pageSizeOptions'],
+    ])->render();
+    $config = decodeTableConfig($html);
+
+    expect($config)
+        ->toMatchArray([
+            'mode' => $fixture['mode'],
+            'rowKey' => $fixture['rowKey'],
+            'searchMode' => $fixture['searchMode'],
+            'subRowsKey' => $fixture['subRowsKey'],
+            'columnResizing' => true,
+            'editable' => [
+                'enabled' => true,
+                'endpoint' => ['url' => $fixture['editable']['endpoint']['url']],
+                'method' => $fixture['editable']['method'],
+                'mode' => $fixture['editable']['mode'],
+                'columns' => $fixture['editable']['columns'],
+                'policy' => $fixture['editable']['policy'],
+                'rowKey' => $fixture['rowKey'],
+            ],
+        ])
+        ->and($config['columns'][0])
+        ->toMatchArray([
+            'key' => 'name',
+            'size' => 180,
+            'minSize' => 120,
+            'maxSize' => 320,
+        ])
+        ->and($config['initialState']['columnSizing'])->toEqual(['name' => 200]);
+});
+
 it('fails clearly when a custom blade cell view is missing', function () {
     $render = fn () => Blade::render(<<<'BLADE'
         <x-daisy::ui.data-display.table
@@ -456,6 +531,24 @@ it('fails clearly when a custom blade cell view is missing', function () {
     BLADE);
 
     expect($render)->toThrow(ViewException::class, 'Daisy table cell view [table-test::missing] does not exist.');
+});
+
+it('fails clearly when a row detail blade view is missing', function () {
+    $render = fn () => Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            row-key="id"
+            row-detail="inline"
+            row-detail-view="table-test::missing"
+            :columns="[
+                ['key' => 'name', 'label' => 'Name'],
+            ]"
+            :rows="[
+                ['id' => 'user-1', 'name' => 'Jane'],
+            ]"
+        />
+    BLADE);
+
+    expect($render)->toThrow(ViewException::class, 'Daisy table row detail view [table-test::missing] does not exist.');
 });
 
 it('renders row selection controls and deferred bulk actions', function () {

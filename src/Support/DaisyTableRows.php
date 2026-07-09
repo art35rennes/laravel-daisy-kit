@@ -12,6 +12,8 @@ class DaisyTableRows
 
     protected $mapper = null;
 
+    protected ?string $rowDetailView = null;
+
     public function __construct(
         protected iterable $items,
         protected array $columns,
@@ -32,6 +34,13 @@ class DaisyTableRows
     public function table(mixed $table): self
     {
         $this->table = $table;
+
+        return $this;
+    }
+
+    public function rowDetailView(?string $view): self
+    {
+        $this->rowDetailView = filled($view) ? $view : null;
 
         return $this;
     }
@@ -72,6 +81,18 @@ class DaisyTableRows
                 'row' => $row,
                 'value' => $value,
                 'column' => $column,
+                'table' => $this->table,
+            ])->render());
+        }
+
+        if ($this->rowDetailView !== null) {
+            if (! View::exists($this->rowDetailView)) {
+                throw new InvalidArgumentException("Daisy table row detail view [{$this->rowDetailView}] does not exist.");
+            }
+
+            $row['_detailHtml'] = trim(View::make($this->rowDetailView, [
+                'item' => $item,
+                'row' => $row,
                 'table' => $this->table,
             ])->render());
         }

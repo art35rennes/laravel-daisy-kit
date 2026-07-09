@@ -143,6 +143,15 @@
   align-items: center;
 }
 
+.daisy-table-edit-row-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-end;
+  padding-block: 0.25rem;
+}
+
 .daisy-table-edit-error {
   margin: 0;
 }

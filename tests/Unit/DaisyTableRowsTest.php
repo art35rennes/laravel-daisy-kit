@@ -45,6 +45,19 @@ it('supports view shorthand and preserves non custom values', function (): void 
         ->and($rows[0]['actions'])->toContain('data-value="edit"');
 });
 
+it('renders row detail blade views into trusted detail html', function (): void {
+    $rows = DaisyTableRows::for([
+        ['id' => 3, 'name' => 'June'],
+    ], [
+        ['key' => 'name', 'label' => 'Name'],
+    ])
+        ->table(['name' => 'Users'])
+        ->rowDetailView('table-test::table.detail')
+        ->renderCells();
+
+    expect($rows[0]['_detailHtml'])->toBe('<aside data-row-detail="3">June Users</aside>');
+});
+
 it('fails clearly when a blade cell view is missing', function (): void {
     $render = fn () => DaisyTableRows::for([
         ['id' => 1, 'actions' => 'open'],
@@ -53,4 +66,16 @@ it('fails clearly when a blade cell view is missing', function (): void {
     ])->renderCells();
 
     expect($render)->toThrow(InvalidArgumentException::class, 'Daisy table cell view [table-test::missing] does not exist.');
+});
+
+it('fails clearly when a row detail blade view is missing', function (): void {
+    $render = fn () => DaisyTableRows::for([
+        ['id' => 1, 'name' => 'Jane'],
+    ], [
+        ['key' => 'name', 'label' => 'Name'],
+    ])
+        ->rowDetailView('table-test::missing')
+        ->renderCells();
+
+    expect($render)->toThrow(InvalidArgumentException::class, 'Daisy table row detail view [table-test::missing] does not exist.');
 });
