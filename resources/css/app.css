@@ -56,8 +56,8 @@
 @import "./table.css";
 
 :root {
-  --daisy-z-tooltip: 35;
-  --daisy-z-tooltip-content: 36;
+  --daisy-z-tooltip: 80;
+  --daisy-z-tooltip-content: 81;
 }
 
 :where(.tooltip):where(:hover, :focus-within, .tooltip-open) {
@@ -69,6 +69,13 @@
 :where(.tooltip):where(:hover, :focus-within, .tooltip-open)::after,
 :where(.tooltip):where(:hover, :focus-within, .tooltip-open) > .tooltip-content {
   z-index: var(--daisy-z-tooltip-content);
+}
+
+:where(.tooltip)::before,
+:where(.tooltip) > .tooltip-content {
+  max-width: min(24rem, calc(100vw - 2rem));
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .daisy-navbar-container {
@@ -2246,10 +2253,6 @@ calendar-month::part(button) {
   display: none;
 }
 
-[data-collapsed="1"] [data-sidebar-submenu] {
-  display: none !important;
-}
-
 [data-collapsed="1"] [data-sidebar-hover-content] {
   display: none !important;
 }
@@ -2266,6 +2269,78 @@ calendar-month::part(button) {
 /* Assurer que les labels sont bien masqués en mode collapsed */
 [data-collapsed="1"] .sidebar-label {
   display: none !important;
+}
+
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-menu] {
+  width: 100%;
+}
+
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-menu] > li,
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-menu] details,
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-menu] summary,
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-row] {
+  width: 100%;
+}
+
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-menu] > li,
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-menu] details {
+  position: relative;
+}
+
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-row] {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0;
+}
+
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-row] > svg,
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-row] > i,
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-row] > span:not(.sidebar-label) {
+  flex: 0 0 auto;
+}
+
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-submenu] {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 0.5rem);
+  z-index: 80;
+  display: block !important;
+  min-width: 14rem;
+  margin: 0;
+  padding: 0.5rem;
+  border: 1px solid color-mix(in oklab, currentColor 14%, transparent);
+  border-radius: var(--radius-box, 0.5rem);
+  background: var(--color-base-100);
+  box-shadow: 0 0.75rem 1.75rem color-mix(in oklab, currentColor 12%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-menu] details:hover > [data-sidebar-submenu],
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-menu] details:focus-within > [data-sidebar-submenu],
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-menu] details[data-collapsed-submenu-open="1"] > [data-sidebar-submenu] {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-submenu] [data-sidebar-row] {
+  min-height: 2.25rem;
+  min-width: 0;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding-inline: 0.75rem;
+}
+
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-submenu] .sidebar-label {
+  display: inline-flex !important;
+}
+
+[data-sidebar-root][data-collapsed="1"] [data-sidebar-submenu] > li {
+  width: 100%;
 }
 
 /* === SIDEBAR NAVIGATION COMPACT === */
