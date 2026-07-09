@@ -1,1 +1,0 @@
-import{n as e}from"./rolldown-runtime-CMxvf4Kt.js";function t(e,t={}){e.querySelector(`[data-sidebar-search]`)&&console.warn(`[DaisyKit] sidebar.js: Le filtrage est maintenant géré par menu-filter. Utilisez data-module="menu-filter" sur le conteneur du filtre.`)}e((()=>{}))();export{t as default,t as initSidebar};
