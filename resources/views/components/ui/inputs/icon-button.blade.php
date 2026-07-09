@@ -46,7 +46,10 @@
     $rel = $target === '_blank' ? 'noopener noreferrer' : null;
 @endphp
 
-<span @if($text) data-tip="{{ $text }}" @endif class="{{ $text ? 'tooltip tooltip-top inline-flex' : 'inline-flex' }}">
+<span class="{{ $text ? 'tooltip tooltip-top inline-flex' : 'inline-flex' }}">
+    @if($text)
+        <span class="tooltip-content">{{ $text }}</span>
+    @endif
     @if($href)
         <a
             href="{{ $href }}"

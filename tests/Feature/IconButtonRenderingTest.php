@@ -14,7 +14,9 @@ it('renders accessible icon-only buttons with tooltips', function () {
 
     expect($html)
         ->toContain('tooltip tooltip-top')
-        ->toContain('data-tip="Supprimer le document"')
+        ->toContain('tooltip-content')
+        ->toContain('Supprimer le document')
+        ->not->toContain('data-tip="Supprimer le document"')
         ->toContain('aria-label="Supprimer"')
         ->toContain('title="Supprimer le document"')
         ->toContain('btn btn-circle btn-xs h-8 min-h-8 w-8 btn-outline btn-error');

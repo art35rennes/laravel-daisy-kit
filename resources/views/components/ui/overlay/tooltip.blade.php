@@ -28,8 +28,12 @@
     }
 @endphp
 
-<div @if(!is_null($text) && empty($content)) data-tip="{{ $text }}" @endif {{ $attributes->merge(['class' => $classes]) }}>
-    @if(!empty($content) || isset($contentSlot))
+<div {{ $attributes->merge(['class' => $classes]) }}>
+    @if(!is_null($text) && empty($content) && !isset($contentSlot))
+        <div class="tooltip-content">
+            {{ $text }}
+        </div>
+    @elseif(!empty($content) || isset($contentSlot))
         <div class="tooltip-content">
             @isset($contentSlot)
                 {{ $contentSlot }}

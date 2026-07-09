@@ -73,7 +73,8 @@
                             @endif
                             <span>{{ $label }}</span>
                             @if($help)
-                                <span class="tooltip tooltip-top" data-tip="{{ $help }}">
+                                <span class="tooltip tooltip-top">
+                                    <span class="tooltip-content">{{ $help }}</span>
                                     <x-icon name="bi-question-circle" class="size-3.5" />
                                 </span>
                             @endif

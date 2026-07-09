@@ -21,7 +21,9 @@ it('renders rich description list sections with links, copyable values, help and
         ->toContain('Document')
         ->toContain('bi-file-earmark')
         ->toContain('data-copy-value="abc123"')
-        ->toContain('data-tip="SHA-256"')
+        ->toContain('tooltip-content')
+        ->toContain('SHA-256')
+        ->not->toContain('data-tip="SHA-256"')
         ->toContain('href="/documents/1"')
         ->toContain('md:col-span-full')
         ->toContain('Non renseigné');
