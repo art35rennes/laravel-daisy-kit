@@ -185,7 +185,10 @@
             @endphp
             @if($keepButtons)
                 @if($tooltip && !$useText && $useIcon)
-                    <div class="{{ $tooltipClass }}" data-tip="{{ $defaultToTargetButtonText }}">{!! $toTargetBtn !!}</div>
+                    <div class="{{ $tooltipClass }}">
+                        <span class="tooltip-content">{{ $defaultToTargetButtonText }}</span>
+                        {!! $toTargetBtn !!}
+                    </div>
                 @else
                     {!! $toTargetBtn !!}
                 @endif
@@ -206,7 +209,10 @@
                     ); 
                 @endphp
                 @if($tooltip && !$useText && $useIcon)
-                    <div class="{{ $tooltipClass }}" data-tip="{{ $defaultToSourceButtonText }}">{!! $toSourceBtn !!}</div>
+                    <div class="{{ $tooltipClass }}">
+                        <span class="tooltip-content">{{ $defaultToSourceButtonText }}</span>
+                        {!! $toSourceBtn !!}
+                    </div>
                 @else
                     {!! $toSourceBtn !!}
                 @endif

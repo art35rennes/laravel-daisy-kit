@@ -686,6 +686,20 @@ it('renders transfer dnd hooks without breaking the existing API', function () {
         ->toContain('data-id="beta"');
 });
 
+it('renders transfer icon button tooltips as real tooltip content', function () {
+    $html = View::make('daisy::components.ui.advanced.transfer', [
+        'source' => [['data' => 'Alpha', 'customId' => 'alpha']],
+        'target' => [['data' => 'Beta', 'customId' => 'beta']],
+        'buttonsMode' => 'icon',
+    ])->render();
+
+    expect($html)
+        ->toContain('tooltip-content')
+        ->toContain('Source → Target')
+        ->toContain('Target ← Source')
+        ->not->toContain('data-tip=');
+});
+
 it('renders footer-layout component with columns', function () {
     $html = View::make('daisy::components.ui.layout.footer-layout', [
         'columns' => [
