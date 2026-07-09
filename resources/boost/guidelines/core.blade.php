@@ -88,6 +88,8 @@ For visual node editors, workflows, blueprints, and schema graphs, prefer `x-dai
 - Do not add inline event handlers, `style=""`, executable inline `<script>`, Alpine expression attributes such as `x-data` or `x-on:*`, `eval()`, or `new Function`.
 - Prefer package classes for dynamic visual values. Use `data-*` attributes only when a package module can handle them without inline styles, and reserve nonceable server-side tags for documented exceptions.
 - Static asset tags generated outside `@vite` should use the package nonce strategy via `daisy-kit.csp_nonce`.
+- Treat CSP nonces as authorization for nonce-bearing `<script>` and `<style>` tags only; a nonce does not make `style=""`, `element.style.*`, inline event attributes, or string evaluation acceptable.
+- When using headless libraries such as TanStack Table, delegate state and behavior to the library but keep Daisy Kit responsible for CSP-safe markup. Do not copy framework examples that apply sizing, transforms, or other dynamic visual values through inline styles unless the component is explicitly documented as requiring a relaxed CSP.
 - Custom theme CSS is disabled by default under strict CSP. Prefer build-time themes; if inline custom CSS is explicitly enabled, it must be nonceable.
 
 ### Conventions
