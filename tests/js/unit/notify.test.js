@@ -59,6 +59,17 @@ describe('notify module', () => {
         expect(notification.textContent).toContain('Queued');
     });
 
+    it('renders a loading spinner for long-running actions', () => {
+        const notification = notify({
+            title: 'Generating',
+            message: 'Please wait',
+            loading: true,
+            autoDismiss: false,
+        });
+
+        expect(notification.querySelector('.loading.loading-spinner')).not.toBeNull();
+    });
+
     it('limits visible notifications and dismisses the oldest entry', () => {
         const first = notify({ title: 'First', autoDismiss: false, limit: 2 });
 

@@ -121,6 +121,17 @@ function appendContent(notification, options) {
     notification.appendChild(content);
 }
 
+function appendLoadingIndicator(notification, options) {
+    if (options.loading !== true) {
+        return;
+    }
+
+    const spinner = document.createElement('span');
+    spinner.className = 'loading loading-spinner loading-sm shrink-0';
+    spinner.setAttribute('aria-hidden', 'true');
+    notification.appendChild(spinner);
+}
+
 function actionButtonClass(action) {
     const variant = action.variant || 'ghost';
 
@@ -221,6 +232,7 @@ function createNotification(options = {}) {
         notification.dataset.alertAutoDismiss = String(delay);
     }
 
+    appendLoadingIndicator(notification, options);
     appendContent(notification, options);
     appendActions(notification, options);
     appendDismissButton(notification, options);

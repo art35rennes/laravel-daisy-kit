@@ -138,4 +138,26 @@ describe('file-preview module', () => {
     expect(document.querySelector('[data-file-preview-text]').textContent).toBe('hello');
     expect(document.querySelector('[data-file-preview-docx]').textContent).toContain('Rendered DOCX');
   });
+
+  it('keeps a skeleton visible until browser media is loaded', () => {
+    document.body.innerHTML = `
+      <div data-module="file-preview">
+        <div data-file-preview-loadable-container>
+          <div class="skeleton" data-file-preview-skeleton></div>
+          <video class="opacity-0" data-file-preview-loadable></video>
+        </div>
+      </div>
+    `;
+
+    const root = document.querySelector('[data-module="file-preview"]');
+    const media = root.querySelector('[data-file-preview-loadable]');
+
+    initFilePreview(root);
+    expect(root.querySelector('[data-file-preview-skeleton]')).not.toBeNull();
+
+    media.dispatchEvent(new Event('loadeddata'));
+
+    expect(root.querySelector('[data-file-preview-skeleton]')).toBeNull();
+    expect(media.classList.contains('opacity-0')).toBe(false);
+  });
 });

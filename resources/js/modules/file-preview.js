@@ -146,7 +146,32 @@ async function loadDocxPreview(element) {
   }
 }
 
+function initializeLoadablePreview(element) {
+  const container = element.closest('[data-file-preview-loadable-container]');
+  const skeleton = container?.querySelector('[data-file-preview-skeleton]');
+
+  if (!container || element.dataset.filePreviewLoadableInitialized === 'true') {
+    return;
+  }
+
+  element.dataset.filePreviewLoadableInitialized = 'true';
+
+  const reveal = () => {
+    skeleton?.remove();
+    element.classList.remove('opacity-0');
+  };
+
+  element.addEventListener('load', reveal, { once: true });
+  element.addEventListener('loadeddata', reveal, { once: true });
+
+  if (element instanceof HTMLImageElement && element.complete) {
+    reveal();
+  }
+}
+
 export default function init(root) {
+  root.querySelectorAll('[data-file-preview-loadable]').forEach(initializeLoadablePreview);
+
   root.querySelectorAll('[data-file-preview-open-modal]').forEach((button) => {
     button.addEventListener('click', () => {
       const dialog = document.getElementById(button.dataset.filePreviewOpenModal);
