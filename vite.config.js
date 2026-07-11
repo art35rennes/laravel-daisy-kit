@@ -56,26 +56,13 @@ const resolveChunkName = (id) => {
         return 'form-kit';
     }
 
-    if (id.includes('resources/js/modules/blueprint') || id.includes('resources/js/blueprint')) {
-        return 'blueprint';
-    }
-
-    if (id.includes('elkjs') || id.includes('rete-auto-arrange-plugin')) {
-        return 'blueprint-layout';
-    }
-
     if (
-        id.includes('@retejs/lit-plugin')
-        || id.includes('rete-render-utils')
-        || id.includes('node_modules/lit')
-        || id.includes('node_modules/lit-html')
-        || id.includes('node_modules/lit-element')
+        id.includes('resources/js/modules/blueprint')
+        || id.includes('resources/js/blueprint')
+        || id.includes('@dagrejs/dagre')
+        || id.includes('@dagrejs/graphlib')
     ) {
-        return 'blueprint-render';
-    }
-
-    if (id.includes('rete') || id.includes('@retejs')) {
-        return 'blueprint-engine';
+        return 'blueprint';
     }
 
     // Séparer les autres dépendances lourdes
@@ -111,9 +98,6 @@ export default defineConfig({
                     includeDependenciesRecursively: false,
                     minSize: 0,
                     groups: [
-                        { name: 'blueprint-layout', test: (id) => resolveChunkName(id) === 'blueprint-layout', priority: 90 },
-                        { name: 'blueprint-render', test: (id) => resolveChunkName(id) === 'blueprint-render', priority: 80 },
-                        { name: 'blueprint-engine', test: (id) => resolveChunkName(id) === 'blueprint-engine', priority: 70 },
                         { name: 'blueprint', test: (id) => resolveChunkName(id) === 'blueprint', priority: 60 },
                         { name: 'code-editor', test: (id) => resolveChunkName(id) === 'code-editor', priority: 50 },
                         { name: 'trix', test: (id) => resolveChunkName(id) === 'trix', priority: 50 },
@@ -133,7 +117,6 @@ export default defineConfig({
                 },
             },
         },
-        // ELK powers Blueprint auto-arrange and ships as a single lazy chunk.
         chunkSizeWarningLimit: 1500,
     },
 });
