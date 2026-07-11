@@ -53,3 +53,24 @@ it('normalizes date range toolbar filters', function (): void {
         'options' => [],
     ]);
 });
+
+it('normalizes editable column definitions', function (): void {
+    expect(DaisyTableColumns::normalizeEditor([
+        'key' => 'status',
+        'editor' => [
+            'type' => 'select',
+            'required' => true,
+            'options' => [
+                ['value' => 'draft', 'label' => 'Draft'],
+            ],
+        ],
+    ]))->toEqual([
+        'type' => 'select',
+        'required' => true,
+        'options' => [
+            ['value' => 'draft', 'label' => 'Draft'],
+        ],
+        'view' => null,
+        'template' => null,
+    ]);
+});

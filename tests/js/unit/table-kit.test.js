@@ -199,7 +199,7 @@ describe('table-kit helpers', () => {
       columnFilters: [{ id: 'name', value: 'Jane' }],
     }, columns, columns.filter((column) => column.filter), [10, 25]);
 
-    expect(columns).toEqual([
+    expect(columns).toMatchObject([
       {
         key: 'name',
         type: null,
@@ -336,6 +336,42 @@ describe('table-kit helpers', () => {
       maxSize: 320,
     });
     expect(config.initialState.columnSizing).toEqual({ name: 200 });
+  });
+
+  it('normalizes local updates, remote row creation, and typed editors', () => {
+    const config = normalizeConfig({
+      rowKey: 'id',
+      editable: {
+        enabled: true,
+        mode: 'row',
+        update: { strategy: 'local' },
+        create: {
+          enabled: true,
+          strategy: 'remote',
+          endpoint: { url: '/projects', method: 'POST' },
+          defaults: { status: 'draft' },
+          position: 'top',
+        },
+      },
+      columns: [
+        { key: 'name', editor: { type: 'text', required: true } },
+        { key: 'budget', editor: { type: 'number' } },
+        { key: 'active', editor: { type: 'boolean' } },
+      ],
+    });
+
+    expect(config.editable).toMatchObject({
+      update: { strategy: 'local', endpoint: null, method: 'PATCH' },
+      create: {
+        enabled: true,
+        strategy: 'remote',
+        endpoint: { url: '/projects' },
+        method: 'POST',
+        defaults: { status: 'draft' },
+        position: 'top',
+      },
+    });
+    expect(config.columns.map((column) => column.editor.type)).toEqual(['text', 'number', 'boolean']);
   });
 
   it('normalizes ECA table column presentation options', () => {
@@ -1389,6 +1425,148 @@ describe('table-kit helpers', () => {
       });
       expect(context.config.rows[0].name).toBe('Janet');
       expect(committedDetail.row.name).toBe('Janet');
+    } finally {
+      if (previousFetch === undefined) {
+        delete global.fetch;
+      } else {
+        global.fetch = previousFetch;
+      }
+
+      env.restore();
+    }
+  });
+
+  it('creates a local row through the TanStack draft row without affecting selection', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        rowKey: 'id',
+        selection: 'multiple',
+        editable: {
+          enabled: true,
+          columns: ['name', 'active'],
+          update: { strategy: 'local' },
+          create: { enabled: true, strategy: 'local', defaults: { active: false } },
+        },
+        columns: [
+          { key: 'name', label: 'Name', editor: { type: 'text', required: true } },
+          { key: 'active', label: 'Active', editor: { type: 'boolean' } },
+        ],
+        rows: [{ id: '1', name: 'Jane', active: true }],
+      });
+      root.insertAdjacentHTML('afterbegin', '<button type="button" data-table-create>Add</button>');
+      const context = await initTable(root);
+      let committed = null;
+
+      root.addEventListener('daisy:table-create-committed', (event) => {
+        committed = event.detail;
+      });
+      root.querySelector('[data-table-create]').click();
+
+      expect(context.visibleRows).toHaveLength(2);
+      expect(root.querySelector('[data-table-row-select]')?.disabled).toBe(true);
+
+      const nameInput = root.querySelector('[data-table-edit-input][data-table-column-id="name"]');
+      nameInput.value = 'New project';
+      nameInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+      root.querySelector('[data-table-edit-save]').click();
+
+      await nextTick();
+
+      expect(context.config.rows[0]).toMatchObject({ name: 'New project', active: false });
+      expect(committed.values).toEqual({ name: 'New project', active: false });
+      expect(context.creating).toBeNull();
+    } finally {
+      env.restore();
+    }
+  });
+
+  it('posts creation values and keeps the draft on validation errors', async () => {
+    const env = installDom();
+    const previousFetch = global.fetch;
+
+    try {
+      const fetchMock = vi.fn(async () => ({
+        ok: false,
+        status: 422,
+        json: async () => ({ message: 'Invalid project.', errors: { name: ['Name is required.'] } }),
+      }));
+      global.fetch = fetchMock;
+
+      const root = createTableRoot({
+        rowKey: 'id',
+        editable: {
+          enabled: true,
+          columns: ['name'],
+          update: { strategy: 'local' },
+          create: { enabled: true, strategy: 'remote', endpoint: '/projects', method: 'POST' },
+        },
+        columns: [{ key: 'name', label: 'Name', editor: { type: 'text' } }],
+        rows: [],
+      });
+      root.insertAdjacentHTML('afterbegin', '<button type="button" data-table-create>Add</button>');
+      const context = await initTable(root);
+
+      root.querySelector('[data-table-create]').click();
+      const input = root.querySelector('[data-table-edit-input]');
+      input.value = 'New project';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      root.querySelector('[data-table-edit-save]').click();
+
+      await nextTick();
+      await nextTick();
+
+      expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ values: { name: 'New project' } });
+      expect(context.creating).not.toBeNull();
+      expect(root.querySelector('.daisy-table-edit-error').textContent).toContain('Name is required.');
+    } finally {
+      if (previousFetch === undefined) {
+        delete global.fetch;
+      } else {
+        global.fetch = previousFetch;
+      }
+
+      env.restore();
+    }
+  });
+
+  it('replaces a remote creation draft with the canonical response row', async () => {
+    const env = installDom();
+    const previousFetch = global.fetch;
+
+    try {
+      global.fetch = vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ row: { id: '2', name: 'New project' } }),
+      }));
+
+      const root = createTableRoot({
+        rowKey: 'id',
+        editable: {
+          enabled: true,
+          columns: ['name'],
+          update: { strategy: 'local' },
+          create: { enabled: true, strategy: 'remote', endpoint: '/projects', method: 'POST' },
+        },
+        columns: [{ key: 'name', label: 'Name' }],
+        rows: [{ id: '1', name: 'Jane' }],
+      });
+      root.insertAdjacentHTML('afterbegin', '<button type="button" data-table-create>Add</button>');
+      const context = await initTable(root);
+
+      root.querySelector('[data-table-create]').click();
+      const input = root.querySelector('[data-table-edit-input]');
+      input.value = 'New project';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      root.querySelector('[data-table-edit-save]').click();
+
+      await nextTick();
+      await nextTick();
+
+      expect(context.creating).toBeNull();
+      expect(context.config.rows[0]).toEqual({ id: '2', name: 'New project' });
+      expect(context.visibleRows.map((row) => row.original.__daisyTableDraft)).not.toContain(true);
     } finally {
       if (previousFetch === undefined) {
         delete global.fetch;

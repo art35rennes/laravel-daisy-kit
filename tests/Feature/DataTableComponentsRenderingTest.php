@@ -37,6 +37,7 @@ it('renders a client table with DaisyUI classes and serialized config', function
     BLADE);
 
     expect($html)
+        ->toContain('data-module="table"')
         ->toContain('data-daisy-table="1"')
         ->toContain('data-table-layout="auto"')
         ->toContain('table table-zebra table-sm table-pin-rows table-pin-cols table-auto w-full')
@@ -463,7 +464,7 @@ it('serializes TanStack-first search, sub rows, resizing and editable options', 
         ->toContain('"size":160')
         ->toContain('"minSize":80')
         ->toContain('"maxSize":320')
-        ->toContain('"editable":{"enabled":true,"endpoint":{"url":"\/users\/edit"},"method":"PUT","mode":"row","columns":["name"],"policy":{"required":["name"]},"rowKey":"id"}')
+        ->toContain('"editable":{"enabled":true,"endpoint":{"url":"\/users\/edit"},"method":"PUT","mode":"row","columns":["name"],"policy":{"required":["name"]},"update":{"strategy":"remote"')
         ->toContain('data-table-resize="name"')
         ->toContain('data-table-edit-cell')
         ->toContain('data-table-row-id="user-1"')
@@ -506,6 +507,19 @@ it('keeps Blade serialized config compatible with the shared TanStack fixture', 
                 'mode' => $fixture['editable']['mode'],
                 'columns' => $fixture['editable']['columns'],
                 'policy' => $fixture['editable']['policy'],
+                'update' => [
+                    'strategy' => 'remote',
+                    'endpoint' => ['url' => $fixture['editable']['endpoint']['url']],
+                    'method' => $fixture['editable']['method'],
+                ],
+                'create' => [
+                    'enabled' => false,
+                    'strategy' => 'remote',
+                    'endpoint' => null,
+                    'method' => 'POST',
+                    'defaults' => [],
+                    'position' => 'top',
+                ],
                 'rowKey' => $fixture['rowKey'],
             ],
         ])
@@ -643,6 +657,66 @@ it('requires an edit endpoint when editable rows are enabled', function () {
     ])->render();
 
     expect($render)->toThrow(ViewException::class, 'editEndpoint prop when editable is enabled');
+});
+
+it('serializes typed editors and remote row creation', function (): void {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            row-key="id"
+            :editable="[
+                'enabled' => true,
+                'mode' => 'row',
+                'update' => ['strategy' => 'local'],
+                'create' => [
+                    'enabled' => true,
+                    'strategy' => 'remote',
+                    'endpoint' => ['url' => '/projects', 'method' => 'POST'],
+                    'defaults' => ['status' => 'draft'],
+                ],
+            ]"
+            :columns="[
+                ['key' => 'name', 'label' => 'Name', 'editor' => ['type' => 'text', 'required' => true]],
+                ['key' => 'status', 'label' => 'Status', 'editor' => ['type' => 'select', 'options' => [['value' => 'draft', 'label' => 'Draft']]]],
+            ]"
+        />
+    BLADE);
+
+    $config = decodeTableConfig($html);
+
+    expect($config['editable'])->toMatchArray([
+        'update' => ['strategy' => 'local', 'endpoint' => null, 'method' => 'PATCH'],
+        'create' => [
+            'enabled' => true,
+            'strategy' => 'remote',
+            'endpoint' => ['url' => '/projects'],
+            'method' => 'POST',
+            'defaults' => ['status' => 'draft'],
+            'position' => 'top',
+        ],
+    ])
+        ->and($config['columns'][0]['editor'])->toMatchArray(['type' => 'text', 'required' => true])
+        ->and($html)->toContain('data-table-create');
+});
+
+it('renders trusted Blade editor templates into the table configuration', function (): void {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            row-key="id"
+            :editable="[
+                'enabled' => true,
+                'update' => ['strategy' => 'local'],
+            ]"
+            :columns="[
+                ['key' => 'status', 'label' => 'Status', 'editor' => ['type' => 'blade', 'view' => 'table-test::table.editor']],
+            ]"
+        />
+    BLADE);
+
+    $config = decodeTableConfig($html);
+
+    expect($config['columns'][0]['editor'])
+        ->toMatchArray(['type' => 'blade', 'view' => 'table-test::table.editor'])
+        ->and($config['columns'][0]['editor']['template'])->toContain('data-table-editor-input');
 });
 
 it('requires an endpoint when mode is server', function () {

@@ -65,15 +65,6 @@
     $resolvedSelection = $selection === 'multiple' ? 'multiple' : 'none';
     $resolvedRowKey = is_string($rowKey) && filled($rowKey) ? $rowKey : null;
     $resolvedSubRowsKey = is_string($subRowsKey) && filled($subRowsKey) ? $subRowsKey : null;
-    $resolvedEditable = (bool) $editable;
-    $resolvedEditEndpoint = is_array($editEndpoint) ? $editEndpoint : (filled($editEndpoint) ? ['url' => $editEndpoint] : null);
-    $resolvedEditMode = in_array($editMode, ['cell', 'row'], true) ? $editMode : 'cell';
-    $resolvedEditMethod = filled($editMethod) ? strtoupper((string) $editMethod) : 'PATCH';
-    $resolvedEditableColumns = collect(is_array($editableColumns) ? $editableColumns : [])
-        ->filter(fn ($key) => is_string($key) && filled($key))
-        ->map(fn ($key) => (string) $key)
-        ->values()
-        ->all();
     $resolvedLinkPolicy = \Art35rennes\DaisyKit\Support\DaisyTableColumns::normalizeLinkPolicy($linkPolicy);
     $selectionEnabled = $resolvedSelection === 'multiple';
     $hasToolbarStartSlot = isset($toolbarStart) && $toolbarStart instanceof \Illuminate\View\ComponentSlot;
@@ -96,13 +87,10 @@
         throw new InvalidArgumentException('The table component requires a non-empty rowKey prop when selection is set to multiple.');
     }
 
-    if (($resolvedRowDetail !== 'none' || $resolvedSubRowsKey !== null || $resolvedEditable) && blank($resolvedRowKey)) {
+    if (($resolvedRowDetail !== 'none' || $resolvedSubRowsKey !== null || (bool) $editable) && blank($resolvedRowKey)) {
         throw new InvalidArgumentException('The table component requires a non-empty rowKey prop for row details, sub rows, or editable rows.');
     }
 
-    if ($resolvedEditable && blank($resolvedEditEndpoint)) {
-        throw new InvalidArgumentException('The table component requires an editEndpoint prop when editable is enabled.');
-    }
 
     if ($resolvedRowDetail !== 'none' && is_string($rowDetailView) && filled($rowDetailView) && ! View::exists($rowDetailView)) {
         throw new InvalidArgumentException("Daisy table row detail view [{$rowDetailView}] does not exist.");
@@ -260,6 +248,7 @@
             'headerClass' => $column['headerClass'] ?? '',
             'html' => in_array($cell['renderer'], ['html', 'blade', 'actions'], true),
             'cell' => $cell,
+            'editor' => \Art35rennes\DaisyKit\Support\DaisyTableColumns::normalizeEditor($column),
             'enableResizing' => ($column['enableResizing'] ?? true) !== false,
             'size' => is_numeric($column['size'] ?? null) ? (int) $column['size'] : null,
             'minSize' => is_numeric($column['minSize'] ?? null) ? (int) $column['minSize'] : null,
@@ -287,6 +276,24 @@
         static fn (array $column) => $column['key'] !== ''
     ));
 
+    $resolvedEditable = \Art35rennes\DaisyKit\Support\DaisyTableColumns::normalizeEditable(
+        $editable,
+        $editEndpoint,
+        $editMethod,
+        $editMode,
+        $editableColumns,
+        $editPolicy,
+        $resolvedColumns,
+    );
+
+    if ($resolvedEditable['enabled'] && $resolvedEditable['update']['strategy'] === 'remote' && $resolvedEditable['update']['endpoint'] === null) {
+        throw new InvalidArgumentException('The table component requires an editEndpoint prop when editable is enabled.');
+    }
+
+    if ($resolvedEditable['create']['enabled'] && $resolvedEditable['create']['strategy'] === 'remote' && $resolvedEditable['create']['endpoint'] === null) {
+        throw new InvalidArgumentException('The table component requires a create endpoint when remote row creation is enabled.');
+    }
+
     if (is_array($columns) && $columns !== [] && $resolvedColumns === []) {
         throw new InvalidArgumentException('The table component requires at least one column with a non-empty key.');
     }
@@ -300,6 +307,22 @@
             throw new InvalidArgumentException("Daisy table cell view [{$column['cell']['view']}] does not exist.");
         }
     }
+
+    foreach ($resolvedColumns as &$column) {
+        if ($column['editor']['type'] !== 'blade') {
+            continue;
+        }
+
+        if ($column['editor']['view'] === null || ! View::exists($column['editor']['view'])) {
+            throw new InvalidArgumentException("Daisy table editor view [{$column['editor']['view']}] does not exist.");
+        }
+
+        $column['editor']['template'] = trim(View::make($column['editor']['view'], [
+            'column' => $column,
+            'table' => ['rowKey' => $resolvedRowKey],
+        ])->render());
+    }
+    unset($column);
 
     $columnFilters = collect($resolvedColumns)
         ->filter(fn (array $column) => $column['filterable'] && is_array($column['filter']))
@@ -510,15 +533,7 @@
             'view' => is_string($rowDetailView) && filled($rowDetailView) ? $rowDetailView : null,
         ],
         'columnResizing' => (bool) $columnResizing,
-        'editable' => [
-            'enabled' => $resolvedEditable,
-            'endpoint' => $resolvedEditEndpoint,
-            'method' => $resolvedEditMethod,
-            'mode' => $resolvedEditMode,
-            'columns' => $resolvedEditableColumns,
-            'policy' => is_array($editPolicy) ? $editPolicy : [],
-            'rowKey' => $resolvedRowKey,
-        ],
+        'editable' => $resolvedEditable + ['rowKey' => $resolvedRowKey],
         'emptyLabel' => $emptyLabel ?: __('daisy::common.no_results'),
         'loadingLabel' => $loadingLabel ?: __('daisy::common.loading'),
         'errorLabel' => $errorLabel ?: __('daisy::components.table_error'),
@@ -542,11 +557,13 @@
             'selectedOffPageCount' => __('daisy::components.selected_off_page_count'),
             'allFilteredRowsSelected' => __('daisy::components.all_filtered_rows_selected'),
             'selectionResetAfterFilter' => __('daisy::components.selection_reset_after_filter'),
+            'addRow' => __('daisy::common.add'),
         ],
     ];
 @endphp
 
 <div
+    data-module="table"
     data-daisy-table="1"
     data-table-layout="{{ $resolvedTableLayout }}"
     data-table-scroll-x="{{ $resolvedScrollX }}"
@@ -590,6 +607,12 @@
             <div class="daisy-table-controls flex flex-wrap items-center justify-start gap-3 lg:justify-end">
                 @if($hasActionsSlot)
                     {{ $actions }}
+                @endif
+
+                @if($resolvedEditable['create']['enabled'])
+                    <button type="button" class="btn btn-sm btn-primary" data-table-create>
+                        {{ __('daisy::common.add') }}
+                    </button>
                 @endif
 
                 @if($hasControlsSlot)
@@ -844,10 +867,10 @@
                                 @endphp
 
                                 @php
-                                    $isEditableCell = $resolvedEditable
+                                    $isEditableCell = $resolvedEditable['enabled']
                                         && ! $column['html']
                                         && ! in_array($column['type'], ['actions', 'link', 'resource-link'], true)
-                                        && ($resolvedEditableColumns === [] || in_array($column['key'], $resolvedEditableColumns, true));
+                                        && ($resolvedEditable['columns'] === [] || in_array($column['key'], $resolvedEditable['columns'], true));
                                 @endphp
 
                                 <td

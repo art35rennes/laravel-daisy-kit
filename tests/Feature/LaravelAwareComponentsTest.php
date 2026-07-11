@@ -138,6 +138,51 @@ it('renders navbar sidebar layout topbar inside drawer content with independent 
         ->and($topbarPosition)->toBeInt()->toBeLessThan($drawerSidePosition);
 });
 
+it('passes an optional footer slot to the sidebar', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::layout.navbar-sidebar-layout :show-theme-controller="false">
+            <x-slot:sidebarFooter>Environment footer</x-slot:sidebarFooter>
+            Content
+        </x-daisy::layout.navbar-sidebar-layout>
+    BLADE);
+
+    expect($html)
+        ->toContain('Environment footer')
+        ->toContain('data-sidebar-footer')
+        ->toContain('text-base-content/50');
+});
+
+it('opens external sidebar entries in a separate tab securely', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.navigation.sidebar :sections="$sections" />
+    BLADE, [
+        'sections' => [[
+            'label' => null,
+            'items' => [
+                [
+                    'label' => 'External direct',
+                    'href' => 'https://example.test/direct',
+                    'external' => true,
+                ],
+                [
+                    'label' => 'Help',
+                    'children' => [[
+                        'label' => 'External help',
+                        'href' => 'https://example.test/help',
+                        'external' => true,
+                    ]],
+                ],
+            ],
+        ]],
+    ]);
+
+    expect($html)
+        ->toContain('href="https://example.test/direct"')
+        ->toContain('href="https://example.test/help"')
+        ->toContain('target="_blank"')
+        ->toContain('rel="noopener noreferrer"');
+});
+
 it('can constrain navbar sidebar layout topbar content inside an inner container', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::layout.navbar-sidebar-layout :show-theme-controller="false" navbar-container="mx-auto max-w-screen-xl px-4">

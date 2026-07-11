@@ -7,6 +7,7 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  sortingFns,
 } from '@tanstack/table-core';
 import { rankItem } from '@tanstack/match-sorter-utils';
 import {
@@ -101,6 +102,10 @@ function normalizeColumns(columns = []) {
       const filterKey = typeof column.filterKey === 'string' && column.filterKey !== '' ? column.filterKey : key;
       const type = ['actions', 'link', 'resource-link'].includes(column.type) ? column.type : null;
       const cell = normalizeCellDefinition(column);
+      const rawEditor = isPlainObject(column.editor) ? column.editor : {};
+      const editorType = ['text', 'textarea', 'number', 'select', 'boolean', 'date', 'blade'].includes(rawEditor.type)
+        ? rawEditor.type
+        : 'text';
       const width = typeof column.width === 'string' ? column.width : (type === 'actions' ? 'fit' : null);
       const align = ALLOWED_ALIGNMENTS.includes(column.align) ? column.align : (type === 'actions' ? 'center' : null);
       const density = ['compact', 'normal'].includes(column.density) ? column.density : (type === 'actions' ? 'compact' : null);
@@ -129,6 +134,15 @@ function normalizeColumns(columns = []) {
         headerClass: typeof column.headerClass === 'string' ? column.headerClass : '',
         html: ['html', 'blade', 'actions'].includes(cell.renderer),
         cell,
+        editor: {
+          type: editorType,
+          required: rawEditor.required === true,
+          options: Array.isArray(rawEditor.options)
+            ? rawEditor.options.filter((option) => isPlainObject(option) && Object.hasOwn(option, 'value'))
+            : [],
+          view: typeof rawEditor.view === 'string' && rawEditor.view !== '' ? rawEditor.view : null,
+          template: typeof rawEditor.template === 'string' ? rawEditor.template : null,
+        },
         enableResizing: column.enableResizing !== false,
         size: Number.isInteger(Number.parseInt(column.size, 10)) ? Number.parseInt(column.size, 10) : undefined,
         minSize: Number.isInteger(Number.parseInt(column.minSize, 10)) ? Number.parseInt(column.minSize, 10) : undefined,
@@ -386,11 +400,13 @@ function normalizeEditPolicy(policy = {}) {
 
 function normalizeEditableConfig(raw = {}, columns = []) {
   const editable = raw.editable === true || raw.editable?.enabled === true;
-  const endpoint = normalizeEndpoint(raw.editEndpoint ?? raw.editable?.endpoint ?? null);
+  const update = isPlainObject(raw.editable?.update) ? raw.editable.update : {};
+  const create = isPlainObject(raw.editable?.create) ? raw.editable.create : {};
+  const endpoint = normalizeEndpoint(update.endpoint ?? raw.editEndpoint ?? raw.editable?.endpoint ?? null);
   const mode = ['cell', 'row'].includes(raw.editMode ?? raw.editable?.mode)
     ? raw.editMode ?? raw.editable.mode
     : 'cell';
-  const rawMethod = raw.editMethod ?? raw.editable?.method;
+  const rawMethod = update.method ?? raw.editMethod ?? raw.editable?.method;
   const method = typeof rawMethod === 'string' && rawMethod !== ''
     ? String(rawMethod).toUpperCase()
     : 'PATCH';
@@ -414,6 +430,19 @@ function normalizeEditableConfig(raw = {}, columns = []) {
       && all.indexOf(key) === index
     )),
     policy: normalizeEditPolicy(raw.editPolicy ?? raw.editable?.policy),
+    update: {
+      strategy: update.strategy === 'local' ? 'local' : 'remote',
+      endpoint,
+      method,
+    },
+    create: {
+      enabled: create.enabled === true,
+      strategy: create.strategy === 'local' ? 'local' : 'remote',
+      endpoint: normalizeEndpoint(create.endpoint),
+      method: typeof create.method === 'string' && create.method !== '' ? create.method.toUpperCase() : 'POST',
+      defaults: isPlainObject(create.defaults) ? create.defaults : {},
+      position: 'top',
+    },
   };
 }
 
@@ -437,6 +466,10 @@ function getStableRowKey(config) {
 }
 
 function getRowSelectionId(config, row) {
+  if (getRowData(row)?.__daisyTableDraft === true) {
+    return null;
+  }
+
   const rowKey = getStableRowKey(config);
 
   if (typeof rowKey !== 'string' || rowKey === '') {
@@ -704,8 +737,12 @@ function normalizeConfig(raw = {}) {
     throw new Error('The table component requires a non-empty rowKey prop for interactive row features.');
   }
 
-  if (editable.enabled && !editable.endpoint) {
+  if (editable.enabled && editable.update.strategy === 'remote' && !editable.update.endpoint) {
     throw new Error('The table component requires an editEndpoint when editable is enabled.');
+  }
+
+  if (editable.create.enabled && editable.create.strategy === 'remote' && !editable.create.endpoint) {
+    throw new Error('The table component requires a create endpoint when remote row creation is enabled.');
   }
 
   return config;
@@ -971,6 +1008,10 @@ function setControlledState(context, key, updater, normalizer = (value) => value
 }
 
 function fuzzyFilter(row, columnId, value, addMeta) {
+  if (row.original?.__daisyTableDraft === true) {
+    return true;
+  }
+
   const itemRank = rankItem(row.getValue(columnId), value);
 
   addMeta({ itemRank });
@@ -981,6 +1022,10 @@ function fuzzyFilter(row, columnId, value, addMeta) {
 fuzzyFilter.autoRemove = (value) => String(value ?? '') === '';
 
 function daisyColumnFilter(row, columnId, filterValue) {
+  if (row.original?.__daisyTableDraft === true) {
+    return true;
+  }
+
   const filter = isPlainObject(filterValue) && ALLOWED_FILTER_TYPES.includes(filterValue.type)
     ? filterValue
     : { type: 'text', value: filterValue };
@@ -1012,6 +1057,17 @@ function createColumnDefs(columns) {
     enableColumnFilter: column.filterable === true,
     enableGlobalFilter: column.filterable === true || columns.every((candidate) => candidate.filterable !== true),
     filterFn: daisyColumnFilter,
+    sortingFn: (firstRow, secondRow, columnId) => {
+      if (firstRow.original?.__daisyTableDraft === true) {
+        return -1;
+      }
+
+      if (secondRow.original?.__daisyTableDraft === true) {
+        return 1;
+      }
+
+      return sortingFns.alphanumeric(firstRow, secondRow, columnId);
+    },
     enableResizing: column.enableResizing !== false,
     size: column.size,
     minSize: column.minSize,
@@ -1021,6 +1077,12 @@ function createColumnDefs(columns) {
       daisyColumn: column,
     },
   }));
+}
+
+function getTableRows(context) {
+  const rows = context.config.mode === 'client' ? context.config.rows : context.rows;
+
+  return context.creating?.row ? [context.creating.row, ...rows] : rows;
 }
 
 function createTableModel(context, rows, rowCount, pageCount) {
@@ -1044,7 +1106,7 @@ function createTableModel(context, rows, rowCount, pageCount) {
     },
     getRowId: (row, index) => {
       const rowKey = getStableRowKey(config);
-      const value = typeof rowKey === 'string' && rowKey !== '' ? row?.[rowKey] : null;
+      const value = row?.__daisyTableDraftId ?? (typeof rowKey === 'string' && rowKey !== '' ? row?.[rowKey] : null);
 
       return value === null || value === undefined || String(value) === '' ? String(index) : String(value);
     },
@@ -1064,7 +1126,7 @@ function createTableModel(context, rows, rowCount, pageCount) {
       fuzzy: fuzzyFilter,
       daisy: daisyColumnFilter,
     },
-    enableRowSelection: config.selection.enabled === true,
+    enableRowSelection: (row) => config.selection.enabled === true && row.original?.__daisyTableDraft !== true,
     enableMultiRowSelection: config.selection.mode === 'multiple',
     enableSubRowSelection: false,
     enableColumnResizing: config.columnResizing === true,
@@ -1510,6 +1572,7 @@ function renderEditCellContent(context, row, column) {
   const value = context.editing?.draft?.[column.key] ?? '';
   const error = context.editing?.errors?.[column.key] ?? '';
   const saving = context.editing?.saving === true;
+  const editor = column.editor || { type: 'text', options: [] };
   const actions = context.editing?.mode === 'row'
     ? ''
     : `
@@ -1519,22 +1582,29 @@ function renderEditCellContent(context, row, column) {
       </div>
     `;
 
-  return `
-    <div class="daisy-table-edit-cell">
-      <input
-        type="text"
-        class="input input-bordered input-xs w-full"
-        data-table-edit-input
-        data-table-row-id="${escapeHtml(row.id)}"
-        data-table-column-id="${escapeHtml(column.key)}"
-        value="${escapeHtml(value)}"
-        aria-invalid="${error ? 'true' : 'false'}"
-        ${saving ? 'disabled' : ''}
-      >
-      ${actions}
-      ${error ? `<p class="daisy-table-edit-error text-xs text-error">${escapeHtml(error)}</p>` : ''}
-    </div>
-  `;
+  const attributes = `data-table-edit-input data-table-row-id="${escapeHtml(row.id)}" data-table-column-id="${escapeHtml(column.key)}" aria-invalid="${error ? 'true' : 'false'}" ${saving ? 'disabled' : ''}`;
+  let input = '';
+
+  if (editor.type === 'blade' && editor.template) {
+    input = `<div class="daisy-table-custom-editor" data-table-editor-column-id="${escapeHtml(column.key)}" data-table-editor-row-id="${escapeHtml(row.id)}">${editor.template}</div>`;
+  } else if (editor.type === 'textarea') {
+    input = `<textarea class="textarea textarea-bordered textarea-xs w-full" ${attributes}>${escapeHtml(value)}</textarea>`;
+  } else if (editor.type === 'select') {
+    const options = editor.options.map((option) => {
+      const optionValue = String(option.value ?? '');
+      const selected = String(value) === optionValue ? ' selected' : '';
+
+      return `<option value="${escapeHtml(optionValue)}"${selected}>${escapeHtml(option.label ?? optionValue)}</option>`;
+    }).join('');
+    input = `<select class="select select-bordered select-xs w-full" ${attributes}>${options}</select>`;
+  } else if (editor.type === 'boolean') {
+    input = `<input type="checkbox" class="toggle toggle-sm" ${attributes} ${value === true || value === 'true' || value === 1 || value === '1' ? 'checked' : ''}>`;
+  } else {
+    const type = editor.type === 'number' || editor.type === 'date' ? editor.type : 'text';
+    input = `<input type="${type}" class="input input-bordered input-xs w-full" ${attributes} value="${escapeHtml(value)}">`;
+  }
+
+  return `<div class="daisy-table-edit-cell">${input}${actions}${error ? `<p class="daisy-table-edit-error text-xs text-error">${escapeHtml(error)}</p>` : ''}</div>`;
 }
 
 function renderEditRowActions(context, row, colspan) {
@@ -1555,7 +1625,7 @@ function renderEditRowActions(context, row, colspan) {
         <div class="daisy-table-edit-row-bar">
           ${status}
           <span class="daisy-table-edit-actions">
-            <button type="button" class="btn btn-xs btn-primary" data-table-edit-save ${saving ? 'disabled' : ''}>Save row</button>
+            <button type="button" class="btn btn-xs btn-primary" data-table-edit-save ${saving ? 'disabled' : ''}>${context.editing.type === 'create' ? 'Add row' : 'Save row'}</button>
             <button type="button" class="btn btn-xs btn-ghost" data-table-edit-cancel ${saving ? 'disabled' : ''}>Cancel</button>
           </span>
         </div>
@@ -1586,7 +1656,10 @@ function validateEdit(context) {
   const editedKeys = context.editing.mode === 'row'
     ? Object.keys(context.editing.draft)
     : [context.editing.columnId];
-  const requiredKeys = getRequiredEditableColumns(context)
+  const requiredKeys = [...new Set([
+    ...getRequiredEditableColumns(context),
+    ...context.config.columns.filter((column) => column.editor?.required === true).map((column) => column.key),
+  ])]
     .filter((key) => editedKeys.includes(key));
 
   return Object.fromEntries(
@@ -1613,6 +1686,7 @@ function startCellEdit(context, rowId, columnId) {
     : [columnId];
 
   context.editing = {
+    type: 'update',
     mode: context.config.editable.mode,
     rowId: String(row.id),
     columnId,
@@ -1636,8 +1710,36 @@ function startCellEdit(context, rowId, columnId) {
 }
 
 function cancelEdit(context) {
+  if (context.editing?.type === 'create') {
+    cancelCreate(context);
+    return;
+  }
+
   context.editing = null;
   renderTable(context);
+}
+
+function getEditorColumnId(input) {
+  return input.dataset.tableColumnId
+    || input.dataset.tableEditorColumnId
+    || input.closest('[data-table-editor-column-id]')?.dataset.tableEditorColumnId
+    || null;
+}
+
+function readEditorValue(context, input, columnId) {
+  const editor = getColumnByKey(context.config.columns, columnId)?.editor;
+
+  if (editor?.type === 'boolean' && input instanceof HTMLInputElement) {
+    return input.checked;
+  }
+
+  if (editor?.type === 'number') {
+    const value = String(input.value ?? '').trim();
+
+    return value === '' ? null : Number(value);
+  }
+
+  return String(input.value ?? '');
 }
 
 function updateEditDraft(context, input) {
@@ -1645,14 +1747,14 @@ function updateEditDraft(context, input) {
     return;
   }
 
-  const columnId = input.dataset.tableColumnId;
+  const columnId = getEditorColumnId(input);
 
   if (!context.config.editable.columns.includes(columnId)) {
     return;
   }
 
-  context.editing.draft[columnId] = String(input.value ?? '');
-  context.editing.dirty[columnId] = context.editing.draft[columnId] !== String(context.editing.original?.[columnId] ?? '');
+  context.editing.draft[columnId] = readEditorValue(context, input, columnId);
+  context.editing.dirty[columnId] = JSON.stringify(context.editing.draft[columnId]) !== JSON.stringify(context.editing.original?.[columnId] ?? '');
 
   if (context.editing.errors?.[columnId]) {
     delete context.editing.errors[columnId];
@@ -1687,9 +1789,166 @@ function applyEditedRow(context, rowId, nextRow) {
   context.rows = replaceRowInRows(context.rows, rowKey, rowId, nextRow);
 }
 
+function createDraftId() {
+  return `daisy-draft-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function startCreate(context) {
+  if (context.loading || !context.config.editable.create.enabled || context.creating) {
+    return null;
+  }
+
+  const rowKey = getStableRowKey(context.config);
+  const draftId = createDraftId();
+  const values = {
+    ...context.config.editable.create.defaults,
+  };
+  const draft = {
+    ...values,
+    __daisyTableDraft: true,
+    __daisyTableDraftId: draftId,
+  };
+
+  context.creating = { row: draft };
+  context.editing = {
+    type: 'create',
+    mode: 'row',
+    rowId: draftId,
+    columnId: context.config.editable.columns[0] || null,
+    original: {},
+    draft: Object.fromEntries(context.config.editable.columns.map((key) => [key, values[key] ?? ''])),
+    dirty: {},
+    errors: {},
+    saving: false,
+  };
+  context.state.pagination.pageIndex = 0;
+
+  dispatchTableEditEvent(context, 'daisy:table-create-started', {
+    draft: { ...context.editing.draft },
+    rowKey,
+  });
+  renderTable(context);
+  focusEditor(context);
+
+  return context.editing;
+}
+
+function cancelCreate(context) {
+  if (!context.creating) {
+    return false;
+  }
+
+  context.creating = null;
+  context.editing = null;
+  dispatchTableEditEvent(context, 'daisy:table-create-cancelled');
+  renderTable(context);
+
+  return true;
+}
+
+function applyCreatedRow(context, row) {
+  if (context.config.mode === 'client') {
+    context.config.rows = [row, ...context.config.rows];
+    return;
+  }
+
+  context.rows = [row, ...context.rows];
+}
+
+function mutationRequest(endpoint, method, payload) {
+  const url = new URL(endpoint.url, window.location.href);
+  const headers = new Headers({
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    ...(endpoint.headers || {}),
+  });
+  const csrfToken = typeof document !== 'undefined'
+    ? document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+    : null;
+
+  if (csrfToken && !headers.has('X-CSRF-TOKEN')) {
+    headers.set('X-CSRF-TOKEN', csrfToken);
+  }
+
+  return fetch(url.toString(), {
+    method,
+    headers,
+    credentials: endpoint.credentials,
+    body: JSON.stringify(payload),
+  });
+}
+
+function normalizeMutationErrors(error, fallbackColumn) {
+  if (isPlainObject(error.errors)) {
+    return Object.fromEntries(Object.entries(error.errors).map(([key, value]) => [key, Array.isArray(value) ? value.join(' ') : String(value)]));
+  }
+
+  return { [fallbackColumn]: error.message || 'Unable to save this value.' };
+}
+
+async function commitCreate(context) {
+  if (!context.editing || context.editing.saving || context.editing.type !== 'create') {
+    return null;
+  }
+
+  const validationErrors = validateEdit(context);
+
+  if (Object.keys(validationErrors).length > 0) {
+    context.editing.errors = validationErrors;
+    dispatchTableEditEvent(context, 'daisy:table-create-failed', { values: { ...context.editing.draft }, errors: validationErrors });
+    renderTable(context);
+    return null;
+  }
+
+  const values = { ...context.editing.draft };
+  const create = context.config.editable.create;
+  context.editing.saving = true;
+  renderTable(context);
+
+  try {
+    let body = { row: values };
+
+    if (create.strategy === 'remote') {
+      const response = await mutationRequest(create.endpoint, create.method, { values });
+      body = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw Object.assign(new Error(body.message || `HTTP ${response.status}`), { errors: body.errors });
+      }
+    }
+
+    const row = isPlainObject(body.row) ? body.row : (isPlainObject(body.data) ? body.data : values);
+    applyCreatedRow(context, row);
+    context.creating = null;
+    context.editing = null;
+    dispatchTableEditEvent(context, 'daisy:table-create-committed', { values, row, response: body });
+
+    if (context.config.mode === 'server' && create.strategy === 'remote') {
+      await refreshTable(context);
+    } else {
+      renderTable(context);
+    }
+
+    return body;
+  } catch (error) {
+    if (context.editing) {
+      context.editing.saving = false;
+      context.editing.errors = normalizeMutationErrors(error, context.config.editable.columns[0] || '_row');
+    }
+
+    dispatchTableEditEvent(context, 'daisy:table-create-failed', { values, errors: context.editing?.errors || {}, error });
+    renderTable(context);
+    return null;
+  }
+}
+
 async function commitEdit(context) {
   if (!context.editing || context.editing.saving) {
     return null;
+  }
+
+  if (context.editing.type === 'create') {
+    return commitCreate(context);
   }
 
   const validationErrors = validateEdit(context);
@@ -1728,36 +1987,21 @@ async function commitEdit(context) {
     row,
     dirty: Object.fromEntries(Object.keys(dirty).map((key) => [key, context.editing.draft[key]])),
   };
-  const endpoint = new URL(context.config.editable.endpoint.url, window.location.href);
-  const headers = new Headers({
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...(context.config.editable.endpoint.headers || {}),
-  });
-  const csrfToken = typeof document !== 'undefined'
-    ? document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-    : null;
-
-  if (csrfToken && !headers.has('X-CSRF-TOKEN')) {
-    headers.set('X-CSRF-TOKEN', csrfToken);
-  }
-
   context.editing.saving = true;
   renderTable(context);
 
   try {
-    const response = await fetch(endpoint.toString(), {
-      method: context.config.editable.method,
-      headers,
-      credentials: context.config.editable.endpoint.credentials,
-      body: JSON.stringify(payload),
-    });
-    const body = await response.json().catch(() => ({}));
+    let body = { row: payload.dirty };
 
-    if (!response.ok) {
-      const errors = isPlainObject(body.errors) ? body.errors : {};
+    if (context.config.editable.update.strategy === 'remote') {
+      const response = await mutationRequest(context.config.editable.update.endpoint, context.config.editable.update.method, payload);
+      body = await response.json().catch(() => ({}));
 
-      throw Object.assign(new Error(body.message || `HTTP ${response.status}`), { errors });
+      if (!response.ok) {
+        const errors = isPlainObject(body.errors) ? body.errors : {};
+
+        throw Object.assign(new Error(body.message || `HTTP ${response.status}`), { errors });
+      }
     }
 
     const nextRow = isPlainObject(body.row)
@@ -1774,15 +2018,18 @@ async function commitEdit(context) {
       },
     });
     context.editing = null;
-    renderTable(context);
+
+    if (context.config.mode === 'server' && context.config.editable.update.strategy === 'remote') {
+      await refreshTable(context);
+    } else {
+      renderTable(context);
+    }
 
     return body;
   } catch (error) {
     if (context.editing) {
       context.editing.saving = false;
-      context.editing.errors = isPlainObject(error.errors)
-        ? Object.fromEntries(Object.entries(error.errors).map(([key, value]) => [key, Array.isArray(value) ? value.join(' ') : String(value)]))
-        : { [column]: error.message || context.config.errorLabel };
+      context.editing.errors = normalizeMutationErrors(error, column);
     }
 
     dispatchTableEditEvent(context, 'daisy:table-edit-failed', {
@@ -2366,8 +2613,9 @@ function resolveFilterInputState(context, input) {
 }
 
 function renderTable(context) {
-  const tableRows = context.config.mode === 'client' ? context.config.rows : context.rows;
-  const rowCount = context.config.mode === 'client' ? tableRows.length : context.rowCount;
+  const sourceRows = context.config.mode === 'client' ? context.config.rows : context.rows;
+  const tableRows = getTableRows(context);
+  const rowCount = context.config.mode === 'client' ? sourceRows.length : context.rowCount;
   let pageCount = context.config.mode === 'client'
     ? Math.max(1, Math.ceil(Math.max(1, rowCount) / context.state.pagination.pageSize))
     : Math.max(1, context.pageCount);
@@ -2383,7 +2631,9 @@ function renderTable(context) {
   context.table = createTableModel(context, tableRows, rowCount, pageCount);
 
   if (context.config.mode === 'client') {
-    const filteredRowCount = context.table.getFilteredRowModel().rows.length;
+    const filteredRowCount = context.table.getFilteredRowModel().rows
+      .filter((row) => row.original?.__daisyTableDraft !== true)
+      .length;
 
     pageCount = Math.max(1, Math.ceil(Math.max(1, filteredRowCount) / context.state.pagination.pageSize));
     context.rowCount = filteredRowCount;
@@ -2403,9 +2653,46 @@ function renderTable(context) {
   renderColumnVisibility(context);
   syncControls(context);
   renderBody(context, rowModel);
+  hydrateCustomEditors(context);
   renderFooter(context, rowModel.length);
   updateSelectionControls(context, rowModel);
   dispatchTableRendered(context);
+}
+
+function hydrateCustomEditors(context) {
+  context.root.querySelectorAll('[data-table-editor-input]').forEach((input) => {
+    if (!(input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement)) {
+      return;
+    }
+
+    const columnId = getEditorColumnId(input);
+    const value = context.editing?.draft?.[columnId];
+
+    if (input instanceof HTMLInputElement && input.type === 'checkbox') {
+      input.checked = value === true || value === 'true' || value === 1 || value === '1';
+    } else if (value !== undefined) {
+      input.value = String(value ?? '');
+    }
+
+    input.disabled = context.editing?.saving === true;
+  });
+
+  if (context.editing?.type === 'create') {
+    context.root.dispatchEvent(new CustomEvent('daisy:table-editor-mounted', {
+      bubbles: true,
+      detail: { editing: context.editing, table: context.table },
+    }));
+  }
+}
+
+function focusEditor(context) {
+  setTimeout(() => {
+    const input = context.root.querySelector('[data-table-edit-input], [data-table-editor-input]');
+
+    if (input instanceof HTMLElement) {
+      input.focus();
+    }
+  });
 }
 
 async function fetchServerRows(context) {
@@ -2500,6 +2787,12 @@ function attachEvents(context) {
     const editCell = event.target instanceof Element ? event.target.closest('[data-table-edit-cell]') : null;
     const editSaveButton = event.target instanceof Element ? event.target.closest('[data-table-edit-save]') : null;
     const editCancelButton = event.target instanceof Element ? event.target.closest('[data-table-edit-cancel]') : null;
+    const createButton = event.target instanceof Element ? event.target.closest('[data-table-create]') : null;
+
+    if (createButton instanceof HTMLElement) {
+      startCreate(context);
+      return;
+    }
 
     if (editSaveButton instanceof HTMLElement) {
       void commitEdit(context);
@@ -2607,6 +2900,12 @@ function attachEvents(context) {
   context.root.addEventListener('change', (event) => {
     const target = event.target;
 
+    if ((target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement)
+      && target.matches('[data-table-edit-input], [data-table-editor-input]')) {
+      updateEditDraft(context, target);
+      return;
+    }
+
     if (target instanceof HTMLInputElement && target.matches('[data-table-select-page]')) {
       context.selectionNotice = '';
       if (context.state.selection.allFilteredSelected) {
@@ -2657,7 +2956,8 @@ function attachEvents(context) {
   context.root.addEventListener('input', (event) => {
     const target = event.target;
 
-    if (target instanceof HTMLInputElement && target.matches('[data-table-edit-input]')) {
+    if ((target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement)
+      && target.matches('[data-table-edit-input], [data-table-editor-input]')) {
       updateEditDraft(context, target);
       return;
     }
@@ -2689,7 +2989,8 @@ function attachEvents(context) {
   context.root.addEventListener('keydown', (event) => {
     const target = event.target;
 
-    if (!(target instanceof HTMLInputElement && target.matches('[data-table-edit-input]'))) {
+    if (!((target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement)
+      && target.matches('[data-table-edit-input], [data-table-editor-input]'))) {
       return;
     }
 
@@ -2884,6 +3185,8 @@ async function initTable(root) {
     eventController: null,
     refreshId: 0,
     selectionNotice: '',
+    creating: null,
+    editing: null,
   };
 
   context.state = mergeState(
@@ -3085,6 +3388,29 @@ function tableApi(idOrRoot) {
       }
 
       return commitEdit(context);
+    },
+    async startCreate() {
+      const context = await initTable(root);
+
+      if (!context) {
+        return null;
+      }
+
+      return startCreate(context);
+    },
+    async saveCreate() {
+      const context = await initTable(root);
+
+      if (!context || context.editing?.type !== 'create') {
+        return null;
+      }
+
+      return commitCreate(context);
+    },
+    cancelCreate() {
+      const context = root?.__daisyTableContext ?? null;
+
+      return context ? cancelCreate(context) : false;
     },
     cancelEdit() {
       const context = root?.__daisyTableContext ?? null;
