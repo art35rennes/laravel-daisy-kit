@@ -30,6 +30,10 @@ function onReady(fn) {
 
 // Initialisation des fonctionnalités une fois le DOM chargé
 onReady(async () => {
+  // Les tooltips sont portés au niveau du document pour échapper aux conteneurs scrollables.
+  const { initAllTooltips } = await import('./modules/tooltip');
+  initAllTooltips(document);
+
   // Gestion des checkbox indéterminées (DaisyUI)
   // Initialise l'état "mixed" puis normalise lors du changement
   document.querySelectorAll('input[type="checkbox"][data-indeterminate="true"]').forEach((el) => {
@@ -280,7 +284,6 @@ onReady(async () => {
   importWhenIdle('[data-popover]:not([data-module])', () => { mediumQueue(() => import('./popover')); });
   importWhenIdle('[data-stepper]', () => { mediumQueue(() => import('./stepper')); });
   importWhenIdle('[data-onboarding="1"]', () => { mediumQueue(() => import('./onboarding')); });
-  importWhenIdle('[data-daisy-table="1"]', () => { mediumQueue(() => import('./table')); });
   importWhenIdle('[data-fileinput="1"]', () => { mediumQueue(() => import('./file-input')); });
   importWhenIdle('input[data-inputmask="1"], input[data-obfuscate="1"]', () => { mediumQueue(() => import('./input-mask')); });
   importWhenIdle('[data-scrollstatus="1"]', () => { mediumQueue(() => import('./scroll-status')); });

@@ -54,6 +54,7 @@
 @import "gridstack/dist/gridstack.min.css";
 @import "trix/dist/trix.css";
 @import "./table.css";
+@import "./blueprint.css";
 
 :root {
   --daisy-z-tooltip: 80;
@@ -76,6 +77,111 @@
   max-width: min(24rem, calc(100vw - 2rem));
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+/*
+ * Le rendu DaisyUI natif reste le fallback sans JavaScript. Une fois initialisé,
+ * le module tooltip utilise un calque document-level qui n'est pas découpé par
+ * les tableaux, modales ou autres ancêtres scrollables.
+ */
+:where(.daisy-tooltip-managed[data-tooltip-ready="true"])::before,
+:where(.daisy-tooltip-managed[data-tooltip-ready="true"])::after,
+:where(.daisy-tooltip-managed[data-tooltip-ready="true"]) > .tooltip-content {
+  display: none;
+}
+
+.daisy-tooltip-floating {
+  position: fixed;
+  inset: auto;
+  z-index: var(--daisy-z-tooltip-content);
+  width: max-content;
+  height: max-content;
+  max-width: min(24rem, calc(100vw - 1rem));
+  max-height: calc(100vh - 1rem);
+  margin: 0;
+  padding: 0.375rem 0.625rem;
+  border: 0;
+  border-radius: var(--radius-field, 0.375rem);
+  background-color: var(--color-neutral);
+  color: var(--color-neutral-content);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1rem;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  box-shadow: 0 0.5rem 1.25rem color-mix(in oklab, var(--color-base-content) 18%, transparent);
+}
+
+.daisy-tooltip-floating[hidden] {
+  display: none;
+}
+
+.daisy-tooltip-floating::after {
+  position: absolute;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: inherit;
+  content: "";
+  transform: rotate(45deg);
+}
+
+.daisy-tooltip-floating[data-placement="top"]::after {
+  bottom: -0.25rem;
+  left: var(--daisy-tooltip-arrow-x);
+  margin-left: -0.25rem;
+}
+
+.daisy-tooltip-floating[data-placement="bottom"]::after {
+  top: -0.25rem;
+  left: var(--daisy-tooltip-arrow-x);
+  margin-left: -0.25rem;
+}
+
+.daisy-tooltip-floating[data-placement="left"]::after {
+  top: var(--daisy-tooltip-arrow-y);
+  right: -0.25rem;
+  margin-top: -0.25rem;
+}
+
+.daisy-tooltip-floating[data-placement="right"]::after {
+  top: var(--daisy-tooltip-arrow-y);
+  left: -0.25rem;
+  margin-top: -0.25rem;
+}
+
+.daisy-tooltip-floating[data-color="primary"] {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+}
+
+.daisy-tooltip-floating[data-color="secondary"] {
+  background-color: var(--color-secondary);
+  color: var(--color-secondary-content);
+}
+
+.daisy-tooltip-floating[data-color="accent"] {
+  background-color: var(--color-accent);
+  color: var(--color-accent-content);
+}
+
+.daisy-tooltip-floating[data-color="info"] {
+  background-color: var(--color-info);
+  color: var(--color-info-content);
+}
+
+.daisy-tooltip-floating[data-color="success"] {
+  background-color: var(--color-success);
+  color: var(--color-success-content);
+}
+
+.daisy-tooltip-floating[data-color="warning"] {
+  background-color: var(--color-warning);
+  color: var(--color-warning-content);
+}
+
+.daisy-tooltip-floating[data-color="error"] {
+  background-color: var(--color-error);
+  color: var(--color-error-content);
 }
 
 .daisy-navbar-container {
@@ -218,163 +324,6 @@ trix-editor[class*="daisy-wysiwyg-min-height-"] {
   white-space: nowrap;
 }
 
-.daisy-blueprint {
-  --daisy-blueprint-height: 520px;
-  inline-size: 100%;
-}
-
-.daisy-blueprint > .grid {
-  min-height: var(--daisy-blueprint-height);
-}
-
-.daisy-blueprint:fullscreen,
-.daisy-blueprint-fullscreen-fallback {
-  --daisy-blueprint-height: 100dvh;
-  width: 100vw;
-  height: 100dvh;
-  max-width: none;
-  border-radius: 0;
-}
-
-.daisy-blueprint-fullscreen-fallback {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-}
-
-.daisy-blueprint:fullscreen > [data-blueprint-layout],
-.daisy-blueprint-fullscreen-fallback > [data-blueprint-layout] {
-  height: calc(100dvh - 3.25rem);
-}
-
-.daisy-blueprint-panel {
-  max-height: var(--daisy-blueprint-height);
-  overflow: auto;
-}
-
-.daisy-blueprint .modal[data-blueprint-details-panel] {
-  position: fixed;
-}
-
-.daisy-blueprint .modal[data-blueprint-details-panel] [data-blueprint-properties] {
-  min-width: 0;
-}
-
-.daisy-blueprint [data-blueprint-palette-menu] > .dropdown-content {
-  width: min(30rem, calc(100vw - 2rem));
-  max-width: calc(100vw - 2rem);
-}
-
-.daisy-blueprint-canvas-wrap,
-.daisy-blueprint-canvas {
-  min-height: var(--daisy-blueprint-height);
-}
-
-.daisy-blueprint-canvas {
-  position: relative;
-  overflow: hidden;
-  background-color: var(--color-base-200);
-  background-image:
-    linear-gradient(color-mix(in oklch, currentColor 8%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklch, currentColor 8%, transparent) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-.daisy-blueprint rete-node {
-  --node-color: var(--color-base-100);
-  --node-color-hover: var(--color-base-100);
-  --node-color-selected: var(--color-primary);
-  --socket-color: var(--color-primary);
-  --node-width: 248px;
-  color: var(--color-base-content);
-  filter: drop-shadow(0 8px 14px color-mix(in oklch, var(--color-base-content) 8%, transparent));
-}
-
-.daisy-blueprint rete-connection path {
-  stroke: var(--color-primary);
-  stroke-width: 3px;
-}
-
-.daisy-blueprint rete-node[data-blueprint-theme="primary"],
-.daisy-blueprint [data-blueprint-theme="primary"] rete-node,
-.daisy-blueprint [data-blueprint-connection-theme="primary"] rete-connection {
-  --socket-color: var(--color-primary);
-  --daisy-blueprint-connection-color: var(--color-primary);
-}
-
-.daisy-blueprint rete-node[data-blueprint-theme="secondary"],
-.daisy-blueprint [data-blueprint-theme="secondary"] rete-node,
-.daisy-blueprint [data-blueprint-connection-theme="secondary"] rete-connection {
-  --socket-color: var(--color-secondary);
-  --daisy-blueprint-connection-color: var(--color-secondary);
-}
-
-.daisy-blueprint rete-node[data-blueprint-theme="accent"],
-.daisy-blueprint [data-blueprint-theme="accent"] rete-node,
-.daisy-blueprint [data-blueprint-connection-theme="accent"] rete-connection {
-  --socket-color: var(--color-accent);
-  --daisy-blueprint-connection-color: var(--color-accent);
-}
-
-.daisy-blueprint rete-node[data-blueprint-theme="neutral"],
-.daisy-blueprint [data-blueprint-theme="neutral"] rete-node,
-.daisy-blueprint [data-blueprint-connection-theme="neutral"] rete-connection {
-  --socket-color: var(--color-neutral);
-  --daisy-blueprint-connection-color: var(--color-neutral);
-}
-
-.daisy-blueprint rete-node[data-blueprint-theme="info"],
-.daisy-blueprint [data-blueprint-theme="info"] rete-node,
-.daisy-blueprint [data-blueprint-connection-theme="info"] rete-connection {
-  --socket-color: var(--color-info);
-  --daisy-blueprint-connection-color: var(--color-info);
-}
-
-.daisy-blueprint rete-node[data-blueprint-theme="success"],
-.daisy-blueprint [data-blueprint-theme="success"] rete-node,
-.daisy-blueprint [data-blueprint-connection-theme="success"] rete-connection {
-  --socket-color: var(--color-success);
-  --daisy-blueprint-connection-color: var(--color-success);
-}
-
-.daisy-blueprint rete-node[data-blueprint-theme="warning"],
-.daisy-blueprint [data-blueprint-theme="warning"] rete-node,
-.daisy-blueprint [data-blueprint-connection-theme="warning"] rete-connection {
-  --socket-color: var(--color-warning);
-  --daisy-blueprint-connection-color: var(--color-warning);
-}
-
-.daisy-blueprint rete-node[data-blueprint-theme="error"],
-.daisy-blueprint [data-blueprint-theme="error"] rete-node,
-.daisy-blueprint [data-blueprint-connection-theme="error"] rete-connection {
-  --socket-color: var(--color-error);
-  --daisy-blueprint-connection-color: var(--color-error);
-}
-
-.daisy-blueprint [data-blueprint-connection-theme] rete-connection path {
-  stroke: var(--daisy-blueprint-connection-color);
-}
-
-.daisy-blueprint rete-minimap {
-  position: absolute;
-  right: 0.75rem;
-  bottom: 0.75rem;
-  z-index: 10;
-  opacity: 0.72;
-  transform: scale(0.72);
-  transform-origin: bottom right;
-}
-
-.daisy-blueprint rete-context-menu {
-  color: var(--color-base-content);
-}
-
-.daisy-blueprint rete-context-menu,
-.daisy-blueprint rete-context-menu-item {
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-  border-color: var(--color-base-300);
-}
 
 .daisy-native-picker-date,
 .daisy-native-picker-month,
@@ -1982,46 +1931,6 @@ calendar-month::part(button) {
 /* 1) Cacher l’icone d’attache quand attachments=0 (comportement du composant) */
 /* 2) Assurer que le popup de lien passe au-dessus des éléments environnants */
 .trix-wrapper .trix-dialog { z-index: 60; }
-
-/* WYSIWYG embedded in the narrow Blueprint properties panel. */
-.daisy-blueprint-wysiwyg trix-toolbar {
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: visible;
-  padding-bottom: 0.25rem;
-}
-
-.daisy-blueprint-wysiwyg trix-toolbar .trix-button-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
-
-.daisy-blueprint-wysiwyg trix-toolbar .trix-button-group {
-  margin: 0;
-}
-
-.daisy-blueprint-wysiwyg .trix-dialogs {
-  position: relative;
-}
-
-.daisy-blueprint-wysiwyg .trix-dialog {
-  position: static;
-  max-width: 100%;
-  margin-top: 0.25rem;
-  transform: none;
-}
-
-.daisy-blueprint-wysiwyg .trix-dialog__link-fields {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.5rem;
-}
-
-.daisy-blueprint-wysiwyg .trix-dialog__link-fields .trix-input {
-  width: 100%;
-  min-width: 0;
-}
 
 /* Mobile nested scroll improvements */
 .overflow-x-auto,
