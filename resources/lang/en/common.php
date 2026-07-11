@@ -20,6 +20,7 @@ return [
     'search' => 'Search',
     'all' => 'All',
     'edit' => 'Edit',
+    'add' => 'Add',
     'remove' => 'Remove',
     'undo' => 'Undo',
     'redo' => 'Redo',

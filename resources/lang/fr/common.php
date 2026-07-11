@@ -20,6 +20,7 @@ return [
     'search' => 'Rechercher',
     'all' => 'Toutes',
     'edit' => 'Modifier',
+    'add' => 'Ajouter',
     'remove' => 'Supprimer',
     'undo' => 'Annuler',
     'redo' => 'Refaire',
