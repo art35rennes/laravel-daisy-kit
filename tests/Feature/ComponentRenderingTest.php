@@ -261,147 +261,51 @@ it('renders localized code-editor toolbar and CodeMirror phrases', function () {
         ->not->toContain('data-daisy-css-font-size');
 });
 
-it('renders the blueprint editor contract with node types and sync field', function () {
+it('renders the blueprint workflow contract and sync field', function () {
     $html = View::make('daisy::components.ui.advanced.blueprint', [
         'name' => 'workflow',
         'height' => '640px',
-        'nodeTypes' => [
-            [
-                'type' => 'source',
-                'label' => 'Source',
-                'category' => 'Data',
-                'description' => 'Load rows from an upstream system.',
-                'theme' => 'data',
-                'display' => 'minimal',
-                'icon' => 'DB',
-                'outputs' => [['key' => 'out', 'label' => 'Rows', 'kind' => 'dataset', 'type' => 'obj']],
-                'controls' => [
-                    ['key' => 'source', 'label' => 'Source', 'type' => 'select', 'options' => ['orders', 'customers']],
-                    ['key' => 'enabled', 'label' => 'Enabled', 'type' => 'checkbox', 'default' => true],
-                ],
-            ],
-            [
-                'type' => 'sink',
-                'label' => 'Sink',
-                'category' => 'Data',
-                'theme' => 'action',
-                'inputs' => [['key' => 'in', 'label' => 'Rows', 'kind' => 'dataset', 'type' => 'obj']],
-            ],
-        ],
+        'direction' => 'TB',
+        'nodeCategories' => [['value' => 'approval', 'label' => 'Approval']],
+        'transitionCategories' => [['value' => 'return', 'label' => 'Return']],
         'value' => [
             'nodes' => [
-                ['id' => 'source-1', 'type' => 'source', 'label' => 'Source', 'position' => ['x' => 40, 'y' => 80]],
+                ['id' => 'review', 'label' => 'Review', 'position' => ['x' => 40, 'y' => 80]],
             ],
+            'transitions' => [],
         ],
     ])->render();
 
     expect($html)
         ->toContain('data-module="blueprint"')
         ->toContain('data-blueprint="1"')
-        ->toContain('data-mode="workflow"')
-        ->toContain('data-readonly="false"')
-        ->toContain('data-details="true"')
-        ->toContain('data-details-mode="panel"')
-        ->toContain('data-fullscreen="true"')
-        ->toContain('data-dock="false"')
-        ->toContain('data-auto-link="true"')
-        ->toContain('data-fit-on-init="true"')
+        ->toContain('data-mode="edit"')
+        ->toContain('data-direction="TB"')
         ->toContain('daisy-blueprint-height-px-640')
         ->toContain('data-blueprint-canvas')
-        ->toContain('data-blueprint-add-node="source"')
-        ->toContain('data-blueprint-palette-menu')
-        ->not->toContain('peer checkbox checkbox-xs')
-        ->not->toContain('peer-checked:block')
-        ->toContain('Add node')
-        ->toContain('data-blueprint-action="fullscreen"')
-        ->not->toContain('<details open')
-        ->not->toContain('collapse collapse-arrow')
-        ->not->toContain('data-blueprint-palette-sidebar')
-        ->not->toContain('data-blueprint-palette-toggle')
-        ->toContain('data-blueprint-details-backdrop')
-        ->toContain('data-blueprint-details-panel')
-        ->toContain('Load rows from an upstream system.')
-        ->toContain('"theme":"data"')
-        ->toContain('"display":"minimal"')
-        ->toContain('"icon":"DB"')
-        ->toContain('"controls"')
-        ->toContain('"type":"select"')
-        ->toContain('"type":"checkbox"')
-        ->toContain('"type":"obj"')
+        ->toContain('data-blueprint-edges')
+        ->toContain('data-blueprint-nodes')
+        ->toContain('data-blueprint-inspector')
+        ->toContain('data-blueprint-action="add-node"')
         ->toContain('name="workflow"')
-        ->toContain('data-blueprint-node-types')
+        ->toContain('data-blueprint-node-categories')
+        ->toContain('data-blueprint-transition-categories')
         ->toContain('readonly data-blueprint-value')
-        ->not->toContain('<script type="application/json"')
-        ->toContain('Source')
-        ->toContain('Sink')
+        ->toContain('"label":"Review"')
         ->not->toContain('style=');
-});
-
-it('renders blueprint modal details mode for larger property forms', function () {
-    $html = View::make('daisy::components.ui.advanced.blueprint', [
-        'detailsMode' => 'modal',
-        'fullscreen' => true,
-        'nodeTypes' => [
-            ['type' => 'workflow-step', 'label' => 'Workflow step'],
-        ],
-    ])->render();
-
-    expect($html)
-        ->toContain('data-details-mode="modal"')
-        ->toContain('class="modal hidden"')
-        ->toContain('modal-box flex')
-        ->toContain('data-blueprint-details-backdrop')
-        ->toContain('data-blueprint-action="fullscreen"')
-        ->not->toContain('daisy-blueprint-details-panel absolute');
 });
 
 it('renders blueprint view mode without mutation controls', function () {
     $html = View::make('daisy::components.ui.advanced.blueprint', [
         'mode' => 'view',
-        'nodeTypes' => [
-            ['type' => 'entity', 'label' => 'Entity'],
-        ],
     ])->render();
 
     expect($html)
-        ->toContain('data-readonly="true"')
         ->toContain('data-mode="view"')
-        ->not->toContain('data-blueprint-add-node')
+        ->not->toContain('data-blueprint-action="add-node"')
         ->not->toContain('data-blueprint-action="undo"')
-        ->not->toContain('data-blueprint-action="redo"');
-});
-
-it('renders blueprint feature toggles for script initialization', function () {
-    $html = View::make('daisy::components.ui.advanced.blueprint', [
-        'toolbar' => false,
-        'palette' => false,
-        'details' => false,
-        'dock' => true,
-        'autoLink' => false,
-        'minimap' => false,
-        'autoArrange' => false,
-        'fitOnInit' => false,
-        'history' => false,
-        'reroute' => false,
-        'module' => 'custom-blueprint',
-    ])->render();
-
-    expect($html)
-        ->toContain('data-module="custom-blueprint"')
-        ->toContain('data-palette="false"')
-        ->toContain('data-details="false"')
-        ->toContain('data-dock="true"')
-        ->toContain('data-auto-link="false"')
-        ->toContain('data-minimap="false"')
-        ->toContain('data-auto-arrange="false"')
-        ->toContain('data-fit-on-init="false"')
-        ->toContain('data-history="false"')
-        ->toContain('data-reroute="false"')
-        ->not->toContain('data-blueprint-action=')
-        ->not->toContain('data-blueprint-add-node')
-        ->not->toContain('data-blueprint-palette-menu')
-        ->not->toContain('data-blueprint-properties')
-        ->not->toContain('data-blueprint-details-backdrop');
+        ->not->toContain('data-blueprint-action="redo"')
+        ->not->toContain('data-blueprint-inspector');
 });
 
 it('renders wysiwyg custom height through a csp safe class', function () {
@@ -427,10 +331,6 @@ it('ships wysiwyg height utilities after trix styles can override defaults', fun
         ->toContain('list-style-type: decimal;')
         ->toContain('.trix-content ul')
         ->toContain('list-style-type: disc;')
-        ->toContain('.daisy-blueprint-wysiwyg trix-toolbar .trix-button-row')
-        ->toContain('flex-wrap: wrap;')
-        ->toContain('.daisy-blueprint-wysiwyg .trix-dialog')
-        ->toContain('position: static;')
         ->toContain('--daisy-wysiwyg-min-height: calc(--value(integer) * 1px);')
         ->toContain('--daisy-wysiwyg-min-height: calc(--value(integer) * 0.25rem);');
 });
