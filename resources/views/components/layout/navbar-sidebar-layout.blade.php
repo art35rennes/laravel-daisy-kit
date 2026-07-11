@@ -58,6 +58,9 @@
         :themes="$themes"
         :themeLabel="$themeLabel"
     >
+        @isset($sidebarFooter)
+            <x-slot:sidebarFooter>{{ $sidebarFooter }}</x-slot:sidebarFooter>
+        @endisset
         <x-slot:topbar>
             <x-daisy::ui.navigation.navbar :bg="$navbarBg" :text="$navbarText" :shadow="$navbarShadow" :fixed="false" :container="$navbarContainer" data-navbar-sidebar-topbar>
                 <x-slot:start>

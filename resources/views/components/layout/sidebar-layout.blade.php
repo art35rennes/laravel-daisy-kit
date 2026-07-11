@@ -85,7 +85,11 @@
                     :sections="$sections" 
                     :iconPrefix="$iconPrefix" 
                     class="h-full {{ $hasNavbar ? 'lg:h-[calc(100vh-4rem)]' : '' }}"
-                />
+                >
+                    @isset($sidebarFooter)
+                        <x-slot:footer>{{ $sidebarFooter }}</x-slot:footer>
+                    @endisset
+                </x-daisy::ui.navigation.sidebar>
             </x-slot:side>
         </x-daisy::ui.overlay.drawer>
     </div>

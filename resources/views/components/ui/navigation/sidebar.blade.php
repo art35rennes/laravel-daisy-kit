@@ -266,9 +266,10 @@
                                             $childRouteNames[] = data_get($child, 'activeRoute');
                                         }
                                         $childIsActive = ! empty($child['active']) || ($childRouteNames !== [] && collect($childRouteNames)->contains(fn ($routeName) => \Illuminate\Support\Facades\Route::currentRouteNamed($routeName)));
+                                        $childExternal = (bool) data_get($child, 'external', false);
                                     @endphp
                                     <li>
-                                        <a href="{{ $normalizeHref($child['href'] ?? '#') }}" class="flex items-center {{ $collapsedItemClasses }} {{ $childIsActive ? 'menu-active' : '' }}" title="{{ __($child['label'] ?? '') }}" aria-label="{{ __($child['label'] ?? '') }}" data-sidebar-row>
+                                        <a href="{{ $normalizeHref($child['href'] ?? '#') }}" @if($childExternal) target="_blank" rel="noopener noreferrer" @endif class="flex items-center {{ $collapsedItemClasses }} {{ $childIsActive ? 'menu-active' : '' }}" title="{{ __($child['label'] ?? '') }}" aria-label="{{ __($child['label'] ?? '') }}" data-sidebar-row>
                                             @if(!empty($child['icon']))
                                                 <x-daisy::ui.advanced.icon :name="$child['icon']" :prefix="$iconPrefix" size="md" />
                                             @endif
@@ -281,8 +282,9 @@
                     </li>
                 @else
                     {{-- Item simple : lien direct sans sous-menu --}}
+                    @php $itemExternal = (bool) data_get($item, 'external', false); @endphp
                     <li>
-                        <a href="{{ $normalizeHref($item['href'] ?? '#') }}" class="flex items-center {{ $collapsedItemClasses }} {{ $itemIsActive ? 'menu-active' : '' }}" title="{{ __($item['label'] ?? '') }}" aria-label="{{ __($item['label'] ?? '') }}" data-sidebar-row>
+                        <a href="{{ $normalizeHref($item['href'] ?? '#') }}" @if($itemExternal) target="_blank" rel="noopener noreferrer" @endif class="flex items-center {{ $collapsedItemClasses }} {{ $itemIsActive ? 'menu-active' : '' }}" title="{{ __($item['label'] ?? '') }}" aria-label="{{ __($item['label'] ?? '') }}" data-sidebar-row>
                             @if(!empty($item['icon']))
                                 <x-daisy::ui.advanced.icon :name="$item['icon']" :prefix="$iconPrefix" size="md" />
                             @endif
@@ -298,6 +300,11 @@
     </ul>
     {{-- Contrôle de collapse : bouton pour plier/déplier la sidebar (si autorisé et non forcé) --}}
     <div class="border-t border-base-content/10 p-2 {{ $collapsedFooterClasses }}" data-sidebar-footer>
+        @isset($footer)
+            <div class="sidebar-label {{ $effectiveCollapsed ? 'hidden' : '' }} mb-2 text-xs text-base-content/50">
+                {{ $footer }}
+            </div>
+        @endisset
         @php $showToggle = $collapsible && !isset($forceCollapsed) && ! $hoverExpandable; @endphp
         @if($showToggle)
             <button type="button" class="btn btn-ghost btn-sm sidebar-toggle {{ $collapsedToggleClasses }}" title="{{ $toggleLabel }}" aria-label="{{ $toggleLabel }}" aria-expanded="{{ $effectiveCollapsed ? 'false' : 'true' }}">
