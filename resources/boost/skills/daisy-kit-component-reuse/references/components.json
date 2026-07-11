@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-07-09T08:33:56+00:00",
+    "generated_at": "2026-07-10T20:28:31+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
@@ -458,24 +458,18 @@
             "relative_path": "resources/views/components/ui/advanced/blueprint.blade.php",
             "props": [
                 "value",
-                "nodeTypes",
-                "mode",
-                "readonly",
                 "name",
+                "mode",
                 "height",
-                "toolbar",
-                "palette",
-                "details",
-                "detailsMode",
-                "dock",
-                "fullscreen",
-                "autoLink",
-                "minimap",
-                "autoArrange",
-                "fitOnInit",
-                "history",
-                "reroute",
-                "module"
+                "direction",
+                "layout",
+                "transitionShape",
+                "transitionColor",
+                "nodeColor",
+                "inspectorMode",
+                "autosave",
+                "nodeCategories",
+                "transitionCategories"
             ]
         },
         {
@@ -2939,33 +2933,9 @@
             "name": "blueprint",
             "relative_path": "resources/views/templates/advanced/blueprint.blade.php",
             "props": [
-                "title",
-                "description",
                 "showHeader",
-                "showThemeStress",
-                "showFeatureCoverage",
                 "showContract",
-                "showThemeTokens",
-                "showReadonly",
-                "showTyped",
-                "showSchema",
-                "showIntegration",
-                "showMinimal",
-                "namePrefix",
-                "themeStressThemes",
-                "workflowHeight",
-                "exampleHeight",
-                "workflowNodeTypes",
-                "workflowValue",
-                "typedNodeTypes",
-                "typedValue",
-                "themeNodeTypes",
-                "themeValue",
-                "schemaNodeTypes",
-                "schemaValue",
-                "minimalNodeTypes",
-                "integrationNodeTypes",
-                "integrationValue"
+                "namePrefix"
             ]
         },
         {

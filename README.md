@@ -89,6 +89,64 @@ Supported notification `type` values are `info`, `success`, `warning`, and `erro
 
 Notifications are manually dismissible by default, auto-dismiss after five seconds unless `autoDismiss: false` is passed, show the reusable alert-dismiss progress bar, pause while hovered or focused, and enforce the visible `limit`. Use popconfirm or a modal confirmation for critical destructive actions; toast actions are for reversible, low-risk follow-ups.
 
+### Blueprint workflow editor
+
+Blueprint is a focused directed-workflow editor. Steps are accessible HTML cards and transitions are SVG paths. Dagre provides the hierarchical/tree layout, while the radial layout stays native to the component. Automatic layout runs only when positions are missing or when the user chooses **Arrange**. The host application owns persistence, authorization, business data, and workflow execution.
+
+    <x-daisy::ui.advanced.blueprint
+        name="publishing_workflow"
+        mode="edit"
+        direction="LR"
+        layout="hierarchical"
+        transition-shape="curve"
+        transition-color="primary"
+        node-color="neutral"
+        inspector-mode="modal"
+        height="560px"
+        :value="$workflow"
+        :node-categories="$stepCategories"
+        :transition-categories="$transitionCategories"
+    />
+
+The public value contains **version**, **nodes**, **transitions**, and **viewport**. Every transition is directed; a return path is represented by another transition with its source and target reversed. Parallel transitions and self-loops are supported. The optional **data** object on steps and transitions is the stable extension boundary for host-owned, JSON-serializable attributes. Unknown data is preserved by edits, history, and form synchronization.
+
+Categories may define `defaults` and a declarative inspector `fields` schema. Defaults fill missing `data` keys when an entity is created or changes category; existing host values always win. Supported field types are **text**, **textarea**, **number**, **select**, **checkbox**, **multiselect**, **code-editor**, and **wysiwyg**:
+
+```php
+$stepCategories = [[
+    'value' => 'approval',
+    'label' => 'Approval',
+    'defaults' => [
+        'required_approvals' => 1,
+        'reviewers' => [],
+    ],
+    'fields' => [
+        [
+            'key' => 'owner_uuid',
+            'type' => 'select',
+            'label' => 'Owner',
+            'required' => true,
+            'options' => $owners,
+            'section' => 'Assignment',
+        ],
+        [
+            'key' => 'eligibility_rule',
+            'type' => 'code-editor',
+            'language' => 'json',
+            'height' => '180px',
+            'label' => 'Eligibility rule',
+            'section' => 'Rules',
+        ],
+    ],
+]];
+```
+
+Field keys may use safe dot notation for nested data. Descriptors also accept `help`, `placeholder`, `maxLength`, `min`, `max`, `step`, and `height` where relevant. The package applies declared browser constraints, but business validation, authorization, and rich-text sanitization remain host responsibilities. Node cards intentionally continue to display only the stable `label`, `description`, and `category` fields.
+
+Create a transition by clicking a dot on the source step, then a dot on the target step. `transition-shape` accepts **straight**, **curve**, **s**, or **orthogonal**. `layout` accepts **hierarchical**, **tree** (an explicit Dagre alias), or **radial**; `direction="LR|TB"` applies to hierarchical/tree layouts. `transition-color` and `node-color` accept DaisyUI semantic colors. A node category may override the default card color, for example `['value' => 'published', 'label' => 'Published', 'color' => 'success']`; a transition category may override both its presentation values, for example `['value' => 'return', 'label' => 'Return', 'shape' => 'curve', 'color' => 'warning']`. These presentation values do not change the persisted workflow. The inspector opens in a centered `modal` by default; use `inspector-mode="sidebar"` to retain a right-hand panel.
+
+The initialized root exposes **root.__daisyBlueprint** with: **getValue**, **setValue**, **addNode**, **updateNode**, **removeNode**, **addTransition**, **updateTransition**, **removeTransition**, **arrange**, **fit**, **undo**, **redo**, and **destroy**. Integration events are **daisy:blueprint:init**, **daisy:blueprint:change**, **daisy:blueprint:select**, and **daisy:blueprint:error**. When **name** is provided, the synchronized hidden field also emits native **input** and **change** events for forms and Livewire.
+
 ## Security Headers And CSP
 
 Daisy Kit is designed to work by default with strict host Content Security Policy rules such as `script-src 'self'`, `style-src 'self'`, `connect-src 'self'`, `form-action 'self'`, `object-src 'none'`, and `frame-ancestors 'none'`.
@@ -982,6 +1040,37 @@ Column `cell.allowedSchemes` extends the table policy. `javascript:`, `data:`, `
 Date filters are supported with `type => 'date'` and `type => 'date-range'`. In the default JSON contract, date ranges are sent as `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }`. In Spatie mode, date ranges use `filter[key_from]` and `filter[key_to]`, configurable with `filterKeyFrom` and `filterKeyTo`.
 
 The runtime emits `daisy:table-rendered` after every stable render with `rows`, `rowCount`, `pageCount`, `state`, `meta`, and the TanStack `table` instance. Column order, column pinning, column sizing, expanded rows, and row selection are part of the normalized state and can be updated through `window.DaisyTable.table(id)`.
+
+### Inline editing and row creation
+
+Editing and creation share a single `editable` contract. Each operation can be `remote` (the default) or `local`. Remote updates send `{ rowId, column, value, dirty }`; remote creation sends `{ values }`. Successful responses should return `{ row }`; validation errors use Laravel's `422 { message, errors }` shape.
+
+```blade
+<x-daisy::ui.data-display.table
+    row-key="id"
+    :editable="[
+        'enabled' => true,
+        'mode' => 'row',
+        'columns' => ['name', 'status', 'starts_at'],
+        'update' => ['strategy' => 'remote', 'endpoint' => ['url' => '/projects/{rowId}', 'method' => 'PATCH']],
+        'create' => [
+            'enabled' => true,
+            'strategy' => 'remote',
+            'endpoint' => ['url' => '/projects', 'method' => 'POST'],
+            'defaults' => ['status' => 'draft'],
+        ],
+    ]"
+    :columns="[
+        ['key' => 'name', 'label' => 'Name', 'editor' => ['type' => 'text', 'required' => true]],
+        ['key' => 'status', 'label' => 'Status', 'editor' => ['type' => 'select', 'options' => $statuses]],
+        ['key' => 'starts_at', 'label' => 'Start', 'editor' => ['type' => 'date']],
+    ]"
+/>
+```
+
+Built-in editors are `text`, `textarea`, `number`, `select`, `boolean`, and `date`. A custom `editor: ['type' => 'blade', 'view' => '…']` is trusted server-rendered markup; its controls must carry `data-table-editor-input`, optionally with `data-table-column-id` for another field. The runtime hydrates values and emits `daisy:table-editor-mounted` after mount.
+
+Only one new-row draft may exist. It stays at the top of the TanStack row model, bypasses filters, sorting, selection, and counts, and is replaced by the canonical server row on success. Use `window.DaisyTable.table(id).startCreate()`, `.saveCreate()`, or `.cancelCreate()` for a custom trigger. The runtime emits `daisy:table-create-started`, `daisy:table-create-committed`, `daisy:table-create-failed`, and `daisy:table-create-cancelled`; local operations update table rows in memory and emit the same events.
 
 ### Server contract
 

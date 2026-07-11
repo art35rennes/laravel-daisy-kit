@@ -1,9 +1,9 @@
 {
-    "generated_at": "2026-06-25T21:45:18+00:00",
+    "generated_at": "2026-07-10T09:52:30+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
-        "component_count": 156,
+        "component_count": 157,
         "template_count": 32,
         "excluded_component_template_mirrors": 0
     },
@@ -458,24 +458,12 @@
             "relative_path": "resources/views/components/ui/advanced/blueprint.blade.php",
             "props": [
                 "value",
-                "nodeTypes",
-                "mode",
-                "readonly",
                 "name",
+                "mode",
                 "height",
-                "toolbar",
-                "palette",
-                "details",
-                "detailsMode",
-                "dock",
-                "fullscreen",
-                "autoLink",
-                "minimap",
-                "autoArrange",
-                "fitOnInit",
-                "history",
-                "reroute",
-                "module"
+                "direction",
+                "nodeCategories",
+                "transitionCategories"
             ]
         },
         {
@@ -1469,9 +1457,11 @@
                 "searchDebounce",
                 "filterDebounce",
                 "minSearchChars",
+                "searchMode",
                 "columnVisibility",
                 "selection",
                 "rowKey",
+                "subRowsKey",
                 "tableLayout",
                 "minWidth",
                 "scrollX",
@@ -1486,6 +1476,12 @@
                 "rowDetail",
                 "rowDetailView",
                 "columnResizing",
+                "editable",
+                "editEndpoint",
+                "editMethod",
+                "editMode",
+                "editableColumns",
+                "editPolicy",
                 "linkPolicy",
                 "emptyLabel",
                 "loadingLabel",
@@ -2271,6 +2267,21 @@
             ]
         },
         {
+            "alias": "x-daisy::ui.media.iptv-player",
+            "group": "ui.media",
+            "name": "iptv-player",
+            "relative_path": "resources/views/components/ui/media/iptv-player.blade.php",
+            "props": [
+                "title",
+                "poster",
+                "autoplay",
+                "muted",
+                "controls",
+                "live",
+                "status"
+            ]
+        },
+        {
             "alias": "x-daisy::ui.media.leaflet",
             "group": "ui.media",
             "name": "leaflet",
@@ -2916,33 +2927,9 @@
             "name": "blueprint",
             "relative_path": "resources/views/templates/advanced/blueprint.blade.php",
             "props": [
-                "title",
-                "description",
                 "showHeader",
-                "showThemeStress",
-                "showFeatureCoverage",
                 "showContract",
-                "showThemeTokens",
-                "showReadonly",
-                "showTyped",
-                "showSchema",
-                "showIntegration",
-                "showMinimal",
-                "namePrefix",
-                "themeStressThemes",
-                "workflowHeight",
-                "exampleHeight",
-                "workflowNodeTypes",
-                "workflowValue",
-                "typedNodeTypes",
-                "typedValue",
-                "themeNodeTypes",
-                "themeValue",
-                "schemaNodeTypes",
-                "schemaValue",
-                "minimalNodeTypes",
-                "integrationNodeTypes",
-                "integrationValue"
+                "namePrefix"
             ]
         },
         {

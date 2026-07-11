@@ -72,7 +72,7 @@ Before adding Alpine, vanilla JavaScript, or a new host-side widget, check wheth
 
 Use `window.DaisyKit.notify(...)`, the `daisy:notify` event, and a single triggerable `x-daisy::ui.feedback.toast` container for on-demand toast notifications with actions and auto-dismiss behavior. Do not add host-side toast scripts for standard business feedback. Keep critical destructive confirmations on `x-daisy::ui.overlay.popconfirm` or modal flows instead of toast actions.
 
-For visual node editors, workflows, blueprints, and schema graphs, prefer `x-daisy::ui.advanced.blueprint` and its `value`/`nodeTypes` JSON contract before creating a custom graph editor.
+For directed business workflows, prefer `x-daisy::ui.advanced.blueprint` and its `value`, `nodeCategories`, and `transitionCategories` contract before creating a custom graph editor. Use `layout="hierarchical|tree|radial"`, `transitionShape="straight|curve|s|orthogonal"`, and DaisyUI semantic `nodeColor`/`transitionColor` values for host-controlled presentation; node categories may override `color`, while transition categories may override `shape` and `color`, without changing persisted workflow data.
 
 ### Browser Autocomplete
 
