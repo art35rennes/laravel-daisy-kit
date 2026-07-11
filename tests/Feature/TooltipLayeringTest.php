@@ -13,3 +13,21 @@ it('layers tooltip content only while the tooltip is active', function (): void 
         ->not->toContain('.tooltip {
   z-index');
 });
+
+it('ships viewport-aware tooltip portal styles', function (): void {
+    $css = file_get_contents(dirname(__DIR__, 2).'/resources/css/app.css');
+    $javascript = file_get_contents(dirname(__DIR__, 2).'/resources/js/app.js');
+
+    expect($css)
+        ->toContain('.daisy-tooltip-floating')
+        ->toContain('[data-tooltip-ready="true"]')
+        ->toContain('width: max-content')
+        ->toContain('height: max-content')
+        ->and($javascript)
+        ->toContain("import('./modules/tooltip')")
+        ->toContain('initAllTooltips(document)');
+
+    expect(file_get_contents(dirname(__DIR__, 2).'/resources/js/modules/tooltip.js'))
+        ->toContain("closest('dialog[open]')")
+        ->toContain('document.body');
+});
