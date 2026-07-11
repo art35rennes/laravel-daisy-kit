@@ -1,576 +1,452 @@
-import { normalizeBlueprintTheme } from './theme.js';
+import { createTransitionGeometry } from './geometry.js';
 
-const themeNames = ['primary', 'secondary', 'accent', 'neutral', 'info', 'success', 'warning', 'error'];
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+const DEFAULT_NODE_SIZE = Object.freeze({ width: 240, height: 112 });
 
-const themeHostRules = themeNames.map((theme) => `
-  :host([data-blueprint-theme="${theme}"]) {
-    --daisy-blueprint-node-theme: var(--color-${theme});
-    --daisy-blueprint-node-theme-content: var(--color-${theme}-content);
-  }
-`).join('');
-
-const nodeShadowCss = `
-  ${themeHostRules}
-
-  :host {
-    --socket-size: 18px !important;
-    --socket-margin: 0px !important;
-    background: var(--color-base-100) !important;
-    border-color: color-mix(in oklch, var(--daisy-blueprint-node-theme) 42%, var(--color-base-300)) !important;
-    border-radius: 8px !important;
-    box-shadow: 0 8px 18px color-mix(in oklch, var(--color-base-content) 8%, transparent) !important;
-    box-sizing: border-box !important;
-    overflow: visible !important;
-  }
-
-  .title {
-    align-items: center !important;
-    background: var(--daisy-blueprint-node-theme) !important;
-    border-bottom: 1px solid color-mix(in oklch, var(--daisy-blueprint-node-theme) 42%, var(--color-base-300)) !important;
-    border-radius: 6px 6px 0 0 !important;
-    color: var(--daisy-blueprint-node-theme-content) !important;
-    display: flex !important;
-    font-size: 14px !important;
-    font-weight: 700 !important;
-    gap: 8px !important;
-    justify-content: space-between !important;
-    line-height: 1.2 !important;
-    min-height: 42px !important;
-    padding: 8px 12px !important;
-    text-shadow: none !important;
-  }
-
-  :host([data-blueprint-display="minimal"]) {
-    width: 188px !important;
-  }
-
-  :host([data-blueprint-display="minimal"]) .title {
-    border-radius: 6px !important;
-    min-height: 46px !important;
-    padding: 10px 10px 10px 12px !important;
-  }
-
-  [data-blueprint-title-label] {
-    min-width: 0 !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-  }
-
-  [data-blueprint-title-icon] {
-    align-items: center !important;
-    background: color-mix(in oklch, var(--daisy-blueprint-node-theme-content) 18%, transparent) !important;
-    border: 1px solid color-mix(in oklch, var(--daisy-blueprint-node-theme-content) 28%, transparent) !important;
-    border-radius: 6px !important;
-    display: inline-flex !important;
-    flex: 0 0 26px !important;
-    font-size: 12px !important;
-    font-weight: 800 !important;
-    height: 26px !important;
-    justify-content: center !important;
-    line-height: 1 !important;
-    width: 26px !important;
-  }
-
-  .input,
-  .output {
-    align-items: center !important;
-    background: transparent !important;
-    border: 0 !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    gap: 6px !important;
-    height: 24px !important;
-    min-height: 24px !important;
-    padding: 0 !important;
-    position: absolute !important;
-    top: calc(50% - 12px) !important;
-    width: 22px !important;
-    z-index: 3 !important;
-  }
-
-  .input {
-    left: -11px !important;
-    justify-content: flex-start !important;
-    text-align: left !important;
-  }
-
-  .output {
-    right: -11px !important;
-    justify-content: flex-end !important;
-    text-align: right !important;
-  }
-
-  .input::after,
-  .output::before {
-    background: var(--daisy-blueprint-node-theme) !important;
-    border-radius: 999px !important;
-    content: "" !important;
-    height: 3px !important;
-    opacity: 0.82 !important;
-    position: absolute !important;
-    top: calc(50% - 1.5px) !important;
-    width: 9px !important;
-    z-index: 0 !important;
-  }
-
-  .input::after {
-    left: 8px !important;
-  }
-
-  .output::before {
-    right: 8px !important;
-  }
-
-  .input[data-blueprint-port-count="2"][data-blueprint-port-index="0"],
-  .output[data-blueprint-port-count="2"][data-blueprint-port-index="0"] {
-    top: calc(50% - 25px) !important;
-  }
-
-  .input[data-blueprint-port-count="2"][data-blueprint-port-index="1"],
-  .output[data-blueprint-port-count="2"][data-blueprint-port-index="1"] {
-    top: calc(50% + 1px) !important;
-  }
-
-  .input[data-blueprint-port-count="3"][data-blueprint-port-index="0"],
-  .output[data-blueprint-port-count="3"][data-blueprint-port-index="0"] {
-    top: calc(50% - 38px) !important;
-  }
-
-  .input[data-blueprint-port-count="3"][data-blueprint-port-index="1"],
-  .output[data-blueprint-port-count="3"][data-blueprint-port-index="1"] {
-    top: calc(50% - 12px) !important;
-  }
-
-  .input[data-blueprint-port-count="3"][data-blueprint-port-index="2"],
-  .output[data-blueprint-port-count="3"][data-blueprint-port-index="2"] {
-    top: calc(50% + 14px) !important;
-  }
-
-  :host([data-blueprint-display="minimal"]) .input,
-  :host([data-blueprint-display="minimal"]) .output {
-    top: calc(50% - 12px) !important;
-  }
-
-  .input-socket,
-  .output-socket {
-    display: inline-flex !important;
-    flex: 0 0 14px !important;
-    height: 14px !important;
-    margin: 0 !important;
-    position: relative !important;
-    transform: none !important;
-    width: 14px !important;
-    z-index: 1 !important;
-  }
-
-  .input-title,
-  .output-title {
-    display: none !important;
-  }
-
-  :host([data-blueprint-display="minimal"]) .input-title,
-  :host([data-blueprint-display="minimal"]) .output-title {
-    font-size: 10px !important;
-    opacity: 0.65 !important;
-  }
-
-  .control,
-  .input-control {
-    display: none !important;
-  }
-
-  .daisy-blueprint-preview:empty {
-    display: none !important;
-  }
-
-  .daisy-blueprint-preview {
-    background: var(--color-base-100) !important;
-    border-radius: 0 0 7px 7px !important;
-    border-top: 1px solid color-mix(in oklch, var(--color-base-300) 78%, transparent) !important;
-    display: grid !important;
-    gap: 0 !important;
-    padding: 7px 0 !important;
-  }
-
-  .daisy-blueprint-preview-row {
-    align-items: center !important;
-    display: grid !important;
-    gap: 10px !important;
-    grid-template-columns: minmax(4.5rem, 0.72fr) minmax(0, 1fr) !important;
-    min-height: 30px !important;
-    padding: 4px 22px !important;
-  }
-
-  .daisy-blueprint-preview-row:nth-child(even) {
-    background: color-mix(in oklch, var(--color-base-200) 54%, transparent) !important;
-  }
-
-  .daisy-blueprint-preview-label {
-    color: var(--color-base-content) !important;
-    font-size: 9px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0 !important;
-    opacity: 0.55 !important;
-    overflow: hidden !important;
-    text-transform: uppercase !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-  }
-
-  .daisy-blueprint-preview-value {
-    color: var(--color-base-content) !important;
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    overflow: hidden !important;
-    text-align: right !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-  }
-
-  :host([data-blueprint-display="minimal"]) .daisy-blueprint-preview {
-    display: none !important;
-  }
-`;
-
-const socketShadowCss = `
-  ${themeHostRules}
-
-  :host {
-    --socket-size: 14px !important;
-    --socket-margin: 0px !important;
-    --socket-color: var(--daisy-blueprint-node-theme) !important;
-    display: block !important;
-    height: 14px !important;
-    width: 14px !important;
-  }
-
-  .hoverable {
-    border-radius: 999px !important;
-    box-sizing: border-box !important;
-    display: block !important;
-    height: 14px !important;
-    padding: 0 !important;
-    width: 14px !important;
-  }
-
-  .styles {
-    box-sizing: border-box !important;
-    height: 14px !important;
-    width: 14px !important;
-  }
-`;
-
-const styleSheetCache = new Map();
-
-export function decorateNodeView(root, area, node) {
-  const element = area.nodeViews.get(node.id)?.element;
-
-  if (!element) {
-    return;
-  }
-
-  const theme = normalizeBlueprintTheme(node.__blueprint?.theme);
-
-  element.dataset.blueprintNodeType = node.__blueprint?.type || 'node';
-  element.dataset.blueprintDisplay = node.__blueprint?.display || 'detailed';
-  element.dataset.blueprintIcon = node.__blueprint?.icon || '';
-  element.dataset.blueprintLabel = node.label || '';
-  element.dataset.blueprintTheme = theme;
-  decorateNodeElement(root, element, theme, node);
-  window.requestAnimationFrame?.(() => decorateNodeElement(root, element, theme, node));
-  window.setTimeout(() => decorateNodeElement(root, element, theme, node), 50);
-}
-
-export function decorateNodeViews(root, area, editor) {
-  editor.getNodes().forEach((node) => decorateNodeView(root, area, node));
-}
-
-function decorateNodeElement(root, element, theme, node) {
-  element.querySelectorAll('rete-node').forEach((nodeElement) => {
-    const color = resolveNodeColor(node);
-
-    nodeElement.dataset.blueprintTheme = theme;
-    nodeElement.dataset.blueprintDisplay = element.dataset.blueprintDisplay || 'detailed';
-    nodeElement.dataset.blueprintIcon = element.dataset.blueprintIcon || '';
-    nodeElement.dataset.blueprintLabel = element.dataset.blueprintLabel || '';
-    applyNodeColor(nodeElement, color);
-    decorateNodeShadow(nodeElement, node);
-  });
-}
-
-function decorateNodeShadow(nodeElement, node) {
-  const shadow = nodeElement.shadowRoot;
-
-  if (!shadow) {
-    return;
-  }
-
-  adoptShadowStyles(shadow, 'node', nodeShadowCss);
-  decoratePortRows(shadow);
-
-  const title = shadow.querySelector('.title');
-
-  if (title) {
-    decorateNodeTitle(title, nodeElement);
-  }
-
-  renderNodePreview(shadow, node);
-
-  shadow.querySelectorAll('.input-socket rete-ref, .output-socket rete-ref').forEach((socketRef) => {
-    decorateSocketRef(socketRef, nodeElement.dataset.blueprintTheme, nodeElement.style.getPropertyValue('--daisy-blueprint-node-theme'));
-  });
-}
-
-function decoratePortRows(shadow) {
-  decoratePortRowGroup(shadow.querySelectorAll('.input'));
-  decoratePortRowGroup(shadow.querySelectorAll('.output'));
-}
-
-function decoratePortRowGroup(rows) {
-  const count = rows.length;
-
-  rows.forEach((row, index) => {
-    row.dataset.blueprintPortIndex = String(index);
-    row.dataset.blueprintPortCount = String(Math.min(count, 3));
-  });
-}
-
-function decorateNodeTitle(title, nodeElement) {
-  const host = nodeElement.closest('[data-blueprint-display]');
-  const icon = host?.dataset.blueprintIcon || nodeElement.dataset.blueprintIcon || '';
-  const labelText = host?.dataset.blueprintLabel || nodeElement.dataset.blueprintLabel || '';
-
-  if (title.dataset.blueprintTitleDecorated !== 'true') {
-    title.dataset.blueprintTitleDecorated = 'true';
-    title.textContent = '';
-
-    const label = document.createElement('span');
-
-    label.dataset.blueprintTitleLabel = 'true';
-    label.textContent = labelText;
-
-    title.append(label);
-  }
-
-  const label = title.querySelector('[data-blueprint-title-label]');
-
-  if (label) {
-    label.textContent = labelText;
-  }
-
-  title.querySelector('[data-blueprint-title-icon]')?.remove();
-
-  if (!icon) {
-    return;
-  }
-
-  const iconElement = document.createElement('span');
-
-  iconElement.dataset.blueprintTitleIcon = 'true';
-  iconElement.textContent = icon.slice(0, 3);
-
-  title.append(iconElement);
-}
-
-function renderNodePreview(shadow, node) {
-  shadow.querySelector('.daisy-blueprint-preview')?.remove();
-
-  if (!node || node.__blueprint?.display === 'minimal') {
-    return;
-  }
-
-  const previewFields = node.__blueprint?.previewFields || [];
-
-  if (!previewFields.length) {
-    return;
-  }
-
-  const preview = document.createElement('div');
-
-  preview.className = 'daisy-blueprint-preview';
-  preview.dataset.blueprintNodePreview = 'true';
-
-  previewFields.forEach((field) => {
-    const value = node.__blueprint?.data?.[field.key];
-
-    if (value === null || value === undefined || typeof value === 'object') {
-      return;
+export function animateTransform(element, transform) {
+    if (typeof element?.animate !== 'function') {
+        return;
     }
 
-    const row = document.createElement('div');
-    const label = document.createElement('span');
-    const output = document.createElement('span');
-
-    row.className = 'daisy-blueprint-preview-row';
-    label.className = 'daisy-blueprint-preview-label';
-    output.className = 'daisy-blueprint-preview-value';
-    label.textContent = field.label || field.key;
-    output.textContent = formatPreviewValue(value, node, field);
-    row.append(label, output);
-    preview.append(row);
-  });
-
-  if (!preview.childElementCount) {
-    return;
-  }
-
-  const insertAfter = shadow.querySelector('.title');
-
-  insertAfter?.after(preview);
+    element.__daisyBlueprintTransform?.cancel();
+    element.__daisyBlueprintTransform = element.animate(
+        [{ transform }, { transform }],
+        { duration: 0, fill: 'forwards' },
+    );
 }
 
-export function formatPreviewValue(value, node = null, field = null) {
-  const control = node?.__blueprint?.controls?.find((candidate) => candidate.key === field?.key);
-  const option = control?.options?.find((candidate) => String(candidate.value) === String(value));
+function createElement(tagName, className, text) {
+    const element = document.createElement(tagName);
 
-  if (option?.label) {
-    return String(option.label);
-  }
+    if (className) {
+        element.className = className;
+    }
 
-  if (typeof value === 'boolean') {
-    return value ? 'true' : 'false';
-  }
+    if (text !== undefined) {
+        element.textContent = text;
+    }
 
-  return String(value);
+    return element;
 }
 
-export function resolveNodeColor(node) {
-  const colorField = node?.__blueprint?.colorField;
+function createSvgElement(tagName, attributes = {}) {
+    const element = document.createElementNS(SVG_NAMESPACE, tagName);
 
-  if (!colorField) {
-    return '';
-  }
-
-  const value = node?.__blueprint?.data?.[colorField];
-  const control = node?.__blueprint?.controls?.find((candidate) => candidate.key === colorField);
-  const option = control?.options?.find((candidate) => String(candidate.value) === String(value));
-
-  return option?.color || '';
-}
-
-function applyNodeColor(nodeElement, color) {
-  if (!color) {
-    nodeElement.style.removeProperty('--daisy-blueprint-node-theme');
-    nodeElement.style.removeProperty('--daisy-blueprint-node-theme-content');
-
-    return;
-  }
-
-  nodeElement.style.setProperty('--daisy-blueprint-node-theme', color);
-  nodeElement.style.setProperty('--daisy-blueprint-node-theme-content', readableTextColor(color));
-}
-
-function readableTextColor(color) {
-  const hex = color.startsWith('#') ? color.slice(1) : color;
-  const expanded = hex.length === 3
-    ? hex.split('').map((char) => `${char}${char}`).join('')
-    : hex;
-  const red = Number.parseInt(expanded.slice(0, 2), 16);
-  const green = Number.parseInt(expanded.slice(2, 4), 16);
-  const blue = Number.parseInt(expanded.slice(4, 6), 16);
-  const yiqBrightness = ((red * 299) + (green * 587) + (blue * 114)) / 1000;
-
-  return yiqBrightness < 128 ? '#ffffff' : '#030f40';
-}
-
-function decorateSocketRef(socketRef, theme, color = '') {
-  const socketElement = socketRef.querySelector?.('rete-socket');
-  const socketShadow = socketElement?.shadowRoot;
-
-  if (!socketElement || !socketShadow) {
-    return;
-  }
-
-  socketElement.dataset.blueprintTheme = theme;
-  if (color) {
-    socketElement.style.setProperty('--daisy-blueprint-node-theme', color);
-  } else {
-    socketElement.style.removeProperty('--daisy-blueprint-node-theme');
-  }
-
-  adoptShadowStyles(socketShadow, 'socket', socketShadowCss);
-}
-
-function adoptShadowStyles(shadow, key, css) {
-  if (shadow.__daisyBlueprintStyleKeys?.has(key)) {
-    return;
-  }
-
-  const sheet = getConstructableStyleSheet(key, css);
-
-  if (!sheet) {
-    return;
-  }
-
-  shadow.adoptedStyleSheets = [...shadow.adoptedStyleSheets, sheet];
-  shadow.__daisyBlueprintStyleKeys = shadow.__daisyBlueprintStyleKeys || new Set();
-  shadow.__daisyBlueprintStyleKeys.add(key);
-}
-
-function getConstructableStyleSheet(key, css) {
-  if (typeof CSSStyleSheet === 'undefined' || typeof ShadowRoot === 'undefined' || !('adoptedStyleSheets' in ShadowRoot.prototype)) {
-    return null;
-  }
-
-  if (!styleSheetCache.has(key)) {
-    const sheet = new CSSStyleSheet();
-
-    sheet.replaceSync(css);
-    styleSheetCache.set(key, sheet);
-  }
-
-  return styleSheetCache.get(key);
-}
-
-function querySelectorAllDeep(root, selector) {
-  const elements = [];
-  const visit = (currentRoot) => {
-    currentRoot.querySelectorAll?.(selector).forEach((element) => elements.push(element));
-    currentRoot.querySelectorAll?.('*').forEach((element) => {
-      if (element.shadowRoot) {
-        visit(element.shadowRoot);
-      }
+    Object.entries(attributes).forEach(([name, value]) => {
+        element.setAttribute(name, String(value));
     });
-  };
 
-  visit(root);
-
-  return elements;
+    return element;
 }
 
-function getConnectionTheme(connection, editor) {
-  const explicitTheme = connection?.data?.theme;
-
-  if (explicitTheme) {
-    return normalizeBlueprintTheme(explicitTheme);
-  }
-
-  return normalizeBlueprintTheme(editor.getNode(connection?.source)?.__blueprint?.theme);
+function categoryLabel(categories, value) {
+    return categories.find(category => category.value === value)?.label ?? value;
 }
 
-function decorateConnectionElement(element, theme) {
-  querySelectorAllDeep(element, 'rete-connection').forEach((connectionElement) => {
-    connectionElement.dataset.blueprintConnectionTheme = theme;
-  });
+function transitionPresentation(transition, state) {
+    const category = state.transitionCategories.find(item => item.value === transition.category);
+
+    return {
+        ...transition,
+        shape: category?.shape ?? state.transitionShape,
+        color: category?.color ?? null,
+    };
 }
 
-export function decorateConnectionView(root, area, editor, connection) {
-  const element = area.connectionViews.get(connection?.id)?.element;
+function nodePresentation(node, state) {
+    const category = state.nodeCategories.find(item => item.value === node.category);
 
-  if (!element) {
-    return;
-  }
-
-  const theme = getConnectionTheme(connection, editor);
-
-  element.dataset.blueprintConnectionTheme = theme;
-  decorateConnectionElement(element, theme);
-
-  window.requestAnimationFrame?.(() => decorateConnectionElement(element, theme));
-  window.setTimeout(() => decorateConnectionElement(element, theme), 50);
+    return {
+        color: category?.color ?? state.nodeColor,
+    };
 }
 
-export function decorateConnectionViews(root, area, editor) {
-  editor.getConnections().forEach((connection) => decorateConnectionView(root, area, editor, connection));
+function matchesSearch(node, search) {
+    if (!search) {
+        return true;
+    }
+
+    return [node.label, node.description, node.category]
+        .join(' ')
+        .toLocaleLowerCase()
+        .includes(search.toLocaleLowerCase());
+}
+
+function createHandle(side, node, state) {
+    const handle = createElement('button', 'daisy-blueprint-handle');
+    handle.type = 'button';
+    handle.dataset.blueprintHandle = side;
+    handle.dataset.blueprintNodeId = node.id;
+    handle.dataset.connectionSource = state.connectionSource?.nodeId === node.id
+        && state.connectionSource.side === side
+        ? 'true'
+        : 'false';
+    handle.setAttribute(
+        'aria-label',
+        (state.i18n.newTransition ?? 'New transition') + ': ' + (node.label || node.id),
+    );
+
+    return handle;
+}
+
+function createNodeCard(node, state) {
+    const card = createElement('article', 'daisy-blueprint-node card border border-base-300 bg-base-100 shadow-sm');
+    const presentation = nodePresentation(node, state);
+    card.dataset.blueprintNodeId = node.id;
+    card.dataset.nodeColor = presentation.color;
+    card.dataset.selected = state.selection?.type === 'node' && state.selection.id === node.id ? 'true' : 'false';
+    card.dataset.connectionSource = state.connectionSource?.nodeId === node.id ? 'true' : 'false';
+    card.dataset.searchMatch = matchesSearch(node, state.search) ? 'true' : 'false';
+    card.tabIndex = 0;
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', (state.i18n.node ?? 'Step') + ': ' + (node.label || node.id));
+    animateTransform(
+        card,
+        'translate(' + (node.position?.x ?? 0) + 'px, ' + (node.position?.y ?? 0) + 'px)',
+    );
+
+    const body = createElement('div', 'card-body gap-2 p-4');
+    const heading = createElement('div', 'flex min-w-0 items-start justify-between gap-2');
+    const title = createElement('h3', 'line-clamp-2 min-w-0 text-sm font-semibold', node.label || state.i18n.unnamed);
+    heading.append(title);
+
+    if (node.category) {
+        heading.append(createElement(
+            'span',
+            'badge badge-sm badge-outline shrink-0',
+            categoryLabel(state.nodeCategories, node.category),
+        ));
+    }
+
+    body.append(heading);
+
+    if (node.description) {
+        body.append(createElement('p', 'daisy-blueprint-node-description line-clamp-2 text-xs text-base-content/65', node.description));
+    }
+
+    card.append(body);
+
+    if (state.editable) {
+        ['top', 'right', 'bottom', 'left'].forEach((side) => {
+            card.append(createHandle(side, node, state));
+        });
+    }
+
+    return card;
+}
+
+function renderNodes(root, state) {
+    const layer = root.querySelector('[data-blueprint-nodes]');
+    const fragment = document.createDocumentFragment();
+
+    state.workflow.nodes.forEach((node) => {
+        fragment.append(createNodeCard(node, state));
+    });
+
+    layer.replaceChildren(fragment);
+
+    return new Map(state.workflow.nodes.map((node) => {
+        const card = Array.from(layer.children).find(element => (
+            element.dataset.blueprintNodeId === node.id
+        ));
+
+        return [node.id, {
+            width: card?.offsetWidth || DEFAULT_NODE_SIZE.width,
+            height: card?.offsetHeight || DEFAULT_NODE_SIZE.height,
+        }];
+    }));
+}
+
+function transitionLabelMetrics(textValue) {
+    const shortened = textValue.length > 42 ? textValue.slice(0, 39) + '…' : textValue;
+    return {
+        text: shortened,
+        width: Math.max(48, shortened.length * 7 + 20),
+        height: 26,
+    };
+}
+
+function rectangle(position, width, height) {
+    return {
+        left: position.x - width / 2,
+        right: position.x + width / 2,
+        top: position.y - height / 2,
+        bottom: position.y + height / 2,
+    };
+}
+
+function overlaps(first, second) {
+    return first.left < second.right
+        && first.right > second.left
+        && first.top < second.bottom
+        && first.bottom > second.top;
+}
+
+function routeOverlapsLabel(route, bounds) {
+    if (!route) {
+        return false;
+    }
+
+    return route.slice(1).some((point, index) => {
+        const previous = route[index];
+
+        if (previous.y === point.y) {
+            return previous.y >= bounds.top
+                && previous.y <= bounds.bottom
+                && Math.max(previous.x, point.x) >= bounds.left
+                && Math.min(previous.x, point.x) <= bounds.right;
+        }
+
+        return previous.x >= bounds.left
+            && previous.x <= bounds.right
+            && Math.max(previous.y, point.y) >= bounds.top
+            && Math.min(previous.y, point.y) <= bounds.bottom;
+    });
+}
+
+export function resolveTransitionLabelPosition(geometry, textValue, nodes, occupiedLabels, transitionGeometries = []) {
+    const metrics = transitionLabelMetrics(textValue);
+    const normal = geometry.normal ?? { x: 0, y: -1 };
+    const tangent = { x: -normal.y, y: normal.x };
+    const distances = [36, 72, 108, 144];
+    const preferredOffsets = geometry.offset === 0
+        ? [...distances, ...distances.map(distance => -distance), 0]
+        : [0, ...distances, ...distances.map(distance => -distance)];
+    const candidates = preferredOffsets.map(offset => ({
+        x: geometry.label.x + normal.x * offset,
+        y: geometry.label.y + normal.y * offset,
+    }));
+
+    distances.flatMap(distance => [distance, -distance]).forEach((offset) => {
+        candidates.push({
+            x: geometry.label.x + tangent.x * offset,
+            y: geometry.label.y + tangent.y * offset,
+        });
+    });
+
+    const nodeBounds = nodes.map(node => rectangle(
+        { x: node.position.x + node.width / 2, y: node.position.y + node.height / 2 },
+        node.width,
+        node.height,
+    ));
+    const occupiedBounds = occupiedLabels.map(label => rectangle(
+        { x: label.x, y: label.y },
+        label.width,
+        label.height,
+    ));
+
+    return candidates.find((candidate) => {
+        const candidateBounds = rectangle(candidate, metrics.width, metrics.height);
+
+        return !nodeBounds.some(bounds => overlaps(candidateBounds, bounds))
+            && !occupiedBounds.some(bounds => overlaps(candidateBounds, bounds))
+            && !transitionGeometries.some((transition) => (
+                transition.id !== geometry.id && routeOverlapsLabel(transition.route, candidateBounds)
+            ));
+    }) ?? geometry.label;
+}
+
+export function transitionLabelLeader(anchor, position, metrics) {
+    const deltaX = position.x - anchor.x;
+    const deltaY = position.y - anchor.y;
+    const distance = Math.hypot(deltaX, deltaY);
+
+    if (distance < 18) {
+        return null;
+    }
+
+    const scale = Math.min(
+        Math.abs(deltaX) > 0 ? (metrics.width / 2) / Math.abs(deltaX) : Infinity,
+        Math.abs(deltaY) > 0 ? (metrics.height / 2) / Math.abs(deltaY) : Infinity,
+    );
+
+    return {
+        x1: anchor.x,
+        y1: anchor.y,
+        x2: position.x - deltaX * scale,
+        y2: position.y - deltaY * scale,
+    };
+}
+
+function appendTransitionLabelLeader(group, metrics, position, anchor) {
+    const leader = transitionLabelLeader(anchor, position, metrics);
+
+    if (leader) {
+        group.append(createSvgElement('line', {
+            class: 'daisy-blueprint-transition-label-leader',
+            ...leader,
+        }));
+    }
+}
+
+function appendTransitionLabel(group, metrics, position, selected) {
+    const label = createSvgElement('g', {
+        class: 'daisy-blueprint-transition-label',
+        transform: 'translate(' + position.x + ' ' + position.y + ')',
+        'data-selected': selected ? 'true' : 'false',
+    });
+    const rect = createSvgElement('rect', {
+        x: -metrics.width / 2,
+        y: -13,
+        width: metrics.width,
+        height: metrics.height,
+        rx: 13,
+    });
+    const text = createSvgElement('text', {
+        'text-anchor': 'middle',
+        'dominant-baseline': 'central',
+    });
+    text.textContent = metrics.text;
+    label.append(rect, text);
+    group.append(label);
+}
+
+function renderTransitions(root, state, sizes) {
+    const layer = root.querySelector('[data-blueprint-transition-layer]');
+    const labelLayer = root.querySelector('[data-blueprint-transition-label-layer]');
+    const svg = root.querySelector('[data-blueprint-edges]');
+    const markerId = root.querySelector('marker')?.id;
+    const measuredNodes = state.workflow.nodes.map(node => ({
+        ...node,
+        ...(sizes.get(node.id) ?? DEFAULT_NODE_SIZE),
+    }));
+    const width = Math.max(1000, ...measuredNodes.map(node => (
+        (node.position?.x ?? 0) + node.width + 240
+    )));
+    const height = Math.max(800, ...measuredNodes.map(node => (
+        (node.position?.y ?? 0) + node.height + 240
+    )));
+    svg.setAttribute('width', String(Math.ceil(width)));
+    svg.setAttribute('height', String(Math.ceil(height)));
+    const presentedTransitions = state.workflow.transitions.map(transition => (
+        transitionPresentation(transition, state)
+    ));
+    const geometries = createTransitionGeometry(presentedTransitions, measuredNodes, {
+        shape: state.transitionShape,
+    });
+    const transitionById = new Map(state.workflow.transitions.map(transition => [transition.id, transition]));
+    const nodeById = new Map(state.workflow.nodes.map(node => [node.id, node]));
+    const transitionFragment = document.createDocumentFragment();
+    const labelFragment = document.createDocumentFragment();
+    const occupiedLabels = [];
+
+    geometries.forEach((geometry) => {
+        const transition = transitionById.get(geometry.id);
+        const selected = state.selection?.type === 'transition' && state.selection.id === geometry.id;
+        const group = createSvgElement('g', {
+            class: 'daisy-blueprint-transition',
+            'data-blueprint-transition-id': geometry.id,
+            'data-selected': selected ? 'true' : 'false',
+            'data-category': transition?.category ?? '',
+            'data-transition-shape': geometry.shape,
+            'data-transition-color': geometry.color ?? '',
+            tabindex: 0,
+            role: 'button',
+            'aria-label': (state.i18n.transition ?? 'Transition') + ': '
+                + (transition?.label || transition?.id) + ', '
+                + (nodeById.get(transition?.source)?.label || transition?.source) + ' → '
+                + (nodeById.get(transition?.target)?.label || transition?.target),
+        });
+        const visiblePath = createSvgElement('path', {
+            class: 'daisy-blueprint-transition-line',
+            d: geometry.path,
+            'marker-end': markerId ? 'url(#' + markerId + ')' : '',
+        });
+        const hitPath = createSvgElement('path', {
+            class: 'daisy-blueprint-transition-hit',
+            d: geometry.path,
+        });
+        group.append(visiblePath, hitPath);
+
+        if (transition?.label) {
+            const metrics = transitionLabelMetrics(transition.label);
+            const labelPosition = resolveTransitionLabelPosition(
+                geometry,
+                transition.label,
+                measuredNodes,
+                occupiedLabels,
+                geometries,
+            );
+            const labelGroup = createSvgElement('g', {
+                class: 'daisy-blueprint-transition',
+                'data-blueprint-transition-id': geometry.id,
+                'data-selected': selected ? 'true' : 'false',
+                'data-category': transition?.category ?? '',
+                'data-transition-shape': geometry.shape,
+                'data-transition-color': geometry.color ?? '',
+            });
+            appendTransitionLabelLeader(group, metrics, labelPosition, geometry.label);
+            appendTransitionLabel(labelGroup, metrics, labelPosition, selected);
+            labelFragment.append(labelGroup);
+            occupiedLabels.push({
+                ...labelPosition,
+                width: metrics.width,
+                height: metrics.height,
+            });
+        }
+
+        transitionFragment.append(group);
+    });
+
+    layer.replaceChildren(transitionFragment);
+    labelLayer?.replaceChildren(labelFragment);
+}
+
+function createMobileTransition(transition, nodeById, state) {
+    const item = createElement('li', 'flex items-center gap-2 text-xs text-base-content/70');
+    const button = createElement(
+        'button',
+        'link link-hover text-left',
+        transition.label || state.i18n.unnamed,
+    );
+    button.type = 'button';
+    button.dataset.blueprintTransitionId = transition.id;
+    const target = nodeById.get(transition.target);
+    item.append(button, createElement('span', '', '→ ' + (target?.label || transition.target)));
+
+    return item;
+}
+
+function renderMobileList(root, state) {
+    const list = root.querySelector('[data-blueprint-mobile-list]');
+    const nodeById = new Map(state.workflow.nodes.map(node => [node.id, node]));
+    const fragment = document.createDocumentFragment();
+
+    state.workflow.nodes.forEach((node) => {
+        const card = createElement('section', 'daisy-blueprint-mobile-node rounded-box border border-base-300 bg-base-100 p-3');
+        const presentation = nodePresentation(node, state);
+        card.dataset.nodeColor = presentation.color;
+        const button = createElement('button', 'font-semibold link link-hover text-left', node.label || state.i18n.unnamed);
+        button.type = 'button';
+        button.dataset.blueprintNodeId = node.id;
+        card.append(button);
+
+        if (node.description) {
+            card.append(createElement('p', 'daisy-blueprint-node-description mt-1 text-sm text-base-content/65', node.description));
+        }
+
+        const outgoing = state.workflow.transitions.filter(transition => transition.source === node.id);
+        if (outgoing.length > 0) {
+            const transitions = createElement('ul', 'mt-3 grid gap-2 border-t border-base-300 pt-3');
+            outgoing.forEach(transition => transitions.append(createMobileTransition(transition, nodeById, state)));
+            card.append(transitions);
+        }
+
+        fragment.append(card);
+    });
+
+    list.replaceChildren(fragment);
+}
+
+export function renderWorkflow(root, state) {
+    const sizes = renderNodes(root, state);
+    renderTransitions(root, state, sizes);
+    renderMobileList(root, state);
+
+    const empty = root.querySelector('[data-blueprint-empty]');
+    if (empty) {
+        empty.hidden = state.workflow.nodes.length > 0;
+    }
+
+    return sizes;
 }
