@@ -65,6 +65,65 @@ describe('select module', () => {
         expect(wrapper.classList.contains('dropdown-open')).toBe(true);
     });
 
+    it('renders and updates semantic color swatches', () => {
+        document.body.innerHTML = `
+            <div data-module="select" class="dropdown w-full">
+                <label class="input flex w-full items-center gap-2">
+                    <span data-role="swatch" class="h-3 w-3 shrink-0 rounded-full bg-primary" aria-hidden="true"></span>
+                    <input type="text" data-role="input" class="grow" autocomplete="off">
+                </label>
+                <ul data-role="list" role="listbox" class="dropdown-content hidden"></ul>
+                <select data-role="native" hidden>
+                    <option value="primary" data-swatch="primary" selected>Traitement courant</option>
+                    <option value="warning" data-swatch="warning">A surveiller</option>
+                </select>
+            </div>
+        `;
+
+        const wrapper = document.querySelector('[data-module="select"]');
+        const input = wrapper.querySelector('[data-role="input"]');
+        const selectedSwatch = wrapper.querySelector('[data-role="swatch"]');
+
+        initSelect(wrapper);
+        input.value = '';
+        input.dispatchEvent(new Event('focus'));
+
+        expect(wrapper.querySelector('[data-select-swatch="warning"]')).not.toBeNull();
+
+        const warningOption = Array.from(wrapper.querySelectorAll('button[role="option"]'))
+            .find((option) => option.textContent.includes('A surveiller'));
+
+        warningOption.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+        expect(selectedSwatch.classList.contains('bg-warning')).toBe(true);
+        expect(selectedSwatch.classList.contains('bg-primary')).toBe(false);
+    });
+
+    it('shows every local option without allowing a search query when configured', () => {
+        document.body.innerHTML = `
+            <div data-module="select" class="dropdown w-full" data-searchable="false">
+                <label class="input flex w-full items-center gap-2">
+                    <input type="text" data-role="input" class="grow" autocomplete="off">
+                </label>
+                <ul data-role="list" role="listbox" class="dropdown-content hidden"></ul>
+                <select data-role="native" hidden>
+                    <option value="primary" selected>Traitement courant</option>
+                    <option value="warning">A surveiller</option>
+                </select>
+            </div>
+        `;
+
+        const wrapper = document.querySelector('[data-module="select"]');
+        const input = wrapper.querySelector('[data-role="input"]');
+
+        initSelect(wrapper);
+        input.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+        expect(input.readOnly).toBe(true);
+        expect(wrapper.querySelectorAll('button[role="option"]')).toHaveLength(2);
+        expect(wrapper.classList.contains('dropdown-open')).toBe(true);
+    });
+
     it('renders remote autocomplete results once and syncs the native select', async () => {
         document.body.innerHTML = `
             <div data-module="select" class="dropdown w-full" data-endpoint="/api/tags" data-param="search" data-min-chars="1" data-debounce="1">

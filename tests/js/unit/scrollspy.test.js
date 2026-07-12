@@ -58,4 +58,29 @@ describe('scrollspy module', () => {
     expect(nav.querySelector('a[href="#section-b"]').classList.contains('active')).toBe(false);
     expect(nav.querySelector('a[href="#section-c"]').classList.contains('active')).toBe(false);
   });
+
+  it('uses the viewport rather than the full document for global scrolling', () => {
+    document.body.innerHTML = `
+      <nav data-scrollspy="1" data-offset="0" data-active-class="active">
+        <ul>
+          <li><a href="#section-a">A</a></li>
+          <li><a href="#section-b">B</a></li>
+        </ul>
+      </nav>
+      <section id="section-a"></section>
+      <section id="section-b"></section>
+    `;
+
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 600 });
+    setRect(document.documentElement, rect(-1_200, 2_400));
+    setRect(document.getElementById('section-a'), rect(-400, -100));
+    setRect(document.getElementById('section-b'), rect(120, 420));
+
+    const nav = document.querySelector('[data-scrollspy="1"]');
+
+    init(nav);
+
+    expect(nav.querySelector('a[href="#section-a"]').classList.contains('active')).toBe(false);
+    expect(nav.querySelector('a[href="#section-b"]').classList.contains('active')).toBe(true);
+  });
 });

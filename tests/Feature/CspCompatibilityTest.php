@@ -240,6 +240,9 @@ it('does not emit package runtime css variable shims in public resources', funct
 
 it('keeps public module runtime style writes explicitly audited', function () {
     $violations = [];
+    $auditedRuntimeStyleWrites = [
+        'modules/tooltip.js', // Floating viewport positioning requires runtime coordinates.
+    ];
 
     $scripts = collect(File::allFiles(dirname(__DIR__, 2).'/resources/js'))
         ->filter(fn (SplFileInfo $file) => $file->getExtension() === 'js');
@@ -248,7 +251,8 @@ it('keeps public module runtime style writes explicitly audited', function () {
         $contents = $script->getContents();
         $relativePath = $script->getRelativePathname();
 
-        if (preg_match('/\.style(?:\.|\.setProperty\s*\()/i', $contents)) {
+        if (preg_match('/\.style(?:\.|\.setProperty\s*\()/i', $contents)
+            && ! in_array($relativePath, $auditedRuntimeStyleWrites, true)) {
             $violations[] = "{$relativePath} writes runtime inline styles";
         }
     }

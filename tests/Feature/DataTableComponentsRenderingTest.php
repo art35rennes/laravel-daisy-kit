@@ -21,6 +21,7 @@ it('renders a client table with DaisyUI classes and serialized config', function
             mode="client"
             size="sm"
             zebra
+            hover
             pin-rows
             pin-cols
             caption="Users"
@@ -40,7 +41,7 @@ it('renders a client table with DaisyUI classes and serialized config', function
         ->toContain('data-module="table"')
         ->toContain('data-daisy-table="1"')
         ->toContain('data-table-layout="auto"')
-        ->toContain('table table-zebra table-sm table-pin-rows table-pin-cols table-auto w-full')
+        ->toContain('table table-zebra daisy-table-row-hover table-sm table-pin-rows table-pin-cols table-auto w-full')
         ->toContain('daisy-table-shell')
         ->toContain('daisy-table-width-px-180')
         ->toContain('Users')
@@ -598,6 +599,26 @@ it('renders row selection controls and deferred bulk actions', function () {
         ->toContain('data-table-bulk-action="archive"');
 });
 
+it('can hide filtered selection when a host submits explicit selected ids', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            selection="multiple"
+            row-key="uuid"
+            :select-filtered="false"
+            :columns="[
+                ['key' => 'name', 'label' => 'Name'],
+            ]"
+            :rows="[
+                ['uuid' => 'user-1', 'name' => 'Jane'],
+            ]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('"selectFiltered":false')
+        ->not->toContain('data-table-select-filtered');
+});
+
 it('requires a row key when table selection is enabled', function () {
     $render = fn () => View::make('daisy::components.ui.data-display.table', [
         'selection' => 'multiple',
@@ -606,7 +627,7 @@ it('requires a row key when table selection is enabled', function () {
         ],
     ])->render();
 
-    expect($render)->toThrow(ViewException::class, 'rowKey prop when selection is set to multiple');
+    expect($render)->toThrow(ViewException::class, 'rowKey prop when selection is enabled');
 });
 
 it('requires a row key for row detail, sub rows and editable rows', function () {

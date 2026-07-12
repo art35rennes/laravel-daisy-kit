@@ -304,12 +304,13 @@ it('renders two-factor template', function () {
         ->toContain(__('daisy::auth.two_factor_description'))
         ->toContain(__('daisy::auth.two_factor_instructions'))
         ->toContain('form')
-        ->toContain('data-module="otp-code"')
-        ->toContain('data-otp-digit');
+        ->toContain('class="otp otp-lg')
+        ->toContain('name="code"')
+        ->toContain('maxlength="6"')
+        ->toContain('autocomplete="one-time-code"')
+        ->not->toContain('data-module="otp-code"');
 
-    // Vérifier qu'il y a 6 inputs pour le code OTP en comptant les balises <input avec data-otp-digit
-    preg_match_all('/<input[^>]*data-otp-digit[^>]*>/i', $html, $matches);
-    expect(count($matches[0]))->toBe(6);
+    expect(substr_count($html, '<span></span>'))->toBeGreaterThanOrEqual(6);
 });
 
 it('renders two-factor template without recovery link', function () {

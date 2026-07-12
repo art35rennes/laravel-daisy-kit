@@ -467,7 +467,33 @@ it('renders Laravel aware select options selected value and validation state', f
         ->toContain('select-error')
         ->toContain('aria-invalid="true"')
         ->toContain('value="admin" selected')
-        ->toContain('Administrator');
+        ->toContain('>Administrator</option>')
+        ->not->toContain(">\n                Administrator\n            </option>");
+});
+
+it('renders semantic color swatches in enhanced select options', function () {
+    $html = View::make('daisy::components.ui.inputs.select', [
+        'name' => 'status_color',
+        'value' => 'warning',
+        'options' => [
+            ['value' => 'primary', 'label' => 'Standard', 'swatch' => 'primary'],
+            ['value' => 'accent', 'label' => 'Mise en avant', 'swatch' => 'accent'],
+            ['value' => 'info', 'label' => 'Information', 'swatch' => 'info'],
+            ['value' => 'warning', 'label' => 'Attention', 'swatch' => 'warning'],
+        ],
+    ])->render();
+
+    expect($html)
+        ->toContain('data-role="swatch"')
+        ->toContain('bg-warning')
+        ->toContain('data-swatch="primary"')
+        ->toContain('data-swatch="warning"');
+
+    $component = file_get_contents(__DIR__.'/../../resources/views/components/ui/inputs/select.blade.php');
+
+    expect($component)
+        ->toContain("'accent' => 'bg-accent'")
+        ->toContain("'info' => 'bg-info'");
 });
 
 it('renders Laravel aware checkbox names values old input and validation state', function () {
@@ -570,6 +596,41 @@ it('renders table toolbar and actions slots', function () {
         ->toContain('Import')
         ->toContain('/users/create')
         ->toContain('Jane');
+});
+
+it('renders a single table selection as radios with selection feedback but without bulk selection controls', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            :columns="[['key' => 'name', 'label' => 'Name']]"
+            :rows="[['uuid' => 'user-1', 'name' => 'Jane']]"
+            row-key="uuid"
+            selection="single"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('type="radio"')
+        ->toContain('class="radio radio-sm"')
+        ->toContain('data-table-selection-feedback')
+        ->toContain('data-table-clear-selection')
+        ->not->toContain('data-table-select-page');
+});
+
+it('renders a read-only table selection', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            :columns="[['key' => 'name', 'label' => 'Name']]"
+            :rows="[['uuid' => 'user-1', 'name' => 'Jane']]"
+            row-key="uuid"
+            selection="single"
+            selection-read-only
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('"readOnly":true')
+        ->toContain('data-table-row-select="user-1"')
+        ->toContain('disabled');
 });
 
 it('renders CRUD layout and section ergonomic slots', function () {

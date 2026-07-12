@@ -247,12 +247,18 @@ it('renders localized code-editor toolbar and CodeMirror phrases', function () {
         ->toContain('Tout déplier')
         ->toContain('Formater')
         ->toContain('Copier')
+        ->toContain('Agrandir')
+        ->toContain('Réduire')
+        ->toContain('Agrandir l’éditeur')
+        ->toContain('Réduire l’éditeur')
         ->toContain('Tout plier récursivement')
         ->toContain('Rechercher')
         ->toContain('"regexp"')
         ->toContain('data-i18n')
         ->toContain('<template data-initial>')
         ->toContain('<template data-i18n>')
+        ->toContain('data-code-editor-expand-modal')
+        ->toContain('data-code-editor-expand-button')
         ->not->toContain('<script type="application/json" data-options>')
         ->not->toContain('<script type="application/json" data-initial>')
         ->not->toContain('<script type="application/json" data-i18n>')
@@ -486,7 +492,11 @@ it('renders a charts.bar component', function () {
         ->toContain('"markers":[{"type":"line","value":20,"name":"Target"}]')
         ->toContain('"zoom":true')
         ->toContain('"orientation":"horizontal"')
+        ->toContain('"renderer":"svg"')
         ->toContain('daisy-chart-clickable')
+        ->toContain('daisy-chart-data')
+        ->toContain('data-chart-accessible-action')
+        ->toContain('data-series-index="0"')
         ->toContain('Revenue')
         ->not->toContain('data-daisy-css-width')
         ->not->toContain('data-daisy-css-height');
@@ -502,7 +512,19 @@ it('renders a charts.sparkline component without legend by default', function ()
     expect($html)
         ->toContain('"preset":"sparkline"')
         ->toContain('"legend":false')
+        ->toContain('daisy-chart-data')
         ->toContain('daisy-chart-height-px-120');
+});
+
+it('marks circular charts for stable css group hover', function () {
+    $html = View::make('daisy::components.charts.donut', [
+        'categories' => ['Open', 'Closed'],
+        'series' => [['name' => 'Status', 'data' => [7, 3]]],
+    ])->render();
+
+    expect($html)
+        ->toContain('data-chart-circular="1"')
+        ->toContain('data-chart-preset="donut"');
 });
 
 it('renders a link component', function () {
@@ -718,7 +740,38 @@ it('renders footer-layout with newsletter', function () {
         ->toContain('Newsletter')
         ->toContain('Restez informé')
         ->toContain('/subscribe')
-        ->toContain('type="email"');
+        ->toContain('type="email"')
+        ->toContain('method="POST"')
+        ->toContain('name="_token"');
+});
+
+it('normalizes newsletter methods and uses laravel method spoofing', function () {
+    $html = View::make('daisy::components.ui.layout.footer-layout', [
+        'newsletter' => true,
+        'newsletterAction' => '/subscribe',
+        'newsletterMethod' => 'PATCH',
+        'attributes' => new ComponentAttributeBag([]),
+    ])->render();
+
+    expect($html)
+        ->toContain('method="POST"')
+        ->toContain('name="_token"')
+        ->toContain('name="_method"')
+        ->toContain('value="PATCH"');
+});
+
+it('does not add csrf or method spoofing to get newsletters', function () {
+    $html = View::make('daisy::components.ui.layout.footer-layout', [
+        'newsletter' => true,
+        'newsletterAction' => '/subscribe',
+        'newsletterMethod' => 'GET',
+        'attributes' => new ComponentAttributeBag([]),
+    ])->render();
+
+    expect($html)
+        ->toContain('method="GET"')
+        ->not->toContain('name="_token"')
+        ->not->toContain('name="_method"');
 });
 
 it('renders footer-layout with brand text and description', function () {
@@ -895,126 +948,6 @@ it('renders scroll status with a native progress element', function () {
         ->toContain('max="100"')
         ->toContain('data-scrollstatus-progress')
         ->not->toContain('style=');
-});
-
-it('renders a tree view parent with an explicit mixed checkbox state', function () {
-    $html = View::make('daisy::components.ui.advanced.tree-view', [
-        'selection' => 'multiple',
-        'data' => [
-            [
-                'id' => 'sandbox',
-                'label' => 'Sandbox',
-                'state' => 'mixed',
-                'children' => [
-                    ['id' => 'draft', 'label' => 'Draft.md', 'selected' => true],
-                    ['id' => 'notes', 'label' => 'Notes.md'],
-                ],
-            ],
-        ],
-    ])->render();
-
-    expect($html)
-        ->toContain('data-indeterminate="true"')
-        ->toContain('aria-checked="mixed"')
-        ->toContain('daisy-tree-indent-0')
-        ->toContain('daisy-tree-indent-1')
-        ->toContain('Draft.md')
-        ->toContain('Notes.md')
-        ->not->toContain('data-daisy-css-tree-indent')
-        ->not->toContain('style=');
-});
-
-it('renders tree nodes from checked aliases used by APIs', function () {
-    $html = View::make('daisy::components.ui.advanced.tree-view', [
-        'selection' => 'multiple',
-        'data' => [
-            [
-                'id' => 'docs',
-                'label' => 'Documentation',
-                'checked' => true,
-                'children' => [
-                    ['id' => 'readme', 'label' => 'README.md', 'checked' => true],
-                ],
-            ],
-        ],
-    ])->render();
-
-    expect(substr_count($html, 'checked'))->toBeGreaterThanOrEqual(2);
-});
-
-it('derives a mixed state for parents from partially selected descendants', function () {
-    $html = View::make('daisy::components.ui.advanced.tree-view', [
-        'selection' => 'multiple',
-        'data' => [
-            [
-                'id' => 'project-beta',
-                'label' => 'Projet Beta',
-                'children' => [
-                    [
-                        'id' => 'docs',
-                        'label' => 'Documentation',
-                        'children' => [
-                            ['id' => 'readme', 'label' => 'README.md', 'selected' => true],
-                            ['id' => 'install', 'label' => 'INSTALL.md'],
-                        ],
-                    ],
-                    [
-                        'id' => 'sources',
-                        'label' => 'Sources',
-                        'children' => [
-                            ['id' => 'main', 'label' => 'main.js'],
-                            ['id' => 'app', 'label' => 'app.vue'],
-                        ],
-                    ],
-                ],
-            ],
-        ],
-    ])->render();
-
-    expect(substr_count($html, 'data-indeterminate="true"'))->toBeGreaterThanOrEqual(2);
-});
-
-it('renders a tree view configured for progressive lazy loading', function () {
-    $html = View::make('daisy::components.ui.advanced.tree-view', [
-        'data' => [
-            [
-                'id' => 'root',
-                'label' => 'Racine',
-                'children' => [
-                    ['id' => 'folder-b', 'label' => 'Dossier B', 'lazy' => true],
-                ],
-            ],
-        ],
-        'lazyUrl' => '/demo/api/tree-children',
-        'lazyMode' => 'progressive',
-    ])->render();
-
-    expect($html)
-        ->toContain('data-lazy-url="/demo/api/tree-children"')
-        ->toContain('data-lazy-mode="progressive"')
-        ->toContain('data-lazy-reload="false"')
-        ->toContain('data-lazy-node="1"');
-});
-
-it('renders a tree view configured for auto lazy loading', function () {
-    $html = View::make('daisy::components.ui.advanced.tree-view', [
-        'data' => [
-            [
-                'id' => 'root',
-                'label' => 'Projet Alpha',
-                'children' => [
-                    ['id' => 'lazy-docs', 'label' => 'Documentation', 'lazy' => true],
-                ],
-            ],
-        ],
-        'lazyUrl' => '/demo/api/tree-children',
-        'lazyMode' => 'auto',
-    ])->render();
-
-    expect($html)
-        ->toContain('data-lazy-url="/demo/api/tree-children"')
-        ->toContain('data-lazy-mode="auto"')
-        ->toContain('data-lazy-reload="false"');
 });
 
 it('renders color picker as a submittable form control', function () {

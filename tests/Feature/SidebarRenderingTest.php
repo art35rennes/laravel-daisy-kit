@@ -90,6 +90,25 @@ it('renders configured collapsed widths and collapsed brand content', function (
         ->toContain('data-sidebar-footer');
 });
 
+it('passes compact behavior through the sidebar layout', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::layout.sidebar-layout
+            title="Dashboard"
+            variant="slim"
+            :force-collapsed="true"
+            :collapsible="false"
+            :sections="[['items' => [['label' => 'Home', 'href' => '/home', 'icon' => 'house']]]]"
+        >
+            Content
+        </x-daisy::layout.sidebar-layout>
+    BLADE);
+
+    expect($html)
+        ->toContain('data-collapsed="1"')
+        ->toContain('sidebar-menu-collapsed')
+        ->not->toContain('data-sidebar-toggle');
+});
+
 it('wraps a custom brand slot when a brand url is provided', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.navigation.sidebar brand-url="/dashboard">
@@ -172,7 +191,7 @@ it('opens a parent when a child is active without marking the parent active', fu
         ->toContain('class="pt-1" data-sidebar-submenu')
         ->toContain('aria-label="Configuration applicative" data-sidebar-row>')
         ->not->toContain('summary class="flex items-center gap-2 menu-active" title="Configuration applicative"')
-        ->toContain('href="/settings/scopes" class="flex items-center gap-2 menu-active"');
+        ->and(preg_match('/href="\/settings\/scopes"\s+class="flex items-center gap-2 menu-active"/', $html))->toBe(1);
 });
 
 it('does not render unsafe sidebar hrefs', function () {
@@ -264,8 +283,8 @@ it('marks sidebar items active from named routes', function () {
         ->toContain('Users')
         ->toContain('menu-active')
         ->toContain('Settings')
-        ->not->toContain('href="/settings" class="flex items-center gap-2 menu-active"');
+        ->and(preg_match('/href="\/settings"\s+class="flex items-center gap-2 menu-active"/', $usersHtml))->toBe(0);
     expect($settingsHtml)
         ->toContain('Settings')
-        ->toContain('href="/settings" class="flex items-center gap-2 menu-active"');
+        ->and(preg_match('/href="\/settings"\s+class="flex items-center gap-2 menu-active"/', $settingsHtml))->toBe(1);
 });

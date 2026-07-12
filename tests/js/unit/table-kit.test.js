@@ -45,6 +45,7 @@ import {
   resetSelectionState,
   serializeRequestPayload,
   serializeStateToParams,
+  tableApi,
   toggleRowSelection,
   toggleVisibleRowsSelection,
   toggleSorting,
@@ -577,6 +578,7 @@ describe('table-kit helpers', () => {
       enabled: true,
       mode: 'multiple',
       rowKey: 'uuid',
+      selectFiltered: true,
     });
     expect(config.initialState.selection).toEqual({
       selectedIds: [],
@@ -585,6 +587,19 @@ describe('table-kit helpers', () => {
       selectionScope: 'filtered',
       filterSignature: 'saved',
     });
+  });
+
+  it('disables filtered selection when the host only supports explicit row ids', () => {
+    const config = normalizeConfig({
+      selection: {
+        mode: 'multiple',
+        rowKey: 'uuid',
+        selectFiltered: false,
+      },
+      columns: [{ key: 'name', label: 'Name' }],
+    });
+
+    expect(config.selection.selectFiltered).toBe(false);
   });
 
   it('toggles row and visible page selection without losing off-page ids', () => {
@@ -1072,7 +1087,7 @@ describe('table-kit helpers', () => {
         rowKey: 'id',
         subRowsKey: 'children',
         rowDetail: { mode: 'inline' },
-        columns: [{ key: 'name', label: 'Name' }],
+        columns: [{ key: 'name', label: 'Name', help: 'Business meaning' }],
         rows: [
           {
             id: 'parent',
@@ -1092,6 +1107,11 @@ describe('table-kit helpers', () => {
       expect(bodyText).toContain('Parent');
       expect(bodyText).toContain('Child');
       expect(bodyText).toContain('Parent details');
+      expect(root.querySelector('.daisy-table-expand-chevron')).toBeInstanceOf(window.SVGElement);
+      expect(root.querySelector('.daisy-table-expand-chevron')?.classList.contains('bi-chevron-right')).toBe(true);
+      expect(root.querySelector('.daisy-table-expand-chevron')?.classList.contains('is-expanded')).toBe(true);
+      expect(root.querySelector('.daisy-table-header-help')?.classList.contains('bi-info-circle')).toBe(true);
+      expect(root.querySelector('[data-tip="Business meaning"]')).not.toBeNull();
     } finally {
       env.restore();
     }
@@ -1133,6 +1153,42 @@ describe('table-kit helpers', () => {
       context.table.setColumnSizing({ name: 180 });
 
       expect(context.state.columnSizing).toEqual({ name: 180 });
+    } finally {
+      env.restore();
+    }
+  });
+
+  it('sets a single radio selection through the public table API', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        rowKey: 'id',
+        selection: 'single',
+        columns: [{ key: 'name', label: 'Name' }],
+        rows: [
+          { id: 'a', name: 'Ada' },
+          { id: 'b', name: 'Ben' },
+        ],
+      });
+
+      await initTable(root);
+      const detail = await tableApi(root).setSelection(['a', 'b']);
+
+      expect(detail.selectedIds).toEqual(['b']);
+      expect(root.querySelector('[data-table-row-select="b"]').checked).toBe(true);
+      expect(root.querySelector('[data-table-row-select="a"]').checked).toBe(false);
+      expect(root.querySelectorAll('[data-table-head-row] th')).toHaveLength(2);
+      expect(root.querySelector('[data-table-select-page]')).toBeNull();
+      expect(root.querySelector('[data-table-row-select="a"]').hasAttribute('name')).toBe(false);
+
+      await tableApi(root).setSelectionReadOnly(true);
+
+      expect(root.querySelector('[data-table-row-select="a"]').disabled).toBe(true);
+
+      await tableApi(root).setSelectionReadOnly(false);
+
+      expect(root.querySelector('[data-table-row-select="a"]').disabled).toBe(false);
     } finally {
       env.restore();
     }

@@ -34,7 +34,7 @@ it('renders a radio choice card group with labels descriptions and selection', f
         ->toContain('Je rencontre un problème avec mon abonnement.')
         ->toContain('Entreprise')
         ->toContain('Je signale un dysfonctionnement professionnel.')
-        ->toContain('peer-checked:border-primary')
+        ->toContain('card card-border')
         ->and(preg_match_all('/\schecked(?:\s|>)/', $html))->toBe(1);
 });
 
@@ -109,5 +109,5 @@ it('keeps accessible group and clickable label structure', function () {
         ->toContain('<label')
         ->toContain('for="')
         ->toContain('id="')
-        ->toContain('class="peer sr-only"');
+        ->toContain('class="radio radio-primary radio-sm pointer-events-none');
 });
