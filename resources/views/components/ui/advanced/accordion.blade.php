@@ -32,7 +32,7 @@
             {{-- Radio input : contrôle l'état open/close (checked = ouvert) --}}
             <input type="radio" name="{{ $name }}" @checked(($openIndex === $index) || (!is_null($item['checked'] ?? null) && $item['checked'])) />
             <div class="collapse-title {{ $titleClass }}">{{ $item['title'] ?? '' }}</div>
-            <div class="collapse-content {{ $contentClass }}">{!! $item['content'] ?? '' !!}</div>
+            <div class="collapse-content {{ $contentClass }}">{{ $item['content'] ?? '' }}</div>
         </div>
     @endforeach
 </div>

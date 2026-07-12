@@ -122,7 +122,7 @@
             {{-- Input radio : contrôle l'affichage du contenu associé via CSS (pattern daisyUI) --}}
             <input type="radio" name="{{ $generatedRadio }}" class="tab {{ $hasError ? 'text-error' : '' }}" aria-label="{{ $label }}" @checked($checked) @disabled($isDisabled) />
             {{-- Contenu de l'onglet : visible uniquement si le radio correspondant est checked --}}
-            <div class="tab-content {{ $contentClass }}">{!! $tab['content'] ?? '' !!}</div>
+            <div class="tab-content {{ $contentClass }}">{{ $tab['content'] ?? '' }}</div>
         @endforeach
     </div>
 @endif

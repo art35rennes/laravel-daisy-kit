@@ -53,7 +53,7 @@
                 @isset($icon)
                     <span class="mt-1 shrink-0">{{ $icon }}</span>
                 @endisset
-                <div class="grow">{!! $message !!}</div>
+                <div class="grow">{{ $message }}</div>
             </div>
             <x-slot:actions>
                 @if($cancelText !== '')
@@ -86,7 +86,7 @@
                     @isset($icon)
                         <span class="mt-1 shrink-0">{{ $icon }}</span>
                     @endisset
-                    <div class="grow text-sm">{!! $message !!}</div>
+                    <div class="grow text-sm">{{ $message }}</div>
                 </div>
                 <div class="mt-3 flex justify-end gap-2">
                     @if($cancelText !== '')

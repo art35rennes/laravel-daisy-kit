@@ -10,10 +10,12 @@
     'thumb' => null,     // --range-thumb
     'fill' => null,      // --range-fill (e.g., 0)
     'noFill' => false,   // convenience to set --range-fill: 0
+    'vertical' => false,
 ])
 
 @php
     $classes = 'range';
+    if ($vertical) $classes .= ' range-vertical';
     if ($color) $classes .= ' range-'.$color;
     if (in_array($size, ['xs','sm','md','lg','xl'], true)) $classes .= ' range-'.$size;
 

@@ -36,6 +36,43 @@ function matches(text, query) {
     return normalizeText(text).includes(normalizeText(query));
 }
 
+const semanticSwatches = new Set(['primary', 'secondary', 'accent', 'neutral', 'info', 'success', 'warning', 'error']);
+
+function normalizeSwatch(swatch) {
+    const normalizedSwatch = String(swatch || '').trim();
+
+    return semanticSwatches.has(normalizedSwatch) ? normalizedSwatch : '';
+}
+
+function createSwatch(swatch) {
+    const normalizedSwatch = normalizeSwatch(swatch);
+
+    if (!normalizedSwatch) {
+        return null;
+    }
+
+    const swatchElement = document.createElement('span');
+    swatchElement.className = `h-3 w-3 shrink-0 rounded-full bg-${normalizedSwatch}`;
+    swatchElement.setAttribute('aria-hidden', 'true');
+    swatchElement.dataset.selectSwatch = normalizedSwatch;
+
+    return swatchElement;
+}
+
+function updateSelectedSwatch(swatchElement, swatch) {
+    if (!swatchElement) {
+        return;
+    }
+
+    const normalizedSwatch = normalizeSwatch(swatch);
+    swatchElement.classList.remove(...Array.from(semanticSwatches, (color) => `bg-${color}`));
+    swatchElement.classList.toggle('hidden', !normalizedSwatch);
+
+    if (normalizedSwatch) {
+        swatchElement.classList.add(`bg-${normalizedSwatch}`);
+    }
+}
+
 function readOption(options, rootEl, selectEl, key, fallback = undefined) {
     if (options[key] !== undefined) {
         return options[key];
@@ -94,6 +131,7 @@ export default function initSelect(rootEl, options = {}) {
     const debounceMs = Number.parseInt(readOption(options, rootEl, selectEl, 'debounce', 500), 10) || 500;
     const minChars = Number.parseInt(readOption(options, rootEl, selectEl, 'minChars', 3), 10) || 3;
     const fetchOnEmpty = String(readOption(options, rootEl, selectEl, 'fetchOnEmpty', 'true')) === 'true';
+    const searchable = String(readOption(options, rootEl, selectEl, 'searchable', 'true')) !== 'false';
     const userPlaceholder = readOption(options, rootEl, selectEl, 'placeholder', selectEl.getAttribute('placeholder') || '') || '';
 
     // Cacher le select original (il sert de champ de formulaire)
@@ -152,9 +190,10 @@ export default function initSelect(rootEl, options = {}) {
     }
 
     // Placeholder: priorité au data-placeholder/placeholder; sinon, si option sélectionnée vide => utiliser son label
-    const placeholderText = userPlaceholder || (!hasRealInitial && initialLabel ? initialLabel : 'Tapez pour rechercher...');
+    const placeholderText = userPlaceholder || (!hasRealInitial && initialLabel ? initialLabel : (searchable ? 'Tapez pour rechercher...' : 'Choisir une option'));
     input.placeholder = placeholderText;
     input.setAttribute('autocomplete', 'off');
+    input.readOnly = !searchable;
     input.setAttribute('aria-expanded', 'false');
     input.setAttribute('aria-autocomplete', 'list');
     input.setAttribute('data-select-input', '1');
@@ -163,12 +202,15 @@ export default function initSelect(rootEl, options = {}) {
     input.setAttribute('data-select-search-input', '1');
     // Ne préremplit pas si la valeur sélectionnée est vide (placeholder)
     input.value = hasRealInitial ? initialLabel : '';
+    const selectedSwatchElement = wrapper.querySelector('[data-role="swatch"]');
+    updateSelectedSwatch(selectedSwatchElement, initialOption?.dataset.swatch);
 
     // Local data snapshot
     const localData = Array.from(selectEl.querySelectorAll('option')).map((opt) => ({
         value: String(opt.value ?? ''),
         label: String(opt.textContent ?? ''),
         disabled: opt.disabled === true,
+        swatch: normalizeSwatch(opt.dataset.swatch),
     }));
 
     // State & helpers
@@ -198,7 +240,7 @@ export default function initSelect(rootEl, options = {}) {
         }
     }
 
-    function selectValue(value, label) {
+    function selectValue(value, label, swatch = '') {
         const opt = Array.from(selectEl.options).find((o) => o.value === value);
         if (opt) {
             opt.selected = true;
@@ -206,10 +248,14 @@ export default function initSelect(rootEl, options = {}) {
             const newOpt = document.createElement('option');
             newOpt.value = value;
             newOpt.textContent = label;
+            if (normalizeSwatch(swatch)) {
+                newOpt.dataset.swatch = normalizeSwatch(swatch);
+            }
             selectEl.appendChild(newOpt);
             newOpt.selected = true;
         }
         input.value = label;
+        updateSelectedSwatch(selectedSwatchElement, opt?.dataset.swatch || swatch);
         selectEl.dispatchEvent(new Event('change', { bubbles: true }));
         setOpen(false);
     }
@@ -223,11 +269,17 @@ export default function initSelect(rootEl, options = {}) {
             const disabled = it?.disabled === true;
             const subtitle = it?.subtitle ? String(it.subtitle) : '';
             const avatar = it?.avatar ? String(it.avatar) : '';
+            const swatch = normalizeSwatch(it?.swatch);
 
             const li = document.createElement('li');
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.setAttribute('role', 'option');
+
+            const swatchElement = createSwatch(swatch);
+            if (swatchElement) {
+                btn.appendChild(swatchElement);
+            }
 
             // Contenu bouton: avatar (optionnel) + label + sous-titre
             if (avatar) {
@@ -260,7 +312,7 @@ export default function initSelect(rootEl, options = {}) {
                 btn.setAttribute('aria-disabled', 'true');
             }
             btn.addEventListener('click', () => {
-                if (!disabled) selectValue(value, label);
+                if (!disabled) selectValue(value, label, swatch);
             });
             li.appendChild(btn);
             list.appendChild(li);
@@ -289,10 +341,15 @@ export default function initSelect(rootEl, options = {}) {
                 const disabled = it?.disabled === true;
                 const subtitle = it?.subtitle ? String(it.subtitle) : '';
                 const avatar = it?.avatar ? String(it.avatar) : '';
+                const swatch = normalizeSwatch(it?.swatch);
                 const li = document.createElement('li');
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.setAttribute('role', 'option');
+                const swatchElement = createSwatch(swatch);
+                if (swatchElement) {
+                    btn.appendChild(swatchElement);
+                }
                 if (avatar) {
                     const avatarWrap = document.createElement('div');
                     avatarWrap.className = 'avatar';
@@ -322,7 +379,7 @@ export default function initSelect(rootEl, options = {}) {
                     btn.setAttribute('aria-disabled', 'true');
                 }
                 btn.addEventListener('click', () => {
-                    if (!disabled) selectValue(value, label);
+                    if (!disabled) selectValue(value, label, swatch);
                 });
                 li.appendChild(btn);
                 list.appendChild(li);
@@ -439,13 +496,17 @@ export default function initSelect(rootEl, options = {}) {
     }, debounceMs);
 
     input.addEventListener('input', (e) => {
+        if (!searchable) {
+            return;
+        }
+
         run(e.target.value || '');
     });
 
     input.addEventListener('focus', () => {
         if (!endpoint) {
-            // local: ouvrir avec toutes les options (ou filtre courant) au focus
-            filterLocal(input.value || '');
+            // Sans saisie, le menu présente directement toutes les options.
+            filterLocal(searchable ? input.value || '' : '');
         } else {
             // remote: afficher defaultData si vide et dispo
             if (!(input.value || '').trim()) {
@@ -457,6 +518,12 @@ export default function initSelect(rootEl, options = {}) {
                     setOpen(false);
                 }
             }
+        }
+    });
+
+    input.addEventListener('click', () => {
+        if (!searchable && !endpoint) {
+            filterLocal('');
         }
     });
 

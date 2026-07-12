@@ -24,9 +24,11 @@
     'teleport' => true,
     'closeLabel' => 'Close modal',
     'initialFocus' => null,
+    'method' => 'dialog',
 ])
 
 @php
+    $isPopover = $method === 'popover';
     // Construction des classes CSS pour le positionnement (vertical et horizontal).
     $modalClasses = 'modal';
     // Placement vertical : top (haut), middle (centre, défaut), bottom (bas).
@@ -45,19 +47,27 @@
     $titleId = $title ? $id.'-title' : null;
 
     // Préparation des attributs du dialog : classes + état open si spécifié.
-    $dialogAttrs = $attributes->merge([
+    $rootAttrs = $attributes->merge([
         'class' => $modalClasses,
-        'data-module' => 'modal',
-        'data-teleport' => $teleport ? 'true' : 'false',
     ]);
-    if ($open) {
-        $dialogAttrs = $dialogAttrs->merge(['open' => true]);
+
+    if (! $isPopover) {
+        $rootAttrs = $rootAttrs->merge([
+            'data-module' => 'modal',
+            'data-teleport' => $teleport ? 'true' : 'false',
+        ]);
+    }
+    if ($open && ! $isPopover) {
+        $rootAttrs = $rootAttrs->merge(['open' => true]);
+    }
+    if ($isPopover) {
+        $rootAttrs = $rootAttrs->merge(['popover' => true]);
     }
     if ($titleId) {
-        $dialogAttrs = $dialogAttrs->merge(['aria-labelledby' => $titleId]);
+        $rootAttrs = $rootAttrs->merge(['aria-labelledby' => $titleId]);
     }
     if ($initialFocus) {
-        $dialogAttrs = $dialogAttrs->merge(['data-initial-focus' => $initialFocus]);
+        $rootAttrs = $rootAttrs->merge(['data-initial-focus' => $initialFocus]);
     }
 
     // Mapping des tailles vers les classes max-width Tailwind.
@@ -86,7 +96,11 @@
         : '';
 @endphp
 
-<dialog {{ $dialogAttrs }} @if($id) id="{{ $id }}" @endif>
+@if($isPopover)
+<div {{ $rootAttrs }} @if($id) id="{{ $id }}" @endif>
+@else
+<dialog {{ $rootAttrs }} @if($id) id="{{ $id }}" @endif>
+@endif
     {{-- Conteneur principal de la modal : responsive, scrollable, taille personnalisable --}}
     <div class="modal-box {{ $boxResponsiveClasses }}{{ $sideClasses }}{{ $scrollClasses }} {{ $boxClass }}">
         {{-- En-tête : titre et bouton de fermeture (si l'un ou l'autre est présent) --}}
@@ -108,7 +122,12 @@
                     <button 
                         type="button" 
                         class="btn btn-sm btn-circle btn-ghost shrink-0" 
-                        data-modal-close
+                        @if($isPopover)
+                            popovertarget="{{ $id }}"
+                            popovertargetaction="hide"
+                        @else
+                            data-modal-close
+                        @endif
                         aria-label="{{ $closeLabel }}"
                     >
                         <x-bi-x class="size-5" />
@@ -126,9 +145,13 @@
         @endif
     </div>
     {{-- Backdrop cliquable : ferme la modal au clic (pattern daisyUI avec form method="dialog") --}}
-    @if($backdrop)
+    @if($backdrop && ! $isPopover)
         <form method="dialog" class="modal-backdrop">
             <button>close</button>
         </form>
     @endif
+@if($isPopover)
+</div>
+@else
 </dialog>
+@endif

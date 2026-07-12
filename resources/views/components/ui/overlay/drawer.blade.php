@@ -21,7 +21,7 @@
     if ($responsiveOpen) $rootClasses .= ' '.$responsiveOpen.':drawer-open';
 
     // Classes pour la zone de contenu principal.
-    $contentClasses = 'drawer-content';
+    $contentClasses = 'drawer-content min-w-0';
     // Hauteur pleine écran par défaut (peut être désactivée pour des layouts compacts).
     if ($fullHeight) $contentClasses .= ' min-h-screen';
     if (!empty($contentClass)) $contentClasses .= ' '.$contentClass;

@@ -3,6 +3,7 @@
     'open' => false,
     'position' => 'top', // top|right|bottom|left
     'color' => null, // neutral|primary|secondary|accent|info|success|warning|error
+    'alignment' => null, // start|center|end
     // Utiliser un contenu personnalisé au lieu de data-tip
     'content' => null,
 ])
@@ -26,6 +27,10 @@
     if ($color && in_array($color, $validColors)) {
         $classes .= ' tooltip-'.$color;
     }
+
+    if (in_array($alignment, ['start', 'center', 'end'], true)) {
+        $classes .= ' tooltip-'.$alignment;
+    }
 @endphp
 
 <div {{ $attributes->merge(['class' => $classes]) }}>
@@ -38,7 +43,7 @@
             @isset($contentSlot)
                 {{ $contentSlot }}
             @else
-                {!! $content !!}
+                {{ $content }}
             @endisset
         </div>
     @endif

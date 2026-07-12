@@ -14,6 +14,8 @@
     // Résilience média
     'imageClass' => null,   // classes appliquées à l'image si fournies (prioritaires)
     'figureClass' => null,  // classes appliquées au <figure>
+    'selectable' => false,
+    'checked' => null,
 ])
 
 @php
@@ -52,9 +54,17 @@
     if (! $side) {
         $root .= ' flex flex-col';
     }
+    if ($selectable) {
+        $root .= ' cursor-pointer';
+    }
+
+    $cardAttributes = $attributes->merge(['class' => $root]);
+    if (! is_null($checked)) {
+        $cardAttributes = $cardAttributes->merge(['aria-checked' => $checked ? 'true' : 'false']);
+    }
 @endphp
 
-<div {{ $attributes->merge(['class' => $root]) }}>
+<div {{ $cardAttributes }}>
     {{-- Figure : image ou slot figure personnalisé (optionnel) --}}
     @if($imageUrl || isset($figure))
         @php

@@ -40,41 +40,6 @@
     $controlClass = $inputType === 'checkbox' ? 'checkbox' : 'radio';
     $controlClass .= " {$controlClass}-{$accentColor}";
 
-    $accentClasses = match($accentColor) {
-        'neutral' => [
-            'card' => 'peer-focus-visible:outline-neutral peer-checked:border-neutral peer-checked:bg-neutral/10',
-            'control' => 'peer-checked:border-neutral peer-checked:bg-neutral',
-        ],
-        'secondary' => [
-            'card' => 'peer-focus-visible:outline-secondary peer-checked:border-secondary peer-checked:bg-secondary/10',
-            'control' => 'peer-checked:border-secondary peer-checked:bg-secondary',
-        ],
-        'accent' => [
-            'card' => 'peer-focus-visible:outline-accent peer-checked:border-accent peer-checked:bg-accent/10',
-            'control' => 'peer-checked:border-accent peer-checked:bg-accent',
-        ],
-        'info' => [
-            'card' => 'peer-focus-visible:outline-info peer-checked:border-info peer-checked:bg-info/10',
-            'control' => 'peer-checked:border-info peer-checked:bg-info',
-        ],
-        'success' => [
-            'card' => 'peer-focus-visible:outline-success peer-checked:border-success peer-checked:bg-success/10',
-            'control' => 'peer-checked:border-success peer-checked:bg-success',
-        ],
-        'warning' => [
-            'card' => 'peer-focus-visible:outline-warning peer-checked:border-warning peer-checked:bg-warning/10',
-            'control' => 'peer-checked:border-warning peer-checked:bg-warning',
-        ],
-        'error' => [
-            'card' => 'peer-focus-visible:outline-error peer-checked:border-error peer-checked:bg-error/10',
-            'control' => 'peer-checked:border-error peer-checked:bg-error',
-        ],
-        default => [
-            'card' => 'peer-focus-visible:outline-primary peer-checked:border-primary peer-checked:bg-primary/10',
-            'control' => 'peer-checked:border-primary peer-checked:bg-primary',
-        ],
-    };
-
     $sizeClasses = match($size) {
         'sm' => [
             'card' => 'gap-3 p-4',
@@ -138,7 +103,7 @@
             <label
                 for="{{ $itemId }}"
                 @class([
-                    'group relative block min-h-full',
+                    'card card-border group relative block min-h-full bg-base-100 shadow-sm',
                     'cursor-pointer' => ! $itemDisabled,
                     'cursor-not-allowed opacity-60' => $itemDisabled,
                 ])
@@ -148,18 +113,14 @@
                     type="{{ $inputType }}"
                     name="{{ $inputName }}"
                     value="{{ $itemValue }}"
-                    class="peer sr-only"
+                    class="{{ $showControl ? $controlClass.' pointer-events-none absolute right-4 top-4 z-10 bg-base-100' : 'sr-only' }}"
                     @checked($isChecked)
                     @disabled($itemDisabled)
                     @required($required && $inputType === 'radio' && $loop->first)
                     @if($required && $inputType === 'checkbox') required @endif
                 />
 
-                @if($showControl)
-                    <span aria-hidden="true" class="{{ $controlClass }} {{ $accentClasses['control'] }} pointer-events-none absolute right-4 top-4 z-10 border-base-300 bg-base-100 transition"></span>
-                @endif
-
-                <span class="flex min-h-full rounded-box border border-base-300 bg-base-100 {{ $sizeClasses['card'] }} {{ $showControl ? 'pe-12' : '' }} {{ $accentClasses['card'] }} shadow-sm transition peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-disabled:bg-base-200">
+                <span class="flex min-h-full {{ $sizeClasses['card'] }} {{ $showControl ? 'pe-12' : '' }}">
                     @if($itemIcon)
                         <span class="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-field bg-base-200 text-base-content/70">
                             <x-daisy::ui.advanced.icon :name="$itemIcon" :prefix="$iconPrefix" :size="$sizeClasses['icon']" />

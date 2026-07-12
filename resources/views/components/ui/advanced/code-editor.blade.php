@@ -4,9 +4,11 @@
     'readonly' => false,
     'showToolbar' => true,
     'showFoldAll' => true,
+    'showFoldOthers' => true,
     'showUnfoldAll' => true,
     'showFormat' => true, // pour JSON: prettify natif
     'showCopy' => true,
+    'showExpand' => true,
     'height' => '320px',
     'width' => '100%',
     'fontSize' => '0.9rem',
@@ -48,15 +50,18 @@
     };
 
     $id = $attributes->get('id') ?? 'code-'.uniqid();
+    $expandModalId = $id.'-expand-modal';
     $widthClass = $width === '100%' ? null : $dimensionClass($width, 'daisy-code-editor-width');
     $heightClass = $height === '320px' ? null : $dimensionClass($height, 'daisy-code-editor-height');
     $fontSizeClass = $fontSize === '0.9rem' ? null : $dimensionClass($fontSize, 'daisy-code-editor-font-size');
     $classes = trim('bg-base-100 card-border rounded-box overflow-hidden '.$widthClass);
     $toolbar = [
         'fold' => $showFoldAll,
+        'foldOthers' => $showFoldOthers,
         'unfold' => $showUnfoldAll,
         'format' => $showFormat,
         'copy' => $showCopy,
+        'expand' => $showExpand,
     ];
     $i18n = [
         'Fold line' => __('daisy::components.code_editor.codemirror.fold_line'),
@@ -103,6 +108,11 @@
             'data-readonly' => $readonly ? 'true' : 'false',
             'data-theme' => $theme ?? '',
             'data-tab-size' => (int) $tabSize,
+            'data-expand-modal-id' => $expandModalId,
+            'data-expand-label' => __('daisy::components.code_editor.actions.expand'),
+            'data-expand-title' => __('daisy::components.code_editor.actions.expand_title'),
+            'data-reduce-label' => __('daisy::components.code_editor.actions.reduce'),
+            'data-reduce-title' => __('daisy::components.code_editor.actions.reduce_title'),
         ]) }}
 >
     @if($showToolbar)
@@ -111,6 +121,9 @@
             <div class="flex items-center gap-1">
                 @if($toolbar['fold'])
                     <button type="button" class="btn btn-xs" data-action="fold-all" title="{{ __('daisy::components.code_editor.actions.fold_all_title') }}">{{ __('daisy::components.code_editor.actions.fold_all') }}</button>
+                @endif
+                @if($toolbar['foldOthers'])
+                    <button type="button" class="btn btn-xs" data-action="fold-others" title="{{ __('daisy::components.code_editor.actions.fold_others_title') }}">{{ __('daisy::components.code_editor.actions.fold_others') }}</button>
                 @endif
                 @if($toolbar['unfold'])
                     <button type="button" class="btn btn-xs" data-action="unfold-all" title="{{ __('daisy::components.code_editor.actions.unfold_all_title') }}">{{ __('daisy::components.code_editor.actions.unfold_all') }}</button>
@@ -121,6 +134,9 @@
                 @if($toolbar['copy'])
                     <button type="button" class="btn btn-xs" data-action="copy" title="{{ __('daisy::components.code_editor.actions.copy_title') }}">{{ __('daisy::components.code_editor.actions.copy') }}</button>
                 @endif
+                @if($toolbar['expand'])
+                    <button type="button" class="btn btn-xs" data-action="expand" data-code-editor-expand-button title="{{ __('daisy::components.code_editor.actions.expand_title') }}" aria-label="{{ __('daisy::components.code_editor.actions.expand_title') }}">{{ __('daisy::components.code_editor.actions.expand') }}</button>
+                @endif
             </div>
         </div>
     @endif
@@ -130,5 +146,16 @@
     <template data-initial>@json(['value' => $value])</template>
     <template data-i18n>@json($i18n)</template>
 </div>
+
+@if($showExpand)
+    <dialog id="{{ $expandModalId }}" class="modal" data-code-editor-expand-modal>
+        <div class="modal-box h-[100svh] max-h-none w-screen max-w-none rounded-none p-4">
+            <div data-code-editor-expand-host class="h-full min-h-0"></div>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>{{ __('daisy::components.code_editor.actions.reduce') }}</button>
+        </form>
+    </dialog>
+@endif
 
 @include('daisy::components.partials.assets')

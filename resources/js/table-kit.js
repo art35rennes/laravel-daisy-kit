@@ -132,6 +132,7 @@ function normalizeColumns(columns = []) {
         headerWrapperClass: typeof column.headerWrapperClass === 'string' ? column.headerWrapperClass : '',
         cellClass: typeof column.cellClass === 'string' ? column.cellClass : '',
         headerClass: typeof column.headerClass === 'string' ? column.headerClass : '',
+        help: typeof column.help === 'string' && column.help.trim() !== '' ? column.help.trim() : '',
         html: ['html', 'blade', 'actions'].includes(cell.renderer),
         cell,
         editor: {
@@ -371,15 +372,18 @@ function normalizeRowSelection(rowSelection = {}) {
 }
 
 function normalizeSelectionConfig(raw = {}) {
-  const mode = raw.selection === 'multiple' || raw.selection?.mode === 'multiple' ? 'multiple' : 'none';
+  const selectionMode = typeof raw.selection === 'string' ? raw.selection : raw.selection?.mode;
+  const mode = ['multiple', 'single'].includes(selectionMode) ? selectionMode : 'none';
   const rowKey = typeof raw.rowKey === 'string' && raw.rowKey !== ''
     ? raw.rowKey
     : (typeof raw.selection?.rowKey === 'string' && raw.selection.rowKey !== '' ? raw.selection.rowKey : null);
 
   return {
-    enabled: mode === 'multiple' && rowKey !== null,
+    enabled: mode !== 'none' && rowKey !== null,
     mode,
-    rowKey: mode === 'multiple' ? rowKey : null,
+    rowKey: mode !== 'none' ? rowKey : null,
+    selectFiltered: mode === 'multiple' && raw.selection?.selectFiltered !== false,
+    readOnly: raw.selection?.readOnly === true,
   };
 }
 
@@ -1308,6 +1312,7 @@ function renderColgroup(context) {
   }
 
   const selectionCol = context.config.selection.enabled ? '<col class="daisy-table-selection-col">' : '';
+  const expandCol = context.config.subRowsKey ? '<col class="daisy-table-expand-col">' : '';
   const detailCol = context.config.rowDetail.mode !== 'none' ? '<col class="daisy-table-detail-col">' : '';
   const columns = context.table
     ? context.table.getVisibleLeafColumns()
@@ -1331,7 +1336,17 @@ function renderColgroup(context) {
     return classes ? `<col class="${escapeHtml(classes)}"${width}>` : `<col${width}>`;
   }).join('');
 
-  colgroup.innerHTML = `${selectionCol}${detailCol}${columnMarkup}`;
+  colgroup.innerHTML = `${selectionCol}${expandCol}${detailCol}${columnMarkup}`;
+}
+
+function renderHeaderHelp(help) {
+  if (!help) {
+    return '';
+  }
+
+  const escapedHelp = escapeHtml(help);
+
+  return ` <span class="tooltip tooltip-top inline-flex align-middle" data-tip="${escapedHelp}" aria-label="${escapedHelp}"><svg class="bi bi-info-circle daisy-table-header-help" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 .936-.252 1.107-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM8 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/></svg></span>`;
 }
 
 function renderHeader(context) {
@@ -1347,14 +1362,25 @@ function renderHeader(context) {
     const th = document.createElement('th');
 
     th.className = 'daisy-table-selection-cell';
-    th.innerHTML = `
-      <input
-        type="checkbox"
-        class="checkbox checkbox-sm"
-        data-table-select-page
-        aria-label="${escapeHtml(context.config.labels.selectAllRows || 'Select all rows on this page')}"
-      >
-    `;
+    th.innerHTML = context.config.selection.mode === 'multiple'
+      ? `
+          <input
+            type="checkbox"
+            class="checkbox checkbox-sm"
+            data-table-select-page
+            aria-label="${escapeHtml(context.config.labels.selectAllRows || 'Select all rows on this page')}"
+            ${context.config.selection.readOnly ? 'disabled' : ''}
+          >
+        `
+      : '<span class="sr-only">Sélection</span>';
+    headRow.append(th);
+  }
+
+  if (context.config.subRowsKey) {
+    const th = document.createElement('th');
+
+    th.className = 'daisy-table-expand-cell';
+    th.innerHTML = '<span class="sr-only">Développer la ligne</span>';
     headRow.append(th);
   }
 
@@ -1402,10 +1428,10 @@ function renderHeader(context) {
       button.className = 'daisy-table-head-button';
       button.dataset.tableSort = column.key;
       button.setAttribute('aria-sort', direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none');
-      button.innerHTML = `<span class="${wrapperClass}">${escapeHtml(column.label)} <span class="daisy-table-sort-indicator" aria-hidden="true">${direction === 'asc' ? '&uarr;' : direction === 'desc' ? '&darr;' : '&harr;'}</span></span>`;
+      button.innerHTML = `<span class="${wrapperClass}">${escapeHtml(column.label)}${renderHeaderHelp(column.help)} <span class="daisy-table-sort-indicator" aria-hidden="true">${direction === 'asc' ? '&uarr;' : direction === 'desc' ? '&darr;' : '&harr;'}</span></span>`;
       th.append(button);
     } else {
-      th.innerHTML = `<span class="${wrapperClass}">${escapeHtml(column.label)}</span>`;
+      th.innerHTML = `<span class="${wrapperClass}">${escapeHtml(column.label)}${renderHeaderHelp(column.help)}</span>`;
     }
 
     if (context.config.columnResizing && typeof header.getResizeHandler === 'function' && header.column?.getCanResize?.()) {
@@ -1435,6 +1461,7 @@ function renderBody(context, rows) {
     1,
     visibleColumns.length
       + (context.config.selection.enabled ? 1 : 0)
+      + (context.config.subRowsKey ? 1 : 0)
       + (context.config.rowDetail.mode !== 'none' ? 1 : 0)
   );
 
@@ -1455,19 +1482,26 @@ function renderBody(context, rows) {
 
   tbody.innerHTML = rows.map((row) => {
     const rowId = getRowSelectionId(context.config, row);
+    const selectionInputType = context.config.selection.mode === 'single' ? 'radio' : 'checkbox';
+    const selectionInputClass = context.config.selection.mode === 'single' ? 'radio radio-sm' : 'checkbox checkbox-sm';
     const selectionCell = context.config.selection.enabled
       ? `<td class="daisy-table-selection-cell">
           <input
-            type="checkbox"
-            class="checkbox checkbox-sm"
+            type="${selectionInputType}"
+            class="${selectionInputClass}"
             data-table-row-select="${escapeHtml(rowId || '')}"
             aria-label="${escapeHtml(context.config.labels.selectRow || 'Select row')}"
-            ${rowId === null ? 'disabled' : ''}
+            ${rowId === null || context.config.selection.readOnly ? 'disabled' : ''}
             ${isRowSelected(context.state, context.config, row) ? 'checked' : ''}
           >
         </td>`
       : '';
     const rowData = row.original ?? row;
+    const expandCell = context.config.subRowsKey
+      ? `<td class="daisy-table-expand-cell">${row.getCanExpand?.()
+        ? `<button type="button" class="btn btn-sm btn-square btn-ghost daisy-table-expand-button" data-table-row-expand="${escapeHtml(row.id ?? getRowSelectionId(context.config, row) ?? '')}" aria-expanded="${row.getIsExpanded?.() ? 'true' : 'false'}" aria-label="${row.getIsExpanded?.() ? 'Réduire la ligne' : 'Développer la ligne'}" title="${row.getIsExpanded?.() ? 'Réduire la ligne' : 'Développer la ligne'}"><svg class="bi bi-chevron-right daisy-table-expand-chevron${row.getIsExpanded?.() ? ' is-expanded' : ''}" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M6.646 3.646a.5.5 0 0 1 .708 0l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L10.293 8 6.646 4.354a.5.5 0 0 1 0-.708"/></svg></button>`
+        : ''}</td>`
+      : '';
     const detailCell = context.config.rowDetail.mode !== 'none'
       ? `<td class="daisy-table-detail-cell">
           <button
@@ -1511,7 +1545,7 @@ function renderBody(context, rows) {
       : '';
     const editActionsRow = renderEditRowActions(context, row, colspan);
 
-    return `<tr>${selectionCell}${detailCell}${cells}</tr>${editActionsRow}${detailRow}`;
+    return `<tr>${selectionCell}${expandCell}${detailCell}${cells}</tr>${editActionsRow}${detailRow}`;
   }).join('');
 }
 
@@ -2198,7 +2232,7 @@ function updateSelectionControls(context, visibleRows = []) {
   if (selectPageInput instanceof HTMLInputElement) {
     selectPageInput.checked = visibleSelectableRows.length > 0 && visibleSelectedCount === visibleSelectableRows.length;
     selectPageInput.indeterminate = visibleSelectedCount > 0 && visibleSelectedCount < visibleSelectableRows.length;
-    selectPageInput.disabled = visibleSelectableRows.length === 0 || context.loading;
+    selectPageInput.disabled = visibleSelectableRows.length === 0 || context.loading || context.config.selection.readOnly;
   }
 
   context.root.querySelectorAll('[data-table-row-select]').forEach((input) => {
@@ -2208,6 +2242,7 @@ function updateSelectionControls(context, visibleRows = []) {
 
     const rowId = input.dataset.tableRowSelect || null;
 
+    input.disabled = rowId === null || context.loading || context.config.selection.readOnly;
     input.checked = rowId !== null && (
       context.state.selection.allFilteredSelected
         ? !context.state.selection.excludedIds.includes(rowId)
@@ -2783,6 +2818,7 @@ function attachEvents(context) {
     const clearSelectionButton = event.target instanceof Element ? event.target.closest('[data-table-clear-selection]') : null;
     const bulkActionButton = event.target instanceof Element ? event.target.closest('[data-table-bulk-action]') : null;
     const detailButton = event.target instanceof Element ? event.target.closest('[data-table-row-detail]') : null;
+    const expandButton = event.target instanceof Element ? event.target.closest('[data-table-row-expand]') : null;
     const detailCloseButton = event.target instanceof Element ? event.target.closest('[data-table-detail-close]') : null;
     const editCell = event.target instanceof Element ? event.target.closest('[data-table-edit-cell]') : null;
     const editSaveButton = event.target instanceof Element ? event.target.closest('[data-table-edit-save]') : null;
@@ -2838,7 +2874,25 @@ function attachEvents(context) {
       return;
     }
 
+    if (expandButton instanceof HTMLElement) {
+      const rowId = expandButton.dataset.tableRowExpand;
+      const row = getVisibleRowById(context, rowId);
+
+      if (!row) {
+        return;
+      }
+
+      row.toggleExpanded?.();
+      persistState(context);
+      renderTable(context);
+      return;
+    }
+
     if (selectFilteredButton instanceof HTMLElement) {
+      if (!context.config.selection.selectFiltered) {
+        return;
+      }
+
       if (selectFilteredButton instanceof HTMLButtonElement && selectFilteredButton.disabled) {
         return;
       }
@@ -2920,6 +2974,10 @@ function attachEvents(context) {
     }
 
     if (target instanceof HTMLInputElement && target.matches('[data-table-row-select]')) {
+      if (context.config.selection.readOnly) {
+        return;
+      }
+
       context.selectionNotice = '';
       if (context.state.selection.allFilteredSelected) {
         toggleRowSelection(context.state, context.config, target.dataset.tableRowSelect || null, target.checked);
@@ -3292,7 +3350,7 @@ function tableApi(idOrRoot) {
     selectAllFiltered() {
       const context = root?.__daisyTableContext ?? null;
 
-      if (!context || !context.config.selection.enabled) {
+      if (!context || !context.config.selection.enabled || !context.config.selection.selectFiltered) {
         return null;
       }
 
@@ -3316,6 +3374,45 @@ function tableApi(idOrRoot) {
       persistState(context);
       updateSelectionControls(context, context.visibleRows);
       dispatchTableSelectionChanged(context, context.visibleRows);
+
+      return buildSelectionDetail(context, context.visibleRows);
+    },
+    async setSelection(selectedIds = []) {
+      const context = await initTable(root);
+
+      if (!context || !context.config.selection.enabled) {
+        return null;
+      }
+
+      const ids = uniqueStringArray(Array.isArray(selectedIds) ? selectedIds : [selectedIds]);
+      const normalizedIds = context.config.selection.mode === 'single' ? ids.slice(-1) : ids;
+
+      context.selectionNotice = '';
+      context.state.selection = {
+        selectedIds: normalizedIds,
+        excludedIds: [],
+        allFilteredSelected: false,
+        selectionScope: 'page',
+        filterSignature: '',
+      };
+      syncRowSelectionState(context);
+      persistState(context);
+      renderTable(context);
+      dispatchTableSelectionChanged(context, context.visibleRows);
+
+      return buildSelectionDetail(context, context.visibleRows);
+    },
+    async setSelectionReadOnly(readOnly = false) {
+      const context = await initTable(root);
+
+      if (!context || !context.config.selection.enabled) {
+        return null;
+      }
+
+      context.config.selection.readOnly = readOnly === true;
+      context.root.dataset.tableSelectionReadonly = context.config.selection.readOnly ? 'true' : 'false';
+      context.root.setAttribute('aria-disabled', context.config.selection.readOnly ? 'true' : 'false');
+      renderTable(context);
 
       return buildSelectionDetail(context, context.visibleRows);
     },
@@ -3500,6 +3597,7 @@ export {
   resetSelectionState,
   serializeRequestPayload,
   serializeStateToParams,
+  tableApi,
   toggleRowSelection,
   toggleVisibleRowsSelection,
   toggleSorting,

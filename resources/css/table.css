@@ -2,6 +2,48 @@
   container-type: inline-size;
 }
 
+.daisy-table-header-help {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  margin-left: 0.25rem;
+  opacity: 0.7;
+}
+
+.daisy-table-expand-button {
+  min-width: 2rem;
+  min-height: 2rem;
+}
+
+.daisy-table-expand-chevron {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  transform: rotate(0deg);
+  transition: transform 150ms ease;
+}
+
+.daisy-table-expand-chevron.is-expanded {
+  transform: rotate(90deg);
+}
+
+[data-daisy-table="1"][data-table-selection-readonly="true"] .daisy-table-scroll {
+  position: relative;
+}
+
+[data-daisy-table="1"][data-table-selection-readonly="true"] .daisy-table-scroll::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: color-mix(in oklab, var(--color-base-200) 62%, transparent);
+  content: '';
+  pointer-events: none;
+}
+
+[data-daisy-table="1"][data-table-selection-readonly="true"] .daisy-table-scroll table {
+  opacity: 0.56;
+}
+
 .daisy-table-toolbar {
   gap: 0.75rem;
 }
@@ -161,6 +203,12 @@
 .daisy-table-loading-row td {
   text-align: center;
   color: color-mix(in oklab, var(--color-base-content, hsl(var(--bc))) 72%, transparent);
+}
+
+/* Keep the reading aid available to pointer and keyboard users alike. */
+.daisy-table-row-hover tbody > tr:not(.daisy-table-empty-row, .daisy-table-error-row, .daisy-table-loading-row):is(:hover, :focus-within) > :where(th, td) {
+  background-color: color-mix(in oklab, var(--color-base-content, hsl(var(--bc))) 8%, transparent);
+  transition: background-color 150ms ease;
 }
 
 .daisy-table-column-menu {

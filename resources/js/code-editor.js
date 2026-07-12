@@ -280,6 +280,37 @@ function doFoldAll(root) {
 }
 
 /**
+ * Replie les branches qui ne contiennent pas l'objet actuellement édité.
+ *
+ * @param {HTMLElement} root
+ */
+function doFoldOthers(root) {
+  const view = getView(root); if (!view) return;
+  const cursor = view.state.selection.main.head;
+  const ranges = [];
+
+  for (let pos = 1; pos <= view.state.doc.length;) {
+    const line = view.state.doc.lineAt(pos);
+    const range = foldable(view.state, line.from, line.to);
+
+    if (range) ranges.push(range);
+    pos = line.to + 1;
+  }
+
+  const current = ranges
+    .filter((range) => range.from <= cursor && cursor <= range.to)
+    .sort((left, right) => (right.from - left.from) || (left.to - right.to))[0];
+
+  if (!current) return;
+
+  const effects = ranges
+    .filter((range) => range.to < current.from || range.from > current.to)
+    .map((range) => foldEffect.of(range));
+
+  if (effects.length) view.dispatch({ effects });
+}
+
+/**
  * Déplie tous les blocs de code dans l'éditeur
  * @param {HTMLElement} root - Élément racine de l'éditeur
  */
@@ -334,6 +365,77 @@ async function doCopy(root) {
   }
 }
 
+function expandedModal(root) {
+  const modalId = root.dataset.expandModalId;
+
+  return modalId ? document.getElementById(modalId) : null;
+}
+
+function updateExpandAction(root, isExpanded) {
+  const button = root.querySelector('[data-code-editor-expand-button]');
+
+  if (!button) return;
+
+  const label = isExpanded ? root.dataset.reduceLabel : root.dataset.expandLabel;
+  const title = isExpanded ? root.dataset.reduceTitle : root.dataset.expandTitle;
+
+  button.dataset.action = isExpanded ? 'reduce' : 'expand';
+  button.textContent = label || title || '';
+  button.title = title || label || '';
+  button.setAttribute('aria-label', title || label || '');
+}
+
+function restoreFromExpand(root) {
+  const placeholder = root.__cmExpandPlaceholder;
+
+  if (placeholder?.parentNode) {
+    placeholder.replaceWith(root);
+  }
+
+  root.__cmExpandPlaceholder = null;
+  root.classList.remove('is-expanded');
+  updateExpandAction(root, false);
+  getView(root)?.requestMeasure();
+}
+
+function bindExpandedModal(root) {
+  const modal = expandedModal(root);
+
+  if (!modal || root.__cmExpandModalBound) return;
+
+  root.__cmExpandModalBound = true;
+  modal.addEventListener('close', () => restoreFromExpand(root));
+}
+
+function expand(root) {
+  const modal = expandedModal(root);
+  const host = modal?.querySelector('[data-code-editor-expand-host]');
+
+  if (!(modal instanceof HTMLDialogElement) || !host || root.classList.contains('is-expanded')) return;
+
+  bindExpandedModal(root);
+  root.__cmExpandPlaceholder = document.createComment('code-editor-expand-placeholder');
+  root.parentNode?.insertBefore(root.__cmExpandPlaceholder, root);
+  host.append(root);
+  root.classList.add('is-expanded');
+  updateExpandAction(root, true);
+
+  modal.showModal();
+  getView(root)?.requestMeasure();
+}
+
+function reduce(root) {
+  const modal = expandedModal(root);
+
+  if (modal instanceof HTMLDialogElement && modal.open) {
+    modal.close();
+
+    return;
+  }
+
+  restoreFromExpand(root);
+}
+
 /**
  * Attache les gestionnaires d'événements pour la barre d'outils
  * Gère les boutons avec l'attribut data-action
@@ -348,10 +450,15 @@ function bindToolbar(root) {
     
     // Dispatch vers les actions appropriées
     if (act === 'fold-all') doFoldAll(root);
+    if (act === 'fold-others') doFoldOthers(root);
     if (act === 'unfold-all') doUnfoldAll(root);
     if (act === 'format') await doFormat(root);
     if (act === 'copy') await doCopy(root);
+    if (act === 'expand') expand(root);
+    if (act === 'reduce') reduce(root);
   });
+
+  bindExpandedModal(root);
 }
 
 /**
@@ -382,14 +489,17 @@ window.DaisyCodeEditor = {
   setValue,
   setLanguage,
   foldAll: doFoldAll,
+  foldOthers: doFoldOthers,
   unfoldAll: doUnfoldAll,
   format: doFormat,
   copy: doCopy,
+  expand,
+  reduce,
 };
 
 // Export pour le système data-module (kit/index.js)
 export default init;
-export { init, initAll, readJsonPayload };
+export { expand, init, initAll, readJsonPayload, reduce, restoreFromExpand };
 
 // Auto-initialisation (compatible import tardif)
 if (document.readyState === 'loading') {

@@ -6,6 +6,10 @@
     'sideClass' => null,
     'expandedWidth' => null,
     'collapsedWidth' => 'w-20',
+    'collapsed' => false,
+    'collapsible' => true,
+    'forceCollapsed' => null,
+    'expandOnHover' => false,
     'stickyAt' => 'lg',
     'brand' => null,
     'brandHref' => null,
@@ -66,7 +70,7 @@
                 @if($hasNavbar && isset($topbar))
                     {{ $topbar }}
                 @endif
-                <div class="{{ $container }} {{ $hasNavbar && ! isset($topbar) ? 'pt-16' : '' }}">
+                <div class="min-w-0 {{ $container }} {{ $hasNavbar && ! isset($topbar) ? 'pt-16' : '' }}">
                     {{ $slot }}
                 </div>
             </x-slot:content>
@@ -76,6 +80,10 @@
                     :sideClass="$sideClass" 
                     :expandedWidth="$expandedWidth"
                     :collapsedWidth="$collapsedWidth"
+                    :collapsed="$collapsed"
+                    :collapsible="$collapsible"
+                    :forceCollapsed="$forceCollapsed"
+                    :expandOnHover="$expandOnHover"
                     :stickyAt="$stickyAt" 
                     :brand="$brand" 
                     :brandHref="$brandHref" 

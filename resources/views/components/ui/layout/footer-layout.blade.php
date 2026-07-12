@@ -85,6 +85,9 @@
         return preg_match('/^(https?:|mailto:|tel:)/i', $url) === 1 ? $url : '#';
     };
 
+    $newsletterFormMethod = strtoupper($newsletterMethod);
+    $newsletterHtmlMethod = $newsletterFormMethod === 'GET' ? 'GET' : 'POST';
+
     $normalizeFormAction = function($url) {
         if (!is_string($url) && !$url instanceof \Stringable) {
             return null;
@@ -162,7 +165,13 @@
                     <p class="text-sm opacity-70 mb-2">{{ $newsletterDescription }}</p>
                 @endif
                 @if($newsletterAction)
-                    <form action="{{ $newsletterAction }}" method="{{ $newsletterMethod }}" class="flex gap-2">
+                    <form action="{{ $newsletterAction }}" method="{{ $newsletterHtmlMethod }}" class="flex gap-2">
+                        @if($newsletterHtmlMethod !== 'GET')
+                            @csrf
+                        @endif
+                        @if(! in_array($newsletterFormMethod, ['GET', 'POST'], true))
+                            @method($newsletterFormMethod)
+                        @endif
                         <input 
                             type="email" 
                             name="email" 

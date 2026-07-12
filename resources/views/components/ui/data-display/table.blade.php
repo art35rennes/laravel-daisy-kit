@@ -19,6 +19,8 @@
     'columnVisibility' => false,
     'selection' => 'none',
     'rowKey' => null,
+    'selectFiltered' => true,
+    'selectionReadOnly' => false,
     'subRowsKey' => null,
     'tableLayout' => 'auto',
     'minWidth' => null,
@@ -29,6 +31,7 @@
     'caption' => null,
     'size' => null,
     'zebra' => false,
+    'hover' => false,
     'pinRows' => false,
     'pinCols' => false,
     'rowDetail' => 'none',
@@ -62,11 +65,15 @@
     $resolvedLivewireMode = in_array($livewireMode, ['ignore', 'morph', 'none'], true) ? $livewireMode : 'none';
     $resolvedRowDetail = in_array($rowDetail, ['none', 'inline', 'modal'], true) ? $rowDetail : 'none';
     $resolvedExternalFilters = (bool) $externalFilters;
-    $resolvedSelection = $selection === 'multiple' ? 'multiple' : 'none';
+    $resolvedSelection = in_array($selection, ['multiple', 'single'], true) ? $selection : 'none';
     $resolvedRowKey = is_string($rowKey) && filled($rowKey) ? $rowKey : null;
     $resolvedSubRowsKey = is_string($subRowsKey) && filled($subRowsKey) ? $subRowsKey : null;
     $resolvedLinkPolicy = \Art35rennes\DaisyKit\Support\DaisyTableColumns::normalizeLinkPolicy($linkPolicy);
-    $selectionEnabled = $resolvedSelection === 'multiple';
+    $selectionEnabled = $resolvedSelection !== 'none';
+    $showSelectionControls = $resolvedSelection === 'multiple';
+    $showSelectionFeedback = $selectionEnabled;
+    $resolvedSelectFiltered = $showSelectionControls && (bool) $selectFiltered;
+    $resolvedSelectionReadOnly = (bool) $selectionReadOnly;
     $hasToolbarStartSlot = isset($toolbarStart) && $toolbarStart instanceof \Illuminate\View\ComponentSlot;
     $hasToolbarSlot = isset($toolbar) && $toolbar instanceof \Illuminate\View\ComponentSlot;
     $hasToolbarEndSlot = isset($toolbarEnd) && $toolbarEnd instanceof \Illuminate\View\ComponentSlot;
@@ -84,7 +91,7 @@
     }
 
     if ($selectionEnabled && blank($resolvedRowKey)) {
-        throw new InvalidArgumentException('The table component requires a non-empty rowKey prop when selection is set to multiple.');
+        throw new InvalidArgumentException('The table component requires a non-empty rowKey prop when selection is enabled.');
     }
 
     if (($resolvedRowDetail !== 'none' || $resolvedSubRowsKey !== null || (bool) $editable) && blank($resolvedRowKey)) {
@@ -101,6 +108,10 @@
 
     if ($zebra) {
         $tableClasses .= ' table-zebra';
+    }
+
+    if ($hover) {
+        $tableClasses .= ' daisy-table-row-hover';
     }
 
     if (in_array($size, $sizeMap, true)) {
@@ -246,6 +257,7 @@
             'headerWrapperClass' => $column['headerWrapperClass'] ?? '',
             'cellClass' => $column['cellClass'] ?? '',
             'headerClass' => $column['headerClass'] ?? '',
+            'help' => is_string($column['help'] ?? null) ? trim($column['help']) : '',
             'html' => in_array($cell['renderer'], ['html', 'blade', 'actions'], true),
             'cell' => $cell,
             'editor' => \Art35rennes\DaisyKit\Support\DaisyTableColumns::normalizeEditor($column),
@@ -527,6 +539,8 @@
             'enabled' => $selectionEnabled,
             'mode' => $resolvedSelection,
             'rowKey' => $selectionEnabled ? $resolvedRowKey : null,
+            'selectFiltered' => $resolvedSelectFiltered,
+            'readOnly' => $resolvedSelectionReadOnly,
         ],
         'rowDetail' => [
             'mode' => $resolvedRowDetail,
@@ -568,6 +582,8 @@
     data-table-layout="{{ $resolvedTableLayout }}"
     data-table-scroll-x="{{ $resolvedScrollX }}"
     data-table-livewire-mode="{{ $resolvedLivewireMode }}"
+    data-table-selection-readonly="{{ $resolvedSelectionReadOnly ? 'true' : 'false' }}"
+    @if($selectionEnabled) aria-disabled="{{ $resolvedSelectionReadOnly ? 'true' : 'false' }}" @endif
     @if(filled($minWidth)) data-table-min-width="{{ $minWidth }}" @endif
     data-table-config='@json($config)'
     class="{{ $wrapperClasses }}"
@@ -723,7 +739,7 @@
         </div>
     @endif
 
-    @if($selectionEnabled)
+    @if($showSelectionFeedback)
         <div class="daisy-table-selection-bar flex flex-col items-stretch gap-3 rounded-box border border-base-content/10 bg-base-200/60 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between" data-table-selection-feedback>
             <div class="flex min-w-0 flex-wrap items-center gap-2">
                 <span class="font-medium" data-table-selection-summary></span>
@@ -731,9 +747,11 @@
             </div>
 
             <div class="flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-                <button type="button" class="btn btn-xs btn-ghost justify-center" data-table-select-filtered>
-                    {{ __('daisy::components.select_filtered_rows') }}
-                </button>
+                @if($resolvedSelectFiltered)
+                    <button type="button" class="btn btn-xs btn-ghost justify-center" data-table-select-filtered>
+                        {{ __('daisy::components.select_filtered_rows') }}
+                    </button>
+                @endif
                 <button type="button" class="btn btn-xs btn-ghost justify-center" data-table-clear-selection>
                     {{ __('daisy::components.clear_selection') }}
                 </button>
@@ -776,12 +794,15 @@
                 <tr data-table-head-row>
                     @if($selectionEnabled)
                         <th class="daisy-table-selection-cell">
+                            @if($showSelectionControls)
                             <input
                                 type="checkbox"
                                 class="checkbox checkbox-sm"
                                 data-table-select-page
                                 aria-label="{{ __('daisy::components.select_all_rows') }}"
+                                @disabled($resolvedSelectionReadOnly)
                             >
+                            @endif
                         </th>
                     @endif
 
@@ -837,10 +858,11 @@
                                 @endphp
                                 <td class="daisy-table-selection-cell">
                                     <input
-                                        type="checkbox"
-                                        class="checkbox checkbox-sm"
+                                        type="{{ $resolvedSelection === 'single' ? 'radio' : 'checkbox' }}"
+                                        class="{{ $resolvedSelection === 'single' ? 'radio radio-sm' : 'checkbox checkbox-sm' }}"
                                         data-table-row-select="{{ $rowSelectionId }}"
                                         aria-label="{{ __('daisy::components.select_row') }}"
+                                        @disabled($resolvedSelectionReadOnly)
                                     >
                                 </td>
                             @endif

@@ -1,6 +1,9 @@
 /**
  * Daisy Kit - OTP Code Input
  *
+ * @deprecated Use x-daisy::ui.inputs.otp. This module remains available for
+ * legacy consumers using the multi-input data-module contract.
+ *
  * Gère la saisie d'un code OTP avec navigation automatique entre les champs.
  * Chaque champ accepte un seul caractère (par défaut) ou peut être restreint aux chiffres.
  *
@@ -202,4 +205,3 @@ export default function initOtpCode(container, options = {}) {
         inputs[0].focus();
     }
 }
-

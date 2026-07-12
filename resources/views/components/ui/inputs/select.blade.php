@@ -6,6 +6,7 @@
     // Modes avancés
     'search' => false,              // Active le mode "search" (filtre local des options existantes)
     'autocomplete' => false,        // Active le mode "autocomplete" (requête distante)
+    'searchable' => true,           // Autorise la saisie libre dans un select enrichi
     // Options autocomplete
     'endpoint' => null,             // URL de l'endpoint qui renvoie les options [{ value, label, disabled? }]
     'param' => 'q',                 // Nom du paramètre de recherche (par défaut: q)
@@ -64,32 +65,54 @@
     $oldInput = $name ? data_get(session()->get('_old_input', []), $name, old($name, $value)) : $value;
     $selectedValue = $bindOld && $name ? $oldInput : $value;
     $slotContent = $slot ?? '';
+    $semanticSwatches = ['primary', 'secondary', 'accent', 'neutral', 'info', 'success', 'warning', 'error'];
+    $semanticSwatchClasses = [
+        'primary' => 'bg-primary',
+        'secondary' => 'bg-secondary',
+        'accent' => 'bg-accent',
+        'neutral' => 'bg-neutral',
+        'info' => 'bg-info',
+        'success' => 'bg-success',
+        'warning' => 'bg-warning',
+        'error' => 'bg-error',
+    ];
+    $normalizeSwatch = static function (mixed $swatch) use ($semanticSwatches): string {
+        $swatch = trim((string) $swatch);
+
+        return in_array($swatch, $semanticSwatches, true) ? $swatch : '';
+    };
     $normalizedOptions = collect(is_iterable($options) ? $options : [])
-        ->map(function ($option): array {
+        ->map(function ($option) use ($normalizeSwatch): array {
             if (is_array($option)) {
                 return [
                     'value' => $option['value'] ?? $option['id'] ?? '',
-                    'label' => $option['label'] ?? $option['name'] ?? $option['value'] ?? '',
+                    'label' => trim((string) ($option['label'] ?? $option['name'] ?? $option['value'] ?? '')),
                     'disabled' => (bool) ($option['disabled'] ?? false),
+                    'swatch' => $normalizeSwatch($option['swatch'] ?? ''),
                 ];
             }
 
             return [
                 'value' => $option,
-                'label' => $option,
+                'label' => trim((string) $option),
                 'disabled' => false,
+                'swatch' => '',
             ];
         })
         ->values();
 
+    $selectedOption = $normalizedOptions->first(fn (array $option): bool => (string) $selectedValue === (string) $option['value']);
+    $selectedSwatch = $selectedOption['swatch'] ?? '';
+
     // Attributs data pour initialiser le module JS quand nécessaire
     $dataAttributes = [];
-    $shouldEnhance = $search || $autocomplete || $endpoint;
+    $shouldEnhance = $search || $autocomplete || $endpoint || $normalizedOptions->contains(fn (array $option): bool => $option['swatch'] !== '');
     if ($shouldEnhance) {
         $dataAttributes['data-module'] = $module ?: 'select';
         // Options communes
         $dataAttributes['data-debounce'] = (string) (is_numeric($debounce) ? $debounce : 500);
         $dataAttributes['data-min-chars'] = (string) (is_numeric($minChars) ? $minChars : 3);
+        $dataAttributes['data-searchable'] = $searchable ? 'true' : 'false';
         // Options spécifiques à l'autocomplete
         if ($endpoint) {
             $dataAttributes['data-endpoint'] = (string) $endpoint;
@@ -128,18 +151,18 @@
 @if($shouldEnhance)
     <div {{ $wrapperAttributes }}>
         <label class="input flex w-full items-center gap-2">
+            <span data-role="swatch" class="h-3 w-3 shrink-0 rounded-full {{ $semanticSwatchClasses[$selectedSwatch] ?? 'hidden' }}" aria-hidden="true"></span>
             <input type="text"
                    data-role="input"
                    class="grow"
                    autocomplete="off"
+                   @readonly(!$searchable)
                    placeholder="{{ is_string($placeholder ?? null) ? $placeholder : 'Tapez pour rechercher...' }}" />
         </label>
         <ul class="dropdown-content z-10 menu bg-base-100 rounded-box w-full shadow hidden" role="listbox" data-role="list"></ul>
         <select data-role="native" @disabled($disabled) {{ $nativeSelectAttributes->merge(['hidden' => true]) }}>
             @foreach($normalizedOptions as $option)
-                <option value="{{ $option['value'] }}" @selected((string) $selectedValue === (string) $option['value']) @disabled($option['disabled'])>
-                    {{ $option['label'] }}
-                </option>
+                <option value="{{ $option['value'] }}" @selected((string) $selectedValue === (string) $option['value']) @disabled($option['disabled']) @if($option['swatch'] !== '') data-swatch="{{ $option['swatch'] }}" @endif>{{ $option['label'] }}</option>
             @endforeach
             {{ $slotContent }}
         </select>
@@ -147,9 +170,7 @@
 @else
     <select @disabled($disabled) {{ $selectAttributes }}>
         @foreach($normalizedOptions as $option)
-            <option value="{{ $option['value'] }}" @selected((string) $selectedValue === (string) $option['value']) @disabled($option['disabled'])>
-                {{ $option['label'] }}
-            </option>
+            <option value="{{ $option['value'] }}" @selected((string) $selectedValue === (string) $option['value']) @disabled($option['disabled'])>{{ $option['label'] }}</option>
         @endforeach
         {{ $slotContent }}
         {{-- Expecting <option> children --}}

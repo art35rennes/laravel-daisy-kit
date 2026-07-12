@@ -86,15 +86,16 @@
                                 <span class="text-sm text-error">{{ $errors->first('code') }}</span>
                             @endif
                         </label>
-                        <div data-module="otp-code" data-length="6" data-numeric-only="true" data-hidden-input-name="code" class="flex justify-center gap-3">
-                            @for($i = 0; $i < 6; $i++)
-                                <x-daisy::ui.inputs.input
-                                    type="text"
-                                    data-otp-digit
-                                    class="w-14 h-16 text-center text-3xl font-mono font-semibold {{ $errors->has('code') ? 'input-error' : '' }}"
-                                    aria-label="@lang('daisy::auth.two_factor_code') {{ $i + 1 }}"
-                                />
-                            @endfor
+                        <div class="flex justify-center">
+                            <x-daisy::ui.inputs.otp
+                                name="code"
+                                :length="6"
+                                :value="old('code')"
+                                :label="__('daisy::auth.two_factor_code')"
+                                :color="$errors->has('code') ? 'error' : null"
+                                size="lg"
+                                required
+                            />
                         </div>
                     </div>
                 @endif

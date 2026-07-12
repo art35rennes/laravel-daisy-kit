@@ -103,8 +103,11 @@ function computeActive(nav) {
   const items = nav.__sspItems || [];
   const targets = nav.__sspTargets || [];
   if (!items.length || !targets.length) return;
-  // Récupère le rectangle visible du conteneur (ou du document)
-  const rootRect = (container || document.documentElement).getBoundingClientRect();
+  // Le document entier ne représente pas la zone visible : pour le défilement
+  // global, la référence doit être le viewport.
+  const rootRect = container
+    ? container.getBoundingClientRect()
+    : { top: 0, bottom: window.innerHeight };
   const offset = parseInt(nav.dataset.offset || '0', 10) || 0;
   const activationLine = rootRect.top + offset + 1;
   let current = null;
