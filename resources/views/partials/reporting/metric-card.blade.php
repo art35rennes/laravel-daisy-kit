@@ -1,6 +1,6 @@
 @props(['kpi', 'toneClasses'])
 
-<article class="rounded-box border border-base-300 bg-base-100 p-4">
+<article class="min-w-0 rounded-box border border-base-300 bg-base-100 p-4">
     <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
             <h3 class="truncate text-sm font-bold">{{ $kpi['label'] }}</h3>
@@ -20,11 +20,13 @@
                 width="140px"
                 :categories="$kpi['sparklineLabels'] ?? []"
                 :series="[['name' => $kpi['label'], 'data' => $kpi['sparklineData']]]"
+                :colors="[$kpi['tone']]"
                 :drilldown-url="$kpi['drilldownUrl'] ?? null"
                 :drilldown-params="$kpi['drilldownParams'] ?? []"
                 value-format="number"
                 empty-message="Aucune donnée disponible"
                 :aria="true"
+                :data-table="false"
             />
         @endif
     </div>

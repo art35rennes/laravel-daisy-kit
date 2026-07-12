@@ -99,16 +99,27 @@ export function createAxisLabelFormatter(format) {
 export function createTooltipFormatter(format) {
     return (params) => {
         const points = Array.isArray(params) ? params : [params];
-        const rows = points.map((point) => {
-            const label = point.seriesName || point.name || '';
+        const rows = points.flatMap((point) => {
+            const label = escapeHtml(point.seriesName || point.name || '');
             const value = Array.isArray(point.value) ? point.value[1] : point.value;
-            return `<div class="daisy-chart-tooltip-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(formatValue(value, format))}</strong></div>`;
-        }).join('');
+            const detailRows = Array.isArray(point.data?.tooltip?.rows)
+                ? point.data.tooltip.rows.map((row) => {
+                    return `<div class="daisy-chart-tooltip-row">${escapeHtml(row?.label || '')}: ${escapeHtml(row?.value || '')}</div>`;
+                })
+                : [];
+
+            return [
+                `<div class="daisy-chart-tooltip-row">${label}: ${escapeHtml(formatValue(value, format))}</div>`,
+                ...detailRows,
+            ];
+        });
 
         const axisLabel = Array.isArray(params) ? params[0]?.axisValueLabel || params[0]?.name || '' : params?.name || '';
-        const title = axisLabel ? `<div class="daisy-chart-tooltip-title">${escapeHtml(axisLabel)}</div>` : '';
+        const title = axisLabel
+            ? `<div class="daisy-chart-tooltip-title">${escapeHtml(axisLabel)}</div>`
+            : '';
 
-        return `<div class="daisy-chart-tooltip">${title}${rows}</div>`;
+        return `<div class="daisy-chart-tooltip">${title}${rows.join('')}</div>`;
     };
 }
 

@@ -21,6 +21,13 @@
     'markers' => [],
     'zoom' => false,
     'zoomMode' => 'inside',
+    'renderer' => 'svg',
+    'action' => null,
+    'showValues' => false,
+    'centerValue' => null,
+    'centerLabel' => null,
+    'dataTable' => true,
+    'dataTableLabel' => 'Voir les données',
 ])
 
 @include('daisy::partials.charts.renderer', ['preset' => 'sparkline'])

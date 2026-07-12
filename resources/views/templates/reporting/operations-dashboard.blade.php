@@ -23,32 +23,44 @@
     'userRole' => 'Secrétaire technique',
     'themes' => ['light', 'dark', 'corporate', 'business', 'winter', 'night'],
     'themeLabel' => 'Thème',
+    'navigation' => null,
+    'summary' => null,
+    'sections' => null,
+    'quickActions' => null,
+    'filterAction' => null,
+    'showSummary' => false,
+    'detailModal' => true,
+    'detailModalId' => 'operations-chart-detail',
 ])
 
 @php
-    $navItems = [
-        ['label' => 'Accueil', 'icon' => 'bi-house', 'active' => true],
-        ['label' => 'Interventions', 'icon' => 'bi-clipboard-check'],
-        ['label' => 'Documents', 'icon' => 'bi-file-earmark-text'],
-        ['label' => 'Exports', 'icon' => 'bi-download'],
-        ['label' => 'Paramètres', 'icon' => 'bi-gear'],
+    $effectiveDetailedUrl = $detailedUrl === '#' ? '#terrain' : $detailedUrl;
+    $effectiveTerrainUrl = $terrainUrl === '#' ? '#terrain' : $terrainUrl;
+    $effectiveOfficeUrl = $officeUrl === '#' ? '#bureau' : $officeUrl;
+    $effectiveManagementUrl = $managementUrl === '#' ? '#gestion' : $managementUrl;
+    $navItems = $navigation ?? [
+        ['label' => 'Accueil', 'icon' => 'bi-house', 'href' => '#dashboard', 'active' => true],
+        ['label' => 'Interventions', 'icon' => 'bi-clipboard-check', 'href' => '#terrain'],
+        ['label' => 'Documents', 'icon' => 'bi-file-earmark-text', 'href' => '#quick-actions'],
+        ['label' => 'Exports', 'icon' => 'bi-download', 'href' => '#quick-actions'],
+        ['label' => 'Paramètres', 'icon' => 'bi-gear', 'href' => '#filters'],
     ];
 
-    $summary = [
+    $summary = $summary ?? [
         ['label' => 'Interventions', 'value' => '128', 'detail' => '+8% sur la période', 'tone' => 'success'],
         ['label' => 'Conformité', 'value' => '87%', 'detail' => '+5 pts vs période précédente', 'tone' => 'success'],
         ['label' => 'À traiter', 'value' => '40', 'detail' => '24 à valider, 16 rapports', 'tone' => 'primary'],
         ['label' => 'Points à risque', 'value' => '19', 'detail' => '14 retards, 5 non conformes', 'tone' => 'error'],
     ];
 
-    $sections = [
+    $sections = $sections ?? [
         [
             'id' => 'terrain',
             'marker' => 'A',
             'title' => 'Terrain',
             'subtitle' => 'Prioriser les interventions et anomalies visibles aujourd’hui',
             'tone' => 'success',
-            'url' => $terrainUrl,
+            'url' => $effectiveTerrainUrl,
             'link' => 'Interventions terrain',
             'kpis' => [
                 ['label' => 'À réaliser', 'value' => '38', 'unit' => 'Interventions', 'trend' => '+12% vs période précédente', 'tone' => 'success', 'icon' => 'bi-calendar-check', 'sparklineLabels' => ['J-6', 'J-5', 'J-4', 'J-3', 'J-2', 'J-1', 'Aujourd’hui'], 'sparklineData' => [
@@ -117,7 +129,7 @@
             'title' => 'Bureau',
             'subtitle' => 'Transformer les enquêtes terrain en livrables validés',
             'tone' => 'primary',
-            'url' => $officeUrl,
+            'url' => $effectiveOfficeUrl,
             'link' => 'Interventions bureau',
             'kpis' => [
                 ['label' => 'À valider', 'value' => '24', 'unit' => 'Enquêtes', 'trend' => '+20% vs période précédente', 'tone' => 'primary', 'icon' => 'bi-person-check'],
@@ -181,7 +193,7 @@
             'title' => 'Gestion',
             'subtitle' => 'Suivre la qualité, les délais et les volumes globaux',
             'tone' => 'secondary',
-            'url' => $managementUrl,
+            'url' => $effectiveManagementUrl,
             'link' => 'Indicateurs de gestion',
             'kpis' => [
                 ['label' => 'Total interventions', 'value' => '128', 'unit' => 'Sur la période', 'trend' => '+8% vs période précédente', 'tone' => 'secondary', 'icon' => 'bi-folder2-open'],
@@ -248,104 +260,88 @@
         'neutral' => ['text' => 'text-base-content/70', 'bg' => 'bg-base-content/40', 'soft' => 'bg-base-200', 'border' => 'border-base-300'],
     ];
 
-    $quickActions = [
-        ['label' => 'Rechercher une intervention', 'description' => 'Référence, adresse, PDC', 'icon' => 'bi-search', 'tone' => 'primary'],
-        ['label' => 'Mes tâches ouvertes', 'description' => 'Interventions à traiter', 'icon' => 'bi-clipboard-check', 'tone' => 'neutral'],
-        ['label' => 'Anomalies à corriger', 'description' => 'Non conformités et reprises', 'icon' => 'bi-exclamation-triangle', 'tone' => 'error'],
-        ['label' => 'Documents récents', 'description' => 'Rapports et courriers', 'icon' => 'bi-file-earmark-text', 'tone' => 'neutral'],
-        ['label' => 'Exports de données', 'description' => 'Télécharger un export', 'icon' => 'bi-download', 'tone' => 'success'],
+    $quickActions = $quickActions ?? [
+        ['label' => 'Rechercher une intervention', 'description' => 'Référence, adresse, PDC', 'icon' => 'bi-search', 'tone' => 'primary', 'url' => '#filters'],
+        ['label' => 'Mes tâches ouvertes', 'description' => 'Interventions à traiter', 'icon' => 'bi-clipboard-check', 'tone' => 'neutral', 'url' => '#bureau'],
+        ['label' => 'Anomalies à corriger', 'description' => 'Non conformités et reprises', 'icon' => 'bi-exclamation-triangle', 'tone' => 'error', 'url' => '#terrain'],
+        ['label' => 'Documents récents', 'description' => 'Rapports et courriers', 'icon' => 'bi-file-earmark-text', 'tone' => 'neutral', 'url' => '#quick-actions'],
+        ['label' => 'Exports de données', 'description' => 'Télécharger un export', 'icon' => 'bi-download', 'tone' => 'success', 'url' => '#quick-actions'],
     ];
+
+    $sidebarSections = [[
+        'items' => array_map(fn ($item) => [
+            ...$item,
+            'href' => $item['href'] ?? '#',
+            'icon' => \Illuminate\Support\Str::after($item['icon'], 'bi-'),
+        ], $navItems),
+    ]];
 @endphp
 
-<x-daisy::layout.app :title="$title" :theme="$theme" :container="false" body-class="bg-base-200 text-base-content">
-    <div class="min-h-screen bg-base-200">
-        <div>
-            <header class="sticky top-0 z-20 border-b border-base-300 bg-base-100">
-                <div class="mx-auto max-w-screen-2xl px-4 py-3 lg:px-6">
-                    <div class="flex items-center justify-between gap-4">
-                        <div class="flex min-w-0 items-center gap-4">
-                            <div class="flex items-center gap-2">
-                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success/10 text-success">
-                                    <x-daisy::ui.advanced.icon name="bi-droplet" class="h-4 w-4" />
-                                </span>
-                                <div class="hidden leading-tight sm:block">
-                                    <p class="text-xs font-bold">{{ $brand }}</p>
-                                    <p class="text-sm font-bold text-primary">{{ $product }}</p>
-                                </div>
-                            </div>
-                            <div class="min-w-0 border-l border-base-300 pl-4">
-                                <h1 class="truncate text-xl font-bold leading-tight">{{ $title }}</h1>
-                                <p class="truncate text-sm text-base-content/60">{{ $subtitle }}</p>
-                            </div>
-                        </div>
-                        <div class="flex shrink-0 items-center gap-3">
-                            <span class="hidden rounded-full border border-base-300 bg-base-200 px-3 py-1 text-xs font-medium text-base-content/70 md:inline-flex">
-                                Mis à jour {{ $updatedAt }}
-                            </span>
-                            <x-daisy::ui.advanced.theme-controller
-                                class="dropdown-end"
-                                variant="dropdown"
-                                size="sm"
-                                :themes="$themes"
-                                :value="$theme"
-                                :label="$themeLabel"
-                            />
-                            <button type="button" class="btn btn-circle btn-ghost btn-sm" aria-label="Aide">
-                                <x-daisy::ui.advanced.icon name="bi-question-circle" class="h-5 w-5" />
-                            </button>
-                            <div class="flex items-center gap-2">
-                                <span class="flex h-9 w-9 items-center justify-center rounded-full border border-base-300 bg-base-100">
-                                    <x-daisy::ui.advanced.icon name="bi-person" class="h-5 w-5" />
-                                </span>
-                                <div class="hidden text-right sm:block">
-                                    <p class="text-sm font-semibold leading-tight">{{ $userName }}</p>
-                                    <p class="text-xs text-base-content/60">{{ $userRole }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <nav aria-label="Navigation principale" class="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-                        @foreach($navItems as $item)
-                            <a href="#" @class([
-                                'btn btn-sm min-w-0 w-full justify-start sm:w-auto',
-                                'btn-primary' => $item['active'] ?? false,
-                                'btn-ghost' => ! ($item['active'] ?? false),
-                            ])>
-                                <x-daisy::ui.advanced.icon :name="$item['icon']" class="h-4 w-4 shrink-0" />
-                                <span class="truncate">{{ $item['label'] }}</span>
-                            </a>
-                        @endforeach
-                    </nav>
-                </div>
-            </header>
+<x-daisy::layout.sidebar-layout
+    :title="$title"
+    :theme="$theme"
+    variant="slim"
+    :force-collapsed="true"
+    :collapsible="false"
+    :brand="$brand.' '.$product"
+    :brand-collapsed="mb_substr($product, 0, 1)"
+    :sections="$sidebarSections"
+    container="bg-base-200 p-0"
+    :themes="$themes"
+    :theme-label="$themeLabel"
+>
+    <x-slot:navbarHeading>
+        <h1>{{ $title }}</h1>
+        <p>{{ $subtitle }}</p>
+    </x-slot:navbarHeading>
 
-            <main class="mx-auto max-w-screen-2xl space-y-5 px-4 py-5 lg:px-6">
-                <section aria-label="Filtres du tableau de bord" class="rounded-box border border-base-300 bg-base-100 p-4">
-                    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+    <x-slot:topbarRight>
+        <span class="hidden rounded-full border border-base-300 bg-base-200 px-3 py-1 text-xs font-medium text-base-content/70 md:inline-flex">
+            Mis à jour {{ $updatedAt }}
+        </span>
+        <button type="button" class="btn btn-circle btn-ghost btn-sm" aria-label="Aide">
+            <x-daisy::ui.advanced.icon name="bi-question-circle" class="h-5 w-5" />
+        </button>
+        <div class="flex items-center gap-2">
+            <span class="flex h-9 w-9 items-center justify-center rounded-full border border-base-300 bg-base-100">
+                <x-daisy::ui.advanced.icon name="bi-person" class="h-5 w-5" />
+            </span>
+            <div class="hidden text-right sm:block">
+                <p class="text-sm font-semibold leading-tight">{{ $userName }}</p>
+                <p class="text-xs text-base-content/60">{{ $userRole }}</p>
+            </div>
+        </div>
+    </x-slot:topbarRight>
+
+    <main id="dashboard" class="mx-auto w-full min-w-0 max-w-screen-2xl space-y-4 px-3 py-4 sm:px-4 lg:px-6">
+        <section id="filters" aria-label="Filtres du tableau de bord" class="rounded-box border border-base-300 bg-base-100 p-4">
+            <form method="GET" action="{{ $filterAction ?: request()->url() }}" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                         <x-daisy::ui.partials.form-field label="Périmètre" gap="gap-1">
-                            <x-daisy::ui.inputs.select size="sm" :options="[$perimeter]" :value="$perimeter" aria-label="Périmètre" />
+                            <x-daisy::ui.inputs.select name="perimeter" size="sm" :options="[$perimeter]" :value="$perimeter" aria-label="Périmètre" />
                         </x-daisy::ui.partials.form-field>
                         <x-daisy::ui.partials.form-field label="Période" gap="gap-1">
                             <label class="input input-sm flex w-full items-center gap-2">
-                                <span class="min-w-0 flex-1 truncate font-semibold">{{ $period }}</span>
+                                <input name="period" value="{{ $period }}" class="min-w-0 flex-1 truncate font-semibold" aria-label="Période" />
                                 <x-daisy::ui.advanced.icon name="bi-calendar3" class="h-4 w-4 text-base-content/60" />
                             </label>
                         </x-daisy::ui.partials.form-field>
                         <x-daisy::ui.partials.form-field label="Contrat" gap="gap-1">
-                            <x-daisy::ui.inputs.select size="sm" :options="[$contract]" :value="$contract" aria-label="Contrat" />
+                            <x-daisy::ui.inputs.select name="contract" size="sm" :options="[$contract]" :value="$contract" aria-label="Contrat" />
                         </x-daisy::ui.partials.form-field>
                         <x-daisy::ui.partials.form-field label="Type d’enquête" gap="gap-1">
-                            <x-daisy::ui.inputs.select size="sm" :options="[$surveyType]" :value="$surveyType" aria-label="Type d’enquête" />
+                            <x-daisy::ui.inputs.select name="survey_type" size="sm" :options="[$surveyType]" :value="$surveyType" aria-label="Type d’enquête" />
                         </x-daisy::ui.partials.form-field>
                         <x-daisy::ui.partials.form-field label="Rechercher une enquête" gap="gap-1">
                             <label class="input input-sm flex w-full items-center gap-2">
-                                <input type="search" class="min-w-0 flex-1" placeholder="N° intervention, adresse, PDC..." aria-label="Rechercher une enquête">
+                                <input name="q" type="search" class="min-w-0 flex-1" placeholder="N° intervention, adresse, PDC..." aria-label="Rechercher une enquête">
                                 <x-daisy::ui.advanced.icon name="bi-search" class="h-4 w-4 text-base-content/60" />
                             </label>
                         </x-daisy::ui.partials.form-field>
-                    </div>
-                </section>
+                        <button type="submit" class="sr-only">Appliquer les filtres</button>
+            </form>
+        </section>
 
+                @if($showSummary)
                 <section aria-label="Synthèse opérationnelle" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     @foreach($summary as $item)
                         <article class="rounded-box border {{ $toneClasses[$item['tone']]['border'] }} bg-base-100 p-4">
@@ -359,38 +355,39 @@
                         </article>
                     @endforeach
                 </section>
+                @endif
 
                 <div class="flex flex-wrap items-center justify-between gap-3 text-sm text-base-content/65">
                     <p>Les indicateurs sont calculés sur votre périmètre : <span class="font-semibold text-base-content">{{ $perimeter }}</span></p>
-                    <a href="{{ $detailedUrl }}" class="btn btn-primary btn-sm">
+                    <a href="{{ $effectiveDetailedUrl }}" class="btn btn-primary btn-sm">
                         Accéder à la liste détaillée
                         <x-daisy::ui.advanced.icon name="bi-arrow-right" class="h-4 w-4" />
                     </a>
                 </div>
 
                 @foreach($sections as $section)
-                    <section class="rounded-box border border-base-300 bg-base-100 p-4 shadow-sm">
+                    <section id="{{ $section['id'] }}" class="min-w-0 scroll-mt-4 rounded-box border border-base-300 bg-base-100 p-4 shadow-sm">
                         @include('daisy::partials.reporting.section-heading', ['section' => $section, 'toneClasses' => $toneClasses])
 
-                        <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div class="mt-4 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                             @foreach($section['kpis'] as $kpi)
                                 @include('daisy::partials.reporting.metric-card', ['kpi' => $kpi, 'toneClasses' => $toneClasses])
                             @endforeach
                         </div>
 
-                        <div class="mt-4 grid gap-4 xl:grid-cols-3">
+                        <div class="mt-4 grid min-w-0 gap-3 lg:grid-cols-2 xl:grid-cols-3">
                             @foreach($section['panels'] as $panel)
-                                @include('daisy::partials.reporting.panel', ['panel' => $panel, 'section' => $section, 'toneClasses' => $toneClasses, 'detailedUrl' => $detailedUrl])
+                                @include('daisy::partials.reporting.panel', ['panel' => $panel, 'section' => $section, 'toneClasses' => $toneClasses, 'detailedUrl' => $effectiveDetailedUrl, 'detailModalId' => $detailModal ? $detailModalId : null])
                             @endforeach
                         </div>
                     </section>
                 @endforeach
 
-                <section class="rounded-box border border-base-300 bg-base-100 p-4">
+                <section id="quick-actions" class="scroll-mt-4 rounded-box border border-base-300 bg-base-100 p-4">
                     <h2 class="text-base font-bold">Accès rapides</h2>
                     <div class="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                         @foreach($quickActions as $action)
-                            <a href="#" class="group flex min-h-20 items-center gap-3 rounded-box border border-base-300 bg-base-100 p-3 transition hover:border-primary hover:bg-base-200">
+                            <a href="{{ $action['url'] ?? '#' }}" class="group flex min-h-16 items-center gap-3 rounded-box border border-base-300 bg-base-100 p-3 transition hover:border-primary hover:bg-base-200">
                                 <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full {{ $toneClasses[$action['tone']]['soft'] }} {{ $toneClasses[$action['tone']]['text'] }}">
                                     <x-daisy::ui.advanced.icon :name="$action['icon']" class="h-5 w-5" />
                                 </span>
@@ -402,7 +399,27 @@
                         @endforeach
                     </div>
                 </section>
-            </main>
-        </div>
-    </div>
-</x-daisy::layout.app>
+
+                @if($detailModal)
+                    <x-daisy::ui.overlay.modal :id="$detailModalId" title="Détail de l’indicateur" size="md" data-chart-detail-modal>
+                        <dl class="grid gap-3 text-sm sm:grid-cols-2">
+                            <div class="rounded-box bg-base-200 p-3">
+                                <dt class="text-xs font-semibold uppercase tracking-wide text-base-content/60">Donnée</dt>
+                                <dd class="mt-1 font-bold" data-chart-detail-name>—</dd>
+                            </div>
+                            <div class="rounded-box bg-base-200 p-3">
+                                <dt class="text-xs font-semibold uppercase tracking-wide text-base-content/60">Valeur</dt>
+                                <dd class="mt-1 text-xl font-bold" data-chart-detail-value>—</dd>
+                            </div>
+                            <div class="rounded-box bg-base-200 p-3 sm:col-span-2">
+                                <dt class="text-xs font-semibold uppercase tracking-wide text-base-content/60">Série</dt>
+                                <dd class="mt-1 font-medium" data-chart-detail-series>—</dd>
+                            </div>
+                        </dl>
+                        <x-slot:actions>
+                            <a href="{{ $effectiveDetailedUrl }}" class="btn btn-primary" data-chart-detail-link>Ouvrir la liste filtrée</a>
+                        </x-slot:actions>
+                    </x-daisy::ui.overlay.modal>
+                @endif
+    </main>
+</x-daisy::layout.sidebar-layout>

@@ -1,4 +1,4 @@
-import { createAxisLabelFormatter, createPieLabelFormatter, createTooltipFormatter } from './formatters';
+import { createAxisLabelFormatter, createPieLabelFormatter, createTooltipFormatter, formatValue } from './formatters';
 
 function isPlainObject(value) {
     return value && typeof value === 'object' && !Array.isArray(value);
@@ -55,26 +55,6 @@ export function mergeOptions(base, extra) {
     return output;
 }
 
-function baseTitle(config) {
-    if (!config.title && !config.subtitle) {
-        return undefined;
-    }
-
-    return {
-        text: config.title || '',
-        subtext: config.subtitle || '',
-        left: 0,
-        top: 0,
-        textStyle: {
-            fontSize: 14,
-            fontWeight: 600,
-        },
-        subtextStyle: {
-            fontSize: 12,
-        },
-    };
-}
-
 function createLegend(config, theme) {
     if (!config.legend) {
         return undefined;
@@ -102,14 +82,6 @@ function createToolbox(config) {
             restore: {},
         },
     };
-}
-
-function createTooltipExtraCss(theme) {
-    const shadow = theme.dark
-        ? '0 18px 45px rgba(0,0,0,0.48), 0 0 0 1px rgba(255,255,255,0.16)'
-        : '0 18px 45px rgba(15,23,42,0.22), 0 0 0 1px rgba(15,23,42,0.10)';
-
-    return `pointer-events:none;z-index:9999;box-shadow:${shadow};`;
 }
 
 function createDataZoom(config) {
@@ -204,6 +176,13 @@ function createSeriesMarkers(config, seriesName) {
         ...(markPointData.length > 0 ? {
             markPoint: {
                 symbolSize: 42,
+                animation: false,
+                emphasis: {
+                    disabled: true,
+                },
+                select: {
+                    disabled: true,
+                },
                 data: markPointData,
             },
         } : {}),
@@ -220,13 +199,13 @@ function createCartesianSeries(config, theme) {
             yAxisIndex: entry.axis === 'right' ? 1 : 0,
             itemStyle: { color },
             emphasis: {
-                focus: 'none',
+                focus: 'self',
                 scale: false,
             },
             blur: {
-                itemStyle: { opacity: 1 },
-                lineStyle: { opacity: 1 },
-                areaStyle: { opacity: 1 },
+                itemStyle: { opacity: 0.42 },
+                lineStyle: { opacity: 0.42 },
+                areaStyle: { opacity: 0.12 },
             },
             select: {
                 disabled: true,
@@ -253,9 +232,11 @@ function createCartesianSeries(config, theme) {
             };
             lineSeries.emphasis.itemStyle = {
                 color,
-                borderColor: theme.tooltipBackground,
-                borderWidth: config.isSparkline ? 3 : 0,
+                borderWidth: 0,
             };
+            lineSeries.emphasis.disabled = true;
+            lineSeries.emphasis.focus = 'none';
+            lineSeries.emphasis.symbolSize = lineSeries.symbolSize;
         }
 
         if (config.isArea) {
@@ -272,6 +253,18 @@ function createCartesianSeries(config, theme) {
             lineSeries.emphasis.itemStyle = {
                 color,
                 opacity: 1,
+                shadowBlur: 10,
+                shadowColor: theme.gridColor,
+            };
+            lineSeries.label = {
+                show: config.showValues,
+                position: config.isHorizontal ? 'right' : 'top',
+                color: theme.textColor,
+                formatter(params) {
+                    const rawValue = params?.value?.value ?? params?.value;
+
+                    return formatValue(Array.isArray(rawValue) ? rawValue[1] : rawValue, config.valueFormat);
+                },
             };
         }
 
@@ -279,11 +272,60 @@ function createCartesianSeries(config, theme) {
     });
 }
 
-function createCircularSeries(config) {
+function escapeRichText(value) {
+    return String(value)
+        .replaceAll('{', '﹛')
+        .replaceAll('}', '﹜');
+}
+
+function createCenterLabel(config, theme) {
+    if (config.preset !== 'donut' || (!config.centerValue && !config.centerLabel)) {
+        return null;
+    }
+
+    const lines = [
+        config.centerValue ? `{value|${escapeRichText(config.centerValue)}}` : null,
+        config.centerLabel ? `{label|${escapeRichText(config.centerLabel)}}` : null,
+    ].filter(Boolean);
+
+    return {
+        show: true,
+        position: 'center',
+        align: 'center',
+        verticalAlign: 'middle',
+        formatter: lines.join('\n'),
+        rich: {
+            value: {
+                color: theme.textColor,
+                fontSize: 22,
+                fontWeight: 700,
+                lineHeight: 26,
+                align: 'center',
+            },
+            label: {
+                color: theme.textMutedColor,
+                fontSize: 11,
+                lineHeight: 16,
+                align: 'center',
+            },
+        },
+    };
+}
+
+function createCircularSeries(config, theme) {
     const [first] = config.series;
     if (!first) {
         return [];
     }
+
+    const centerLabel = createCenterLabel(config, theme);
+    const data = centerLabel
+        ? first.data.map((point, index) => index === 0 ? {
+            ...(point && typeof point === 'object' ? point : { value: point }),
+            label: centerLabel,
+            labelLine: { show: false },
+        } : point)
+        : first.data;
 
     return [{
         name: first.name,
@@ -297,15 +339,17 @@ function createCircularSeries(config) {
             color: 'inherit',
             formatter: createPieLabelFormatter(config.valueFormat),
         },
-        data: first.data,
+        data,
         emphasis: {
             disabled: true,
             focus: 'none',
+            // Keep the sector geometry stable. Scaling changes the SVG hit area
+            // under the pointer and can cause alternating mouseover/mouseout events.
             scale: false,
             scaleSize: 0,
             itemStyle: {
+                opacity: 1,
                 shadowBlur: 0,
-                shadowOffsetX: 0,
             },
         },
         blur: {
@@ -323,21 +367,24 @@ export function buildChartOption(config, theme) {
     const legend = createLegend(config, theme);
     const toolbox = createToolbox(config);
     const dataZoom = createDataZoom(config);
-    const title = baseTitle(config);
+    const title = undefined;
     const tooltip = {
         trigger: config.isCircular ? 'item' : 'axis',
         triggerOn: 'mousemove|click',
         renderMode: 'html',
-        appendTo: typeof document === 'undefined' ? undefined : document.body,
+        appendTo: 'body',
         confine: false,
         enterable: false,
-        extraCssText: createTooltipExtraCss(theme),
+        displayTransition: false,
+        extraCssText: 'pointer-events:none;z-index:var(--daisy-z-tooltip-content,81);box-shadow:none;',
         transitionDuration: 0,
         hideDelay: config.isCircular ? 220 : 100,
         showDelay: 0,
         backgroundColor: theme.tooltipBackground,
         borderColor: theme.dark ? 'rgba(255,255,255,0.18)' : 'rgba(15,23,42,0.12)',
         borderWidth: 1,
+        shadowBlur: 0,
+        shadowColor: 'transparent',
         textStyle: {
             color: theme.textColor,
         },
@@ -358,7 +405,12 @@ export function buildChartOption(config, theme) {
     };
 
     const baseOption = {
-        animationDuration: 240,
+        animation: config.animation,
+        animationDuration: config.animation ? 240 : 0,
+        animationDurationUpdate: config.animation ? 180 : 0,
+        stateAnimation: {
+            duration: 0,
+        },
         color: theme.palette,
         textStyle: {
             color: theme.textColor,
@@ -378,7 +430,7 @@ export function buildChartOption(config, theme) {
 
     if (config.isCircular) {
         return mergeOptions(baseOption, {
-            series: createCircularSeries(config),
+            series: createCircularSeries(config, theme),
         });
     }
 

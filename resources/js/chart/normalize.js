@@ -6,6 +6,25 @@ function normalizeDrilldown(value) {
     return value && typeof value === 'object' && !Array.isArray(value) ? value : null;
 }
 
+function normalizeAction(value, fallbackIntent = 'navigate') {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return null;
+    }
+
+    const type = value.type === 'event' ? 'event' : (value.type === 'url' ? 'url' : null);
+    if (!type) {
+        return null;
+    }
+
+    return {
+        type,
+        ...(type === 'url' && typeof value.url === 'string' ? { url: value.url } : {}),
+        ...(typeof value.target === 'string' && value.target.startsWith('#') ? { target: value.target } : {}),
+        params: normalizeDrilldown(value.params) || {},
+        intent: typeof value.intent === 'string' && value.intent.trim() !== '' ? value.intent : fallbackIntent,
+    };
+}
+
 function normalizePoint(value, index, categories) {
     if (value && typeof value === 'object' && !Array.isArray(value)) {
         const point = {
@@ -25,6 +44,8 @@ function normalizePoint(value, index, categories) {
         }
 
         point.drilldown = normalizeDrilldown(value.drilldown);
+        point.action = normalizeAction(value.action, value.action?.type === 'event' ? 'detail' : 'navigate');
+        point.meta = normalizeDrilldown(value.meta) || {};
 
         return point;
     }
@@ -98,6 +119,7 @@ export function normalizeChartConfig(config = {}) {
             params: normalizeDrilldown(config.drilldown.params) || {},
         }
         : { url: null, params: {} };
+    const action = normalizeAction(config.action);
 
     return {
         preset,
@@ -114,12 +136,18 @@ export function normalizeChartConfig(config = {}) {
         valueFormat: normalizeFormat(config.valueFormat, 'number'),
         tooltipFormat: normalizeFormat(config.tooltipFormat, config.valueFormat || 'number'),
         options: config.options && typeof config.options === 'object' ? config.options : {},
+        action,
         drilldown,
         aria: config.aria !== false,
         markers: Array.isArray(config.markers) ? config.markers : [],
         zoom: Boolean(config.zoom),
         zoomMode: config.zoomMode === 'slider' ? 'slider' : 'inside',
         orientation,
+        renderer: config.renderer === 'canvas' ? 'canvas' : 'svg',
+        showValues: Boolean(config.showValues),
+        centerValue: config.centerValue == null ? null : String(config.centerValue),
+        centerLabel: config.centerLabel == null ? null : String(config.centerLabel),
+        animation: config.animation !== false,
         hasData: hasAnyData(normalizedSeries),
         isCartesian: CARTESIAN_PRESETS.has(preset),
         isCircular: CIRCULAR_PRESETS.has(preset),

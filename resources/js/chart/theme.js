@@ -35,8 +35,25 @@ function resolveColorToken(token, contextEl, role = 'text') {
         return null;
     }
 
+    const variableMatch = token.trim().match(/^var\(\s*(--[A-Za-z0-9-_]+)(?:\s*,[^)]*)?\)$/);
+    if (variableMatch) {
+        const variableValue = getComputedStyle(contextEl || document.documentElement)
+            .getPropertyValue(variableMatch[1])
+            .trim();
+
+        return variableValue || null;
+    }
+
     if (isCssColorLike(token)) {
         return token;
+    }
+
+    const semanticValue = getComputedStyle(contextEl || document.documentElement)
+        .getPropertyValue(`--color-${token}`)
+        .trim();
+
+    if (semanticValue) {
+        return semanticValue;
     }
 
     let className = `text-${token}`;
@@ -110,8 +127,13 @@ export function resolveColors(tokensOrColors, contextEl, role = 'text') {
 }
 
 export function applyAlpha(color, alpha) {
-    if (!color || typeof document === 'undefined') {
+    if (!color) {
         return color;
+    }
+
+    const parsed = parseCssColor(color);
+    if (parsed) {
+        return `rgba(${parsed.r}, ${parsed.g}, ${parsed.b}, ${Math.max(0, Math.min(1, Number(alpha)))})`;
     }
 
     if (color.startsWith('rgba(')) {
@@ -135,15 +157,7 @@ function getBaseContentColor(contextEl) {
 }
 
 function getBase300Color(contextEl) {
-    const probe = createProbe(contextEl || document.body);
-    if (!probe) {
-        return 'rgb(200, 200, 200)';
-    }
-    withProbeClass(probe, 'card-border');
-    const style = getComputedStyle(probe);
-    const color = style.borderTopColor || style.color;
-    probe.remove();
-    return color || 'rgb(200, 200, 200)';
+    return resolveSingleColor('base-300', contextEl, 'bg') || 'rgb(200, 200, 200)';
 }
 
 function getBase200Color(contextEl) {
@@ -151,17 +165,59 @@ function getBase200Color(contextEl) {
 }
 
 function parseRgb(rgbString) {
-    const match = rgbString?.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([0-9.]+))?\s*\)/i);
+    const match = rgbString?.match(/rgba?\s*\(\s*(\d+(?:\.\d+)?)\s*[, ]\s*(\d+(?:\.\d+)?)\s*[, ]\s*(\d+(?:\.\d+)?)(?:\s*[,\/]\s*([0-9.]+%?))?\s*\)/i);
     if (!match) {
         return null;
     }
 
     return {
-        r: Number(match[1]),
-        g: Number(match[2]),
-        b: Number(match[3]),
-        a: match[4] != null ? Number(match[4]) : 1,
+        r: Math.round(Number(match[1])),
+        g: Math.round(Number(match[2])),
+        b: Math.round(Number(match[3])),
+        a: match[4] != null ? Number.parseFloat(match[4]) / (match[4].endsWith('%') ? 100 : 1) : 1,
     };
+}
+
+function parseOklch(color) {
+    const match = color?.match(/oklch\(\s*([0-9.]+%?)\s+([0-9.]+)\s+(-?[0-9.]+)(?:deg)?(?:\s*\/\s*([0-9.]+%?))?\s*\)/i);
+    if (!match) {
+        return null;
+    }
+
+    const lightness = Number.parseFloat(match[1]) / (match[1].endsWith('%') ? 100 : 1);
+    const chroma = Number.parseFloat(match[2]);
+    const hue = Number.parseFloat(match[3]) * Math.PI / 180;
+    const alpha = match[4] == null
+        ? 1
+        : Number.parseFloat(match[4]) / (match[4].endsWith('%') ? 100 : 1);
+    const a = chroma * Math.cos(hue);
+    const b = chroma * Math.sin(hue);
+    const lPrime = lightness + 0.3963377774 * a + 0.2158037573 * b;
+    const mPrime = lightness - 0.1055613458 * a - 0.0638541728 * b;
+    const sPrime = lightness - 0.0894841775 * a - 1.291485548 * b;
+    const l = lPrime ** 3;
+    const m = mPrime ** 3;
+    const s = sPrime ** 3;
+
+    return {
+        r: linearChannelToSrgb(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+        g: linearChannelToSrgb(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+        b: linearChannelToSrgb(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s),
+        a: alpha,
+    };
+}
+
+function linearChannelToSrgb(channel) {
+    const clamped = Math.max(0, Math.min(1, channel));
+    const value = clamped <= 0.0031308
+        ? 12.92 * clamped
+        : 1.055 * clamped ** (1 / 2.4) - 0.055;
+
+    return Math.round(value * 255);
+}
+
+function parseCssColor(color) {
+    return parseRgb(color) || parseOklch(color);
 }
 
 function srgbToLinear(channel) {
@@ -183,7 +239,11 @@ function relativeLuminance(rgb) {
 
 function isDarkTheme(contextEl) {
     const baseColor = resolveSingleColor('base-100', contextEl, 'bg') || 'rgb(255, 255, 255)';
-    return relativeLuminance(parseRgb(baseColor)) < 0.45;
+    return isDarkColor(baseColor);
+}
+
+export function isDarkColor(color) {
+    return relativeLuminance(parseCssColor(color)) < 0.45;
 }
 
 function buildPalette(tokens, contextEl) {
