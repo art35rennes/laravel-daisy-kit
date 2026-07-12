@@ -1,7 +1,10 @@
 // Importation des modules de base
 import './bootstrap';
-import './kit'; // Système de modules data-module
+import { init as initializeDataModules } from './kit';
 import { importWhenIdle, importWhenNearViewport, createLimiter } from './utils/scheduler';
+
+// Keep the generic data-module router in the production bundle.
+initializeDataModules();
 
 /**
  * Importe dynamiquement un module seulement si un élément correspondant au sélecteur existe dans le DOM

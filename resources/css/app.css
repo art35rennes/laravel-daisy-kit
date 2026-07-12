@@ -249,6 +249,18 @@ trix-editor[class*="daisy-wysiwyg-min-height-"] {
   font-size: var(--daisy-font-size, 0.9rem);
 }
 
+[data-code-editor-expand-modal] [data-code-editor-expand-host] > .code-editor.is-expanded {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+[data-code-editor-expand-modal] .code-editor.is-expanded .cm-host {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+
 .code-editor .cm-scroller {
   position: relative;
   display: flex;
@@ -282,10 +294,31 @@ trix-editor[class*="daisy-wysiwyg-min-height-"] {
 
 .daisy-chart {
   width: var(--daisy-width, 100%);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .daisy-chart-frame {
   height: var(--daisy-height, 320px);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.daisy-chart [data-chart-canvas] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.daisy-chart[data-chart-circular="1"] .daisy-chart-segment-muted {
+  opacity: 0.28 !important;
+}
+
+.daisy-chart[data-chart-circular="1"] .daisy-chart-segment-focus {
+  opacity: 1 !important;
+}
+
+.daisy-chart-legend-item[data-chart-focus] {
+  background-color: var(--color-base-200);
 }
 
 .daisy-chart-clickable [data-chart-canvas],
@@ -1929,8 +1962,15 @@ calendar-month::part(button) {
 
 /* Minimal overrides pour rester quasi natif Trix */
 /* 1) Cacher l’icone d’attache quand attachments=0 (comportement du composant) */
-/* 2) Assurer que le popup de lien passe au-dessus des éléments environnants */
-.trix-wrapper .trix-dialog { z-index: 60; }
+/* 2) Assurer que le popup de lien reste masqué au repos et passe au-dessus à l'ouverture */
+.trix-wrapper .trix-dialog {
+  display: none;
+  z-index: 60;
+}
+
+.trix-wrapper .trix-dialog.trix-active {
+  display: block;
+}
 
 /* Mobile nested scroll improvements */
 .overflow-x-auto,
