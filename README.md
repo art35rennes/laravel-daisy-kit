@@ -89,6 +89,27 @@ Supported notification `type` values are `info`, `success`, `warning`, and `erro
 
 Notifications are manually dismissible by default, auto-dismiss after five seconds unless `autoDismiss: false` is passed, show the reusable alert-dismiss progress bar, pause while hovered or focused, and enforce the visible `limit`. Use popconfirm or a modal confirmation for critical destructive actions; toast actions are for reversible, low-risk follow-ups.
 
+### Hierarchical tree selector
+
+Tree View is a Laravel form control with a fixed node schema: `id`, `label`, optional `children`, `disabled`, `lazy`, and `expanded`. Selection state belongs to the component `value`, not to individual nodes. Multiple selection cascades through descendants, shows mixed parents, and submits selected leaves only.
+
+```blade
+<x-daisy::ui.advanced.tree-view
+    id="permission-tree"
+    label="Permissions"
+    name="permissions"
+    selection="multiple"
+    :value="old('permissions', ['reports.view'])"
+    :data="$permissionTree"
+    :search="true"
+    lazy-url="/api/permissions/children"
+/>
+```
+
+Lazy endpoints return `{ "items": [...] }`. Remote search endpoints return at most 50 paths as `{ "paths": [["root", "branch", "match"]] }`. Labels and IDs are always inserted as text by the runtime.
+
+Use `window.DaisyTreeView.get(root)` to access `getValue()`, `setValue(value)`, `expand(id)`, `collapse(id)`, `toggle(id)`, `reset()`, `reload(id?)`, and `destroy()`. The root emits `daisy:tree-change`, `daisy:tree-load`, and `daisy:tree-error`; every detail contains `value`, `nodeId`, and `source`.
+
 ### Blueprint workflow editor
 
 Blueprint is a focused directed-workflow editor. Steps are accessible HTML cards and transitions are SVG paths. Dagre provides the hierarchical/tree layout, while the radial layout stays native to the component. Automatic layout runs only when positions are missing or when the user chooses **Arrange**. The host application owns persistence, authorization, business data, and workflow execution.
@@ -329,6 +350,29 @@ For package maintainers, regenerate that catalog after any public Blade surface 
 ```bash
 composer ai:catalog
 ```
+
+### DaisyUI 5.6 components
+
+The package exposes the DaisyUI 5.6 additions through stable Blade aliases:
+
+```blade
+<x-daisy::ui.inputs.otp name="code" :length="6" size="lg" color="primary" required />
+
+<x-daisy::ui.advanced.aura variant="rainbow" size="lg">
+    <x-daisy::ui.layout.card>Highlighted content</x-daisy::ui.layout.card>
+</x-daisy::ui.advanced.aura>
+
+<x-daisy::ui.navigation.megamenu mode="wide" size="md">
+    <button popovertarget="products-menu">Products</button>
+    <div id="products-menu" popover>
+        <x-daisy::ui.navigation.menu>...</x-daisy::ui.navigation.menu>
+    </div>
+</x-daisy::ui.navigation.megamenu>
+```
+
+OTP supports `numeric`, `joined`, semantic `color`, and `xs` through `xl` sizes. Megamenu supports `wide`, `full`, and `vertical` modes. Existing components also expose `vertical` on range inputs, `alignment="start|center|end"` on tooltips, and `method="dialog|popover"` on modals. Dialog remains the modal default. Cards accept opt-in `selectable` and `checked` props.
+
+The two-factor template now submits a single native `code` input. The older multi-input `data-module="otp-code"` runtime remains available for existing host markup but is deprecated.
 
 ### Configuration highlights
 
@@ -757,6 +801,7 @@ Supported public props:
 - `caption`
 - `size`
 - `zebra`
+- `hover`: highlights the hovered row, and the row containing keyboard focus.
 - `pinRows`
 - `pinCols`
 - `emptyLabel`

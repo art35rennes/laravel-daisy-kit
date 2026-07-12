@@ -72,6 +72,10 @@ Before adding Alpine, vanilla JavaScript, or a new host-side widget, check wheth
 
 Use `window.DaisyKit.notify(...)`, the `daisy:notify` event, and a single triggerable `x-daisy::ui.feedback.toast` container for on-demand toast notifications with actions and auto-dismiss behavior. Do not add host-side toast scripts for standard business feedback. Keep critical destructive confirmations on `x-daisy::ui.overlay.popconfirm` or modal flows instead of toast actions.
 
+For hierarchical form choices, use `x-daisy::ui.advanced.tree-view`. Keep node data structural (`id`, `label`, `children`, `disabled`, `lazy`, `expanded`) and pass selected IDs through `value`; do not put `selected`, `checked`, or custom key aliases on nodes. Multiple selection cascades through parents and submits selected leaves only.
+
+For DaisyUI 5.6 surfaces, prefer `x-daisy::ui.inputs.otp`, `x-daisy::ui.advanced.aura`, and `x-daisy::ui.navigation.megamenu`. Use the existing range, tooltip, modal, card, and choice-card components for vertical sliders, aligned tooltips, Popover API modals, and selectable cards instead of recreating their markup.
+
 For directed business workflows, prefer `x-daisy::ui.advanced.blueprint` and its `value`, `nodeCategories`, and `transitionCategories` contract before creating a custom graph editor. Use `layout="hierarchical|tree|radial"`, `transitionShape="straight|curve|s|orthogonal"`, and DaisyUI semantic `nodeColor`/`transitionColor` values for host-controlled presentation; node categories may override `color`, while transition categories may override `shape` and `color`, without changing persisted workflow data.
 
 ### Browser Autocomplete
@@ -96,7 +100,7 @@ For directed business workflows, prefer `x-daisy::ui.advanced.blueprint` and its
 
 - Keep reusable presentation in the package and business logic in the host application.
 - Preserve concise public Blade usage such as `x-daisy::charts.line`, `x-daisy::ui.inputs.button`, and `x-daisy::templates.auth.login-simple`.
-- For reporting charts, use `x-daisy::charts.*` with `drilldownUrl`, enriched point `drilldown` metadata, `markers`, `zoom`, and `orientation="horizontal"` before writing bespoke SVG, canvas, or host-side chart markup.
+- For reporting charts, use `x-daisy::charts.*` with the default SVG renderer, enriched point actions, `markers`, `zoom`, and `orientation="horizontal"` before writing bespoke SVG, canvas, or host-side chart markup. Keep `drilldownUrl` for filtered navigation. For a packaged modal target, use point `action: ['type' => 'event', 'intent' => 'detail', 'target' => '#detail-modal']`; the chart populates `[data-chart-detail-name]`, `[data-chart-detail-value]`, `[data-chart-detail-series]`, and `[data-chart-detail-link]` inside the target before opening it. Listen for the cancelable `daisy:chart-activate` event when the host needs custom business behavior instead.
 - Use `x-daisy::ui.partials.form-field` as the default wrapper for label + input/select pairs, especially in constrained grids. Keep host CSS from targeting package `.label`, `.input`, or `.select` just to fix field alignment.
 - Use `x-daisy::ui.layout.editable-grid` only for explicitly editable dashboards or builder-style surfaces; keep `x-daisy::ui.layout.grid-layout` as the default static grid.
 - Use `x-daisy::ui.utilities.copyable` for long technical values such as checksums, UUIDs, masked tokens, and generated identifiers. Prefer `class="font-mono break-all"`, `icon-position="inline"`, configurable `success-message`, and `:underline="false"` when the value sits inside a dense detail view.

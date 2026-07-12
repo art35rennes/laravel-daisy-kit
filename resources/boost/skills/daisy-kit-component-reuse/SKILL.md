@@ -40,6 +40,8 @@ Do not rebuild a component, page shell, or layout that already exists in the pac
 - Forms and input handling:
   - `x-daisy::ui.partials.form-field`
   - `x-daisy::ui.inputs.*`
+  - `x-daisy::ui.inputs.otp`
+  - `x-daisy::ui.advanced.tree-view`
   - `x-daisy::templates.form.*`
 - CRUD and structured data:
   - `x-daisy::ui.layout.crud-layout`
@@ -47,6 +49,7 @@ Do not rebuild a component, page shell, or layout that already exists in the pac
   - `x-daisy::ui.data-display.table`
 - Navigation, sections, and page structure:
   - `x-daisy::ui.navigation.*`
+  - `x-daisy::ui.navigation.megamenu`
   - `x-daisy::ui.layout.*`
   - `x-daisy::ui.layout.editable-grid`
   - `x-daisy::ui.layout.editable-grid-item`
@@ -64,6 +67,7 @@ Do not rebuild a component, page shell, or layout that already exists in the pac
 - Media and rich interactive surfaces:
   - `x-daisy::ui.media.*`
   - `x-daisy::ui.advanced.*`
+  - `x-daisy::ui.advanced.aura`
   - `x-daisy::ui.utilities.*`
 - Chat, notifications, and communication UI:
   - `x-daisy::ui.communication.*`
@@ -73,6 +77,8 @@ Do not rebuild a component, page shell, or layout that already exists in the pac
 - Prefer composition over copying package markup into a host Blade file.
 - Prefer vendor overrides over host-local clones when the change is mostly visual, structural, or textual.
 - Before adding new JavaScript, check whether the target package component already ships a package module, a `data-module` hook, or a package entrypoint that covers the behavior.
+- For chart drilldowns, prefer same-origin `drilldownUrl` navigation. Point event actions may declare a same-document `target` selector for a Daisy modal containing `data-chart-detail-*` placeholders, or emit the cancelable `daisy:chart-activate` event when the host must own the business-detail behavior.
+- Use `x-daisy::ui.advanced.tree-view` for hierarchical Laravel selection. Pass selection through the component `value`; nodes use only `id`, `label`, `children`, `disabled`, `lazy`, and `expanded`. Multiple mode submits selected leaves through `name[]`.
 - Treat HTML `autocomplete` as host-controlled markup: use semantic values where Daisy Kit owns the field meaning, and let hosts disable it at the form/page or field level for business or sensitive workflows.
 - For broad autocomplete conventions, prefer host layouts, wrappers, or published Daisy Kit overrides instead of adding a package-wide switch.
 - Do not confuse browser/password-manager autocomplete with Daisy Kit remote autocomplete widgets such as enhanced selects or token inputs.

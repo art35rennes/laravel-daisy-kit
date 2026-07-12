@@ -4,6 +4,32 @@ All notable changes to this package are documented in this file.
 
 This project follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 
+## Unreleased
+
+### Added
+
+- Add DaisyUI 5.6 wrappers for native OTP inputs, Aura effects, and Megamenu navigation.
+- Add vertical range sliders, tooltip alignment, Popover API modals, and selectable card states.
+- Add a tested Tree View instance API, accessible keyboard navigation, safe remote loading, and local or remote search.
+
+### Changed
+
+- Upgrade DaisyUI to 5.6.17, Tailwind CSS to 4.3.2, Vite to 8.1.4, and Vitest to 4.1.10.
+- Use the native DaisyUI OTP component in the two-factor authentication template while retaining the legacy `otp-code` JavaScript module for compatibility.
+- Delegate choice-card selection and focus styling to DaisyUI 5.6 card states.
+- Escape string content in tooltip, popconfirm, tabs, and accordion components while preserving explicit `Htmlable` values and Blade slots.
+- Route the legacy theme-selector alias through the configuration-backed selector to prevent built-in theme drift.
+- Rebuild Tree View as a Laravel hierarchical selector with component-level values, normalized nodes, tri-state cascading, and leaf-only multiple form submission.
+
+### Breaking
+
+- Replace the legacy Tree View node selection flags, configurable node keys, lazy modes, events, and implicit global methods with the normalized v2 contract documented in the README.
+
+### Fixed
+
+- Add Laravel CSRF tokens and method spoofing to non-GET newsletter forms.
+- Audit the floating tooltip's required runtime positioning styles and make sidebar rendering tests whitespace-tolerant.
+
 ## [3.0.0] - 2026-06-09
 
 ### Added

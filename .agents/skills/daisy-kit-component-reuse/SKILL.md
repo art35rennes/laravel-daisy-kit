@@ -80,6 +80,7 @@ Do not rebuild a component, page shell, or layout that already exists in the pac
 - Keep reused or new package UI compatible with strict CSP by default: no inline handlers, `style=""`, executable inline scripts, Alpine expression attributes, `eval()`, or `new Function`.
 - For dynamic visual values, prefer classes or `data-*` attributes handled by package modules. Use nonceable server-generated `<style>` or `<script>` only for explicit documented exceptions.
 - Keep host-specific business logic in the host application and reusable presentation in the package.
+- For chart drilldowns, prefer same-origin `drilldownUrl` navigation. Point event actions may declare a same-document `target` selector for a Daisy modal containing `data-chart-detail-*` placeholders, or emit the cancelable `daisy:chart-activate` event when the host must own the business-detail behavior.
 - If you create a new host component anyway, explain why the package aliases and overrides were not sufficient.
 
 ## Verification

@@ -1,9 +1,9 @@
 {
-    "generated_at": "2026-07-10T20:28:31+00:00",
+    "generated_at": "2026-07-12T19:48:36+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
-        "component_count": 157,
+        "component_count": 160,
         "template_count": 32,
         "excluded_component_template_mirrors": 0
     },
@@ -35,7 +35,14 @@
                 "aria",
                 "markers",
                 "zoom",
-                "zoomMode"
+                "zoomMode",
+                "renderer",
+                "action",
+                "showValues",
+                "centerValue",
+                "centerLabel",
+                "dataTable",
+                "dataTableLabel"
             ]
         },
         {
@@ -66,7 +73,14 @@
                 "markers",
                 "zoom",
                 "zoomMode",
-                "orientation"
+                "orientation",
+                "renderer",
+                "action",
+                "showValues",
+                "centerValue",
+                "centerLabel",
+                "dataTable",
+                "dataTableLabel"
             ]
         },
         {
@@ -96,7 +110,14 @@
                 "aria",
                 "markers",
                 "zoom",
-                "zoomMode"
+                "zoomMode",
+                "renderer",
+                "action",
+                "showValues",
+                "centerValue",
+                "centerLabel",
+                "dataTable",
+                "dataTableLabel"
             ]
         },
         {
@@ -126,7 +147,14 @@
                 "aria",
                 "markers",
                 "zoom",
-                "zoomMode"
+                "zoomMode",
+                "renderer",
+                "action",
+                "showValues",
+                "centerValue",
+                "centerLabel",
+                "dataTable",
+                "dataTableLabel"
             ]
         },
         {
@@ -156,7 +184,14 @@
                 "aria",
                 "markers",
                 "zoom",
-                "zoomMode"
+                "zoomMode",
+                "renderer",
+                "action",
+                "showValues",
+                "centerValue",
+                "centerLabel",
+                "dataTable",
+                "dataTableLabel"
             ]
         },
         {
@@ -186,7 +221,14 @@
                 "aria",
                 "markers",
                 "zoom",
-                "zoomMode"
+                "zoomMode",
+                "renderer",
+                "action",
+                "showValues",
+                "centerValue",
+                "centerLabel",
+                "dataTable",
+                "dataTableLabel"
             ]
         },
         {
@@ -216,7 +258,14 @@
                 "aria",
                 "markers",
                 "zoom",
-                "zoomMode"
+                "zoomMode",
+                "renderer",
+                "action",
+                "showValues",
+                "centerValue",
+                "centerLabel",
+                "dataTable",
+                "dataTableLabel"
             ]
         },
         {
@@ -247,7 +296,14 @@
                 "markers",
                 "zoom",
                 "zoomMode",
-                "orientation"
+                "orientation",
+                "renderer",
+                "action",
+                "showValues",
+                "centerValue",
+                "centerLabel",
+                "dataTable",
+                "dataTableLabel"
             ]
         },
         {
@@ -385,6 +441,10 @@
                 "sideClass",
                 "expandedWidth",
                 "collapsedWidth",
+                "collapsed",
+                "collapsible",
+                "forceCollapsed",
+                "expandOnHover",
                 "stickyAt",
                 "brand",
                 "brandHref",
@@ -426,7 +486,8 @@
             "props": [
                 "position",
                 "placement",
-                "themes"
+                "themes",
+                "offsetClass"
             ]
         },
         {
@@ -449,6 +510,17 @@
                 "itemClass",
                 "titleClass",
                 "contentClass"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.aura",
+            "group": "ui.advanced",
+            "name": "aura",
+            "relative_path": "resources/views/components/ui/advanced/aura.blade.php",
+            "props": [
+                "as",
+                "variant",
+                "size"
             ]
         },
         {
@@ -549,9 +621,11 @@
                 "readonly",
                 "showToolbar",
                 "showFoldAll",
+                "showFoldOthers",
                 "showUnfoldAll",
                 "showFormat",
                 "showCopy",
+                "showExpand",
                 "height",
                 "width",
                 "fontSize",
@@ -903,33 +977,23 @@
             "props": [
                 "id",
                 "label",
-                "children",
-                "lazy",
-                "expanded",
-                "selected",
                 "data",
-                "selection",
-                "persist",
-                "selectOnLabel",
-                "itemKey",
-                "labelKey",
-                "childrenKey",
-                "lazyKey",
+                "value",
                 "name",
-                "controlSize",
+                "selection",
+                "valueMode",
+                "initialExpandPaths",
                 "disabled",
-                "return",
+                "persist",
+                "controlSize",
                 "lazyUrl",
                 "lazyParam",
-                "lazyMode",
-                "lazyReload",
                 "search",
-                "searchMin",
-                "searchDebounce",
                 "searchUrl",
                 "searchParam",
                 "searchPlaceholder",
-                "searchButton",
+                "searchMin",
+                "searchDebounce",
                 "searchAuto",
                 "module"
             ]
@@ -1467,6 +1531,8 @@
                 "columnVisibility",
                 "selection",
                 "rowKey",
+                "selectFiltered",
+                "selectionReadOnly",
                 "subRowsKey",
                 "tableLayout",
                 "minWidth",
@@ -1477,6 +1543,7 @@
                 "caption",
                 "size",
                 "zebra",
+                "hover",
                 "pinRows",
                 "pinCols",
                 "rowDetail",
@@ -1872,6 +1939,22 @@
             ]
         },
         {
+            "alias": "x-daisy::ui.inputs.otp",
+            "group": "ui.inputs",
+            "name": "otp",
+            "relative_path": "resources/views/components/ui/inputs/otp.blade.php",
+            "props": [
+                "length",
+                "value",
+                "numeric",
+                "joined",
+                "size",
+                "color",
+                "required",
+                "label"
+            ]
+        },
+        {
             "alias": "x-daisy::ui.inputs.radio",
             "group": "ui.inputs",
             "name": "radio",
@@ -1901,7 +1984,8 @@
                 "bg",
                 "thumb",
                 "fill",
-                "noFill"
+                "noFill",
+                "vertical"
             ]
         },
         {
@@ -1916,6 +2000,7 @@
                 "disabled",
                 "search",
                 "autocomplete",
+                "searchable",
                 "endpoint",
                 "param",
                 "debounce",
@@ -2033,7 +2118,9 @@
                 "size",
                 "imageAlt",
                 "imageClass",
-                "figureClass"
+                "figureClass",
+                "selectable",
+                "checked"
             ]
         },
         {
@@ -2415,6 +2502,17 @@
             ]
         },
         {
+            "alias": "x-daisy::ui.navigation.megamenu",
+            "group": "ui.navigation",
+            "name": "megamenu",
+            "relative_path": "resources/views/components/ui/navigation/megamenu.blade.php",
+            "props": [
+                "mode",
+                "size",
+                "activeIndicator"
+            ]
+        },
+        {
             "alias": "x-daisy::ui.navigation.menu",
             "group": "ui.navigation",
             "name": "menu",
@@ -2685,7 +2783,8 @@
                 "scrollable",
                 "teleport",
                 "closeLabel",
-                "initialFocus"
+                "initialFocus",
+                "method"
             ]
         },
         {
@@ -2732,6 +2831,7 @@
                 "open",
                 "position",
                 "color",
+                "alignment",
                 "content"
             ]
         },
@@ -3688,7 +3788,15 @@
                 "userName",
                 "userRole",
                 "themes",
-                "themeLabel"
+                "themeLabel",
+                "navigation",
+                "summary",
+                "sections",
+                "quickActions",
+                "filterAction",
+                "showSummary",
+                "detailModal",
+                "detailModalId"
             ]
         }
     ]
