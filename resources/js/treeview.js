@@ -1,1095 +1,786 @@
-/**
- * Daisy Kit - TreeView (agnostique backend)
- * 
- * Ce module fournit un composant d'arbre interactif, accessible et agnostique du backend.
- * Compatible DaisyUI v5 avec prise en charge complète de l'accessibilité ARIA.
- * 
- * ARCHITECTURE :
- * - Composant autonome sans dépendances externes
- * - Indexation DOM optimisée pour les grands arbres
- * - Gestion d'état avec persistance sessionStorage
- * - Support lazy-loading via événements personnalisés
- * - Navigation clavier complète (WAI-ARIA Tree Pattern)
- * 
- * API PUBLIQUE (window.DaisyTreeView) :
- *   - init(root) : initialise un arbre sur un élément racine
- *   - initAll() : initialise tous les arbres [data-treeview="1"] du DOM
- *   - expand(root, nodeId) : ouvre un nœud spécifique
- *   - collapse(root, nodeId) : ferme un nœud spécifique  
- *   - toggle(root, nodeId) : bascule l'état d'un nœud
- *   - getSelected(root) => array : retourne les ids sélectionnés
- *   - setData(root, data) : hook pour lazy-loading (événement personnalisé)
- *   - expand(nodeId), collapse(nodeId), toggle(nodeId) : contrôle l'ouverture d'un nœud
- *   - getSelected(root) => array d'ids : retourne les ids sélectionnés
- *   - setData(root, data) : hook pour lazy-loading (l'intégrateur gère le HTML)
- *   - reset(root) : réinitialise la sélection et l'état ouvert
- * 
- * Fonctionnalités :
- *   - Sélection simple ou multiple (radio/checkbox)
- *   - Navigation clavier (flèches, espace, entrée)
- *   - Persistance de l'état ouvert (sessionStorage)
- *   - Lazy-loading via événements personnalisés
- *   - Support du tri-état pour les cases à cocher
- *   - Désactivation possible de l'arbre
- * 
- * Data-attributes (sur la racine [data-treeview="1"]) :
- *   - data-selection: 'single'|'multiple' (mode de sélection)
- *   - data-return: 'nodes'|'leaves' (pour multiple, ce qui est retourné par getSelected)
- *   - data-persist: 'true' => mémorise les nœuds ouverts (sessionStorage)
- *   - data-persist-key: clé personnalisée de persistance si pas d'id
- *   - data-select-label: 'true' => clic sur le label sélectionne le nœud
- *   - ul[role="tree"][data-disabled]: désactive toutes les interactions
- */
+const instances = new WeakMap();
+const storagePrefix = 'treeview:';
 
-const STORAGE_PREFIX = 'treeview:';
-
-// Sélecteurs utilitaires pour le DOM, scoping sur la racine
-function $(root, selector) { return root.querySelector(selector); }
-function $all(root, selector) { return Array.from(root.querySelectorAll(selector)); }
-
-// Persistance de l'état ouvert dans sessionStorage
-function readStorage(key) {
-  try { return JSON.parse(sessionStorage.getItem(key) || 'null'); } catch (_) { return null; }
-}
-function writeStorage(key, value) {
-  try { sessionStorage.setItem(key, JSON.stringify(value)); } catch (_) {}
+function treeItems(root) {
+    return Array.from(root.querySelectorAll('[role="treeitem"]'));
 }
 
-// Retourne la liste des treeitems visibles (pour navigation clavier)
-function visibleTreeItems(root) {
-  const items = [];
-  // Parcours en profondeur, ne descend que dans les groupes ouverts
-  function dfs(ul) {
-    const lis = Array.from(ul.children).filter((el) => el.matches('li[role="treeitem"]'));
-    for (const li of lis) {
-      if (li.classList.contains('hidden') || li.getAttribute('aria-hidden') === 'true') continue;
-      items.push(li);
-      const group = li.querySelector(':scope > ul[role="group"]');
-      const expanded = li.getAttribute('aria-expanded') === 'true';
-      if (group && expanded && !group.classList.contains('hidden')) dfs(group);
+function directGroup(item) {
+    return Array.from(item.children).find((child) => child.matches?.('[role="group"]')) || null;
+}
+
+function directHeader(item) {
+    return Array.from(item.children).find((child) => child.matches?.('[data-node-header]')) || null;
+}
+
+function directControl(item) {
+    return directHeader(item)?.querySelector('[data-tree-control]') || null;
+}
+
+function directChildren(item) {
+    const group = directGroup(item);
+    return group ? Array.from(group.children).filter((child) => child.matches?.('[role="treeitem"]')) : [];
+}
+
+function parentItem(item) {
+    return item.parentElement?.closest('[role="treeitem"]') || null;
+}
+
+function findItem(root, id) {
+    return treeItems(root).find((item) => item.dataset.id === String(id)) || null;
+}
+
+function isVisible(item) {
+    if (item.hidden || item.classList.contains('hidden') || item.getAttribute('aria-hidden') === 'true') return false;
+
+    let parent = parentItem(item);
+    while (parent) {
+        const group = directGroup(parent);
+        if (parent.getAttribute('aria-expanded') !== 'true' || group?.classList.contains('hidden')) return false;
+        parent = parentItem(parent);
     }
-  }
-  const tree = $(root, 'ul[role="tree"]');
-  if (tree) dfs(tree);
-  return items;
-}
 
-// Debounce utilitaire
-function debounce(fn, wait) {
-  let t = null;
-  return function debounced(...args) {
-    window.clearTimeout(t);
-    t = window.setTimeout(() => fn.apply(this, args), wait);
-  };
-}
-
-// --- Indexation du DOM pour grands arbres ---
-// Ajoute des propriétés __treeParent, __cb, __group, __childrenLis sur chaque li
-function indexTree(root) {
-  const tree = $(root, 'ul[role="tree"]');
-  if (!tree) return;
-  function indexUL(ul, parentLi) {
-    const lis = Array.from(ul.querySelectorAll(':scope > li[role="treeitem"]'));
-    for (const li of lis) {
-      li.__treeParent = parentLi || null; // parent direct dans l'arbre
-      li.__cb = li.querySelector(':scope input[type="checkbox"]'); // case à cocher éventuelle
-      const group = li.querySelector(':scope > ul[role="group"]');
-      li.__group = group || null; // sous-groupe éventuel
-      li.__childrenLis = group ? Array.from(group.querySelectorAll(':scope > li[role="treeitem"]')) : []; // enfants directs
-      if (group) indexUL(group, li);
-    }
-  }
-  indexUL(tree, null);
-  root.__treeIndexed = true;
-  root.__indexStale = false; // index à jour
-}
-
-// S'assure que l'index est présent et à jour
-function ensureIndex(root) {
-  if (!root.__treeIndexed || root.__indexStale) indexTree(root);
-}
-
-// Synchronise l'icône des chevrons avec l'état aria-expanded
-function syncToggleIcons(root) {
-  $all(root, 'li[role="treeitem"]').forEach((li) => {
-    const btn = li.querySelector(':scope > div [data-toggle]');
-    if (!btn) return;
-    const isOpen = li.getAttribute('aria-expanded') === 'true';
-    const c = btn.querySelector('[data-icon-collapsed]');
-    const e = btn.querySelector('[data-icon-expanded]');
-    if (c) c.classList.toggle('hidden', isOpen);
-    if (e) e.classList.toggle('hidden', !isOpen);
-  });
-}
-
-// Gère le focus clavier sur un treeitem
-function setFocus(root, li, doFocus = true) {
-  if (!li) return;
-  const tree = $(root, 'ul[role="tree"]');
-  if (!tree) return;
-  // On retire le tabIndex de tous les items, puis on le met sur l'élément ciblé
-  $all(root, 'li[role="treeitem"]').forEach((n) => n.tabIndex = -1);
-  li.tabIndex = 0;
-  if (doFocus) li.focus();
-}
-
-// Déclenche un événement CustomEvent sur la racine
-function fireEvent(root, type, detail) {
-  root.dispatchEvent(new CustomEvent(type, { detail, bubbles: true }));
-}
-
-// Le rendu Blade sérialise les cases mixtes via `data-indeterminate`.
-// Cette fonction applique la propriété DOM `indeterminate`, nécessaire après chargement initial
-// comme après injection de nœuds lazy.
-function initializeIndeterminateCheckboxes(scope) {
-  if (!scope?.querySelectorAll) return;
-  scope.querySelectorAll('input[type="checkbox"][data-indeterminate="true"]').forEach((el) => {
-    el.checked = false;
-    el.indeterminate = true;
-    el.setAttribute('aria-checked', 'mixed');
-  });
-}
-
-function itemHasExplicitSelectionState(item) {
-  if (!item || typeof item !== 'object') return false;
-  return item.selected === true
-    || item.checked === true
-    || item.indeterminate === true
-    || item.state === 'checked'
-    || item.state === 'selected'
-    || item.state === 'mixed';
-}
-
-function subtreeHasExplicitSelectionState(items) {
-  return (items || []).some((item) => {
-    if (itemHasExplicitSelectionState(item)) return true;
-    return Array.isArray(item?.children) && subtreeHasExplicitSelectionState(item.children);
-  });
-}
-
-function shouldReloadLazyNode(root, li) {
-  if (!li || !li.hasAttribute('data-lazy-node')) return false;
-  if (li.dataset.lazyLoading === 'true') return false;
-  return root.dataset.lazyReload === 'true' || li.dataset.lazyLoaded !== 'true';
-}
-
-function requestLazyLoad(root, li, options = {}) {
-  if (!li || !li.hasAttribute('data-lazy-node')) return false;
-  if (!shouldReloadLazyNode(root, li)) return false;
-  const grp = li.querySelector(':scope > ul[role="group"]');
-  if (grp) grp.innerHTML = '<li class="px-2 py-1 text-sm opacity-60" data-lazy-placeholder>Chargement…</li>';
-  li.dataset.lazyLoading = 'true';
-  delete li.dataset.lazyLoaded;
-  root.__indexStale = true;
-  fireEvent(root, 'tree:lazy', {
-    root,
-    nodeId: li.dataset.id,
-    li,
-    preserveExpanded: !!options.preserveExpanded,
-  });
-  return true;
-}
-
-// Persiste l'état des nœuds ouverts si data-persist="true"
-function persistStateIfNeeded(root) {
-  const persist = root.dataset.persist === 'true';
-  if (!persist) return;
-  const id = root.id || root.dataset.persistKey || 'default';
-  // On stocke la liste des ids des nœuds ouverts
-  const expandedIds = $all(root, 'li[role="treeitem"][aria-expanded="true"]').map((li) => li.dataset.id);
-  writeStorage(STORAGE_PREFIX + id, { expanded: expandedIds });
-}
-
-// Restaure l'état ouvert des nœuds depuis le storage
-function restoreState(root) {
-  const persist = root.dataset.persist === 'true';
-  if (!persist) return;
-  const id = root.id || root.dataset.persistKey || 'default';
-  const state = readStorage(STORAGE_PREFIX + id);
-  if (!state || !state.expanded) return;
-  const set = new Set(state.expanded);
-  $all(root, 'li[role="treeitem"]').forEach((li) => {
-    // On ne traite que les nœuds ayant des enfants ou un placeholder lazy DIRECT
-    const hasChildren = !!li.querySelector(':scope > ul[role="group"]') || !!li.querySelector(':scope > ul[role="group"] > [data-lazy-placeholder]');
-    if (!hasChildren) return;
-    const btn = li.querySelector('[data-toggle]');
-    const children = li.querySelector(':scope > ul[role="group"]');
-    const wantOpen = set.has(li.dataset.id);
-    if (wantOpen) {
-      li.setAttribute('aria-expanded', 'true');
-      if (children) children.classList.remove('hidden');
-      if (btn) {
-        // Affiche l'icône "ouvert", masque "fermé"
-        const c = btn.querySelector('[data-icon-collapsed]');
-        const e = btn.querySelector('[data-icon-expanded]');
-        if (c) c.classList.add('hidden');
-        if (e) e.classList.remove('hidden');
-      }
-      // Ne PAS déclencher de lazy auto ici: l'ouverture automatique issue de la persistance
-      // ne doit pas charger les enfants tant que l'utilisateur n'a pas explicitement
-      // ouvert les nœuds concernés.
-    }
-  });
-  // Harmonise les icônes avec l'état restauré
-  syncToggleIcons(root);
-}
-
-// --- Recherche ---
-function clearSearch(root) {
-  // Retire surbrillance et rend tous les nœuds visibles
-  $all(root, 'li[role="treeitem"]').forEach((li) => {
-    li.removeAttribute('data-search-match');
-    li.removeAttribute('data-has-match-in-subtree');
-    li.classList.remove('hidden');
-    li.removeAttribute('aria-hidden');
-    const header = li.querySelector(':scope > div[data-node-header]');
-    if (header) header.classList.remove('bg-warning/20');
-    const label = li.querySelector(':scope > div [data-label]');
-    if (label && label.dataset.origLabel) {
-      label.textContent = label.dataset.origLabel;
-      delete label.dataset.origLabel;
-    }
-  });
-  // Supprime les ellipses ajoutées par la recherche
-  $all(root, 'li[data-search-ellipsis]')
-    .forEach((el) => el.remove());
-}
-
-function markLabelHighlight(labelEl, term) {
-  const text = labelEl.textContent || '';
-  if (!labelEl.dataset.origLabel) labelEl.dataset.origLabel = text;
-  const idx = text.toLowerCase().indexOf(term.toLowerCase());
-  if (idx === -1) return;
-  const before = text.slice(0, idx);
-  const match = text.slice(idx, idx + term.length);
-  const after = text.slice(idx + term.length);
-  labelEl.innerHTML = `${before}<mark>${match}</mark>${after}`;
-}
-
-function computeSearchVisibility(root, term) {
-  ensureIndex(root);
-  // Post-ordre: on calcule si un nœud a un match direct ou dans ses descendants
-  const visit = (li) => {
-    const children = li.__childrenLis || [];
-    let hasMatchInSubtree = false;
-    for (const ch of children) {
-      hasMatchInSubtree = visit(ch) || hasMatchInSubtree;
-    }
-    const label = li.querySelector(':scope > div [data-label]');
-    const text = (label?.textContent || '').toLowerCase();
-    const isDirectMatch = term && text.includes(term.toLowerCase());
-    if (isDirectMatch && label) {
-      const header = li.querySelector(':scope > div[data-node-header]');
-      if (header) header.classList.add('bg-warning/20');
-      markLabelHighlight(label, term);
-      li.setAttribute('data-search-match', '1');
-    }
-    if (isDirectMatch || hasMatchInSubtree) {
-      li.removeAttribute('aria-hidden');
-      li.classList.remove('hidden');
-      li.setAttribute('data-has-match-in-subtree', '1');
-      // Ouvre la branche pour rendre visibles les descendants pertinents (hors lazy)
-      const group = li.__group || li.querySelector(':scope > ul[role="group"]');
-      const isLazyNode = li.hasAttribute('data-lazy-node');
-      if (group && !isLazyNode) {
-        li.setAttribute('aria-expanded', 'true');
-        group.classList.remove('hidden');
-      }
-      return true;
-    }
-    // Masque les nœuds qui ne matchent pas et n'ont pas de descendant qui matche
-    li.setAttribute('aria-hidden', 'true');
-    li.classList.add('hidden');
-    return false;
-  };
-  const tree = $(root, 'ul[role="tree"]');
-  if (!tree) return;
-  const topLis = Array.from(tree.querySelectorAll(':scope > li[role="treeitem"]'));
-  topLis.forEach((li) => visit(li));
-  // Met à jour les indicateurs d'élision "…" par niveau
-  updateEllipsisMarkers(root);
-}
-
-function updateEllipsisMarkers(root) {
-  // Retire d'abord les ellipses existantes
-  $all(root, 'li[data-search-ellipsis]')
-    .forEach((el) => el.remove());
-  // Pour chaque niveau (ul) visible, si certains enfants directs sont masqués, ajoute "…" en fin
-  const lists = $all(root, 'ul[role="tree"], ul[role="group"]');
-  lists.forEach((ul) => {
-    // Si la liste est masquée, ignorer
-    if (ul.classList.contains('hidden')) return;
-    const children = Array.from(ul.querySelectorAll(':scope > li[role="treeitem"]'));
-    if (!children.length) return;
-    const hiddenCount = children.filter((li) => li.classList.contains('hidden') || li.getAttribute('aria-hidden') === 'true').length;
-    if (hiddenCount <= 0) return;
-    // Calcule le niveau et l'indentation
-    const parentLi = ul.closest('li[role="treeitem"]');
-    const parentLevel = parentLi ? (parseInt(parentLi.getAttribute('aria-level') || '0', 10) || 0) : 0;
-    const level = parentLi ? (parentLevel + 1) : 1;
-    const indentLevel = Math.max(0, Math.min(64, level - 1));
-    // Construit l'élément d'ellipses
-    const li = document.createElement('li');
-    li.setAttribute('data-search-ellipsis', '1');
-    li.setAttribute('role', 'presentation');
-    li.innerHTML = `
-      <div class="flex items-center gap-2 px-2 py-1 rounded-box opacity-60 daisy-tree-indent-${indentLevel}" data-node-header="1">
-        <span class="inline-block w-6"></span>
-        <span class="flex-1 select-none">…</span>
-      </div>
-    `;
-    ul.appendChild(li);
-  });
-}
-
-async function expandPath(root, path, token) {
-  if (!Array.isArray(path) || path.length === 0) return false;
-  const getLi = (id) => root.querySelector(`li[role="treeitem"][data-id="${CSS.escape(String(id))}"]`);
-  // Assure l'existence du premier nœud
-  let li = getLi(path[0]);
-  if (!li) return false;
-  const waitForChild = (parentLi, childId, timeoutMs = 3000) => new Promise((resolve) => {
-    const start = Date.now();
-    const tick = () => {
-      if (token && root.__searchToken !== token) return resolve(null);
-      const found = getLi(childId);
-      if (found) return resolve(found);
-      if (Date.now() - start >= timeoutMs) return resolve(null);
-      setTimeout(tick, 30);
-    };
-    tick();
-  });
-  for (let i = 0; i < path.length - 1; i++) {
-    if (token && root.__searchToken !== token) return false;
-    const parentId = path[i];
-    const childId = path[i + 1];
-    const parentLi = getLi(parentId);
-    if (!parentLi) return false;
-    // Ouvre le parent (et force le lazy si déjà ouvert mais non chargé)
-    if (parentLi.getAttribute('aria-expanded') !== 'true') {
-      toggleNode(root, parentLi, true);
-    } else if (parentLi.hasAttribute('data-lazy-node')) {
-      const group = parentLi.querySelector(':scope > ul[role="group"]');
-      const hasChildItems = !!(group && group.querySelector(':scope > li[role="treeitem"]'));
-      const placeholder = group && group.querySelector(':scope > [data-lazy-placeholder]');
-      if (!hasChildItems) {
-        // Branches lazy ouvertes mais vides (restauration), on relance le chargement
-        toggleNode(root, parentLi, true);
-      } else if (placeholder && !hasChildItems) {
-        toggleNode(root, parentLi, true);
-      }
-    }
-    // Attends que l'enfant soit présent
-    const child = await waitForChild(parentLi, childId);
-    if (!child) return false;
-  }
-  return true;
-}
-
-async function performRemoteSearch(root, term, token) {
-  const baseUrl = root.dataset.searchUrl;
-  const param = root.dataset.searchParam || 'q';
-  if (!baseUrl) return [];
-  try {
-    const url = (() => {
-      try {
-        const u = new URL(baseUrl, window.location.origin);
-        u.searchParams.set(param, term);
-        return u.toString();
-      } catch (_) {
-        const sep = baseUrl.includes('?') ? '&' : '?';
-        return `${baseUrl}${sep}${encodeURIComponent(param)}=${encodeURIComponent(term)}`;
-      }
-    })();
-    if (root.__searchAbort) root.__searchAbort.abort();
-    const ctrl = new AbortController();
-    root.__searchAbort = ctrl;
-    const res = await fetch(url, { signal: ctrl.signal });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    const paths = Array.isArray(data?.paths) ? data.paths : (Array.isArray(data) && Array.isArray(data[0]) ? data : []);
-    // Réduit le nombre de chemins pour éviter l'explosion
-    const capped = paths.slice(0, 50);
-    for (const p of capped) {
-      if (token && root.__searchToken !== token) return;
-      // Déroule le chemin (ouvre uniquement les parents nécessaires à l'affichage du nœud matché)
-      // N'ouvre pas les descendants du nœud trouvé
-      const parentPath = p.slice(0, Math.max(1, p.length - 0));
-      await expandPath(root, parentPath, token);
-    }
-    return capped;
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Tree search remote error', e);
-    return [];
-  }
-}
-
-async function runSearch(root, term) {
-  const minLen = parseInt(root.dataset.searchMin || '2', 10) || 2;
-  const debounceMs = parseInt(root.dataset.searchDebounce || '300', 10) || 300;
-  if (!term || term.length < minLen) {
-    clearSearch(root);
-    return;
-  }
-  // Token pour annuler les recherches concurrentes
-  root.__searchToken = (root.__searchToken || 0) + 1;
-  const token = root.__searchToken;
-  clearSearch(root);
-  // Si une URL de recherche est fournie, on déroule les chemins pour inclure les branches lazy
-  let paths = [];
-  if (root.dataset.searchUrl) {
-    paths = await performRemoteSearch(root, term, token) || [];
-    if (token && root.__searchToken !== token) return; // annulé
-  }
-  // Applique un filtrage local basé sur le terme (et/ou les chemins ouverts via remote)
-  computeSearchVisibility(root, term);
-  syncToggleIcons(root);
-}
-
-// Ouvre/ferme un nœud (li) selon l'état demandé (ou toggle si open non précisé)
-function toggleNode(root, li, open = undefined) {
-  // On ne toggle que si le nœud a des enfants ou un placeholder lazy
-  const hasChildren = !!li.querySelector(':scope > ul[role="group"]') || li.querySelector('[data-lazy-placeholder]');
-  if (!hasChildren) return;
-  const isOpen = li.getAttribute('aria-expanded') === 'true';
-  const willOpen = open === undefined ? !isOpen : !!open;
-  const btn = li.querySelector('[data-toggle]');
-  const group = li.querySelector(':scope > ul[role="group"]');
-  li.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-  if (group) group.classList.toggle('hidden', !willOpen);
-  if (btn) {
-    // Affiche/masque les icônes d'état
-    const c = btn.querySelector('[data-icon-collapsed]');
-    const e = btn.querySelector('[data-icon-expanded]');
-    if (c) c.classList.toggle('hidden', willOpen);
-    if (e) e.classList.toggle('hidden', !willOpen);
-  }
-  persistStateIfNeeded(root);
-  // Un nœud lazy recharge son groupe à l'ouverture. La persistance continue à ne mémoriser
-  // que l'état d'ouverture; les données enfants restent la responsabilité de la source distante.
-  if (willOpen && li.hasAttribute('data-lazy-node')) {
-    requestLazyLoad(root, li);
-  }
-}
-
-// Vérifie si un nœud ou un de ses ancêtres est désactivé (input[disabled])
-function hasDisabledAncestor(li) {
-  let cur = li;
-  while (cur) {
-    const disabledCtrl = cur.querySelector(':scope > div input[disabled]');
-    if (disabledCtrl) return true;
-    cur = cur.parentElement?.closest('li[role="treeitem"]');
-  }
-  return false;
-}
-
-// Met à jour l'état visuel d'une checkbox (checked, unchecked, mixed)
-function setCheckboxState(checkbox, state) {
-  if (!checkbox) return;
-  if (state === 'checked') {
-    checkbox.checked = true;
-    checkbox.indeterminate = false;
-    checkbox.setAttribute('aria-checked', 'true');
-  } else if (state === 'unchecked') {
-    checkbox.checked = false;
-    checkbox.indeterminate = false;
-    checkbox.setAttribute('aria-checked', 'false');
-  } else if (state === 'mixed') {
-    checkbox.checked = false;
-    checkbox.indeterminate = true;
-    checkbox.setAttribute('aria-checked', 'mixed');
-  }
-}
-
-function isLazyNodeUnresolved(li) {
-  if (!li || !li.hasAttribute('data-lazy-node')) return false;
-  const group = li.__group || li.querySelector(':scope > ul[role="group"]');
-  if (!group) return true;
-  const hasRenderedChildren = !!group.querySelector(':scope > li[role="treeitem"]');
-  return !hasRenderedChildren;
-}
-
-// Met à jour le tri-état des ancêtres d'un nœud après modification d'une case
-function updateAncestorsTriState(root, li) {
-  let parent = li.parentElement?.closest('li[role="treeitem"]');
-  while (parent) {
-    const parentBox = parent.querySelector(':scope input[type="checkbox"]');
-    const childLis = parent.__childrenLis || Array.from(parent.querySelectorAll(':scope > ul[role="group"] > li[role="treeitem"]'));
-    const childStates = childLis
-      .map((child) => {
-        const box = child.__cb || child.querySelector(':scope input[type="checkbox"]');
-        if (!box) return null;
-        if (isLazyNodeUnresolved(child)) {
-          return box.checked ? 'checked' : (box.indeterminate ? 'mixed' : 'unchecked');
-        }
-        if (box.indeterminate) return 'mixed';
-        return box.checked ? 'checked' : 'unchecked';
-      })
-      .filter(Boolean);
-    const numChecked = childStates.filter((state) => state === 'checked').length;
-    const numIndet = childStates.filter((state) => state === 'mixed').length;
-    if (childStates.length === 0) {
-      // Si pas d'enfants, on considère le parent comme décoché
-      setCheckboxState(parentBox, 'unchecked');
-    } else if (numChecked === childStates.length && numIndet === 0) {
-      setCheckboxState(parentBox, 'checked');
-    } else if (numChecked === 0 && numIndet === 0) {
-      setCheckboxState(parentBox, 'unchecked');
-    } else {
-      setCheckboxState(parentBox, 'mixed');
-    }
-    parent = parent.parentElement?.closest('li[role="treeitem"]');
-  }
-}
-
-// Applique l'état checked/unchecked à tous les descendants d'un nœud
-function setDescendantsState(li, checked) {
-  // Utilise l'index si dispo pour éviter de requêter tout le sous-arbre
-  const apply = (node) => {
-    const children = node.__childrenLis || [];
-    for (const child of children) {
-      const cb = child.__cb || child.querySelector(':scope input[type="checkbox"]');
-      if (cb && !cb.disabled) setCheckboxState(cb, checked ? 'checked' : 'unchecked');
-      apply(child);
-    }
-  };
-  apply(li);
-}
-
-// Met à jour le tri-état d'un nœud en fonction de ses enfants
-function updateNodeTriState(li) {
-  const group = li.__group || li.querySelector(':scope > ul[role="group"]');
-  const parentBox = li.__cb || li.querySelector(':scope input[type="checkbox"]');
-  if (!group || !parentBox) return;
-  if (isLazyNodeUnresolved(li)) return;
-  // On récupère toutes les cases enfants
-  const childStates = (li.__childrenLis || Array.from(group.querySelectorAll(':scope > li[role="treeitem"]')))
-    .map((child) => {
-      const box = child.__cb || child.querySelector(':scope input[type="checkbox"]');
-      if (!box) return null;
-      if (isLazyNodeUnresolved(child)) {
-        return box.checked ? 'checked' : (box.indeterminate ? 'mixed' : 'unchecked');
-      }
-      if (box.indeterminate) return 'mixed';
-      return box.checked ? 'checked' : 'unchecked';
-    })
-    .filter(Boolean);
-  const numChecked = childStates.filter((state) => state === 'checked').length;
-  const numIndet = childStates.filter((state) => state === 'mixed').length;
-  if (childStates.length === 0) {
-    setCheckboxState(parentBox, 'unchecked');
-  } else if (numChecked === childStates.length && numIndet === 0) {
-    setCheckboxState(parentBox, 'checked');
-  } else if (numChecked === 0 && numIndet === 0) {
-    setCheckboxState(parentBox, 'unchecked');
-  } else {
-    setCheckboxState(parentBox, 'mixed');
-  }
-}
-
-// Met à jour récursivement le tri-état de toute une sous-branche
-function updateSubtreeTriState(li) {
-  const children = li.__childrenLis || [];
-  children.forEach((child) => updateSubtreeTriState(child));
-  updateNodeTriState(li);
-}
-
-function syncInitialSelectionState(root) {
-  initializeIndeterminateCheckboxes(root);
-  if (root.dataset.selection !== 'multiple') return;
-  ensureIndex(root);
-  const tree = $(root, 'ul[role="tree"]');
-  if (!tree) return;
-  Array.from(tree.querySelectorAll(':scope > li[role="treeitem"]')).forEach((li) => {
-    updateSubtreeTriState(li);
-  });
-}
-
-// Met à jour les surlignages de sélection sur tous les nœuds
-function refreshSelectionHighlight(root) {
-  const mode = root.dataset.selection || 'single';
-  $all(root, 'li[role="treeitem"]').forEach((li) => {
-    const header = li.querySelector(':scope > div[data-node-header]');
-    if (!header) return;
-    let active = false;
-    if (mode === 'multiple') {
-      const cb = li.querySelector(':scope input[type="checkbox"]');
-      active = !!(cb && (cb.checked || cb.indeterminate));
-    } else {
-      const rd = li.querySelector(':scope input[type="radio"]');
-      active = !!(rd && rd.checked) || li.getAttribute('aria-selected') === 'true';
-    }
-    header.classList.toggle('bg-base-200', active);
-  });
-}
-
-// Gère la sélection d'un nœud (clic, clavier, input)
-function selectNode(root, li, viaKeyboard = false, fromInput = false) {
-  // On ne sélectionne rien si l'arbre est désactivé ou si le nœud est désactivé
-  if ($(root, 'ul[role="tree"]').dataset.disabled === 'true') return;
-  if (hasDisabledAncestor(li)) return;
-  ensureIndex(root);
-  const mode = root.dataset.selection || 'single';
-  const input = li.querySelector(':scope input[type="radio"], :scope input[type="checkbox"]');
-  if (mode === 'single' && input && input.type === 'radio') {
-    // Sélection simple : on coche le radio et on marque aria-selected
-    input.checked = true;
-    $all(root, 'li[role="treeitem"]').forEach((node) => node.setAttribute('aria-selected', node === li ? 'true' : 'false'));
-  } else if (mode === 'multiple' && input && input.type === 'checkbox') {
-    // Sélection multiple : on coche/décoche, cascade descendants, met à jour tri-état
-    const willCheck = fromInput ? !!input.checked : !(input.checked || input.indeterminate);
-    setCheckboxState(input, willCheck ? 'checked' : 'unchecked');
-    setDescendantsState(li, willCheck); // cascade descendants
-    updateSubtreeTriState(li); // recalcul tri-état sous-branche
-    updateAncestorsTriState(root, li); // met à jour ancêtres
-    li.setAttribute('aria-selected', willCheck ? 'true' : 'false');
-  } else {
-    // Pas de cases : sélection visuelle uniquement
-    $all(root, 'li[role="treeitem"]').forEach((node) => node.setAttribute('aria-selected', node === li ? 'true' : 'false'));
-  }
-  // Met à jour les surlignages globaux (sélection et mixed)
-  refreshSelectionHighlight(root);
-  // Déclenche un événement de sélection
-  fireEvent(root, 'tree:select', { nodeId: li.dataset.id, viaKeyboard });
-}
-
-// Gère la navigation clavier sur l'arbre
-function onKeyDown(root, e) {
-  const current = document.activeElement?.closest('li[role="treeitem"]');
-  const items = visibleTreeItems(root);
-  if (!items.length) return;
-  let idx = current ? items.indexOf(current) : -1;
-  switch (e.key) {
-    case 'ArrowDown':
-      e.preventDefault();
-      setFocus(root, items[Math.min(items.length - 1, (idx + 1))]);
-      break;
-    case 'ArrowUp':
-      e.preventDefault();
-      setFocus(root, items[Math.max(0, (idx - 1))]);
-      break;
-    case 'ArrowRight':
-      if (!current) return;
-      e.preventDefault();
-      // Si le nœud est fermé, on l'ouvre, sinon on focus le premier enfant
-      if (current.getAttribute('aria-expanded') === 'false') toggleNode(root, current, true);
-      else {
-        const group = current.querySelector(':scope > ul[role="group"]');
-        if (group && !group.classList.contains('hidden')) {
-          const firstChild = group.querySelector('li[role="treeitem"]');
-          if (firstChild) setFocus(root, firstChild);
-        }
-      }
-      break;
-    case 'ArrowLeft':
-      if (!current) return;
-      e.preventDefault();
-      // Si le nœud est ouvert, on le ferme, sinon on focus le parent
-      if (current.getAttribute('aria-expanded') === 'true') toggleNode(root, current, false);
-      else {
-        const parent = current.parentElement?.closest('li[role="treeitem"]');
-        if (parent) setFocus(root, parent);
-      }
-      break;
-    case 'Enter':
-    case ' ': // Space
-      if (!current) return;
-      e.preventDefault();
-      selectNode(root, current, true);
-      break;
-  }
-}
-
-// Attache tous les gestionnaires d'événements sur l'arbre
-function attachInteractions(root) {
-  const tree = $(root, 'ul[role="tree"]');
-  if (!tree) return;
-  // Indexation initiale du DOM pour accélérer les accès
-  indexTree(root);
-
-  // Navigation clavier
-  tree.addEventListener('keydown', (e) => onKeyDown(root, e));
-
-  // Gestion du clic sur les nœuds, les toggles, les labels
-  tree.addEventListener('click', (e) => {
-    const t = e.target;
-    const header = t.closest('[data-node-header]');
-    const li = t.closest('li[role="treeitem"]');
-    if (!li) return;
-    // Si l'arbre est désactivé, on ne permet que le toggle
-    if ($(root, 'ul[role="tree"]').dataset.disabled === 'true') {
-      if (t.closest('[data-toggle]')) {
-        toggleNode(root, li);
-      }
-      return;
-    }
-    // Clic sur le bouton toggle
-    if (t.closest('[data-toggle]')) {
-      toggleNode(root, li);
-      setFocus(root, li);
-      return;
-    }
-    // Clic sur le label (si activé)
-    if (header && t.closest('[data-label]')) {
-      if (root.dataset.selectLabel === 'true' && !hasDisabledAncestor(li)) selectNode(root, li, false);
-      setFocus(root, li);
-    }
-  });
-
-  // Gestion du clic direct sur une case à cocher : on mémorise si elle était indéterminée
-  tree.addEventListener('mousedown', (e) => {
-    const input = e.target;
-    if (!(input instanceof HTMLInputElement)) return;
-    if (input.type !== 'checkbox') return;
-    // On mémorise si la case était mixed avant l'action utilisateur
-    input.dataset.wasIndeterminate = input.indeterminate ? '1' : '0';
-  }, { capture: true });
-
-  // Gestion du changement d'état d'une case à cocher ou radio
-  tree.addEventListener('change', (e) => {
-    const input = e.target;
-    if (!(input instanceof HTMLInputElement)) return;
-    if (input.type !== 'checkbox' && input.type !== 'radio') return;
-    const li = input.closest('li[role="treeitem"]');
-    if (!li) return;
-    if ($(root, 'ul[role="tree"]').dataset.disabled === 'true') return;
-    if (hasDisabledAncestor(li)) {
-      // Si le nœud est désactivé, on annule visuellement le changement
-      if (input.type === 'checkbox') setCheckboxState(input, 'unchecked');
-      else input.checked = false;
-      return;
-    }
-    // Si la case était mixed, un clic doit la décocher et normaliser l'état aria
-    if (input.type === 'checkbox' && input.dataset.wasIndeterminate === '1') {
-      setCheckboxState(input, 'unchecked');
-      input.indeterminate = false;
-      input.setAttribute('aria-checked', 'false');
-      delete input.dataset.wasIndeterminate;
-      selectNode(root, li, false, true);
-      return;
-    }
-    // Normalise aria-checked après tout changement
-    if (input.type === 'checkbox') {
-      input.indeterminate = false;
-      input.setAttribute('aria-checked', input.checked ? 'true' : 'false');
-    }
-    selectNode(root, li, false, true);
-  });
-
-  // Double-clic sur un nœud : toggle ouverture/fermeture
-  tree.addEventListener('dblclick', (e) => {
-    const li = e.target.closest('li[role="treeitem"]');
-    if (!li) return;
-    toggleNode(root, li);
-  });
-
-  // Lazy-loading automatique (optionnel) si data-lazy-url est défini sur la racine
-  if (root.dataset.lazyUrl) {
-    // Hérite des classes et du HTML du toggle/inputs existants pour garantir le même rendu
-    const selectionMode = root.dataset.selection || 'single';
-    const radioName = $(root, 'ul[role="tree"]').dataset.radioName || (root.id ? root.id + '-group' : 'tree-group');
-    const sampleRadioClass = ($(root, 'input[type="radio"]')?.className || 'radio radio-sm') + ' shrink-0';
-    const sampleCheckboxClass = ($(root, 'input[type="checkbox"]')?.className || 'checkbox checkbox-sm') + ' shrink-0';
-    const sampleToggleInner = ($(root, '[data-toggle]')?.innerHTML) || (
-      '<span data-icon-collapsed>▸</span><span data-icon-expanded class="hidden">▾</span>'
-    );
-    const normalizedToggleInner = (() => {
-      try {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = sampleToggleInner;
-        const coll = tmp.querySelector('[data-icon-collapsed]');
-        const exp = tmp.querySelector('[data-icon-expanded]');
-        if (coll) coll.classList.remove('hidden');
-        if (exp) exp.classList.add('hidden');
-        return tmp.innerHTML;
-      } catch (_) {
-        return '<span data-icon-collapsed>▸</span><span data-icon-expanded class="hidden">▾</span>';
-      }
-    })();
-    // Rendu d'un nœud distant en conservant les états fournis par l'API
-    // (checked, mixed, expanded, disabled). Les icônes sont normalisées ensuite
-    // via `syncToggleIcons`, ce qui évite de dupliquer la logique du partial Blade.
-    const renderNode = (item, level, parentDisabled = false) => {
-      const id = item.id;
-      const label = item.label ?? String(item.id);
-      const isDisabled = !!item.disabled || !!parentDisabled;
-      const disabledAttr = isDisabled ? ' disabled' : '';
-      const isSelected = !!item.selected || !!item.checked || item.state === 'checked' || item.state === 'selected';
-      const isIndeterminate = !!item.indeterminate || item.state === 'mixed';
-      const isLazy = !!item.lazy;
-      const children = Array.isArray(item.children) ? item.children : [];
-      const hasChildren = isLazy || children.length > 0;
-      const isExpanded = !isLazy && hasChildren && !!item.expanded;
-      const indentLevel = Math.max(0, Math.min(64, level - 1));
-      const inputHtml = selectionMode === 'multiple'
-        ? `<input type="checkbox" class="${sampleCheckboxClass}" tabindex="-1"${disabledAttr}${isSelected && !isIndeterminate ? ' checked' : ''}${isIndeterminate ? ' aria-checked="mixed" data-indeterminate="true"' : ''} />`
-        : `<input type="radio" name="${radioName}" class="${sampleRadioClass}" tabindex="-1"${disabledAttr}${isSelected ? ' checked' : ''} />`;
-      const toggleHtml = hasChildren
-        ? (`<button type="button" class="btn btn-ghost btn-xs btn-square shrink-0 flex items-center justify-center" aria-label="Toggle" data-toggle="1" tabindex="-1">${normalizedToggleInner}</button>`)
-        : `<span class="inline-block w-6"></span>`;
-      let html = '';
-      html += `<li role="treeitem" aria-level="${level}" aria-expanded="${hasChildren ? (isExpanded ? 'true' : 'false') : 'false'}" aria-selected="${isSelected ? 'true' : 'false'}" data-id="${String(id)}" class="outline-none"${isLazy ? ' data-lazy-node="1"' : ''}>`;
-      html += `  <div class="flex items-center gap-2 px-2 py-1 rounded hover:bg-base-200 focus:bg-base-200 daisy-tree-indent-${indentLevel}" data-node-header="1">`;
-      html += `    ${toggleHtml}`;
-      html += `    ${inputHtml}`;
-      const labelClasses = `flex-1 cursor-default select-none${isDisabled ? ' opacity-50' : ''}`;
-      html += `    <span class="${labelClasses}" data-label="1">${label}</span>`;
-      html += `  </div>`;
-      if (hasChildren) {
-        html += `  <ul role="group" class="pl-2 ml-4 border-l${isExpanded ? '' : ' hidden'}" data-children="1">`;
-        if (isLazy) {
-          html += `    <li class="px-2 py-1 text-sm opacity-60 hidden" data-lazy-placeholder="1">Loading…</li>`;
-        } else {
-          children.forEach((ch) => {
-            html += renderNode(ch, level + 1, isDisabled);
-          });
-        }
-        html += `  </ul>`;
-      }
-      html += `</li>`;
-      return html;
-    };
-    const buildUrl = (baseUrl, paramName, nodeId) => {
-      try {
-        const url = new URL(baseUrl, window.location.origin);
-        url.searchParams.set(paramName, String(nodeId));
-        return url.toString();
-      } catch (_) {
-        const sep = baseUrl.includes('?') ? '&' : '?';
-        return `${baseUrl}${sep}${encodeURIComponent(paramName)}=${encodeURIComponent(String(nodeId))}`;
-      }
-    };
-    root.addEventListener('tree:lazy', async (e) => {
-      const { li, nodeId, preserveExpanded = false } = e.detail || {};
-      if (!li) return;
-      const group = li.querySelector(':scope > ul[role="group"]');
-      if (!group) return;
-      const wasExpanded = li.getAttribute('aria-expanded') === 'true';
-      // Placeholder chargement (déjà mis lors du toggle, mais on assure)
-      // Toujours placer un placeholder visible avant chargement pour états persistés
-      if (!group.querySelector('[data-lazy-placeholder]')) {
-        group.innerHTML = '<li class="px-2 py-1 text-sm opacity-60" data-lazy-placeholder>Chargement…</li>';
-      }
-      const param = root.dataset.lazyParam || 'node';
-      const url = buildUrl(root.dataset.lazyUrl, param, nodeId);
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const items = await res.json();
-        const parentLevel = parseInt(li.getAttribute('aria-level') || '0', 10) || 0;
-        const baseLevel = parentLevel + 1;
-        // Remplace uniquement le contenu du groupe lazy ciblé.
-        const parentDisabled = !!li.querySelector(':scope > div input[disabled]');
-        const html = (items || []).map((it) => renderNode(it, baseLevel, parentDisabled)).join('');
-        group.innerHTML = '';
-        group.insertAdjacentHTML('afterbegin', html);
-        initializeIndeterminateCheckboxes(group);
-        delete li.dataset.lazyLoading;
-        li.dataset.lazyLoaded = 'true';
-        root.__indexStale = true;
-        ensureIndex(root);
-        const parentBox = li.querySelector(':scope input[type="checkbox"]');
-        if (parentBox && !parentBox.indeterminate && !subtreeHasExplicitSelectionState(items)) {
-          setDescendantsState(li, parentBox.checked);
-        }
-        updateSubtreeTriState(li);
-        updateAncestorsTriState(root, li);
-        // Conserve l'état d'ouverture lors d'un auto-load, sinon ouvre le nœud.
-        li.setAttribute('aria-expanded', (preserveExpanded ? wasExpanded : true) ? 'true' : 'false');
-        group.classList.toggle('hidden', preserveExpanded ? !wasExpanded : false);
-        const btn = li.querySelector('[data-toggle]');
-        if (btn) {
-          const c = btn.querySelector('[data-icon-collapsed]');
-          const e2 = btn.querySelector('[data-icon-expanded]');
-          const isExpanded = li.getAttribute('aria-expanded') === 'true';
-          if (c) c.classList.toggle('hidden', isExpanded);
-          if (e2) e2.classList.toggle('hidden', !isExpanded);
-        }
-      } catch (err) {
-        delete li.dataset.lazyLoading;
-        li.dataset.lazyLoaded = 'error';
-        group.innerHTML = '<li class="px-2 py-1 text-error">Erreur de chargement</li>';
-        // eslint-disable-next-line no-console
-        console.error('Tree lazy auto-load error', err);
-      }
-      // Recalcule l'index et les surlignages
-      root.__indexStale = true;
-      refreshSelectionHighlight(root);
-      syncToggleIcons(root);
-    });
-
-    if (root.dataset.lazyMode === 'auto') {
-      const autoLoadAll = async () => {
-        let pending = Array.from(root.querySelectorAll('li[role="treeitem"][data-lazy-node]'))
-          .filter((li) => shouldReloadLazyNode(root, li) && li.dataset.lazyLoaded !== 'error');
-        while (pending.length) {
-          for (const li of pending) {
-            requestLazyLoad(root, li, { preserveExpanded: true });
-          }
-          await new Promise((resolve) => window.setTimeout(resolve, 0));
-          pending = Array.from(root.querySelectorAll('li[role="treeitem"][data-lazy-node]'))
-            .filter((li) => shouldReloadLazyNode(root, li) && li.dataset.lazyLoaded !== 'error');
-        }
-      };
-      autoLoadAll();
-    }
-  }
-
-  // Recherche (champ en-tête)
-  if (root.dataset.searchEnabled === 'true') {
-    const input = $(root, '[data-tree-search]');
-    const btn = $(root, '[data-tree-search-btn]');
-    const debounceMs = parseInt(root.dataset.searchDebounce || '300', 10) || 300;
-    const debounced = debounce(() => {
-      if (!input) return;
-      runSearch(root, input.value.trim());
-    }, debounceMs);
-    if (input) {
-      input.addEventListener('input', () => {
-        const minLen = parseInt(root.dataset.searchMin || '2', 10) || 2;
-        if (!input.value || input.value.trim().length < minLen) {
-          // Efface immédiatement si en-dessous du seuil
-          clearSearch(root);
-        }
-        if (root.dataset.searchAuto === 'true') debounced();
-      });
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          runSearch(root, input.value.trim());
-        }
-      });
-    }
-    if (btn && input) {
-      btn.addEventListener('click', () => {
-        runSearch(root, input.value.trim());
-      });
-    }
-  }
-}
-
-// Retourne la liste des ids sélectionnés selon le mode de sélection
-function getSelected(root) {
-  const mode = root.dataset.selection || 'single';
-  const returnMode = $(root, 'ul[role="tree"]').dataset.return || 'nodes';
-  if (mode === 'multiple') {
-    if (returnMode === 'leaves') {
-      // Ne renvoyer que les feuilles cochées (pas de sous-nœuds)
-      return $all(root, 'li[role="treeitem"] input[type="checkbox"]:checked')
-        .map((i) => i.closest('li'))
-        .filter((li) => !li.querySelector(':scope > ul[role="group"] li[role="treeitem"]'))
-        .map((li) => li?.dataset.id)
-        .filter(Boolean);
-    }
-    // Par défaut : tous les nœuds cochés
-    return $all(root, 'li[role="treeitem"] input[type="checkbox"]:checked').map((i) => i.closest('li')?.dataset.id).filter(Boolean);
-  }
-  // Mode single : radio ou aria-selected
-  const checked = root.querySelector('li[role="treeitem"] input[type="radio"]:checked');
-  if (checked) return [checked.closest('li')?.dataset.id].filter(Boolean);
-  const selected = root.querySelector('li[role="treeitem"][aria-selected="true"]');
-  return selected ? [selected.dataset.id] : [];
-}
-
-// Hook pour lazy-loading : l'intégrateur écoute 'tree:setData'
-function setData(root, data) {
-  // API minimaliste: l'intégrateur regénère le HTML côté Blade si besoin.
-  // Ici, on expose un hook pour lazy-loading: l'écouteur de 'tree:lazy' remplace le placeholder.
-  fireEvent(root, 'tree:setData', { data });
-}
-
-// Réinitialise la sélection et l'état visuel de l'arbre
-function reset(root) {
-  $all(root, 'li[role="treeitem"]').forEach((li) => {
-    li.setAttribute('aria-selected', 'false');
-    li.classList.remove('bg-base-200');
-    const cb = li.querySelector('input[type="checkbox"]');
-    const rd = li.querySelector('input[type="radio"]');
-    if (cb) cb.checked = false;
-    if (rd) rd.checked = false;
-  });
-  persistStateIfNeeded(root);
-}
-
-// Génère l'API publique pour une instance d'arbre
-function apiFor(root) {
-  return {
-    expand: (nodeId) => {
-      const li = root.querySelector(`li[role="treeitem"][data-id="${CSS.escape(String(nodeId))}"]`);
-      if (li) toggleNode(root, li, true);
-    },
-    collapse: (nodeId) => {
-      const li = root.querySelector(`li[role="treeitem"][data-id="${CSS.escape(String(nodeId))}"]`);
-      if (li) toggleNode(root, li, false);
-    },
-    toggle: (nodeId) => {
-      const li = root.querySelector(`li[role="treeitem"][data-id="${CSS.escape(String(nodeId))}"]`);
-      if (li) toggleNode(root, li);
-    },
-    getSelected: () => getSelected(root),
-    setData: (data) => setData(root, data),
-    reset: () => reset(root),
-  };
-}
-
-// Initialise un arbre sur un élément racine
-function init(root) {
-  if (!root || root.__treeInit) return;
-  root.__treeInit = true;
-  attachInteractions(root);
-  restoreState(root);
-  // Reconstitue l'état visuel avant de calculer les surlignages.
-  syncInitialSelectionState(root);
-  refreshSelectionHighlight(root);
-  syncToggleIcons(root);
-  // Détermine s'il faut autofocus au chargement
-  function shouldAutofocusOnInit(r) {
-    // Opt-in via data-autofocus="true" pour éviter de casser l'ancre URL et le focus existant
-    if (r.dataset.autofocus !== 'true') return false;
-    // Si une ancre est présente ou une cible :target existe, ne pas voler le focus
-    if (document.querySelector(':target')) return false;
-    if (location.hash && location.hash.length > 1) return false;
-    // Si un autre élément a déjà le focus, on n'interfère pas
-    const active = document.activeElement;
-    if (active && active !== document.body) return false;
     return true;
-  }
-  // Prépare le premier élément focusable (tabIndex) sans déclencher un focus/scroll
-  const first = root.querySelector('li[role="treeitem"]');
-  if (first) setFocus(root, first, false);
-  // Autofocus uniquement si explicitement demandé et sans ancre
-  if (first && shouldAutofocusOnInit(root)) setFocus(root, first, true);
-  // Expose l'API instance sur la racine
-  root.__treeApi = apiFor(root);
 }
 
-// Initialise tous les arbres présents dans le DOM
-function initAll() {
-  document.querySelectorAll('[data-treeview="1"]').forEach((el) => {
-    // Si déjà initialisé, on resynchronise les icônes et on sort
-    if (el.__treeInit) {
-      syncToggleIcons(el);
-      return;
+function validateNode(node) {
+    if (!node || typeof node !== 'object' || Array.isArray(node)) return false;
+    if (!['string', 'number'].includes(typeof node.id)) return false;
+    if (!['string', 'number'].includes(typeof node.label)) return false;
+    if (node.children !== undefined && !Array.isArray(node.children)) return false;
+    if (node.lazy === true && (node.children || []).length > 0) return false;
+    return (node.children || []).every(validateNode);
+}
+
+function buildUrl(baseUrl, parameter, value) {
+    const url = new URL(baseUrl, window.location.origin);
+    url.searchParams.set(parameter, String(value));
+    return url.toString();
+}
+
+function parseJsonAttribute(root, attribute, fallback) {
+    try {
+        return JSON.parse(root.dataset[attribute] || '');
+    } catch {
+        return fallback;
     }
-    init(el);
-  });
 }
 
-// API publique globale
+class TreeView {
+    constructor(root) {
+        this.root = root;
+        this.tree = root.querySelector('[role="tree"]');
+        this.selection = root.dataset.selection === 'single' ? 'single' : 'multiple';
+        this.initialValue = this.readInitialValue();
+        this.initialExpandPaths = this.readInitialExpandPaths();
+        this.hydrating = false;
+        this.expansionBeforeSearch = null;
+        this.searchAbortController = null;
+        this.loadControllers = new Map();
+        this.typeAhead = '';
+        this.typeAheadTimer = null;
+        this.handleKeyDown = this.onKeyDown.bind(this);
+        this.handleClick = this.onClick.bind(this);
+        this.handleChange = this.onChange.bind(this);
+        this.handleSearchInput = this.onSearchInput.bind(this);
+        this.handleSearchKeyDown = this.onSearchKeyDown.bind(this);
+        this.handleSearchButton = () => this.runSearch(this.searchInput?.value || '');
+
+        this.tree?.addEventListener('keydown', this.handleKeyDown);
+        this.tree?.addEventListener('click', this.handleClick);
+        this.tree?.addEventListener('change', this.handleChange);
+
+        this.searchInput = root.querySelector('[data-tree-search]');
+        this.searchButton = root.querySelector('[data-tree-search-button]');
+        this.searchInput?.addEventListener('input', this.handleSearchInput);
+        this.searchInput?.addEventListener('keydown', this.handleSearchKeyDown);
+        this.searchButton?.addEventListener('click', this.handleSearchButton);
+
+        this.normalizeState();
+        this.setFocusItem(this.firstSelectedItem() || this.visibleItems()[0], false);
+        const requiresHydration = this.initialExpandPaths.length > 0 || this.root.dataset.persist === 'true';
+
+        if (requiresHydration) {
+            this.ready = this.hydrateInitialState();
+        } else {
+            this.setValue(this.initialValue, { silent: true });
+            this.initialValue = this.getValue();
+            this.ready = this.markReady();
+        }
+    }
+
+    visibleItems() {
+        return treeItems(this.root).filter(isVisible);
+    }
+
+    firstSelectedItem() {
+        return treeItems(this.root).find((item) => {
+            if (this.selection === 'single') return item.getAttribute('aria-selected') === 'true';
+            return item.getAttribute('aria-checked') === 'true';
+        });
+    }
+
+    setFocusItem(item, focus = true) {
+        if (!item) return;
+        treeItems(this.root).forEach((candidate) => candidate.tabIndex = candidate === item ? 0 : -1);
+        if (focus) item.focus();
+    }
+
+    readValue() {
+        if (this.selection === 'single') {
+            const selected = treeItems(this.root).find((item) => directControl(item)?.checked || item.getAttribute('aria-selected') === 'true');
+            return selected?.dataset.id || null;
+        }
+
+        const selectedItems = treeItems(this.root)
+            .filter((item) => directControl(item)?.checked);
+
+        if (this.root.dataset.valueMode === 'selected-roots') {
+            return selectedItems
+                .filter((item) => !this.hasSelectedAncestor(item))
+                .map((item) => item.dataset.id);
+        }
+
+        return selectedItems
+            .filter((item) => directChildren(item).length === 0 && !item.dataset.lazy)
+            .map((item) => item.dataset.id);
+    }
+
+    readInitialValue() {
+        const fallback = this.readRenderedValue();
+        const value = Object.hasOwn(this.root.dataset, 'initialValue')
+            ? parseJsonAttribute(this.root, 'initialValue', fallback)
+            : fallback;
+
+        if (this.selection === 'single') {
+            return typeof value === 'string' || typeof value === 'number' ? String(value) : null;
+        }
+
+        return Array.isArray(value)
+            ? value.filter((id) => typeof id === 'string' || typeof id === 'number').map(String)
+            : fallback;
+    }
+
+    readRenderedValue() {
+        const selectedIds = treeItems(this.root)
+            .filter((item) => directControl(item)?.checked)
+            .map((item) => item.dataset.id);
+
+        return this.selection === 'single' ? (selectedIds[0] || null) : selectedIds;
+    }
+
+    readInitialExpandPaths() {
+        const paths = parseJsonAttribute(this.root, 'initialExpandPaths', []);
+
+        if (!Array.isArray(paths)) return [];
+
+        return paths
+            .filter(Array.isArray)
+            .map((path) => path.filter((id) => typeof id === 'string' || typeof id === 'number').map(String))
+            .filter((path) => path.length > 0);
+    }
+
+    hasSelectedAncestor(item) {
+        let ancestor = parentItem(item);
+
+        while (ancestor) {
+            if (directControl(ancestor)?.checked) return true;
+            ancestor = parentItem(ancestor);
+        }
+
+        return false;
+    }
+
+    getValue() {
+        const value = this.readValue();
+        return Array.isArray(value) ? [...value] : value;
+    }
+
+    setValue(value, options = {}) {
+        if (this.selection === 'single') {
+            const selectedId = value === null || value === undefined ? null : String(value);
+            treeItems(this.root).forEach((item) => {
+                const selected = item.dataset.id === selectedId;
+                const control = directControl(item);
+                if (control) control.checked = selected;
+                item.setAttribute('aria-selected', selected ? 'true' : 'false');
+                this.syncHighlight(item, selected, false);
+            });
+        } else {
+            const selectedIds = new Set((Array.isArray(value) ? value : [value]).filter((id) => id !== null && id !== undefined).map(String));
+            treeItems(this.root).forEach((item) => {
+                const control = directControl(item);
+                if (!control) return;
+                const selected = selectedIds.has(item.dataset.id);
+                control.checked = selected;
+                control.indeterminate = false;
+            });
+            treeItems(this.root).filter((item) => selectedIds.has(item.dataset.id) && directChildren(item).length > 0).forEach((item) => {
+                this.setDescendants(item, true);
+            });
+            this.recalculateAll();
+        }
+
+        if (!options.silent) this.emitChange(options.source || 'api', null);
+        return this.getValue();
+    }
+
+    reset() {
+        this.setValue(this.initialValue, { source: 'reset' });
+        this.clearSearch();
+        return this.getValue();
+    }
+
+    normalizeState() {
+        if (this.selection === 'multiple') {
+            treeItems(this.root).forEach((item) => {
+                const control = directControl(item);
+                if (!control) return;
+                const mixed = item.getAttribute('aria-checked') === 'mixed' || control.dataset.indeterminate === 'true';
+                control.indeterminate = mixed;
+                control.setAttribute('aria-checked', mixed ? 'mixed' : (control.checked ? 'true' : 'false'));
+            });
+            this.recalculateAll();
+        } else {
+            this.setValue(this.initialValue, { silent: true });
+        }
+        this.syncExpansionIcons();
+    }
+
+    async hydrateInitialState() {
+        this.hydrating = true;
+        this.root.setAttribute('aria-busy', 'true');
+        this.setStatus(this.root.dataset.loadingLabel || 'Loading…');
+
+        try {
+            await this.restoreExpansion();
+
+            for (const path of this.initialExpandPaths) {
+                for (const nodeId of path) {
+                    await this.expand(nodeId);
+                }
+            }
+
+            this.setValue(this.initialValue, { silent: true });
+            this.initialValue = this.getValue();
+            this.setFocusItem(this.firstSelectedItem() || this.visibleItems()[0], false);
+            this.markReady();
+        } finally {
+            this.hydrating = false;
+            this.root.removeAttribute('aria-busy');
+            this.setStatus('');
+        }
+    }
+
+    markReady() {
+        this.root.dispatchEvent(new CustomEvent('daisy:tree-ready', {
+            bubbles: true,
+            detail: { value: this.getValue() },
+        }));
+
+        return Promise.resolve(this.getValue());
+    }
+
+    setDescendants(item, checked) {
+        directChildren(item).forEach((child) => {
+            const control = directControl(child);
+            if (control && !control.disabled && child.getAttribute('aria-disabled') !== 'true') {
+                control.checked = checked;
+                control.indeterminate = false;
+            }
+            this.setDescendants(child, checked);
+        });
+    }
+
+    recalculateAll() {
+        const visit = (item) => {
+            const children = directChildren(item);
+            children.forEach(visit);
+            const control = directControl(item);
+            if (!control) return;
+
+            if (children.length > 0) {
+                const states = children.map((child) => {
+                    const childControl = directControl(child);
+                    if (childControl?.indeterminate) return 'mixed';
+                    return childControl?.checked ? 'checked' : 'unchecked';
+                });
+                control.checked = states.every((state) => state === 'checked');
+                control.indeterminate = !control.checked && states.some((state) => state !== 'unchecked');
+            }
+
+            const state = control.indeterminate ? 'mixed' : (control.checked ? 'true' : 'false');
+            control.setAttribute('aria-checked', state);
+            item.setAttribute('aria-checked', state);
+            this.syncHighlight(item, control.checked, control.indeterminate);
+        };
+
+        Array.from(this.tree?.children || []).filter((item) => item.matches?.('[role="treeitem"]')).forEach(visit);
+    }
+
+    syncHighlight(item, selected, mixed) {
+        directHeader(item)?.classList.toggle('bg-base-200', selected || mixed);
+    }
+
+    select(item, source) {
+        if (this.hydrating || !item || this.root.dataset.disabled === 'true' || item.getAttribute('aria-disabled') === 'true') return;
+        const control = directControl(item);
+        if (!control || control.disabled) return;
+
+        if (this.selection === 'single') {
+            this.setValue(item.dataset.id, { silent: true });
+        } else {
+            const checked = !(control.checked || control.indeterminate);
+            control.checked = checked;
+            control.indeterminate = false;
+            this.setDescendants(item, checked);
+            this.recalculateAll();
+        }
+
+        this.emitChange(source, item.dataset.id);
+    }
+
+    emitChange(source, nodeId) {
+        this.root.dispatchEvent(new CustomEvent('daisy:tree-change', {
+            bubbles: true,
+            detail: { value: this.getValue(), nodeId, source },
+        }));
+    }
+
+    async expand(nodeId) {
+        return this.setExpanded(findItem(this.root, nodeId), true, 'api');
+    }
+
+    collapse(nodeId) {
+        return this.setExpanded(findItem(this.root, nodeId), false, 'api');
+    }
+
+    async toggle(nodeId) {
+        const item = findItem(this.root, nodeId);
+        if (!item) return false;
+        return this.setExpanded(item, item.getAttribute('aria-expanded') !== 'true', 'api');
+    }
+
+    async setExpanded(item, expanded, source) {
+        if (!item || !item.hasAttribute('aria-expanded')) return false;
+        item.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        directGroup(item)?.classList.toggle('hidden', !expanded);
+        this.syncExpansionIcons(item);
+        if (!['restore', 'search', 'search-reset'].includes(source)) this.persistExpansion();
+
+        if (expanded && item.dataset.lazy === '1' && item.dataset.loaded !== 'true') {
+            await this.load(item, source);
+        }
+
+        return true;
+    }
+
+    syncExpansionIcons(scope = this.root) {
+        const items = scope.matches?.('[role="treeitem"]') ? [scope] : treeItems(scope);
+        items.forEach((item) => {
+            if (!item.hasAttribute('aria-expanded')) return;
+            const expanded = item.getAttribute('aria-expanded') === 'true';
+            const header = directHeader(item);
+            header?.querySelector('[data-tree-collapsed-icon]')?.classList.toggle('hidden', expanded);
+            header?.querySelector('[data-tree-expanded-icon]')?.classList.toggle('hidden', !expanded);
+            const button = header?.querySelector('[data-tree-toggle]');
+            if (button) {
+                const label = header.querySelector('[data-tree-label]')?.textContent || item.dataset.id;
+                const template = expanded
+                    ? (this.root.dataset.collapseLabel || 'Collapse :label')
+                    : (this.root.dataset.expandLabel || 'Expand :label');
+                button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                button.setAttribute('aria-label', template.replace(':label', label));
+            }
+        });
+    }
+
+    createNode(node, level, parentDisabled = false, inheritedSelection = false) {
+        if (!validateNode(node)) throw new TypeError('Invalid tree node');
+        const id = String(node.id);
+        const children = node.children || [];
+        const hasChildren = node.lazy === true || children.length > 0;
+        const disabled = parentDisabled || node.disabled === true;
+        const item = document.createElement('li');
+        item.id = `${this.root.id}-item-${this.safeDomToken(id, level)}`;
+        item.setAttribute('role', 'treeitem');
+        item.setAttribute('aria-level', String(level));
+        item.dataset.id = id;
+        item.dataset.level = String(level);
+        item.tabIndex = -1;
+        item.className = 'outline-none focus-visible:ring-2 focus-visible:ring-primary';
+        if (hasChildren) item.setAttribute('aria-expanded', node.expanded === true && node.lazy !== true ? 'true' : 'false');
+        if (node.lazy === true) item.dataset.lazy = '1';
+        if (disabled) item.setAttribute('aria-disabled', 'true');
+
+        const header = document.createElement('div');
+        header.dataset.nodeHeader = '1';
+        header.className = `flex items-center gap-2 rounded px-2 py-1 hover:bg-base-200 daisy-tree-indent-${Math.min(64, Math.max(0, level - 1))}`;
+        header.append(this.createToggle(hasChildren));
+
+        const control = document.createElement('input');
+        control.type = this.selection === 'single' ? 'radio' : 'checkbox';
+        control.dataset.treeControl = '1';
+        control.tabIndex = -1;
+        control.disabled = disabled;
+        control.className = `${this.selection === 'single' ? 'radio' : 'checkbox'} ${this.selection === 'single' ? 'radio' : 'checkbox'}-${this.root.dataset.controlSize || 'sm'} shrink-0`;
+        if (this.selection === 'single') {
+            item.setAttribute('aria-selected', 'false');
+            if (this.root.dataset.name) control.name = this.root.dataset.name;
+            control.value = id;
+        } else {
+            item.setAttribute('aria-checked', inheritedSelection ? 'true' : 'false');
+            control.checked = inheritedSelection;
+            if (!hasChildren && this.root.dataset.name) control.name = `${this.root.dataset.name}[]`;
+            control.value = id;
+        }
+        header.append(control);
+
+        const label = document.createElement('span');
+        label.dataset.treeLabel = '1';
+        label.className = `min-w-0 flex-1 select-none break-words${disabled ? ' opacity-50' : ' cursor-default'}`;
+        label.textContent = String(node.label);
+        header.append(label);
+        item.append(header);
+
+        if (hasChildren) {
+            const group = document.createElement('ul');
+            group.setAttribute('role', 'group');
+            group.dataset.treeGroup = '1';
+            group.className = `ml-4 border-l pl-2${node.expanded === true && node.lazy !== true ? '' : ' hidden'}`;
+            children.forEach((child) => group.append(this.createNode(child, level + 1, disabled, inheritedSelection)));
+            item.append(group);
+        }
+
+        return item;
+    }
+
+    createToggle(hasChildren) {
+        if (!hasChildren) {
+            const spacer = document.createElement('span');
+            spacer.className = 'inline-block w-6 shrink-0';
+            spacer.setAttribute('aria-hidden', 'true');
+            return spacer;
+        }
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.tabIndex = -1;
+        button.dataset.treeToggle = '1';
+        button.className = 'btn btn-ghost btn-xs btn-square shrink-0';
+        button.setAttribute('aria-label', this.root.dataset.expandLabel || 'Expand');
+        const collapsed = document.createElement('span');
+        collapsed.dataset.treeCollapsedIcon = '1';
+        collapsed.textContent = '›';
+        const expanded = document.createElement('span');
+        expanded.dataset.treeExpandedIcon = '1';
+        expanded.className = 'hidden';
+        expanded.textContent = '⌄';
+        button.append(collapsed, expanded);
+        return button;
+    }
+
+    safeDomToken(id, level) {
+        let hash = 2166136261;
+        for (const character of `${id}-${level}`) {
+            hash ^= character.charCodeAt(0);
+            hash = Math.imul(hash, 16777619);
+        }
+        return Math.abs(hash).toString(36);
+    }
+
+    async load(item, source = 'api') {
+        if (!this.root.dataset.lazyUrl) return false;
+        this.loadControllers.get(item)?.abort();
+        const controller = new AbortController();
+        this.loadControllers.set(item, controller);
+        item.dataset.loading = 'true';
+        this.setStatus(this.root.dataset.loadingLabel || 'Loading…');
+
+        try {
+            const response = await fetch(buildUrl(this.root.dataset.lazyUrl, this.root.dataset.lazyParam || 'node', item.dataset.id), { signal: controller.signal });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const payload = await response.json();
+            if (!payload || !Array.isArray(payload.items) || !payload.items.every(validateNode)) throw new TypeError('Invalid lazy tree response');
+            const group = directGroup(item);
+            const inheritSelection = this.selection === 'multiple' && directControl(item)?.checked === true;
+            const level = Number.parseInt(item.dataset.level || '1', 10) + 1;
+            const fragment = document.createDocumentFragment();
+            payload.items.forEach((node) => fragment.append(this.createNode(node, level, item.getAttribute('aria-disabled') === 'true', inheritSelection)));
+            group.replaceChildren(fragment);
+            item.dataset.loaded = 'true';
+            delete item.dataset.loadError;
+            this.recalculateAll();
+            this.syncExpansionIcons(group);
+            this.setStatus('');
+            this.root.dispatchEvent(new CustomEvent('daisy:tree-load', {
+                bubbles: true,
+                detail: { value: this.getValue(), nodeId: item.dataset.id, source },
+            }));
+            return true;
+        } catch (error) {
+            if (error.name === 'AbortError') return false;
+            item.dataset.loadError = 'true';
+            this.setStatus(this.root.dataset.loadErrorLabel || 'Unable to load items. Activate to retry.');
+            this.root.dispatchEvent(new CustomEvent('daisy:tree-error', {
+                bubbles: true,
+                detail: { value: this.getValue(), nodeId: item.dataset.id, source, error },
+            }));
+            return false;
+        } finally {
+            delete item.dataset.loading;
+            this.loadControllers.delete(item);
+        }
+    }
+
+    async reload(nodeId = null) {
+        const items = nodeId === null ? treeItems(this.root).filter((item) => item.dataset.lazy === '1') : [findItem(this.root, nodeId)].filter(Boolean);
+        const results = [];
+        for (const item of items) {
+            delete item.dataset.loaded;
+            results.push(await this.load(item, 'reload'));
+        }
+        return results.every(Boolean);
+    }
+
+    search(term) {
+        return this.runSearch(String(term || '').trim());
+    }
+
+    async runSearch(term) {
+        const minimum = Number.parseInt(this.root.dataset.searchMin || '2', 10);
+        if (term.length < minimum) {
+            this.clearSearch();
+            return [];
+        }
+
+        if (!this.expansionBeforeSearch) {
+            this.expansionBeforeSearch = new Map(treeItems(this.root).filter((item) => item.hasAttribute('aria-expanded')).map((item) => [item.dataset.id, item.getAttribute('aria-expanded') === 'true']));
+        }
+
+        if (this.root.dataset.searchUrl) await this.remoteSearch(term);
+        this.clearSearchPresentation();
+        const normalizedTerm = term.toLocaleLowerCase();
+        const matches = [];
+        const visit = (item) => {
+            let childMatch = false;
+            directChildren(item).forEach((child) => {
+                childMatch = visit(child) || childMatch;
+            });
+            const label = directHeader(item)?.querySelector('[data-tree-label]');
+            const directMatch = (label?.textContent || '').toLocaleLowerCase().includes(normalizedTerm);
+            const visible = directMatch || childMatch;
+            item.classList.toggle('hidden', !visible);
+            item.setAttribute('aria-hidden', visible ? 'false' : 'true');
+            if (visible && directGroup(item)) this.setExpanded(item, true, 'search');
+            if (directMatch && label) {
+                matches.push(item.dataset.id);
+                this.highlight(label, term);
+            }
+            return visible;
+        };
+        Array.from(this.tree.children).filter((item) => item.matches?.('[role="treeitem"]')).forEach(visit);
+        this.setStatus(matches.length ? '' : (this.root.dataset.noResultsLabel || 'No results'));
+        return matches;
+    }
+
+    highlight(label, term) {
+        const text = label.textContent || '';
+        label.dataset.originalLabel = text;
+        const index = text.toLocaleLowerCase().indexOf(term.toLocaleLowerCase());
+        if (index < 0) return;
+        const mark = document.createElement('mark');
+        mark.textContent = text.slice(index, index + term.length);
+        label.replaceChildren(document.createTextNode(text.slice(0, index)), mark, document.createTextNode(text.slice(index + term.length)));
+    }
+
+    clearSearchPresentation() {
+        treeItems(this.root).forEach((item) => {
+            item.classList.remove('hidden');
+            item.removeAttribute('aria-hidden');
+            const label = directHeader(item)?.querySelector('[data-tree-label]');
+            if (label?.dataset.originalLabel !== undefined) {
+                label.textContent = label.dataset.originalLabel;
+                delete label.dataset.originalLabel;
+            }
+        });
+    }
+
+    clearSearch() {
+        this.searchAbortController?.abort();
+        this.clearSearchPresentation();
+        if (this.expansionBeforeSearch) {
+            this.expansionBeforeSearch.forEach((expanded, id) => this.setExpanded(findItem(this.root, id), expanded, 'search-reset'));
+            this.expansionBeforeSearch = null;
+        }
+        this.setStatus('');
+    }
+
+    async remoteSearch(term) {
+        this.searchAbortController?.abort();
+        this.searchAbortController = new AbortController();
+        try {
+            const response = await fetch(buildUrl(this.root.dataset.searchUrl, this.root.dataset.searchParam || 'q', term), { signal: this.searchAbortController.signal });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const payload = await response.json();
+            if (!payload || !Array.isArray(payload.paths) || !payload.paths.every((path) => Array.isArray(path))) throw new TypeError('Invalid tree search response');
+            for (const path of payload.paths.slice(0, 50)) await this.expandPath(path);
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            this.root.dispatchEvent(new CustomEvent('daisy:tree-error', {
+                bubbles: true,
+                detail: { value: this.getValue(), nodeId: null, source: 'search', error },
+            }));
+        }
+    }
+
+    async expandPath(path) {
+        for (const id of path.slice(0, -1)) await this.expand(id);
+    }
+
+    onKeyDown(event) {
+        const current = event.target.closest?.('[role="treeitem"]');
+        if (!current) return;
+        const visible = this.visibleItems();
+        const index = visible.indexOf(current);
+        const focus = (item) => {
+            event.preventDefault();
+            this.setFocusItem(item);
+        };
+
+        if (event.key === 'ArrowDown') focus(visible[Math.min(visible.length - 1, index + 1)]);
+        else if (event.key === 'ArrowUp') focus(visible[Math.max(0, index - 1)]);
+        else if (event.key === 'Home') focus(visible[0]);
+        else if (event.key === 'End') focus(visible[visible.length - 1]);
+        else if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            if (current.getAttribute('aria-expanded') === 'false') this.setExpanded(current, true, 'keyboard');
+            else this.setFocusItem(directChildren(current)[0]);
+        } else if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            if (current.getAttribute('aria-expanded') === 'true') this.setExpanded(current, false, 'keyboard');
+            else this.setFocusItem(parentItem(current));
+        } else if (event.key === ' ' || event.key === 'Enter') {
+            event.preventDefault();
+            this.select(current, 'keyboard');
+        } else if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            this.handleTypeAhead(event.key, current);
+        }
+    }
+
+    handleTypeAhead(character, current) {
+        window.clearTimeout(this.typeAheadTimer);
+        this.typeAhead += character.toLocaleLowerCase();
+        this.typeAheadTimer = window.setTimeout(() => this.typeAhead = '', 500);
+        const visible = this.visibleItems();
+        const start = visible.indexOf(current);
+        const ordered = [...visible.slice(start + 1), ...visible.slice(0, start + 1)];
+        const match = ordered.find((item) => directHeader(item)?.querySelector('[data-tree-label]')?.textContent?.trim().toLocaleLowerCase().startsWith(this.typeAhead));
+        if (match) this.setFocusItem(match);
+    }
+
+    onClick(event) {
+        if (this.hydrating) return;
+        const item = event.target.closest?.('[role="treeitem"]');
+        if (!item) return;
+        if (event.target.closest('[data-tree-toggle]')) {
+            this.setExpanded(item, item.getAttribute('aria-expanded') !== 'true', 'pointer');
+            this.setFocusItem(item);
+        } else if (event.target.closest('[data-tree-label]')) {
+            this.select(item, 'pointer');
+            this.setFocusItem(item);
+        }
+    }
+
+    onChange(event) {
+        if (!event.target.matches?.('[data-tree-control]')) return;
+        if (this.hydrating) return;
+        const item = event.target.closest('[role="treeitem"]');
+        if (this.selection === 'single') this.setValue(item.dataset.id, { silent: true });
+        else {
+            this.setDescendants(item, event.target.checked);
+            this.recalculateAll();
+        }
+        this.emitChange('control', item.dataset.id);
+    }
+
+    onSearchInput() {
+        const term = this.searchInput?.value || '';
+        window.clearTimeout(this.searchTimer);
+        if (this.root.dataset.searchAuto === 'false') return;
+        const delay = Number.parseInt(this.root.dataset.searchDebounce || '300', 10);
+        this.searchTimer = window.setTimeout(() => this.runSearch(term), delay);
+    }
+
+    onSearchKeyDown(event) {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        this.runSearch(this.searchInput?.value || '');
+    }
+
+    setStatus(message) {
+        const status = this.root.querySelector('[data-tree-status]');
+        if (status) status.textContent = message;
+    }
+
+    persistExpansion() {
+        if (this.root.dataset.persist !== 'true' || !this.root.id) return;
+        const expanded = treeItems(this.root).filter((item) => item.getAttribute('aria-expanded') === 'true').map((item) => item.dataset.id);
+        try {
+            sessionStorage.setItem(`${storagePrefix}${this.root.id}`, JSON.stringify({ expanded }));
+        } catch {}
+    }
+
+    async restoreExpansion() {
+        if (this.root.dataset.persist !== 'true' || !this.root.id) return;
+        try {
+            const state = JSON.parse(sessionStorage.getItem(`${storagePrefix}${this.root.id}`));
+            if (!Array.isArray(state?.expanded)) return;
+            for (const id of state.expanded) {
+                await this.setExpanded(findItem(this.root, id), true, 'restore');
+            }
+        } catch {}
+    }
+
+    destroy() {
+        this.tree?.removeEventListener('keydown', this.handleKeyDown);
+        this.tree?.removeEventListener('click', this.handleClick);
+        this.tree?.removeEventListener('change', this.handleChange);
+        this.searchInput?.removeEventListener('input', this.handleSearchInput);
+        this.searchInput?.removeEventListener('keydown', this.handleSearchKeyDown);
+        this.searchButton?.removeEventListener('click', this.handleSearchButton);
+        this.searchAbortController?.abort();
+        this.loadControllers.forEach((controller) => controller.abort());
+        window.clearTimeout(this.searchTimer);
+        window.clearTimeout(this.typeAheadTimer);
+        instances.delete(this.root);
+        delete this.root.__treeView;
+    }
+}
+
+function init(root) {
+    if (!root) return null;
+    if (instances.has(root)) return instances.get(root);
+    const instance = new TreeView(root);
+    instances.set(root, instance);
+    root.__treeView = instance;
+    return instance;
+}
+
+function initAll(scope = document) {
+    return Array.from(scope.querySelectorAll('[data-treeview="1"]')).map(init);
+}
+
 window.DaisyTreeView = {
-  init,
-  initAll,
-  getSelected(root) { return getSelected(root); },
+    init,
+    initAll,
+    get(root) {
+        return instances.get(root) || null;
+    },
 };
 
-// Export pour le système data-module (kit/index.js)
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => initAll());
+else initAll();
+
 export default init;
 export { init, initAll };
-
-// Initialisation automatique (compatible import tardif)
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initAll);
-} else {
-  initAll();
-}
