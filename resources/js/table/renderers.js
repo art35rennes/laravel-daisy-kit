@@ -6,6 +6,17 @@ import {
 
 const DEFAULT_ALLOWED_SCHEMES = ['http', 'https', 'mailto', 'tel'];
 const BLOCKED_SCHEMES = ['javascript', 'data', 'vbscript'];
+const ACTION_VARIANTS = {
+  neutral: 'btn-neutral',
+  primary: 'btn-primary',
+  secondary: 'btn-secondary',
+  accent: 'btn-accent',
+  info: 'btn-info',
+  success: 'btn-success',
+  warning: 'btn-warning',
+  error: 'btn-error',
+  ghost: 'btn-ghost',
+};
 
 function normalizeAllowedSchemes(schemes = []) {
   if (!Array.isArray(schemes)) {
@@ -36,12 +47,16 @@ function normalizeCellDefinition(column = {}) {
     renderer = 'blade';
   }
 
-  if (column.html === true && renderer === null) {
-    renderer = 'html';
+  if (column.html === true || renderer === 'html') {
+    throw new Error('The Daisy table html renderer was removed. Use renderer: trusted-html explicitly.');
   }
 
   if ((column.type === 'link' || column.type === 'resource-link') && renderer === null) {
     renderer = 'link';
+  }
+
+  if (column.type === 'actions' && renderer === null) {
+    renderer = 'actions';
   }
 
   renderer = ALLOWED_CELL_RENDERERS.includes(renderer) ? renderer : 'text';
@@ -53,6 +68,29 @@ function normalizeCellDefinition(column = {}) {
       : (typeof column.view === 'string' && column.view !== '' ? column.view : null),
     allowedSchemes: normalizeAllowedSchemes(rawCell.allowedSchemes),
   };
+}
+
+function normalizeActions(value) {
+  const actions = Array.isArray(value) ? value : (isPlainObject(value) ? [value] : []);
+
+  return actions
+    .filter((action) => isPlainObject(action) && typeof action.action === 'string' && action.action.trim() !== '')
+    .map((action) => ({
+      action: action.action.trim(),
+      label: typeof action.label === 'string' ? action.label : action.action.trim(),
+      variant: Object.hasOwn(ACTION_VARIANTS, action.variant) ? action.variant : 'ghost',
+      disabled: action.disabled === true,
+      ariaLabel: typeof action.ariaLabel === 'string' ? action.ariaLabel : '',
+    }));
+}
+
+function renderActionsCell(value, rowId, columnId) {
+  return normalizeActions(value).map((action) => {
+    const disabled = action.disabled ? ' disabled aria-disabled="true"' : '';
+    const ariaLabel = action.ariaLabel !== '' ? ` aria-label="${escapeHtml(action.ariaLabel)}"` : '';
+
+    return `<button type="button" class="btn btn-xs ${ACTION_VARIANTS[action.variant]}" data-table-row-action="${escapeHtml(action.action)}" data-table-row-id="${escapeHtml(rowId ?? '')}" data-table-column-id="${escapeHtml(columnId ?? '')}"${ariaLabel}${disabled}>${escapeHtml(action.label)}</button>`;
+  }).join('');
 }
 
 function isSafeHref(href, tablePolicy = {}, cellPolicy = {}) {
@@ -131,14 +169,19 @@ function getDaisyColumnFromHeader(header) {
 
 function renderCellContent(cell, tablePolicy = {}) {
   const column = getDaisyColumnFromCell(cell);
-  const renderer = column?.cell?.renderer || (column?.html ? 'html' : 'text');
+  const renderer = column?.cell?.renderer || 'text';
   const value = cell?.getContext?.().renderValue?.() ?? cell?.getValue?.() ?? '';
 
   if (renderer === 'link') {
     return renderLinkCell(value, tablePolicy, column?.cell ?? {});
   }
 
-  if (renderer === 'html' || renderer === 'blade' || renderer === 'actions') {
+  if (renderer === 'actions') {
+    return renderActionsCell(value, cell?.row?.id, cell?.column?.id ?? column?.key);
+  }
+
+  // These renderers cross the explicit trusted HTML boundary configured by the host.
+  if (renderer === 'trusted-html' || renderer === 'blade') {
     return String(value ?? '');
   }
 
@@ -146,6 +189,7 @@ function renderCellContent(cell, tablePolicy = {}) {
 }
 
 export {
+  ACTION_VARIANTS,
   BLOCKED_SCHEMES,
   DEFAULT_ALLOWED_SCHEMES,
   getAllowedSchemes,
@@ -154,7 +198,9 @@ export {
   getRowDetailContent,
   isSafeHref,
   normalizeAllowedSchemes,
+  normalizeActions,
   normalizeCellDefinition,
   renderCellContent,
+  renderActionsCell,
   renderLinkCell,
 };

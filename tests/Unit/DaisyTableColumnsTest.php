@@ -23,6 +23,22 @@ it('normalizes table cells and view shorthand', function (): void {
         ]);
 });
 
+it('requires explicit trusted HTML renderers', function (): void {
+    expect(fn (): array => DaisyTableColumns::normalizeCell([
+        'key' => 'status',
+        'html' => true,
+    ]))->toThrow(InvalidArgumentException::class, 'trusted-html explicitly');
+
+    expect(DaisyTableColumns::normalizeCell([
+        'key' => 'status',
+        'cell' => ['renderer' => 'trusted-html'],
+    ]))->toEqual([
+        'renderer' => 'trusted-html',
+        'view' => null,
+        'allowedSchemes' => [],
+    ]);
+});
+
 it('normalizes link policies and numeric classes', function (): void {
     expect(DaisyTableColumns::normalizeLinkPolicy([
         'allowedSchemes' => ['myapp:', 'intent', 'data'],

@@ -64,15 +64,15 @@ it('places a consumer table identifier on the Daisy table root', function (): vo
     BLADE);
 
     expect($html)
-        ->toMatch('/<div\s+id="scope-users"/s')
+        ->toMatch('/<div\b[^>]*\bid="scope-users"[^>]*\baria-describedby="scope-users-caption"/s')
         ->toContain('data-daisy-table="1"')
-        ->toMatch('/<table\s+class="[^"]+" aria-describedby="scope-users-caption"/s')
         ->not->toContain('<table id="scope-users"');
 });
 
 it('renders configurable table layout, scroll and native action column attributes', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.data-display.table
+            row-key="id"
             table-layout="auto"
             min-width="128rem"
             scroll-x="always"
@@ -80,11 +80,11 @@ it('renders configurable table layout, scroll and native action column attribute
             livewire-mode="ignore"
             :columns="[
                 ['key' => '_action', 'label' => 'Actions', 'type' => 'actions'],
-                ['key' => 'status_badge', 'label' => 'Status', 'align' => 'center', 'width' => '140px', 'html' => true],
+                ['key' => 'status_badge', 'label' => 'Status', 'align' => 'center', 'width' => '140px', 'cell' => ['renderer' => 'trusted-html']],
                 ['key' => 'postal_address', 'label' => 'Address', 'truncate' => 2, 'width' => '260px', 'minWidth' => 'max-content', 'nowrap' => true],
             ]"
             :rows="[
-                ['_action' => '<button class=&quot;btn btn-xs&quot;>Open</button>', 'status_badge' => '<span class=&quot;badge&quot;>Open</span>', 'postal_address' => '12 rue longue'],
+                ['id' => 'intervention-1', '_action' => ['action' => 'open', 'label' => 'Open'], 'status_badge' => '<span class=&quot;badge&quot;>Open</span>', 'postal_address' => '12 rue longue'],
             ]"
             :filters="[
                 ['key' => 'status', 'label' => 'Status', 'type' => 'text'],
@@ -134,12 +134,13 @@ it('provides a content-width table helper for wide containers', function (): voi
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.data-display.table
             table-class="daisy-table-width-content"
+            row-key="id"
             :columns="[
                 ['key' => '_action', 'label' => 'Actions', 'type' => 'actions'],
                 ['key' => 'name', 'label' => 'Name'],
             ]"
             :rows="[
-                ['_action' => '<button class=&quot;btn btn-xs&quot;>Open</button>', 'name' => 'Jane'],
+                ['id' => 'user-1', '_action' => ['action' => 'open', 'label' => 'Open'], 'name' => 'Jane'],
             ]"
         />
     BLADE);
@@ -306,7 +307,7 @@ it('renders a client table with trusted html cells', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.data-display.table
             :columns="[
-                ['key' => 'status', 'label' => 'Status', 'html' => true],
+                ['key' => 'status', 'label' => 'Status', 'cell' => ['renderer' => 'trusted-html']],
             ]"
             :rows="[
                 ['status' => '<span class=&quot;badge badge-success&quot;>Active</span>'],
@@ -726,7 +727,7 @@ it('serializes typed editors and remote row creation', function (): void {
         'create' => [
             'enabled' => true,
             'strategy' => 'remote',
-            'endpoint' => ['url' => '/projects'],
+            'endpoint' => ['url' => '/projects', 'method' => 'POST'],
             'method' => 'POST',
             'defaults' => ['status' => 'draft'],
             'position' => 'top',

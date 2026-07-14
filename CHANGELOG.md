@@ -15,6 +15,8 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 
 ### Changed
 
+- Upgrade the TanStack table runtime to contract v2 with immutable configuration, canonical runtime rows, a read-only public facade, recursive row identity validation, namespaced bounded persistence, and modular data, transport, editing, rendering, and state boundaries.
+- Replace ambiguous table HTML/action renderers with explicit `trusted-html`, trusted Blade views, and CSP-safe structured row actions.
 - Upgrade DaisyUI to 5.6.17, Tailwind CSS to 4.3.2, Vite to 8.1.4, and Vitest to 4.1.10.
 - Use the native DaisyUI OTP component in the two-factor authentication template while retaining the legacy `otp-code` JavaScript module for compatibility.
 - Delegate choice-card selection and focus styling to DaisyUI 5.6 card states.
@@ -24,6 +26,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 
 ### Breaking
 
+- Require republished v2 table assets, stable row keys for client mutations and structured actions, strict remote mutation response rows, and migration from table `html => true` or raw action HTML.
 - Replace the legacy Tree View node selection flags, configurable node keys, lazy modes, events, and implicit global methods with the normalized v2 contract documented in the README.
 
 ### Fixed

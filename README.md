@@ -761,7 +761,7 @@ The table runtime is designed for host policies that avoid `unsafe-inline` and `
 - The Blade component serializes configuration into HTML data attributes, not executable inline scripts.
 - Public table events use `addEventListener` / `dispatchEvent`; package markup must not emit inline handlers such as `onclick`.
 - A CSP nonce is useful for package-generated `<script>` or `<style>` tags, but it does not authorize `style=""` attributes or `element.style.*` writes. Column sizing and resizing must therefore avoid inline width styles when strict `style-src` is required.
-- `rowDetailView`, `blade`, `html`, and `actions` cell renderers are trusted HTML extension points. Host partials used there must escape user content and avoid inline handlers, inline styles, and scripts if the page must remain strict-CSP compatible.
+- `rowDetailView`, `blade`, and `trusted-html` are explicit trusted HTML extension points. Host partials used there must escape user content and avoid inline handlers, inline styles, and scripts if the page must remain strict-CSP compatible. The `actions` renderer is structured and CSP-safe.
 - Daisy Kit does not currently claim Trusted Types compatibility for the table runtime because trusted HTML extension points are inserted as HTML. Hosts enforcing `require-trusted-types-for 'script'` need a host-level Trusted Types policy or a stricter renderer contract.
 
 ### Breaking change
@@ -792,6 +792,10 @@ Supported public props:
 - `serverAdapter`
 - `persistState`
 - `stateKey`
+- `persistStateFields`
+- `rowKey`
+- `subRowsKey`
+- `linkPolicy`
 - `globalFilterKey`
 - `filters`
 - `initialState`
@@ -833,7 +837,7 @@ Column definition shape:
         'width' => '16rem',
         'cellClass' => 'font-medium',
         'headerClass' => 'whitespace-nowrap',
-        'html' => false,
+        'cell' => ['renderer' => 'text'],
     ],
 ]
 ```
@@ -846,7 +850,7 @@ Column definition shape:
     :columns="[
         ['key' => 'name', 'label' => 'Name', 'sortable' => true],
         ['key' => 'email', 'label' => 'Email', 'sortable' => true],
-        ['key' => 'status', 'label' => 'Status', 'html' => true],
+        ['key' => 'status', 'label' => 'Status', 'cell' => ['renderer' => 'trusted-html']],
     ]"
     :rows="$users->map(fn ($user) => [
         'name' => $user->name,
@@ -878,7 +882,7 @@ Column definition shape:
         [
             'key' => 'status',
             'label' => 'Status',
-            'html' => true,
+            'cell' => ['renderer' => 'trusted-html'],
             'sortable' => true,
             'filterable' => true,
             'sortKey' => 'status',
@@ -1020,7 +1024,7 @@ QueryBuilder::for(User::query())
     ->appends(request()->query());
 ```
 
-For Laravel resources, return the table keys directly in `toArray()` or map them before passing rows to the component. Keep HTML values opt-in with the column `html` flag.
+For Laravel resources, return the table keys directly in `toArray()` or map them before passing rows to the component. Keep HTML values opt-in with `cell.renderer = trusted-html`; never pass unsanitized user data through a trusted renderer.
 
 ### Custom table cells
 
@@ -1068,7 +1072,24 @@ $rows = DaisyTableRows::for($audits, $columns)
     ->renderCells();
 ```
 
-Blade cell views receive `item`, `row`, `value`, `column`, and `table`. Supported renderers are `text`, `html`, `blade`, `link`, and `actions`. `blade`, `html`, and `actions` are trusted HTML renderers; keep user content escaped inside the host view.
+Blade cell views receive `item`, `row`, `value`, `column`, and `table`. Supported renderers are `text`, `trusted-html`, `blade`, `link`, and `actions`. Only `blade` and `trusted-html` cross the trusted HTML boundary.
+
+The `actions` renderer accepts one descriptor or a list of descriptors. It does not accept HTML:
+
+```php
+[
+    'id' => $user->id,
+    'actions' => [
+        'action' => 'remove',
+        'label' => 'Remove',
+        'variant' => 'error',
+        'disabled' => false,
+        'ariaLabel' => 'Remove this user',
+    ],
+]
+```
+
+Listen for `daisy:table-row-action`; its detail contains `action`, `rowId`, `row`, `column`, and the TanStack `table` instance. Variants are allowlisted and descriptor strings are escaped.
 
 `link` and `resource-link` escape labels and validate hrefs in both the initial Blade render and JS refreshes. Relative URLs plus `http`, `https`, `mailto`, and `tel` are allowed by default. Deeplink schemes are opt-in with either a table policy or a column policy:
 
@@ -1093,6 +1114,10 @@ Client tables can receive data after the initial Blade render without host code 
 ```js
 const table = window.DaisyTable.table('scope-users');
 
+if (!table) {
+    throw new Error('The table root is missing.');
+}
+
 await table.setLoading(true);
 await table.setRows(users);
 
@@ -1100,7 +1125,9 @@ await table.upsertRows([user]);
 await table.removeRows([userId]);
 ```
 
-`setRows(rows)` replaces the client snapshot. `upsertRows(rows)` replaces or appends top-level rows by `rowKey`; every supplied row must provide that key. `removeRows(ids)` removes top-level rows by key. The table keeps TanStack sorting, filters, pagination, column state, expansion, and selection coherent; deleted identifiers are removed from selection and expansion, and an out-of-range page is clamped automatically. Nested rows remain supported by `setRows`; incremental operations address only top-level rows.
+`setRows(rows)` replaces the client snapshot. It validates recursively that every row and sub-row has a non-empty, globally unique `rowKey`. `upsertRows(rows)` replaces or appends top-level rows by `rowKey`; `removeRows(ids)` removes top-level rows by key. The table keeps TanStack sorting, filters, pagination, column state, expansion, and selection coherent; deleted identifiers are removed from selection and expansion, and an out-of-range page is clamped automatically. Nested rows remain supported by `setRows`; incremental operations address only top-level rows.
+
+The public facade exposes `setLoading`, `setRows`, `upsertRows`, `removeRows`, `refresh`, `getRows`, `getState`, `getTanStackTable`, and `snapshot`. Snapshots are detached from internal runtime state; `window.DaisyTable.table(id)` returns `null` when no table exists.
 
 The data API is intentionally limited to client tables with a `row-key`. Server tables remain backend-authoritative: call `table.refresh()` after a host mutation or external event. `setLoading(true)` displays the standard loading row while client data is being obtained. Every data mutation emits `daisy:table-data-changed` after the stable render with `operation`, `rowIds`, `rows`, `rowCount`, `pageCount`, `state`, and the TanStack `table` instance.
 

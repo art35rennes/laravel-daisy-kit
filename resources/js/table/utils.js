@@ -18,7 +18,7 @@ const ALLOWED_FILTER_TYPES = ['text', 'select', 'boolean', 'date', 'date-range']
 const ALLOWED_ALIGNMENTS = ['left', 'center', 'right'];
 const ALLOWED_VERTICAL_ALIGNMENTS = ['top', 'middle', 'bottom'];
 const ALLOWED_TRUNCATE_VALUES = ['line', 2, 3];
-const ALLOWED_CELL_RENDERERS = ['text', 'html', 'blade', 'link', 'actions'];
+const ALLOWED_CELL_RENDERERS = ['text', 'trusted-html', 'blade', 'link', 'actions'];
 
 function isPlainObject(value) {
   return Object.prototype.toString.call(value) === '[object Object]';

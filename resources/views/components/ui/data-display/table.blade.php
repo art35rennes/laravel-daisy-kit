@@ -7,6 +7,7 @@
     'serverAdapter' => null,
     'persistState' => false,
     'stateKey' => null,
+    'persistStateFields' => null,
     'globalFilterKey' => 'global',
     'filters' => [],
     'initialState' => [],
@@ -55,6 +56,10 @@
     $resolvedMode = $mode === 'server' ? 'server' : 'client';
     $resolvedServerAdapter = $serverAdapter === 'spatie-query-builder' ? 'spatie-query-builder' : null;
     $resolvedPersistState = in_array($persistState, ['url', 'local'], true) ? $persistState : false;
+    $resolvedStateKey = is_string($stateKey) && filled($stateKey)
+        ? $stateKey
+        : (is_string($attributes->get('id')) && filled($attributes->get('id')) ? $attributes->get('id') : null);
+    $resolvedPersistStateFields = \Art35rennes\DaisyKit\Support\DaisyTableConfig::normalizePersistedStateFields($persistStateFields);
     $resolvedSearchDebounce = max(0, (int) $searchDebounce);
     $resolvedFilterDebounce = max(0, (int) $filterDebounce);
     $resolvedMinSearchChars = max(0, (int) $minSearchChars);
@@ -92,6 +97,10 @@
 
     if ($selectionEnabled && blank($resolvedRowKey)) {
         throw new InvalidArgumentException('The table component requires a non-empty rowKey prop when selection is enabled.');
+    }
+
+    if ($resolvedPersistState !== false && blank($resolvedStateKey)) {
+        throw new InvalidArgumentException('The table component requires a stateKey or root id when state persistence is enabled.');
     }
 
     if (($resolvedRowDetail !== 'none' || $resolvedSubRowsKey !== null || (bool) $editable) && blank($resolvedRowKey)) {
@@ -190,101 +199,16 @@
         return trim(implode(' ', array_unique(array_filter($classes))));
     };
 
-    $normalizeColumn = static function (array $column): array {
-        $key = is_string($column['key'] ?? null) ? trim($column['key']) : '';
-        $filterConfig = is_array($column['filter'] ?? null) ? $column['filter'] : [];
-        $filterType = in_array($filterConfig['type'] ?? null, ['text', 'select', 'boolean', 'date', 'date-range'], true)
-            ? $filterConfig['type']
-            : null;
-        $type = in_array($column['type'] ?? null, ['actions', 'link', 'resource-link'], true) ? $column['type'] : null;
-        $cell = \Art35rennes\DaisyKit\Support\DaisyTableColumns::normalizeCell($column);
-        $width = $column['width'] ?? null;
-        $minWidth = $column['minWidth'] ?? null;
-        $maxWidth = $column['maxWidth'] ?? null;
-        $align = in_array($column['align'] ?? null, ['left', 'center', 'right'], true) ? $column['align'] : null;
-        $verticalAlign = in_array($column['verticalAlign'] ?? null, ['top', 'middle', 'bottom'], true) ? $column['verticalAlign'] : null;
-        $padding = in_array($column['padding'] ?? null, ['none', 'compact', 'normal'], true) ? $column['padding'] : null;
-        $density = in_array($column['density'] ?? null, ['compact', 'normal'], true) ? $column['density'] : null;
-        $truncate = $column['truncate'] ?? false;
-
-        if ($type === 'actions') {
-            $width ??= 'fit';
-            $align ??= 'center';
-            $column['nowrap'] ??= true;
-            $density ??= 'compact';
-        }
-
-        return [
-            'key' => $key,
-            'type' => $type,
-            'label' => $column['label'] ?? $column['title'] ?? $key,
-            'sortable' => (bool) ($column['sortable'] ?? false),
-            'filterable' => (bool) ($column['filterable'] ?? false),
-            'sortKey' => is_string($column['sortKey'] ?? null) && filled($column['sortKey']) ? $column['sortKey'] : $key,
-            'filterKey' => is_string($column['filterKey'] ?? null) && filled($column['filterKey']) ? $column['filterKey'] : $key,
-            'visible' => (bool) ($column['visible'] ?? true),
-            'width' => $width,
-            'minWidth' => $minWidth,
-            'maxWidth' => $maxWidth,
-            'widthClass' => $width === 'fit' ? 'daisy-table-width-fit' : ($width === 'auto' ? null : \Art35rennes\DaisyKit\Support\DaisyTableColumns::numericClass($width, 'daisy-table-width')),
-            'minWidthClass' => $minWidth === 'max-content' ? 'daisy-table-min-width-max' : ($minWidth === 'full' ? 'min-w-full' : \Art35rennes\DaisyKit\Support\DaisyTableColumns::numericClass($minWidth, 'daisy-table-min-width')),
-            'maxWidthClass' => \Art35rennes\DaisyKit\Support\DaisyTableColumns::numericClass($maxWidth, 'daisy-table-max-width'),
-            'align' => $align,
-            'alignClass' => match ($align) {
-                'center' => 'text-center',
-                'right' => 'text-right',
-                'left' => 'text-left',
-                default => null,
-            },
-            'verticalAlign' => $verticalAlign,
-            'verticalAlignClass' => match ($verticalAlign) {
-                'top' => 'align-top',
-                'middle' => 'align-middle',
-                'bottom' => 'align-bottom',
-                default => null,
-            },
-            'padding' => $padding,
-            'paddingClass' => match ($padding) {
-                'none' => 'p-0',
-                'compact' => 'px-2 py-1',
-                default => null,
-            },
-            'density' => $density,
-            'densityClass' => $density === 'compact' ? 'daisy-table-cell-compact' : null,
-            'nowrap' => (bool) ($column['nowrap'] ?? false),
-            'truncate' => in_array($truncate, ['line', 2, 3], true) ? $truncate : false,
-            'cellWrapperClass' => $column['cellWrapperClass'] ?? '',
-            'headerWrapperClass' => $column['headerWrapperClass'] ?? '',
-            'cellClass' => $column['cellClass'] ?? '',
-            'headerClass' => $column['headerClass'] ?? '',
-            'help' => is_string($column['help'] ?? null) ? trim($column['help']) : '',
-            'html' => in_array($cell['renderer'], ['html', 'blade', 'actions'], true),
-            'cell' => $cell,
-            'editor' => \Art35rennes\DaisyKit\Support\DaisyTableColumns::normalizeEditor($column),
-            'enableResizing' => ($column['enableResizing'] ?? true) !== false,
-            'size' => is_numeric($column['size'] ?? null) ? (int) $column['size'] : null,
-            'minSize' => is_numeric($column['minSize'] ?? null) ? (int) $column['minSize'] : null,
-            'maxSize' => is_numeric($column['maxSize'] ?? null) ? (int) $column['maxSize'] : null,
-            'filter' => $filterType ? [
-                'type' => $filterType,
-                'filterKeyFrom' => is_string($filterConfig['filterKeyFrom'] ?? null) && filled($filterConfig['filterKeyFrom']) ? $filterConfig['filterKeyFrom'] : null,
-                'filterKeyTo' => is_string($filterConfig['filterKeyTo'] ?? null) && filled($filterConfig['filterKeyTo']) ? $filterConfig['filterKeyTo'] : null,
-                'options' => array_values(array_filter(
-                    is_array($filterConfig['options'] ?? null) ? $filterConfig['options'] : [],
-                    static fn ($option) => is_array($option) && filled($option['value'] ?? null)
-                )),
-            ] : null,
-        ];
-    };
-
     $tableMinWidthClass = $minWidth === 'full'
         ? 'min-w-full'
         : (\Art35rennes\DaisyKit\Support\DaisyTableColumns::numericClass($minWidth, 'daisy-table-root-min-width') ?? null);
 
     $tableClasses = trim($tableClasses.' '.$tableMinWidthClass);
 
+    \Art35rennes\DaisyKit\Support\DaisyTableConfig::validateColumns(is_array($columns) ? $columns : []);
+
     $resolvedColumns = array_values(array_filter(
-        array_map($normalizeColumn, is_array($columns) ? $columns : []),
+        array_map(\Art35rennes\DaisyKit\Support\DaisyTableColumns::normalize(...), is_array($columns) ? $columns : []),
         static fn (array $column) => $column['key'] !== ''
     ));
 
@@ -308,6 +232,10 @@
 
     if (is_array($columns) && $columns !== [] && $resolvedColumns === []) {
         throw new InvalidArgumentException('The table component requires at least one column with a non-empty key.');
+    }
+
+    if (collect($resolvedColumns)->contains(fn (array $column) => ($column['cell']['renderer'] ?? null) === 'actions') && blank($resolvedRowKey)) {
+        throw new InvalidArgumentException('The table component requires a non-empty rowKey prop for structured row actions.');
     }
 
     foreach ($resolvedColumns as $column) {
@@ -476,7 +404,11 @@
         'rowSelection' => is_array($initialState['rowSelection'] ?? null) ? $initialState['rowSelection'] : [],
     ];
 
-    $resolvedEndpoint = is_array($endpoint) ? $endpoint : (filled($endpoint) ? ['url' => $endpoint] : null);
+    $resolvedEndpoint = \Art35rennes\DaisyKit\Support\DaisyTableConfig::normalizeEndpoint($endpoint, (string) $method);
+    $resolvedMethod = \Art35rennes\DaisyKit\Support\DaisyTableConfig::normalizeMethod(
+        is_array($endpoint) ? ($endpoint['method'] ?? $method) : $method,
+        'GET',
+    );
 
     $resolvedRows = $resolvedMode === 'client' && is_iterable($rows)
         ? \Art35rennes\DaisyKit\Support\DaisyTableRows::for($rows, $resolvedColumns)
@@ -485,7 +417,7 @@
             ->renderCells()
         : [];
 
-    $renderCell = static function (array $row, array $column) use ($resolvedLinkPolicy) {
+    $renderCell = static function (array $row, array $column) use ($resolvedLinkPolicy, $resolvedRowKey) {
         $value = data_get($row, $column['key']);
 
         if (($column['cell']['renderer'] ?? null) === 'link') {
@@ -502,7 +434,15 @@
             return new Illuminate\Support\HtmlString('<a href="'.e($href).'"'.$targetAttribute.' class="link link-hover">'.e($label).($target === '_blank' ? ' <span aria-hidden="true">&nearr;</span>' : '').'</a>');
         }
 
-        if ($column['html']) {
+        if (($column['cell']['renderer'] ?? null) === 'actions') {
+            return \Art35rennes\DaisyKit\Support\DaisyTableActions::render(
+                $value,
+                data_get($row, $resolvedRowKey),
+                $column['key'],
+            );
+        }
+
+        if ($column['trusted']) {
             return new Illuminate\Support\HtmlString((string) $value);
         }
 
@@ -512,11 +452,13 @@
     // Keep the serialized config explicit so the JS runtime can switch transport
     // adapters without exposing a generic frontend options surface.
     $config = [
+        'contractVersion' => \Art35rennes\DaisyKit\Support\DaisyTableConfig::ContractVersion,
         'mode' => $resolvedMode,
-        'method' => strtoupper((string) $method),
+        'method' => $resolvedMethod,
         'serverAdapter' => $resolvedServerAdapter,
         'persistState' => $resolvedPersistState,
-        'stateKey' => $stateKey,
+        'stateKey' => $resolvedStateKey,
+        'persistStateFields' => $resolvedPersistStateFields,
         'globalFilterKey' => filled($globalFilterKey) ? (string) $globalFilterKey : 'global',
         'rowKey' => $resolvedRowKey,
         'searchMode' => $resolvedSearchMode,
@@ -577,7 +519,7 @@
 @endphp
 
 <div
-    {{ $attributes->only(['id', 'data-daisy-table-id']) }}
+    {{ $attributes->except(['data-module', 'data-daisy-table', 'data-table-config'])->class([$wrapperClasses]) }}
     data-module="table"
     data-daisy-table="1"
     data-table-layout="{{ $resolvedTableLayout }}"
@@ -587,7 +529,6 @@
     @if($selectionEnabled) aria-disabled="{{ $resolvedSelectionReadOnly ? 'true' : 'false' }}" @endif
     @if(filled($minWidth)) data-table-min-width="{{ $minWidth }}" @endif
     data-table-config='@json($config)'
-    class="{{ $wrapperClasses }}"
     @if($resolvedLivewireMode === 'ignore') wire:ignore @endif
 >
     @if($resolvedToolbarLayout !== 'hidden')
@@ -768,7 +709,7 @@
 
     <div class="{{ $scrollClasses }}" @if($resolvedScrollX !== 'none') tabindex="0" @endif>
         <table
-            {{ $attributes->except(['id', 'data-daisy-table-id'])->merge(['class' => $tableClasses]) }}
+            class="{{ $tableClasses }}"
             data-table-layout="{{ $resolvedTableLayout }}"
         >
             @if($caption)
@@ -891,7 +832,7 @@
 
                                 @php
                                     $isEditableCell = $resolvedEditable['enabled']
-                                        && ! $column['html']
+                                        && ! $column['trusted']
                                         && ! in_array($column['type'], ['actions', 'link', 'resource-link'], true)
                                         && ($resolvedEditable['columns'] === [] || in_array($column['key'], $resolvedEditable['columns'], true));
                                 @endphp

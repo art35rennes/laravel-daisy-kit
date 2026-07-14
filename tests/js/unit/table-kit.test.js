@@ -40,6 +40,7 @@ import {
   parseStateFromLocalStorage,
   parseStateFromUrl,
   renderLinkCell,
+  renderActionsCell,
   getRowDetailContent,
   resolveSearchInputValue,
   resetSelectionState,
@@ -122,7 +123,7 @@ function createTableRoot(config) {
 
   const root = document.querySelector('[data-daisy-table="1"]');
 
-  root.dataset.tableConfig = JSON.stringify(config);
+  root.dataset.tableConfig = JSON.stringify({ contractVersion: 2, ...config });
 
   return root;
 }
@@ -134,6 +135,35 @@ function nextTick() {
 }
 
 describe('table-kit helpers', () => {
+  it('returns null when a public table cannot be resolved', () => {
+    const env = installDom();
+
+    try {
+      expect(tableApi('missing-table')).toBeNull();
+    } finally {
+      env.restore();
+    }
+  });
+
+  it('renders structured actions without accepting host HTML', () => {
+    const html = renderActionsCell({
+      action: 'remove&quot; onclick=&quot;alert(1)',
+      label: '<img src=x onerror=alert(1)>',
+      variant: 'unknown',
+      ariaLabel: 'Remove "user"',
+    }, 'user-1', 'actions');
+
+    expect(html).toContain('btn-ghost');
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
+    expect(html).not.toContain('<img');
+
+    const dom = new JSDOM(html);
+    const button = dom.window.document.querySelector('button');
+
+    expect(button.hasAttribute('onclick')).toBe(false);
+    expect(button.dataset.tableRowAction).toBe('remove&quot; onclick=&quot;alert(1)');
+  });
+
   it('parses config from a dataset payload', () => {
     const config = parseConfig({
       dataset: {
@@ -154,19 +184,16 @@ describe('table-kit helpers', () => {
 
     global.window = {
       location: {
-        search: '?sorting=%7Bbad&columnFilters=%5Bbad&columnVisibility=%7Bbad',
+        search: '?daisy-table%5Busers%5D=%7Bbad',
       },
     };
 
     const config = normalizeConfig({
+      stateKey: 'users',
       columns: [{ key: 'name', label: 'Name' }],
     });
 
-    expect(parseStateFromUrl(config)).toMatchObject({
-      sorting: [],
-      columnFilters: [],
-      columnVisibility: {},
-    });
+    expect(parseStateFromUrl(config)).toEqual({});
 
     global.window = originalWindow;
   });
@@ -176,26 +203,6 @@ describe('table-kit helpers', () => {
     expect(renderLinkCell({ href: '/users/1', label: 'Open', target: '_blank' })).toContain('rel="noopener noreferrer"');
     expect(getRowDetailContent({ detail: '<img src=x onerror=alert(1)>' })).toBe('&lt;img src=x onerror=alert(1)&gt;');
     expect(getRowDetailContent({ detailHtml: '<strong>Trusted</strong>' })).toBe('<strong>Trusted</strong>');
-  });
-
-  it('resolves a public table id and a descendant element to the Daisy table root', async () => {
-    const env = installDom();
-
-    try {
-      const root = createTableRoot({
-        rowKey: 'id',
-        columns: [{ key: 'name', label: 'Name' }],
-        rows: [],
-      });
-      root.id = 'client-updates';
-
-      await tableApi('client-updates').setRows([{ id: '1', name: 'Ada' }]);
-      await tableApi(root.querySelector('table')).upsertRows([{ id: '1', name: 'Ada Lovelace' }]);
-
-      expect(root.__daisyTableContext.config.rows).toEqual([{ id: '1', name: 'Ada Lovelace' }]);
-    } finally {
-      env.restore();
-    }
   });
 
   it('allows deeplink link cells only through explicit policies', () => {
@@ -243,7 +250,7 @@ describe('table-kit helpers', () => {
         headerWrapperClass: '',
         cellClass: '',
         headerClass: '',
-        html: false,
+        trusted: false,
         cell: {
           renderer: 'text',
           view: null,
@@ -285,7 +292,7 @@ describe('table-kit helpers', () => {
         headerWrapperClass: '',
         cellClass: '',
         headerClass: '',
-        html: false,
+        trusted: false,
         cell: {
           renderer: 'text',
           view: null,
@@ -427,13 +434,13 @@ describe('table-kit helpers', () => {
     const columns = normalizeColumns([
       { key: 'actions', type: 'actions', view: 'users._actions', size: 96 },
       { key: 'profile', type: 'resource-link' },
-      { key: 'status', html: true },
+      { key: 'status', cell: { renderer: 'trusted-html' } },
     ]);
     const columnDefs = createColumnDefs(columns);
 
     expect(columns[0]).toMatchObject({
       type: 'actions',
-      html: true,
+      trusted: true,
       cell: {
         renderer: 'blade',
         view: 'users._actions',
@@ -442,7 +449,7 @@ describe('table-kit helpers', () => {
       size: 96,
     });
     expect(columns[1].cell.renderer).toBe('link');
-    expect(columns[2].cell.renderer).toBe('html');
+    expect(columns[2].cell.renderer).toBe('trusted-html');
     expect(columnDefs[0]).toMatchObject({
       id: 'actions',
       size: 96,
@@ -468,6 +475,20 @@ describe('table-kit helpers', () => {
     expect(normalizeColumnSizing({ name: '220', email: 0, missing: 100 }, columns)).toEqual({ name: 220 });
     expect(normalizeExpanded({ 1: true, 2: false })).toEqual({ 1: true });
     expect(normalizeRowSelection({ 1: true, 2: false })).toEqual({ 1: true });
+  });
+
+  it('bridges persisted TanStack row selection back to Daisy selection state', () => {
+    const config = normalizeConfig({
+      rowKey: 'id',
+      selection: 'multiple',
+      columns: [{ key: 'name' }],
+    });
+    const state = mergeState(config.initialState, {
+      rowSelection: { 1: true, 2: true },
+    }, config);
+
+    expect(state.rowSelection).toEqual({ 1: true, 2: true });
+    expect(state.selection.selectedIds).toEqual(['1', '2']);
   });
 
   it('builds a clean server config and request payload', () => {
@@ -923,14 +944,22 @@ describe('table-kit helpers', () => {
   it('hydrates state from a spatie-style url and merges it with defaults', () => {
     const originalWindow = global.window;
 
+    const persisted = encodeURIComponent(JSON.stringify({
+      sorting: [{ id: 'name', desc: true }],
+      pagination: { pageIndex: 3, pageSize: 50 },
+      globalFilter: 'jane',
+      columnFilters: [{ id: 'status', type: 'select', value: 'active' }],
+    }));
+
     global.window = {
       location: {
-        search: '?sort=-users.name&filter%5Bglobal%5D=jane&filter%5Bstatus%5D=active&page%5Bnumber%5D=4&page%5Bsize%5D=50',
+        search: `?daisy-table%5Busers%5D=${persisted}`,
       },
     };
 
     const config = normalizeConfig({
       mode: 'server',
+      stateKey: 'users',
       serverAdapter: 'spatie-query-builder',
       endpoint: '/users',
       columns: [
@@ -971,14 +1000,23 @@ describe('table-kit helpers', () => {
   it('hydrates spatie filters submitted as bracket arrays from external forms', () => {
     const originalWindow = global.window;
 
+    const persisted = encodeURIComponent(JSON.stringify({
+      columnFilters: [
+        { id: 'status', type: 'text', value: 'toSpecify,finished' },
+        { id: 'compliance', type: 'text', value: 'conforme' },
+      ],
+      pagination: { pageIndex: 0, pageSize: 20 },
+    }));
+
     global.window = {
       location: {
-        search: '?filter%5Bstatus%5D%5B%5D=toSpecify&filter%5Bstatus%5D%5B%5D=finished&filter%5Bcompliance%5D%5B%5D=conforme&page%5Bnumber%5D=1&page%5Bsize%5D=20',
+        search: `?daisy-table%5Binterventions%5D=${persisted}`,
       },
     };
 
     const config = normalizeConfig({
       mode: 'server',
+      stateKey: 'interventions',
       serverAdapter: 'spatie-query-builder',
       endpoint: '/interventions',
       columns: [
@@ -1245,7 +1283,7 @@ describe('table-kit helpers', () => {
       const root = createTableRoot({
         rowKey: 'id',
         editable: true,
-        editEndpoint: '/users/1',
+        editEndpoint: '/users/{rowId}',
         editMode: 'row',
         editableColumns: ['name', 'status'],
         columns: [
@@ -1285,7 +1323,7 @@ describe('table-kit helpers', () => {
       const root = createTableRoot({
         rowKey: 'id',
         editable: true,
-        editEndpoint: '/users/1',
+        editEndpoint: '/users/{rowId}',
         editMode: 'row',
         editableColumns: ['name', 'status'],
         columns: [
@@ -1314,15 +1352,17 @@ describe('table-kit helpers', () => {
 
       const [, request] = fetchMock.mock.calls[0];
 
-      expect(JSON.parse(request.body)).toMatchObject({
+      expect(fetchMock.mock.calls[0][0]).toBe('https://example.test/users/1');
+      expect(JSON.parse(request.body)).toEqual({
         rowId: '1',
         column: 'name',
+        value: 'Janet',
         dirty: {
           name: 'Janet',
           status: 'active',
         },
       });
-      expect(context.config.rows[0]).toMatchObject({ name: 'Janet', status: 'active' });
+      expect(context.rows[0]).toMatchObject({ name: 'Janet', status: 'active' });
     } finally {
       if (previousFetch === undefined) {
         delete global.fetch;
@@ -1430,7 +1470,7 @@ describe('table-kit helpers', () => {
       await nextTick();
 
       expect(fetchMock).toHaveBeenCalledOnce();
-      expect(context.config.rows[0].name).toBe('Jane');
+      expect(context.rows[0].name).toBe('Jane');
       expect(failedDetail.errors).toEqual({ name: 'Name is already used.' });
       expect(root.querySelector('.daisy-table-edit-error').textContent).toContain('already used');
     } finally {
@@ -1493,13 +1533,13 @@ describe('table-kit helpers', () => {
       const [, request] = fetchMock.mock.calls[0];
 
       expect(fetchMock).toHaveBeenCalledOnce();
-      expect(JSON.parse(request.body)).toMatchObject({
+      expect(JSON.parse(request.body)).toEqual({
         rowId: '1',
         column: 'name',
         value: 'Janet',
         dirty: { name: 'Janet' },
       });
-      expect(context.config.rows[0].name).toBe('Janet');
+      expect(context.rows[0].name).toBe('Janet');
       expect(committedDetail.row.name).toBe('Janet');
     } finally {
       if (previousFetch === undefined) {
@@ -1508,6 +1548,116 @@ describe('table-kit helpers', () => {
         global.fetch = previousFetch;
       }
 
+      env.restore();
+    }
+  });
+
+  it('rejects a successful remote edit response without a canonical row', async () => {
+    const env = installDom();
+    const previousFetch = global.fetch;
+
+    try {
+      global.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) }));
+
+      const root = createTableRoot({
+        rowKey: 'id',
+        editable: true,
+        editEndpoint: '/users/{rowId}',
+        editableColumns: ['name'],
+        columns: [{ key: 'name', label: 'Name' }],
+        rows: [{ id: '1', name: 'Jane' }],
+      });
+      const table = tableApi(root);
+      let failed = null;
+
+      await initTable(root);
+      root.addEventListener('daisy:table-edit-failed', (event) => {
+        failed = event.detail;
+      });
+      await table.editCell('1', 'name');
+
+      const input = root.querySelector('[data-table-edit-input]');
+      input.value = 'Janet';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      await table.commitEdit();
+
+      expect(table.getRows()).toEqual([{ id: '1', name: 'Jane' }]);
+      expect(failed.error.message).toContain('contain a row object');
+    } finally {
+      if (previousFetch === undefined) delete global.fetch;
+      else global.fetch = previousFetch;
+      env.restore();
+    }
+  });
+
+  it('aborts pending mutations and ignores their responses after destroy', async () => {
+    const env = installDom();
+    const previousFetch = global.fetch;
+
+    try {
+      const fetchMock = vi.fn((url, request) => new Promise((resolve, reject) => {
+        request.signal.addEventListener('abort', () => {
+          reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }));
+        });
+      }));
+
+      global.fetch = fetchMock;
+
+      const root = createTableRoot({
+        rowKey: 'id',
+        editable: true,
+        editEndpoint: '/users/{rowId}',
+        editableColumns: ['name'],
+        columns: [{ key: 'name', label: 'Name' }],
+        rows: [{ id: '1', name: 'Jane' }],
+      });
+      const table = tableApi(root);
+
+      await initTable(root);
+      await table.editCell('1', 'name');
+
+      const input = root.querySelector('[data-table-edit-input]');
+      input.value = 'Janet';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      const commit = table.commitEdit();
+      await nextTick();
+      table.destroy();
+      await commit;
+
+      expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(true);
+      expect(table.snapshot()).toBeNull();
+    } finally {
+      if (previousFetch === undefined) delete global.fetch;
+      else global.fetch = previousFetch;
+      env.restore();
+    }
+  });
+
+  it('emits structured row actions with the TanStack row and column', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        rowKey: 'id',
+        columns: [{ key: 'actions', type: 'actions' }],
+        rows: [{ id: '1', actions: { action: 'remove', label: 'Remove', variant: 'error' } }],
+      });
+      let detail = null;
+
+      root.addEventListener('daisy:table-row-action', (event) => {
+        detail = event.detail;
+      });
+      await initTable(root);
+      root.querySelector('[data-table-row-action]').click();
+
+      expect(detail).toMatchObject({ action: 'remove', rowId: '1', row: { id: '1' } });
+      expect(detail.column.id).toBe('actions');
+      expect(detail.table).toBe(tableApi(root).getTanStackTable());
+      detail.row.id = 'mutated-by-host';
+      expect(tableApi(root).getRows()[0].id).toBe('1');
+    } finally {
       env.restore();
     }
   });
@@ -1550,7 +1700,7 @@ describe('table-kit helpers', () => {
 
       await nextTick();
 
-      expect(context.config.rows[0]).toMatchObject({ name: 'New project', active: false });
+      expect(context.rows[0]).toMatchObject({ name: 'New project', active: false });
       expect(committed.values).toEqual({ name: 'New project', active: false });
       expect(context.creating).toBeNull();
     } finally {
@@ -1641,7 +1791,7 @@ describe('table-kit helpers', () => {
       await nextTick();
 
       expect(context.creating).toBeNull();
-      expect(context.config.rows[0]).toEqual({ id: '2', name: 'New project' });
+      expect(context.rows[0]).toEqual({ id: '2', name: 'New project' });
       expect(context.visibleRows.map((row) => row.original.__daisyTableDraft)).not.toContain(true);
     } finally {
       if (previousFetch === undefined) {
@@ -1677,6 +1827,8 @@ describe('table-kit helpers', () => {
       const dataChanges = [];
       const table = tableApi(root);
 
+      expect(Object.isFrozen(context.config)).toBe(true);
+
       root.addEventListener('daisy:table-data-changed', (event) => {
         dataChanges.push(event.detail);
       });
@@ -1685,17 +1837,25 @@ describe('table-kit helpers', () => {
 
       expect(root.querySelector('[data-table-body]').textContent).toContain('Loading');
 
-      await table.setRows([
+      const incomingRows = [
         { id: '1', name: 'Ada' },
         { id: '2', name: 'Ben' },
         { id: '3', name: 'Cleo' },
-      ]);
+      ];
+
+      await table.setRows(incomingRows);
+      incomingRows[0].name = 'Mutated by host';
+      expect(table.getRows()[0].name).toBe('Ada');
       await table.setSelection(['2', '3']);
       await table.setExpanded({ 2: true, 3: true });
       await table.upsertRows([{ id: '2', name: 'Benoit' }, { id: '4', name: 'Dina' }]);
       await table.removeRows(['2', '3', '4']);
 
-      expect(context.config.rows).toEqual([{ id: '1', name: 'Ada' }]);
+      expect(context.rows).toEqual([{ id: '1', name: 'Ada' }]);
+      expect(context.config.rows).toHaveLength(3);
+      expect(table.getRows()).toEqual([{ id: '1', name: 'Ada' }]);
+      expect(table.getState()).toEqual(context.state);
+      expect(table.snapshot()).not.toBe(context);
       expect(context.state.pagination.pageIndex).toBe(0);
       expect(context.state.selection.selectedIds).toEqual([]);
       expect(context.state.expanded).toEqual({});
@@ -1743,6 +1903,30 @@ describe('table-kit helpers', () => {
 
       expect(root.querySelector('[data-table-body]').innerHTML).toContain('&lt;img src=x onerror=alert(1)&gt;');
       expect(root.querySelector('[data-table-body] img')).toBeNull();
+    } finally {
+      env.restore();
+    }
+  });
+
+  it('rejects missing and duplicate row keys recursively', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        mode: 'client',
+        rowKey: 'id',
+        subRowsKey: 'children',
+        columns: [{ key: 'name', label: 'Name' }],
+        rows: [],
+      });
+      const table = tableApi(root);
+
+      await expect(table.setRows([{ name: 'Missing' }])).rejects.toThrow('non-empty id');
+      await expect(table.setRows([{ id: 'same' }, { id: 'same' }])).rejects.toThrow('Duplicate value: same');
+      await expect(table.setRows([
+        { id: 'parent', children: [{ id: 'child' }] },
+        { id: 'other', children: [{ id: 'child' }] },
+      ])).rejects.toThrow('Duplicate value: child');
     } finally {
       env.restore();
     }
