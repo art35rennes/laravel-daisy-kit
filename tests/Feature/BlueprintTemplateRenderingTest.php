@@ -15,6 +15,7 @@ it('renders the simplified editable Blueprint contract', function () {
             transition-color="accent"
             node-color="neutral"
             inspector-mode="sidebar"
+            autosave
             :node-categories="[[
                 'value' => 'approval',
                 'label' => 'Approbation',
@@ -38,7 +39,9 @@ it('renders the simplified editable Blueprint contract', function () {
                 'nodes' => [['id' => 'review', 'label' => 'Révision']],
                 'transitions' => [],
             ]"
-        />
+        >
+            <x-slot:inspector><div data-host-inspector>Host content</div></x-slot:inspector>
+        </x-daisy::ui.advanced.blueprint>
         BLADE);
 
     expect($html)
@@ -50,7 +53,8 @@ it('renders the simplified editable Blueprint contract', function () {
         ->toContain('data-transition-shape="orthogonal"')
         ->toContain('data-transition-color="accent"')
         ->toContain('data-node-color="neutral"')
-        ->toContain('data-inspector-mode="sidebar"')
+        ->not->toContain('data-inspector-mode')
+        ->not->toContain('inspector-mode="sidebar"')
         ->toContain('name="workflow"')
         ->toContain('data-blueprint-world')
         ->toContain('data-blueprint-edges')
@@ -59,23 +63,31 @@ it('renders the simplified editable Blueprint contract', function () {
         ->toContain('data-blueprint-inspector')
         ->toContain('data-blueprint-inspector-backdrop')
         ->toContain('data-blueprint-discard-dialog')
-        ->toContain('data-autosave="false"')
-        ->toContain('data-blueprint-mobile-list')
+        ->toContain('data-blueprint-inspector-content')
+        ->toContain('<div data-host-inspector>Host content</div>')
+        ->not->toContain('data-autosave')
+        ->not->toContain('data-blueprint-mobile-list')
         ->toContain('data-blueprint-action="add-node"')
         ->toContain('data-blueprint-action="arrange"')
         ->toContain('data-blueprint-action="fit"')
         ->toContain('"value":"approval"')
         ->toContain('"color":"success"')
-        ->toContain('"defaults":{"required_approvals":2}')
-        ->toContain('"key":"owner_uuid"')
-        ->toContain('"type":"select"')
-        ->toContain('"required":true')
+        ->not->toContain('"defaults"')
+        ->not->toContain('"fields"')
         ->toContain('"value":"return"')
         ->toContain('"shape":"s"')
         ->toContain('"color":"warning"');
 });
 
-it('safely serializes integrator schema labels and values', function () {
+it('keeps the graphical canvas available on mobile', function () {
+    $css = file_get_contents(dirname(__DIR__, 2).'/resources/css/blueprint.css');
+
+    expect($css)
+        ->not->toMatch('/\.daisy-blueprint\[data-mode="edit"\]\s+\.daisy-blueprint-canvas\s*\{[^}]*display:\s*none/s')
+        ->toContain('.daisy-blueprint-inspector .modal-box');
+});
+
+it('safely serializes category presentation without business schema', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.advanced.blueprint
             :node-categories="[[
@@ -95,16 +107,8 @@ it('safely serializes integrator schema labels and values', function () {
         ->not->toContain('</textarea><script>')
         ->not->toContain('<img src=x')
         ->toContain('\u003C\/textarea\u003E\u003Cscript\u003Ealert(1)\u003C\/script\u003E')
-        ->toContain('data-blueprint-integrator-fields');
-});
-
-it('renders Blueprint inspector autosave as an explicit opt-in', function () {
-    $html = Blade::render('<x-daisy::ui.advanced.blueprint autosave />');
-
-    expect($html)
-        ->toContain('data-autosave="true"')
-        ->toContain(__('daisy::components.blueprint_editor.autosave'))
-        ->not->toContain('data-blueprint-action="save"');
+        ->not->toContain('alert(2)')
+        ->not->toContain('data-blueprint-integrator-fields');
 });
 
 it('renders Blueprint view mode without editing controls', function () {
@@ -125,7 +129,6 @@ it('normalizes invalid visual configuration values in the Blade boundary', funct
             transition-shape="spiral"
             transition-color="magenta"
             node-color="magenta"
-            inspector-mode="drawer"
         />
         BLADE);
 
@@ -136,16 +139,16 @@ it('normalizes invalid visual configuration values in the Blade boundary', funct
         ->toContain('data-transition-shape="curve"')
         ->toContain('data-transition-color="primary"')
         ->toContain('data-node-color="primary"')
-        ->toContain('data-inspector-mode="modal"');
+        ->not->toContain('data-inspector-mode');
 });
 
 it('uses a centered modal inspector by default', function () {
     $html = Blade::render('<x-daisy::ui.advanced.blueprint />');
 
     expect($html)
-        ->toContain('data-inspector-mode="modal"')
         ->toContain('<dialog')
-        ->toContain('modal-middle');
+        ->toContain('modal-middle')
+        ->toContain('data-blueprint-inspector-content');
 });
 
 it('renders the three focused Blueprint examples through the public view alias', function () {
@@ -158,10 +161,13 @@ it('renders the three focused Blueprint examples through the public view alias',
         ->toContain(__('daisy::components.blueprint_template.examples.approval.title'))
         ->toContain(__('daisy::components.blueprint_template.examples.cycle.title'))
         ->toContain(__('daisy::components.blueprint_template.examples.dense.title'))
-        ->toContain('"key":"owner"')
-        ->toContain('"key":"notify"')
+        ->toContain('data-module="blueprint-inspector-demo"')
+        ->toContain('data-blueprint-demo-field="owner"')
+        ->toContain('data-blueprint-demo-field="notify"')
         ->toContain('"priority":"high"')
-        ->toContain('daisy:blueprint:select')
+        ->toContain('daisy:blueprint:inspector-open')
+        ->not->toContain('"fields"')
+        ->not->toContain('"defaults"')
         ->not->toContain('sourcePort')
         ->not->toContain('nodeTypes');
 });

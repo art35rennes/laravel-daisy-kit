@@ -1,5 +1,3 @@
-import { categoryFor, mergeData, mergeDefaults } from './schema.js';
-
 const DEFAULT_VIEWPORT = Object.freeze({ x: 0, y: 0, zoom: 1 });
 
 function cloneValue(value, fallback) {
@@ -52,43 +50,6 @@ function normalizeViewport(viewport = {}) {
         x: Number.isFinite(Number(viewport.x)) ? Number(viewport.x) : DEFAULT_VIEWPORT.x,
         y: Number.isFinite(Number(viewport.y)) ? Number(viewport.y) : DEFAULT_VIEWPORT.y,
         zoom: Number.isFinite(zoom) ? Math.min(2, Math.max(0.2, zoom)) : DEFAULT_VIEWPORT.zoom,
-    };
-}
-
-/**
- * Applies an entity data patch and fills missing category defaults.
- *
- * @param {object} entity - Current normalized entity.
- * @param {object} changes - Entity changes.
- * @param {Array<object>} categories - Available entity categories.
- * @returns {object} Entity changes with normalized integrator data.
- */
-function changesWithIntegratorData(entity, changes, categories) {
-    const category = changes.category ?? entity.category;
-    const patchedData = Object.hasOwn(changes, 'data')
-        ? mergeData(entity.data, changes.data)
-        : entity.data;
-    const defaults = categoryFor(categories, category)?.defaults ?? {};
-
-    return {
-        ...changes,
-        data: mergeDefaults(patchedData, defaults),
-    };
-}
-
-/**
- * Applies category defaults to a new entity.
- *
- * @param {object} entity - New entity.
- * @param {Array<object>} categories - Available entity categories.
- * @returns {object} Entity with defaulted integrator data.
- */
-function entityWithDefaults(entity, categories) {
-    const defaults = categoryFor(categories, entity.category)?.defaults ?? {};
-
-    return {
-        ...entity,
-        data: mergeDefaults(entity.data, defaults),
     };
 }
 
@@ -158,17 +119,17 @@ function assertValid(workflow) {
     return normalizeWorkflow(workflow);
 }
 
-export function addNode(workflow, node, { categories = [] } = {}) {
+export function addNode(workflow, node) {
     return assertValid({
         ...normalizeWorkflow(workflow),
         nodes: [
             ...normalizeWorkflow(workflow).nodes,
-            normalizeNode(entityWithDefaults(node, categories)),
+            normalizeNode(node),
         ],
     });
 }
 
-export function updateNode(workflow, id, changes, { categories = [] } = {}) {
+export function updateNode(workflow, id, changes) {
     const normalized = normalizeWorkflow(workflow);
     let found = false;
     const nodes = normalized.nodes.map((node) => {
@@ -180,7 +141,7 @@ export function updateNode(workflow, id, changes, { categories = [] } = {}) {
 
         return normalizeNode({
             ...node,
-            ...changesWithIntegratorData(node, changes, categories),
+            ...changes,
             id: changes.id ?? node.id,
         });
     });
@@ -210,19 +171,19 @@ export function removeNode(workflow, id) {
     });
 }
 
-export function addTransition(workflow, transition, { categories = [] } = {}) {
+export function addTransition(workflow, transition) {
     const normalized = normalizeWorkflow(workflow);
 
     return assertValid({
         ...normalized,
         transitions: [
             ...normalized.transitions,
-            normalizeTransition(entityWithDefaults(transition, categories)),
+            normalizeTransition(transition),
         ],
     });
 }
 
-export function updateTransition(workflow, id, changes, { categories = [] } = {}) {
+export function updateTransition(workflow, id, changes) {
     const normalized = normalizeWorkflow(workflow);
     let found = false;
     const transitions = normalized.transitions.map((transition) => {
@@ -234,7 +195,7 @@ export function updateTransition(workflow, id, changes, { categories = [] } = {}
 
         return normalizeTransition({
             ...transition,
-            ...changesWithIntegratorData(transition, changes, categories),
+            ...changes,
             id: changes.id ?? transition.id,
         });
     });

@@ -7,7 +7,14 @@ import {
 } from '../../../resources/js/blueprint/interactions.js';
 
 function pointerEvent(type, options) {
-    return new MouseEvent(type, { bubbles: true, button: 0, ...options });
+    const { pointerId, ...mouseOptions } = options;
+    const event = new MouseEvent(type, { bubbles: true, button: 0, ...mouseOptions });
+
+    if (pointerId !== undefined) {
+        Object.defineProperty(event, 'pointerId', { value: pointerId });
+    }
+
+    return event;
 }
 
 function interactionFixture() {
@@ -97,6 +104,26 @@ describe('Blueprint pointer interactions', () => {
 
         expect(handlers.setViewport).not.toHaveBeenCalled();
         expect(handlers.finishViewport).not.toHaveBeenCalled();
+        unbind();
+    });
+
+    it('zooms and pans around the gesture center when two pointers pinch', () => {
+        const { root, canvas, state, handlers } = interactionFixture();
+        state.viewport = { x: 30, y: 40, zoom: 1 };
+        const unbind = bindBlueprintInteractions(root, handlers);
+
+        canvas.dispatchEvent(pointerEvent('pointerdown', { pointerId: 1, clientX: 210, clientY: 220 }));
+        canvas.dispatchEvent(pointerEvent('pointerdown', { pointerId: 2, clientX: 410, clientY: 220 }));
+        window.dispatchEvent(pointerEvent('pointermove', { pointerId: 2, clientX: 510, clientY: 220 }));
+
+        expect(handlers.setViewport).toHaveBeenCalledWith({
+            x: -55,
+            y: -40,
+            zoom: 1.5,
+        }, false);
+
+        window.dispatchEvent(pointerEvent('pointerup', { pointerId: 2, clientX: 510, clientY: 220 }));
+        expect(handlers.finishViewport).toHaveBeenCalledOnce();
         unbind();
     });
 });

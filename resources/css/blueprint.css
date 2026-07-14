@@ -1,5 +1,4 @@
-.daisy-blueprint {
-  --daisy-blueprint-height: 520px;
+:where(.daisy-blueprint) {
   --daisy-blueprint-transition-color: var(--color-primary);
   --daisy-blueprint-transition-content: var(--color-primary-content);
   inline-size: 100%;
@@ -53,76 +52,65 @@
   --daisy-blueprint-transition-content: var(--color-error-content);
 }
 
-.daisy-blueprint-node[data-node-color],
-.daisy-blueprint-mobile-node[data-node-color] {
+.daisy-blueprint-node[data-node-color] {
   background-color: var(--daisy-blueprint-node-color);
   border-color: var(--daisy-blueprint-node-color);
   color: var(--daisy-blueprint-node-content);
 }
 
-.daisy-blueprint-node[data-node-color="primary"],
-.daisy-blueprint-mobile-node[data-node-color="primary"] {
+.daisy-blueprint-node[data-node-color="primary"] {
   --daisy-blueprint-node-color: var(--color-primary);
   --daisy-blueprint-node-content: var(--color-primary-content);
 }
 
-.daisy-blueprint-node[data-node-color="secondary"],
-.daisy-blueprint-mobile-node[data-node-color="secondary"] {
+.daisy-blueprint-node[data-node-color="secondary"] {
   --daisy-blueprint-node-color: var(--color-secondary);
   --daisy-blueprint-node-content: var(--color-secondary-content);
 }
 
-.daisy-blueprint-node[data-node-color="accent"],
-.daisy-blueprint-mobile-node[data-node-color="accent"] {
+.daisy-blueprint-node[data-node-color="accent"] {
   --daisy-blueprint-node-color: var(--color-accent);
   --daisy-blueprint-node-content: var(--color-accent-content);
 }
 
-.daisy-blueprint-node[data-node-color="neutral"],
-.daisy-blueprint-mobile-node[data-node-color="neutral"] {
+.daisy-blueprint-node[data-node-color="neutral"] {
   --daisy-blueprint-node-color: var(--color-neutral);
   --daisy-blueprint-node-content: var(--color-neutral-content);
 }
 
-.daisy-blueprint-node[data-node-color="info"],
-.daisy-blueprint-mobile-node[data-node-color="info"] {
+.daisy-blueprint-node[data-node-color="info"] {
   --daisy-blueprint-node-color: var(--color-info);
   --daisy-blueprint-node-content: var(--color-info-content);
 }
 
-.daisy-blueprint-node[data-node-color="success"],
-.daisy-blueprint-mobile-node[data-node-color="success"] {
+.daisy-blueprint-node[data-node-color="success"] {
   --daisy-blueprint-node-color: var(--color-success);
   --daisy-blueprint-node-content: var(--color-success-content);
 }
 
-.daisy-blueprint-node[data-node-color="warning"],
-.daisy-blueprint-mobile-node[data-node-color="warning"] {
+.daisy-blueprint-node[data-node-color="warning"] {
   --daisy-blueprint-node-color: var(--color-warning);
   --daisy-blueprint-node-content: var(--color-warning-content);
 }
 
-.daisy-blueprint-node[data-node-color="error"],
-.daisy-blueprint-mobile-node[data-node-color="error"] {
+.daisy-blueprint-node[data-node-color="error"] {
   --daisy-blueprint-node-color: var(--color-error);
   --daisy-blueprint-node-content: var(--color-error-content);
 }
 
-.daisy-blueprint-node[data-node-color] .badge,
-.daisy-blueprint-mobile-node[data-node-color] .badge {
+.daisy-blueprint-node[data-node-color] .badge {
   border-color: currentColor;
   color: inherit;
 }
 
-.daisy-blueprint-node[data-node-color] .daisy-blueprint-node-description,
-.daisy-blueprint-mobile-node[data-node-color] .daisy-blueprint-node-description {
+.daisy-blueprint-node[data-node-color] .daisy-blueprint-node-description {
   color: color-mix(in oklch, var(--daisy-blueprint-node-content) 76%, transparent);
 }
 
 .daisy-blueprint-layout,
 .daisy-blueprint-canvas {
-  min-block-size: var(--daisy-blueprint-height);
-  block-size: var(--daisy-blueprint-height);
+  min-block-size: var(--daisy-blueprint-height, 520px);
+  block-size: var(--daisy-blueprint-height, 520px);
 }
 
 .daisy-blueprint-canvas {
@@ -319,22 +307,14 @@
   fill: var(--daisy-blueprint-transition-content);
 }
 
-.daisy-blueprint-mobile-list {
-  min-block-size: var(--daisy-blueprint-height);
-  max-block-size: var(--daisy-blueprint-height);
-}
-
 @media (max-width: 767px) {
-  .daisy-blueprint[data-mode="edit"] .daisy-blueprint-canvas {
-    display: none;
+  .daisy-blueprint-inspector .modal-box {
+    inline-size: 100%;
+    max-inline-size: none;
+    block-size: 100dvh;
+    max-block-size: 100dvh;
+    border-radius: 0;
   }
-
-  .daisy-blueprint[data-mode="edit"] .daisy-blueprint-mobile-list {
-    display: grid;
-    align-content: start;
-    gap: 0.75rem;
-  }
-
 }
 
 @media (prefers-reduced-motion: reduce) {

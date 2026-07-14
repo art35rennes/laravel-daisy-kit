@@ -392,56 +392,9 @@ function renderTransitions(root, state, sizes) {
     labelLayer?.replaceChildren(labelFragment);
 }
 
-function createMobileTransition(transition, nodeById, state) {
-    const item = createElement('li', 'flex items-center gap-2 text-xs text-base-content/70');
-    const button = createElement(
-        'button',
-        'link link-hover text-left',
-        transition.label || state.i18n.unnamed,
-    );
-    button.type = 'button';
-    button.dataset.blueprintTransitionId = transition.id;
-    const target = nodeById.get(transition.target);
-    item.append(button, createElement('span', '', '→ ' + (target?.label || transition.target)));
-
-    return item;
-}
-
-function renderMobileList(root, state) {
-    const list = root.querySelector('[data-blueprint-mobile-list]');
-    const nodeById = new Map(state.workflow.nodes.map(node => [node.id, node]));
-    const fragment = document.createDocumentFragment();
-
-    state.workflow.nodes.forEach((node) => {
-        const card = createElement('section', 'daisy-blueprint-mobile-node rounded-box border border-base-300 bg-base-100 p-3');
-        const presentation = nodePresentation(node, state);
-        card.dataset.nodeColor = presentation.color;
-        const button = createElement('button', 'font-semibold link link-hover text-left', node.label || state.i18n.unnamed);
-        button.type = 'button';
-        button.dataset.blueprintNodeId = node.id;
-        card.append(button);
-
-        if (node.description) {
-            card.append(createElement('p', 'daisy-blueprint-node-description mt-1 text-sm text-base-content/65', node.description));
-        }
-
-        const outgoing = state.workflow.transitions.filter(transition => transition.source === node.id);
-        if (outgoing.length > 0) {
-            const transitions = createElement('ul', 'mt-3 grid gap-2 border-t border-base-300 pt-3');
-            outgoing.forEach(transition => transitions.append(createMobileTransition(transition, nodeById, state)));
-            card.append(transitions);
-        }
-
-        fragment.append(card);
-    });
-
-    list.replaceChildren(fragment);
-}
-
 export function renderWorkflow(root, state) {
     const sizes = renderNodes(root, state);
     renderTransitions(root, state, sizes);
-    renderMobileList(root, state);
 
     const empty = root.querySelector('[data-blueprint-empty]');
     if (empty) {

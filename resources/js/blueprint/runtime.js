@@ -55,7 +55,6 @@ export default function initBlueprint(root) {
     const hiddenField = root.querySelector('[data-blueprint-sync]');
     const connectionStatus = root.querySelector('[data-blueprint-connection-status]');
     const editable = root.dataset.mode !== 'view';
-    const autosave = root.dataset.autosave === 'true';
     const direction = root.dataset.direction === 'TB' ? 'TB' : 'LR';
     const layout = ['hierarchical', 'tree', 'radial'].includes(root.dataset.layout)
         ? root.dataset.layout
@@ -84,6 +83,8 @@ export default function initBlueprint(root) {
     let destroyed = false;
     let history;
     let inspectorController;
+    let pendingNodeId = null;
+    let pendingTransitionId = null;
 
     function state() {
         return {
@@ -190,34 +191,18 @@ export default function initBlueprint(root) {
         return collection.find(entity => entity.id === selection.id) ?? null;
     }
 
-    function populateTargets(nodeId) {
-        const select = root.querySelector('[data-blueprint-transition-target]');
-
-        if (!select) {
-            return;
-        }
-
-        const fragment = document.createDocumentFragment();
-        const empty = document.createElement('option');
-        empty.value = '';
-        empty.textContent = i18n.selectTarget ?? '';
-        fragment.append(empty);
-
-        workflow.nodes.forEach((node) => {
-            const option = document.createElement('option');
-            option.value = node.id;
-            option.textContent = node.label || node.id;
-            fragment.append(option);
+    function inspectorValue(entity) {
+        return clone({
+            label: entity.label,
+            description: entity.description,
+            category: entity.category,
+            data: entity.data,
         });
-
-        select.replaceChildren(fragment);
-        select.value = '';
-        select.dataset.source = nodeId;
     }
 
-    function openInspector() {
+    function openSelectedInspector() {
         if (!editable) {
-            return;
+            return null;
         }
 
         const entity = entityForSelection();
@@ -225,25 +210,48 @@ export default function initBlueprint(root) {
         if (!entity) {
             inspectorController.close();
 
-            return;
+            return null;
         }
 
         const isNode = selection.type === 'node';
-        root.querySelector('[data-blueprint-node-transition]')?.classList.toggle('hidden', !isNode);
+        const isPendingEntity = (isNode && pendingNodeId === entity.id)
+            || (!isNode && pendingTransitionId === entity.id);
 
-        if (isNode) {
-            populateTargets(entity.id);
-        }
-
-        inspectorController.open({
+        return inspectorController.open({
             selection,
-            entity,
-            categories: isNode ? nodeCategories : transitionCategories,
-            titlePrefix: isNode ? i18n.node : i18n.transition,
+            value: inspectorValue(entity),
+            title: `${isNode ? i18n.node : i18n.transition}: ${entity.label}`,
+            isNew: isPendingEntity,
         });
     }
 
+    function discardPendingNode() {
+        if (!pendingNodeId) {
+            return;
+        }
+
+        workflow = removeNodeFromWorkflow(workflow, pendingNodeId);
+        pendingNodeId = null;
+    }
+
+    function discardPendingTransition() {
+        if (!pendingTransitionId) {
+            return;
+        }
+
+        workflow = removeTransitionFromWorkflow(workflow, pendingTransitionId);
+        pendingTransitionId = null;
+    }
+
     function selectNow(type, id) {
+        if (pendingNodeId && (type !== 'node' || id !== pendingNodeId)) {
+            discardPendingNode();
+        }
+
+        if (pendingTransitionId && (type !== 'transition' || id !== pendingTransitionId)) {
+            discardPendingTransition();
+        }
+
         const collection = type === 'node' ? workflow.nodes : workflow.transitions;
 
         if (!collection.some(entity => entity.id === id)) {
@@ -252,19 +260,33 @@ export default function initBlueprint(root) {
 
         selection = { type, id };
         render();
-        openInspector();
+        const context = openSelectedInspector();
         emit(root, 'select', { selection: { ...selection }, value: clone(workflow) });
+
+        return context;
     }
 
     function select(type, id) {
         if (selection?.type === type && selection.id === id) {
-            return;
+            let context = null;
+            inspectorController.request(() => {
+                context = openSelectedInspector();
+            }, 'reopen');
+
+            return context;
         }
 
-        inspectorController.request(() => selectNow(type, id));
+        let context = null;
+        inspectorController.request(() => {
+            context = selectNow(type, id);
+        }, 'selection');
+
+        return context;
     }
 
     function clearSelectionNow() {
+        discardPendingNode();
+        discardPendingTransition();
         selection = null;
         inspectorController.close();
         render();
@@ -291,6 +313,7 @@ export default function initBlueprint(root) {
     }
 
     function addNode(input = {}) {
+        discardPendingNode();
         const ids = workflow.nodes.map(node => node.id);
         const id = input.id || createEntityId('step', ids);
         const center = screenToWorld(
@@ -307,19 +330,42 @@ export default function initBlueprint(root) {
             position: input.position ?? { x: Math.round(center.x - 120), y: Math.round(center.y - 56) },
             data: input.data ?? {},
         };
-        const value = commit(
-            addNodeToWorkflow(workflow, node, { categories: nodeCategories }),
-            'addNode',
-        );
+        const value = commit(addNodeToWorkflow(workflow, node), 'addNode');
         select('node', id);
 
         return value.nodes.find(item => item.id === id);
     }
 
+    function beginNodeCreation() {
+        const ids = workflow.nodes.map(node => node.id);
+        const id = createEntityId('step', ids);
+        const center = screenToWorld(
+            canvas,
+            workflow.viewport,
+            canvas.getBoundingClientRect().left + canvas.clientWidth / 2,
+            canvas.getBoundingClientRect().top + canvas.clientHeight / 2,
+        );
+        const node = {
+            id,
+            label: i18n.newNode ?? 'New step',
+            description: '',
+            category: nodeCategories[0]?.value ?? '',
+            position: { x: Math.round(center.x - 120), y: Math.round(center.y - 56) },
+            data: {},
+        };
+
+        workflow = ensureValid(addNodeToWorkflow(workflow, node));
+        pendingNodeId = id;
+        selection = { type: 'node', id };
+        render();
+        openSelectedInspector();
+        emit(root, 'select', { selection: { ...selection }, value: clone(workflow) });
+    }
+
     function updateNode(id, changes) {
         const updatesConnectionSource = connectionSource?.nodeId === id && changes.id;
         const value = commit(
-            updateNodeInWorkflow(workflow, id, changes, { categories: nodeCategories }),
+            updateNodeInWorkflow(workflow, id, changes),
             'updateNode',
         );
 
@@ -330,7 +376,6 @@ export default function initBlueprint(root) {
         if (selection?.id === id) {
             selection.id = changes.id ?? id;
             render();
-            openInspector();
         } else if (updatesConnectionSource) {
             render();
         }
@@ -342,6 +387,15 @@ export default function initBlueprint(root) {
         const targetId = id ?? (selection?.type === 'node' ? selection.id : null);
 
         if (!targetId) {
+            return clone(workflow);
+        }
+
+        if (targetId === pendingNodeId) {
+            discardPendingNode();
+            selection = null;
+            inspectorController.close();
+            render();
+
             return clone(workflow);
         }
 
@@ -368,7 +422,7 @@ export default function initBlueprint(root) {
             data: input.data ?? {},
         };
         const value = commit(
-            addTransitionToWorkflow(workflow, transition, { categories: transitionCategories }),
+            addTransitionToWorkflow(workflow, transition),
             'addTransition',
         );
         select('transition', id);
@@ -376,16 +430,37 @@ export default function initBlueprint(root) {
         return value.transitions.find(item => item.id === id);
     }
 
+    function beginTransitionCreation(input) {
+        discardPendingTransition();
+        const ids = workflow.transitions.map(transition => transition.id);
+        const id = createEntityId('transition', ids);
+        const transition = {
+            id,
+            source: input.source,
+            target: input.target,
+            label: i18n.newTransition ?? 'New transition',
+            description: '',
+            category: transitionCategories[0]?.value ?? '',
+            data: {},
+        };
+
+        workflow = ensureValid(addTransitionToWorkflow(workflow, transition));
+        pendingTransitionId = id;
+        selection = { type: 'transition', id };
+        render();
+        openSelectedInspector();
+        emit(root, 'select', { selection: { ...selection }, value: clone(workflow) });
+    }
+
     function updateTransition(id, changes) {
         const value = commit(
-            updateTransitionInWorkflow(workflow, id, changes, { categories: transitionCategories }),
+            updateTransitionInWorkflow(workflow, id, changes),
             'updateTransition',
         );
 
         if (selection?.id === id) {
             selection.id = changes.id ?? id;
             render();
-            openInspector();
         }
 
         return value.transitions.find(transition => transition.id === (changes.id ?? id));
@@ -395,6 +470,15 @@ export default function initBlueprint(root) {
         const targetId = id ?? (selection?.type === 'transition' ? selection.id : null);
 
         if (!targetId) {
+            return clone(workflow);
+        }
+
+        if (targetId === pendingTransitionId) {
+            discardPendingTransition();
+            selection = null;
+            inspectorController.close();
+            render();
+
             return clone(workflow);
         }
 
@@ -461,6 +545,8 @@ export default function initBlueprint(root) {
         }
 
         workflow = normalizeWorkflow(history.undo());
+        pendingNodeId = null;
+        pendingTransitionId = null;
         selection = null;
         resetConnectionSource();
         inspectorController.close();
@@ -476,6 +562,8 @@ export default function initBlueprint(root) {
         }
 
         workflow = normalizeWorkflow(history.redo());
+        pendingNodeId = null;
+        pendingTransitionId = null;
         selection = null;
         resetConnectionSource();
         inspectorController.close();
@@ -488,6 +576,8 @@ export default function initBlueprint(root) {
     function setValue(value) {
         try {
             workflow = ensureValid(value);
+            pendingNodeId = null;
+            pendingTransitionId = null;
             history = createHistory(workflow);
             selection = null;
             resetConnectionSource();
@@ -521,7 +611,14 @@ export default function initBlueprint(root) {
     }
 
     function removeSelection() {
-        inspectorController.request(removeSelectionNow);
+        const currentSelection = selection ? { ...selection } : null;
+        inspectorController.request(() => {
+            if (currentSelection?.type === 'node') {
+                removeNode(currentSelection.id);
+            } else if (currentSelection?.type === 'transition') {
+                removeTransition(currentSelection.id);
+            }
+        }, 'delete');
     }
 
     function setViewport(viewport, finished) {
@@ -563,7 +660,7 @@ export default function initBlueprint(root) {
 
         const source = connectionSource.nodeId;
         connectionSource = null;
-        addTransition({ source, target: nodeId });
+        beginTransitionCreation({ source, target: nodeId });
     }
 
     function focusFirstMatch() {
@@ -595,7 +692,7 @@ export default function initBlueprint(root) {
         const action = event.target.closest?.('[data-blueprint-action]')?.dataset.blueprintAction;
 
         if (action === 'add-node') {
-            addNode();
+            inspectorController.request(beginNodeCreation);
             return;
         }
 
@@ -620,23 +717,12 @@ export default function initBlueprint(root) {
         }
 
         if (action === 'close-inspector') {
-            clearSelection();
+            inspectorController.cancel('close');
             return;
         }
 
         if (action === 'delete') {
             removeSelection();
-            return;
-        }
-
-        if (action === 'add-transition') {
-            const target = root.querySelector('[data-blueprint-transition-target]')?.value;
-            const source = selection?.type === 'node' ? selection.id : null;
-
-            if (source && target) {
-                addTransition({ source, target });
-            }
-
             return;
         }
 
@@ -737,6 +823,24 @@ export default function initBlueprint(root) {
         fit,
         undo,
         redo,
+        openInspector(nextSelection) {
+            if (!nextSelection || !['node', 'transition'].includes(nextSelection.type)) {
+                reportError(new Error('invalid_inspector_selection'), 'openInspector');
+
+                return null;
+            }
+
+            return select(nextSelection.type, nextSelection.id);
+        },
+        setInspectorDraft(value) {
+            return inspectorController.setDraft(value);
+        },
+        commitInspector(value) {
+            return inspectorController.commit(value);
+        },
+        cancelInspector() {
+            return inspectorController.cancel('api');
+        },
         destroy() {
             if (destroyed) {
                 return;
@@ -755,12 +859,66 @@ export default function initBlueprint(root) {
 
     const searchInput = root.querySelector('[data-blueprint-search]');
     inspectorController = createInspector(root, {
-        autosave,
-        enhanceRichControls: root.dataset.blueprintEnhanceRichControls !== 'false',
-        onCommit(currentSelection, changes) {
-            currentSelection.type === 'node'
-                ? updateNode(currentSelection.id, changes)
-                : updateTransition(currentSelection.id, changes);
+        onOpen(context) {
+            emit(root, 'inspector-open', context);
+        },
+        onCommit(currentSelection, changes, { isNew }) {
+            let updatedEntity;
+
+            if (currentSelection.type === 'node' && currentSelection.id === pendingNodeId) {
+                const nextWorkflow = updateNodeInWorkflow(
+                    workflow,
+                    currentSelection.id,
+                    changes,
+                );
+                pendingNodeId = null;
+                commit(nextWorkflow, 'addNode');
+                updatedEntity = workflow.nodes.find(node => node.id === currentSelection.id) ?? null;
+            } else if (currentSelection.type === 'transition' && currentSelection.id === pendingTransitionId) {
+                const nextWorkflow = updateTransitionInWorkflow(
+                    workflow,
+                    currentSelection.id,
+                    changes,
+                );
+                pendingTransitionId = null;
+                commit(nextWorkflow, 'addTransition');
+                updatedEntity = workflow.transitions.find(transition => transition.id === currentSelection.id) ?? null;
+            } else {
+                updatedEntity = currentSelection.type === 'node'
+                    ? updateNode(currentSelection.id, changes)
+                    : updateTransition(currentSelection.id, changes);
+            }
+
+            const committedValue = inspectorValue(updatedEntity);
+            emit(root, 'inspector-commit', {
+                selection: clone(currentSelection),
+                value: committedValue,
+                workflow: clone(workflow),
+                isNew,
+            });
+
+            return clone(updatedEntity);
+        },
+        onCancel(currentSelection, value, draft, { isNew, reason }) {
+            if (currentSelection.type === 'node' && currentSelection.id === pendingNodeId) {
+                discardPendingNode();
+            }
+            if (currentSelection.type === 'transition' && currentSelection.id === pendingTransitionId) {
+                discardPendingTransition();
+            }
+
+            if (selection?.type === currentSelection.type && selection.id === currentSelection.id) {
+                selection = null;
+            }
+
+            render();
+            emit(root, 'inspector-cancel', {
+                selection: clone(currentSelection),
+                value: clone(value),
+                draft: clone(draft),
+                isNew,
+                reason,
+            });
         },
         onError(error, context) {
             reportError(error, context);

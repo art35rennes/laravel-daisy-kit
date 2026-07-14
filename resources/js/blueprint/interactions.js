@@ -16,7 +16,38 @@ export function screenToWorld(canvas, viewport, clientX, clientY) {
 export function bindBlueprintInteractions(root, handlers) {
     const canvas = root.querySelector('[data-blueprint-canvas]');
     const dragThreshold = 4;
+    const pointers = new Map();
     let gesture = null;
+
+    function pointerKey(event) {
+        return event.pointerId ?? 'primary';
+    }
+
+    function startPinch(state) {
+        const pointerIds = [...pointers.keys()].slice(0, 2);
+        const [first, second] = pointerIds.map(id => pointers.get(id));
+        const distance = Math.hypot(second.x - first.x, second.y - first.y);
+
+        if (distance === 0) {
+            return;
+        }
+
+        const bounds = canvas.getBoundingClientRect();
+        const center = {
+            x: (first.x + second.x) / 2 - bounds.left,
+            y: (first.y + second.y) / 2 - bounds.top,
+        };
+        gesture = {
+            type: 'pinch',
+            pointerIds,
+            distance,
+            viewport: { ...state.viewport },
+            world: {
+                x: (center.x - state.viewport.x) / state.viewport.zoom,
+                y: (center.y - state.viewport.y) / state.viewport.zoom,
+            },
+        };
+    }
 
     function onPointerDown(event) {
         if (event.button !== 0) {
@@ -24,6 +55,15 @@ export function bindBlueprintInteractions(root, handlers) {
         }
 
         const state = handlers.getState();
+        pointers.set(pointerKey(event), { x: event.clientX, y: event.clientY });
+
+        if (pointers.size >= 2) {
+            event.preventDefault();
+            startPinch(state);
+
+            return;
+        }
+
         const handle = closestWithin(root, event.target, '[data-blueprint-handle]');
         const node = closestWithin(root, event.target, '[data-blueprint-node-id]');
 
@@ -66,7 +106,35 @@ export function bindBlueprintInteractions(root, handlers) {
             return;
         }
 
+        const key = pointerKey(event);
+        if (pointers.has(key)) {
+            pointers.set(key, { x: event.clientX, y: event.clientY });
+        }
+
         const state = handlers.getState();
+
+        if (gesture.type === 'pinch') {
+            const [first, second] = gesture.pointerIds.map(id => pointers.get(id));
+
+            if (!first || !second) {
+                return;
+            }
+
+            const bounds = canvas.getBoundingClientRect();
+            const distance = Math.hypot(second.x - first.x, second.y - first.y);
+            const nextZoom = Math.min(2, Math.max(0.2, gesture.viewport.zoom * distance / gesture.distance));
+            const center = {
+                x: (first.x + second.x) / 2 - bounds.left,
+                y: (first.y + second.y) / 2 - bounds.top,
+            };
+            handlers.setViewport({
+                x: center.x - gesture.world.x * nextZoom,
+                y: center.y - gesture.world.y * nextZoom,
+                zoom: nextZoom,
+            }, false);
+
+            return;
+        }
 
         if (gesture.type === 'move') {
             const distance = Math.hypot(
@@ -106,7 +174,17 @@ export function bindBlueprintInteractions(root, handlers) {
     }
 
     function onPointerUp(event) {
+        pointers.delete(pointerKey(event));
+
         if (!gesture) {
+            return;
+        }
+
+        if (gesture.type === 'pinch') {
+            gesture = null;
+            pointers.clear();
+            handlers.finishViewport();
+
             return;
         }
 
@@ -142,6 +220,7 @@ export function bindBlueprintInteractions(root, handlers) {
 
     function onPointerCancel() {
         gesture = null;
+        pointers.clear();
     }
 
     function onKeyDown(event) {

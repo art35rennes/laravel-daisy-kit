@@ -8,8 +8,6 @@
     'transitionShape' => 'curve',
     'transitionColor' => 'primary',
     'nodeColor' => 'primary',
-    'inspectorMode' => 'modal',
-    'autosave' => false,
     'nodeCategories' => [],
     'transitionCategories' => [],
 ])
@@ -55,17 +53,6 @@
                     'label' => (string) ($category['label'] ?? $category['value']),
                 ];
 
-                if (is_array($category['defaults'] ?? null)) {
-                    $normalized['defaults'] = $category['defaults'];
-                }
-
-                if (is_array($category['fields'] ?? null)) {
-                    $normalized['fields'] = collect($category['fields'])
-                        ->filter(fn ($field): bool => is_array($field))
-                        ->values()
-                        ->all();
-                }
-
                 if ($withShape && in_array($category['shape'] ?? null, $transitionShapes, true)) {
                     $normalized['shape'] = $category['shape'];
                 }
@@ -88,8 +75,6 @@
     $resolvedTransitionShape = in_array($transitionShape, $transitionShapes, true) ? $transitionShape : 'curve';
     $resolvedTransitionColor = in_array($transitionColor, $transitionColors, true) ? $transitionColor : 'primary';
     $resolvedNodeColor = in_array($nodeColor, $transitionColors, true) ? $nodeColor : 'primary';
-    $resolvedInspectorMode = $inspectorMode === 'sidebar' ? 'sidebar' : 'modal';
-    $resolvedAutosave = filter_var($autosave, FILTER_VALIDATE_BOOLEAN);
     $heightClass = $height === '520px' ? null : $dimensionClass($height, 'daisy-blueprint-height');
     $resolvedNodeCategories = $normalizeCategories($nodeCategories, true);
     $resolvedTransitionCategories = $normalizeCategories($transitionCategories, true, true);
@@ -100,7 +85,6 @@
         'transition' => __('daisy::components.blueprint_editor.transition'),
         'empty' => __('daisy::components.blueprint_editor.empty'),
         'unnamed' => __('daisy::components.blueprint_editor.unnamed'),
-        'selectTarget' => __('daisy::components.blueprint_editor.select_target'),
         'selectConnectionTarget' => __('daisy::components.blueprint_editor.select_connection_target'),
         'validationError' => __('daisy::components.blueprint_editor.validation_error'),
     ];
@@ -108,7 +92,7 @@
 
 <div
     {{ $attributes
-        ->except('id')
+        ->except(['id', 'autosave', 'inspector-mode', 'inspector-labels'])
         ->class([
             'daisy-blueprint w-full overflow-hidden rounded-box border border-base-300 bg-base-100',
             $heightClass,
@@ -123,18 +107,16 @@
             'data-transition-shape' => $resolvedTransitionShape,
             'data-transition-color' => $resolvedTransitionColor,
             'data-node-color' => $resolvedNodeColor,
-            'data-inspector-mode' => $resolvedInspectorMode,
-            'data-autosave' => $resolvedAutosave ? 'true' : 'false',
         ]) }}
 >
-    <div class="daisy-blueprint-toolbar flex flex-wrap items-center gap-2 border-b border-base-300 bg-base-100 px-3 py-2">
+    <div class="daisy-blueprint-toolbar grid grid-cols-1 gap-2 border-b border-base-300 bg-base-100 px-3 py-2 sm:flex sm:flex-wrap sm:items-center">
         @if($resolvedMode === 'edit')
-            <button type="button" class="btn btn-primary btn-sm" data-blueprint-action="add-node">
+            <button type="button" class="btn btn-primary btn-sm w-full sm:w-auto" data-blueprint-action="add-node">
                 {{ __('daisy::components.blueprint_editor.actions.add_node') }}
             </button>
         @endif
 
-        <label class="input input-sm min-w-44 flex-1 sm:max-w-64">
+        <label class="input input-sm w-full min-w-0 sm:max-w-64 sm:flex-1">
             <span class="sr-only">{{ __('daisy::components.blueprint_editor.actions.search') }}</span>
             <svg class="h-4 w-4 opacity-60" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <circle cx="11" cy="11" r="7"></circle>
@@ -143,7 +125,7 @@
             <input type="search" data-blueprint-search placeholder="{{ __('daisy::components.blueprint_editor.actions.search') }}">
         </label>
 
-        <div class="join ms-auto">
+        <div class="join max-w-full overflow-x-auto sm:ms-auto">
             @if($resolvedMode === 'edit')
                 <button type="button" class="btn btn-sm join-item" data-blueprint-action="undo" disabled>
                     {{ __('daisy::components.blueprint_editor.actions.undo') }}
@@ -189,70 +171,33 @@
 
         @if($resolvedMode === 'edit')
             <dialog
-                class="daisy-blueprint-inspector modal {{ $resolvedInspectorMode === 'sidebar' ? 'modal-end' : 'modal-middle' }} hidden"
+                class="daisy-blueprint-inspector modal modal-middle hidden"
                 data-blueprint-inspector
                 aria-labelledby="{{ $id }}-inspector-title"
             >
-                <div class="modal-box {{ $resolvedInspectorMode === 'sidebar' ? 'h-full max-h-none w-full max-w-sm rounded-none' : 'w-full max-w-xl' }} overflow-y-auto p-4">
+                <div class="modal-box w-11/12 max-w-5xl overflow-y-auto p-4">
                     <div class="mb-4 flex items-start justify-between gap-2">
-                    <div class="grid min-w-0 gap-2">
-                        <h2 id="{{ $id }}-inspector-title" class="font-semibold" data-blueprint-inspector-title></h2>
-                        <span class="badge badge-warning badge-sm hidden" data-blueprint-dirty-indicator>
-                            {{ __('daisy::components.blueprint_editor.unsaved_changes') }}
-                        </span>
-                    </div>
-                    <button type="button" class="btn btn-ghost btn-sm" data-blueprint-action="close-inspector" aria-label="{{ __('daisy::components.blueprint_editor.actions.close') }}">×</button>
-                </div>
-
-                    <form class="grid gap-4" data-blueprint-inspector-form>
-                    <label class="form-control grid gap-1">
-                        <span class="label-text text-sm font-medium">{{ __('daisy::components.blueprint_editor.fields.name') }}</span>
-                        <input type="text" class="input input-bordered w-full" name="label" maxlength="160">
-                    </label>
-                    <label class="form-control grid gap-1">
-                        <span class="label-text text-sm font-medium">{{ __('daisy::components.blueprint_editor.fields.description') }}</span>
-                        <textarea class="textarea textarea-bordered min-h-24 w-full" name="description" maxlength="500"></textarea>
-                    </label>
-                    <label class="form-control grid gap-1">
-                        <span class="label-text text-sm font-medium">{{ __('daisy::components.blueprint_editor.fields.category') }}</span>
-                        <select class="select select-bordered w-full" name="category"></select>
-                    </label>
-
-                    <div class="grid gap-4" data-blueprint-integrator-fields></div>
-
-                    <fieldset class="grid gap-2 rounded-box border border-base-300 p-3" data-blueprint-node-transition>
-                        <legend class="px-1 text-sm font-medium">{{ __('daisy::components.blueprint_editor.create_transition') }}</legend>
-                        <label class="sr-only" for="{{ $id }}-target">{{ __('daisy::components.blueprint_editor.select_target') }}</label>
-                        <select id="{{ $id }}-target" class="select select-bordered w-full" data-blueprint-transition-target></select>
-                        <button type="button" class="btn btn-outline btn-sm" data-blueprint-action="add-transition">
-                            {{ __('daisy::components.blueprint_editor.actions.add_transition') }}
-                        </button>
-                    </fieldset>
-
-                    <div class="flex justify-between gap-2 border-t border-base-300 pt-4">
-                        <button type="button" class="btn btn-error btn-outline" data-blueprint-action="delete">
-                            {{ __('daisy::components.blueprint_editor.actions.delete') }}
-                        </button>
-                        @if($resolvedAutosave)
-                            <span class="self-center text-xs text-base-content/60">
-                                {{ __('daisy::components.blueprint_editor.autosave') }}
+                        <div class="grid min-w-0 gap-2">
+                            <h2 id="{{ $id }}-inspector-title" class="font-semibold" data-blueprint-inspector-title></h2>
+                            <span class="badge badge-warning badge-sm hidden" data-blueprint-dirty-indicator>
+                                {{ __('daisy::components.blueprint_editor.unsaved_changes') }}
                             </span>
-                        @else
-                            <button type="submit" class="btn btn-primary" data-blueprint-action="save">
-                                {{ __('daisy::components.blueprint_editor.actions.save') }}
-                            </button>
-                        @endif
+                        </div>
+                        <button type="button" class="btn btn-ghost btn-sm" data-blueprint-action="close-inspector" aria-label="{{ __('daisy::components.blueprint_editor.actions.close') }}">×</button>
                     </div>
-                    </form>
+
+                    <div data-blueprint-inspector-content>
+                        {{ $inspector ?? '' }}
+                    </div>
                 </div>
-                <form method="dialog" class="modal-backdrop">
+                <div class="modal-backdrop">
                     <button
                         type="button"
                         data-blueprint-inspector-backdrop
                         data-blueprint-action="close-inspector"
                         aria-label="{{ __('daisy::components.blueprint_editor.actions.close') }}"
                     ></button>
-                </form>
+                </div>
             </dialog>
 
             <x-daisy::ui.overlay.modal
@@ -278,7 +223,6 @@
             </x-daisy::ui.overlay.modal>
         @endif
 
-        <div class="daisy-blueprint-mobile-list hidden overflow-y-auto bg-base-200 p-3" data-blueprint-mobile-list></div>
     </div>
 
     <textarea class="hidden" data-blueprint-sync @if($name) name="{{ $name }}" @endif></textarea>

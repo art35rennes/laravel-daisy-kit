@@ -78,20 +78,11 @@ describe('Blueprint workflow model', () => {
         expect(removed.transitions).toEqual([]);
     });
 
-    it('applies category defaults and deeply merges partial integrator data', () => {
-        const categories = [{
-            value: 'workflow-step',
-            defaults: {
-                forwardable: true,
-                permissions: { web: true, api: true },
-            },
-        }];
+    it('replaces opaque data when a command explicitly supplies it', () => {
         const initial = normalizeWorkflow({
             nodes: [{
                 id: 'draft',
-                category: 'workflow-step',
                 data: {
-                    forwardable: false,
                     permissions: { web: false },
                     opaque: { preserved: true },
                 },
@@ -102,17 +93,15 @@ describe('Blueprint workflow model', () => {
             data: {
                 permissions: { api: false },
             },
-        }, { categories });
+        });
 
         expect(updated.nodes[0].data).toEqual({
-            forwardable: false,
-            permissions: { web: false, api: false },
-            opaque: { preserved: true },
+            permissions: { api: false },
         });
         expect(initial.nodes[0].data.permissions).toEqual({ web: false });
     });
 
-    it('adds missing defaults when an entity category changes', () => {
+    it('preserves opaque data when a command does not supply it', () => {
         const workflow = normalizeWorkflow({
             nodes: [{
                 id: 'draft',
@@ -123,17 +112,23 @@ describe('Blueprint workflow model', () => {
 
         const updated = updateNode(workflow, 'draft', {
             category: 'approval',
-        }, {
-            categories: [{
-                value: 'approval',
-                defaults: { requiredApprovals: 2, owner: 'Default owner' },
-            }],
         });
 
-        expect(updated.nodes[0].data).toEqual({
-            owner: 'Ada',
-            requiredApprovals: 2,
+        expect(updated.nodes[0].data).toEqual({ owner: 'Ada' });
+    });
+
+    it('ignores business defaults supplied through obsolete category options', () => {
+        const workflow = normalizeWorkflow();
+
+        const updated = addNode(workflow, {
+            id: 'review',
+            category: 'approval',
+            data: { owner: 'Ada' },
+        }, {
+            categories: [{ value: 'approval', defaults: { requiredApprovals: 2 } }],
         });
+
+        expect(updated.nodes[0].data).toEqual({ owner: 'Ada' });
     });
 
     it('rejects commands that would break workflow integrity', () => {

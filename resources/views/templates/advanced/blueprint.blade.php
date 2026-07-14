@@ -13,41 +13,16 @@
 ])
 
 @php
-    $integratorFields = [
-        [
-            'key' => 'owner',
-            'type' => 'text',
-            'label' => __('daisy::components.blueprint_template.fields.owner'),
-            'section' => __('daisy::components.blueprint_template.fields.assignment'),
-        ],
-        [
-            'key' => 'priority',
-            'type' => 'select',
-            'label' => __('daisy::components.blueprint_template.fields.priority'),
-            'section' => __('daisy::components.blueprint_template.fields.assignment'),
-            'options' => [
-                ['value' => 'normal', 'label' => __('daisy::components.blueprint_template.fields.normal')],
-                ['value' => 'high', 'label' => __('daisy::components.blueprint_template.fields.high')],
-            ],
-        ],
-        [
-            'key' => 'expedited',
-            'type' => 'checkbox',
-            'label' => __('daisy::components.blueprint_template.fields.expedited'),
-            'section' => __('daisy::components.blueprint_template.fields.assignment'),
-        ],
-    ];
-    $integratorDefaults = ['owner' => '', 'priority' => 'normal', 'expedited' => false];
     $nodeCategories = [
-        ['value' => 'start', 'label' => __('daisy::components.blueprint_template.categories.start'), 'color' => 'info', 'defaults' => $integratorDefaults, 'fields' => $integratorFields],
-        ['value' => 'work', 'label' => __('daisy::components.blueprint_template.categories.work'), 'color' => 'primary', 'defaults' => $integratorDefaults, 'fields' => $integratorFields],
-        ['value' => 'approval', 'label' => __('daisy::components.blueprint_template.categories.approval'), 'color' => 'warning', 'defaults' => $integratorDefaults, 'fields' => $integratorFields],
-        ['value' => 'done', 'label' => __('daisy::components.blueprint_template.categories.done'), 'color' => 'success', 'defaults' => $integratorDefaults, 'fields' => $integratorFields],
+        ['value' => 'start', 'label' => __('daisy::components.blueprint_template.categories.start'), 'color' => 'info'],
+        ['value' => 'work', 'label' => __('daisy::components.blueprint_template.categories.work'), 'color' => 'primary'],
+        ['value' => 'approval', 'label' => __('daisy::components.blueprint_template.categories.approval'), 'color' => 'warning'],
+        ['value' => 'done', 'label' => __('daisy::components.blueprint_template.categories.done'), 'color' => 'success'],
     ];
     $transitionCategories = [
-        ['value' => 'progress', 'label' => __('daisy::components.blueprint_template.categories.progress'), 'color' => 'primary', 'shape' => 's', 'defaults' => ['notify' => false], 'fields' => [['key' => 'notify', 'type' => 'checkbox', 'label' => __('daisy::components.blueprint_template.fields.notify')]]],
-        ['value' => 'approval', 'label' => __('daisy::components.blueprint_template.categories.approval'), 'color' => 'success', 'shape' => 'orthogonal', 'defaults' => ['notify' => true], 'fields' => [['key' => 'notify', 'type' => 'checkbox', 'label' => __('daisy::components.blueprint_template.fields.notify')]]],
-        ['value' => 'return', 'label' => __('daisy::components.blueprint_template.categories.return'), 'color' => 'warning', 'shape' => 'curve', 'defaults' => ['notify' => true], 'fields' => [['key' => 'notify', 'type' => 'checkbox', 'label' => __('daisy::components.blueprint_template.fields.notify')]]],
+        ['value' => 'progress', 'label' => __('daisy::components.blueprint_template.categories.progress'), 'color' => 'primary', 'shape' => 's'],
+        ['value' => 'approval', 'label' => __('daisy::components.blueprint_template.categories.approval'), 'color' => 'success', 'shape' => 'orthogonal'],
+        ['value' => 'return', 'label' => __('daisy::components.blueprint_template.categories.return'), 'color' => 'warning', 'shape' => 'curve'],
     ];
 
     $approval = [
@@ -59,9 +34,9 @@
             ['id' => 'published', 'label' => __('daisy::components.blueprint_template.workflow.published'), 'description' => __('daisy::components.blueprint_template.workflow.published_description'), 'category' => 'done', 'position' => ['x' => 1380, 'y' => 110], 'data' => ['owner' => 'Publisher', 'priority' => 'normal', 'expedited' => false]],
         ],
         'transitions' => [
-            ['id' => 'submit', 'source' => 'draft', 'target' => 'review', 'label' => __('daisy::components.blueprint_template.workflow.submit'), 'description' => '', 'category' => 'progress', 'data' => []],
-            ['id' => 'request-approval', 'source' => 'review', 'target' => 'approval', 'label' => __('daisy::components.blueprint_template.workflow.request_approval'), 'description' => '', 'category' => 'approval', 'data' => []],
-            ['id' => 'publish', 'source' => 'approval', 'target' => 'published', 'label' => __('daisy::components.blueprint_template.workflow.publish'), 'description' => '', 'category' => 'approval', 'data' => []],
+            ['id' => 'submit', 'source' => 'draft', 'target' => 'review', 'label' => __('daisy::components.blueprint_template.workflow.submit'), 'description' => '', 'category' => 'progress'],
+            ['id' => 'request-approval', 'source' => 'review', 'target' => 'approval', 'label' => __('daisy::components.blueprint_template.workflow.request_approval'), 'description' => '', 'category' => 'approval'],
+            ['id' => 'publish', 'source' => 'approval', 'target' => 'published', 'label' => __('daisy::components.blueprint_template.workflow.publish'), 'description' => '', 'category' => 'approval'],
         ],
         'viewport' => ['x' => 0, 'y' => 0, 'zoom' => 1],
     ];
@@ -70,9 +45,9 @@
     $cycle['nodes'] = collect($cycle['nodes'])
         ->map(fn ($node) => [...$node, 'position' => null])
         ->all();
-    $cycle['transitions'][] = ['id' => 'return-review', 'source' => 'approval', 'target' => 'review', 'label' => __('daisy::components.blueprint_template.workflow.return_review'), 'description' => __('daisy::components.blueprint_template.workflow.return_description'), 'category' => 'return', 'data' => []];
-    $cycle['transitions'][] = ['id' => 'reopen-draft', 'source' => 'review', 'target' => 'draft', 'label' => __('daisy::components.blueprint_template.workflow.reopen'), 'description' => '', 'category' => 'return', 'data' => []];
-    $cycle['transitions'][] = ['id' => 'self-review', 'source' => 'review', 'target' => 'review', 'label' => __('daisy::components.blueprint_template.workflow.recheck'), 'description' => '', 'category' => 'work', 'data' => []];
+    $cycle['transitions'][] = ['id' => 'return-review', 'source' => 'approval', 'target' => 'review', 'label' => __('daisy::components.blueprint_template.workflow.return_review'), 'description' => __('daisy::components.blueprint_template.workflow.return_description'), 'category' => 'return'];
+    $cycle['transitions'][] = ['id' => 'reopen-draft', 'source' => 'review', 'target' => 'draft', 'label' => __('daisy::components.blueprint_template.workflow.reopen'), 'description' => '', 'category' => 'return'];
+    $cycle['transitions'][] = ['id' => 'self-review', 'source' => 'review', 'target' => 'review', 'label' => __('daisy::components.blueprint_template.workflow.recheck'), 'description' => '', 'category' => 'work'];
 
     $denseNodes = collect(range(1, 14))->map(fn ($index) => [
         'id' => "step-{$index}",
@@ -89,15 +64,14 @@
         'label' => __('daisy::components.blueprint_template.workflow.continue'),
         'description' => '',
         'category' => 'progress',
-        'data' => [],
     ])->all();
     $denseTransitions = array_merge($denseTransitions, [
-        ['id' => 'dense-branch-1', 'source' => 'step-2', 'target' => 'step-6', 'label' => __('daisy::components.blueprint_template.workflow.escalate'), 'description' => '', 'category' => 'approval', 'data' => []],
-        ['id' => 'dense-branch-2', 'source' => 'step-4', 'target' => 'step-9', 'label' => __('daisy::components.blueprint_template.workflow.escalate'), 'description' => '', 'category' => 'approval', 'data' => []],
-        ['id' => 'dense-return-1', 'source' => 'step-8', 'target' => 'step-3', 'label' => __('daisy::components.blueprint_template.workflow.return_review'), 'description' => '', 'category' => 'return', 'data' => []],
-        ['id' => 'dense-return-2', 'source' => 'step-12', 'target' => 'step-7', 'label' => __('daisy::components.blueprint_template.workflow.return_review'), 'description' => '', 'category' => 'return', 'data' => []],
-        ['id' => 'dense-parallel-1', 'source' => 'step-5', 'target' => 'step-10', 'label' => __('daisy::components.blueprint_template.workflow.fast_track'), 'description' => '', 'category' => 'progress', 'data' => []],
-        ['id' => 'dense-parallel-2', 'source' => 'step-5', 'target' => 'step-10', 'label' => __('daisy::components.blueprint_template.workflow.manual_track'), 'description' => '', 'category' => 'approval', 'data' => []],
+        ['id' => 'dense-branch-1', 'source' => 'step-2', 'target' => 'step-6', 'label' => __('daisy::components.blueprint_template.workflow.escalate'), 'description' => '', 'category' => 'approval'],
+        ['id' => 'dense-branch-2', 'source' => 'step-4', 'target' => 'step-9', 'label' => __('daisy::components.blueprint_template.workflow.escalate'), 'description' => '', 'category' => 'approval'],
+        ['id' => 'dense-return-1', 'source' => 'step-8', 'target' => 'step-3', 'label' => __('daisy::components.blueprint_template.workflow.return_review'), 'description' => '', 'category' => 'return'],
+        ['id' => 'dense-return-2', 'source' => 'step-12', 'target' => 'step-7', 'label' => __('daisy::components.blueprint_template.workflow.return_review'), 'description' => '', 'category' => 'return'],
+        ['id' => 'dense-parallel-1', 'source' => 'step-5', 'target' => 'step-10', 'label' => __('daisy::components.blueprint_template.workflow.fast_track'), 'description' => '', 'category' => 'progress'],
+        ['id' => 'dense-parallel-2', 'source' => 'step-5', 'target' => 'step-10', 'label' => __('daisy::components.blueprint_template.workflow.manual_track'), 'description' => '', 'category' => 'approval'],
     ]);
     $dense = [
         'version' => 1,
@@ -120,10 +94,10 @@
             <h2 class="font-semibold">{{ __('daisy::components.blueprint_template.contract.title') }}</h2>
             <p class="mt-2 text-sm text-base-content/70">{{ __('daisy::components.blueprint_template.contract.description') }}</p>
             <p class="mt-3 text-xs text-base-content/60">
-                getValue · setValue · addNode · updateNode · removeNode · addTransition · updateTransition · removeTransition · arrange · fit · undo · redo · destroy
+                getValue · setValue · addNode · updateNode · removeNode · addTransition · updateTransition · removeTransition · arrange · fit · undo · redo · openInspector · setInspectorDraft · commitInspector · cancelInspector · destroy
             </p>
             <p class="mt-1 text-xs text-base-content/60">
-                daisy:blueprint:init · daisy:blueprint:change · daisy:blueprint:select · daisy:blueprint:error
+                daisy:blueprint:init · daisy:blueprint:change · daisy:blueprint:select · daisy:blueprint:inspector-open · daisy:blueprint:inspector-commit · daisy:blueprint:inspector-cancel · daisy:blueprint:error
             </p>
         </section>
     @endif
@@ -139,7 +113,11 @@
             :node-categories="$nodeCategories"
             :transition-categories="$transitionCategories"
             height="480px"
-        />
+        >
+            <x-slot:inspector>
+                @include('daisy::templates.advanced.partials.blueprint-inspector', ['inspectorId' => $namePrefix.'-approval-inspector'])
+            </x-slot:inspector>
+        </x-daisy::ui.advanced.blueprint>
     </article>
 
     <article class="space-y-3">
@@ -154,7 +132,11 @@
             :transition-categories="$transitionCategories"
             layout="radial"
             height="520px"
-        />
+        >
+            <x-slot:inspector>
+                @include('daisy::templates.advanced.partials.blueprint-inspector', ['inspectorId' => $namePrefix.'-cycle-inspector'])
+            </x-slot:inspector>
+        </x-daisy::ui.advanced.blueprint>
     </article>
 
     <article class="space-y-3">
@@ -170,6 +152,10 @@
             direction="TB"
             layout="hierarchical"
             height="620px"
-        />
+        >
+            <x-slot:inspector>
+                @include('daisy::templates.advanced.partials.blueprint-inspector', ['inspectorId' => $namePrefix.'-dense-inspector'])
+            </x-slot:inspector>
+        </x-daisy::ui.advanced.blueprint>
     </article>
 </section>
