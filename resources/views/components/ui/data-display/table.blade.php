@@ -40,7 +40,7 @@
     'columnResizing' => false,
     'editable' => false,
     'editEndpoint' => null,
-    'editMethod' => 'PATCH',
+    'editMethod' => null,
     'editMode' => 'cell',
     'editableColumns' => [],
     'editPolicy' => [],
@@ -205,7 +205,11 @@
 
     $tableClasses = trim($tableClasses.' '.$tableMinWidthClass);
 
-    \Art35rennes\DaisyKit\Support\DaisyTableConfig::validateColumns(is_array($columns) ? $columns : []);
+    if (! is_array($columns)) {
+        throw new InvalidArgumentException('The table component requires columns to be an array.');
+    }
+
+    \Art35rennes\DaisyKit\Support\DaisyTableConfig::validateColumns($columns);
 
     $resolvedColumns = array_values(array_filter(
         array_map(\Art35rennes\DaisyKit\Support\DaisyTableColumns::normalize(...), is_array($columns) ? $columns : []),
@@ -417,6 +421,10 @@
             ->renderCells()
         : [];
 
+    if ($resolvedRowKey !== null) {
+        \Art35rennes\DaisyKit\Support\DaisyTableConfig::validateRows($resolvedRows, $resolvedRowKey, $resolvedSubRowsKey);
+    }
+
     $renderCell = static function (array $row, array $column) use ($resolvedLinkPolicy, $resolvedRowKey) {
         $value = data_get($row, $column['key']);
 
@@ -435,11 +443,11 @@
         }
 
         if (($column['cell']['renderer'] ?? null) === 'actions') {
-            return \Art35rennes\DaisyKit\Support\DaisyTableActions::render(
-                $value,
-                data_get($row, $resolvedRowKey),
-                $column['key'],
-            );
+            return new Illuminate\Support\HtmlString(View::make('daisy::partials.table-actions', [
+                'actions' => \Art35rennes\DaisyKit\Support\DaisyTableActions::normalize($value),
+                'rowId' => data_get($row, $resolvedRowKey),
+                'columnId' => $column['key'],
+            ])->render());
         }
 
         if ($column['trusted']) {
@@ -519,7 +527,7 @@
 @endphp
 
 <div
-    {{ $attributes->except(['data-module', 'data-daisy-table', 'data-table-config'])->class([$wrapperClasses]) }}
+    {{ $attributes->only(['id', 'data-daisy-table-id'])->class([$wrapperClasses]) }}
     data-module="table"
     data-daisy-table="1"
     data-table-layout="{{ $resolvedTableLayout }}"
@@ -709,7 +717,7 @@
 
     <div class="{{ $scrollClasses }}" @if($resolvedScrollX !== 'none') tabindex="0" @endif>
         <table
-            class="{{ $tableClasses }}"
+            {{ $attributes->except(['id', 'data-daisy-table-id', 'data-module', 'data-daisy-table', 'data-table-config'])->class([$tableClasses]) }}
             data-table-layout="{{ $resolvedTableLayout }}"
         >
             @if($caption)

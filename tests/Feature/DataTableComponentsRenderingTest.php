@@ -57,16 +57,44 @@ it('places a consumer table identifier on the Daisy table root', function (): vo
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.data-display.table
             id="scope-users"
+            class="consumer-table"
             aria-describedby="scope-users-caption"
+            data-consumer-table="users"
             :columns="[['key' => 'name', 'label' => 'Name']]"
             :rows="[['name' => 'Ada']]"
         />
     BLADE);
 
     expect($html)
-        ->toMatch('/<div\b[^>]*\bid="scope-users"[^>]*\baria-describedby="scope-users-caption"/s')
+        ->toMatch('/<div\b[^>]*\bid="scope-users"/s')
         ->toContain('data-daisy-table="1"')
+        ->toMatch('/<table\b[^>]*class="[^"]*consumer-table[^"]*"[^>]*aria-describedby="scope-users-caption"[^>]*data-consumer-table="users"/s')
+        ->not->toMatch('/<div\b[^>]*aria-describedby="scope-users-caption"/s')
         ->not->toContain('<table id="scope-users"');
+});
+
+it('rejects missing and duplicate client row keys before rendering structured actions', function (): void {
+    $missingKey = fn (): string => Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            row-key="id"
+            :columns="[['key' => 'actions', 'label' => 'Actions', 'type' => 'actions']]"
+            :rows="[['actions' => ['action' => 'open']]]"
+        />
+    BLADE);
+    $duplicateNestedKey = fn (): string => Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            row-key="id"
+            sub-rows-key="children"
+            :columns="[['key' => 'name', 'label' => 'Name']]"
+            :rows="[
+                ['id' => 'parent', 'name' => 'Parent', 'children' => [['id' => 'child', 'name' => 'First']]],
+                ['id' => 'other', 'name' => 'Other', 'children' => [['id' => 'child', 'name' => 'Duplicate']]],
+            ]"
+        />
+    BLADE);
+
+    expect($missingKey)->toThrow(ViewException::class, 'non-empty id')
+        ->and($duplicateNestedKey)->toThrow(ViewException::class, 'Duplicate value: child');
 });
 
 it('renders configurable table layout, scroll and native action column attributes', function () {

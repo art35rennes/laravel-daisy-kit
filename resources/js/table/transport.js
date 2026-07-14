@@ -1,6 +1,7 @@
 import { isPlainObject } from './utils.js';
 
 const ALLOWED_HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+const ALLOWED_MUTATION_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
 const ALLOWED_CREDENTIALS = ['omit', 'same-origin', 'include'];
 
 function normalizeHttpMethod(method, fallback = 'GET') {
@@ -23,6 +24,16 @@ function normalizeCredentials(credentials) {
   }
 
   return credentials;
+}
+
+function normalizeMutationMethod(method, fallback = 'PATCH') {
+  const normalized = normalizeHttpMethod(method, fallback);
+
+  if (!ALLOWED_MUTATION_METHODS.includes(normalized)) {
+    throw new Error(`Daisy Table mutation method ${normalized} is not supported.`);
+  }
+
+  return normalized;
 }
 
 function interpolateRowId(url, rowId) {
@@ -49,7 +60,7 @@ async function mutationRequest(endpoint, method, payload, options = {}) {
   }
 
   return fetch(url.toString(), {
-    method: normalizeHttpMethod(method),
+    method: normalizeMutationMethod(method),
     headers,
     credentials: normalizeCredentials(endpoint.credentials),
     body: JSON.stringify(payload),
@@ -74,10 +85,12 @@ function requireMutationRow(body, rowKey) {
 export {
   ALLOWED_CREDENTIALS,
   ALLOWED_HTTP_METHODS,
+  ALLOWED_MUTATION_METHODS,
   interpolateRowId,
   isSameOrigin,
   mutationRequest,
   normalizeCredentials,
   normalizeHttpMethod,
+  normalizeMutationMethod,
   requireMutationRow,
 };

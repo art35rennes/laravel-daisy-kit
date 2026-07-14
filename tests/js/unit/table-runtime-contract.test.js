@@ -10,6 +10,8 @@ import {
   mutationRequest,
   requireMutationRow,
 } from '../../../resources/js/table/transport.js';
+import { normalizeActions } from '../../../resources/js/table/renderers.js';
+import { normalizeConfig } from '../../../resources/js/table/runtime.js';
 
 const previousGlobals = {
   window: global.window,
@@ -101,5 +103,43 @@ describe('table v2 runtime contracts', () => {
       .rejects.toThrow('credentials');
     await expect(mutationRequest({ url: '/users' }, 'TRACE', {}))
       .rejects.toThrow('not supported');
+    await expect(mutationRequest({ url: '/users' }, 'GET', {}))
+      .rejects.toThrow('mutation method');
+  });
+
+  it('rejects raw HTML and malformed structured row actions', () => {
+    expect(() => normalizeActions('<button>Unsafe</button>')).toThrow('descriptor');
+    expect(() => normalizeActions([{ label: 'Missing action' }])).toThrow('non-empty action');
+  });
+
+  it('resolves the editable mutation method using the public precedence contract', () => {
+    const endpointMethod = normalizeConfig({
+      columns: [{ key: 'name' }],
+      rowKey: 'id',
+      editable: true,
+      editEndpoint: { url: '/users/{rowId}', method: 'PUT' },
+    });
+    const explicitMethod = normalizeConfig({
+      columns: [{ key: 'name' }],
+      rowKey: 'id',
+      editable: true,
+      editEndpoint: { url: '/users/{rowId}', method: 'PUT' },
+      editMethod: 'DELETE',
+    });
+    const structuredMethod = normalizeConfig({
+      columns: [{ key: 'name' }],
+      rowKey: 'id',
+      editable: {
+        enabled: true,
+        update: {
+          method: 'PATCH',
+          endpoint: { url: '/users/{rowId}', method: 'PUT' },
+        },
+      },
+    });
+
+    expect(endpointMethod.editable.update.method).toBe('PUT');
+    expect(explicitMethod.editable.update.method).toBe('DELETE');
+    expect(structuredMethod.editable.update.method).toBe('PATCH');
   });
 });

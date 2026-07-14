@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-07-12T19:48:36+00:00",
+    "generated_at": "2026-07-14T18:47:29+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
@@ -1519,6 +1519,7 @@
                 "serverAdapter",
                 "persistState",
                 "stateKey",
+                "persistStateFields",
                 "globalFilterKey",
                 "filters",
                 "initialState",

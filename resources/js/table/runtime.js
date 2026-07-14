@@ -63,6 +63,7 @@ import {
   isSameOrigin,
   normalizeCredentials,
   normalizeHttpMethod,
+  normalizeMutationMethod,
   requireMutationRow,
 } from './transport.js';
 import {
@@ -435,12 +436,17 @@ function normalizeEditableConfig(raw = {}, columns = []) {
   const editable = raw.editable === true || raw.editable?.enabled === true;
   const update = isPlainObject(raw.editable?.update) ? raw.editable.update : {};
   const create = isPlainObject(raw.editable?.create) ? raw.editable.create : {};
-  const endpoint = normalizeEndpoint(update.endpoint ?? raw.editEndpoint ?? raw.editable?.endpoint ?? null);
+  const rawEndpoint = update.endpoint ?? raw.editEndpoint ?? raw.editable?.endpoint ?? null;
+  const endpoint = normalizeEndpoint(rawEndpoint);
   const mode = ['cell', 'row'].includes(raw.editMode ?? raw.editable?.mode)
     ? raw.editMode ?? raw.editable.mode
     : 'cell';
-  const rawMethod = update.method ?? update.endpoint?.method ?? raw.editMethod ?? raw.editable?.method;
-  const method = normalizeHttpMethod(rawMethod, 'PATCH');
+  const rawMethod = update.method
+    ?? update.endpoint?.method
+    ?? raw.editMethod
+    ?? rawEndpoint?.method
+    ?? raw.editable?.method;
+  const method = normalizeMutationMethod(rawMethod, 'PATCH');
   const editableColumnKeys = Array.isArray(raw.editableColumns ?? raw.editable?.columns)
     ? raw.editableColumns ?? raw.editable.columns
     : [];
@@ -470,7 +476,7 @@ function normalizeEditableConfig(raw = {}, columns = []) {
       enabled: create.enabled === true,
       strategy: create.strategy === 'local' ? 'local' : 'remote',
       endpoint: normalizeEndpoint(create.endpoint),
-      method: normalizeHttpMethod(create.method ?? create.endpoint?.method, 'POST'),
+      method: normalizeMutationMethod(create.method ?? create.endpoint?.method, 'POST'),
       defaults: isPlainObject(create.defaults) ? create.defaults : {},
       position: 'top',
     },

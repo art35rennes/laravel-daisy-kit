@@ -71,17 +71,35 @@ function normalizeCellDefinition(column = {}) {
 }
 
 function normalizeActions(value) {
-  const actions = Array.isArray(value) ? value : (isPlainObject(value) ? [value] : []);
+  if (value === null || value === undefined || (Array.isArray(value) && value.length === 0)) {
+    return [];
+  }
 
-  return actions
-    .filter((action) => isPlainObject(action) && typeof action.action === 'string' && action.action.trim() !== '')
-    .map((action) => ({
-      action: action.action.trim(),
+  if (!Array.isArray(value) && !isPlainObject(value)) {
+    throw new TypeError('Daisy table actions must use a structured descriptor or a list of descriptors.');
+  }
+
+  const actions = Array.isArray(value) ? value : [value];
+
+  return actions.map((action) => {
+    if (!isPlainObject(action)) {
+      throw new TypeError('Each Daisy table action must be a structured descriptor.');
+    }
+
+    const name = typeof action.action === 'string' ? action.action.trim() : '';
+
+    if (name === '') {
+      throw new TypeError('Each Daisy table action requires a non-empty action.');
+    }
+
+    return {
+      action: name,
       label: typeof action.label === 'string' ? action.label : action.action.trim(),
       variant: Object.hasOwn(ACTION_VARIANTS, action.variant) ? action.variant : 'ghost',
       disabled: action.disabled === true,
       ariaLabel: typeof action.ariaLabel === 'string' ? action.ariaLabel : '',
-    }));
+    };
+  });
 }
 
 function renderActionsCell(value, rowId, columnId) {

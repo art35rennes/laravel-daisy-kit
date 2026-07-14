@@ -115,15 +115,36 @@ class DaisyTableColumns
             : ($config['columns'] ?? $defaultColumns);
         $update = is_array($config['update'] ?? null) ? $config['update'] : [];
         $create = is_array($config['create'] ?? null) ? $config['create'] : [];
-        $legacyEndpoint = $editEndpoint ?? ($config['endpoint'] ?? null);
-        $legacyMethod = $editMethod ?? ($config['method'] ?? null);
-        $updateMethod = $update['method'] ?? data_get($update, 'endpoint.method') ?? $legacyMethod;
-        $createMethod = $create['method'] ?? data_get($create, 'endpoint.method');
+        $flatEndpoint = $editEndpoint ?? ($config['endpoint'] ?? null);
+        $flatMethod = $editMethod ?? ($config['method'] ?? null);
+        $updateEndpoint = $update['endpoint'] ?? $flatEndpoint;
+        $updateMethod = DaisyTableConfig::normalizeMutationMethod(
+            $update['method']
+                ?? data_get($update, 'endpoint.method')
+                ?? $flatMethod
+                ?? data_get($flatEndpoint, 'method'),
+            'PATCH',
+        );
+        $createEndpoint = $create['endpoint'] ?? null;
+        $createMethod = DaisyTableConfig::normalizeMutationMethod(
+            $create['method'] ?? data_get($createEndpoint, 'method'),
+            'POST',
+        );
+        $normalizedUpdateEndpoint = DaisyTableConfig::normalizeEndpoint($updateEndpoint, $updateMethod);
+        $normalizedCreateEndpoint = DaisyTableConfig::normalizeEndpoint($createEndpoint, $createMethod);
+
+        if ($normalizedUpdateEndpoint !== null) {
+            unset($normalizedUpdateEndpoint['method']);
+        }
+
+        if ($normalizedCreateEndpoint !== null) {
+            $normalizedCreateEndpoint['method'] = $createMethod;
+        }
 
         return [
             'enabled' => $enabled,
-            'endpoint' => DaisyTableConfig::normalizeEndpoint($update['endpoint'] ?? $legacyEndpoint, 'PATCH'),
-            'method' => DaisyTableConfig::normalizeMethod($updateMethod, 'PATCH'),
+            'endpoint' => $normalizedUpdateEndpoint,
+            'method' => $updateMethod,
             'mode' => in_array($config['mode'] ?? $editMode, ['cell', 'row'], true) ? ($config['mode'] ?? $editMode) : 'cell',
             'columns' => collect(is_array($requestedColumns) ? $requestedColumns : [])
                 ->filter(fn ($key) => is_string($key) && filled($key) && in_array($key, $columnKeys, true))
@@ -133,14 +154,14 @@ class DaisyTableColumns
             'policy' => is_array($editPolicy) && $editPolicy !== [] ? $editPolicy : (is_array($config['policy'] ?? null) ? $config['policy'] : []),
             'update' => [
                 'strategy' => ($update['strategy'] ?? null) === 'local' ? 'local' : 'remote',
-                'endpoint' => DaisyTableConfig::normalizeEndpoint($update['endpoint'] ?? $legacyEndpoint, 'PATCH'),
-                'method' => DaisyTableConfig::normalizeMethod($updateMethod, 'PATCH'),
+                'endpoint' => $normalizedUpdateEndpoint,
+                'method' => $updateMethod,
             ],
             'create' => [
                 'enabled' => ($create['enabled'] ?? false) === true,
                 'strategy' => ($create['strategy'] ?? null) === 'local' ? 'local' : 'remote',
-                'endpoint' => DaisyTableConfig::normalizeEndpoint($create['endpoint'] ?? null, 'POST'),
-                'method' => DaisyTableConfig::normalizeMethod($createMethod, 'POST'),
+                'endpoint' => $normalizedCreateEndpoint,
+                'method' => $createMethod,
                 'defaults' => is_array($create['defaults'] ?? null) ? $create['defaults'] : [],
                 'position' => 'top',
             ],

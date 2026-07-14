@@ -34,19 +34,72 @@ class DaisyTableConfig
 
     public const AllowedHttpMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
+    public const AllowedMutationMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+
     public const AllowedCredentials = ['omit', 'same-origin', 'include'];
 
     public static function validateColumns(array $columns): void
     {
-        $keys = array_values(array_filter(array_map(
-            static fn (array $column): string => trim((string) ($column['key'] ?? '')),
-            $columns,
-        )));
+        $keys = [];
+
+        foreach ($columns as $column) {
+            if (! is_array($column)) {
+                throw new InvalidArgumentException('Daisy table columns must be arrays.');
+            }
+
+            $key = is_string($column['key'] ?? null) ? trim($column['key']) : '';
+
+            if ($key === '') {
+                throw new InvalidArgumentException('The table component requires at least one column with a non-empty key, and every column must define one.');
+            }
+
+            $keys[] = $key;
+        }
+
         $duplicates = array_values(array_unique(array_diff_assoc($keys, array_unique($keys))));
 
         if ($duplicates !== []) {
             throw new InvalidArgumentException('Daisy table column keys must be unique. Duplicate keys: '.implode(', ', $duplicates).'.');
         }
+    }
+
+    public static function validateRows(array $rows, string $rowKey, ?string $subRowsKey = null): void
+    {
+        $seen = [];
+
+        $validate = function (array $items, string $path = 'rows') use (&$validate, &$seen, $rowKey, $subRowsKey): void {
+            foreach ($items as $index => $row) {
+                if (! is_array($row)) {
+                    throw new InvalidArgumentException("Daisy table {$path} must be an array of row arrays.");
+                }
+
+                $value = $row[$rowKey] ?? null;
+                $isStringable = is_scalar($value) || $value instanceof \Stringable;
+                $rowId = $isStringable ? trim((string) $value) : '';
+
+                if ($rowId === '') {
+                    throw new InvalidArgumentException("Daisy table {$path}[{$index}] requires a non-empty {$rowKey}.");
+                }
+
+                if (isset($seen[$rowId])) {
+                    throw new InvalidArgumentException("Daisy table row keys must be unique. Duplicate value: {$rowId}.");
+                }
+
+                $seen[$rowId] = true;
+
+                if ($subRowsKey === null || ! array_key_exists($subRowsKey, $row)) {
+                    continue;
+                }
+
+                if (! is_array($row[$subRowsKey])) {
+                    throw new InvalidArgumentException("Daisy table {$path}[{$index}].{$subRowsKey} must be an array of row arrays.");
+                }
+
+                $validate($row[$subRowsKey], "{$path}[{$index}].{$subRowsKey}");
+            }
+        };
+
+        $validate($rows);
     }
 
     public static function normalizePersistedStateFields(mixed $fields): array
@@ -95,6 +148,17 @@ class DaisyTableConfig
 
         if (! in_array($method, self::AllowedHttpMethods, true)) {
             throw new InvalidArgumentException('Daisy table HTTP method ['.$method.'] is not supported.');
+        }
+
+        return $method;
+    }
+
+    public static function normalizeMutationMethod(mixed $method, string $fallback): string
+    {
+        $method = self::normalizeMethod($method, $fallback);
+
+        if (! in_array($method, self::AllowedMutationMethods, true)) {
+            throw new InvalidArgumentException("Daisy table mutation method [{$method}] is not supported.");
         }
 
         return $method;

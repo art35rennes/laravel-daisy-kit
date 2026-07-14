@@ -90,3 +90,42 @@ it('normalizes editable column definitions', function (): void {
         'template' => null,
     ]);
 });
+
+it('resolves editable methods from the most specific configuration', function (): void {
+    $columns = [DaisyTableColumns::normalize(['key' => 'name'])];
+
+    $flatEndpoint = DaisyTableColumns::normalizeEditable(
+        true,
+        ['url' => '/users/{rowId}', 'method' => 'PUT'],
+        null,
+        'cell',
+        [],
+        [],
+        $columns,
+    );
+    $explicitFlatMethod = DaisyTableColumns::normalizeEditable(
+        true,
+        ['url' => '/users/{rowId}', 'method' => 'PUT'],
+        'DELETE',
+        'cell',
+        [],
+        [],
+        $columns,
+    );
+    $structuredMethod = DaisyTableColumns::normalizeEditable(
+        ['enabled' => true, 'update' => [
+            'method' => 'PATCH',
+            'endpoint' => ['url' => '/users/{rowId}', 'method' => 'PUT'],
+        ]],
+        null,
+        'DELETE',
+        'cell',
+        [],
+        [],
+        $columns,
+    );
+
+    expect($flatEndpoint['update']['method'])->toBe('PUT')
+        ->and($explicitFlatMethod['update']['method'])->toBe('DELETE')
+        ->and($structuredMethod['update']['method'])->toBe('PATCH');
+});

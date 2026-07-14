@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DaJ6WEGw.js";import{initChatWidget as t,t as n}from"./chat-_EvYkTcr.js";function r(e,n={}){return t(e,n)}e((()=>{n()}))();export{r as default};
