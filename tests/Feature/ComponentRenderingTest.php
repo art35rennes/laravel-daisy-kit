@@ -150,6 +150,119 @@ it('renders calendar-native with csp safe picker spacing classes', function () {
         ->not->toContain('style=');
 });
 
+it('renders the cally calendar with the official DaisyUI surface', function () {
+    $html = View::make('daisy::components.ui.advanced.calendar-cally', [
+        'value' => '2026-07-13',
+        'min' => '2026-07-01',
+        'max' => '2026-07-31',
+    ])->render();
+
+    expect($html)
+        ->toContain('<calendar-date')
+        ->toContain('cally')
+        ->toContain('bg-base-100')
+        ->toContain('border-base-300')
+        ->toContain('rounded-box')
+        ->toContain('value="2026-07-13"')
+        ->toContain('min="2026-07-01"')
+        ->toContain('max="2026-07-31"');
+});
+
+it('forwards calendar navigation slots to cally', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.advanced.calendar>
+            <x-slot:previous>Earlier</x-slot:previous>
+            <x-slot:next>Later</x-slot:next>
+            <x-slot:heading>Choose a date</x-slot:heading>
+        </x-daisy::ui.advanced.calendar>
+    BLADE);
+
+    expect($html)
+        ->toContain('slot="previous"')
+        ->toContain('Earlier')
+        ->toContain('slot="next"')
+        ->toContain('Later')
+        ->toContain('slot="heading"')
+        ->toContain('Choose a date');
+});
+
+it('forwards native calendar constraints and accessible attributes', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.advanced.calendar
+            provider="native"
+            input-id="delivery-date"
+            name="delivery_date"
+            min="2026-07-01"
+            max="2026-07-31"
+            aria-label="Delivery date"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('id="delivery-date"')
+        ->toContain('name="delivery_date"')
+        ->toContain('min="2026-07-01"')
+        ->toContain('max="2026-07-31"')
+        ->toContain('aria-label="Delivery date"')
+        ->toContain('class="input');
+});
+
+it('renders Vanilla Calendar Pro through the calendar provider', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.advanced.calendar
+            provider="vanilla"
+            mode="range"
+            :months="2"
+            value="2026-07-13,2026-07-18"
+            min="2026-07-01"
+            max="2026-07-31"
+            locale="fr-FR"
+            name="stay_dates"
+            input-id="stay-dates"
+            aria-label="Dates du séjour"
+            class="w-full"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('data-module="calendar-vanilla"')
+        ->toContain('data-calendar-vanilla="1"')
+        ->toContain('class="vc w-full"')
+        ->toContain('name="stay_dates"')
+        ->toContain('id="stay-dates"')
+        ->toContain('aria-label="Dates du séjour"')
+        ->toContain('"type":"multiple"')
+        ->toContain('"displayMonthsCount":2')
+        ->toContain('"selectionDatesMode":"multiple-ranged"')
+        ->toContain('"selectedDates":["2026-07-13:2026-07-18"]')
+        ->toContain('"displayDateMin":"2026-07-01"')
+        ->toContain('"displayDateMax":"2026-07-31"')
+        ->toContain('"locale":"fr-FR"')
+        ->not->toContain('name="stay_dates" data-module');
+});
+
+it('keeps cally as the default calendar provider', function () {
+    $html = Blade::render('<x-daisy::ui.advanced.calendar value="2026-07-13" />');
+
+    expect($html)
+        ->toContain('<calendar-date')
+        ->not->toContain('data-calendar-vanilla');
+});
+
+it('renders the full calendar as a DaisyUI card surface', function () {
+    $html = View::make('daisy::components.ui.advanced.calendar-full', [
+        'initialDate' => '2026-07-13',
+    ])->render();
+
+    expect($html)
+        ->toContain('data-calendar-full="1"')
+        ->toContain('card')
+        ->toContain('card-border')
+        ->toContain('bg-base-100')
+        ->not->toContain('border border-base-300')
+        ->toContain('aria-label=');
+});
+
 it('renders a token-input component with prefilled values and hidden inputs', function () {
     $html = View::make('daisy::components.ui.inputs.token-input', [
         'name' => 'recipients',
@@ -259,6 +372,8 @@ it('renders localized code-editor toolbar and CodeMirror phrases', function () {
         ->toContain('<template data-i18n>')
         ->toContain('data-code-editor-expand-modal')
         ->toContain('data-code-editor-expand-button')
+        ->toContain('data-code-editor-expand-dismiss')
+        ->not->toContain('<form method="dialog" class="modal-backdrop">')
         ->not->toContain('<script type="application/json" data-options>')
         ->not->toContain('<script type="application/json" data-initial>')
         ->not->toContain('<script type="application/json" data-i18n>')
@@ -272,8 +387,16 @@ it('renders the blueprint workflow contract and sync field', function () {
         'name' => 'workflow',
         'height' => '640px',
         'direction' => 'TB',
-        'nodeCategories' => [['value' => 'approval', 'label' => 'Approval']],
+        'nodeCategories' => [[
+            'value' => 'approval',
+            'label' => 'Approval',
+            'color' => 'success',
+            'defaults' => ['owner' => 'Ada'],
+            'tabs' => [['value' => 'identity', 'label' => 'Identity and status']],
+            'fields' => [['key' => 'status', 'type' => 'select']],
+        ]],
         'transitionCategories' => [['value' => 'return', 'label' => 'Return']],
+        'inspector' => new HtmlString('<section data-host-inspector>Host inspector</section>'),
         'value' => [
             'nodes' => [
                 ['id' => 'review', 'label' => 'Review', 'position' => ['x' => 40, 'y' => 80]],
@@ -292,12 +415,22 @@ it('renders the blueprint workflow contract and sync field', function () {
         ->toContain('data-blueprint-edges')
         ->toContain('data-blueprint-nodes')
         ->toContain('data-blueprint-inspector')
+        ->toContain('w-11/12 max-w-5xl')
+        ->toContain('data-blueprint-inspector-content')
+        ->toContain('<section data-host-inspector>Host inspector</section>')
         ->toContain('data-blueprint-action="add-node"')
         ->toContain('name="workflow"')
         ->toContain('data-blueprint-node-categories')
         ->toContain('data-blueprint-transition-categories')
         ->toContain('readonly data-blueprint-value')
         ->toContain('"label":"Review"')
+        ->toContain('"color":"success"')
+        ->not->toContain('"defaults"')
+        ->not->toContain('"fields"')
+        ->not->toContain('"tabs"')
+        ->not->toContain('data-autosave')
+        ->not->toContain('data-inspector-mode')
+        ->not->toContain('data-blueprint-integrator-fields')
         ->not->toContain('style=');
 });
 
@@ -321,10 +454,21 @@ it('renders wysiwyg custom height through a csp safe class', function () {
     ])->render();
 
     expect($html)
-        ->toContain('class="trix-content daisy-wysiwyg-min-height-rem-80"')
+        ->toContain('class="trix-content block w-full daisy-wysiwyg-min-height-rem-80"')
         ->toContain('daisy-wysiwyg-min-height-rem-80')
         ->not->toContain('data-daisy-css-min-height')
         ->not->toContain('style=');
+});
+
+it('associates the explicit toolbar when a wysiwyg has no named input', function () {
+    $html = View::make('daisy::components.ui.advanced.wysiwyg', [
+        'inputId' => 'workflow-description',
+        'slot' => '',
+    ])->render();
+
+    expect($html)
+        ->toContain('<trix-toolbar id="workflow-description-toolbar"></trix-toolbar>')
+        ->toContain('toolbar="workflow-description-toolbar"');
 });
 
 it('ships wysiwyg height utilities after trix styles can override defaults', function () {
@@ -423,6 +567,7 @@ it('renders conservative default pacing for autocomplete controls', function () 
     $select = View::make('daisy::components.ui.inputs.select', [
         'name' => 'contract',
         'endpoint' => '/contracts/autocomplete',
+        'size' => 'sm',
     ])->render();
     $tokenInput = View::make('daisy::components.ui.inputs.token-input', [
         'name' => 'recipients',
@@ -434,6 +579,7 @@ it('renders conservative default pacing for autocomplete controls', function () 
     ])->render();
 
     expect($select)
+        ->toContain('input input-sm flex w-full items-center gap-2')
         ->toContain('data-debounce="500"')
         ->toContain('data-min-chars="3"')
         ->and(substr_count($select, 'data-module="select"'))->toBe(1);

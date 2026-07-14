@@ -152,6 +152,19 @@ it('passes an optional footer slot to the sidebar', function () {
         ->toContain('text-base-content/50');
 });
 
+it('keeps the responsive sidebar shell overflow visible for flyouts', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::layout.sidebar-layout :show-theme-controller="false">
+            Content
+        </x-daisy::layout.sidebar-layout>
+    BLADE);
+
+    expect($html)
+        ->toContain('class="drawer-side overflow-visible"')
+        ->toContain('data-sidebar-scroll-region')
+        ->not->toContain('text-base-content h-full overflow-y-auto border-r');
+});
+
 it('opens external sidebar entries in a separate tab securely', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.navigation.sidebar :sections="$sections" />
@@ -382,6 +395,30 @@ it('wires form field ids descriptions old input and validation state into inputs
         ->toContain('aria-describedby="email-error"')
         ->toContain('id="email-hint"')
         ->toContain('id="email-error"');
+});
+
+it('renders form field hints as accessible icons independently from blueprint', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.partials.form-field
+            name="eligibility_rule"
+            label="Eligibility rule"
+            hint="This rule controls whether the transition is available."
+            hint-mode="icon"
+        >
+            <x-daisy::ui.inputs.input name="eligibility_rule" />
+        </x-daisy::ui.partials.form-field>
+    BLADE);
+
+    expect($html)
+        ->toContain('daisy-form-field-hint-icon')
+        ->toContain('bi-info-circle')
+        ->not->toContain('rounded-full border border-current')
+        ->toContain('tooltip-content')
+        ->toContain('tabindex="0"')
+        ->toContain('aria-describedby="eligibility_rule-hint"')
+        ->toContain('id="eligibility_rule-hint"')
+        ->toContain('class="sr-only"')
+        ->not->toContain('data-blueprint');
 });
 
 it('renders form fields with constrained grid alignment classes for labels inputs selects and dates', function () {

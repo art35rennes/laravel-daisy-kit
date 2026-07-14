@@ -140,7 +140,7 @@ it('opens field editing in a responsive modal without a backdrop', function () {
     ])
         ->assertSet('fieldEditorOpen', false)
         ->assertDontSeeHtml('data-builder-editor-modal')
-        ->assertDontSeeHtml('modal-backdrop')
+        ->assertDontSeeHtml('<form method="dialog" class="modal-backdrop">')
         ->call('editField', 'email')
         ->assertSet('fieldEditorOpen', true)
         ->assertSet('selectedId', 'email')
