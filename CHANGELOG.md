@@ -8,7 +8,6 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 
 ### Added
 
-- Add client-table data updates through the CSP-safe `window.DaisyTable.table(id)` API, including loading, snapshot replacement, incremental changes, and synchronization events.
 - Add DaisyUI 5.6 wrappers for native OTP inputs, Aura effects, and Megamenu navigation.
 - Add vertical range sliders, tooltip alignment, Popover API modals, and selectable card states.
 - Add a tested Tree View instance API, accessible keyboard navigation, safe remote loading, and local or remote search.
@@ -17,7 +16,8 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 
 - Upgrade the TanStack table runtime to contract v2 with immutable configuration, canonical runtime rows, a read-only public facade, recursive row identity validation, namespaced bounded persistence, and modular data, transport, editing, rendering, and state boundaries.
 - Replace ambiguous table HTML/action renderers with explicit `trusted-html`, trusted Blade views, and CSP-safe structured row actions.
-- Upgrade DaisyUI to 5.6.17, Tailwind CSS to 4.3.2, Vite to 8.1.4, and Vitest to 4.1.10.
+- Upgrade the package baseline to PHP 8.3, Laravel 13.19, Livewire 4.3, DaisyUI 5.6.18, Tailwind CSS 4.3.2, Vite 8.1.4, Vitest 4.1.10, and docx-preview 0.4.
+- Refresh all Composer and npm dependencies to their latest PHP 8.3-compatible stable versions and resolve the Guzzle and PSR-7 security advisories present in the previous lock file.
 - Use the native DaisyUI OTP component in the two-factor authentication template while retaining the legacy `otp-code` JavaScript module for compatibility.
 - Delegate choice-card selection and focus styling to DaisyUI 5.6 card states.
 - Escape string content in tooltip, popconfirm, tabs, and accordion components while preserving explicit `Htmlable` values and Blade slots.
@@ -27,11 +27,11 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 ### Breaking
 
 - Require republished v2 table assets, stable row keys for client mutations and structured actions, strict remote mutation response rows, and migration from table `html => true` or raw action HTML.
+- Require PHP 8.3 or later, Laravel 13, and Livewire 4 for the Form Kit builder; Laravel 10–12 and Livewire 3 are no longer supported.
 - Replace the legacy Tree View node selection flags, configurable node keys, lazy modes, events, and implicit global methods with the normalized v2 contract documented in the README.
 
 ### Fixed
 
-- Resolve public table identifiers on the Daisy Table root while retaining descendant element targeting.
 - Add Laravel CSRF tokens and method spoofing to non-GET newsletter forms.
 - Audit the floating tooltip's required runtime positioning styles and make sidebar rendering tests whitespace-tolerant.
 

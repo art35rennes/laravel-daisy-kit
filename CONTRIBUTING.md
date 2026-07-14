@@ -40,6 +40,8 @@ composer ai:catalog
 - Any release must update `CHANGELOG.md`.
 - Tags must follow the `vMAJOR.MINOR.PATCH` format.
 - Until a contrary decision is documented, the stable public baseline starts at `v1.0.0`.
+- The `v4` development baseline is PHP `^8.3`, Laravel `^13.0`, and Livewire `^4.3`.
+- Run the supported PHP matrix, JavaScript tests, dependency audits, and asset reproducibility check before tagging.
 - Run `npm run build` before tagging so `dist/vendor/art35rennes/laravel-daisy-kit/` matches the release and host apps can publish `daisy-assets` after `composer install`.
 
 ## Initial release baseline

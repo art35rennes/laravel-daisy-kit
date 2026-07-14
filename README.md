@@ -11,13 +11,13 @@ This package follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 - `PATCH`: backward-compatible fix or maintenance change
 
 The initial stable release baseline is `v1.0.0`.
-See [CHANGELOG.md](CHANGELOG.md) for released versions and [CONTRIBUTING.md](CONTRIBUTING.md) for the project release rules.
+See [CHANGELOG.md](CHANGELOG.md) for released versions, [UPGRADE.md](UPGRADE.md) for major-version migrations, and [CONTRIBUTING.md](CONTRIBUTING.md) for the project release rules.
 
 ## Requirements
 
-- PHP `^8.1`
-- Laravel `^10.0`, `^11.0`, `^12.0`, or `^13.0`
-- Livewire `^3.6` when using `x-daisy::forms.builder`
+- PHP `^8.3`
+- Laravel `^13.0`
+- Livewire `^4.3` when using `x-daisy::forms.builder`
 
 ## Installation
 
@@ -40,7 +40,7 @@ Then include the package components in Blade:
 </x-daisy::layout.app>
 ```
 
-If the host renders the Form Kit builder, make sure Livewire 3 is installed and its scripts/styles are present in the application layout. The viewer does not require Livewire; it is rendered by Blade and progressively enhanced by the package JavaScript runtime.
+If the host renders the Form Kit builder, make sure Livewire 4 is installed and its scripts/styles are present in the application layout. The viewer does not require Livewire; it is rendered by Blade and progressively enhanced by the package JavaScript runtime.
 
 ## What this package provides
 
@@ -122,51 +122,74 @@ Blueprint is a focused directed-workflow editor. Steps are accessible HTML cards
         transition-shape="curve"
         transition-color="primary"
         node-color="neutral"
-        inspector-mode="modal"
         height="560px"
         :value="$workflow"
         :node-categories="$stepCategories"
         :transition-categories="$transitionCategories"
-    />
+    >
+        <x-slot:inspector>
+            <div class="grid gap-4" data-module="publishing-workflow-inspector">
+                <x-daisy::ui.partials.form-field
+                    id="workflow-label"
+                    label="Name"
+                    hint="This content belongs to the host application."
+                    hint-mode="icon"
+                >
+                    <x-daisy::ui.inputs.input id="workflow-label" data-workflow-field="label" />
+                </x-daisy::ui.partials.form-field>
+
+                <div class="flex justify-end gap-2">
+                    <button type="button" class="btn" data-workflow-action="cancel">Cancel</button>
+                    <button type="button" class="btn btn-primary" data-workflow-action="commit">Save</button>
+                </div>
+            </div>
+        </x-slot:inspector>
+    </x-daisy::ui.advanced.blueprint>
 
 The public value contains **version**, **nodes**, **transitions**, and **viewport**. Every transition is directed; a return path is represented by another transition with its source and target reversed. Parallel transitions and self-loops are supported. The optional **data** object on steps and transitions is the stable extension boundary for host-owned, JSON-serializable attributes. Unknown data is preserved by edits, history, and form synchronization.
 
-Categories may define `defaults` and a declarative inspector `fields` schema. Defaults fill missing `data` keys when an entity is created or changes category; existing host values always win. Supported field types are **text**, **textarea**, **number**, **select**, **checkbox**, **multiselect**, **code-editor**, and **wysiwyg**:
+Categories are presentation-only. Node categories accept `value`, `label`, and `color`; transition categories also accept `shape`. Blueprint never applies defaults to `data` and does not interpret form schemas, sections, tabs, help, CodeMirror, or WYSIWYG configuration.
 
-```php
-$stepCategories = [[
-    'value' => 'approval',
-    'label' => 'Approval',
-    'defaults' => [
-        'required_approvals' => 1,
-        'reviewers' => [],
-    ],
-    'fields' => [
-        [
-            'key' => 'owner_uuid',
-            'type' => 'select',
-            'label' => 'Owner',
-            'required' => true,
-            'options' => $owners,
-            'section' => 'Assignment',
-        ],
-        [
-            'key' => 'eligibility_rule',
-            'type' => 'code-editor',
-            'language' => 'json',
-            'height' => '180px',
-            'label' => 'Eligibility rule',
-            'section' => 'Rules',
-        ],
-    ],
-]];
+The `inspector` slot is rendered inside Blueprint's modal shell. The host may compose any Daisy Kit components in it, including tabs, `form-field`, code editors, and WYSIWYG controls. A host module hydrates these controls when the modal opens and returns the complete `{ label, description, category, data }` value:
+
+```js
+export default function initPublishingInspector(root) {
+    const blueprint = root.closest('[data-blueprint]');
+    const label = root.querySelector('[data-workflow-field="label"]');
+    let session = null;
+
+    blueprint.addEventListener('daisy:blueprint:inspector-open', (event) => {
+        session = event.detail;
+        label.value = session.value.label;
+    });
+
+    label.addEventListener('input', () => {
+        session?.setDraft({
+            ...session.value,
+            label: label.value,
+        });
+    });
+
+    root.querySelector('[data-workflow-action="commit"]').addEventListener('click', () => {
+        session?.commit({
+            ...session.value,
+            label: label.value,
+        });
+    });
+
+    root.querySelector('[data-workflow-action="cancel"]').addEventListener('click', () => {
+        session?.cancel('integrator');
+    });
+}
 ```
 
-Field keys may use safe dot notation for nested data. Descriptors also accept `help`, `placeholder`, `maxLength`, `min`, `max`, `step`, and `height` where relevant. The package applies declared browser constraints, but business validation, authorization, and rich-text sanitization remain host responsibilities. Node cards intentionally continue to display only the stable `label`, `description`, and `category` fields.
+Calling `setDraft(value)` lets Blueprint detect unsaved changes and protect closing, Escape, backdrop clicks, and selection changes. `commit(value)` validates the generic object, updates history and the synchronized workflow, then closes the modal. When `data` is omitted from a draft or commit, Blueprint preserves the entity's existing opaque data; when it is provided, it replaces that data entirely. `cancel()` requests cancellation and displays the discard confirmation when necessary. Business validation remains the host's responsibility and should run before `commit`.
 
-Create a transition by clicking a dot on the source step, then a dot on the target step. `transition-shape` accepts **straight**, **curve**, **s**, or **orthogonal**. `layout` accepts **hierarchical**, **tree** (an explicit Dagre alias), or **radial**; `direction="LR|TB"` applies to hierarchical/tree layouts. `transition-color` and `node-color` accept DaisyUI semantic colors. A node category may override the default card color, for example `['value' => 'published', 'label' => 'Published', 'color' => 'success']`; a transition category may override both its presentation values, for example `['value' => 'return', 'label' => 'Return', 'shape' => 'curve', 'color' => 'warning']`. These presentation values do not change the persisted workflow. The inspector opens in a centered `modal` by default; use `inspector-mode="sidebar"` to retain a right-hand panel.
+Create a transition by clicking a dot on the source step, then a dot on the target step. `transition-shape` accepts **straight**, **curve**, **s**, or **orthogonal**. `layout` accepts **hierarchical**, **tree** (an explicit Dagre alias), or **radial**; `direction="LR|TB"` applies to hierarchical/tree layouts. `transition-color` and `node-color` accept DaisyUI semantic colors. A node category may override the default card color, for example `['value' => 'published', 'label' => 'Published', 'color' => 'success']`; a transition category may override both its presentation values, for example `['value' => 'return', 'label' => 'Return', 'shape' => 'curve', 'color' => 'warning']`. These presentation values do not change the persisted workflow.
 
-The initialized root exposes **root.__daisyBlueprint** with: **getValue**, **setValue**, **addNode**, **updateNode**, **removeNode**, **addTransition**, **updateTransition**, **removeTransition**, **arrange**, **fit**, **undo**, **redo**, and **destroy**. Integration events are **daisy:blueprint:init**, **daisy:blueprint:change**, **daisy:blueprint:select**, and **daisy:blueprint:error**. When **name** is provided, the synchronized hidden field also emits native **input** and **change** events for forms and Livewire.
+Blueprint keeps the same graphical canvas at every viewport width. On touch screens, one finger pans the workflow and a two-finger pinch zooms around the gesture center. The toolbar stacks on narrow screens and the inspector modal occupies the full mobile viewport; no alternate mobile-only workflow representation is generated.
+
+The initialized root exposes **root.__daisyBlueprint** with: **getValue**, **setValue**, **addNode**, **updateNode**, **removeNode**, **addTransition**, **updateTransition**, **removeTransition**, **arrange**, **fit**, **undo**, **redo**, **openInspector**, **setInspectorDraft**, **commitInspector**, **cancelInspector**, and **destroy**. Integration events are **daisy:blueprint:init**, **daisy:blueprint:change**, **daisy:blueprint:select**, **daisy:blueprint:inspector-open**, **daisy:blueprint:inspector-commit**, **daisy:blueprint:inspector-cancel**, and **daisy:blueprint:error**. When **name** is provided, the synchronized hidden field also emits native **input** and **change** events for forms and Livewire.
 
 ## Security Headers And CSP
 
@@ -1128,6 +1151,8 @@ await table.removeRows([userId]);
 `setRows(rows)` replaces the client snapshot. It validates recursively that every row and sub-row has a non-empty, globally unique `rowKey`. `upsertRows(rows)` replaces or appends top-level rows by `rowKey`; `removeRows(ids)` removes top-level rows by key. The table keeps TanStack sorting, filters, pagination, column state, expansion, and selection coherent; deleted identifiers are removed from selection and expansion, and an out-of-range page is clamped automatically. Nested rows remain supported by `setRows`; incremental operations address only top-level rows.
 
 The public facade exposes `setLoading`, `setRows`, `upsertRows`, `removeRows`, `refresh`, `getRows`, `getState`, `getTanStackTable`, and `snapshot`. Snapshots are detached from internal runtime state; `window.DaisyTable.table(id)` returns `null` when no table exists.
+
+URL persistence uses one JSON query parameter per table, for example `daisy-table[scope-users]`, and preserves all host query parameters. Provide `state-key` or a root `id`. Sorting, filters, search, pagination, and column state persist by default; opt into transient state explicitly with `:persist-state-fields="[..., 'expanded', 'rowSelection']"`. Persisted JSON is limited to 4096 bytes.
 
 The data API is intentionally limited to client tables with a `row-key`. Server tables remain backend-authoritative: call `table.refresh()` after a host mutation or external event. `setLoading(true)` displays the standard loading row while client data is being obtained. Every data mutation emits `daisy:table-data-changed` after the stable render with `operation`, `rowIds`, `rows`, `rowCount`, `pageCount`, `state`, and the TanStack `table` instance.
 
