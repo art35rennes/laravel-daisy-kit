@@ -36,29 +36,41 @@ export function mount(el){
 
 function buildInstanceApi(el, state){
   const header = document.createElement('div'); header.className = 'cf-toolbar';
-  const titleEl = document.createElement('div'); titleEl.className = 'font-medium';
-  const left = document.createElement('div'); left.className = 'btn-group';
-  const right = document.createElement('div'); right.className = 'btn-group';
+  const titleEl = document.createElement('h2'); titleEl.className = 'cf-title'; titleEl.setAttribute('aria-live', 'polite');
+  const left = document.createElement('div'); left.className = 'join';
+  const right = document.createElement('div'); right.className = 'tabs tabs-box'; right.setAttribute('role', 'tablist');
   header.appendChild(left); header.appendChild(titleEl); header.appendChild(right);
 
   function buildToolbar(){
     left.innerHTML = '';
     right.innerHTML = '';
-    const prev = btn('«'); prev.addEventListener('click', () => step(-1));
-    const today = btnLabel(i18n('today')); today.addEventListener('click', () => { state.currentDate = new Date(); render(); });
-    const next = btn('»'); next.addEventListener('click', () => step(1));
+    const prev = navigationButton('‹', i18n('previous')); prev.addEventListener('click', () => step(-1));
+    const today = navigationButton(i18n('today'), i18n('today'), false); today.addEventListener('click', () => { state.currentDate = new Date(); render(); });
+    const next = navigationButton('›', i18n('next')); next.addEventListener('click', () => step(1));
     left.appendChild(prev); left.appendChild(today); left.appendChild(next);
     const views = state.options.views;
     views.forEach((v) => {
-      const b = btnLabel(capitalize(v));
-      if (v === state.view) b.classList.add('btn-primary'); else b.classList.add('btn-outline');
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tab';
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(v === state.view));
+      b.textContent = i18n(v);
+      if (v === state.view) b.classList.add('tab-active');
       b.addEventListener('click', () => { state.view = v; render(); });
       right.appendChild(b);
     });
   }
 
-  function btn(txt){ const b = document.createElement('button'); b.className = 'btn btn-sm'; b.textContent = txt; return b; }
-  function btnLabel(txt){ const b = document.createElement('button'); b.className = 'btn btn-sm'; b.textContent = txt; return b; }
+  function navigationButton(text, label, square = true){
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `btn btn-sm join-item${square ? ' btn-square' : ''}`;
+    button.textContent = text;
+    button.setAttribute('aria-label', label);
+
+    return button;
+  }
 
   function step(dir){
     const d = new Date(state.currentDate);
@@ -82,6 +94,7 @@ function buildInstanceApi(el, state){
 
     // Construire le contenu
     const container = document.createElement('div');
+    container.className = 'cf-content';
     function onEventClick(ev){ if (state.options.detail === 'modal') openEventModal(ev); el.dispatchEvent(new CustomEvent('calendar:detail', { detail: ev })); }
     function onMore(day, dayEvents){ openDayList(day, dayEvents); }
     const ctx = { ...state.options, currentDate: state.currentDate, events, onEventClick, onMore };
@@ -124,7 +137,7 @@ function rangeForView(view, currentDate, options){
 }
 
 function parseJson(txt){ try { return JSON.parse(txt || ''); } catch(_) { return null; } }
-function i18n(key){ try { return (window.daisyI18n && window.daisyI18n.calendar && window.daisyI18n.calendar[key]) || key; } catch(_) { return key; } }
+function i18n(key){ try { return (window.daisyI18n && window.daisyI18n.calendar && window.daisyI18n.calendar[key]) || capitalize(key); } catch(_) { return capitalize(key); } }
 function capitalize(s){ return String(s).charAt(0).toUpperCase() + String(s).slice(1); }
 
 // Utilitaires dates
@@ -132,41 +145,90 @@ function startOfWeek(date, firstDay){ const d = new Date(date); const dow = d.ge
 function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
 function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
 function openEventModal(ev){
-  const dialog = document.createElement('dialog');
-  dialog.className = 'modal modal-middle';
-  dialog.innerHTML = `
-    <div class="modal-box">
-      <h3 class="text-lg font-bold mb-2">${escapeHtml(ev.title || 'Event')}</h3>
-      <div class="mb-4 text-sm opacity-80">${formatRange(ev.start, ev.end, ev.allDay)}</div>
-      <div class="mb-2">${ev.raw?.description ? escapeHtml(ev.raw.description) : ''}</div>
-      <div class="modal-action">
-        <form method="dialog"><button class="btn">OK</button></form>
-      </div>
-    </div>
-    <form method="dialog" class="modal-backdrop"><button>close</button></form>`;
+  const { dialog, box } = createDialog(ev.title || 'Event');
+  const range = document.createElement('p');
+  range.className = 'mb-4 text-sm text-base-content/70';
+  range.textContent = formatRange(ev.start, ev.end, ev.allDay);
+  box.appendChild(range);
+
+  if (ev.raw?.description) {
+    const description = document.createElement('p');
+    description.className = 'mb-2';
+    description.textContent = String(ev.raw.description);
+    box.appendChild(description);
+  }
+
+  box.appendChild(createModalActions());
   document.body.appendChild(dialog);
   try { dialog.showModal(); } catch(_) { dialog.setAttribute('open',''); }
   dialog.addEventListener('close', () => dialog.remove());
 }
 function openDayList(day, events){
-  const dialog = document.createElement('dialog');
-  dialog.className = 'modal modal-middle';
-  const items = events.map((e) => `<li class="py-1"><a class="link" href="#" data-id="${e.id||''}">${escapeHtml(e.title||'(untitled)')}</a></li>`).join('');
-  dialog.innerHTML = `
-    <div class="modal-box">
-      <h3 class="text-lg font-bold mb-2">${day.toLocaleDateString(undefined,{ dateStyle:'full' })}</h3>
-      <ul class="mb-4">${items || '<li class="opacity-70">No events</li>'}</ul>
-      <div class="modal-action"><form method="dialog"><button class="btn">OK</button></form></div>
-    </div>
-    <form method="dialog" class="modal-backdrop"><button>close</button></form>`;
-  document.body.appendChild(dialog);
-  dialog.addEventListener('click', (e) => {
-    const a = e.target.closest('a[data-id]'); if (!a) return; e.preventDefault(); const id = a.getAttribute('data-id'); const ev = events.find((x) => String(x.id||'') === id); if (ev) openEventModal(ev);
+  const { dialog, box } = createDialog(day.toLocaleDateString(undefined, { dateStyle: 'full' }));
+  const list = document.createElement('ul');
+  list.className = 'list mb-4';
+
+  events.forEach(event => {
+    const item = document.createElement('li');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'list-row w-full text-start hover:bg-base-200';
+    button.textContent = event.title || '(untitled)';
+    button.addEventListener('click', () => openEventModal(event));
+    item.appendChild(button);
+    list.appendChild(item);
   });
+
+  if (!events.length) {
+    const empty = document.createElement('li');
+    empty.className = 'p-4 text-base-content/60';
+    empty.textContent = i18n('no_events');
+    list.appendChild(empty);
+  }
+
+  box.appendChild(list);
+  box.appendChild(createModalActions());
+  document.body.appendChild(dialog);
   try { dialog.showModal(); } catch(_) { dialog.setAttribute('open',''); }
   dialog.addEventListener('close', () => dialog.remove());
 }
-function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
+
+function createDialog(title){
+  const dialog = document.createElement('dialog');
+  dialog.className = 'modal modal-middle';
+  const box = document.createElement('div');
+  box.className = 'modal-box';
+  const heading = document.createElement('h3');
+  heading.className = 'mb-2 text-lg font-bold';
+  heading.textContent = title;
+  const backdrop = document.createElement('form');
+  backdrop.method = 'dialog';
+  backdrop.className = 'modal-backdrop';
+  const close = document.createElement('button');
+  close.type = 'submit';
+  close.setAttribute('aria-label', i18n('close'));
+  backdrop.appendChild(close);
+  box.appendChild(heading);
+  dialog.appendChild(box);
+  dialog.appendChild(backdrop);
+
+  return { dialog, box };
+}
+
+function createModalActions(){
+  const actions = document.createElement('div');
+  actions.className = 'modal-action';
+  const form = document.createElement('form');
+  form.method = 'dialog';
+  const button = document.createElement('button');
+  button.type = 'submit';
+  button.className = 'btn';
+  button.textContent = i18n('close');
+  form.appendChild(button);
+  actions.appendChild(form);
+
+  return actions;
+}
 function formatRange(start, end, allDay){
   if (allDay){
     const s = start.toLocaleDateString(undefined, { dateStyle:'medium' });
@@ -179,4 +241,3 @@ function formatRange(start, end, allDay){
   const e = sameDay ? end.toLocaleTimeString(undefined,{ hour:'2-digit', minute:'2-digit' }) : `${end.toLocaleDateString(undefined,{ month:'short', day:'numeric' })} ${end.toLocaleTimeString(undefined,{ hour:'2-digit', minute:'2-digit' })}`;
   return `${s} – ${e}`;
 }
-

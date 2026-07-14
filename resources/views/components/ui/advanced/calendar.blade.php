@@ -1,19 +1,7 @@
-{{--
-    Calendar Component (Wrapper)
-
-    Composant wrapper qui délègue le rendu à un provider spécifique :
-    - native : calendrier HTML5 natif (<input type="date">)
-    - cally : calendrier avancé avec le web component Cally (défaut)
-
-    Usage:
-        <x-daisy::ui.advanced.calendar provider="cally" mode="range" />
---}}
-
 @props([
-    'provider' => 'cally', // cally | native
-    // Props forwards
-    'mode' => 'date',     // date | range | multi (cally)
-    'months' => 1,        // (cally)
+    'provider' => 'cally',
+    'mode' => 'date',
+    'months' => 1,
     'showPrevNext' => true,
     'inputId' => null,
     'value' => null,
@@ -21,13 +9,38 @@
     'max' => null,
     'locale' => null,
     'placeholder' => null,
+    'firstDay' => 1,
+    'type' => null,
+    'options' => [],
+    'valueSeparator' => ',',
 ])
 
 @if($provider === 'native')
-    {{-- Provider natif : utilise l'input date HTML5 (simple, accessible, mais limité) --}}
-    <x-daisy::ui.advanced.calendar-native :inputId="$inputId" :value="$value" :placeholder="$placeholder" {{ $attributes }} />
+    <x-daisy::ui.advanced.calendar-native
+        :inputId="$inputId"
+        :value="$value"
+        :min="$min"
+        :max="$max"
+        :placeholder="$placeholder"
+        {{ $attributes }}
+    />
+@elseif($provider === 'vanilla')
+    <x-daisy::ui.advanced.calendar-vanilla
+        :inputId="$inputId"
+        :mode="$mode"
+        :months="$months"
+        :showPrevNext="$showPrevNext"
+        :value="$value"
+        :min="$min"
+        :max="$max"
+        :locale="$locale"
+        :firstDay="$firstDay"
+        :type="$type"
+        :options="$options"
+        :valueSeparator="$valueSeparator"
+        {{ $attributes }}
+    />
 @else
-    {{-- Provider Cally (défaut) : web component avancé avec support range, multi-select, etc. --}}
     <x-daisy::ui.advanced.calendar-cally
         :mode="$mode"
         :months="$months"
@@ -38,6 +51,15 @@
         :locale="$locale"
         {{ $attributes }}
     >
+        @isset($previous)
+            <x-slot:previous>{{ $previous }}</x-slot:previous>
+        @endisset
+        @isset($next)
+            <x-slot:next>{{ $next }}</x-slot:next>
+        @endisset
+        @isset($heading)
+            <x-slot:heading>{{ $heading }}</x-slot:heading>
+        @endisset
         {{ $slot }}
     </x-daisy::ui.advanced.calendar-cally>
 @endif

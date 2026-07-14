@@ -2,6 +2,12 @@
 
 return [
     'today' => 'Today',
+    'calendar' => 'Calendar',
+    'previous' => 'Previous',
+    'next' => 'Next',
+    'year' => 'Year',
+    'list' => 'List',
+    'more' => 'more',
     'add_event' => 'Add event',
     'add' => 'Add',
     'edit' => 'Edit',

@@ -17,14 +17,27 @@ export function renderMonth(container, ctx){
 
   const frag = document.createDocumentFragment();
   const grid = el('div','cf-grid cf-month');
+  grid.setAttribute('role', 'grid');
+  grid.setAttribute('aria-label', monthLabel(year, month));
   frag.appendChild(toolbarSpacer(ctx));
   frag.appendChild(grid);
+
+  for (let index = 0; index < 7; index++) {
+    const weekday = addDays(start, index);
+    const heading = el('div', 'cf-weekday');
+    heading.setAttribute('role', 'columnheader');
+    heading.textContent = weekday.toLocaleDateString(undefined, { weekday: 'short' });
+    grid.appendChild(heading);
+  }
 
   const todayKey = toIsoDate(new Date());
   days.forEach((day,i) => {
     const cell = el('div','cf-cell');
+    cell.setAttribute('role', 'gridcell');
     if (toIsoDate(day) === todayKey) cell.classList.add('is-today');
-    const dateEl = el('div','cf-date');
+    if (day.getMonth() !== month) cell.classList.add('is-outside-month');
+    const dateEl = el('time','cf-date');
+    dateEl.dateTime = toIsoDate(day);
     dateEl.textContent = String(day.getDate());
     cell.appendChild(dateEl);
     const dayEvents = events.filter((e) => intersectsDay(e, day));
@@ -35,10 +48,10 @@ export function renderMonth(container, ctx){
       shown++;
     }
     if (dayEvents.length > shown) {
-      const more = el('a','cf-more link');
-      more.textContent = `+${dayEvents.length - shown} more`;
-      more.href = '#';
-      more.addEventListener('click', (e) => { e.preventDefault(); ctx.onMore(day, dayEvents); });
+      const more = el('button','cf-more btn btn-ghost btn-xs');
+      more.type = 'button';
+      more.textContent = `+${dayEvents.length - shown} ${translate('more', 'more')}`;
+      more.addEventListener('click', () => ctx.onMore(day, dayEvents));
       cell.appendChild(more);
     }
     grid.appendChild(cell);
@@ -50,65 +63,71 @@ export function renderMonth(container, ctx){
 }
 
 export function renderWeek(container, ctx){
-  const { currentDate, events, hourStart, hourEnd, firstDay } = ctx;
+  const { currentDate, firstDay } = ctx;
   const start = startOfWeek(currentDate, firstDay);
-  const end = addDays(start, 7);
+  renderSchedule(container, ctx, Array.from({ length: 7 }, (_, index) => addDays(start, index)), 'cf-week');
 
-  const frag = document.createDocumentFragment();
-  frag.appendChild(toolbarSpacer(ctx));
-  const grid = el('div','cf-grid cf-week');
-  frag.appendChild(grid);
-
-  // En-tête heures colonne 0
-  const hourCountClass = calendarHoursClass(hourEnd - hourStart);
-  const hoursCol = el('div', `cf-hours-col ${hourCountClass}`);
-  for (let h = hourStart; h < hourEnd; h++) {
-    const hr = el('div','cf-hour');
-    hr.textContent = `${h}:00`;
-    hoursCol.appendChild(hr);
-  }
-  grid.appendChild(hoursCol);
-
-  // 7 colonnes jour
-  for (let i=0;i<7;i++){
-    const col = el('div', `cf-day-col ${hourCountClass}`);
-    const day = addDays(start,i);
-    const dayEvents = events.filter((e) => e.allDay ? intersectsDay(e, day) : intersects(e, day, addDays(day,1)));
-    // Slots horizontaux (lignes)
-    for (let h = hourStart; h < hourEnd; h++) col.appendChild(el('div','cf-slot'));
-    // Blocs horaires
-    for (const ev of dayEvents) {
-      if (ev.allDay) continue; // all-day non géré visuel ici pour simplicité
-      const top = posFromTime(maxDate(ev.start, day)) - hourStart;
-      const bottom = posFromTime(minDate(ev.end || ev.start, addDays(day,1))) - hourStart;
-      const block = el('div', `cf-block ${calendarTimeClass('daisy-calendar-top', top)} ${calendarTimeClass('daisy-calendar-height', Math.max(0.8, bottom - top))}`);
-      // Contenu enrichi via template "block"
-      const tpl = queryEventTemplate('block');
-      const payload = {
-        title: ev.title || '(untitled)',
-        timeRange: formatDateTime(ev.start, ev.end),
-        dotColor: colorInputValue(ev.color),
-      };
-      block.appendChild(applyEventTemplate(tpl, payload));
-      block.addEventListener('click', () => ctx.onEventClick(ev));
-      col.appendChild(block);
-    }
-    grid.appendChild(col);
-  }
-
-  container.innerHTML = '';
-  container.appendChild(frag);
   return { title: weekLabel(start), cleanup(){} };
 }
 
 export function renderDay(container, ctx){
-  // Utilise renderWeek mais centré sur un seul jour
-  const tmp = { ...ctx };
-  const node = el('div');
-  container.innerHTML = '';
-  container.appendChild(node);
-  const { title, cleanup } = renderWeek(node, { ...tmp, currentDate: tmp.currentDate });
-  return { title: dayLabel(tmp.currentDate), cleanup };
+  const day = startOfDay(ctx.currentDate);
+  renderSchedule(container, ctx, [day], 'cf-day');
+
+  return { title: dayLabel(day), cleanup(){} };
+}
+
+function renderSchedule(container, ctx, days, viewClass){
+  const { events, hourStart, hourEnd } = ctx;
+  const frag = document.createDocumentFragment();
+  const grid = el('div', `cf-grid cf-schedule ${viewClass}`);
+  const hourCountClass = calendarHoursClass(hourEnd - hourStart);
+  const hoursCol = el('div', `cf-hours-col ${hourCountClass}`);
+  const hoursHeading = el('div', 'cf-day-heading');
+  hoursHeading.setAttribute('aria-hidden', 'true');
+  hoursCol.appendChild(hoursHeading);
+
+  for (let hour = hourStart; hour < hourEnd; hour++) {
+    const hourLabel = el('div','cf-hour');
+    hourLabel.textContent = `${hour}:00`;
+    hoursCol.appendChild(hourLabel);
+  }
+
+  grid.appendChild(hoursCol);
+
+  days.forEach(day => {
+    const column = el('div', `cf-day-col ${hourCountClass}`);
+    const heading = el('div', 'cf-day-heading');
+    heading.textContent = day.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' });
+    column.appendChild(heading);
+    const dayEvents = events.filter(event => event.allDay
+      ? intersectsDay(event, day)
+      : intersects(event, day, addDays(day, 1)));
+
+    for (let hour = hourStart; hour < hourEnd; hour++) {
+      column.appendChild(el('div','cf-slot'));
+    }
+
+    dayEvents.filter(event => !event.allDay).forEach(event => {
+      const top = posFromTime(maxDate(event.start, day)) - hourStart;
+      const bottom = posFromTime(minDate(event.end || event.start, addDays(day, 1))) - hourStart;
+      const block = el('button', `cf-block ${calendarTimeClass('daisy-calendar-top', top)} ${calendarTimeClass('daisy-calendar-height', Math.max(0.8, bottom - top))}`);
+      block.type = 'button';
+      block.appendChild(applyEventTemplate(queryEventTemplate('block'), {
+        title: event.title || '(untitled)',
+        timeRange: formatDateTime(event.start, event.end),
+        dotColor: colorInputValue(event.color),
+      }));
+      block.addEventListener('click', () => ctx.onEventClick(event));
+      column.appendChild(block);
+    });
+
+    grid.appendChild(column);
+  });
+
+  frag.appendChild(toolbarSpacer(ctx));
+  frag.appendChild(grid);
+  container.replaceChildren(frag);
 }
 
 export function renderList(container, ctx){
@@ -121,10 +140,11 @@ export function renderList(container, ctx){
   const sorted = events.filter((e) => intersects(e,start,end))
     .sort((a,b) => (a.start - b.start));
   if (!sorted.length){
-    const p = el('p','opacity-70'); p.textContent = 'No events'; list.appendChild(p);
+    const p = el('p','py-8 text-center text-base-content/60'); p.textContent = translate('no_events', 'No events'); list.appendChild(p);
   } else {
     for (const ev of sorted){
-      const li = el('div','cf-li');
+      const li = el('button','cf-li w-full text-start');
+      li.type = 'button';
       const tpl = queryEventTemplate('list');
       const payload = { title: ev.title || '(untitled)', timeRange: formatDateTime(ev.start, ev.end), dotColor: colorInputValue(ev.color) };
       li.appendChild(applyEventTemplate(tpl, payload));
@@ -204,7 +224,6 @@ function colorInputValue(value){
   const color = String(value || '').trim();
   return /^#[0-9a-f]{6}$/i.test(color) ? color : '#563d7c';
 }
-function escapeHtml(s){ return String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function formatDateTime(start, end){
   const sameDay = !end || (start.toDateString() === end.toDateString());
   const d = start.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
@@ -221,12 +240,24 @@ function intersectsDay(ev, day){
 
 function eventChip(ev, ctx){
   const a = el('a','cf-event');
-  a.href = ev.url || '#';
+  a.href = safeEventUrl(ev.url);
   const tpl = queryEventTemplate('chip');
   const payload = { title: ev.title || '(untitled)', dotColor: colorInputValue(ev.color) };
   a.appendChild(applyEventTemplate(tpl, payload));
   a.addEventListener('click', (e) => { if (!ev.url) e.preventDefault(); ctx.onEventClick(ev); });
   return a;
+}
+
+function safeEventUrl(value){
+  if (!value) return '#';
+
+  try {
+    const url = new URL(String(value), window.location.href);
+
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '#';
+  } catch (_) {
+    return '#';
+  }
 }
 
 // Recherche le <template data-calendar-event="kind"> le plus proche (dans le DOM/document)
@@ -240,11 +271,38 @@ function applyEventTemplate(tpl, payload){
   const span = el('span');
   if (!tpl) { span.textContent = payload.title || ''; return span; }
   const node = tpl.content.cloneNode(true);
-  const html = nodeToHtml(node).replace(/\{\{(\w+)\}\}/g, (_, k) => k in payload ? String(payload[k]) : '');
-  span.innerHTML = html;
-  return span.firstElementChild ? span.firstElementChild : span;
+  const replace = value => String(value).replace(/\{\{(\w+)\}\}/g, (_, key) => key in payload ? String(payload[key]) : '');
+  const textWalker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+  let textNode = textWalker.nextNode();
+
+  while (textNode) {
+    textNode.textContent = replace(textNode.textContent);
+    textNode = textWalker.nextNode();
+  }
+
+  node.querySelectorAll('*').forEach(element => {
+    [...element.attributes].forEach(attribute => element.setAttribute(attribute.name, replace(attribute.value)));
+  });
+
+  span.appendChild(node);
+
+  return span.firstElementChild || span;
 }
-function nodeToHtml(node){ const div = document.createElement('div'); div.appendChild(node); return div.innerHTML; }
+
+function startOfDay(date){
+  const day = new Date(date);
+  day.setHours(0, 0, 0, 0);
+
+  return day;
+}
+
+function translate(key, fallback){
+  try {
+    return window.daisyI18n?.calendar?.[key] || fallback;
+  } catch (_) {
+    return fallback;
+  }
+}
 
 function toolbarSpacer(ctx){
   // Les barres d'outils sont construites dans core.js. Ce noeud est un espace réservé.

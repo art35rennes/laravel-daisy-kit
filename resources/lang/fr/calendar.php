@@ -2,6 +2,12 @@
 
 return [
     'today' => 'Aujourd\'hui',
+    'calendar' => 'Calendrier',
+    'previous' => 'Précédent',
+    'next' => 'Suivant',
+    'year' => 'Année',
+    'list' => 'Liste',
+    'more' => 'de plus',
     'add_event' => 'Ajouter un évènement',
     'add' => 'Ajouter',
     'edit' => 'Modifier',

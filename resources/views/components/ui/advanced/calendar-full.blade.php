@@ -18,8 +18,8 @@
     'height' => 'auto',
     // Détail par défaut: none | modal (clic événement). none = évènement personnalisé uniquement
     'detail' => 'modal',
-    // Surcharge du nom de module JS (optionnel)
     'module' => null,
+    'label' => null,
 ])
 
 @php
@@ -52,9 +52,11 @@
     data-module="{{ $module ?? 'calendar-full' }}"
     data-calendar-full="1"
     data-options='@json($data)'
+    role="region"
+    aria-label="{{ $label ?? __('daisy::calendar.calendar') }}"
     @if($events) data-events='@json($events)' @endif
     @if($eventsUrl) data-events-url="{{ $eventsUrl }}" @endif
-    {{ $attributes->merge(['class' => trim('calendar-full block w-full '.$heightClass)]) }}
+    {{ $attributes->merge(['class' => trim('calendar-full card card-border block w-full bg-base-100 shadow-sm '.$heightClass)]) }}
 ></div>
 
 @include('daisy::components.ui.partials.calendar-event')
