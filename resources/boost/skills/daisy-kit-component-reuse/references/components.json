@@ -1,10 +1,10 @@
 {
-    "generated_at": "2026-07-14T18:47:29+00:00",
+    "generated_at": "2026-07-14T18:55:22+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
-        "component_count": 160,
-        "template_count": 32,
+        "component_count": 162,
+        "template_count": 33,
         "excluded_component_template_mirrors": 0
     },
     "components": [
@@ -411,18 +411,32 @@
                 "sideClass",
                 "expandedWidth",
                 "collapsedWidth",
+                "collapsed",
+                "collapsible",
+                "forceCollapsed",
+                "expandOnHover",
                 "stickyAt",
+                "collapseAt",
+                "storageKey",
+                "name",
+                "logo",
+                "logoAlt",
                 "brand",
                 "brandHref",
                 "brandUrl",
                 "brandCollapsed",
                 "showBrand",
                 "sections",
+                "searchable",
+                "searchPlaceholder",
+                "searchEmptyLabel",
+                "searchResultsLabel",
                 "drawerId",
                 "responsiveOpen",
                 "end",
                 "menuIcon",
                 "iconPrefix",
+                "fallbackIcon",
                 "container",
                 "showThemeController",
                 "themes",
@@ -446,17 +460,27 @@
                 "forceCollapsed",
                 "expandOnHover",
                 "stickyAt",
+                "collapseAt",
+                "storageKey",
+                "name",
+                "logo",
+                "logoAlt",
                 "brand",
                 "brandHref",
                 "brandUrl",
                 "brandCollapsed",
                 "showBrand",
                 "sections",
+                "searchable",
+                "searchPlaceholder",
+                "searchEmptyLabel",
+                "searchResultsLabel",
                 "drawerId",
                 "responsiveOpen",
                 "end",
                 "menuIcon",
                 "iconPrefix",
+                "fallbackIcon",
                 "container",
                 "hasNavbar",
                 "showThemeController",
@@ -538,8 +562,6 @@
                 "transitionShape",
                 "transitionColor",
                 "nodeColor",
-                "inspectorMode",
-                "autosave",
                 "nodeCategories",
                 "transitionCategories"
             ]
@@ -559,7 +581,11 @@
                 "min",
                 "max",
                 "locale",
-                "placeholder"
+                "placeholder",
+                "firstDay",
+                "type",
+                "options",
+                "valueSeparator"
             ]
         },
         {
@@ -596,7 +622,8 @@
                 "hourEnd",
                 "height",
                 "detail",
-                "module"
+                "module",
+                "label"
             ]
         },
         {
@@ -607,7 +634,30 @@
             "props": [
                 "inputId",
                 "value",
-                "placeholder"
+                "placeholder",
+                "min",
+                "max"
+            ]
+        },
+        {
+            "alias": "x-daisy::ui.advanced.calendar-vanilla",
+            "group": "ui.advanced",
+            "name": "calendar-vanilla",
+            "relative_path": "resources/views/components/ui/advanced/calendar-vanilla.blade.php",
+            "props": [
+                "inputId",
+                "mode",
+                "months",
+                "showPrevNext",
+                "value",
+                "min",
+                "max",
+                "locale",
+                "firstDay",
+                "type",
+                "options",
+                "valueSeparator",
+                "label"
             ]
         },
         {
@@ -2568,6 +2618,13 @@
             ]
         },
         {
+            "alias": "x-daisy::ui.navigation.partials.sidebar-item",
+            "group": "ui.navigation.partials",
+            "name": "sidebar-item",
+            "relative_path": "resources/views/components/ui/navigation/partials/sidebar-item.blade.php",
+            "props": []
+        },
+        {
             "alias": "x-daisy::ui.navigation.section-nav",
             "group": "ui.navigation",
             "name": "section-nav",
@@ -2597,27 +2654,30 @@
                 "expandOnHover",
                 "forceCollapsed",
                 "stickyAt",
+                "collapseAt",
+                "hasNavbar",
+                "end",
                 "sideClass",
                 "expandedWidth",
                 "collapsedWidth",
                 "minWidth",
                 "maxWidth",
                 "storageKey",
+                "name",
+                "logo",
+                "logoAlt",
                 "brand",
                 "brandHref",
                 "brandUrl",
                 "brandCollapsed",
                 "showBrand",
-                "label",
-                "items",
-                "href",
-                "icon",
-                "active",
-                "children",
                 "sections",
                 "iconPrefix",
+                "fallbackIcon",
                 "searchable",
-                "searchPlaceholder"
+                "searchPlaceholder",
+                "searchEmptyLabel",
+                "searchResultsLabel"
             ]
         },
         {
@@ -2855,6 +2915,7 @@
                 "labelClass",
                 "error",
                 "hint",
+                "hintMode",
                 "required",
                 "srOnly",
                 "as",
@@ -3037,6 +3098,16 @@
                 "showHeader",
                 "showContract",
                 "namePrefix"
+            ]
+        },
+        {
+            "component_alias": "x-daisy::templates.advanced.partials.blueprint-inspector",
+            "view_alias": "daisy::templates.advanced.partials.blueprint-inspector",
+            "group": "advanced.partials",
+            "name": "blueprint-inspector",
+            "relative_path": "resources/views/templates/advanced/partials/blueprint-inspector.blade.php",
+            "props": [
+                "inspectorId"
             ]
         },
         {
