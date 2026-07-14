@@ -48,6 +48,19 @@ it('renders translated collapse controls', function () {
         ->not->toContain('>Collapse<');
 });
 
+it('centers the sidebar footer and its collapse control', function () {
+    $html = View::make('daisy::components.ui.navigation.sidebar', [
+        'footer' => 'Environment footer',
+        'sections' => daisyKitSidebarSections(),
+    ])->render();
+
+    expect($html)
+        ->toContain('flex shrink-0 flex-col items-center')
+        ->toContain('w-full text-center')
+        ->toContain('justify-center gap-2 sidebar-toggle')
+        ->not->toContain('w-full justify-start gap-2');
+});
+
 it('renders a compact collapsed navigation state', function () {
     $html = View::make('daisy::components.ui.navigation.sidebar', [
         'collapsed' => true,
@@ -57,12 +70,102 @@ it('renders a compact collapsed navigation state', function () {
     expect($html)
         ->toContain('data-collapsed="1"')
         ->toContain('aria-expanded="false"')
-        ->toContain('aria-hidden="true"')
-        ->toContain('sidebar-section-title sidebar-label hidden')
-        ->toContain('sidebar-label-toggle sr-only')
+        ->toContain('data-sidebar-section-title')
+        ->toContain('sidebar-label')
         ->toContain('data-sidebar-icon-collapsed')
         ->toContain('data-sidebar-submenu')
         ->toContain('menu-active');
+});
+
+it('renders nested sidebar items recursively', function () {
+    $html = View::make('daisy::components.ui.navigation.sidebar', [
+        'sections' => [[
+            'label' => 'Workspace',
+            'items' => [[
+                'label' => 'Settings',
+                'icon' => 'gear',
+                'children' => [[
+                    'label' => 'Access',
+                    'icon' => 'shield-lock',
+                    'children' => [[
+                        'label' => 'Roles',
+                        'href' => '/settings/access/roles',
+                    ]],
+                ]],
+            ]],
+        ]],
+    ])->render();
+
+    expect(substr_count($html, '<details'))->toBe(2)
+        ->and($html)
+        ->toContain('data-sidebar-depth="0"')
+        ->toContain('data-sidebar-depth="1"')
+        ->toContain('data-sidebar-depth="2"')
+        ->toContain('href="/settings/access/roles"');
+});
+
+it('renders the sidebar name logo and footer', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.navigation.sidebar name="Daisy Admin" logo="/images/daisy.svg">
+            <x-slot:footer><span data-environment>Production</span></x-slot:footer>
+        </x-daisy::ui.navigation.sidebar>
+    BLADE);
+
+    expect($html)
+        ->toContain('Daisy Admin')
+        ->toContain('src="/images/daisy.svg"')
+        ->toContain('data-sidebar-logo')
+        ->toContain('data-environment');
+});
+
+it('renders a persistent recursive search surface', function () {
+    $html = View::make('daisy::components.ui.navigation.sidebar', [
+        'collapsed' => true,
+        'searchable' => true,
+        'sections' => daisyKitSidebarSections(),
+    ])->render();
+
+    expect($html)
+        ->toContain('data-sidebar-search')
+        ->toContain('data-sidebar-search-status')
+        ->toContain('data-sidebar-search-empty')
+        ->not->toContain('data-sidebar-search-trigger')
+        ->toContain('data-menu-filter-target');
+});
+
+it('renders direction and responsive state hooks', function () {
+    $html = View::make('daisy::components.ui.navigation.sidebar', [
+        'end' => true,
+        'collapseAt' => 'md',
+        'sections' => daisyKitSidebarSections(),
+    ])->render();
+
+    expect($html)
+        ->toContain('data-sidebar-side="end"')
+        ->toContain('data-collapse-at="md"')
+        ->toContain('md:flex');
+});
+
+it('passes the complete sidebar api through the navbar sidebar layout', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::layout.navbar-sidebar-layout
+            collapsed
+            searchable
+            storage-key="admin-navigation"
+            name="Admin"
+            logo="/logo.svg"
+            :show-theme-controller="false"
+        >
+            Content
+        </x-daisy::layout.navbar-sidebar-layout>
+    BLADE);
+
+    expect($html)
+        ->toContain('data-collapsed="1"')
+        ->toContain('data-sidebar-search')
+        ->toContain('data-storage-key="admin-navigation"')
+        ->toContain('Admin')
+        ->toContain('src="/logo.svg"');
 });
 
 it('renders configured collapsed widths and collapsed brand content', function () {
@@ -84,9 +187,9 @@ it('renders configured collapsed widths and collapsed brand content', function (
         ->toContain('w-16')
         ->toContain('data-sidebar-brand-collapsed')
         ->toContain('data-collapsed-brand')
-        ->toContain('justify-center gap-0')
-        ->toContain('btn-square mx-auto justify-center')
-        ->toContain('sidebar-menu-collapsed')
+        ->toContain('justify-center gap-2')
+        ->toContain('justify-center gap-2 sidebar-toggle')
+        ->toContain('data-sidebar-scroll-region')
         ->toContain('data-sidebar-footer');
 });
 
@@ -105,7 +208,8 @@ it('passes compact behavior through the sidebar layout', function () {
 
     expect($html)
         ->toContain('data-collapsed="1"')
-        ->toContain('sidebar-menu-collapsed')
+        ->toContain('data-force-collapsed="1"')
+        ->toContain('data-sidebar-scroll-region')
         ->not->toContain('data-sidebar-toggle');
 });
 
@@ -134,8 +238,7 @@ it('renders expand on hover as a temporary compact state', function () {
     expect($html)
         ->toContain('data-expand-on-hover="1"')
         ->toContain('data-collapsed="1"')
-        ->toContain('data-sidebar-hover-content')
-        ->toContain('aria-hidden="true"')
+        ->toContain('data-sidebar-search-region')
         ->toContain('data-sidebar-submenu')
         ->not->toContain('sidebar-toggle');
 });
@@ -186,11 +289,13 @@ it('opens a parent when a child is active without marking the parent active', fu
         ],
     ])->render();
 
+    preg_match('/<summary\s+class="([^"]*)"[^>]*aria-label="Configuration applicative"/s', $html, $parentSummary);
+
     expect($html)
-        ->toContain('<details open>')
-        ->toContain('class="pt-1" data-sidebar-submenu')
-        ->toContain('aria-label="Configuration applicative" data-sidebar-row>')
-        ->not->toContain('summary class="flex items-center gap-2 menu-active" title="Configuration applicative"')
+        ->toMatch('/<details\s+open\s+data-sidebar-details/')
+        ->toContain('<ul data-sidebar-submenu>')
+        ->toContain('aria-label="Configuration applicative"')
+        ->and($parentSummary[1] ?? null)->not->toContain('menu-active')
         ->and(preg_match('/href="\/settings\/scopes"\s+class="flex items-center gap-2 menu-active"/', $html))->toBe(1);
 });
 
