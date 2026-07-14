@@ -577,6 +577,7 @@
 @endphp
 
 <div
+    {{ $attributes->only(['id', 'data-daisy-table-id']) }}
     data-module="table"
     data-daisy-table="1"
     data-table-layout="{{ $resolvedTableLayout }}"
@@ -767,7 +768,7 @@
 
     <div class="{{ $scrollClasses }}" @if($resolvedScrollX !== 'none') tabindex="0" @endif>
         <table
-            {{ $attributes->merge(['class' => $tableClasses]) }}
+            {{ $attributes->except(['id', 'data-daisy-table-id'])->merge(['class' => $tableClasses]) }}
             data-table-layout="{{ $resolvedTableLayout }}"
         >
             @if($caption)

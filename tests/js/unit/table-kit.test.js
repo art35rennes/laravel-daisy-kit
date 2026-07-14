@@ -178,6 +178,26 @@ describe('table-kit helpers', () => {
     expect(getRowDetailContent({ detailHtml: '<strong>Trusted</strong>' })).toBe('<strong>Trusted</strong>');
   });
 
+  it('resolves a public table id and a descendant element to the Daisy table root', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        rowKey: 'id',
+        columns: [{ key: 'name', label: 'Name' }],
+        rows: [],
+      });
+      root.id = 'client-updates';
+
+      await tableApi('client-updates').setRows([{ id: '1', name: 'Ada' }]);
+      await tableApi(root.querySelector('table')).upsertRows([{ id: '1', name: 'Ada Lovelace' }]);
+
+      expect(root.__daisyTableContext.config.rows).toEqual([{ id: '1', name: 'Ada Lovelace' }]);
+    } finally {
+      env.restore();
+    }
+  });
+
   it('allows deeplink link cells only through explicit policies', () => {
     expect(renderLinkCell({ href: 'myapp://ticket/123', label: 'Open' })).toBe('Open');
     expect(renderLinkCell({ href: 'myapp://ticket/123', label: 'Open' }, {}, { allowedSchemes: ['myapp'] }))
@@ -1630,6 +1650,100 @@ describe('table-kit helpers', () => {
         global.fetch = previousFetch;
       }
 
+      env.restore();
+    }
+  });
+
+  it('updates client data through the public API while preserving TanStack state invariants', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        rowKey: 'id',
+        selection: 'multiple',
+        rowDetail: { mode: 'inline' },
+        pageSizeOptions: [1],
+        initialState: {
+          pagination: { pageIndex: 2, pageSize: 1 },
+        },
+        columns: [{ key: 'name', label: 'Name', sortable: true }],
+        rows: [
+          { id: '1', name: 'Ada' },
+          { id: '2', name: 'Ben' },
+          { id: '3', name: 'Cleo' },
+        ],
+      });
+      const context = await initTable(root);
+      const dataChanges = [];
+      const table = tableApi(root);
+
+      root.addEventListener('daisy:table-data-changed', (event) => {
+        dataChanges.push(event.detail);
+      });
+
+      await table.setLoading(true);
+
+      expect(root.querySelector('[data-table-body]').textContent).toContain('Loading');
+
+      await table.setRows([
+        { id: '1', name: 'Ada' },
+        { id: '2', name: 'Ben' },
+        { id: '3', name: 'Cleo' },
+      ]);
+      await table.setSelection(['2', '3']);
+      await table.setExpanded({ 2: true, 3: true });
+      await table.upsertRows([{ id: '2', name: 'Benoit' }, { id: '4', name: 'Dina' }]);
+      await table.removeRows(['2', '3', '4']);
+
+      expect(context.config.rows).toEqual([{ id: '1', name: 'Ada' }]);
+      expect(context.state.pagination.pageIndex).toBe(0);
+      expect(context.state.selection.selectedIds).toEqual([]);
+      expect(context.state.expanded).toEqual({});
+      expect(root.querySelector('[data-table-body]').textContent).toContain('Ada');
+      expect(dataChanges.map((event) => event.operation)).toEqual(['setRows', 'upsertRows', 'removeRows']);
+      expect(dataChanges.at(-1)).toMatchObject({
+        rowIds: ['2', '3', '4'],
+        rowCount: 1,
+        table: context.table,
+      });
+    } finally {
+      env.restore();
+    }
+  });
+
+  it('rejects client data mutations when the table cannot identify client rows', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        mode: 'server',
+        endpoint: '/users',
+        columns: [{ key: 'name', label: 'Name' }],
+      });
+      const table = tableApi(root);
+
+      await expect(table.setRows([])).rejects.toThrow('only supports client mode with a non-empty rowKey');
+    } finally {
+      env.restore();
+    }
+  });
+
+  it('escapes untrusted values received through client data mutations', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        rowKey: 'id',
+        columns: [{ key: 'name', label: 'Name' }],
+        rows: [],
+      });
+      const table = tableApi(root);
+
+      await table.setRows([{ id: '1', name: '<img src=x onerror=alert(1)>' }]);
+
+      expect(root.querySelector('[data-table-body]').innerHTML).toContain('&lt;img src=x onerror=alert(1)&gt;');
+      expect(root.querySelector('[data-table-body] img')).toBeNull();
+    } finally {
       env.restore();
     }
   });

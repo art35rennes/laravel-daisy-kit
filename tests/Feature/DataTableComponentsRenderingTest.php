@@ -53,6 +53,23 @@ it('renders a client table with DaisyUI classes and serialized config', function
         ->not->toContain('data-daisy-css-width');
 });
 
+it('places a consumer table identifier on the Daisy table root', function (): void {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            id="scope-users"
+            aria-describedby="scope-users-caption"
+            :columns="[['key' => 'name', 'label' => 'Name']]"
+            :rows="[['name' => 'Ada']]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toMatch('/<div\s+id="scope-users"/s')
+        ->toContain('data-daisy-table="1"')
+        ->toMatch('/<table\s+class="[^"]+" aria-describedby="scope-users-caption"/s')
+        ->not->toContain('<table id="scope-users"');
+});
+
 it('renders configurable table layout, scroll and native action column attributes', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.data-display.table

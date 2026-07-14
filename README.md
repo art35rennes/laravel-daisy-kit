@@ -1086,6 +1086,36 @@ Date filters are supported with `type => 'date'` and `type => 'date-range'`. In 
 
 The runtime emits `daisy:table-rendered` after every stable render with `rows`, `rowCount`, `pageCount`, `state`, `meta`, and the TanStack `table` instance. Column order, column pinning, column sizing, expanded rows, and row selection are part of the normalized state and can be updated through `window.DaisyTable.table(id)`.
 
+### Client-side data updates
+
+Client tables can receive data after the initial Blade render without host code touching the table body. Give the table an `id`, use `mode="client"` with a stable `row-key`, then use the public runtime API:
+
+```js
+const table = window.DaisyTable.table('scope-users');
+
+await table.setLoading(true);
+await table.setRows(users);
+
+await table.upsertRows([user]);
+await table.removeRows([userId]);
+```
+
+`setRows(rows)` replaces the client snapshot. `upsertRows(rows)` replaces or appends top-level rows by `rowKey`; every supplied row must provide that key. `removeRows(ids)` removes top-level rows by key. The table keeps TanStack sorting, filters, pagination, column state, expansion, and selection coherent; deleted identifiers are removed from selection and expansion, and an out-of-range page is clamped automatically. Nested rows remain supported by `setRows`; incremental operations address only top-level rows.
+
+The data API is intentionally limited to client tables with a `row-key`. Server tables remain backend-authoritative: call `table.refresh()` after a host mutation or external event. `setLoading(true)` displays the standard loading row while client data is being obtained. Every data mutation emits `daisy:table-data-changed` after the stable render with `operation`, `rowIds`, `rows`, `rowCount`, `pageCount`, `state`, and the TanStack `table` instance.
+
+Use explicit column alignment to keep application tables scannable:
+
+```php
+[
+    ['key' => 'name', 'label' => 'Name', 'align' => 'left'],
+    ['key' => 'visual_signal', 'label' => 'Visual signal', 'align' => 'center'],
+    ['key' => 'amount', 'label' => 'Amount', 'align' => 'right'],
+]
+```
+
+Use `left` for text, names, descriptions, links, and long references; `center` for badges, visual signals, statuses, booleans, actions, short counters, and dates; and `right` for comparable measures, money, decimals, and percentages.
+
 ### Inline editing and row creation
 
 Editing and creation share a single `editable` contract. Each operation can be `remote` (the default) or `local`. Remote updates send `{ rowId, column, value, dirty }`; remote creation sends `{ values }`. Successful responses should return `{ row }`; validation errors use Laravel's `422 { message, errors }` shape.

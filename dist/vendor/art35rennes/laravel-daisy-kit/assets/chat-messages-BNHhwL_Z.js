@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DaJ6WEGw.js";import{initChatMessages as t,t as n}from"./chat-Bo4r69kO.js";function r(e,n={}){return t(e,n)}e((()=>{n()}))();export{r as default};

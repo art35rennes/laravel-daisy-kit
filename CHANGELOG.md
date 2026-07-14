@@ -8,6 +8,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 
 ### Added
 
+- Add client-table data updates through the CSP-safe `window.DaisyTable.table(id)` API, including loading, snapshot replacement, incremental changes, and synchronization events.
 - Add DaisyUI 5.6 wrappers for native OTP inputs, Aura effects, and Megamenu navigation.
 - Add vertical range sliders, tooltip alignment, Popover API modals, and selectable card states.
 - Add a tested Tree View instance API, accessible keyboard navigation, safe remote loading, and local or remote search.
@@ -27,6 +28,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 
 ### Fixed
 
+- Resolve public table identifiers on the Daisy Table root while retaining descendant element targeting.
 - Add Laravel CSRF tokens and method spoofing to non-GET newsletter forms.
 - Audit the floating tooltip's required runtime positioning styles and make sidebar rendering tests whitespace-tolerant.
 

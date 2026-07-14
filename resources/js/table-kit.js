@@ -2278,6 +2278,21 @@ function dispatchTableRendered(context) {
   }));
 }
 
+function dispatchTableDataChanged(context, operation, rowIds = []) {
+  context.root.dispatchEvent(new CustomEvent('daisy:table-data-changed', {
+    bubbles: true,
+    detail: {
+      operation,
+      rowIds,
+      rows: context.visibleRows,
+      rowCount: context.rowCount,
+      pageCount: context.pageCount,
+      state: cloneState(context.state),
+      table: context.table,
+    },
+  }));
+}
+
 function dispatchTableEditEvent(context, name, detail = {}) {
   context.root.dispatchEvent(new CustomEvent(name, {
     bubbles: true,
@@ -2313,6 +2328,157 @@ function syncRowSelectionState(context) {
   }
 
   context.state.rowSelection = rowSelectionFromSelection(context.state.selection);
+}
+
+function requireClientDataContext(context) {
+  if (context?.config.mode !== 'client' || !getStableRowKey(context.config)) {
+    throw new Error('The Daisy Table data API only supports client mode with a non-empty rowKey.');
+  }
+}
+
+function requireRowCollection(rows, method) {
+  if (!Array.isArray(rows) || !rows.every((row) => isPlainObject(row))) {
+    throw new TypeError(`DaisyTable.${method} expects an array of row objects.`);
+  }
+}
+
+function collectClientRowIds(context, rows = context.config.rows) {
+  const rowIds = new Set();
+  const subRowsKey = context.config.subRowsKey;
+
+  const collect = (items) => {
+    items.forEach((row) => {
+      const rowId = getRowSelectionId(context.config, row);
+
+      if (rowId !== null) {
+        rowIds.add(rowId);
+      }
+
+      const subRows = subRowsKey ? row?.[subRowsKey] : null;
+
+      if (Array.isArray(subRows)) {
+        collect(subRows);
+      }
+    });
+  };
+
+  collect(rows);
+
+  return rowIds;
+}
+
+function reconcileClientDataState(context) {
+  const rowIds = collectClientRowIds(context);
+  const selection = normalizeSelectionState(context.state.selection);
+
+  context.state.selection = {
+    ...selection,
+    selectedIds: selection.selectedIds.filter((rowId) => rowIds.has(rowId)),
+    excludedIds: selection.excludedIds.filter((rowId) => rowIds.has(rowId)),
+  };
+
+  if (context.state.expanded !== true) {
+    context.state.expanded = Object.fromEntries(
+      Object.entries(normalizeExpanded(context.state.expanded))
+        .filter(([rowId]) => rowIds.has(rowId))
+    );
+  }
+
+  if (context.editing?.type === 'update' && !rowIds.has(String(context.editing.rowId))) {
+    context.editing = null;
+  }
+
+  syncRowSelectionState(context);
+}
+
+function commitClientDataMutation(context, operation, rowIds = []) {
+  context.loading = false;
+  context.error = '';
+  reconcileClientDataState(context);
+  renderTable(context);
+  persistState(context);
+  dispatchTableDataChanged(context, operation, rowIds);
+
+  return context;
+}
+
+function setClientRows(context, rows) {
+  requireClientDataContext(context);
+  requireRowCollection(rows, 'setRows');
+
+  context.config.rows = [...rows];
+
+  return commitClientDataMutation(context, 'setRows', [...collectClientRowIds(context)]);
+}
+
+function upsertClientRows(context, rows) {
+  requireClientDataContext(context);
+  requireRowCollection(rows, 'upsertRows');
+
+  const rowKey = getStableRowKey(context.config);
+  const rowsById = new Map();
+
+  rows.forEach((row) => {
+    const rowId = getRowSelectionId(context.config, row);
+
+    if (rowId === null) {
+      throw new TypeError(`DaisyTable.upsertRows requires every row to include a non-empty ${rowKey}.`);
+    }
+
+    rowsById.set(rowId, row);
+  });
+
+  const existingRowIds = new Set();
+  const nextRows = context.config.rows.map((row) => {
+    const rowId = getRowSelectionId(context.config, row);
+
+    if (rowId === null || !rowsById.has(rowId)) {
+      return row;
+    }
+
+    existingRowIds.add(rowId);
+
+    return rowsById.get(rowId);
+  });
+
+  rowsById.forEach((row, rowId) => {
+    if (!existingRowIds.has(rowId)) {
+      nextRows.push(row);
+    }
+  });
+
+  context.config.rows = nextRows;
+
+  return commitClientDataMutation(context, 'upsertRows', [...rowsById.keys()]);
+}
+
+function removeClientRows(context, rowIds) {
+  requireClientDataContext(context);
+
+  if (!Array.isArray(rowIds)) {
+    throw new TypeError('DaisyTable.removeRows expects an array of row identifiers.');
+  }
+
+  const normalizedRowIds = uniqueStringArray(rowIds);
+  const removedRows = new Set(normalizedRowIds);
+
+  context.config.rows = context.config.rows.filter((row) => {
+    const rowId = getRowSelectionId(context.config, row);
+
+    return rowId === null || !removedRows.has(rowId);
+  });
+
+  return commitClientDataMutation(context, 'removeRows', normalizedRowIds);
+}
+
+function setClientLoading(context, loading) {
+  requireClientDataContext(context);
+
+  context.loading = loading === true;
+  context.error = '';
+  renderTable(context);
+
+  return context;
 }
 
 function renderColumnVisibility(context) {
@@ -3297,7 +3463,8 @@ function resolveTableRoot(idOrRoot) {
   if (typeof HTMLElement !== 'undefined' && idOrRoot instanceof HTMLElement) {
     return idOrRoot.matches('[data-daisy-table="1"]')
       ? idOrRoot
-      : idOrRoot.querySelector('[data-daisy-table="1"]');
+      : idOrRoot.closest('[data-daisy-table="1"]')
+        ?? idOrRoot.querySelector('[data-daisy-table="1"]');
   }
 
   if (typeof document === 'undefined') {
@@ -3336,6 +3503,26 @@ function tableApi(idOrRoot) {
       destroyTable(root);
 
       return initTable(root);
+    },
+    async setLoading(loading = true) {
+      const context = await initTable(root);
+
+      return setClientLoading(context, loading);
+    },
+    async setRows(rows = []) {
+      const context = await initTable(root);
+
+      return setClientRows(context, rows);
+    },
+    async upsertRows(rows = []) {
+      const context = await initTable(root);
+
+      return upsertClientRows(context, rows);
+    },
+    async removeRows(rowIds = []) {
+      const context = await initTable(root);
+
+      return removeClientRows(context, rowIds);
     },
     selection() {
       const context = root?.__daisyTableContext ?? null;
