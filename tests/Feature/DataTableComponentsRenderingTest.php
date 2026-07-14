@@ -15,6 +15,96 @@ function decodeTableConfig(string $html): array
     return json_decode(html_entity_decode($matches[1] ?? '{}', ENT_QUOTES), true, flags: JSON_THROW_ON_ERROR);
 }
 
+it('keeps the technical id on the root and consumer attributes on the table', function (): void {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            id="scope-users"
+            class="host-table"
+            aria-describedby="scope-users-caption"
+            data-host="eca3"
+            data-module="unsafe"
+            data-daisy-table="0"
+            data-table-config="unsafe"
+            :columns="[['key' => 'name', 'label' => 'Name']]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toMatch('/<div[^>]+id="scope-users"[^>]*>/s')
+        ->toMatch('/<table\b[^>]*class="[^"]*host-table[^"]*"[^>]*aria-describedby="scope-users-caption"[^>]*data-host="eca3"/s')
+        ->not->toMatch('/<div\b[^>]*class="[^"]*host-table[^"]*"/s')
+        ->toContain('data-module="table"')
+        ->toContain('data-daisy-table="1"')
+        ->not->toContain('data-table-config="unsafe"')
+        ->and(decodeTableConfig($html)['contractVersion'])->toBe(2);
+});
+
+it('rejects missing and duplicate client row keys before rendering', function (): void {
+    $missingKey = fn (): string => Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            row-key="id"
+            :columns="[['key' => 'actions', 'label' => 'Actions', 'type' => 'actions']]"
+            :rows="[['actions' => ['action' => 'open']]]"
+        />
+    BLADE);
+    $duplicateNestedKey = fn (): string => Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            row-key="id"
+            sub-rows-key="children"
+            :columns="[['key' => 'name', 'label' => 'Name']]"
+            :rows="[
+                ['id' => 'parent', 'name' => 'Parent', 'children' => [['id' => 'child', 'name' => 'First']]],
+                ['id' => 'other', 'name' => 'Other', 'children' => [['id' => 'child', 'name' => 'Duplicate']]],
+            ]"
+        />
+    BLADE);
+
+    expect($missingKey)->toThrow(ViewException::class, 'non-empty id')
+        ->and($duplicateNestedKey)->toThrow(ViewException::class, 'Duplicate value: child');
+});
+
+it('rejects duplicate columns and legacy trusted html declarations', function (): void {
+    $duplicates = fn () => Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table :columns="[['key' => 'name'], ['key' => 'name']]" />
+    BLADE);
+    $legacyHtml = fn () => Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table :columns="[['key' => 'name', 'html' => true]]" />
+    BLADE);
+
+    expect($duplicates)->toThrow(ViewException::class, 'column keys must be unique')
+        ->and($legacyHtml)->toThrow(ViewException::class, 'trusted-html explicitly');
+});
+
+it('renders structured row actions without trusting descriptor content', function (): void {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            row-key="id"
+            :columns="[['key' => 'actions', 'type' => 'actions']]"
+            :rows="[['id' => 'user-1', 'actions' => ['action' => 'remove&amp;quot; onclick=&amp;quot;alert(1)', 'label' => '&lt;script&gt;alert(1)&lt;/script&gt;', 'variant' => 'unknown']]]"
+        />
+    BLADE);
+
+    expect($html)
+        ->toContain('data-table-row-action=')
+        ->toContain('btn-ghost')
+        ->not->toContain('<script>')
+        ->not->toContain(' onclick="alert');
+});
+
+it('namespaces persisted state with the root id and excludes transient row state by default', function (): void {
+    $html = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            id="scope-users"
+            persist-state="url"
+            :columns="[['key' => 'name']]"
+        />
+    BLADE);
+    $config = decodeTableConfig($html);
+
+    expect($config['stateKey'])->toBe('scope-users')
+        ->and($config['persistStateFields'])->not->toContain('expanded', 'rowSelection');
+});
+
 it('renders a client table with DaisyUI classes and serialized config', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.data-display.table
@@ -53,50 +143,6 @@ it('renders a client table with DaisyUI classes and serialized config', function
         ->not->toContain('data-daisy-css-width');
 });
 
-it('places a consumer table identifier on the Daisy table root', function (): void {
-    $html = Blade::render(<<<'BLADE'
-        <x-daisy::ui.data-display.table
-            id="scope-users"
-            class="consumer-table"
-            aria-describedby="scope-users-caption"
-            data-consumer-table="users"
-            :columns="[['key' => 'name', 'label' => 'Name']]"
-            :rows="[['name' => 'Ada']]"
-        />
-    BLADE);
-
-    expect($html)
-        ->toMatch('/<div\b[^>]*\bid="scope-users"/s')
-        ->toContain('data-daisy-table="1"')
-        ->toMatch('/<table\b[^>]*class="[^"]*consumer-table[^"]*"[^>]*aria-describedby="scope-users-caption"[^>]*data-consumer-table="users"/s')
-        ->not->toMatch('/<div\b[^>]*aria-describedby="scope-users-caption"/s')
-        ->not->toContain('<table id="scope-users"');
-});
-
-it('rejects missing and duplicate client row keys before rendering structured actions', function (): void {
-    $missingKey = fn (): string => Blade::render(<<<'BLADE'
-        <x-daisy::ui.data-display.table
-            row-key="id"
-            :columns="[['key' => 'actions', 'label' => 'Actions', 'type' => 'actions']]"
-            :rows="[['actions' => ['action' => 'open']]]"
-        />
-    BLADE);
-    $duplicateNestedKey = fn (): string => Blade::render(<<<'BLADE'
-        <x-daisy::ui.data-display.table
-            row-key="id"
-            sub-rows-key="children"
-            :columns="[['key' => 'name', 'label' => 'Name']]"
-            :rows="[
-                ['id' => 'parent', 'name' => 'Parent', 'children' => [['id' => 'child', 'name' => 'First']]],
-                ['id' => 'other', 'name' => 'Other', 'children' => [['id' => 'child', 'name' => 'Duplicate']]],
-            ]"
-        />
-    BLADE);
-
-    expect($missingKey)->toThrow(ViewException::class, 'non-empty id')
-        ->and($duplicateNestedKey)->toThrow(ViewException::class, 'Duplicate value: child');
-});
-
 it('renders configurable table layout, scroll and native action column attributes', function () {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.data-display.table
@@ -112,7 +158,7 @@ it('renders configurable table layout, scroll and native action column attribute
                 ['key' => 'postal_address', 'label' => 'Address', 'truncate' => 2, 'width' => '260px', 'minWidth' => 'max-content', 'nowrap' => true],
             ]"
             :rows="[
-                ['id' => 'intervention-1', '_action' => ['action' => 'open', 'label' => 'Open'], 'status_badge' => '<span class=&quot;badge&quot;>Open</span>', 'postal_address' => '12 rue longue'],
+                ['id' => 'row-1', '_action' => ['action' => 'open', 'label' => 'Open'], 'status_badge' => '<span class=&quot;badge&quot;>Open</span>', 'postal_address' => '12 rue longue'],
             ]"
             :filters="[
                 ['key' => 'status', 'label' => 'Status', 'type' => 'text'],
@@ -161,14 +207,14 @@ it('renders configurable table layout, scroll and native action column attribute
 it('provides a content-width table helper for wide containers', function (): void {
     $html = Blade::render(<<<'BLADE'
         <x-daisy::ui.data-display.table
-            table-class="daisy-table-width-content"
             row-key="id"
+            table-class="daisy-table-width-content"
             :columns="[
                 ['key' => '_action', 'label' => 'Actions', 'type' => 'actions'],
                 ['key' => 'name', 'label' => 'Name'],
             ]"
             :rows="[
-                ['id' => 'user-1', '_action' => ['action' => 'open', 'label' => 'Open'], 'name' => 'Jane'],
+                ['id' => 'row-1', '_action' => ['action' => 'open', 'label' => 'Open'], 'name' => 'Jane'],
             ]"
         />
     BLADE);
