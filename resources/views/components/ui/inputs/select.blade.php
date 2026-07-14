@@ -34,6 +34,13 @@
         'lg' => 'select-lg',
         'xl' => 'select-xl',
     ];
+    $enhancedInputSizeMap = [
+        'xs' => 'input-xs',
+        'sm' => 'input-sm',
+        'md' => 'input-md',
+        'lg' => 'input-lg',
+        'xl' => 'input-xl',
+    ];
 
     $classes = 'select w-full';
 
@@ -150,7 +157,7 @@
 
 @if($shouldEnhance)
     <div {{ $wrapperAttributes }}>
-        <label class="input flex w-full items-center gap-2">
+        <label class="input {{ $enhancedInputSizeMap[$size] ?? $enhancedInputSizeMap['md'] }} flex w-full items-center gap-2">
             <span data-role="swatch" class="h-3 w-3 shrink-0 rounded-full {{ $semanticSwatchClasses[$selectedSwatch] ?? 'hidden' }}" aria-hidden="true"></span>
             <input type="text"
                    data-role="input"

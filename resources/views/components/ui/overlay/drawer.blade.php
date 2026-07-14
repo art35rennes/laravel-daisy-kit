@@ -13,12 +13,16 @@
 ])
 
 @php
-    // Construction des classes CSS selon les options (placement, responsive).
+    $responsiveOpenClasses = [
+        'sm' => 'sm:drawer-open',
+        'md' => 'md:drawer-open',
+        'lg' => 'lg:drawer-open',
+        'xl' => 'xl:drawer-open',
+        '2xl' => '2xl:drawer-open',
+    ];
     $rootClasses = 'drawer';
-    // Placement : drawer-end pour sidebar à droite (défaut : gauche).
     if ($end) $rootClasses .= ' drawer-end';
-    // Ouverture responsive : sidebar toujours visible à partir d'un breakpoint (ex: lg:drawer-open).
-    if ($responsiveOpen) $rootClasses .= ' '.$responsiveOpen.':drawer-open';
+    if ($responsiveOpen) $rootClasses .= ' '.($responsiveOpenClasses[$responsiveOpen] ?? $responsiveOpenClasses['lg']);
 
     // Classes pour la zone de contenu principal.
     $contentClasses = 'drawer-content min-w-0';
@@ -36,7 +40,7 @@
     {{ $content ?? $slot }}
   </div>
   {{-- Zone sidebar : menu ou contenu personnalisé --}}
-  <div class="drawer-side">
+  <div class="drawer-side overflow-visible">
     {{-- Overlay cliquable : ferme le drawer au clic (label pointant vers le checkbox) --}}
     <label for="{{ $id }}" aria-label="close sidebar" class="drawer-overlay"></label>
     @if($sideIsMenu)
@@ -46,7 +50,7 @@
       </ul>
     @else
       {{-- Mode contenu libre : rend un <div> pour du contenu personnalisé --}}
-      <div class="bg-base-200 text-base-content h-full overflow-y-auto border-r border-base-content/10 {{ $sideClass }}">
+      <div class="bg-base-200 text-base-content h-full overflow-visible border-r border-base-content/10 {{ $sideClass }}">
         {{ $side ?? '' }}
       </div>
     @endif

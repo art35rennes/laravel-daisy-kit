@@ -5,6 +5,7 @@
     'labelClass' => null,    // Extra classes on label
     'error' => null,         // Force an error message (overrides Laravel $errors)
     'hint' => null,          // Help text (can be overridden by slot: hint)
+    'hintMode' => 'text',    // text|icon
     'required' => false,     // Display required asterisk on label
     'srOnly' => false,       // Screen-reader only label
     'as' => 'div',           // Wrapper tag
@@ -22,6 +23,7 @@
     $controlClasses = trim('daisy-form-field-control w-full min-w-0 max-w-full '.$controlClass);
     $labelClasses = trim('daisy-form-field-label '.$labelClass);
     $resolvedLabelWrap = in_array((string) $labelWrap, ['truncate', 'wrap', 'normal'], true) ? (string) $labelWrap : 'truncate';
+    $resolvedHintMode = $hintMode === 'icon' ? 'icon' : 'text';
     $fieldId = $id ?: ($name ? preg_replace('/[^A-Za-z0-9_-]+/', '-', trim((string) $name, '[]')) : null);
     $labelFor = $for === '__name' ? $fieldId : $for;
 
@@ -70,17 +72,30 @@
                     <span aria-hidden="true" class="text-error ml-1">*</span>
                 @endif
             @endisset
+
+            @if($resolvedHintMode === 'icon' && (isset($hintSlot) || $hint))
+                <span class="daisy-form-field-hint-icon tooltip tooltip-top ms-1 inline-flex align-middle" tabindex="0">
+                    <span class="tooltip-content">
+                        @isset($hintSlot)
+                            {{ $hintSlot }}
+                        @else
+                            {{ $hint }}
+                        @endisset
+                    </span>
+                    <x-icon name="bi-info-circle" aria-hidden="true" class="size-4 shrink-0" />
+                </span>
+            @endif
         </x-daisy::ui.advanced.label>
     @endif
 
     {{-- Control slot: templates should use old($name) and $errors->has($name) directly --}}
     {{-- The $name prop is available in the component context for templates to use --}}
-    <div class="{{ $controlClasses }}">
+    <div class="{{ $controlClasses }}" @if($describedBy) role="group" aria-describedby="{{ $describedBy }}" @endif>
         {{ $slot }}
     </div>
 
     @if(isset($hintSlot) || $hint)
-        <p @if($hintId) id="{{ $hintId }}" @endif class="mt-1 text-sm text-base-content/70">
+        <p @if($hintId) id="{{ $hintId }}" @endif class="{{ $resolvedHintMode === 'icon' ? 'sr-only' : 'mt-1 text-sm text-base-content/70' }}">
             @isset($hintSlot)
                 {{ $hintSlot }}
             @else

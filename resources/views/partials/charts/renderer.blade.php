@@ -128,7 +128,7 @@
     @if(($dataTable ?? true) && $accessibleRows !== [])
         <details class="daisy-chart-data mt-3 text-sm">
             <summary class="cursor-pointer font-medium text-primary">{{ $dataTableLabel ?? __('View chart data') }}</summary>
-            <div class="mt-2 overflow-x-auto rounded-box border border-base-300">
+            <div class="mt-2 overflow-x-auto rounded-box card-border">
                 <table class="table table-xs">
                     <thead>
                         <tr>

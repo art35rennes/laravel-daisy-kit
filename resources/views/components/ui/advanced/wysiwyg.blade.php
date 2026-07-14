@@ -31,7 +31,7 @@
 
     $inputId = $inputId ?: ($name ? 'trix-'.str_replace(['[',']','.'], '-', $name).'-'.uniqid() : 'trix-'.uniqid());
     $classes = 'trix-wrapper';
-    $editorClasses = trim('trix-content '.($heightClass ?? ''));
+    $editorClasses = trim('trix-content block w-full '.($heightClass ?? ''));
     $attachmentsAttr = $attachments ? '1' : '0';
     $isDeferred = $lazy === true || $lazy === 1 || $lazy === '1' || $lazy === 'button';
 @endphp
@@ -53,7 +53,8 @@
                 @if($toolbar) toolbar="{{ $inputId }}-toolbar" @endif></trix-editor>
         @else
             <trix-editor placeholder="{{ $placeholder }}" @disabled($disabled)
-                class="{{ $editorClasses }}">{!! $value ?? $slot !!}</trix-editor>
+                class="{{ $editorClasses }}"
+                @if($toolbar) toolbar="{{ $inputId }}-toolbar" @endif>{!! $value ?? $slot !!}</trix-editor>
         @endif
     </div>
 

@@ -405,6 +405,11 @@ function bindExpandedModal(root) {
 
   root.__cmExpandModalBound = true;
   modal.addEventListener('close', () => restoreFromExpand(root));
+  modal.querySelector('[data-code-editor-expand-dismiss]')?.addEventListener('click', () => {
+    if (modal.open) {
+      modal.close();
+    }
+  });
 }
 
 function expand(root) {

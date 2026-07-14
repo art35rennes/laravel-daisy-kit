@@ -20,6 +20,9 @@ return [
     'sidebar' => 'Sidebar',
     'sidebar_collapse' => 'Collapse',
     'sidebar_expand' => 'Expand',
+    'sidebar_search_placeholder' => 'Search navigation…',
+    'sidebar_search_empty' => 'No matching navigation item.',
+    'sidebar_search_results' => ':count navigation item(s) found',
     'tabs' => 'Tabs',
     'tab' => 'Tab',
     'steps' => 'Steps',
@@ -92,11 +95,8 @@ return [
         'transition' => 'Transition',
         'empty' => 'Add a step to start this workflow.',
         'unnamed' => 'Unnamed',
-        'select_target' => 'Choose a target step',
         'select_connection_target' => 'Now select a dot on the target step.',
         'validation_error' => 'The workflow is invalid.',
-        'create_transition' => 'Create a transition',
-        'autosave' => 'Automatic saving',
         'unsaved_changes' => 'Unsaved changes',
         'discard' => [
             'title' => 'Discard changes?',
@@ -104,22 +104,14 @@ return [
             'keep_editing' => 'Keep editing',
             'confirm' => 'Discard',
         ],
-        'fields' => [
-            'name' => 'Name',
-            'description' => 'Description',
-            'category' => 'Category',
-        ],
         'actions' => [
             'search' => 'Search steps',
             'undo' => 'Undo',
             'redo' => 'Redo',
             'arrange' => 'Arrange',
             'fit' => 'Fit',
-            'save' => 'Save',
-            'delete' => 'Delete',
             'close' => 'Close',
             'add_node' => 'Add step',
-            'add_transition' => 'Add transition',
         ],
     ],
     'blueprint_template' => [
@@ -136,8 +128,12 @@ return [
         'contract' => [
             'title' => 'Public contract',
             'description' => 'Blueprint edits directed steps and transitions. The host application keeps ownership of persistence, business data, and workflow execution.',
+            'inspector_help' => 'This inspector is supplied by the host application through the Blueprint slot.',
         ],
         'fields' => [
+            'name' => 'Name',
+            'description' => 'Description',
+            'category' => 'Category',
             'assignment' => 'Assignment',
             'owner' => 'Owner',
             'priority' => 'Priority',
@@ -145,6 +141,11 @@ return [
             'high' => 'High',
             'expedited' => 'Expedited',
             'notify' => 'Notify on transition',
+        ],
+        'actions' => [
+            'save' => 'Save',
+            'cancel' => 'Cancel',
+            'delete' => 'Delete',
         ],
         'examples' => [
             'approval' => [

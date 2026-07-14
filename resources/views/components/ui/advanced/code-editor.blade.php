@@ -152,9 +152,9 @@
         <div class="modal-box h-[100svh] max-h-none w-screen max-w-none rounded-none p-4">
             <div data-code-editor-expand-host class="h-full min-h-0"></div>
         </div>
-        <form method="dialog" class="modal-backdrop">
-            <button>{{ __('daisy::components.code_editor.actions.reduce') }}</button>
-        </form>
+        <div class="modal-backdrop">
+            <button type="button" data-code-editor-expand-dismiss>{{ __('daisy::components.code_editor.actions.reduce') }}</button>
+        </div>
     </dialog>
 @endif
 

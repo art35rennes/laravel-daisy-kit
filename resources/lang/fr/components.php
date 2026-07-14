@@ -34,6 +34,9 @@ return [
     'sidebar' => 'Barre latérale',
     'sidebar_collapse' => 'Réduire',
     'sidebar_expand' => 'Développer',
+    'sidebar_search_placeholder' => 'Rechercher dans la navigation…',
+    'sidebar_search_empty' => 'Aucun élément de navigation trouvé.',
+    'sidebar_search_results' => ':count élément(s) de navigation trouvé(s)',
     'tabs' => 'Onglets',
     'tab' => 'Onglet',
     'steps' => 'Étapes',
@@ -107,11 +110,8 @@ return [
         'transition' => 'Transition',
         'empty' => 'Ajoutez une étape pour commencer ce workflow.',
         'unnamed' => 'Sans nom',
-        'select_target' => 'Choisir une étape cible',
         'select_connection_target' => 'Sélectionnez maintenant un point sur l’étape cible.',
         'validation_error' => 'Le workflow est invalide.',
-        'create_transition' => 'Créer une transition',
-        'autosave' => 'Enregistrement automatique',
         'unsaved_changes' => 'Modifications non enregistrées',
         'discard' => [
             'title' => 'Abandonner les modifications ?',
@@ -119,22 +119,14 @@ return [
             'keep_editing' => 'Continuer la modification',
             'confirm' => 'Abandonner',
         ],
-        'fields' => [
-            'name' => 'Nom',
-            'description' => 'Description',
-            'category' => 'Catégorie',
-        ],
         'actions' => [
             'search' => 'Rechercher une étape',
             'undo' => 'Annuler',
             'redo' => 'Refaire',
             'arrange' => 'Organiser',
             'fit' => 'Ajuster',
-            'save' => 'Enregistrer',
-            'delete' => 'Supprimer',
             'close' => 'Fermer',
             'add_node' => 'Ajouter une étape',
-            'add_transition' => 'Ajouter une transition',
         ],
     ],
     'blueprint_template' => [
@@ -151,8 +143,12 @@ return [
         'contract' => [
             'title' => 'Contrat public',
             'description' => 'Blueprint édite des étapes et transitions orientées. L’application hôte garde la persistance, les données métier et l’exécution du workflow.',
+            'inspector_help' => 'Cet inspecteur est fourni par l’application hôte via le slot Blueprint.',
         ],
         'fields' => [
+            'name' => 'Nom',
+            'description' => 'Description',
+            'category' => 'Catégorie',
             'assignment' => 'Affectation',
             'owner' => 'Responsable',
             'priority' => 'Priorité',
@@ -160,6 +156,11 @@ return [
             'high' => 'Haute',
             'expedited' => 'Traitement accéléré',
             'notify' => 'Notifier lors de la transition',
+        ],
+        'actions' => [
+            'save' => 'Enregistrer',
+            'cancel' => 'Annuler',
+            'delete' => 'Supprimer',
         ],
         'examples' => [
             'approval' => [
