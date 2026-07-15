@@ -11,7 +11,7 @@ import {
   requireMutationRow,
 } from '../../../resources/js/table/transport.js';
 import { normalizeActions } from '../../../resources/js/table/renderers.js';
-import { normalizeConfig } from '../../../resources/js/table/runtime.js';
+import { mergeState, normalizeConfig } from '../../../resources/js/table/runtime.js';
 
 const previousGlobals = {
   window: global.window,
@@ -55,6 +55,139 @@ describe('table v2 runtime contracts', () => {
       rowSelection: { 1: true },
     });
     expect(readStateFromUrl({ stateKey: 'assets' })).toEqual({ sorting: [{ id: 'title', desc: true }] });
+  });
+
+  it('removes URL persistence for an untouched table while preserving host parameters and other tables', () => {
+    const initialState = {
+      sorting: [],
+      globalFilter: '',
+      columnFilters: [],
+      pagination: { pageIndex: 0, pageSize: 20 },
+      columnVisibility: { name: true, status: true },
+      columnOrder: ['name', 'status'],
+      columnPinning: { left: [], right: [] },
+      columnSizing: {},
+    };
+    const dom = new JSDOM('<div></div>', {
+      url: 'https://example.test/users?tenant=acme&daisy-table%5Bassets%5D=%7B%22sorting%22%3A%5B%5D%7D&daisy-table%5Busers%5D=%7B%22globalFilter%22%3A%22stale%22%7D',
+    });
+
+    global.window = dom.window;
+    global.document = dom.window.document;
+
+    const state = structuredClone(initialState);
+
+    state.columnFilters = [{ id: 'status', type: 'text', value: '' }];
+    writeStateToUrl({ stateKey: 'users', initialState }, null, state);
+
+    const params = new URLSearchParams(window.location.search);
+
+    expect(params.get('tenant')).toBe('acme');
+    expect(params.has('daisy-table[users]')).toBe(false);
+    expect(params.get('daisy-table[assets]')).toBe('{"sorting":[]}');
+  });
+
+  it('persists an empty filter array when it clears an initial filter', () => {
+    const initialState = {
+      columnFilters: [{ id: 'status', type: 'select', value: 'active' }],
+    };
+    const dom = new JSDOM('<div></div>', { url: 'https://example.test/users' });
+
+    global.window = dom.window;
+    global.document = dom.window.document;
+
+    writeStateToUrl({ stateKey: 'users', initialState }, null, { columnFilters: [] });
+
+    expect(readStateFromUrl({ stateKey: 'users' })).toEqual({ columnFilters: [] });
+  });
+
+  it('persists only nested differences and restores them over normalized initial state', () => {
+    const config = normalizeConfig({
+      stateKey: 'users',
+      persistState: 'url',
+      pageSizeOptions: [20, 50],
+      columns: [
+        { key: 'name' },
+        { key: 'status' },
+        { key: 'updated_at' },
+      ],
+      filters: [{ id: 'status', type: 'select' }],
+      initialState: {
+        pagination: { pageIndex: 0, pageSize: 20 },
+        columnVisibility: { status: false },
+        columnPinning: { right: ['updated_at'] },
+        columnSizing: { name: 160 },
+      },
+    });
+    const state = structuredClone(config.initialState);
+    const dom = new JSDOM('<div></div>', { url: 'https://example.test/users?tenant=acme' });
+
+    state.sorting = [{ id: 'name', desc: false }];
+    state.globalFilter = 'alice';
+    state.columnFilters = [{ id: 'status', type: 'select', value: 'active' }];
+    state.pagination.pageIndex = 2;
+    state.columnVisibility.name = false;
+    state.columnPinning.left = ['name'];
+    state.columnSizing.updated_at = 220;
+
+    global.window = dom.window;
+    global.document = dom.window.document;
+
+    writeStateToUrl(config, null, state);
+
+    const persistedState = readStateFromUrl(config);
+    const restoredState = mergeState(config.initialState, persistedState, config, true);
+
+    expect(persistedState).toEqual({
+      sorting: [{ id: 'name', desc: false }],
+      globalFilter: 'alice',
+      columnFilters: [{ id: 'status', type: 'select', value: 'active' }],
+      pagination: { pageIndex: 2 },
+      columnVisibility: { name: false },
+      columnPinning: { left: ['name'] },
+      columnSizing: { updated_at: 220 },
+    });
+    expect(restoredState).toEqual(state);
+  });
+
+  it('persists removal of an initial column customization', () => {
+    const config = normalizeConfig({
+      stateKey: 'users',
+      persistState: 'url',
+      columns: [{ key: 'name' }],
+      initialState: { columnSizing: { name: 160 } },
+    });
+    const state = structuredClone(config.initialState);
+    const dom = new JSDOM('<div></div>', { url: 'https://example.test/users' });
+
+    state.columnSizing = {};
+    global.window = dom.window;
+    global.document = dom.window.document;
+
+    writeStateToUrl(config, null, state);
+
+    const persistedState = readStateFromUrl(config);
+
+    expect(persistedState).toEqual({ columnSizing: { name: null } });
+    expect(mergeState(config.initialState, persistedState, config, true).columnSizing).toEqual({});
+  });
+
+  it('keeps full-state replacement semantics outside URL delta hydration', () => {
+    const config = normalizeConfig({
+      columns: [{ key: 'name' }],
+      initialState: {
+        columnSizing: { name: 160 },
+        rowSelection: { initial: true },
+      },
+    });
+
+    const restoredState = mergeState(config.initialState, {
+      columnSizing: {},
+      rowSelection: { persisted: true },
+    }, config);
+
+    expect(restoredState.columnSizing).toEqual({});
+    expect(restoredState.rowSelection).toEqual({ persisted: true });
   });
 
   it('excludes selection and expansion by default and bounds persisted JSON', () => {

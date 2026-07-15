@@ -37,16 +37,74 @@ function getPersistenceParameter(config, root = null) {
   return namespace ? `daisy-table[${namespace}]` : null;
 }
 
-function selectPersistedState(state, fields) {
+function createStateDelta(value, initialValue) {
+  if (Object.is(value, initialValue)) {
+    return undefined;
+  }
+
+  if (Array.isArray(value) || Array.isArray(initialValue)) {
+    return JSON.stringify(value) === JSON.stringify(initialValue) ? undefined : value;
+  }
+
+  if (isPlainObject(value) && isPlainObject(initialValue)) {
+    const keys = new Set([...Object.keys(initialValue), ...Object.keys(value)]);
+    const delta = {};
+
+    keys.forEach((key) => {
+      if (!Object.hasOwn(value, key)) {
+        delta[key] = null;
+        return;
+      }
+
+      const nestedDelta = createStateDelta(value[key], initialValue[key]);
+
+      if (nestedDelta !== undefined) {
+        delta[key] = nestedDelta;
+      }
+    });
+
+    return Object.keys(delta).length > 0 ? delta : undefined;
+  }
+
+  return value;
+}
+
+function withoutEmptyColumnFilters(filters) {
+  if (!Array.isArray(filters)) {
+    return filters;
+  }
+
+  return filters.filter((filter) => {
+    if (!isPlainObject(filter)) {
+      return false;
+    }
+
+    if (isPlainObject(filter.value)) {
+      return Object.values(filter.value).some((value) => value !== '' && value != null);
+    }
+
+    return filter.value !== '' && filter.value != null;
+  });
+}
+
+function normalizePersistedValue(field, value) {
+  return field === 'columnFilters' ? withoutEmptyColumnFilters(value) : value;
+}
+
+function selectPersistedState(state, fields, initialState = {}) {
   return Object.fromEntries(
     normalizePersistedStateFields(fields)
       .filter((field) => Object.hasOwn(state, field))
-      .map((field) => [field, state[field]])
+      .map((field) => [field, createStateDelta(
+        normalizePersistedValue(field, state[field]),
+        normalizePersistedValue(field, initialState[field])
+      )])
+      .filter(([, value]) => value !== undefined)
   );
 }
 
-function serializePersistedState(state, fields, maxBytes = MAX_PERSISTED_STATE_BYTES) {
-  const serialized = JSON.stringify(selectPersistedState(state, fields));
+function serializePersistedState(state, fields, maxBytes = MAX_PERSISTED_STATE_BYTES, initialState = {}) {
+  const serialized = JSON.stringify(selectPersistedState(state, fields, initialState));
 
   if (new TextEncoder().encode(serialized).byteLength > maxBytes) {
     throw new Error(`Daisy Table persisted state exceeds the ${maxBytes} byte limit.`);
@@ -87,9 +145,19 @@ function writeStateToUrl(config, root, state, history = window.history, location
   }
 
   const url = new URL(location.href);
-  const serialized = serializePersistedState(state, config.persistStateFields);
+  const serialized = serializePersistedState(
+    state,
+    config.persistStateFields,
+    MAX_PERSISTED_STATE_BYTES,
+    config.initialState
+  );
 
-  url.searchParams.set(parameter, serialized);
+  if (serialized === '{}') {
+    url.searchParams.delete(parameter);
+  } else {
+    url.searchParams.set(parameter, serialized);
+  }
+
   history.replaceState({}, '', url);
 
   return true;

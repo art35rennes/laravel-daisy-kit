@@ -2633,8 +2633,24 @@ function persistState(context) {
   } catch (_) {}
 }
 
-function mergeState(baseState, overrideState = {}, config) {
+function mergeState(baseState, overrideState = {}, config, mergePartialObjects = false) {
   const nextState = cloneState(baseState);
+  const mergeObject = (baseValue, overrideValue) => {
+    const merged = { ...baseValue };
+
+    Object.entries(overrideValue).forEach(([key, value]) => {
+      if (value === null) {
+        delete merged[key];
+      } else {
+        merged[key] = value;
+      }
+    });
+
+    return merged;
+  };
+  const resolveObject = (baseValue, overrideValue) => mergePartialObjects
+    ? mergeObject(baseValue, overrideValue)
+    : overrideValue;
 
   if (Array.isArray(overrideState.sorting)) {
     nextState.sorting = normalizeSorting(overrideState.sorting, config.columns);
@@ -2662,7 +2678,10 @@ function mergeState(baseState, overrideState = {}, config) {
   }
 
   if (isPlainObject(overrideState.columnVisibility)) {
-    nextState.columnVisibility = normalizeColumnVisibility(overrideState.columnVisibility, config.columns);
+    nextState.columnVisibility = normalizeColumnVisibility(
+      resolveObject(nextState.columnVisibility, overrideState.columnVisibility),
+      config.columns
+    );
   }
 
   if (Array.isArray(overrideState.columnOrder)) {
@@ -2670,19 +2689,29 @@ function mergeState(baseState, overrideState = {}, config) {
   }
 
   if (isPlainObject(overrideState.columnPinning)) {
-    nextState.columnPinning = normalizeColumnPinning(overrideState.columnPinning, config.columns);
+    nextState.columnPinning = normalizeColumnPinning(
+      resolveObject(nextState.columnPinning, overrideState.columnPinning),
+      config.columns
+    );
   }
 
   if (isPlainObject(overrideState.columnSizing)) {
-    nextState.columnSizing = normalizeColumnSizing(overrideState.columnSizing, config.columns);
+    nextState.columnSizing = normalizeColumnSizing(
+      resolveObject(nextState.columnSizing, overrideState.columnSizing),
+      config.columns
+    );
   }
 
   if (overrideState.expanded === true || isPlainObject(overrideState.expanded)) {
-    nextState.expanded = normalizeExpanded(overrideState.expanded);
+    nextState.expanded = normalizeExpanded(
+      isPlainObject(nextState.expanded) && isPlainObject(overrideState.expanded)
+        ? resolveObject(nextState.expanded, overrideState.expanded)
+        : overrideState.expanded
+    );
   }
 
   if (isPlainObject(overrideState.rowSelection)) {
-    nextState.rowSelection = normalizeRowSelection(overrideState.rowSelection);
+    nextState.rowSelection = normalizeRowSelection(resolveObject(nextState.rowSelection, overrideState.rowSelection));
 
     if (config.selection.enabled && !isPlainObject(overrideState.selection)) {
       const selectedIds = Object.keys(nextState.rowSelection);
@@ -3403,7 +3432,8 @@ async function initTable(root) {
   context.state = mergeState(
     context.state,
     config.persistState === 'url' ? parseStateFromUrl(config) : parseStateFromLocalStorage(context),
-    config
+    config,
+    config.persistState === 'url'
   );
 
   container.__daisyTableInit = true;
