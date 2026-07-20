@@ -768,7 +768,7 @@ Readonly viewers keep the same schema/value contract and expose `data-readonly="
 
 ## DOCX file preview zoom
 
-`x-daisy::ui.data-display.file-preview` can fit rendered DOCX pages to the available width while keeping a vertically scrollable viewport. The scale is calculated from the full rendered document width, including overflowing tables and images, to avoid horizontal scrolling whenever the configured minimum zoom allows it.
+`x-daisy::ui.data-display.file-preview` can fit rendered DOCX pages to the available width while keeping a vertically scrollable viewport. The scale is calculated from the page width, so genuinely overflowing tables, images, or other incompressible content can still use horizontal scrolling.
 
 ```blade
 <x-daisy::ui.data-display.file-preview

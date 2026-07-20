@@ -92,10 +92,9 @@ function measureDocxFitZoom(element) {
     - getNumericStyle(element, 'paddingLeft')
     - getNumericStyle(element, 'paddingRight');
   const widestPage = Math.max(...pages.map((page) => page.getBoundingClientRect().width));
-  const nominalDocumentWidth = widestPage
+  const documentWidth = widestPage
     + getNumericStyle(wrapper, 'paddingLeft')
     + getNumericStyle(wrapper, 'paddingRight');
-  const documentWidth = Math.max(nominalDocumentWidth, wrapper.scrollWidth);
 
   return calculateDocxFitZoom(viewportWidth, documentWidth);
 }

@@ -98,29 +98,6 @@ describe('file-preview module', () => {
     expect(calculateDocxFitZoom(0, 800)).toBe(100);
   });
 
-  it('fits overflowing docx content rather than only the nominal page width', () => {
-    document.body.innerHTML = `
-      <div data-module="file-preview">
-        <div data-file-preview-docx data-docx-view="fit-width" data-docx-zoom="100">
-          <div class="daisy-docx-preview-wrapper">
-            <section class="daisy-docx-preview">Wide table</section>
-          </div>
-        </div>
-      </div>
-    `;
-    const element = document.querySelector('[data-file-preview-docx]');
-    const wrapper = element.querySelector('.daisy-docx-preview-wrapper');
-    const page = element.querySelector('.daisy-docx-preview');
-
-    Object.defineProperty(element, 'clientWidth', { configurable: true, value: 400 });
-    Object.defineProperty(wrapper, 'scrollWidth', { configurable: true, value: 1600 });
-    page.getBoundingClientRect = () => ({ width: 800, height: 1000 });
-
-    setDocxZoom(element, 'fit-width');
-
-    expect(element.dataset.docxCurrentZoom).toBe('25');
-  });
-
   it('applies fit width and manual docx zoom through CSP safe classes', () => {
     document.body.innerHTML = `
       <div data-module="file-preview">
