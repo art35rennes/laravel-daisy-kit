@@ -42,6 +42,16 @@
     >{{ $loadingLabel }}</pre>
 @elseif($previewType === 'docx')
     <div class="min-w-0" data-file-preview-docx-viewer>
+        @if($resolvedDocxNotice)
+            <p
+                class="flex items-start gap-2 border-b border-base-300/60 bg-base-200/70 px-3 py-2 text-xs text-base-content/60"
+                role="note"
+                data-file-preview-docx-notice
+            >
+                <x-icon name="bi-info-circle" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>{{ $resolvedDocxNotice }}</span>
+            </p>
+        @endif
         @if($resolvedDocxZoomControls)
             <div
                 class="flex flex-wrap items-center justify-end gap-1 border-b border-base-300/60

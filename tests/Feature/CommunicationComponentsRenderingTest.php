@@ -595,12 +595,28 @@ describe('Communication Components Rendering', function () {
                 'url' => 'https://example.com/document.docx',
                 'name' => 'document.docx',
                 'previewMode' => 'inline',
+                'docxNotice' => 'The DOCX preview may differ from the final document.',
             ])->render();
 
             expect($html)
                 ->toContain('data-file-preview-docx')
+                ->toContain('data-file-preview-docx-notice')
+                ->toContain('The DOCX preview may differ from the final document.')
                 ->toContain('data-url="https://example.com/document.docx"')
                 ->toContain('document.docx');
+        });
+
+        it('does not render a docx notice for another preview type', function () {
+            $html = View::make('daisy::components.ui.data-display.file-preview', [
+                'url' => 'https://example.com/document.pdf',
+                'name' => 'document.pdf',
+                'previewMode' => 'inline',
+                'docxNotice' => 'The DOCX preview may differ from the final document.',
+            ])->render();
+
+            expect($html)
+                ->not->toContain('data-file-preview-docx-notice')
+                ->not->toContain('The DOCX preview may differ from the final document.');
         });
 
         it('renders optional fit width and zoom controls for docx previews', function () {

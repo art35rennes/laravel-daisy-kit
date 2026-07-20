@@ -23,6 +23,7 @@
     'docxView' => 'page',
     'docxZoom' => 100,
     'docxZoomControls' => false,
+    'docxNotice' => null,
     'layout' => 'card',
     'actionOnly' => false,
     'actionButtonClass' => null,
@@ -166,6 +167,9 @@
     $resolvedDocxView = $docxView === 'fit-width' ? 'fit-width' : 'page';
     $resolvedDocxZoom = min(100, max(10, (int) $docxZoom));
     $resolvedDocxZoomControls = filter_var($docxZoomControls, FILTER_VALIDATE_BOOLEAN);
+    $resolvedDocxNotice = is_string($docxNotice) && trim($docxNotice) !== ''
+        ? trim($docxNotice)
+        : null;
 
     if ($openMode !== null && $previewMode === 'auto') {
         $previewMode = $openMode === 'blank' ? 'download' : $openMode;
