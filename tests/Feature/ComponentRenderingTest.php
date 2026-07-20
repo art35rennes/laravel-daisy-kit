@@ -586,6 +586,8 @@ it('renders conservative default pacing for autocomplete controls', function () 
         ->toContain('input input-sm flex w-full items-center gap-2')
         ->toContain('data-debounce="500"')
         ->toContain('data-min-chars="3"')
+        ->toContain('data-list-size="5"')
+        ->toContain('data-select-list-size="5"')
         ->and(substr_count($select, 'data-module="select"'))->toBe(1);
 
     expect($tokenInput)
@@ -596,6 +598,18 @@ it('renders conservative default pacing for autocomplete controls', function () 
         ->toContain('data-debounce="500"')
         ->toContain('data-min-chars="3"')
         ->toContain('data-endpoint="/tags/autocomplete"');
+});
+
+it('allows the enhanced select visible list size to be configured', function () {
+    $html = View::make('daisy::components.ui.inputs.select', [
+        'name' => 'asset',
+        'endpoint' => '/assets/autocomplete',
+        'listSize' => 8,
+    ])->render();
+
+    expect($html)
+        ->toContain('data-list-size="8"')
+        ->toContain('data-select-list-size="8"');
 });
 
 it('does not render unsafe tab hrefs', function () {

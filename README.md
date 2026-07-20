@@ -486,6 +486,7 @@ Useful defaults:
 - `layout.navbar-sidebar-layout` and `layout.sidebar-layout` accept `showThemeController`, `themes`, and `themeLabel`.
 - `form-field` is the recommended wrapper for every label + input/select pair. It contains labels and controls in constrained grids and defaults to truncated labels; use `label-wrap="wrap"` when multiline labels are preferred.
 - `input` and `select` accept `name`, `id`, `value`, `bindOld`, `error`, and accessibility attributes.
+- Enhanced `select` lists show five options by default and scroll internally; use `listSize` (1–20) to change the visible option count.
 - `textarea` mirrors the Laravel-aware input props for old input, validation state, and described-by wiring.
 - `checkbox` accepts `name`, `value`, `uncheckedValue`, `bindOld`, and validation state for common form submissions.
 - `alert` can render a `sessionKey`, validation errors via `showErrors`, automatic roles, and a dismiss button.

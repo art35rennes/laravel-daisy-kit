@@ -109,6 +109,12 @@ function readArrayOption(options, rootEl, selectEl, key) {
     return [];
 }
 
+function normalizeListSize(value) {
+    const normalizedValue = typeof value === 'string' && value.trim() === '' ? Number.NaN : Number(value);
+
+    return Number.isFinite(normalizedValue) ? Math.min(20, Math.max(1, Math.trunc(normalizedValue))) : 5;
+}
+
 export default function initSelect(rootEl, options = {}) {
     if (rootEl.tagName === 'SELECT' && rootEl.parentElement?.closest('[data-module="select"]')) {
         return;
@@ -132,6 +138,7 @@ export default function initSelect(rootEl, options = {}) {
     const minChars = Number.parseInt(readOption(options, rootEl, selectEl, 'minChars', 3), 10) || 3;
     const fetchOnEmpty = String(readOption(options, rootEl, selectEl, 'fetchOnEmpty', 'true')) === 'true';
     const searchable = String(readOption(options, rootEl, selectEl, 'searchable', 'true')) !== 'false';
+    const listSize = normalizeListSize(readOption(options, rootEl, selectEl, 'listSize', 5));
     const userPlaceholder = readOption(options, rootEl, selectEl, 'placeholder', selectEl.getAttribute('placeholder') || '') || '';
 
     // Cacher le select original (il sert de champ de formulaire)
@@ -147,6 +154,19 @@ export default function initSelect(rootEl, options = {}) {
     let input = null;
     let list = null;
     let createdWrapper = false;
+    const listClasses = [
+        'daisy-select-list',
+        'dropdown-content',
+        'z-10',
+        'menu',
+        'hidden',
+        'w-full',
+        'overflow-y-auto',
+        'overscroll-contain',
+        'rounded-box',
+        'bg-base-100',
+        'shadow',
+    ];
 
     // Si SSR a déjà rendu un wrapper
     if (rootEl.tagName !== 'SELECT') {
@@ -168,7 +188,7 @@ export default function initSelect(rootEl, options = {}) {
             list = document.createElement('ul');
             wrapper.appendChild(list);
         }
-        list.classList.add('dropdown-content', 'z-10', 'menu', 'bg-base-100', 'rounded-box', 'w-full', 'shadow', 'hidden');
+        list.classList.add(...listClasses);
         list.setAttribute('role', 'listbox');
     } else {
         // Créer wrapper côté client si pas SSR
@@ -181,13 +201,16 @@ export default function initSelect(rootEl, options = {}) {
         input.className = 'grow';
         inputWrap.appendChild(input);
         list = document.createElement('ul');
-        list.className = 'dropdown-content z-10 menu bg-base-100 rounded-box w-full shadow hidden';
+        list.className = listClasses.join(' ');
         list.setAttribute('role', 'listbox');
         selectEl.parentNode?.insertBefore(wrapper, selectEl.nextSibling);
         wrapper.appendChild(inputWrap);
         wrapper.appendChild(list);
         createdWrapper = true;
     }
+
+    wrapper.dataset.listSize = String(listSize);
+    list.dataset.selectListSize = String(listSize);
 
     // Placeholder: priorité au data-placeholder/placeholder; sinon, si option sélectionnée vide => utiliser son label
     const placeholderText = userPlaceholder || (!hasRealInitial && initialLabel ? initialLabel : (searchable ? 'Tapez pour rechercher...' : 'Choisir une option'));

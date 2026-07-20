@@ -34,6 +34,73 @@ describe('select module', () => {
         expect(document.querySelectorAll('.dropdown')).toHaveLength(1);
     });
 
+    it('limits modern and legacy suggestion lists to five visible options by default', () => {
+        document.body.innerHTML = `
+            <div data-module="select" class="dropdown w-full">
+                <label class="input flex w-full items-center gap-2">
+                    <input type="text" data-role="input" class="grow" autocomplete="off">
+                </label>
+                <ul data-role="list" role="listbox" class="dropdown-content hidden"></ul>
+                <select data-role="native" hidden>
+                    <option value="one">One</option>
+                </select>
+            </div>
+            <select data-module="select">
+                <option value="two">Two</option>
+            </select>
+        `;
+
+        const modernSelect = document.querySelector('div[data-module="select"]');
+        const legacySelect = document.querySelector('select[data-module="select"]');
+
+        initSelect(modernSelect);
+        initSelect(legacySelect);
+
+        const modernList = modernSelect.querySelector('[data-role="list"]');
+        const legacyList = legacySelect.nextElementSibling.querySelector('[role="listbox"]');
+
+        expect(modernList.classList.contains('daisy-select-list')).toBe(true);
+        expect(modernList.dataset.selectListSize).toBe('5');
+        expect(legacyList.classList.contains('daisy-select-list')).toBe(true);
+        expect(legacyList.dataset.selectListSize).toBe('5');
+    });
+
+    it('applies a configured visible option count to the suggestion list', () => {
+        document.body.innerHTML = `
+            <select data-module="select" data-list-size="8">
+                <option value="one">One</option>
+            </select>
+        `;
+
+        const select = document.querySelector('select');
+
+        initSelect(select);
+
+        const list = select.nextElementSibling.querySelector('[role="listbox"]');
+
+        expect(list.dataset.selectListSize).toBe('8');
+    });
+
+    it('normalizes legacy list sizes to the supported range', () => {
+        document.body.innerHTML = `
+            <select id="minimum" data-module="select" data-list-size="0"><option>Minimum</option></select>
+            <select id="maximum" data-module="select" data-list-size="80"><option>Maximum</option></select>
+            <select id="fallback" data-module="select" data-list-size="invalid"><option>Fallback</option></select>
+        `;
+
+        const minimumSelect = document.querySelector('#minimum');
+        const maximumSelect = document.querySelector('#maximum');
+        const fallbackSelect = document.querySelector('#fallback');
+
+        initSelect(minimumSelect);
+        initSelect(maximumSelect);
+        initSelect(fallbackSelect);
+
+        expect(minimumSelect.nextElementSibling.querySelector('[role="listbox"]').dataset.selectListSize).toBe('1');
+        expect(maximumSelect.nextElementSibling.querySelector('[role="listbox"]').dataset.selectListSize).toBe('20');
+        expect(fallbackSelect.nextElementSibling.querySelector('[role="listbox"]').dataset.selectListSize).toBe('5');
+    });
+
     it('filters local search options from the hidden native select', async () => {
         document.body.innerHTML = `
             <div data-module="select" class="dropdown w-full" data-debounce="1">

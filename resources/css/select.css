@@ -1,0 +1,33 @@
+.daisy-select-list {
+  --daisy-select-list-max-block-size: 17.25rem;
+  --daisy-select-option-height: 3.25rem;
+
+  max-block-size: min(var(--daisy-select-list-max-block-size), 50dvh);
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.daisy-select-list > li > [role="option"] {
+  min-block-size: var(--daisy-select-option-height);
+}
+
+.daisy-select-list[data-select-list-size="1"] { --daisy-select-list-max-block-size: 4.25rem; }
+.daisy-select-list[data-select-list-size="2"] { --daisy-select-list-max-block-size: 7.5rem; }
+.daisy-select-list[data-select-list-size="3"] { --daisy-select-list-max-block-size: 10.75rem; }
+.daisy-select-list[data-select-list-size="4"] { --daisy-select-list-max-block-size: 14rem; }
+.daisy-select-list[data-select-list-size="5"] { --daisy-select-list-max-block-size: 17.25rem; }
+.daisy-select-list[data-select-list-size="6"] { --daisy-select-list-max-block-size: 20.5rem; }
+.daisy-select-list[data-select-list-size="7"] { --daisy-select-list-max-block-size: 23.75rem; }
+.daisy-select-list[data-select-list-size="8"] { --daisy-select-list-max-block-size: 27rem; }
+.daisy-select-list[data-select-list-size="9"] { --daisy-select-list-max-block-size: 30.25rem; }
+.daisy-select-list[data-select-list-size="10"] { --daisy-select-list-max-block-size: 33.5rem; }
+.daisy-select-list[data-select-list-size="11"] { --daisy-select-list-max-block-size: 36.75rem; }
+.daisy-select-list[data-select-list-size="12"] { --daisy-select-list-max-block-size: 40rem; }
+.daisy-select-list[data-select-list-size="13"] { --daisy-select-list-max-block-size: 43.25rem; }
+.daisy-select-list[data-select-list-size="14"] { --daisy-select-list-max-block-size: 46.5rem; }
+.daisy-select-list[data-select-list-size="15"] { --daisy-select-list-max-block-size: 49.75rem; }
+.daisy-select-list[data-select-list-size="16"] { --daisy-select-list-max-block-size: 53rem; }
+.daisy-select-list[data-select-list-size="17"] { --daisy-select-list-max-block-size: 56.25rem; }
+.daisy-select-list[data-select-list-size="18"] { --daisy-select-list-max-block-size: 59.5rem; }
+.daisy-select-list[data-select-list-size="19"] { --daisy-select-list-max-block-size: 62.75rem; }
+.daisy-select-list[data-select-list-size="20"] { --daisy-select-list-max-block-size: 66rem; }

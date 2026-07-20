@@ -15,6 +15,7 @@
     'default' => null,              // Données par défaut (array d'items {value,label,disabled?,subtitle?,avatar?}) quand vide en remote
     'fetchOnEmpty' => true,         // Si true, quand input vide en remote, on interroge endpoint avec q=''
     'placeholder' => null,          // Placeholder à utiliser pour l'input unifié (sinon 1ère option vide ou défaut)
+    'listSize' => 5,                // Nombre maximal d'options visibles avant défilement (1 à 20)
     // Surcharge éventuelle du nom du module
     'module' => null,
     'name' => null,
@@ -110,6 +111,7 @@
 
     $selectedOption = $normalizedOptions->first(fn (array $option): bool => (string) $selectedValue === (string) $option['value']);
     $selectedSwatch = $selectedOption['swatch'] ?? '';
+    $resolvedListSize = is_numeric($listSize) ? min(20, max(1, (int) $listSize)) : 5;
 
     // Attributs data pour initialiser le module JS quand nécessaire
     $dataAttributes = [];
@@ -120,6 +122,7 @@
         $dataAttributes['data-debounce'] = (string) (is_numeric($debounce) ? $debounce : 500);
         $dataAttributes['data-min-chars'] = (string) (is_numeric($minChars) ? $minChars : 3);
         $dataAttributes['data-searchable'] = $searchable ? 'true' : 'false';
+        $dataAttributes['data-list-size'] = (string) $resolvedListSize;
         // Options spécifiques à l'autocomplete
         if ($endpoint) {
             $dataAttributes['data-endpoint'] = (string) $endpoint;
@@ -166,7 +169,12 @@
                    @readonly(!$searchable)
                    placeholder="{{ is_string($placeholder ?? null) ? $placeholder : 'Tapez pour rechercher...' }}" />
         </label>
-        <ul class="dropdown-content z-10 menu bg-base-100 rounded-box w-full shadow hidden" role="listbox" data-role="list"></ul>
+        <ul
+            class="daisy-select-list dropdown-content z-10 menu hidden w-full overflow-y-auto overscroll-contain rounded-box bg-base-100 shadow"
+            role="listbox"
+            data-role="list"
+            data-select-list-size="{{ $resolvedListSize }}"
+        ></ul>
         <select data-role="native" @disabled($disabled) {{ $nativeSelectAttributes->merge(['hidden' => true]) }}>
             @foreach($normalizedOptions as $option)
                 <option value="{{ $option['value'] }}" @selected((string) $selectedValue === (string) $option['value']) @disabled($option['disabled']) @if($option['swatch'] !== '') data-swatch="{{ $option['swatch'] }}" @endif>{{ $option['label'] }}</option>
