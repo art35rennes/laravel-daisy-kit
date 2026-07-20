@@ -63,7 +63,12 @@
 }
 
 .daisy-table-scroll-always {
+  overflow-x: scroll;
   scrollbar-gutter: stable both-edges;
+}
+
+.daisy-table-scroll-none {
+  overflow-x: visible;
 }
 
 .daisy-table-scroll:focus-visible {

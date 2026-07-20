@@ -172,7 +172,8 @@ it('renders configurable table layout, scroll and native action column attribute
         ->toContain('data-table-livewire-mode="ignore"')
         ->toContain('data-table-min-width="128rem"')
         ->toContain('wire:ignore')
-        ->toContain('daisy-table-scroll-always overflow-x-scroll')
+        ->toContain('daisy-table-scroll daisy-table-scroll-always')
+        ->not->toContain('overflow-x-scroll')
         ->toContain('daisy-table-root-min-width-rem-512')
         ->toContain('daisy-table-width-fit')
         ->toContain('daisy-table-actions-cell')
@@ -231,15 +232,41 @@ it('provides a content-width table helper for wide containers', function (): voi
 });
 
 it('lets vertical page scrolling pass through horizontal table scroll regions', function (): void {
+    $defaultHtml = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            :columns="[['key' => 'name', 'label' => 'Name']]"
+            :rows="[['name' => 'Jane']]"
+        />
+    BLADE);
+    $unscrolledHtml = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            scroll-x="none"
+            :columns="[['key' => 'name', 'label' => 'Name']]"
+            :rows="[['name' => 'Jane']]"
+        />
+    BLADE);
     $css = file_get_contents(dirname(__DIR__, 2).'/resources/css/table.css');
 
-    expect($css)->toContain(<<<'CSS'
+    expect($defaultHtml)
+        ->toContain('class="daisy-table-scroll"')
+        ->not->toContain('overflow-x-auto')
+        ->and($unscrolledHtml)
+        ->toContain('daisy-table-scroll daisy-table-scroll-none')
+        ->not->toContain('overflow-x-visible')
+        ->and($css)
+        ->toContain(<<<'CSS'
 .daisy-table-shell > .daisy-table-scroll:not(.daisy-table-scroll-none) {
   overscroll-behavior-x: contain;
   overscroll-behavior-y: auto;
   touch-action: pan-x pan-y pinch-zoom;
 }
 CSS);
+
+    expect($css)
+        ->toContain('.daisy-table-scroll-always')
+        ->toContain('overflow-x: scroll')
+        ->toContain('.daisy-table-scroll-none')
+        ->toContain('overflow-x: visible');
 });
 
 it('renders a server table with endpoint config', function () {

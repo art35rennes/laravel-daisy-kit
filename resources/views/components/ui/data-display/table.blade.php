@@ -161,9 +161,9 @@
     $tableClasses = trim($tableClasses.' '.$tableClass);
     $wrapperClasses = trim('daisy-table-shell space-y-4 '.$containerClass);
     $scrollClasses = match ($resolvedScrollX) {
-        'always' => 'daisy-table-scroll daisy-table-scroll-always overflow-x-scroll',
-        'none' => 'daisy-table-scroll daisy-table-scroll-none overflow-x-visible',
-        default => 'daisy-table-scroll overflow-x-auto',
+        'always' => 'daisy-table-scroll daisy-table-scroll-always',
+        'none' => 'daisy-table-scroll daisy-table-scroll-none',
+        default => 'daisy-table-scroll',
     };
 
     // `key` stays the stable client-side identifier, while `sortKey` / `filterKey`
