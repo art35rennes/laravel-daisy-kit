@@ -55,6 +55,110 @@ function markPreviewError(element, error, type) {
   }
 }
 
+function normalizeDocxZoom(value) {
+  const zoom = Number.parseInt(value, 10);
+
+  return Number.isFinite(zoom) ? Math.min(100, Math.max(10, zoom)) : 100;
+}
+
+function calculateDocxFitZoom(availableWidth, documentWidth) {
+  if (!Number.isFinite(availableWidth)
+    || !Number.isFinite(documentWidth)
+    || availableWidth <= 0
+    || documentWidth <= 0) {
+    return 100;
+  }
+
+  return normalizeDocxZoom(Math.floor((availableWidth / documentWidth) * 100));
+}
+
+function getNumericStyle(element, property) {
+  if (!(element instanceof HTMLElement) || typeof getComputedStyle !== 'function') {
+    return 0;
+  }
+
+  return Number.parseFloat(getComputedStyle(element)[property]) || 0;
+}
+
+function measureDocxFitZoom(element) {
+  const wrapper = element.querySelector('.daisy-docx-preview-wrapper');
+  const pages = [...element.querySelectorAll('.daisy-docx-preview')];
+
+  if (!(wrapper instanceof HTMLElement) || pages.length === 0) {
+    return normalizeDocxZoom(element.dataset.docxZoom);
+  }
+
+  const viewportWidth = element.clientWidth
+    - getNumericStyle(element, 'paddingLeft')
+    - getNumericStyle(element, 'paddingRight');
+  const widestPage = Math.max(...pages.map((page) => page.getBoundingClientRect().width));
+  const nominalDocumentWidth = widestPage
+    + getNumericStyle(wrapper, 'paddingLeft')
+    + getNumericStyle(wrapper, 'paddingRight');
+  const documentWidth = Math.max(nominalDocumentWidth, wrapper.scrollWidth);
+
+  return calculateDocxFitZoom(viewportWidth, documentWidth);
+}
+
+function updateDocxZoomControls(element, zoom, view) {
+  const root = element.closest('[data-module="file-preview"]');
+
+  root?.querySelectorAll('[data-file-preview-docx-zoom]').forEach((button) => {
+    const value = button.dataset.filePreviewDocxZoom;
+    const pressed = view === 'fit-width' ? value === 'fit-width' : value === String(zoom);
+
+    button.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+  });
+
+  const status = root?.querySelector('[data-file-preview-docx-zoom-status]');
+
+  if (status instanceof HTMLElement) {
+    status.textContent = `${zoom} %`;
+  }
+}
+
+function setDocxZoom(element, value) {
+  const view = value === 'fit-width' ? 'fit-width' : 'page';
+
+  [...element.classList]
+    .filter((className) => /^daisy-docx-zoom-\d+$/.test(className))
+    .forEach((className) => element.classList.remove(className));
+
+  const zoom = view === 'fit-width' ? measureDocxFitZoom(element) : normalizeDocxZoom(value);
+
+  element.classList.add(`daisy-docx-zoom-${zoom}`);
+  element.dataset.docxView = view;
+  element.dataset.docxZoom = view === 'page' ? String(zoom) : element.dataset.docxZoom || '100';
+  element.dataset.docxCurrentZoom = String(zoom);
+  updateDocxZoomControls(element, zoom, view);
+
+  return zoom;
+}
+
+function initializeDocxZoom(element) {
+  if (element.dataset.filePreviewDocxZoomInitialized === 'true') {
+    return;
+  }
+
+  element.dataset.filePreviewDocxZoomInitialized = 'true';
+
+  const resize = () => {
+    if (element.dataset.docxView === 'fit-width') {
+      setDocxZoom(element, 'fit-width');
+    }
+  };
+
+  if (typeof ResizeObserver === 'function') {
+    const observer = new ResizeObserver(resize);
+
+    observer.observe(element);
+    element.__daisyDocxResizeObserver = observer;
+  } else {
+    window.addEventListener('resize', resize);
+    element.__daisyDocxResizeListener = resize;
+  }
+}
+
 async function loadTextPreview(element) {
   if (element.dataset.filePreviewLoaded === 'true') {
     return;
@@ -135,7 +239,10 @@ async function loadDocxPreview(element) {
       renderFooters: true,
       renderFootnotes: true,
       renderEndnotes: true,
+      renderAltChunks: false,
     });
+
+    setDocxZoom(element, element.dataset.docxView === 'fit-width' ? 'fit-width' : element.dataset.docxZoom);
   } catch (error) {
     markPreviewError(element, error, 'docx');
     element.replaceChildren();
@@ -196,8 +303,26 @@ export default function init(root) {
   });
 
   root.querySelectorAll('[data-file-preview-docx]').forEach((element) => {
+    initializeDocxZoom(element);
     void loadDocxPreview(element);
+  });
+
+  root.querySelectorAll('[data-file-preview-docx-zoom]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const element = root.querySelector('[data-file-preview-docx]');
+
+      if (element instanceof HTMLElement) {
+        setDocxZoom(element, button.dataset.filePreviewDocxZoom);
+      }
+    });
   });
 }
 
-export { downloadFile, loadDocxPreview, loadTextPreview, markPreviewError };
+export {
+  calculateDocxFitZoom,
+  downloadFile,
+  loadDocxPreview,
+  loadTextPreview,
+  markPreviewError,
+  setDocxZoom,
+};

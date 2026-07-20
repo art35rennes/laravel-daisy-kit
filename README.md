@@ -766,6 +766,28 @@ Readonly viewers keep the same schema/value contract and expose `data-readonly="
 />
 ```
 
+## DOCX file preview zoom
+
+`x-daisy::ui.data-display.file-preview` can fit rendered DOCX pages to the available width while keeping a vertically scrollable viewport. The scale is calculated from the full rendered document width, including overflowing tables and images, to avoid horizontal scrolling whenever the configured minimum zoom allows it.
+
+```blade
+<x-daisy::ui.data-display.file-preview
+    :url="$documentUrl"
+    name="contract.docx"
+    preview-mode="inline"
+    docx-view="fit-width"
+    :docx-zoom="100"
+    :docx-zoom-controls="true"
+/>
+```
+
+- `docxView="page|fit-width"` selects the initial mode and defaults to `page`.
+- `docxZoom` configures the manual page zoom from 10% to 100%.
+- `docxZoomControls` optionally exposes Fit, 50%, 75%, and 100% controls.
+- `docxPreview=false` disables DOCX rendering and its zoom behavior entirely.
+
+The Daisy Kit toolbar and zoom implementation do not emit inline handlers or styles. However, `docx-preview` itself generates inline document styles. Applications enforcing `style-src-attr 'none'` must disable DOCX preview or convert the document server-side to a CSP-compatible PDF or sanitized HTML representation.
+
 ## Table component
 
 The package exposes a progressive table component aligned with Blade, DaisyUI, and TanStack Table:

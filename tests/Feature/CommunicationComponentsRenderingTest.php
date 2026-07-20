@@ -603,6 +603,47 @@ describe('Communication Components Rendering', function () {
                 ->toContain('document.docx');
         });
 
+        it('renders optional fit width and zoom controls for docx previews', function () {
+            $html = View::make('daisy::components.ui.data-display.file-preview', [
+                'url' => 'https://example.com/document.docx',
+                'name' => 'document.docx',
+                'previewMode' => 'inline',
+                'docxView' => 'fit-width',
+                'docxZoom' => 75,
+                'docxZoomControls' => true,
+            ])->render();
+
+            expect($html)
+                ->toContain('data-file-preview-docx-controls')
+                ->toContain('data-docx-view="fit-width"')
+                ->toContain('data-docx-zoom="75"')
+                ->toContain('data-file-preview-docx-zoom="fit-width"')
+                ->toContain('data-file-preview-docx-zoom="50"')
+                ->toContain('data-file-preview-docx-zoom="75"')
+                ->toContain('data-file-preview-docx-zoom="100"')
+                ->not->toContain('style=');
+        });
+
+        it('keeps docx zoom controls disabled by default and with docx preview disabled', function () {
+            $defaultHtml = View::make('daisy::components.ui.data-display.file-preview', [
+                'url' => 'https://example.com/document.docx',
+                'previewMode' => 'inline',
+            ])->render();
+            $disabledHtml = View::make('daisy::components.ui.data-display.file-preview', [
+                'url' => 'https://example.com/document.docx',
+                'previewMode' => 'inline',
+                'docxPreview' => false,
+                'docxZoomControls' => true,
+            ])->render();
+
+            expect($defaultHtml)
+                ->toContain('data-docx-view="page"')
+                ->not->toContain('data-file-preview-docx-controls')
+                ->and($disabledHtml)
+                ->not->toContain('data-file-preview-docx')
+                ->not->toContain('data-file-preview-docx-controls');
+        });
+
         it('uses previewUrl for preview and downloadUrl for downloads', function () {
             $html = View::make('daisy::components.ui.data-display.file-preview', [
                 'url' => 'https://example.com/document.docx',

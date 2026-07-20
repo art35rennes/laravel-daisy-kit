@@ -20,6 +20,9 @@
     'showMeta' => true,
     'maxTextPreviewBytes' => 65536,
     'docxPreview' => true,
+    'docxView' => 'page',
+    'docxZoom' => 100,
+    'docxZoomControls' => false,
     'layout' => 'card',
     'actionOnly' => false,
     'actionButtonClass' => null,
@@ -160,6 +163,9 @@
     ]);
     $isPreviewable = $showPreviewAction && $resolvedPreviewUrl && $capabilities['isPreviewable'] && ($previewType !== 'docx' || $docxPreview);
     $canDownload = $downloadable && $showDownloadAction && $resolvedDownloadUrl;
+    $resolvedDocxView = $docxView === 'fit-width' ? 'fit-width' : 'page';
+    $resolvedDocxZoom = min(100, max(10, (int) $docxZoom));
+    $resolvedDocxZoomControls = filter_var($docxZoomControls, FILTER_VALIDATE_BOOLEAN);
 
     if ($openMode !== null && $previewMode === 'auto') {
         $previewMode = $openMode === 'blank' ? 'download' : $openMode;
@@ -239,6 +245,8 @@
     $openLabel = __('daisy::components.file_preview.open');
     $loadingLabel = __('daisy::common.loading');
     $fallbackLabel = __('daisy::components.file_preview.preview_unavailable');
+    $docxZoomToolbarLabel = __('daisy::components.file_preview.zoom_toolbar');
+    $docxFitWidthLabel = __('daisy::components.file_preview.fit_width');
     $modalTitleText = $modalTitle ?? $name ?? $previewLabel;
 @endphp
 

@@ -95,6 +95,8 @@ return [
         'preview' => 'Prévisualiser',
         'open' => 'Ouvrir',
         'preview_unavailable' => 'Prévisualisation indisponible',
+        'zoom_toolbar' => 'Zoom du document',
+        'fit_width' => 'Ajuster',
         'video_unsupported' => 'Votre navigateur ne prend pas en charge la balise vidéo.',
         'audio_unsupported' => 'Votre navigateur ne prend pas en charge la balise audio.',
     ],

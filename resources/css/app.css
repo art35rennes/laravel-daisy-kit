@@ -54,6 +54,7 @@
 @import "gridstack/dist/gridstack.min.css";
 @import "trix/dist/trix.css";
 @import "./table.css";
+@import "./file-preview.css";
 @import "./blueprint.css";
 
 :root {
