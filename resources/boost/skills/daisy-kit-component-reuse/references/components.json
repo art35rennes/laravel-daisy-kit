@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-07-20T11:39:19+00:00",
+    "generated_at": "2026-07-20T12:09:34+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
@@ -1588,6 +1588,7 @@
                 "selectFiltered",
                 "selectionReadOnly",
                 "subRowsKey",
+                "subRowSelection",
                 "tableLayout",
                 "minWidth",
                 "scrollX",
@@ -1907,6 +1908,8 @@
                 "dropzoneText",
                 "helpText",
                 "browseText",
+                "previewContainerClass",
+                "previewItemClass",
                 "module"
             ]
         },

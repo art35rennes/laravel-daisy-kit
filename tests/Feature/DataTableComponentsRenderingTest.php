@@ -230,6 +230,18 @@ it('provides a content-width table helper for wide containers', function (): voi
         ->toContain('margin-inline: auto');
 });
 
+it('lets vertical page scrolling pass through horizontal table scroll regions', function (): void {
+    $css = file_get_contents(dirname(__DIR__, 2).'/resources/css/table.css');
+
+    expect($css)->toContain(<<<'CSS'
+.daisy-table-shell > .daisy-table-scroll:not(.daisy-table-scroll-none) {
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
+  touch-action: pan-x pan-y pinch-zoom;
+}
+CSS);
+});
+
 it('renders a server table with endpoint config', function () {
     $html = View::make('daisy::components.ui.data-display.table', [
         'mode' => 'server',
@@ -710,6 +722,48 @@ it('can hide filtered selection when a host submits explicit selected ids', func
         ->toContain('"selectFiltered":false')
         ->not->toContain('data-table-select-filtered');
 });
+
+it('configures hierarchical sub row selection modes', function () {
+    $cascadeHtml = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            selection="multiple"
+            row-key="id"
+            sub-rows-key="children"
+            sub-row-selection="cascade"
+            :columns="[['key' => 'name', 'label' => 'Name']]"
+            :rows="[['id' => 'parent', 'name' => 'Parent', 'children' => [['id' => 'child', 'name' => 'Child']]]]"
+        />
+    BLADE);
+    $masterOnlyHtml = Blade::render(<<<'BLADE'
+        <x-daisy::ui.data-display.table
+            selection="multiple"
+            row-key="id"
+            sub-rows-key="children"
+            sub-row-selection="master-only"
+            :columns="[['key' => 'name', 'label' => 'Name']]"
+            :rows="[['id' => 'parent', 'name' => 'Parent', 'children' => [['id' => 'child', 'name' => 'Child']]]]"
+        />
+    BLADE);
+
+    expect($cascadeHtml)
+        ->toContain('"subRowSelection":"cascade"')
+        ->toContain('"selectFiltered":false')
+        ->and($masterOnlyHtml)->toContain('"subRowSelection":"master-only"');
+});
+
+it('validates hierarchical sub row selection modes', function (array $props, string $message) {
+    $render = fn () => View::make('daisy::components.ui.data-display.table', $props + [
+        'rowKey' => 'id',
+        'columns' => [['key' => 'name', 'label' => 'Name']],
+        'rows' => [['id' => 'parent', 'name' => 'Parent', 'children' => []]],
+    ])->render();
+
+    expect($render)->toThrow(ViewException::class, $message);
+})->with([
+    'unknown mode' => [['selection' => 'multiple', 'subRowsKey' => 'children', 'subRowSelection' => 'unknown'], 'subRowSelection prop'],
+    'cascade with single selection' => [['selection' => 'single', 'subRowsKey' => 'children', 'subRowSelection' => 'cascade'], 'cascade subRowSelection mode requires selection to be multiple'],
+    'hierarchical mode without sub rows' => [['selection' => 'multiple', 'subRowSelection' => 'master-only'], 'subRowSelection mode requires a non-empty subRowsKey prop'],
+]);
 
 it('requires a row key when table selection is enabled', function () {
     $render = fn () => View::make('daisy::components.ui.data-display.table', [

@@ -407,13 +407,22 @@ function normalizeSelectionConfig(raw = {}) {
   const rowKey = typeof raw.rowKey === 'string' && raw.rowKey !== ''
     ? raw.rowKey
     : (typeof raw.selection?.rowKey === 'string' && raw.selection.rowKey !== '' ? raw.selection.rowKey : null);
+  const rawSubRowSelection = raw.selection?.subRowSelection ?? raw.subRowSelection;
+  const requestedSubRowSelection = ['independent', 'cascade', 'master-only'].includes(rawSubRowSelection)
+    ? rawSubRowSelection
+    : 'independent';
+  const hasSubRows = typeof raw.subRowsKey === 'string' && raw.subRowsKey !== '';
+  const subRowSelection = requestedSubRowSelection === 'cascade' && (mode !== 'multiple' || !hasSubRows)
+    ? 'independent'
+    : (requestedSubRowSelection === 'master-only' && (mode === 'none' || !hasSubRows) ? 'independent' : requestedSubRowSelection);
 
   return {
     enabled: mode !== 'none' && rowKey !== null,
     mode,
     rowKey: mode !== 'none' ? rowKey : null,
-    selectFiltered: mode === 'multiple' && raw.selection?.selectFiltered !== false,
+    selectFiltered: mode === 'multiple' && subRowSelection !== 'cascade' && raw.selection?.selectFiltered !== false,
     readOnly: raw.selection?.readOnly === true,
+    subRowSelection,
   };
 }
 
@@ -536,6 +545,86 @@ function isRowSelected(state, config, row) {
   return state.selection?.selectedIds.includes(rowId) === true;
 }
 
+function collectHierarchicalSelectionRows(config, rows = [], depth = 0, result = new Map()) {
+  rows.forEach((row) => {
+    const rowId = getRowSelectionId(config, row);
+    const rawSubRows = row?.subRows ?? (config.subRowsKey ? getRowData(row)?.[config.subRowsKey] : null);
+    const subRows = Array.isArray(rawSubRows) ? rawSubRows : [];
+    const rowDepth = Number.isInteger(row?.depth) ? row.depth : depth;
+    const descendantLeafIds = [];
+
+    collectHierarchicalSelectionRows(config, subRows, rowDepth + 1, result);
+    subRows.forEach((subRow) => {
+      const subRowId = getRowSelectionId(config, subRow);
+      const info = subRowId === null ? null : result.get(subRowId);
+
+      if (info) {
+        descendantLeafIds.push(...(info.leaf ? [subRowId] : info.descendantLeafIds));
+      }
+    });
+
+    if (rowId !== null) {
+      result.set(rowId, {
+        depth: rowDepth,
+        leaf: subRows.length === 0,
+        descendantLeafIds: uniqueStringArray(descendantLeafIds),
+      });
+    }
+  });
+
+  return result;
+}
+
+function normalizeHierarchicalSelectedIds(config, rows, selectedIds) {
+  const mode = config.selection.subRowSelection;
+
+  if (mode === 'independent') {
+    return uniqueStringArray(selectedIds);
+  }
+
+  const hierarchy = collectHierarchicalSelectionRows(config, rows);
+
+  return uniqueStringArray(selectedIds.flatMap((rowId) => {
+    const info = hierarchy.get(String(rowId));
+
+    if (!info) {
+      return [rowId];
+    }
+
+    if (mode === 'master-only') {
+      return info.depth === 0 ? [rowId] : [];
+    }
+
+    return info.leaf ? [rowId] : info.descendantLeafIds;
+  }));
+}
+
+function getSelectableRowIds(config, rows = []) {
+  const mode = config.selection.subRowSelection;
+
+  if (mode === 'independent') {
+    return uniqueStringArray(rows.map((row) => getRowSelectionId(config, row)).filter((rowId) => rowId !== null));
+  }
+
+  const hierarchy = collectHierarchicalSelectionRows(config, rows);
+
+  return [...hierarchy.entries()]
+    .filter(([, info]) => mode === 'cascade' ? info.leaf : info.depth === 0)
+    .map(([rowId]) => rowId);
+}
+
+function getCascadeRowSelectionState(context, row, hierarchy) {
+  const rowId = getRowSelectionId(context.config, row);
+  const info = rowId === null ? null : hierarchy.get(rowId);
+  const selectionIds = info?.leaf ? [rowId] : info?.descendantLeafIds ?? [];
+  const selectedCount = selectionIds.filter((id) => context.state.selection.selectedIds.includes(id)).length;
+
+  return {
+    checked: selectionIds.length > 0 && selectedCount === selectionIds.length,
+    mixed: selectedCount > 0 && selectedCount < selectionIds.length,
+  };
+}
+
 function toggleRowSelection(state, config, row, forceSelected = null) {
   const rowId = typeof row === 'string' ? row : getRowSelectionId(config, row);
 
@@ -565,9 +654,7 @@ function toggleRowSelection(state, config, row, forceSelected = null) {
 }
 
 function toggleVisibleRowsSelection(state, config, rows = [], forceSelected = null) {
-  const visibleIds = rows
-    .map((row) => getRowSelectionId(config, row))
-    .filter((rowId) => rowId !== null);
+  const visibleIds = getSelectableRowIds(config, rows);
 
   if (visibleIds.length === 0) {
     return state.selection;
@@ -645,6 +732,7 @@ function buildSelectionDetail(context, visibleRows = []) {
     offPageCount: summary.offPageCount,
     excludedCount: summary.excludedCount,
     filterSignature: selection.filterSignature,
+    subRowSelection: context.config.selection.subRowSelection,
     tableState: {
       sorting: normalizeSorting(context.state.sorting, context.config.columns),
       pagination: { ...context.state.pagination },
@@ -1166,9 +1254,11 @@ function createTableModel(context, rows, rowCount, pageCount) {
       fuzzy: fuzzyFilter,
       daisy: daisyColumnFilter,
     },
-    enableRowSelection: (row) => config.selection.enabled === true && row.original?.__daisyTableDraft !== true,
+    enableRowSelection: (row) => config.selection.enabled === true
+      && row.original?.__daisyTableDraft !== true
+      && (config.selection.subRowSelection !== 'master-only' || row.depth === 0),
     enableMultiRowSelection: config.selection.mode === 'multiple',
-    enableSubRowSelection: false,
+    enableSubRowSelection: config.selection.subRowSelection === 'cascade',
     enableColumnResizing: config.columnResizing === true,
     columnResizeMode: 'onChange',
     onSortingChange: (updater) => setControlledState(context, 'sorting', updater, (value) => normalizeSorting(value, config.columns)),
@@ -1516,22 +1606,33 @@ function renderBody(context, rows) {
     return;
   }
 
+  const selectionHierarchy = context.config.selection.subRowSelection === 'cascade'
+    ? collectHierarchicalSelectionRows(context.config, context.table?.getCoreRowModel?.().rows ?? rows)
+    : null;
+
   tbody.innerHTML = rows.map((row) => {
     const rowId = getRowSelectionId(context.config, row);
     const selectionInputType = context.config.selection.mode === 'single' ? 'radio' : 'checkbox';
     const selectionInputClass = context.config.selection.mode === 'single' ? 'radio radio-sm' : 'checkbox checkbox-sm';
-    const selectionCell = context.config.selection.enabled
+    const isContextOnlySubRow = context.config.selection.subRowSelection === 'master-only' && row.depth > 0;
+    const cascadeState = selectionHierarchy
+      ? getCascadeRowSelectionState(context, row, selectionHierarchy)
+      : null;
+    const rowSelected = cascadeState?.checked ?? isRowSelected(context.state, context.config, row);
+    const ariaChecked = cascadeState?.mixed ? 'mixed' : (rowSelected ? 'true' : 'false');
+    const selectionCell = context.config.selection.enabled && !isContextOnlySubRow
       ? `<td class="daisy-table-selection-cell">
           <input
             type="${selectionInputType}"
             class="${selectionInputClass}"
             data-table-row-select="${escapeHtml(rowId || '')}"
             aria-label="${escapeHtml(context.config.labels.selectRow || 'Select row')}"
+            aria-checked="${ariaChecked}"
             ${rowId === null || context.selectionReadOnly ? 'disabled' : ''}
-            ${isRowSelected(context.state, context.config, row) ? 'checked' : ''}
+            ${rowSelected ? 'checked' : ''}
           >
         </td>`
-      : '';
+      : (context.config.selection.enabled ? '<td class="daisy-table-selection-cell"></td>' : '');
     const rowData = row.original ?? row;
     const expandCell = context.config.subRowsKey
       ? `<td class="daisy-table-expand-cell">${row.getCanExpand?.()
@@ -1742,6 +1843,14 @@ function validateEdit(context) {
 function startCellEdit(context, rowId, columnId) {
   if (context.loading || !context.config.editable.enabled || !context.config.editable.columns.includes(columnId)) {
     return null;
+  }
+
+  const isCurrentEditor = context.editing
+    && String(context.editing.rowId) === String(rowId)
+    && (context.editing.mode === 'row' || context.editing.columnId === columnId);
+
+  if (isCurrentEditor) {
+    return context.editing;
   }
 
   const row = getVisibleRowById(context, rowId);
@@ -2253,13 +2362,20 @@ function updateSelectionControls(context, visibleRows = []) {
   }
 
   const selectPageInput = context.root.querySelector('[data-table-select-page]');
-  const visibleSelectableRows = visibleRows.filter((row) => getRowSelectionId(context.config, row) !== null);
-  const visibleSelectedCount = visibleSelectableRows.filter((row) => isRowSelected(context.state, context.config, row)).length;
+  const pageRows = context.table?.getPaginationRowModel?.().rows ?? visibleRows;
+  const selectionHierarchy = context.config.selection.subRowSelection === 'cascade'
+    ? collectHierarchicalSelectionRows(context.config, pageRows)
+    : null;
+  const visibleSelectableIds = getSelectableRowIds(context.config, pageRows);
+  const visibleSelectedCount = visibleSelectableIds.filter((rowId) => context.state.selection.allFilteredSelected
+    ? !context.state.selection.excludedIds.includes(rowId)
+    : context.state.selection.selectedIds.includes(rowId)).length;
 
   if (selectPageInput instanceof HTMLInputElement) {
-    selectPageInput.checked = visibleSelectableRows.length > 0 && visibleSelectedCount === visibleSelectableRows.length;
-    selectPageInput.indeterminate = visibleSelectedCount > 0 && visibleSelectedCount < visibleSelectableRows.length;
-    selectPageInput.disabled = visibleSelectableRows.length === 0 || context.loading || context.selectionReadOnly;
+    selectPageInput.checked = visibleSelectableIds.length > 0 && visibleSelectedCount === visibleSelectableIds.length;
+    selectPageInput.indeterminate = visibleSelectedCount > 0 && visibleSelectedCount < visibleSelectableIds.length;
+    selectPageInput.disabled = visibleSelectableIds.length === 0 || context.loading || context.selectionReadOnly;
+    selectPageInput.setAttribute('aria-checked', selectPageInput.indeterminate ? 'mixed' : (selectPageInput.checked ? 'true' : 'false'));
   }
 
   context.root.querySelectorAll('[data-table-row-select]').forEach((input) => {
@@ -2268,13 +2384,19 @@ function updateSelectionControls(context, visibleRows = []) {
     }
 
     const rowId = input.dataset.tableRowSelect || null;
+    const row = rowId === null ? null : context.table?.getRow?.(rowId, true);
+    const cascadeState = row && selectionHierarchy
+      ? getCascadeRowSelectionState(context, row, selectionHierarchy)
+      : null;
 
     input.disabled = rowId === null || context.loading || context.selectionReadOnly;
-    input.checked = rowId !== null && (
+    input.checked = cascadeState?.checked ?? (rowId !== null && (
       context.state.selection.allFilteredSelected
         ? !context.state.selection.excludedIds.includes(rowId)
         : context.state.selection.selectedIds.includes(rowId)
-    );
+    ));
+    input.indeterminate = cascadeState?.mixed === true;
+    input.setAttribute('aria-checked', input.indeterminate ? 'mixed' : (input.checked ? 'true' : 'false'));
   });
 
   updateSelectionFeedback(context, visibleRows);
@@ -2340,7 +2462,11 @@ function syncSelectionFromRowSelection(context) {
 
   context.state.selection = {
     ...normalizeSelectionState(context.state.selection),
-    selectedIds: Object.keys(normalizeRowSelection(context.state.rowSelection)),
+    selectedIds: normalizeHierarchicalSelectedIds(
+      context.config,
+      context.rows,
+      Object.keys(normalizeRowSelection(context.state.rowSelection))
+    ),
     excludedIds: [],
     allFilteredSelected: false,
     selectionScope: 'page',
@@ -2354,6 +2480,14 @@ function syncRowSelectionState(context) {
     return;
   }
 
+  context.state.selection = {
+    ...normalizeSelectionState(context.state.selection),
+    selectedIds: normalizeHierarchicalSelectedIds(
+      context.config,
+      context.rows,
+      normalizeSelectionState(context.state.selection).selectedIds
+    ),
+  };
   context.state.rowSelection = rowSelectionFromSelection(context.state.selection);
 }
 
@@ -3127,8 +3261,11 @@ function attachEvents(context) {
 
     if (target instanceof HTMLInputElement && target.matches('[data-table-select-page]')) {
       context.selectionNotice = '';
-      if (context.state.selection.allFilteredSelected) {
-        toggleVisibleRowsSelection(context.state, context.config, context.visibleRows, target.checked);
+      if (context.state.selection.allFilteredSelected || context.config.selection.subRowSelection !== 'independent') {
+        const pageRows = context.table?.getPaginationRowModel?.().rows ?? context.visibleRows;
+
+        toggleVisibleRowsSelection(context.state, context.config, pageRows, target.checked);
+        syncRowSelectionState(context);
       } else {
         context.table?.toggleAllPageRowsSelected?.(target.checked);
       }

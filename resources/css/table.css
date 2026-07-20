@@ -56,6 +56,12 @@
   overflow-x: auto;
 }
 
+.daisy-table-shell > .daisy-table-scroll:not(.daisy-table-scroll-none) {
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
 .daisy-table-scroll-always {
   scrollbar-gutter: stable both-edges;
 }

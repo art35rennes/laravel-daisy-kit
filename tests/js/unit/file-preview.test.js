@@ -6,6 +6,7 @@ import initFilePreview, {
   calculateDocxFitZoom,
   loadDocxPreview,
   loadTextPreview,
+  restoreDocxSvgDimensions,
   setDocxZoom,
 } from '../../../resources/js/modules/file-preview.js';
 
@@ -92,10 +93,50 @@ describe('file-preview module', () => {
     }));
   });
 
+  it('restores CSP blocked dimensions on docx SVG images', () => {
+    const element = document.createElement('div');
+
+    element.innerHTML = `
+      <svg style="width:152.25pt;height:53.25pt" width="0" height="0">
+        <image width="100%" height="100%" href="blob:document-image"></image>
+      </svg>
+    `;
+
+    restoreDocxSvgDimensions(element);
+
+    const svg = element.querySelector('svg');
+
+    expect(svg.getAttribute('width')).toBe('152.25pt');
+    expect(svg.getAttribute('height')).toBe('53.25pt');
+  });
+
   it('calculates a fit width zoom without scaling above one hundred percent', () => {
     expect(calculateDocxFitZoom(600, 800)).toBe(75);
     expect(calculateDocxFitZoom(1000, 800)).toBe(100);
     expect(calculateDocxFitZoom(0, 800)).toBe(100);
+  });
+
+  it('fits overflowing docx content within the available width', () => {
+    document.body.innerHTML = `
+      <div data-module="file-preview">
+        <div data-file-preview-docx data-docx-view="fit-width" data-docx-zoom="100">
+          <div class="daisy-docx-preview-wrapper">
+            <section class="daisy-docx-preview">Wide document content</section>
+          </div>
+        </div>
+      </div>
+    `;
+    const element = document.querySelector('[data-file-preview-docx]');
+    const wrapper = element.querySelector('.daisy-docx-preview-wrapper');
+    const page = element.querySelector('.daisy-docx-preview');
+
+    Object.defineProperty(element, 'clientWidth', { configurable: true, value: 400 });
+    Object.defineProperty(wrapper, 'scrollWidth', { configurable: true, value: 1600 });
+    page.getBoundingClientRect = () => ({ width: 800, height: 1000 });
+
+    setDocxZoom(element, 'fit-width');
+
+    expect(element.dataset.docxCurrentZoom).toBe('25');
   });
 
   it('applies fit width and manual docx zoom through CSP safe classes', () => {
@@ -131,6 +172,57 @@ describe('file-preview module', () => {
 
     expect(element.classList.contains('daisy-docx-zoom-100')).toBe(true);
     expect(element.dataset.docxView).toBe('page');
+  });
+
+  it('zooms docx previews in and out and disables controls at their limits', () => {
+    document.body.innerHTML = `
+      <div data-module="file-preview">
+        <div data-file-preview-docx-controls>
+          <button data-file-preview-docx-zoom-action="out">Zoom out</button>
+          <button data-file-preview-docx-zoom-action="in">Zoom in</button>
+          <span data-file-preview-docx-zoom-status></span>
+        </div>
+        <div
+          data-file-preview-docx
+          data-file-preview-loaded="true"
+          data-docx-view="page"
+          data-docx-zoom="50"
+        >
+          <div class="daisy-docx-preview-wrapper"><section class="daisy-docx-preview">Document</section></div>
+        </div>
+      </div>
+    `;
+    const root = document.querySelector('[data-module="file-preview"]');
+    const element = root.querySelector('[data-file-preview-docx]');
+    const page = element.querySelector('.daisy-docx-preview');
+    const zoomOut = root.querySelector('[data-file-preview-docx-zoom-action="out"]');
+    const zoomIn = root.querySelector('[data-file-preview-docx-zoom-action="in"]');
+
+    Object.defineProperty(element, 'clientWidth', { configurable: true, value: 400 });
+    page.getBoundingClientRect = () => ({ width: 800, height: 1000 });
+
+    initFilePreview(root);
+    setDocxZoom(element, 'fit-width');
+    zoomIn.click();
+
+    expect(element.dataset.docxCurrentZoom).toBe('60');
+    expect(element.dataset.docxView).toBe('page');
+
+    zoomOut.click();
+
+    expect(element.dataset.docxCurrentZoom).toBe('50');
+
+    setDocxZoom(element, '10');
+
+    expect(zoomOut.disabled).toBe(true);
+    expect(zoomOut.getAttribute('aria-disabled')).toBe('true');
+    expect(zoomIn.disabled).toBe(false);
+
+    setDocxZoom(element, '100');
+
+    expect(zoomOut.disabled).toBe(false);
+    expect(zoomIn.disabled).toBe(true);
+    expect(zoomIn.getAttribute('aria-disabled')).toBe('true');
   });
 
   it('recalculates fit width docx zoom when its viewport is resized', async () => {
@@ -235,6 +327,37 @@ describe('file-preview module', () => {
     await tick(3);
 
     expect(document.querySelector('[data-file-preview-text]').textContent).toBe('hello');
+    expect(document.querySelector('[data-file-preview-docx]').textContent).toContain('Rendered DOCX');
+  });
+
+  it('defers docx rendering until its modal is visible', async () => {
+    document.body.innerHTML = `
+      <div data-module="file-preview">
+        <button data-file-preview-open-modal="document-preview-modal">Preview</button>
+        <dialog id="document-preview-modal">
+          <div data-file-preview-docx data-url="/files/document.docx">Loading</div>
+        </dialog>
+      </div>
+    `;
+    const dialog = document.querySelector('dialog');
+
+    dialog.showModal = vi.fn(() => {
+      dialog.setAttribute('open', '');
+    });
+    global.fetch = vi.fn(async () => ({ ok: true, blob: async () => new Blob(['docx']) }));
+    vi.clearAllMocks();
+
+    initFilePreview(document.querySelector('[data-module="file-preview"]'));
+    await tick(3);
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(renderAsync).not.toHaveBeenCalled();
+
+    document.querySelector('[data-file-preview-open-modal]').click();
+    await tick(3);
+
+    expect(dialog.showModal).toHaveBeenCalledOnce();
+    expect(dialog.hasAttribute('open')).toBe(true);
     expect(document.querySelector('[data-file-preview-docx]').textContent).toContain('Rendered DOCX');
   });
 

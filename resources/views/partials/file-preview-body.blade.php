@@ -50,6 +50,13 @@
                 role="toolbar"
                 aria-label="{{ $docxZoomToolbarLabel }}"
             >
+                <button
+                    type="button"
+                    class="btn btn-xs btn-square btn-ghost"
+                    data-file-preview-docx-zoom-action="out"
+                    aria-label="{{ $docxZoomOutLabel }}"
+                    title="{{ $docxZoomOutLabel }}"
+                >&minus;</button>
                 @foreach([
                     'fit-width' => $docxFitWidthLabel,
                     '50' => '50 %',
@@ -63,6 +70,13 @@
                         aria-pressed="false"
                     >{{ $zoomLabel }}</button>
                 @endforeach
+                <button
+                    type="button"
+                    class="btn btn-xs btn-square btn-ghost"
+                    data-file-preview-docx-zoom-action="in"
+                    aria-label="{{ $docxZoomInLabel }}"
+                    title="{{ $docxZoomInLabel }}"
+                >+</button>
                 <span class="sr-only" data-file-preview-docx-zoom-status aria-live="polite"></span>
             </div>
         @endif

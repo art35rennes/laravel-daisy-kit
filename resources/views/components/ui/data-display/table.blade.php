@@ -23,6 +23,7 @@
     'selectFiltered' => true,
     'selectionReadOnly' => false,
     'subRowsKey' => null,
+    'subRowSelection' => 'independent',
     'tableLayout' => 'auto',
     'minWidth' => null,
     'scrollX' => 'auto',
@@ -73,11 +74,15 @@
     $resolvedSelection = in_array($selection, ['multiple', 'single'], true) ? $selection : 'none';
     $resolvedRowKey = is_string($rowKey) && filled($rowKey) ? $rowKey : null;
     $resolvedSubRowsKey = is_string($subRowsKey) && filled($subRowsKey) ? $subRowsKey : null;
+    $allowedSubRowSelectionModes = ['independent', 'cascade', 'master-only'];
+    $resolvedSubRowSelection = in_array($subRowSelection, $allowedSubRowSelectionModes, true)
+        ? $subRowSelection
+        : null;
     $resolvedLinkPolicy = \Art35rennes\DaisyKit\Support\DaisyTableColumns::normalizeLinkPolicy($linkPolicy);
     $selectionEnabled = $resolvedSelection !== 'none';
     $showSelectionControls = $resolvedSelection === 'multiple';
     $showSelectionFeedback = $selectionEnabled;
-    $resolvedSelectFiltered = $showSelectionControls && (bool) $selectFiltered;
+    $resolvedSelectFiltered = $showSelectionControls && $resolvedSubRowSelection !== 'cascade' && (bool) $selectFiltered;
     $resolvedSelectionReadOnly = (bool) $selectionReadOnly;
     $hasToolbarStartSlot = isset($toolbarStart) && $toolbarStart instanceof \Illuminate\View\ComponentSlot;
     $hasToolbarSlot = isset($toolbar) && $toolbar instanceof \Illuminate\View\ComponentSlot;
@@ -97,6 +102,22 @@
 
     if ($selectionEnabled && blank($resolvedRowKey)) {
         throw new InvalidArgumentException('The table component requires a non-empty rowKey prop when selection is enabled.');
+    }
+
+    if ($resolvedSubRowSelection === null) {
+        throw new InvalidArgumentException('The table component subRowSelection prop must be independent, cascade, or master-only.');
+    }
+
+    if ($resolvedSubRowSelection !== 'independent' && $resolvedSubRowsKey === null) {
+        throw new InvalidArgumentException('The table component hierarchical subRowSelection mode requires a non-empty subRowsKey prop.');
+    }
+
+    if ($resolvedSubRowSelection === 'cascade' && $resolvedSelection !== 'multiple') {
+        throw new InvalidArgumentException('The table component cascade subRowSelection mode requires selection to be multiple.');
+    }
+
+    if ($resolvedSubRowSelection === 'master-only' && ! $selectionEnabled) {
+        throw new InvalidArgumentException('The table component master-only subRowSelection mode requires selection to be enabled.');
     }
 
     if ($resolvedPersistState !== false && blank($resolvedStateKey)) {
@@ -491,6 +512,7 @@
             'rowKey' => $selectionEnabled ? $resolvedRowKey : null,
             'selectFiltered' => $resolvedSelectFiltered,
             'readOnly' => $resolvedSelectionReadOnly,
+            'subRowSelection' => $resolvedSubRowSelection,
         ],
         'rowDetail' => [
             'mode' => $resolvedRowDetail,

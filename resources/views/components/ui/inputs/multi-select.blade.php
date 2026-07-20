@@ -188,8 +188,10 @@
                 @if($selectId) id="{{ $selectId }}" @endif
                 autocomplete="off"
                 placeholder="{{ $selectedOptions->isEmpty() ? $placeholder : '' }}"
+                role="combobox"
                 aria-expanded="false"
                 aria-autocomplete="list"
+                @if($selectId) aria-controls="{{ $selectId }}-listbox" @endif
                 @readonly($isReadonly)
                 @if($isReadonly) tabindex="-1" @endif
                 @if($hasError) aria-invalid="true" @endif
@@ -221,7 +223,13 @@
         @endforeach
     </div>
 
-    <ul class="dropdown-content menu z-10 mt-2 hidden max-h-72 w-full overflow-auto rounded-box bg-base-100 p-2 shadow" role="listbox" data-role="list" aria-multiselectable="true"></ul>
+    <ul
+        class="dropdown-content menu z-10 mt-2 hidden max-h-72 w-full overflow-auto rounded-box bg-base-100 p-2 shadow"
+        @if($selectId) id="{{ $selectId }}-listbox" @endif
+        role="listbox"
+        data-role="list"
+        aria-multiselectable="true"
+    ></ul>
 
     @if($hasError)
         <p class="validator-hint mt-1 text-error" data-role="message">{{ $errorMessage }}</p>

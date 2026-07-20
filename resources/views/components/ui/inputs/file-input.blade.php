@@ -13,6 +13,9 @@
     'dropzoneText' => null,
     'helpText' => null,
     'browseText' => null,
+    // Classes de mise en page des aperçus (conserve les valeurs actuelles par défaut)
+    'previewContainerClass' => null,
+    'previewItemClass' => null,
     // Surcharge du nom de module JS (optionnel)
     'module' => null,
 ])
@@ -39,6 +42,10 @@
         ? 'Vous pouvez sélectionner plusieurs fichiers.'
         : 'Un seul fichier sera conservé.';
     $browseText ??= 'Parcourir';
+    $previewContainerClass ??= $isMultiple
+        ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'
+        : 'grid-cols-1 max-w-sm';
+    $previewItemClass ??= 'aspect-video';
 
     $inputAttributes = $attributes;
     if ($accept !== null && ! $inputAttributes->has('accept')) {
@@ -52,7 +59,7 @@
 @if(!$dragdrop && !$preview)
     <input type="file" id="{{ $id }}" @multiple($isMultiple) @disabled($disabled) {{ $inputAttributes->merge(['class' => $classes]) }} />
 @else
-    <div id="{{ $id }}-wrap" data-module="{{ $module ?? 'file-input' }}" data-fileinput="1" data-preview="{{ $preview ? 'true' : 'false' }}" data-multiple="{{ $isMultiple ? 'true' : 'false' }}" class="space-y-2">
+    <div id="{{ $id }}-wrap" data-module="{{ $module ?? 'file-input' }}" data-fileinput="1" data-preview="{{ $preview ? 'true' : 'false' }}" data-multiple="{{ $isMultiple ? 'true' : 'false' }}" data-preview-item-class="{{ $previewItemClass }}" class="space-y-2">
         <input type="file" id="{{ $id }}" @multiple($isMultiple) @disabled($disabled) {{ $inputAttributes->merge(['class' => $classes.' hidden']) }} />
         <div class="{{ $dropZoneClass }} bg-base-100 flex flex-col items-center justify-center gap-2 text-center text-sm" data-dropzone>
             <div class="flex items-center justify-center gap-2">
@@ -65,7 +72,7 @@
             @endif
         </div>
         @if($preview)
-            <div class="{{ $isMultiple ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4' : 'grid-cols-1 max-w-sm' }} grid gap-2" data-previews></div>
+            <div class="{{ $previewContainerClass }} grid gap-2" data-previews></div>
         @endif
     </div>
 @endif

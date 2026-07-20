@@ -66,6 +66,8 @@ function normalizeOption(item) {
     };
 }
 
+let multiSelectInstanceCount = 0;
+
 export default function initMultiSelect(root, options = {}) {
     if (root.dataset.multiSelectInitialized === 'true') {
         return;
@@ -107,6 +109,12 @@ export default function initMultiSelect(root, options = {}) {
     const readonly = String(options.readonly ?? root.dataset.readonly ?? 'false') === 'true';
     const inert = disabled || readonly;
 
+    multiSelectInstanceCount += 1;
+    const listId = list.id || `${input.id || 'daisy-multi-select'}-listbox-${multiSelectInstanceCount}`;
+    list.id = listId;
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-controls', listId);
+
     let selectedItems = Array.from(selectedWrap.querySelectorAll('[data-multi-select-item]')).map((item) => ({
         value: String(item.dataset.value ?? ''),
         label: String(item.dataset.label ?? item.dataset.value ?? ''),
@@ -139,6 +147,12 @@ export default function initMultiSelect(root, options = {}) {
         root.classList.toggle('dropdown-open', open);
         list.classList.toggle('hidden', !open);
         input.setAttribute('aria-expanded', open ? 'true' : 'false');
+
+        if (!open) {
+            activeIndex = -1;
+            input.removeAttribute('aria-activedescendant');
+            list.querySelectorAll('button[role="option"]').forEach((button) => button.classList.remove('active'));
+        }
     }
 
     function showMessage(text, isError = false) {
@@ -272,7 +286,8 @@ export default function initMultiSelect(root, options = {}) {
     function renderList(items, emptyMessage = '') {
         list.replaceChildren();
         currentItems = items;
-        activeIndex = items.findIndex((item) => !item.disabled);
+        activeIndex = -1;
+        input.removeAttribute('aria-activedescendant');
 
         if (items.length === 0) {
             if (!emptyMessage) {
@@ -296,7 +311,8 @@ export default function initMultiSelect(root, options = {}) {
             button.type = 'button';
             button.setAttribute('role', 'option');
             button.setAttribute('aria-selected', isSelected(item.value) ? 'true' : 'false');
-            button.className = index === activeIndex ? 'active' : '';
+            button.id = `${listId}-option-${index}`;
+            button.tabIndex = -1;
 
             if (item.avatar) {
                 const avatar = document.createElement('div');
@@ -353,15 +369,31 @@ export default function initMultiSelect(root, options = {}) {
         }
 
         let nextIndex = activeIndex;
+        let remainingItems = currentItems.length;
 
-        do {
-            nextIndex = (nextIndex + direction + currentItems.length) % currentItems.length;
-        } while (currentItems[nextIndex]?.disabled && nextIndex !== activeIndex);
+        while (remainingItems > 0) {
+            if (nextIndex === -1) {
+                nextIndex = direction > 0 ? 0 : currentItems.length - 1;
+            } else {
+                nextIndex = (nextIndex + direction + currentItems.length) % currentItems.length;
+            }
+
+            if (!currentItems[nextIndex]?.disabled) {
+                break;
+            }
+
+            remainingItems -= 1;
+        }
+
+        if (remainingItems === 0) {
+            return;
+        }
 
         activeIndex = nextIndex;
         list.querySelectorAll('button[role="option"]').forEach((button, index) => {
             button.classList.toggle('active', index === activeIndex);
         });
+        input.setAttribute('aria-activedescendant', `${listId}-option-${activeIndex}`);
     }
 
     function filterLocal(query) {

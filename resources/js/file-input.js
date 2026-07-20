@@ -24,6 +24,7 @@
  * - Autres : nom du fichier dans une boîte stylisée
  *
  * @param {File} file - Le fichier à prévisualiser
+ * @param {string} itemClass - Classes de dimensionnement fournies par le composant Blade
  * @returns {HTMLElement} - L'élément DOM de prévisualisation
  */
 function previewType(file) {
@@ -71,10 +72,12 @@ async function renderDocxPreview(file, container) {
   }
 }
 
-function createPreview(file) {
+function createPreview(file, itemClass = 'aspect-video') {
   const wrap = document.createElement('div');
   // Style général du conteneur de prévisualisation
-  wrap.className = 'relative rounded-box overflow-hidden card-border bg-base-200/50 aspect-video';
+  wrap.className = ['relative rounded-box overflow-hidden card-border bg-base-200/50', itemClass]
+    .filter(Boolean)
+    .join(' ');
   const type = previewType(file);
 
   // Prévisualisation pour les images
@@ -160,6 +163,7 @@ function initFileInput(root) {
   const previews = root.querySelector('[data-previews]');
   const wantPreview = root.dataset.preview === 'true';
   const isMultiple = root.dataset.multiple === 'true';
+  const previewItemClass = root.dataset.previewItemClass || 'aspect-video';
   // Synchronise le mode multiple demandé côté wrapper avec l'input natif.
   if (isMultiple) {
     try { input.multiple = true; } catch (_) {}
@@ -206,7 +210,7 @@ function initFileInput(root) {
   function render(files) {
     if (!wantPreview || !previews) return;
     previews.innerHTML = '';
-    Array.from(files || []).slice(0, isMultiple ? undefined : 1).forEach((f) => previews.append(createPreview(f)));
+    Array.from(files || []).slice(0, isMultiple ? undefined : 1).forEach((f) => previews.append(createPreview(f, previewItemClass)));
   }
 
   // Clique sur la zone DnD = déclenche le sélecteur de fichiers natif

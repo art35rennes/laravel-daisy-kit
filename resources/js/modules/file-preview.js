@@ -92,9 +92,10 @@ function measureDocxFitZoom(element) {
     - getNumericStyle(element, 'paddingLeft')
     - getNumericStyle(element, 'paddingRight');
   const widestPage = Math.max(...pages.map((page) => page.getBoundingClientRect().width));
-  const documentWidth = widestPage
+  const nominalDocumentWidth = widestPage
     + getNumericStyle(wrapper, 'paddingLeft')
     + getNumericStyle(wrapper, 'paddingRight');
+  const documentWidth = Math.max(nominalDocumentWidth, wrapper.scrollWidth);
 
   return calculateDocxFitZoom(viewportWidth, documentWidth);
 }
@@ -107,6 +108,14 @@ function updateDocxZoomControls(element, zoom, view) {
     const pressed = view === 'fit-width' ? value === 'fit-width' : value === String(zoom);
 
     button.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+  });
+
+  root?.querySelectorAll('[data-file-preview-docx-zoom-action]').forEach((button) => {
+    const action = button.dataset.filePreviewDocxZoomAction;
+    const disabled = action === 'out' ? zoom <= 10 : zoom >= 100;
+
+    button.disabled = disabled;
+    button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
   });
 
   const status = root?.querySelector('[data-file-preview-docx-zoom-status]');
@@ -134,6 +143,13 @@ function setDocxZoom(element, value) {
   return zoom;
 }
 
+function adjustDocxZoom(element, action) {
+  const currentZoom = normalizeDocxZoom(element.dataset.docxCurrentZoom || element.dataset.docxZoom);
+  const offset = action === 'out' ? -10 : 10;
+
+  return setDocxZoom(element, currentZoom + offset);
+}
+
 function initializeDocxZoom(element) {
   if (element.dataset.filePreviewDocxZoomInitialized === 'true') {
     return;
@@ -155,6 +171,41 @@ function initializeDocxZoom(element) {
   } else {
     window.addEventListener('resize', resize);
     element.__daisyDocxResizeListener = resize;
+  }
+}
+
+function getInlineStyleDeclaration(element, property) {
+  const style = element.getAttribute('style') || '';
+  const declaration = style
+    .split(';')
+    .map((value) => value.trim())
+    .find((value) => value.toLowerCase().startsWith(`${property}:`));
+
+  return declaration?.slice(declaration.indexOf(':') + 1).trim() || '';
+}
+
+function restoreDocxSvgDimensions(element) {
+  element.querySelectorAll('svg').forEach((svg) => {
+    const width = getInlineStyleDeclaration(svg, 'width');
+    const height = getInlineStyleDeclaration(svg, 'height');
+
+    if (width && Number.parseFloat(svg.getAttribute('width') || '0') <= 0) {
+      svg.setAttribute('width', width);
+    }
+
+    if (height && Number.parseFloat(svg.getAttribute('height') || '0') <= 0) {
+      svg.setAttribute('height', height);
+    }
+  });
+}
+
+function scheduleDocxSvgDimensionRestore(element) {
+  const restore = () => restoreDocxSvgDimensions(element);
+
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(restore);
+  } else {
+    setTimeout(restore, 0);
   }
 }
 
@@ -242,6 +293,7 @@ async function loadDocxPreview(element) {
     });
 
     setDocxZoom(element, element.dataset.docxView === 'fit-width' ? 'fit-width' : element.dataset.docxZoom);
+    scheduleDocxSvgDimensionRestore(element);
   } catch (error) {
     markPreviewError(element, error, 'docx');
     element.replaceChildren();
@@ -284,6 +336,10 @@ export default function init(root) {
 
       if (typeof dialog?.showModal === 'function') {
         dialog.showModal();
+
+        dialog.querySelectorAll('[data-file-preview-docx]').forEach((element) => {
+          void loadDocxPreview(element);
+        });
       }
     });
   });
@@ -303,7 +359,12 @@ export default function init(root) {
 
   root.querySelectorAll('[data-file-preview-docx]').forEach((element) => {
     initializeDocxZoom(element);
-    void loadDocxPreview(element);
+
+    const dialog = element.closest('dialog');
+
+    if (!dialog || dialog.hasAttribute('open')) {
+      void loadDocxPreview(element);
+    }
   });
 
   root.querySelectorAll('[data-file-preview-docx-zoom]').forEach((button) => {
@@ -315,6 +376,16 @@ export default function init(root) {
       }
     });
   });
+
+  root.querySelectorAll('[data-file-preview-docx-zoom-action]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const element = root.querySelector('[data-file-preview-docx]');
+
+      if (element instanceof HTMLElement) {
+        adjustDocxZoom(element, button.dataset.filePreviewDocxZoomAction);
+      }
+    });
+  });
 }
 
 export {
@@ -323,5 +394,6 @@ export {
   loadDocxPreview,
   loadTextPreview,
   markPreviewError,
+  restoreDocxSvgDimensions,
   setDocxZoom,
 };

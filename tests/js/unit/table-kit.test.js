@@ -1216,6 +1216,137 @@ describe('table-kit helpers', () => {
     }
   });
 
+  it('cascades selection through sub rows and exposes mixed master state', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        rowKey: 'id',
+        selection: { mode: 'multiple', rowKey: 'id', subRowSelection: 'cascade' },
+        subRowsKey: 'children',
+        columns: [{ key: 'name', label: 'Name' }],
+        rows: [{
+          id: 'parent',
+          name: 'Parent',
+          children: [
+            { id: 'child-a', name: 'Child A' },
+            { id: 'child-b', name: 'Child B' },
+          ],
+        }],
+        initialState: { expanded: { parent: true } },
+      });
+      const context = await initTable(root);
+      const parent = root.querySelector('[data-table-row-select="parent"]');
+      const childA = root.querySelector('[data-table-row-select="child-a"]');
+
+      childA.checked = true;
+      childA.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+      expect(context.state.selection.selectedIds).toEqual(['child-a']);
+      expect(parent.checked).toBe(false);
+      expect(parent.indeterminate).toBe(true);
+      expect(parent.getAttribute('aria-checked')).toBe('mixed');
+
+      parent.checked = true;
+      parent.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+      expect(context.state.selection.selectedIds.sort()).toEqual(['child-a', 'child-b']);
+      expect(context.state.selection.selectedIds).not.toContain('parent');
+      expect(parent.checked).toBe(true);
+      expect(parent.indeterminate).toBe(false);
+      expect(parent.getAttribute('aria-checked')).toBe('true');
+
+      const detail = await tableApi(root).setSelection(['parent']);
+
+      expect(detail.selectedIds.sort()).toEqual(['child-a', 'child-b']);
+    } finally {
+      env.restore();
+    }
+  });
+
+  it('selects collapsed descendant leaves through the page control in cascade mode', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        rowKey: 'id',
+        selection: { mode: 'multiple', rowKey: 'id', subRowSelection: 'cascade' },
+        subRowsKey: 'children',
+        columns: [{ key: 'name', label: 'Name' }],
+        rows: [{
+          id: 'parent',
+          name: 'Parent',
+          children: [{ id: 'child-a', name: 'Child A' }, { id: 'child-b', name: 'Child B' }],
+        }],
+      });
+      const context = await initTable(root);
+      const selectPage = root.querySelector('[data-table-select-page]');
+
+      expect(root.querySelector('[data-table-row-select="child-a"]')).toBeNull();
+
+      selectPage.checked = true;
+      selectPage.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+      expect(context.state.selection.selectedIds.sort()).toEqual(['child-a', 'child-b']);
+      expect(selectPage.checked).toBe(true);
+    } finally {
+      env.restore();
+    }
+  });
+
+  it('keeps sub rows contextual in master-only selection mode', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        rowKey: 'id',
+        selection: { mode: 'multiple', rowKey: 'id', subRowSelection: 'master-only' },
+        subRowsKey: 'children',
+        columns: [{ key: 'name', label: 'Name' }],
+        rows: [{ id: 'parent', name: 'Parent', children: [{ id: 'child', name: 'Child' }] }],
+        initialState: { expanded: { parent: true } },
+      });
+      const context = await initTable(root);
+
+      expect(root.querySelector('[data-table-row-select="parent"]')).not.toBeNull();
+      expect(root.querySelector('[data-table-row-select="child"]')).toBeNull();
+
+      const selectPage = root.querySelector('[data-table-select-page]');
+      selectPage.checked = true;
+      selectPage.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+      expect(context.state.selection.selectedIds).toEqual(['parent']);
+    } finally {
+      env.restore();
+    }
+  });
+
+  it('keeps independent sub row selection as the default', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        rowKey: 'id',
+        selection: 'multiple',
+        subRowsKey: 'children',
+        columns: [{ key: 'name', label: 'Name' }],
+        rows: [{ id: 'parent', name: 'Parent', children: [{ id: 'child', name: 'Child' }] }],
+        initialState: { expanded: { parent: true } },
+      });
+      const context = await initTable(root);
+      const parent = root.querySelector('[data-table-row-select="parent"]');
+
+      parent.checked = true;
+      parent.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+      expect(context.config.selection.subRowSelection).toBe('independent');
+      expect(context.state.selection.selectedIds).toEqual(['parent']);
+      expect(root.querySelector('[data-table-row-select="child"]').checked).toBe(false);
+    } finally {
+      env.restore();
+    }
+  });
+
   it('sets a single radio selection through the public table API', async () => {
     const env = installDom();
 
@@ -1301,6 +1432,41 @@ describe('table-kit helpers', () => {
       expect(root.querySelectorAll('[data-table-edit-input]')).toHaveLength(2);
       expect(root.querySelector('.daisy-table-edit-row-actions [data-table-edit-save]')).toBeInstanceOf(HTMLElement);
       expect(root.querySelector('.daisy-table-edit-cell [data-table-edit-save]')).toBeNull();
+    } finally {
+      env.restore();
+    }
+  });
+
+  it('keeps select and textarea editors mounted when they are clicked', async () => {
+    const env = installDom();
+
+    try {
+      const root = createTableRoot({
+        rowKey: 'id',
+        editable: true,
+        editEndpoint: '/users/{rowId}',
+        editMode: 'row',
+        editableColumns: ['status', 'notes'],
+        columns: [
+          { key: 'status', label: 'Status', editor: { type: 'select', options: [{ value: 'draft', label: 'Draft' }] } },
+          { key: 'notes', label: 'Notes', editor: { type: 'textarea' } },
+        ],
+        rows: [{ id: '1', status: 'draft', notes: 'Initial notes' }],
+      });
+
+      await initTable(root);
+
+      root.querySelector('[data-table-edit-cell][data-table-column-id="status"]')
+        .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+      const select = root.querySelector('select[data-table-edit-input]');
+      const textarea = root.querySelector('textarea[data-table-edit-input]');
+
+      select.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+      textarea.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+      expect(select.isConnected).toBe(true);
+      expect(textarea.isConnected).toBe(true);
     } finally {
       env.restore();
     }

@@ -247,6 +247,8 @@
     $fallbackLabel = __('daisy::components.file_preview.preview_unavailable');
     $docxZoomToolbarLabel = __('daisy::components.file_preview.zoom_toolbar');
     $docxFitWidthLabel = __('daisy::components.file_preview.fit_width');
+    $docxZoomOutLabel = __('daisy::components.file_preview.zoom_out');
+    $docxZoomInLabel = __('daisy::components.file_preview.zoom_in');
     $modalTitleText = $modalTitle ?? $name ?? $previewLabel;
 @endphp
 

@@ -82,6 +82,8 @@ return [
         'preview_unavailable' => 'Preview unavailable',
         'zoom_toolbar' => 'Document zoom',
         'fit_width' => 'Fit',
+        'zoom_out' => 'Zoom out',
+        'zoom_in' => 'Zoom in',
         'video_unsupported' => 'Your browser does not support the video tag.',
         'audio_unsupported' => 'Your browser does not support the audio tag.',
     ],

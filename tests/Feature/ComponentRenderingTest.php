@@ -303,6 +303,10 @@ it('renders a multi-select component with selected values and hidden inputs', fu
         ->toContain('name="tags[]"')
         ->toContain('value="laravel"')
         ->toContain('value="livewire"')
+        ->toContain('role="combobox"')
+        ->toContain('aria-controls="tags-listbox"')
+        ->toContain('id="tags-listbox"')
+        ->toContain('role="listbox"')
         ->toContain('aria-multiselectable="true"');
 });
 

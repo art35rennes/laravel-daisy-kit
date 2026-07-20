@@ -621,6 +621,8 @@ describe('Communication Components Rendering', function () {
                 ->toContain('data-file-preview-docx-zoom="50"')
                 ->toContain('data-file-preview-docx-zoom="75"')
                 ->toContain('data-file-preview-docx-zoom="100"')
+                ->toContain('data-file-preview-docx-zoom-action="out"')
+                ->toContain('data-file-preview-docx-zoom-action="in"')
                 ->not->toContain('style=');
         });
 

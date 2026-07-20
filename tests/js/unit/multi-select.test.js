@@ -118,6 +118,79 @@ describe('multi-select module', () => {
     expect(root.querySelector('[data-role="list"]').classList.contains('hidden')).toBe(false);
   });
 
+  it('leaves Enter available to submit the form until an option is navigated to', async () => {
+    const root = createRoot('data-debounce="0"', `
+      <option value="todo">To do</option>
+      <option value="review">To review</option>
+    `);
+
+    initMultiSelect(root, { debounce: 0 });
+
+    const input = root.querySelector('[data-role="input"]');
+    input.focus();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const enterEvent = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    input.dispatchEvent(enterEvent);
+
+    expect(enterEvent.defaultPrevented).toBe(false);
+    expect(root.querySelectorAll('[data-multi-select-item]')).toHaveLength(0);
+    expect(input.hasAttribute('aria-activedescendant')).toBe(false);
+  });
+
+  it('navigates options with the keyboard before selecting the active option', async () => {
+    const root = createRoot('data-debounce="0"', `
+      <option value="todo">To do</option>
+      <option value="review">To review</option>
+    `);
+
+    initMultiSelect(root, { debounce: 0 });
+
+    const input = root.querySelector('[data-role="input"]');
+    input.focus();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const firstOption = root.querySelector('button[role="option"]');
+    expect(firstOption.classList.contains('active')).toBe(false);
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+
+    expect(firstOption.classList.contains('active')).toBe(true);
+    expect(input.getAttribute('aria-activedescendant')).toBe(firstOption.id);
+
+    const enterEvent = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    input.dispatchEvent(enterEvent);
+
+    expect(enterEvent.defaultPrevented).toBe(true);
+    expect(root.querySelector('[data-multi-select-hidden]').value).toBe('todo');
+  });
+
+  it('navigates upward to the last enabled option and clears activity with Escape', async () => {
+    const root = createRoot('data-debounce="0"', `
+      <option value="todo">To do</option>
+      <option value="blocked" disabled>Blocked</option>
+      <option value="done">Done</option>
+    `);
+
+    initMultiSelect(root, { debounce: 0 });
+
+    const input = root.querySelector('[data-role="input"]');
+    input.focus();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
+
+    const options = root.querySelectorAll('button[role="option"]');
+    expect(options[2].classList.contains('active')).toBe(true);
+    expect(input.getAttribute('aria-activedescendant')).toBe(options[2].id);
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    expect(root.querySelector('[data-role="list"]').classList.contains('hidden')).toBe(true);
+    expect(options[2].classList.contains('active')).toBe(false);
+    expect(input.hasAttribute('aria-activedescendant')).toBe(false);
+  });
+
   it('loads remote options and keeps selecting multiple values', async () => {
     const root = createRoot('data-endpoint="/api/tags" data-param="search" data-min-chars="1" data-debounce="0"');
 

@@ -783,7 +783,7 @@ Readonly viewers keep the same schema/value contract and expose `data-readonly="
 
 - `docxView="page|fit-width"` selects the initial mode and defaults to `page`.
 - `docxZoom` configures the manual page zoom from 10% to 100%.
-- `docxZoomControls` optionally exposes Fit, 50%, 75%, and 100% controls.
+- `docxZoomControls` optionally exposes zoom out, Fit, 50%, 75%, 100%, and zoom in controls. The incremental buttons use a 10-point step and stop at 10% and 100%.
 - `docxPreview=false` disables DOCX rendering and its zoom behavior entirely.
 
 The Daisy Kit toolbar and zoom implementation do not emit inline handlers or styles. However, `docx-preview` itself generates inline document styles. Applications enforcing `style-src-attr 'none'` must disable DOCX preview or convert the document server-side to a CSP-compatible PDF or sanitized HTML representation.
@@ -840,6 +840,7 @@ Supported public props:
 - `persistStateFields`
 - `rowKey`
 - `subRowsKey`
+- `subRowSelection="independent|cascade|master-only"`
 - `linkPolicy`
 - `globalFilterKey`
 - `filters`
@@ -1001,6 +1002,23 @@ Selection works in client and server mode:
 - changing filters or search resets selection because the result set has changed;
 - changing page, page size, sorting, or refreshing server data keeps selection.
 
+When `sub-rows-key` is configured, `sub-row-selection` controls how master and sub rows participate:
+
+- `independent` (default): every row is selectable independently, preserving the existing behavior;
+- `cascade`: selecting a master selects all descendant leaves, while the master exposes checked, unchecked, or mixed state. Selection events contain only leaf IDs and filtered server-side selection is disabled because unloaded descendants cannot be normalized safely;
+- `master-only`: only top-level rows are selectable; sub rows remain visible as context without a selection control.
+
+```blade
+<x-daisy::ui.data-display.table
+    selection="multiple"
+    row-key="id"
+    sub-rows-key="children"
+    sub-row-selection="cascade"
+    :columns="$columns"
+    :rows="$groups"
+/>
+```
+
 The runtime emits `daisy:table-selection-changed` with:
 
 ```json
@@ -1009,6 +1027,7 @@ The runtime emits `daisy:table-selection-changed` with:
   "excludedIds": [],
   "allFilteredSelected": false,
   "selectionScope": "page",
+  "subRowSelection": "independent",
   "selectedCount": 2,
   "visibleSelectedCount": 2,
   "tableState": {
