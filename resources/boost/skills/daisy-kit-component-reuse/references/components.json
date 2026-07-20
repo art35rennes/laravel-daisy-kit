@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-07-20T12:09:34+00:00",
+    "generated_at": "2026-07-20T13:32:49+00:00",
     "package": "art35rennes/laravel-daisy-kit",
     "blade_namespace": "daisy::",
     "summary": {
@@ -1457,6 +1457,7 @@
                 "docxView",
                 "docxZoom",
                 "docxZoomControls",
+                "docxNotice",
                 "layout",
                 "actionOnly",
                 "actionButtonClass",
@@ -2065,6 +2066,7 @@
                 "default",
                 "fetchOnEmpty",
                 "placeholder",
+                "listSize",
                 "module",
                 "name",
                 "id",
