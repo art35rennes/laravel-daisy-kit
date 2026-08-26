@@ -16,7 +16,10 @@ function tableMarkup(configuration) {
 }
 
 describe('table module', () => {
-    afterEach(() => vi.restoreAllMocks());
+    afterEach(() => {
+        vi.restoreAllMocks();
+        window.history.replaceState({}, '', '/');
+    });
 
     it('loads a server-backed filtered page and retains selected row identifiers', async () => {
         const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
@@ -120,6 +123,178 @@ describe('table module', () => {
         root.querySelector('[data-daisy-kit-table-row-select="a"]').click();
         root.querySelector('[data-daisy-kit-table-bulk-action="archive"]').click();
         expect(events).toEqual([{ id: 'archive', ids: ['a'] }]);
+    });
+
+    it('opens a row detail and dispatches configured row actions with the row contract', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [{ id: 'name', label: 'Name' }, { id: 'summary', label: 'Summary' }],
+            rows: [{ id: 'a', name: 'Alpha', summary: 'Ready for review' }],
+            rowActions: [{ id: 'approve', label: 'Approve' }],
+            rowDetails: { accessor: 'summary', label: 'Details', mode: 'inline' },
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+        const events = [];
+        root.addEventListener('daisy-kit:table:row-action', (event) => events.push(event.detail));
+
+        mount(root);
+        root.querySelector('[data-daisy-kit-table-detail-toggle="a"]').click();
+
+        expect(root.querySelector('[data-daisy-kit-table-detail="a"]').textContent).toContain('Ready for review');
+
+        root.querySelector('[data-daisy-kit-table-row-action="approve"]').click();
+        expect(events).toEqual([{
+            id: 'approve',
+            row: { id: 'a', name: 'Alpha', summary: 'Ready for review' },
+            rowId: 'a',
+        }]);
+
+        root.querySelector('[data-daisy-kit-table-detail-toggle="a"]').click();
+        expect(root.querySelector('[data-daisy-kit-table-detail="a"]')).toBeNull();
+    });
+
+    it('removes a modal row detail when the table unmounts', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [{ id: 'name', label: 'Name' }],
+            rowDetails: { accessor: 'name', mode: 'modal' },
+            rows: [{ id: 'a', name: 'Alpha' }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+        root.querySelector('[data-daisy-kit-table-detail-toggle="a"]').click();
+
+        expect(root.querySelector('dialog[data-daisy-kit-table-detail="a"]')).not.toBeNull();
+
+        unmount(root);
+
+        expect(root.querySelector('dialog[data-daisy-kit-table-detail="a"]')).toBeNull();
+    });
+
+    it('edits an explicitly editable cell and enriches the remote mutation with its row contract', async () => {
+        const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+            row: { id: 'a', name: 'Approved' },
+        }), { headers: { 'content-type': 'application/json' } }));
+        vi.stubGlobal('fetch', fetch);
+        document.body.innerHTML = tableMarkup({
+            columns: [{ id: 'name', label: 'Name' }],
+            editable: { columns: ['name'], endpoint: '/api/people/{rowId}', method: 'PATCH' },
+            rows: [{ id: 'a', name: 'Alpha' }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+        const edits = [];
+        root.addEventListener('daisy-kit:table:edited', (event) => edits.push(event.detail));
+
+        mount(root);
+        root.querySelector('[data-daisy-kit-table-edit="a:name"]').click();
+        const input = root.querySelector('[data-daisy-kit-table-edit-input="a:name"]');
+        input.value = 'Approved';
+        root.querySelector('[data-daisy-kit-table-edit-save="a:name"]').click();
+
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+        expect(fetch.mock.calls[0][0]).toContain('/api/people/a');
+        expect(fetch.mock.calls[0][1]).toMatchObject({ method: 'PATCH' });
+        expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({
+            column: 'name',
+            dirty: { name: 'Approved' },
+            row: { id: 'a', name: 'Alpha' },
+            rowId: 'a',
+            value: 'Approved',
+        });
+        await vi.waitFor(() => expect(root.querySelector('tbody').textContent).toContain('Approved'));
+        expect(edits).toEqual([{
+            column: 'name',
+            row: { id: 'a', name: 'Approved' },
+            rowId: 'a',
+            value: 'Approved',
+        }]);
+    });
+
+    it('restores and writes an instance-scoped URL persistence contract without global table state', () => {
+        const parameter = 'daisy-kit-table[orders]';
+        const savedState = JSON.stringify({
+            columnVisibility: { name: true, status: false },
+            globalFilter: 'Alpha',
+            pagination: { pageIndex: 0, pageSize: 1 },
+            sorting: [{ desc: false, id: 'name' }],
+        });
+        const query = new URLSearchParams([[parameter, savedState]]);
+        window.history.replaceState({}, '', `/?${query}`);
+        document.body.innerHTML = tableMarkup({
+            columns: [{ id: 'name', label: 'Name' }, { id: 'status', label: 'Status' }],
+            persistence: { key: 'orders', mode: 'url' },
+            rows: [{ name: 'Beta', status: 'closed' }, { name: 'Alpha', status: 'open' }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+
+        expect(root.querySelector('tbody').textContent).toContain('Alpha');
+        expect(root.querySelector('tbody').textContent).not.toContain('open');
+        expect(root.querySelector('[data-daisy-kit-table-column-visibility="status"]').checked).toBe(false);
+
+        const control = root.querySelector('[data-daisy-kit-table-column-visibility="status"]');
+        control.checked = true;
+        control.dispatchEvent(new Event('change'));
+        const persisted = JSON.parse(new URL(window.location.href).searchParams.get(parameter));
+
+        expect(persisted.columnVisibility.status).toBe(true);
+        expect(persisted.globalFilter).toBe('Alpha');
+    });
+
+    it('applies a declared initial state before a persistence backend is configured', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [{ id: 'name', label: 'Name' }, { id: 'status', label: 'Status' }],
+            initialState: {
+                columnVisibility: { status: false },
+                globalFilter: 'Beta',
+                sorting: [{ desc: false, id: 'name' }],
+            },
+            rows: [{ name: 'Beta', status: 'open' }, { name: 'Alpha', status: 'closed' }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+
+        expect(root.querySelector('tbody').textContent).toContain('Beta');
+        expect(root.querySelector('tbody').textContent).not.toContain('open');
+        expect(root.querySelector('[data-daisy-kit-table-filter]').value).toBe('Beta');
+    });
+
+    it('enriches server requests with typed filters and column state', async () => {
+        const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ rows: [], total: 0 }), {
+            headers: { 'content-type': 'application/json' },
+        }));
+        vi.stubGlobal('fetch', fetch);
+        document.body.innerHTML = tableMarkup({
+            columns: [
+                { id: 'name', label: 'Name', filter: { type: 'text' } },
+                { id: 'status', label: 'Status', filter: { options: ['open'], type: 'select' } },
+            ],
+            source: '/api/orders',
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+        const nameFilter = root.querySelector('[data-daisy-kit-table-column-filter="name"]');
+        nameFilter.value = 'alpha';
+        nameFilter.dispatchEvent(new Event('input'));
+        const statusFilter = root.querySelector('[data-daisy-kit-table-column-filter="status"]');
+        statusFilter.value = 'open';
+        statusFilter.dispatchEvent(new Event('change'));
+        const pin = root.querySelector('[data-daisy-kit-table-column-pinning="status"]');
+        pin.value = 'left';
+        pin.dispatchEvent(new Event('change'));
+
+        await vi.waitFor(() => expect(fetch.mock.calls.length).toBeGreaterThan(2));
+        const request = new URL(fetch.mock.calls.at(-1)[0]);
+
+        expect(JSON.parse(request.searchParams.get('columnFilters'))).toEqual([
+            { id: 'name', value: 'alpha' },
+            { id: 'status', value: 'open' },
+        ]);
+        expect(JSON.parse(request.searchParams.get('columnPinning'))).toEqual({ left: ['status'], right: [] });
+        expect(JSON.parse(request.searchParams.get('columnVisibility'))).toEqual({ name: true, status: true });
     });
 
     it('sorts, filters, and reports state changes without global state', () => {

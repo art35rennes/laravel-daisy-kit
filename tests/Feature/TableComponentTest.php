@@ -13,6 +13,11 @@ it('renders the table as a CSP-safe explicitly mounted module', function (): voi
             ['name' => '</script><img src=x onerror=alert(1)>'],
         ],
         'pageSize' => 20,
+        'rowActions' => [['id' => 'approve', 'label' => 'Approve']],
+        'rowDetails' => ['accessor' => 'summary', 'mode' => 'inline'],
+        'editable' => ['columns' => ['name'], 'endpoint' => '/people/{rowId}'],
+        'persistence' => ['key' => 'people', 'mode' => 'url'],
+        'initialState' => ['globalFilter' => 'Ada'],
     ])->render();
 
     preg_match('/<script data-daisy-kit-config type="application\/json">(.*?)<\/script>/s', $html, $matches);
@@ -30,6 +35,12 @@ it('renders the table as a CSP-safe explicitly mounted module', function (): voi
             'pageSize' => 20,
             'selectable' => false,
             'source' => null,
+            'bulkActions' => [],
+            'rowActions' => [['id' => 'approve', 'label' => 'Approve']],
+            'rowDetails' => ['accessor' => 'summary', 'mode' => 'inline'],
+            'editable' => ['columns' => ['name'], 'endpoint' => '/people/{rowId}'],
+            'persistence' => ['key' => 'people', 'mode' => 'url'],
+            'initialState' => ['globalFilter' => 'Ada'],
         ]);
 });
 

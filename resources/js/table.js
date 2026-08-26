@@ -69,6 +69,125 @@ function normalizePageSize(value) {
     return Math.min(value, 100);
 }
 
+function normalizeRowActions(actions) {
+    if (!Array.isArray(actions)) {
+        return [];
+    }
+
+    return actions.flatMap((action) => {
+        if (!action || Array.isArray(action) || typeof action !== 'object') {
+            return [];
+        }
+
+        if (typeof action.id !== 'string' || action.id === '' || typeof action.label !== 'string' || action.label === '') {
+            return [];
+        }
+
+        return [{ disabled: action.disabled === true, id: action.id, label: action.label }];
+    });
+}
+
+function normalizeRowDetails(details) {
+    if (details === true) {
+        return { accessor: null, label: 'Details', mode: 'inline' };
+    }
+
+    if (!details || Array.isArray(details) || typeof details !== 'object') {
+        return null;
+    }
+
+    return {
+        accessor: typeof details.accessor === 'string' && details.accessor !== '' ? details.accessor : null,
+        label: typeof details.label === 'string' && details.label !== '' ? details.label : 'Details',
+        mode: details.mode === 'modal' ? 'modal' : 'inline',
+    };
+}
+
+function normalizeEditable(editable) {
+    if (editable === true) {
+        return { columns: [], endpoint: null, method: 'PATCH' };
+    }
+
+    if (!editable || Array.isArray(editable) || typeof editable !== 'object') {
+        return null;
+    }
+
+    const endpoint = normalizeSource(editable.endpoint);
+    const method = typeof editable.method === 'string' ? editable.method.toUpperCase() : 'PATCH';
+
+    return {
+        columns: Array.isArray(editable.columns) ? editable.columns.filter((column) => typeof column === 'string' && column !== '') : [],
+        endpoint,
+        method: ['PATCH', 'POST', 'PUT'].includes(method) ? method : 'PATCH',
+    };
+}
+
+function normalizePersistence(persistence) {
+    if (!persistence || Array.isArray(persistence) || typeof persistence !== 'object') {
+        return null;
+    }
+
+    const key = typeof persistence.key === 'string' && persistence.key !== '' ? persistence.key : null;
+
+    if (!key || !['local', 'url'].includes(persistence.mode)) {
+        return null;
+    }
+
+    return {
+        fields: Array.isArray(persistence.fields)
+            ? persistence.fields.filter((field) => ['columnFilters', 'columnPinning', 'columnVisibility', 'globalFilter', 'pagination', 'sorting'].includes(field))
+            : ['columnFilters', 'columnPinning', 'columnVisibility', 'globalFilter', 'pagination', 'sorting'],
+        key,
+        mode: persistence.mode,
+    };
+}
+
+function readPersistedState(persistence) {
+    if (!persistence) {
+        return {};
+    }
+
+    const storageKey = `daisy-kit-table[${persistence.key}]`;
+    const serialized = persistence.mode === 'url'
+        ? new URLSearchParams(window.location.search).get(storageKey)
+        : window.localStorage.getItem(storageKey);
+
+    if (!serialized || serialized.length > 4096) {
+        return {};
+    }
+
+    try {
+        const state = JSON.parse(serialized);
+
+        return state && !Array.isArray(state) && typeof state === 'object' ? state : {};
+    } catch {
+        return {};
+    }
+}
+
+function persistState(persistence, state) {
+    if (!persistence) {
+        return;
+    }
+
+    const storageKey = `daisy-kit-table[${persistence.key}]`;
+    const selectedState = Object.fromEntries(persistence.fields.map((field) => [field, state[field]]));
+    const serialized = JSON.stringify(selectedState);
+
+    if (serialized.length > 4096) {
+        return;
+    }
+
+    if (persistence.mode === 'url') {
+        const url = new URL(window.location.href);
+        url.searchParams.set(storageKey, serialized);
+        window.history.replaceState({}, '', url);
+        return;
+    }
+
+    window.localStorage.setItem(storageKey, serialized);
+}
+
 function normalizeSource(value) {
     if (typeof value !== 'string' || value === '') {
         return null;
@@ -126,21 +245,55 @@ function initialize(root, configuration) {
     const source = normalizeSource(configuration.source);
     const selectable = configuration.selectable === true;
     const bulkActions = Array.isArray(configuration.bulkActions) ? configuration.bulkActions.filter((action) => action && typeof action.id === 'string' && typeof action.label === 'string') : [];
+    const rowActions = normalizeRowActions(configuration.rowActions);
+    const rowDetails = normalizeRowDetails(configuration.rowDetails);
+    const editable = normalizeEditable(configuration.editable);
+    const persistence = normalizePersistence(configuration.persistence);
+    const columns = normalizeColumns(configuration.columns);
+    const configuredState = configuration.initialState && !Array.isArray(configuration.initialState) && typeof configuration.initialState === 'object'
+        ? configuration.initialState
+        : {};
+    const persistedState = readPersistedState(persistence);
     const selectedIds = new Set();
+    const expandedRowIds = new Set();
+    const detailDialogs = new Set();
     let abortController = null;
+    let editing = null;
     let requestSerial = 0;
     let rows = normalizeRows(configuration.rows);
     let total = rows.length;
     const state = {
-        columnPinning: { left: [], right: [] },
-        columnFilters: [],
-        columnVisibility: Object.fromEntries(normalizeColumns(configuration.columns).map((column) => [column.id, column.initialVisible])),
-        globalFilter: '',
-        pagination: { pageIndex: 0, pageSize: normalizePageSize(configuration.pageSize) },
-        sorting: [],
+        columnPinning: {
+            left: Array.isArray((persistedState.columnPinning ?? configuredState.columnPinning)?.left)
+                ? (persistedState.columnPinning ?? configuredState.columnPinning).left.filter((column) => typeof column === 'string')
+                : [],
+            right: Array.isArray((persistedState.columnPinning ?? configuredState.columnPinning)?.right)
+                ? (persistedState.columnPinning ?? configuredState.columnPinning).right.filter((column) => typeof column === 'string')
+                : [],
+        },
+        columnFilters: Array.isArray(persistedState.columnFilters ?? configuredState.columnFilters)
+            ? (persistedState.columnFilters ?? configuredState.columnFilters).filter((filter) => filter && typeof filter.id === 'string')
+            : [],
+        columnVisibility: {
+            ...Object.fromEntries(columns.map((column) => [column.id, column.initialVisible])),
+            ...(configuredState.columnVisibility ?? {}),
+            ...(persistedState.columnVisibility ?? {}),
+        },
+        globalFilter: typeof persistedState.globalFilter === 'string'
+            ? persistedState.globalFilter
+            : (typeof configuredState.globalFilter === 'string' ? configuredState.globalFilter : ''),
+        pagination: {
+            pageIndex: Number.isInteger((persistedState.pagination ?? configuredState.pagination)?.pageIndex) && (persistedState.pagination ?? configuredState.pagination).pageIndex >= 0
+                ? (persistedState.pagination ?? configuredState.pagination).pageIndex
+                : 0,
+            pageSize: normalizePageSize((persistedState.pagination ?? configuredState.pagination)?.pageSize ?? configuration.pageSize),
+        },
+        sorting: Array.isArray(persistedState.sorting ?? configuredState.sorting)
+            ? (persistedState.sorting ?? configuredState.sorting).filter((sorting) => sorting && typeof sorting.id === 'string' && typeof sorting.desc === 'boolean')
+            : [],
     };
     const table = createTable({
-        columns: normalizeColumns(configuration.columns),
+        columns,
         data: rows,
         getRowId: (row, index) => typeof row.id === 'string' || typeof row.id === 'number' ? String(row.id) : String(index),
         getCoreRowModel: getCoreRowModel(),
@@ -154,6 +307,7 @@ function initialize(root, configuration) {
         onGlobalFilterChange: (updater) => {
             state.globalFilter = functionalUpdate(updater, state.globalFilter);
             state.pagination.pageIndex = 0;
+            persistState(persistence, state);
             render();
             emit(root, 'filtered', { query: state.globalFilter });
             requestRows();
@@ -161,25 +315,33 @@ function initialize(root, configuration) {
         onColumnFiltersChange: (updater) => {
             state.columnFilters = functionalUpdate(updater, state.columnFilters);
             state.pagination.pageIndex = 0;
+            persistState(persistence, state);
             render();
             emit(root, 'filtered', { filters: state.columnFilters });
+            requestRows();
         },
         onColumnPinningChange: (updater) => {
             state.columnPinning = functionalUpdate(updater, state.columnPinning);
+            persistState(persistence, state);
             render();
+            requestRows();
         },
         onColumnVisibilityChange: (updater) => {
             state.columnVisibility = functionalUpdate(updater, state.columnVisibility);
+            persistState(persistence, state);
             render();
+            requestRows();
         },
         onPaginationChange: (updater) => {
             state.pagination = functionalUpdate(updater, state.pagination);
+            persistState(persistence, state);
             render();
             emit(root, 'page-changed', { page: state.pagination.pageIndex + 1 });
             requestRows();
         },
         onSortingChange: (updater) => {
             state.sorting = functionalUpdate(updater, state.sorting);
+            persistState(persistence, state);
             render();
 
             const [sorting] = state.sorting;
@@ -196,6 +358,61 @@ function initialize(root, configuration) {
         state,
     });
 
+    function updateRow(rowId, nextRow) {
+        rows = rows.map((row, index) => {
+            const id = typeof row.id === 'string' || typeof row.id === 'number' ? String(row.id) : String(index);
+
+            return id === rowId ? nextRow : row;
+        });
+        table.setOptions((current) => ({ ...current, data: rows }));
+    }
+
+    async function saveEdit(row, column, value) {
+        const originalRow = { ...row.original };
+        const payload = {
+            column: column.id,
+            dirty: { [column.id]: value },
+            row: originalRow,
+            rowId: row.id,
+            value,
+        };
+        let nextRow = { ...originalRow, [column.columnDef.accessorKey]: value };
+
+        try {
+            if (editable?.endpoint) {
+                const endpoint = editable.endpoint.toString()
+                    .replaceAll('{rowId}', encodeURIComponent(row.id))
+                    .replaceAll('%7BrowId%7D', encodeURIComponent(row.id));
+                const response = await fetch(endpoint, {
+                    body: JSON.stringify(payload),
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+                    method: editable.method,
+                });
+
+                if (!response.ok) {
+                    throw new Error('The table edit could not be saved.');
+                }
+
+                const responsePayload = await response.json();
+
+                if (!responsePayload?.row || Array.isArray(responsePayload.row) || typeof responsePayload.row !== 'object') {
+                    throw new Error('The table edit response must include the updated row.');
+                }
+
+                nextRow = { ...nextRow, ...responsePayload.row };
+            }
+
+            updateRow(row.id, nextRow);
+            editing = null;
+            render();
+            emit(root, 'edited', { column: column.id, row: nextRow, rowId: row.id, value });
+        } catch (error) {
+            updateStatus(root, error instanceof Error ? error.message : 'The table edit could not be saved.');
+            emit(root, 'error', { column: column.id, reason: 'edit-failed', rowId: row.id });
+        }
+    }
+
     function render() {
         const head = tableElement.tHead;
         const body = tableElement.tBodies.item(0);
@@ -206,6 +423,7 @@ function initialize(root, configuration) {
 
         head.replaceChildren();
         body.replaceChildren();
+        filter.value = state.globalFilter;
         let visibilityControls = content.querySelector('[data-daisy-kit-table-column-controls]');
         if (!visibilityControls) {
             visibilityControls = document.createElement('fieldset');
@@ -253,6 +471,7 @@ function initialize(root, configuration) {
         }
 
         const headerRow = document.createElement('tr');
+        const hasRowControls = rowActions.length > 0 || rowDetails !== null;
 
         if (selectable) {
             const selectionHeader = document.createElement('th');
@@ -307,6 +526,13 @@ function initialize(root, configuration) {
 
             headerRow.append(headerCell);
         });
+
+        if (hasRowControls) {
+            const actionsHeader = document.createElement('th');
+            actionsHeader.scope = 'col';
+            actionsHeader.textContent = 'Actions';
+            headerRow.append(actionsHeader);
+        }
 
         head.append(headerRow);
 
@@ -374,12 +600,115 @@ function initialize(root, configuration) {
             visibleColumns.forEach((column) => {
                 const cell = cellsByColumn.get(column.id);
                 const tableCell = document.createElement('td');
+                const editKey = `${row.id}:${column.id}`;
+                const canEdit = editable !== null && (editable.columns.length === 0 || editable.columns.includes(column.id));
 
-                tableCell.textContent = cell ? formatCell(cell.getValue()) : '';
+                if (canEdit && editing?.key === editKey) {
+                    const input = document.createElement('input');
+                    const save = document.createElement('button');
+                    const cancel = document.createElement('button');
+
+                    input.dataset.daisyKitTableEditInput = editKey;
+                    input.value = editing.value;
+                    save.dataset.daisyKitTableEditSave = editKey;
+                    save.textContent = 'Save';
+                    save.type = 'button';
+                    save.addEventListener('click', () => saveEdit(row, column, input.value));
+                    cancel.dataset.daisyKitTableEditCancel = editKey;
+                    cancel.textContent = 'Cancel';
+                    cancel.type = 'button';
+                    cancel.addEventListener('click', () => {
+                        editing = null;
+                        render();
+                    });
+                    tableCell.append(input, save, cancel);
+                } else if (canEdit) {
+                    const value = cell ? formatCell(cell.getValue()) : '';
+                    const output = document.createElement('span');
+                    const edit = document.createElement('button');
+
+                    output.textContent = value;
+                    edit.setAttribute('aria-label', `Edit ${String(column.columnDef.header ?? column.id)} in row ${row.id}`);
+                    edit.dataset.daisyKitTableEdit = editKey;
+                    edit.textContent = 'Edit';
+                    edit.type = 'button';
+                    edit.addEventListener('click', () => {
+                        editing = { key: editKey, value };
+                        render();
+                    });
+                    tableCell.append(output, edit);
+                } else {
+                    tableCell.textContent = cell ? formatCell(cell.getValue()) : '';
+                }
                 tableRow.append(tableCell);
             });
 
+            if (hasRowControls) {
+                const actionCell = document.createElement('td');
+
+                if (rowDetails) {
+                    const toggle = document.createElement('button');
+
+                    toggle.setAttribute('aria-expanded', String(expandedRowIds.has(row.id)));
+                    toggle.dataset.daisyKitTableDetailToggle = row.id;
+                    toggle.textContent = rowDetails.label;
+                    toggle.type = 'button';
+                    toggle.addEventListener('click', () => {
+                        if (rowDetails.mode === 'modal') {
+                            const dialog = document.createElement('dialog');
+                            const title = document.createElement('h2');
+                            const close = document.createElement('button');
+
+                            dialog.dataset.daisyKitTableDetail = row.id;
+                            title.textContent = rowDetails.label;
+                            close.textContent = 'Close';
+                            close.type = 'button';
+                            close.addEventListener('click', () => dialog.close());
+                            dialog.append(title, document.createTextNode(formatCell(rowDetails.accessor ? row.original[rowDetails.accessor] : row.original)), close);
+                            root.append(dialog);
+                            detailDialogs.add(dialog);
+                            if (typeof dialog.showModal === 'function') dialog.showModal();
+                            else dialog.setAttribute('open', '');
+                            return;
+                        }
+
+                        if (expandedRowIds.has(row.id)) expandedRowIds.delete(row.id);
+                        else expandedRowIds.add(row.id);
+                        render();
+                    });
+                    actionCell.append(toggle);
+                }
+
+                rowActions.forEach((action) => {
+                    const button = document.createElement('button');
+
+                    button.dataset.daisyKitTableRowAction = action.id;
+                    button.disabled = action.disabled;
+                    button.textContent = action.label;
+                    button.type = 'button';
+                    button.addEventListener('click', () => emit(root, 'row-action', {
+                        id: action.id,
+                        row: { ...row.original },
+                        rowId: row.id,
+                    }));
+                    actionCell.append(button);
+                });
+
+                tableRow.append(actionCell);
+            }
+
             body.append(tableRow);
+
+            if (rowDetails?.mode === 'inline' && expandedRowIds.has(row.id)) {
+                const detailRow = document.createElement('tr');
+                const detailCell = document.createElement('td');
+
+                detailCell.colSpan = visibleColumns.length + Number(selectable) + Number(hasRowControls);
+                detailCell.dataset.daisyKitTableDetail = row.id;
+                detailCell.textContent = formatCell(rowDetails.accessor ? row.original[rowDetails.accessor] : row.original);
+                detailRow.append(detailCell);
+                body.append(detailRow);
+            }
         });
 
         const filteredRows = table.getFilteredRowModel().rows;
@@ -414,6 +743,9 @@ function initialize(root, configuration) {
             request.searchParams.set('sort', sorting.id);
             request.searchParams.set('direction', sorting.desc ? 'desc' : 'asc');
         }
+        request.searchParams.set('columnFilters', JSON.stringify(state.columnFilters));
+        request.searchParams.set('columnPinning', JSON.stringify(state.columnPinning));
+        request.searchParams.set('columnVisibility', JSON.stringify(state.columnVisibility));
 
         root.dataset.daisyKitState = 'loading';
         root.setAttribute('aria-busy', 'true');
@@ -474,6 +806,8 @@ function initialize(root, configuration) {
         nextButton.removeEventListener('click', onNextPage);
         abortController?.abort();
         requestSerial += 1;
+        detailDialogs.forEach((dialog) => dialog.remove());
+        detailDialogs.clear();
         content.innerHTML = initialContent;
     };
 }

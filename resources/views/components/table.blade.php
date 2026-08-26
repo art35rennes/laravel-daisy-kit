@@ -4,6 +4,12 @@
     'pageSize' => 10,
     'selectable' => false,
     'source' => null,
+    'bulkActions' => [],
+    'rowActions' => [],
+    'rowDetails' => null,
+    'editable' => false,
+    'persistence' => null,
+    'initialState' => [],
 ])
 
 @php
@@ -13,6 +19,12 @@
         'pageSize' => $pageSize,
         'selectable' => $selectable,
         'source' => $source,
+        'bulkActions' => $bulkActions,
+        'rowActions' => $rowActions,
+        'rowDetails' => $rowDetails,
+        'editable' => $editable,
+        'persistence' => $persistence,
+        'initialState' => $initialState,
     ]);
 @endphp
 
