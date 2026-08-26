@@ -95,6 +95,33 @@ describe('table module', () => {
         expect(root.querySelector('tbody').textContent).toContain('private');
     });
 
+    it('pins a column through the native column controls', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [{ id: 'name', label: 'Name' }, { id: 'status', label: 'Status' }],
+            rows: [{ name: 'Alpha', status: 'open' }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+        const pin = root.querySelector('[data-daisy-kit-table-column-pinning="status"]');
+        pin.value = 'left';
+        pin.dispatchEvent(new Event('change'));
+
+        expect(root.querySelector('th button').textContent).toBe('Status');
+        expect(root.querySelector('tbody td').textContent).toBe('open');
+    });
+
+    it('executes a configured bulk action for selected rows', () => {
+        document.body.innerHTML = tableMarkup({ columns: [{ id: 'name', label: 'Name' }], rows: [{ id: 'a', name: 'Alpha' }], selectable: true, bulkActions: [{ id: 'archive', label: 'Archive' }] });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+        const events = [];
+        root.addEventListener('daisy-kit:table:bulk-action', (event) => events.push(event.detail));
+        mount(root);
+        root.querySelector('[data-daisy-kit-table-row-select="a"]').click();
+        root.querySelector('[data-daisy-kit-table-bulk-action="archive"]').click();
+        expect(events).toEqual([{ id: 'archive', ids: ['a'] }]);
+    });
+
     it('sorts, filters, and reports state changes without global state', () => {
         document.body.innerHTML = tableMarkup({
             columns: [{ id: 'name', label: 'Name' }],

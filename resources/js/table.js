@@ -163,6 +163,10 @@ function initialize(root, configuration) {
             render();
             emit(root, 'filtered', { filters: state.columnFilters });
         },
+        onColumnPinningChange: (updater) => {
+            state.columnPinning = functionalUpdate(updater, state.columnPinning);
+            render();
+        },
         onColumnVisibilityChange: (updater) => {
             state.columnVisibility = functionalUpdate(updater, state.columnVisibility);
             render();
@@ -217,7 +221,17 @@ function initialize(root, configuration) {
             control.dataset.daisyKitTableColumnVisibility = column.id;
             control.type = 'checkbox';
             control.addEventListener('change', () => column.toggleVisibility(control.checked));
-            label.append(control, document.createTextNode(String(column.columnDef.header ?? column.id)));
+            const pin = document.createElement('select');
+            pin.dataset.daisyKitTableColumnPinning = column.id;
+            [['false', 'Normal'], ['left', 'Pin left'], ['right', 'Pin right']].forEach(([value, text]) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = text;
+                pin.append(option);
+            });
+            pin.value = column.getIsPinned() || 'false';
+            pin.addEventListener('change', () => column.pin(pin.value === 'false' ? false : pin.value));
+            label.append(control, document.createTextNode(String(column.columnDef.header ?? column.id)), pin);
             return [label];
         }));
 
@@ -246,9 +260,13 @@ function initialize(root, configuration) {
             headerRow.append(selectionHeader);
         }
 
-        table.getFlatHeaders().forEach((header) => {
+        const visibleColumns = [
+            ...table.getLeftVisibleLeafColumns(),
+            ...table.getCenterVisibleLeafColumns(),
+            ...table.getRightVisibleLeafColumns(),
+        ];
+        visibleColumns.forEach((column) => {
             const headerCell = document.createElement('th');
-            const column = header.column;
             const sortDirection = column.getIsSorted();
 
             headerCell.scope = 'col';
@@ -335,10 +353,12 @@ function initialize(root, configuration) {
                 tableRow.append(selectionCell);
             }
 
-            row.getVisibleCells().forEach((cell) => {
+            const cellsByColumn = new Map(row.getVisibleCells().map((cell) => [cell.column.id, cell]));
+            visibleColumns.forEach((column) => {
+                const cell = cellsByColumn.get(column.id);
                 const tableCell = document.createElement('td');
 
-                tableCell.textContent = formatCell(cell.getValue());
+                tableCell.textContent = cell ? formatCell(cell.getValue()) : '';
                 tableRow.append(tableCell);
             });
 
