@@ -3,17 +3,18 @@
 ## Scope
 
 This is the complete supported Blade surface. Any component outside this table is an
-architecture-test failure.
+architecture-test failure. The detailed business outcomes and test oracle are in
+[`v5-product-contract-matrix.md`](v5-product-contract-matrix.md).
 
 | Module | Blade component | Essential contract |
 | --- | --- | --- |
-| Forms viewer | `x-daisy-kit::forms.viewer` | Renders a semantic form from a JSON-safe schema and value; evaluates declared JSONata expressions in the module. |
-| Forms builder | `x-daisy-kit::forms.builder` | Renders a schema-builder mount point; Livewire enhancement is optional and only available with Livewire 4. |
-| Table | `x-daisy-kit::table` | Renders data and column definitions for client-side sorting, filtering, and pagination. |
-| Tree | `x-daisy-kit::tree` | Renders a keyboard-navigable hierarchical tree with selection and expansion. |
-| Blueprint | `x-daisy-kit::blueprint` | Renders nodes and directed edges with deterministic Dagre layout. |
-| File Preview | `x-daisy-kit::file-preview` | Shows loading, error, text/image, and DOCX preview states without inline scripts. |
-| Map | `x-daisy-kit::map` | Renders a map with GeoJSON data, optional drawing, and geometry measurement events. |
+| Forms viewer | `x-daisy-kit::forms.viewer` | Schema-driven, recursive and progressively validated form viewer with JSONata and safe submission modes. |
+| Forms builder | `x-daisy-kit::forms.builder` | Livewire 4-optional authoring surface for the same Viewer schema, including diagnostics, history and synchronized JSON. |
+| Table | `x-daisy-kit::table` | Client/server TanStack data workbench with typed filters, persistent selection and configurable data actions. |
+| Tree | `x-daisy-kit::tree` | Keyboard-accessible hierarchical selector with multiple/indeterminate selection, lazy loading and search. |
+| Blueprint | `x-daisy-kit::blueprint` | Accessible directed-graph viewer/editor with inspector, history and synchronized JSON. |
+| File Preview | `x-daisy-kit::file-preview` | Isolated previews and actions for validated document/media sources, without inline scripts. |
+| Map | `x-daisy-kit::map` | Leaflet/Terra Draw/Turf map with layers, editable GeoJSON and spatial tools. |
 
 ## Module entry contract
 
