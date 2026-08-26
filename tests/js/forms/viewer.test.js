@@ -221,6 +221,33 @@ describe('forms viewer', () => {
         expect(errors).toContainEqual({ reason: 'validation-failed' });
     });
 
+    it('updates readonly computed fields from JSONata expressions', async () => {
+        const root = viewerRoot(JSON.stringify({
+            schema: {
+                fields: [
+                    { name: 'quantity', type: 'number' },
+                    { name: 'unit_price', type: 'number' },
+                    { name: 'total', type: 'number', computed: 'quantity * unit_price' },
+                ],
+            },
+            value: { quantity: 2, unit_price: 12 },
+        }));
+
+        await mount(root);
+        await settle();
+        const total = root.querySelector('input[name="total"]');
+
+        expect(total.value).toBe('24');
+        expect(total.readOnly).toBe(true);
+
+        const quantity = root.querySelector('input[name="quantity"]');
+        quantity.value = '3';
+        quantity.dispatchEvent(new Event('input', { bubbles: true }));
+        await settle();
+
+        expect(total.value).toBe('36');
+    });
+
     it('remounts explicitly when the optional Livewire adapter receives a navigation event', async () => {
         const root = viewerRoot(JSON.stringify({
             schema: { fields: [{ name: 'name', label: 'Name', type: 'text' }] },

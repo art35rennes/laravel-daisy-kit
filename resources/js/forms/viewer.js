@@ -58,7 +58,7 @@ function setInputValue(input, field, value) {
 }
 
 function setReadonly(input, field, readonly) {
-    if (! readonly && field.readonly !== true) {
+    if (! readonly && field.readonly !== true && typeof field.computed !== 'string') {
         return;
     }
 
@@ -320,6 +320,23 @@ function initialize(root, configuration) {
 
     async function refreshVisibility() {
         const visibility = new Map();
+
+        for (const { field } of context.entries) {
+            if (typeof field.name !== 'string' || typeof field.computed !== 'string' || field.computed.trim() === '') {
+                continue;
+            }
+
+            try {
+                values[field.name] = await jsonata(field.computed).evaluate(values);
+                const input = [...root.querySelectorAll('[name]')].find((candidate) => candidate.getAttribute('name') === field.name);
+
+                if (input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement) {
+                    setInputValue(input, field, values[field.name]);
+                }
+            } catch {
+                emit(root, 'error', { field: field.name, reason: 'invalid-computed-expression' });
+            }
+        }
 
         for (const entry of context.entries) {
             const parentVisible = entry.parent ? visibility.get(entry.parent) !== false : true;
