@@ -8,7 +8,7 @@
         }
     ],
     "require": {
-        "art35rennes/laravel-daisy-kit": "dev-next/v5"
+        "art35rennes/laravel-daisy-kit": "__PACKAGE_BRANCH_VERSION__"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

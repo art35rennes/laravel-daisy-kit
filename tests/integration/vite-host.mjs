@@ -30,6 +30,31 @@ function run(command, arguments_, options = {}) {
     }
 }
 
+function gitOutput(arguments_, cwd) {
+    const result = spawnSync('git', arguments_, { cwd, encoding: 'utf8' });
+
+    if (result.status !== 0) {
+        throw new Error(`git ${arguments_.join(' ')} failed:\n${result.stdout}\n${result.stderr}`);
+    }
+
+    return result.stdout.trim();
+}
+
+function activePackageReference() {
+    const branch = gitOutput(['branch', '--show-current'], repositoryRoot);
+    const commit = gitOutput(['rev-parse', 'HEAD'], repositoryRoot);
+
+    if (!/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(branch)) {
+        throw new Error('The Vite host fixture requires a checked-out package branch with a Composer-compatible name.');
+    }
+
+    if (!/^[a-f0-9]{40}$/.test(commit)) {
+        throw new Error('The Vite host fixture could not resolve the active package commit.');
+    }
+
+    return { branch, commit, version: `dev-${branch}#${commit}` };
+}
+
 function startHost(buildRoot) {
     return new Promise((resolveServer, rejectServer) => {
         const server = createServer((request, response) => {
@@ -85,8 +110,11 @@ let browser;
 try {
     cpSync(fixtureRoot, hostRoot, { recursive: true });
 
+    const activePackage = activePackageReference();
+
     const composerJson = readFileSync(resolve(hostRoot, 'composer.json'), 'utf8')
-        .replace('__PACKAGE_ROOT__', repositoryRoot);
+        .replace('__PACKAGE_ROOT__', repositoryRoot)
+        .replace('__PACKAGE_BRANCH_VERSION__', activePackage.version);
     writeFileSync(resolve(hostRoot, 'composer.json'), composerJson);
 
     run('composer', ['install', '--no-interaction', '--no-scripts', '--prefer-dist']);
@@ -96,10 +124,11 @@ try {
     const manifest = JSON.parse(readFileSync(resolve(hostRoot, 'build/.vite/manifest.json'), 'utf8'));
 
     const distRoot = resolve(hostRoot, 'vendor/art35rennes/laravel-daisy-kit/dist');
+    const installedCommit = gitOutput(['-C', resolve(hostRoot, 'vendor/art35rennes/laravel-daisy-kit'), 'rev-parse', 'HEAD'], hostRoot);
     const everyEntryExists = entryStems.every((entry) => existsSync(resolve(distRoot, `${entry}.js`)) && existsSync(resolve(distRoot, `${entry}.css`)));
 
-    if (!everyEntryExists || Object.keys(manifest).length === 0) {
-        throw new Error('The fresh Composer host did not resolve and build the Daisy Kit Vite entries.');
+    if (!everyEntryExists || Object.keys(manifest).length === 0 || installedCommit !== activePackage.commit) {
+        throw new Error(`The fresh Composer host did not resolve and build the active Daisy Kit package commit (${activePackage.commit}; installed ${installedCommit}).`);
     }
 
     const buildRoot = resolve(hostRoot, 'build');
