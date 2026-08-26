@@ -1,1 +1,0 @@
-<x-daisy::forms.viewer :schema="$schema" submit-mode="none" />

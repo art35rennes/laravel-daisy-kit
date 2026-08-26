@@ -1,1 +1,0 @@
-    <x-daisy::ui.inputs.token-input name="recipients" :values="['alice@example.com']" />

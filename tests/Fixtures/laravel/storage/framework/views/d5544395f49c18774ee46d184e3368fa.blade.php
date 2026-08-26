@@ -1,1 +1,0 @@
-<x-daisy::ui.inputs.range vertical />

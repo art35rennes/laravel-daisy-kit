@@ -1,3 +1,0 @@
-    <?php echo $__env->make('daisy::components.partials.assets', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-    <?php echo $__env->yieldPushContent('styles'); ?>
-    <?php echo $__env->yieldPushContent('scripts'); ?><?php /**PATH /Users/asicard/.codex/worktrees/2849/laravel-daisy-kit/tests/Fixtures/laravel/storage/framework/views/62ebdc42cfea3331495042bc6376a2b1.blade.php ENDPATH**/ ?>

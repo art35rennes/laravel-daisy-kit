@@ -1,9 +1,0 @@
-    <x-daisy::ui.inputs.otp
-        name="code"
-        :length="6"
-        value="123456"
-        size="lg"
-        color="error"
-        joined
-        required
-    />

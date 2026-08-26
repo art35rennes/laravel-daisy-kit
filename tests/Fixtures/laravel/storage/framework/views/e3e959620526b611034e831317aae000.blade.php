@@ -1,1 +1,0 @@
-    <x-daisy::ui.layout.ordered-list :items="[['id' => 'plan', 'label' => 'Plan V2']]" />

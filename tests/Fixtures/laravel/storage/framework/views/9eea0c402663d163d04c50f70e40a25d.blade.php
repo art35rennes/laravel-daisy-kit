@@ -1,1 +1,0 @@
-<x-daisy::templates.auth.login-simple />

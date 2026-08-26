@@ -1,2 +1,0 @@
-<aside data-row-detail="<?php echo e($row['id']); ?>"><?php echo e(data_get($item, 'name')); ?> <?php echo e(data_get($table, 'name', 'Table')); ?></aside>
-<?php /**PATH /Users/asicard/.codex/worktrees/2849/laravel-daisy-kit/tests/Fixtures/views/table/detail.blade.php ENDPATH**/ ?>

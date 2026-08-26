@@ -1,1 +1,0 @@
-<x-daisy::templates.advanced.blueprint :show-header="false" name-prefix="demo" />

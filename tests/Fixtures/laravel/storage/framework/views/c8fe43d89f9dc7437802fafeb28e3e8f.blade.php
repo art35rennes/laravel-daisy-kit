@@ -1,1 +1,0 @@
-<x-daisy::templates.reporting.operations-dashboard detailed-url="/interventions" />

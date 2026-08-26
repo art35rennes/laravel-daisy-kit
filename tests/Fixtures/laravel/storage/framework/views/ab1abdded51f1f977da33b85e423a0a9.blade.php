@@ -1,1 +1,0 @@
-<x-daisy::ui.layout.card selectable :checked="true">Plan</x-daisy::ui.layout.card>

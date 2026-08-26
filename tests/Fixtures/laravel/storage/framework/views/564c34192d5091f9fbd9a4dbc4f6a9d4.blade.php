@@ -1,1 +1,0 @@
-<x-daisy::ui.data-display.datatable />

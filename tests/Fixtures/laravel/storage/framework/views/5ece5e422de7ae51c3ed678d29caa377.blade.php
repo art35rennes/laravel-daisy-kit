@@ -1,1 +1,0 @@
-<x-daisy::ui.advanced.blueprint mode="view" :value="[]" />

@@ -1,1 +1,0 @@
-<x-daisy::ui.advanced.calendar value="2026-07-13" />
