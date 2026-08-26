@@ -20,6 +20,8 @@ class FormsBuilder extends Component
     /** @var array<int, array{fields: array<int, array{name: string, label: string, type: string}>}> */
     public array $redoStack = [];
 
+    public string $name = 'schema';
+
     /** @param array<string, mixed> $schema */
     public function mount(array $schema = []): void
     {
@@ -84,6 +86,22 @@ class FormsBuilder extends Component
         $this->schema = $next;
     }
 
+    public function importSchema(string $json): void
+    {
+        try {
+            $schema = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return;
+        }
+
+        if (! is_array($schema)) {
+            return;
+        }
+
+        $this->remember();
+        $this->schema = $this->normalizeSchema($schema);
+    }
+
     public function updatedSchema(): void
     {
         $this->schema = $this->normalizeSchema($this->schema);
@@ -110,6 +128,11 @@ class FormsBuilder extends Component
         return view('daisy-kit::components.forms.livewire-builder');
     }
 
+    public function exportSchema(): string
+    {
+        return json_encode($this->schema, JSON_THROW_ON_ERROR);
+    }
+
     /** @param array<string, mixed> $schema
      * @return array{fields: array<int, array{name: string, label: string, type: string}>}
      */
@@ -134,11 +157,19 @@ class FormsBuilder extends Component
         $name = is_string($value['name'] ?? null) ? trim($value['name']) : "field_{$position}";
         $label = is_string($value['label'] ?? null) ? trim($value['label']) : "Field {$position}";
 
-        return [
+        $field = [
             'name' => $name === '' ? "field_{$position}" : $name,
             'label' => $label === '' ? "Field {$position}" : $label,
             'type' => $this->normalizeFieldType($value['type'] ?? null),
         ];
+
+        foreach (['options', 'rules', 'visibleWhen'] as $property) {
+            if (isset($value[$property]) && (is_array($value[$property]) || is_string($value[$property]))) {
+                $field[$property] = $value[$property];
+            }
+        }
+
+        return $field;
     }
 
     private function normalizeFieldType(mixed $type): string

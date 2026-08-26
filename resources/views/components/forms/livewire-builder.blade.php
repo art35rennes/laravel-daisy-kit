@@ -1,4 +1,5 @@
 <div data-daisy-kit-livewire-builder>
+    <input name="{{ $name }}" type="hidden" value="{{ $this->exportSchema() }}">
     <div data-daisy-kit-builder-authoring>
         @foreach($schema['fields'] as $index => $field)
             <fieldset wire:key="daisy-kit-builder-field-{{ $index }}">
