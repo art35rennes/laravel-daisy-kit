@@ -253,6 +253,13 @@ function initialize(root, configuration) {
         return;
     }
 
+    root.classList.add('card', 'border', 'border-base-300', 'bg-base-100', 'p-4', 'shadow-sm');
+    tableElement.classList.add('table', 'table-zebra');
+    filter.classList.add('input', 'input-bordered', 'w-full');
+    previousButton.classList.add('btn', 'btn-sm');
+    nextButton.classList.add('btn', 'btn-sm');
+    page.classList.add('badge', 'badge-outline');
+
     const initialContent = content.innerHTML;
     const source = normalizeSource(configuration.source);
     const selectable = configuration.selectable === true;
@@ -453,6 +460,7 @@ function initialize(root, configuration) {
         let visibilityControls = content.querySelector('[data-daisy-kit-table-column-controls]');
         if (!visibilityControls) {
             visibilityControls = document.createElement('fieldset');
+            visibilityControls.className = 'fieldset border border-base-300 rounded-box p-3';
             visibilityControls.setAttribute('data-daisy-kit-table-column-controls', '');
             const legend = document.createElement('legend');
             legend.textContent = 'Columns';
@@ -462,11 +470,14 @@ function initialize(root, configuration) {
         visibilityControls.replaceChildren(...[...table.getAllLeafColumns()].flatMap((column) => {
             const label = document.createElement('label');
             const control = document.createElement('input');
+            label.className = 'label gap-2';
+            control.className = 'checkbox checkbox-sm';
             control.checked = column.getIsVisible();
             control.dataset.daisyKitTableColumnVisibility = column.id;
             control.type = 'checkbox';
             control.addEventListener('change', () => column.toggleVisibility(control.checked));
             const pin = document.createElement('select');
+            pin.className = 'select select-bordered select-sm';
             pin.dataset.daisyKitTableColumnPinning = column.id;
             [['false', 'Normal'], ['left', 'Pin left'], ['right', 'Pin right']].forEach(([value, text]) => {
                 const option = document.createElement('option');
@@ -488,6 +499,7 @@ function initialize(root, configuration) {
         if (actions) {
             actions.replaceChildren(...bulkActions.map((action) => {
                 const button = document.createElement('button');
+                button.className = 'btn btn-sm';
                 button.dataset.daisyKitTableBulkAction = action.id;
                 button.textContent = action.label;
                 button.type = 'button';
@@ -502,6 +514,7 @@ function initialize(root, configuration) {
         if (selectable) {
             const selectionHeader = document.createElement('th');
             const selectAll = document.createElement('input');
+            selectAll.className = 'checkbox checkbox-sm';
             const visibleIds = table.getRowModel().rows.map((row) => row.id);
             const selectedCount = visibleIds.filter((id) => selectedIds.has(id)).length;
 
@@ -540,6 +553,8 @@ function initialize(root, configuration) {
             if (column.getCanSort()) {
                 const button = document.createElement('button');
 
+                button.className = 'btn btn-ghost btn-sm';
+
                 button.type = 'button';
                 button.textContent = String(column.columnDef.header ?? column.id);
                 button.addEventListener('click', () => {
@@ -575,6 +590,8 @@ function initialize(root, configuration) {
                 hasFilters = true;
                 const control = filterType === 'select' ? document.createElement('select') : document.createElement('input');
 
+                control.className = filterType === 'select' ? 'select select-bordered select-sm w-full' : 'input input-bordered input-sm w-full';
+
                 control.dataset.daisyKitTableColumnFilter = column.id;
                 control.setAttribute('aria-label', `Filter ${String(column.columnDef.header ?? column.id)}`);
                 if (control instanceof HTMLInputElement) control.type = filterType === 'number' ? 'number' : 'search';
@@ -608,6 +625,8 @@ function initialize(root, configuration) {
                 const selectionCell = document.createElement('td');
                 const selectRow = document.createElement('input');
 
+                selectRow.className = 'checkbox checkbox-sm';
+
                 selectRow.setAttribute('aria-label', `Select row ${row.id}`);
                 selectRow.dataset.daisyKitTableRowSelect = row.id;
                 selectRow.checked = selectedIds.has(row.id);
@@ -634,6 +653,10 @@ function initialize(root, configuration) {
                     const save = document.createElement('button');
                     const cancel = document.createElement('button');
 
+                    input.className = 'input input-bordered input-sm';
+                    save.className = 'btn btn-primary btn-sm';
+                    cancel.className = 'btn btn-ghost btn-sm';
+
                     input.dataset.daisyKitTableEditInput = editKey;
                     input.value = editing.value;
                     save.dataset.daisyKitTableEditSave = editKey;
@@ -652,6 +675,8 @@ function initialize(root, configuration) {
                     const value = cell ? formatCell(cell.getValue()) : '';
                     const output = document.createElement('span');
                     const edit = document.createElement('button');
+
+                    edit.className = 'btn btn-ghost btn-sm';
 
                     output.textContent = value;
                     edit.setAttribute('aria-label', `Edit ${String(column.columnDef.header ?? column.id)} in row ${row.id}`);
@@ -675,6 +700,8 @@ function initialize(root, configuration) {
                 if (rowDetails) {
                     const toggle = document.createElement('button');
 
+                    toggle.className = 'btn btn-ghost btn-sm';
+
                     toggle.setAttribute('aria-expanded', String(expandedRowIds.has(row.id)));
                     toggle.dataset.daisyKitTableDetailToggle = row.id;
                     toggle.textContent = rowDetails.label;
@@ -684,6 +711,10 @@ function initialize(root, configuration) {
                             const dialog = document.createElement('dialog');
                             const title = document.createElement('h2');
                             const close = document.createElement('button');
+
+                            dialog.className = 'modal';
+                            title.className = 'text-lg font-semibold';
+                            close.className = 'btn btn-sm';
 
                             dialog.dataset.daisyKitTableDetail = row.id;
                             title.textContent = rowDetails.label;
@@ -707,6 +738,8 @@ function initialize(root, configuration) {
 
                 rowActions.forEach((action) => {
                     const button = document.createElement('button');
+
+                    button.className = 'btn btn-sm';
 
                     button.dataset.daisyKitTableRowAction = action.id;
                     button.disabled = action.disabled;

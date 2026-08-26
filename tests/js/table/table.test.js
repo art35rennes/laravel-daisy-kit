@@ -31,6 +31,24 @@ describe('table module', () => {
         window.history.replaceState({}, '', '/');
     });
 
+    it('composes native DaisyUI controls instead of relying on unstyled browser defaults', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [{ id: 'name', label: 'Name', filter: { type: 'text' } }],
+            rows: [{ id: 'ada', name: 'Ada' }],
+            selectable: true,
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+
+        expect(root.classList).toContain('card');
+        expect(root.querySelector('[data-daisy-kit-table-filter]').classList).toContain('input');
+        expect(root.querySelector('[data-daisy-kit-table]').classList).toContain('table');
+        expect(root.querySelector('th button').classList).toContain('btn');
+        expect(root.querySelector('[data-daisy-kit-table-column-filter="name"]').classList).toContain('input');
+        expect(root.querySelector('[data-daisy-kit-table-row-select="ada"]').classList).toContain('checkbox');
+    });
+
     it('loads a server-backed filtered page and retains selected row identifiers', async () => {
         const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
             rows: [{ id: 'alpha', name: 'Alpha' }],
