@@ -109,6 +109,44 @@ it('documents the Vite alias for Composer-installed module entries', function ()
         ->not->toMatch($fakeNpmImport);
 });
 
+it('documents the corrective development contract with copyable examples for every module', function (): void {
+    $readme = (string) file_get_contents(packagePath('README.md'));
+    $examples = (string) file_get_contents(packagePath('docs/examples.md'));
+    $contract = (string) file_get_contents(packagePath('docs/specs/v5-public-contract.md'));
+    $dependencies = (string) file_get_contents(packagePath('docs/dependencies.md'));
+
+    expect($readme)
+        ->toContain('v5.1.0-alpha.1')
+        ->not->toContain('v5.0.0-alpha.2');
+
+    expect($readme)
+        ->toMatch('/validation propriétaire en\\s+attente/')
+        ->toMatch('/v5\\.0\\.0 or its historical\\s+alpha releases/');
+
+    expect($examples)
+        ->toContain("'@daisy-kit': resolve(__dirname, 'vendor/art35rennes/laravel-daisy-kit/dist'),")
+        ->toContain('x-daisy-kit::forms.viewer')
+        ->toContain('x-daisy-kit::forms.builder')
+        ->toContain('x-daisy-kit::table')
+        ->toContain('x-daisy-kit::tree')
+        ->toContain('x-daisy-kit::blueprint')
+        ->toContain('x-daisy-kit::file-preview')
+        ->toContain('x-daisy-kit::map')
+        ->not->toMatch('/x-daisy::|daisy::/');
+
+    $fakeNpmImport = '/(?:from\\s+|import\\s*(?:\\(\\s*)?)[\'\"]art35rennes\\/laravel-daisy-kit\\/dist/';
+
+    expect($examples)->not->toMatch($fakeNpmImport);
+
+    expect($contract)
+        ->toMatch('/v5\\.0\\.0 or its\\s+historical alpha releases/');
+
+    expect($dependencies)
+        ->toContain('@tanstack/table-core | 9.2.3')
+        ->toContain('Laravel Boost | 2.7.0')
+        ->toContain('Official source');
+});
+
 it('keeps File Preview frame helpers relative to its Vite entry', function (): void {
     $entry = (string) file_get_contents(packagePath('resources/js/file-preview.js'));
     $distribution = (string) file_get_contents(packagePath('dist/file-preview.js'));

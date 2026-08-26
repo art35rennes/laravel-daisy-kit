@@ -35,7 +35,7 @@ specifier.
 - The package ships concise Laravel Boost resources in `resources/boost/`. Keep the
   guideline foundational and place detailed package instructions only in its on-demand
   skill; do not copy Laravel's generated guidance into this repository.
-- In a consuming Laravel application with Boost 2.6+, install positive capabilities with
+- In a consuming Laravel application with Boost 2.7+, install positive capabilities with
   `php artisan boost:install --guidelines --skills --mcp`, then use
   `php artisan boost:update --discover` after adding or updating packages. These are host
   commands, not package-root commands.

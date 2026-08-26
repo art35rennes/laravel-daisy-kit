@@ -46,6 +46,12 @@ inline handler, executable script, or `style` attribute.
 Forms Builder emits `visibleWhen` and `computed` JSONata expressions in the canonical descriptor
 shape `{ "type": "jsonata", "expression": "…" }`. Forms Viewer accepts this shape only.
 
+## Corrective development line
+
+The corrective development contract deliberately has no compatibility layer for v5.0.0 or its
+historical alpha releases. Consumers pin the current VCS prerelease and use its documentation as
+one coherent contract; no alias, fallback dialect, or adapter is provided for prior v5 tags.
+
 ## Deliberate non-goals
 
 There are no `x-daisy` aliases, DaisyUI primitive wrappers, application templates, charts,

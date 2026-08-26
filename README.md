@@ -17,7 +17,7 @@ Install it from GitHub/VCS rather than Packagist:
 ```json
 {
     "repositories": [{ "type": "vcs", "url": "https://github.com/art35rennes/laravel-daisy-kit" }],
-    "require": { "art35rennes/laravel-daisy-kit": "v5.0.0-alpha.2" }
+    "require": { "art35rennes/laravel-daisy-kit": "v5.1.0-alpha.1" }
 }
 ```
 
@@ -63,6 +63,9 @@ The available pairs are `forms-viewer`, `forms-builder`, `table`, `tree`, `bluep
 `@daisy-kit/forms-viewer.css`. Do not import this Composer package by its package name in a Vite
 source file.
 
+[`docs/examples.md`](docs/examples.md) contains copyable Blade and Vite examples for every
+module, including their common options and stateful use cases.
+
 Each ESM entry exports `mount(root)`, `mountAll(scope = document)`, and `unmount(root)`.
 There is no global bootstrap or `vendor:publish` step. Configuration is rendered as encoded
 JSON, so a host can keep a strict CSP without inline script, handler, or style exceptions.
@@ -98,7 +101,7 @@ fresh, complete baseline artifact. `composer test:full` remains the cache-indepe
 This package ships concise, distributable Laravel Boost guidance for consuming applications:
 `resources/boost/guidelines/core.blade.php` is loaded as foundational context and
 `resources/boost/skills/laravel-daisy-kit-development/` is an on-demand package skill.
-With Laravel Boost 2.6+ installed in the consuming application, run:
+With Laravel Boost 2.7+ installed in the consuming application, run:
 
 ```bash
 php artisan boost:install --guidelines --skills --mcp
@@ -111,6 +114,12 @@ official `laravel-best-practices` skill when Boost makes it available.
 
 ## Status
 
-v5 is under active alpha validation. Existing v4 applications should remain on
+`v5.1.0-alpha.1` is a VCS-only corrective development prerelease; **validation propriétaire en
+attente**. It is not a stable release and must be pinned by its exact tag for demo integration.
+The corrective v5 contract deliberately has no compatibility layer for v5.0.0 or its historical
+alpha releases: use this documentation and tag as one coherent development line, rather than
+combining examples or runtime assumptions from earlier v5 tags.
+
+Existing v4 applications should remain on
 [`v4.0.0`](https://github.com/art35rennes/laravel-daisy-kit/releases/tag/v4.0.0) or the
 `legacy/4.x` branch until they choose to adopt the new API.
