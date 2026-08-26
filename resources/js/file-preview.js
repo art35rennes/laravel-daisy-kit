@@ -1,4 +1,5 @@
 import '../css/file-preview.css';
+import { createInstanceIdentifier } from './core/identifiers.js';
 import { createMountable } from './core/mountable.js';
 
 const defaultMaximumBytes = 5 * 1024 * 1024;
@@ -136,7 +137,7 @@ function initializeFilePreview(root, configuration) {
     }
 
     const abortController = new AbortController();
-    const frameToken = crypto.randomUUID().replaceAll('-', '');
+    const frameToken = createInstanceIdentifier('daisy-kit-file-preview');
     let destroyed = false;
     let frameReady = false;
     let payloadSent = false;

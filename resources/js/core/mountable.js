@@ -24,9 +24,17 @@ export function createMountable(moduleName, initialize) {
 
         try {
             destroy = initialize(root, value) ?? (() => {});
-        } catch {
+        } catch (error) {
             showError(root, 'This module could not be initialized.');
-            root.dispatchEvent(new CustomEvent(`daisy-kit:${moduleName}:error`, { bubbles: true }));
+            root.dispatchEvent(new CustomEvent(`daisy-kit:${moduleName}:error`, {
+                bubbles: true,
+                detail: {
+                    code: 'initialization-failed',
+                    message: error instanceof Error && error.message !== ''
+                        ? error.message
+                        : 'An unknown initialization failure occurred.',
+                },
+            }));
 
             return null;
         }

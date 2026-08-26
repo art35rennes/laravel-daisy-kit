@@ -1,6 +1,7 @@
 import jsonata from 'jsonata';
 
 import '../../css/forms-viewer.css';
+import { createInstanceIdentifier } from '../core/identifiers.js';
 import { createMountable, installLivewireAdapter as createLivewireAdapter } from '../core/mountable.js';
 
 const supportedTypes = new Set(['checkbox', 'date', 'email', 'number', 'select', 'textarea', 'text']);
@@ -127,7 +128,7 @@ function initialize(root, configuration) {
     const fields = fieldsFrom(configuration);
     const values = { ...(configuration.value ?? {}) };
     const fieldWrappers = new Map();
-    const instanceId = root.dataset.daisyKitFormsInstance ?? crypto.randomUUID();
+    const instanceId = root.dataset.daisyKitFormsInstance ?? createInstanceIdentifier('daisy-kit-forms');
     let active = true;
 
     async function refreshVisibility() {

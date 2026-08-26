@@ -97,16 +97,24 @@ try {
     const buildRoot = resolve(hostRoot, 'build');
     const axeSource = readFileSync(resolve(repositoryRoot, 'vendor/pestphp/pest-plugin-browser/resources/js/axe.min.js'), 'utf8');
     const responses = [];
+    const consoleErrors = [];
     server = await startHost(buildRoot);
     const address = server.address();
     const url = `http://127.0.0.1:${address.port}`;
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
+    await page.addInitScript(() => {
+        Object.defineProperty(window, 'crypto', { configurable: true, value: {} });
+    });
     page.on('response', (response) => {
         if (response.status() >= 400) responses.push(`${response.status()} ${response.url()}`);
     });
+    page.on('console', (message) => {
+        if (message.type() === 'error') consoleErrors.push(message.text());
+    });
 
     await page.goto(url, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => document.querySelector('[data-daisy-kit-module="forms-viewer"]')?.dataset.daisyKitState === 'ready');
     await page.waitForFunction(() => document.querySelector('[data-daisy-kit-module="file-preview"]')?.dataset.daisyKitState === 'ready');
     await page.frameLocator('[data-daisy-kit-file-preview-frame]').locator('pre').waitFor({ state: 'visible' });
 
@@ -143,6 +151,10 @@ try {
 
     if (responses.length > 0) {
         throw new Error(`The served host requested missing assets:\n${responses.join('\n')}`);
+    }
+
+    if (consoleErrors.length > 0) {
+        throw new Error(`The served HTTP host logged browser errors:\n${consoleErrors.join('\n')}`);
     }
 } finally {
     if (browser) await browser.close();

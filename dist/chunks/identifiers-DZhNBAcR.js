@@ -1,0 +1,1 @@
+var e=0;function t(){return e+=1,`${Date.now().toString(36)}-${e.toString(36)}-${Math.random().toString(36).slice(2)}`}function n(e){let n=globalThis.crypto?.randomUUID;return`${e}-${typeof n==`function`?n.call(globalThis.crypto).replaceAll(`-`,``):t()}`}export{n as t};

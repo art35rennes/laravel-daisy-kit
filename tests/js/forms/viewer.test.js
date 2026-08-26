@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { installLivewireAdapter, mount, mountAll, unmount } from '../../../resources/js/forms/viewer.js';
 
 async function settle() {
@@ -20,6 +20,10 @@ function viewerRoot(configuration) {
 
     return document.querySelector('[data-daisy-kit-module="forms-viewer"]');
 }
+
+afterEach(() => {
+    vi.unstubAllGlobals();
+});
 
 describe('forms viewer', () => {
     it('renders a semantic field and emits changes without duplicate mounts', async () => {
@@ -45,6 +49,21 @@ describe('forms viewer', () => {
 
         unmount(root);
         expect(root.dataset.daisyKitState).toBeUndefined();
+    });
+
+    it('mounts on an HTTP host that does not provide crypto.randomUUID', async () => {
+        vi.stubGlobal('crypto', {});
+        const root = viewerRoot(JSON.stringify({
+            schema: { fields: [{ name: 'name', label: 'Name', type: 'text' }] },
+            value: { name: 'Ada' },
+        }));
+
+        mount(root);
+        await settle();
+
+        expect(root.dataset.daisyKitState).toBe('ready');
+        expect(root.dataset.daisyKitFormsInstance).toMatch(/^daisy-kit-forms-/);
+        expect(root.querySelector('input[name="name"]')).not.toBeNull();
     });
 
     it('evaluates JSONata visibility expressions independently for each root', async () => {

@@ -3,8 +3,12 @@
     "file": "file-preview-frame.js",
     "src": ".tmp/file-preview-frame/file-preview-frame.js"
   },
-  "_mountable-D1lQW1nF.js": {
-    "file": "chunks/mountable-D1lQW1nF.js",
+  "_identifiers-DZhNBAcR.js": {
+    "file": "chunks/identifiers-DZhNBAcR.js",
+    "name": "identifiers"
+  },
+  "_mountable-D4N6TMEA.js": {
+    "file": "chunks/mountable-D4N6TMEA.js",
     "name": "mountable"
   },
   "_rolldown-runtime-BHe-jwch.js": {
@@ -29,7 +33,7 @@
     "src": "resources/js/blueprint.js",
     "isEntry": true,
     "imports": [
-      "_mountable-D1lQW1nF.js"
+      "_mountable-D4N6TMEA.js"
     ],
     "css": [
       "blueprint.css"
@@ -45,7 +49,8 @@
     "src": "resources/js/file-preview.js",
     "isEntry": true,
     "imports": [
-      "_mountable-D1lQW1nF.js"
+      "_identifiers-DZhNBAcR.js",
+      "_mountable-D4N6TMEA.js"
     ],
     "css": [
       "file-preview.css"
@@ -61,7 +66,7 @@
     "src": "resources/js/forms/builder.js",
     "isEntry": true,
     "imports": [
-      "_mountable-D1lQW1nF.js"
+      "_mountable-D4N6TMEA.js"
     ],
     "css": [
       "forms-builder.css"
@@ -74,7 +79,8 @@
     "isEntry": true,
     "imports": [
       "_rolldown-runtime-BHe-jwch.js",
-      "_mountable-D1lQW1nF.js"
+      "_identifiers-DZhNBAcR.js",
+      "_mountable-D4N6TMEA.js"
     ],
     "css": [
       "forms-viewer.css"
@@ -87,7 +93,7 @@
     "isEntry": true,
     "imports": [
       "_rolldown-runtime-BHe-jwch.js",
-      "_mountable-D1lQW1nF.js"
+      "_mountable-D4N6TMEA.js"
     ],
     "css": [
       "map.css"
@@ -104,7 +110,7 @@
     "src": "resources/js/table.js",
     "isEntry": true,
     "imports": [
-      "_mountable-D1lQW1nF.js"
+      "_mountable-D4N6TMEA.js"
     ],
     "css": [
       "table.css"
@@ -116,7 +122,7 @@
     "src": "resources/js/tree.js",
     "isEntry": true,
     "imports": [
-      "_mountable-D1lQW1nF.js"
+      "_mountable-D4N6TMEA.js"
     ],
     "css": [
       "tree.css"

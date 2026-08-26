@@ -18,9 +18,13 @@ function root(configuration) {
     return document.querySelector('[data-daisy-kit-module="file-preview"]');
 }
 
+function tokenFromFrame(frame) {
+    return frame.srcdoc.match(/data-daisy-kit-file-preview-token="([^"]+)"/)?.[1];
+}
+
 function frameMessage(element, message, source = null, origin = 'null') {
     const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
-    const token = frame.srcdoc.match(/data-daisy-kit-file-preview-token="([a-f0-9]+)"/)?.[1];
+    const token = tokenFromFrame(frame);
 
     window.dispatchEvent(new MessageEvent('message', {
         data: { channel: 'daisy-kit:file-preview:frame', token, ...message },
@@ -37,6 +41,19 @@ afterEach(() => {
 });
 
 describe('file preview entry', () => {
+    it('starts a sandboxed preview on an HTTP host without crypto.randomUUID', async () => {
+        vi.stubGlobal('crypto', {});
+        vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+        const element = root({ src: '/notes.txt', type: 'text' });
+
+        mount(element);
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+
+        const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
+        expect(element.dataset.daisyKitState).toBe('loading');
+        expect(frame.getAttribute('srcdoc')).toContain('data-daisy-kit-file-preview-token="daisy-kit-file-preview-');
+    });
+
     it('sends validated text to the sandboxed frame and destroys its instance', async () => {
         vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('plain text', {
             headers: { 'content-type': 'text/plain' },
@@ -72,7 +89,7 @@ describe('file preview entry', () => {
         await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
         const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
         const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
-        const token = frame.srcdoc.match(/data-daisy-kit-file-preview-token="([a-f0-9]+)"/)?.[1];
+        const token = tokenFromFrame(frame);
 
         frameMessage(element, { token: 'a'.repeat(32), type: 'ready' });
         frameMessage(element, { type: 'ready' }, window);
@@ -101,7 +118,7 @@ describe('file preview entry', () => {
         mount(element);
         const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
         const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
-        const token = frame.srcdoc.match(/data-daisy-kit-file-preview-token="([a-f0-9]+)"/)?.[1];
+        const token = tokenFromFrame(frame);
         unmount(element);
         window.dispatchEvent(new MessageEvent('message', {
             data: { channel: 'daisy-kit:file-preview:frame', token, type: 'ready' },

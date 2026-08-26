@@ -36,4 +36,28 @@ describe('mountable module contract', () => {
         expect(root.dataset.daisyKitState).toBe('error');
         expect(root.querySelector('[data-daisy-kit-status]').hidden).toBe(false);
     });
+
+    it('keeps an initialization failure diagnosable without exposing it in the UI', () => {
+        document.body.innerHTML = `
+            <section data-daisy-kit-module="example">
+                <p data-daisy-kit-status hidden role="alert"></p>
+                <script data-daisy-kit-config type="application/json">{}</script>
+            </section>
+        `;
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const errors = [];
+        root.addEventListener('daisy-kit:example:error', (event) => errors.push(event.detail));
+        const module = createMountable('example', () => {
+            throw new Error('The configured source cannot be reached.');
+        });
+
+        module.mount(root);
+
+        expect(root.dataset.daisyKitState).toBe('error');
+        expect(root.querySelector('[data-daisy-kit-status]').textContent).toBe('This module could not be initialized.');
+        expect(errors).toEqual([{
+            code: 'initialization-failed',
+            message: 'The configured source cannot be reached.',
+        }]);
+    });
 });
