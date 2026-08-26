@@ -3,7 +3,7 @@ import { mount, mountAll, unmount } from '../../../resources/js/table.js';
 
 function tableMarkup(configuration) {
     return `
-        <section data-daisy-kit-module="table">
+        <section aria-busy="true" data-daisy-kit-module="table">
             <p data-daisy-kit-status hidden role="status" aria-live="polite"></p>
             <div data-daisy-kit-content>
                 <label>Filter <input data-daisy-kit-table-filter type="search"></label>
@@ -35,6 +35,7 @@ describe('table module', () => {
         expect(root.querySelector('tbody td').textContent).toBe('Alpha');
         expect(events).toEqual([{ column: 'name', direction: 'asc' }]);
         expect(root.querySelector('th').getAttribute('aria-sort')).toBe('ascending');
+        expect(root.getAttribute('aria-busy')).toBe('false');
     });
 
     it('mounts multiple roots idempotently and restores them on teardown', () => {

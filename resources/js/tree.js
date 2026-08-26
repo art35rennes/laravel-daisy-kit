@@ -260,6 +260,7 @@ function initialize(root, configuration) {
         updateStatus(root, 'No tree items are available.');
         root.dataset.daisyKitState = 'empty';
     } else {
+        visibleButtons()[0].tabIndex = 0;
         root.dataset.daisyKitState = 'ready';
     }
 

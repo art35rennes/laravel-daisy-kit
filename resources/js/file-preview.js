@@ -96,13 +96,32 @@ function initializeFilePreview(root, configuration) {
             }
 
             if (type === 'text' && text) {
-                text.textContent = await response.text();
+                const content = await response.text();
+
+                if (destroyed) {
+                    return;
+                }
+
+                text.textContent = content;
                 setVisible(text, true);
             }
 
             if (type === 'docx' && docx) {
+                const document = await response.blob();
+
+                if (destroyed) {
+                    return;
+                }
+
                 docx.replaceChildren();
-                await renderAsync(await response.blob(), docx, undefined, { renderComments: false });
+                await renderAsync(document, docx, undefined, { renderComments: false });
+
+                if (destroyed) {
+                    docx.replaceChildren();
+
+                    return;
+                }
+
                 setVisible(docx, true);
             }
 

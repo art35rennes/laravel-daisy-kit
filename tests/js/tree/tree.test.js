@@ -5,7 +5,7 @@ function treeMarkup(configuration) {
     return `
         <section data-daisy-kit-module="tree">
             <p data-daisy-kit-status hidden role="status" aria-live="polite"></p>
-            <div data-daisy-kit-content><ul data-daisy-kit-tree-root aria-label="Tree" role="tree" tabindex="0"></ul></div>
+            <div data-daisy-kit-content><ul data-daisy-kit-tree-root aria-label="Tree" role="tree"></ul></div>
             <script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script>
         </section>
     `;
@@ -41,5 +41,26 @@ describe('tree module', () => {
 
         expect(roots.map((root) => root.dataset.daisyKitState)).toEqual([undefined, undefined]);
         expect(roots.every((root) => root.querySelector('[data-daisy-kit-tree-root]').children.length === 0)).toBe(true);
+    });
+
+    it('uses roving tab focus without making the tree container tabbable', () => {
+        document.body.innerHTML = treeMarkup({
+            items: [
+                { id: 'first', label: 'First' },
+                { id: 'second', label: 'Second' },
+            ],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="tree"]');
+
+        mount(root);
+        const first = root.querySelector('[data-daisy-kit-tree-node="first"]');
+        const second = root.querySelector('[data-daisy-kit-tree-node="second"]');
+        first.focus();
+        first.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowDown' }));
+
+        expect(root.querySelector('[data-daisy-kit-tree-root]').hasAttribute('tabindex')).toBe(false);
+        expect(first.tabIndex).toBe(-1);
+        expect(second.tabIndex).toBe(0);
+        expect(document.activeElement).toBe(second);
     });
 });

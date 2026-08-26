@@ -49,4 +49,26 @@ describe('forms builder', () => {
         mount(invalidRoot);
         expect(invalidRoot.dataset.daisyKitState).toBe('error');
     });
+
+    it('does not render or emit after unmount', async () => {
+        const root = builderRoot(JSON.stringify({ schema: { fields: [] } }));
+        const updates = [];
+        root.addEventListener('daisy-kit:forms-builder:changed', (event) => updates.push(event.detail));
+
+        mount(root);
+        unmount(root);
+        await settle();
+
+        expect(root.dataset.daisyKitState).toBeUndefined();
+        expect(root.querySelector('[data-daisy-kit-forms-builder-content]').children).toHaveLength(0);
+
+        mount(root);
+        await settle();
+        const detachedButton = root.querySelector('button');
+        unmount(root);
+        detachedButton.click();
+
+        expect(updates).toEqual([]);
+        expect(root.querySelector('[data-daisy-kit-forms-builder-content]').children).toHaveLength(0);
+    });
 });

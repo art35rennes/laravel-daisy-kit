@@ -13,7 +13,7 @@
     <p data-daisy-kit-status hidden role="status" aria-live="polite"></p>
 
     <div data-daisy-kit-content>
-        <ul data-daisy-kit-tree-root aria-label="{{ $label }}" role="tree" tabindex="0"></ul>
+        <ul data-daisy-kit-tree-root aria-label="{{ $label }}" role="tree"></ul>
     </div>
 
     <script data-daisy-kit-config type="application/json">{!! $configuration !!}</script>

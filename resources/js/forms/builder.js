@@ -89,10 +89,18 @@ function initialize(root, configuration) {
     let active = true;
 
     function notify() {
+        if (! active) {
+            return;
+        }
+
         emit(root, 'changed', { schema: structuredClone(schema) });
     }
 
     function render() {
+        if (! active) {
+            return;
+        }
+
         content.replaceChildren();
 
         if (schema.fields.length === 0) {
@@ -122,6 +130,10 @@ function initialize(root, configuration) {
         add.type = 'button';
         add.textContent = 'Add field';
         add.addEventListener('click', () => {
+            if (! active) {
+                return;
+            }
+
             schema.fields.push({ name: '', label: '', type: 'text' });
             render();
             notify();

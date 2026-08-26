@@ -39,7 +39,7 @@ it('provides an accessible empty tree shell', function (): void {
     $html = view('daisy-kit::components.tree', ['items' => []])->render();
 
     expect($html)->toContain('role="tree"')
-        ->toContain('tabindex="0"')
+        ->not->toContain('tabindex="0"')
         ->toContain('role="status"')
         ->toContain('aria-live="polite"');
 });

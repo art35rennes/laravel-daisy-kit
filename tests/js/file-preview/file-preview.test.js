@@ -45,4 +45,23 @@ describe('file preview entry', () => {
         expect(element.dataset.daisyKitState).toBe('empty');
         expect(element.querySelector('[data-daisy-kit-empty]').hidden).toBe(false);
     });
+
+    it('does not write a pending response after unmount', async () => {
+        let resolveText;
+        const text = new Promise((resolve) => {
+            resolveText = resolve;
+        });
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: true, text: () => text })));
+        const element = root({ src: '/notes.txt', type: 'text' });
+
+        mount(element);
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+        unmount(element);
+        resolveText('late content');
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(element.dataset.daisyKitState).toBeUndefined();
+        expect(element.querySelector('[data-daisy-kit-file-preview-text]').textContent).toBe('');
+    });
 });

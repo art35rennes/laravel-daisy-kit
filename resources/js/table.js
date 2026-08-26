@@ -197,6 +197,7 @@ function initialize(root, configuration) {
 
         updateStatus(root, empty ? 'No table rows match the current filter.' : null);
         root.dataset.daisyKitState = empty ? 'empty' : 'ready';
+        root.setAttribute('aria-busy', 'false');
         tableElement.setAttribute('aria-busy', 'false');
         previousButton.disabled = !table.getCanPreviousPage();
         nextButton.disabled = !table.getCanNextPage();
