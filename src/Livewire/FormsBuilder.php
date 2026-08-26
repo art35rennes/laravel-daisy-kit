@@ -14,6 +14,12 @@ class FormsBuilder extends Component
     /** @var array{fields: array<int, array{name: string, label: string, type: string}>} */
     public array $schema = ['fields' => []];
 
+    /** @var array<int, array{fields: array<int, array{name: string, label: string, type: string}>}> */
+    public array $undoStack = [];
+
+    /** @var array<int, array{fields: array<int, array{name: string, label: string, type: string}>}> */
+    public array $redoStack = [];
+
     /** @param array<string, mixed> $schema */
     public function mount(array $schema = []): void
     {
@@ -22,12 +28,60 @@ class FormsBuilder extends Component
 
     public function addField(): void
     {
+        $this->remember();
         $position = count($this->schema['fields']) + 1;
         $this->schema['fields'][] = [
             'name' => "field_{$position}",
             'label' => "Field {$position}",
             'type' => 'text',
         ];
+    }
+
+    public function removeField(int $index): void
+    {
+        if (! isset($this->schema['fields'][$index])) {
+            return;
+        }
+
+        $this->remember();
+        unset($this->schema['fields'][$index]);
+        $this->schema['fields'] = array_values($this->schema['fields']);
+    }
+
+    public function moveField(int $index, int $direction): void
+    {
+        $target = $index + $direction;
+
+        if (! isset($this->schema['fields'][$index], $this->schema['fields'][$target])) {
+            return;
+        }
+
+        $this->remember();
+        [$this->schema['fields'][$index], $this->schema['fields'][$target]] = [$this->schema['fields'][$target], $this->schema['fields'][$index]];
+    }
+
+    public function undo(): void
+    {
+        $previous = array_pop($this->undoStack);
+
+        if ($previous === null) {
+            return;
+        }
+
+        $this->redoStack[] = $this->schema;
+        $this->schema = $previous;
+    }
+
+    public function redo(): void
+    {
+        $next = array_pop($this->redoStack);
+
+        if ($next === null) {
+            return;
+        }
+
+        $this->undoStack[] = $this->schema;
+        $this->schema = $next;
     }
 
     public function updatedSchema(): void
@@ -90,5 +144,11 @@ class FormsBuilder extends Component
     private function normalizeFieldType(mixed $type): string
     {
         return is_string($type) && in_array($type, self::FieldTypes, true) ? $type : 'text';
+    }
+
+    private function remember(): void
+    {
+        $this->undoStack[] = $this->schema;
+        $this->redoStack = [];
     }
 }

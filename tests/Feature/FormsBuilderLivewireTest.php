@@ -25,3 +25,18 @@ it('authors a safe field and renders a viewer preview through Livewire 4', funct
         ->assertSee('Form preview')
         ->assertSee('profile_url');
 });
+
+it('removes, reorders, and restores authored fields', function (): void {
+    Livewire::test('daisy-kit.forms.builder', ['schema' => ['fields' => [
+        ['name' => 'first', 'label' => 'First', 'type' => 'text'],
+        ['name' => 'second', 'label' => 'Second', 'type' => 'text'],
+    ]]])
+        ->call('moveField', 1, -1)
+        ->assertSet('schema.fields.0.name', 'second')
+        ->call('removeField', 0)
+        ->assertSet('schema.fields.0.name', 'first')
+        ->call('undo')
+        ->assertSet('schema.fields.0.name', 'second')
+        ->call('redo')
+        ->assertSet('schema.fields.0.name', 'first');
+});
