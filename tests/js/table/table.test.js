@@ -81,6 +81,41 @@ describe('table module', () => {
         expect(selections).toEqual([{ ids: ['alpha'] }]);
     });
 
+    it('keeps a selected server row available to bulk actions after the next page replaces it', async () => {
+        const fetch = vi.fn()
+            .mockResolvedValueOnce(new Response(JSON.stringify({
+                rows: [{ id: 'alpha', name: 'Alpha' }],
+                total: 2,
+            }), { headers: { 'content-type': 'application/json' } }))
+            .mockResolvedValueOnce(new Response(JSON.stringify({
+                rows: [{ id: 'beta', name: 'Beta' }],
+                total: 2,
+            }), { headers: { 'content-type': 'application/json' } }));
+        vi.stubGlobal('fetch', fetch);
+        document.body.innerHTML = tableMarkup({
+            bulkActions: [{ id: 'archive', label: 'Archive' }],
+            columns: [{ id: 'name', label: 'Name' }],
+            selectable: true,
+            source: '/api/people',
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+        const bulkEvents = [];
+        root.addEventListener('daisy-kit:table:bulk-action', (event) => bulkEvents.push(event.detail));
+
+        mount(root);
+        await vi.waitFor(() => expect(root.querySelector('[data-daisy-kit-table-row-select="alpha"]')).not.toBeNull());
+        root.querySelector('[data-daisy-kit-table-row-select="alpha"]').click();
+
+        const filter = root.querySelector('[data-daisy-kit-table-filter]');
+        filter.value = 'Beta';
+        filter.dispatchEvent(new Event('input'));
+        await vi.waitFor(() => expect(root.querySelector('[data-daisy-kit-table-row-select="beta"]')).not.toBeNull());
+
+        root.querySelector('[data-daisy-kit-table-bulk-action="archive"]').click();
+
+        expect(bulkEvents).toEqual([{ id: 'archive', ids: ['alpha'] }]);
+    });
+
     it('filters typed text, number, and select columns independently', () => {
         document.body.innerHTML = tableMarkup({
             columns: [
@@ -135,7 +170,7 @@ describe('table module', () => {
 
         mount(root);
         const pin = root.querySelector('[data-daisy-kit-table-column-pinning="status"]');
-        pin.value = 'left';
+        pin.value = 'start';
         pin.dispatchEvent(new Event('change'));
 
         expect(root.querySelector('th button').textContent).toBe('Status');
@@ -364,7 +399,7 @@ describe('table module', () => {
         statusFilter.value = 'open';
         statusFilter.dispatchEvent(new Event('change'));
         const pin = root.querySelector('[data-daisy-kit-table-column-pinning="status"]');
-        pin.value = 'left';
+        pin.value = 'start';
         pin.dispatchEvent(new Event('change'));
 
         await vi.waitFor(() => expect(fetch.mock.calls.length).toBeGreaterThan(2));
@@ -374,7 +409,7 @@ describe('table module', () => {
             { id: 'name', value: 'alpha' },
             { id: 'status', value: 'open' },
         ]);
-        expect(JSON.parse(request.searchParams.get('columnPinning'))).toEqual({ left: ['status'], right: [] });
+        expect(JSON.parse(request.searchParams.get('columnPinning'))).toEqual({ end: [], start: ['status'] });
         expect(JSON.parse(request.searchParams.get('columnVisibility'))).toEqual({ name: true, status: true });
     });
 

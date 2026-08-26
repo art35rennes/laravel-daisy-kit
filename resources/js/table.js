@@ -1,14 +1,36 @@
 import {
-    createTable,
+    columnFilteringFeature,
+    columnPinningFeature,
+    columnVisibilityFeature,
+    constructTable,
+    createFilteredRowModel,
+    createPaginatedRowModel,
+    createSortedRowModel,
     functionalUpdate,
-    getCoreRowModel,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
+    globalFilteringFeature,
+    rowPaginationFeature,
+    rowSelectionFeature,
+    rowSortingFeature,
+    tableFeatures,
 } from '@tanstack/table-core';
+import { storeReactivityBindings } from '@tanstack/table-core/store-reactivity-bindings';
 
 import '../css/table.css';
 import { createMountable } from './core/mountable.js';
+
+const daisyKitTableFeatures = tableFeatures({
+    coreReactivityFeature: storeReactivityBindings(),
+    columnFilteringFeature,
+    globalFilteringFeature,
+    rowSortingFeature,
+    rowPaginationFeature,
+    rowSelectionFeature,
+    columnVisibilityFeature,
+    columnPinningFeature,
+    filteredRowModel: createFilteredRowModel(),
+    sortedRowModel: createSortedRowModel(),
+    paginatedRowModel: createPaginatedRowModel(),
+});
 
 function emit(root, name, detail) {
     root.dispatchEvent(new CustomEvent(`daisy-kit:table:${name}`, { bubbles: true, detail }));
@@ -273,7 +295,6 @@ function initialize(root, configuration) {
         ? configuration.initialState
         : {};
     const persistedState = readPersistedState(persistence);
-    const selectedIds = new Set();
     const expandedRowIds = new Set();
     const detailDialogs = new Set();
     let abortController = null;
@@ -285,11 +306,11 @@ function initialize(root, configuration) {
     let total = rows.length;
     const state = {
         columnPinning: {
-            left: Array.isArray((persistedState.columnPinning ?? configuredState.columnPinning)?.left)
-                ? (persistedState.columnPinning ?? configuredState.columnPinning).left.filter((column) => typeof column === 'string')
+            start: Array.isArray((persistedState.columnPinning ?? configuredState.columnPinning)?.start)
+                ? (persistedState.columnPinning ?? configuredState.columnPinning).start.filter((column) => typeof column === 'string')
                 : [],
-            right: Array.isArray((persistedState.columnPinning ?? configuredState.columnPinning)?.right)
-                ? (persistedState.columnPinning ?? configuredState.columnPinning).right.filter((column) => typeof column === 'string')
+            end: Array.isArray((persistedState.columnPinning ?? configuredState.columnPinning)?.end)
+                ? (persistedState.columnPinning ?? configuredState.columnPinning).end.filter((column) => typeof column === 'string')
                 : [],
         },
         columnFilters: Array.isArray(persistedState.columnFilters ?? configuredState.columnFilters)
@@ -312,15 +333,14 @@ function initialize(root, configuration) {
         sorting: Array.isArray(persistedState.sorting ?? configuredState.sorting)
             ? (persistedState.sorting ?? configuredState.sorting).filter((sorting) => sorting && typeof sorting.id === 'string' && typeof sorting.desc === 'boolean')
             : [],
+        rowSelection: Object.fromEntries(Object.entries(configuredState.rowSelection ?? {})
+            .filter(([id, selected]) => typeof id === 'string' && selected === true)),
     };
-    const table = createTable({
+    const table = constructTable({
         columns,
         data: rows,
+        features: daisyKitTableFeatures,
         getRowId: (row, index) => typeof row.id === 'string' || typeof row.id === 'number' ? String(row.id) : String(index),
-        getCoreRowModel: getCoreRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
         manualFiltering: source !== null,
         manualPagination: source !== null,
         manualSorting: source !== null,
@@ -328,6 +348,7 @@ function initialize(root, configuration) {
         onGlobalFilterChange: (updater) => {
             state.globalFilter = functionalUpdate(updater, state.globalFilter);
             state.pagination.pageIndex = 0;
+            synchronizeTableState();
             persistState(persistence, state);
             render();
             emit(root, 'filtered', { query: state.globalFilter });
@@ -336,6 +357,7 @@ function initialize(root, configuration) {
         onColumnFiltersChange: (updater) => {
             state.columnFilters = functionalUpdate(updater, state.columnFilters);
             state.pagination.pageIndex = 0;
+            synchronizeTableState();
             persistState(persistence, state);
             render();
             emit(root, 'filtered', { filters: state.columnFilters });
@@ -343,18 +365,21 @@ function initialize(root, configuration) {
         },
         onColumnPinningChange: (updater) => {
             state.columnPinning = functionalUpdate(updater, state.columnPinning);
+            synchronizeTableState();
             persistState(persistence, state);
             render();
             requestRows();
         },
         onColumnVisibilityChange: (updater) => {
             state.columnVisibility = functionalUpdate(updater, state.columnVisibility);
+            synchronizeTableState();
             persistState(persistence, state);
             render();
             requestRows();
         },
         onPaginationChange: (updater) => {
             state.pagination = functionalUpdate(updater, state.pagination);
+            synchronizeTableState();
             persistState(persistence, state);
             render();
             emit(root, 'page-changed', { page: state.pagination.pageIndex + 1 });
@@ -362,6 +387,7 @@ function initialize(root, configuration) {
         },
         onSortingChange: (updater) => {
             state.sorting = functionalUpdate(updater, state.sorting);
+            synchronizeTableState();
             persistState(persistence, state);
             render();
 
@@ -376,8 +402,18 @@ function initialize(root, configuration) {
 
             requestRows();
         },
+        onRowSelectionChange: (updater) => {
+            state.rowSelection = functionalUpdate(updater, state.rowSelection);
+            synchronizeTableState();
+            emit(root, 'selection-changed', { ids: table.getSelectedRowIds() });
+            render();
+        },
         state,
     });
+
+    function synchronizeTableState() {
+        table.setOptions((current) => ({ ...current, state: { ...state } }));
+    }
 
     function updateRow(rowId, nextRow) {
         rows = rows.map((row, index) => {
@@ -479,7 +515,7 @@ function initialize(root, configuration) {
             const pin = document.createElement('select');
             pin.className = 'select select-bordered select-sm';
             pin.dataset.daisyKitTableColumnPinning = column.id;
-            [['false', 'Normal'], ['left', 'Pin left'], ['right', 'Pin right']].forEach(([value, text]) => {
+            [['false', 'Normal'], ['start', 'Pin start'], ['end', 'Pin end']].forEach(([value, text]) => {
                 const option = document.createElement('option');
                 option.value = value;
                 option.textContent = text;
@@ -503,7 +539,7 @@ function initialize(root, configuration) {
                 button.dataset.daisyKitTableBulkAction = action.id;
                 button.textContent = action.label;
                 button.type = 'button';
-                button.addEventListener('click', () => emit(root, 'bulk-action', { id: action.id, ids: [...selectedIds] }));
+                button.addEventListener('click', () => emit(root, 'bulk-action', { id: action.id, ids: table.getSelectedRowIds() }));
                 return button;
             }));
         }
@@ -515,30 +551,22 @@ function initialize(root, configuration) {
             const selectionHeader = document.createElement('th');
             const selectAll = document.createElement('input');
             selectAll.className = 'checkbox checkbox-sm';
-            const visibleIds = table.getRowModel().rows.map((row) => row.id);
-            const selectedCount = visibleIds.filter((id) => selectedIds.has(id)).length;
-
             selectAll.setAttribute('aria-label', 'Select all visible rows');
-            selectAll.checked = visibleIds.length > 0 && selectedCount === visibleIds.length;
-            selectAll.indeterminate = selectedCount > 0 && selectedCount < visibleIds.length;
+            selectAll.checked = table.getIsAllPageRowsSelected();
+            selectAll.indeterminate = table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected();
             selectAll.type = 'checkbox';
             selectionHeader.scope = 'col';
             selectAll.addEventListener('change', () => {
-                visibleIds.forEach((id) => {
-                    if (selectAll.checked) selectedIds.add(id);
-                    else selectedIds.delete(id);
-                });
-                emit(root, 'selection-changed', { ids: [...selectedIds] });
-                render();
+                table.toggleAllPageRowsSelected(selectAll.checked);
             });
             selectionHeader.append(selectAll);
             headerRow.append(selectionHeader);
         }
 
         const visibleColumns = [
-            ...table.getLeftVisibleLeafColumns(),
+            ...table.getStartVisibleLeafColumns(),
             ...table.getCenterVisibleLeafColumns(),
-            ...table.getRightVisibleLeafColumns(),
+            ...table.getEndVisibleLeafColumns(),
         ];
         visibleColumns.forEach((column) => {
             const headerCell = document.createElement('th');
@@ -629,13 +657,10 @@ function initialize(root, configuration) {
 
                 selectRow.setAttribute('aria-label', `Select row ${row.id}`);
                 selectRow.dataset.daisyKitTableRowSelect = row.id;
-                selectRow.checked = selectedIds.has(row.id);
+                selectRow.checked = row.getIsSelected();
                 selectRow.type = 'checkbox';
                 selectRow.addEventListener('change', () => {
-                    if (selectRow.checked) selectedIds.add(row.id);
-                    else selectedIds.delete(row.id);
-                    emit(root, 'selection-changed', { ids: [...selectedIds] });
-                    render();
+                    row.toggleSelected(selectRow.checked);
                 });
                 selectionCell.append(selectRow);
                 tableRow.append(selectionCell);
