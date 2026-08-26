@@ -288,7 +288,7 @@ class FormsBuilder extends Component
     {
         $selectedField = $this->selectedId === null ? null : $this->findField($this->schema['fields'], $this->selectedId);
 
-        return view('daisy-kit::components.forms.livewire-builder', [
+        return view('daisy-kit::internal.forms-builder', [
             'outline' => $this->outlineFields($this->schema['fields']),
             'selectedField' => $selectedField,
         ]);
