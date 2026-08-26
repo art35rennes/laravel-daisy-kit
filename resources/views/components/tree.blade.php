@@ -3,6 +3,8 @@
     'label' => 'Tree',
     'multiple' => false,
     'name' => null,
+    'persistenceKey' => null,
+    'searchable' => false,
 ])
 
 @php
@@ -10,6 +12,8 @@
         'items' => $items,
         'multiple' => $multiple,
         'name' => $name,
+        'persistenceKey' => $persistenceKey,
+        'searchable' => $searchable,
     ]);
 @endphp
 
@@ -17,6 +21,12 @@
     <p data-daisy-kit-status hidden role="status" aria-live="polite"></p>
 
     <div data-daisy-kit-content>
+        @if ($searchable)
+            <label>
+                <span>Search tree</span>
+                <input data-daisy-kit-tree-search type="search" autocomplete="off">
+            </label>
+        @endif
         <ul data-daisy-kit-tree-root aria-label="{{ $label }}" role="tree"></ul>
         @if (is_string($name) && $name !== '')
             <input data-daisy-kit-tree-value name="{{ $name }}" type="hidden" value="[]">

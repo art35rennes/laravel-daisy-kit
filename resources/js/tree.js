@@ -48,6 +48,7 @@ function updateStatus(root, message = null) {
 
 function initialize(root, configuration) {
     const treeRoot = root.querySelector('[data-daisy-kit-tree-root]');
+    const searchInput = root.querySelector('[data-daisy-kit-tree-search]');
 
     if (!treeRoot) {
         updateStatus(root, 'This tree is missing its required markup.');
@@ -61,11 +62,41 @@ function initialize(root, configuration) {
     const items = normalizeItems(configuration.items);
     const multiple = configuration.multiple === true;
     const valueInput = root.querySelector('[data-daisy-kit-tree-value]');
+    const persistenceKey = typeof configuration.persistenceKey === 'string' && configuration.persistenceKey !== ''
+        ? `daisy-kit:tree:${configuration.persistenceKey}`
+        : null;
     const itemsById = new Map();
     const buttonsById = new Map();
     const expandedIds = new Set();
     const selectedIds = new Set();
     let selectedId = null;
+    let searchQuery = '';
+
+    function persistedState() {
+        if (!persistenceKey) return null;
+
+        try {
+            const value = JSON.parse(localStorage.getItem(persistenceKey) ?? 'null');
+
+            return value && typeof value === 'object' ? value : null;
+        } catch {
+            return null;
+        }
+    }
+
+    function persist() {
+        if (!persistenceKey) return;
+
+        try {
+            localStorage.setItem(persistenceKey, JSON.stringify({
+                expandedIds: [...expandedIds],
+                selectedId,
+                selectedIds: [...selectedIds],
+            }));
+        } catch {
+            // Storage can be unavailable in a privacy-restricted host.
+        }
+    }
 
     function index(itemsToIndex, parentId = null) {
         itemsToIndex.forEach((item) => {
@@ -126,7 +157,7 @@ function initialize(root, configuration) {
             const expanded = expandedIds.has(item.id);
 
             if (button) {
-                button.hidden = !ancestorsVisible;
+                button.hidden = !ancestorsVisible || (searchQuery !== '' && !matchingIds(items).has(item.id));
                 button.setAttribute('aria-selected', String(selectedId === item.id));
 
                 if (multiple) {
@@ -139,8 +170,41 @@ function initialize(root, configuration) {
                 }
             }
 
-            applyVisibility(item.children, ancestorsVisible && expanded);
+            applyVisibility(item.children, ancestorsVisible && (expanded || searchQuery !== ''));
         });
+    }
+
+    function matchingIds(itemsToMatch) {
+        const matches = new Set();
+        const query = searchQuery.toLocaleLowerCase();
+
+        function visit(item) {
+            const selfMatches = query === '' || item.label.toLocaleLowerCase().includes(query);
+            const childMatches = item.children.map(visit).some(Boolean);
+
+            if (selfMatches || childMatches) matches.add(item.id);
+
+            return selfMatches || childMatches;
+        }
+
+        itemsToMatch.forEach(visit);
+
+        return matches;
+    }
+
+    function expandMatchingPaths(itemsToSearch) {
+        const query = searchQuery.toLocaleLowerCase();
+
+        function visit(item) {
+            const selfMatches = item.label.toLocaleLowerCase().includes(query);
+            const childMatches = item.children.map(visit).some(Boolean);
+
+            if (childMatches) expandedIds.add(item.id);
+
+            return selfMatches || childMatches;
+        }
+
+        itemsToSearch.forEach(visit);
     }
 
     function visibleButtons() {
@@ -204,6 +268,7 @@ function initialize(root, configuration) {
             });
             syncValue();
             applyVisibility(items);
+            persist();
             emit(root, 'selection-changed', { ids: [...selectedIds] });
 
             return;
@@ -211,6 +276,7 @@ function initialize(root, configuration) {
 
         selectedId = id;
         applyVisibility(items);
+        persist();
         emit(root, 'selected', { id: item.id, label: item.label });
     }
 
@@ -228,6 +294,7 @@ function initialize(root, configuration) {
         }
 
         applyVisibility(items);
+        persist();
         emit(root, expanded ? 'expanded' : 'collapsed', { id: item.id, label: item.label });
     }
 
@@ -308,6 +375,16 @@ function initialize(root, configuration) {
     }
 
     index(items);
+    const stored = persistedState();
+    if (stored) {
+        (Array.isArray(stored.expandedIds) ? stored.expandedIds : []).forEach((id) => {
+            if (itemsById.has(id)) expandedIds.add(id);
+        });
+        selectedId = typeof stored.selectedId === 'string' && itemsById.has(stored.selectedId) ? stored.selectedId : null;
+        (Array.isArray(stored.selectedIds) ? stored.selectedIds : []).forEach((id) => {
+            if (typeof id === 'string' && itemsById.has(id)) selectedIds.add(id);
+        });
+    }
     treeRoot.replaceChildren(renderItems(items));
     applyVisibility(items);
 
@@ -321,10 +398,18 @@ function initialize(root, configuration) {
 
     treeRoot.addEventListener('click', onClick);
     treeRoot.addEventListener('keydown', onKeyDown);
+    const onSearch = (event) => {
+        searchQuery = event.currentTarget.value.trim();
+        if (searchQuery !== '') expandMatchingPaths(items);
+        applyVisibility(items);
+        persist();
+    };
+    searchInput?.addEventListener('input', onSearch);
 
     return () => {
         treeRoot.removeEventListener('click', onClick);
         treeRoot.removeEventListener('keydown', onKeyDown);
+        searchInput?.removeEventListener('input', onSearch);
         treeRoot.innerHTML = initialMarkup;
     };
 }

@@ -37,6 +37,37 @@ describe('tree module', () => {
         expect(root.querySelector('[data-daisy-kit-tree-value]').value).toBe('["read","write"]');
     });
 
+    it('searches local branches, expands matching paths, and persists the selected result', () => {
+        document.body.innerHTML = treeMarkup({
+            persistenceKey: 'tree-search-fixture',
+            searchable: true,
+            items: [{ id: 'docs', label: 'Documentation', children: [{ id: 'api', label: 'API reference' }] }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="tree"]');
+        root.querySelector('[data-daisy-kit-content]').insertAdjacentHTML('afterbegin', '<label>Search <input data-daisy-kit-tree-search type="search"></label>');
+
+        mount(root);
+        const search = root.querySelector('[data-daisy-kit-tree-search]');
+        search.value = 'api';
+        search.dispatchEvent(new Event('input'));
+        const api = root.querySelector('[data-daisy-kit-tree-node="api"]');
+        api.click();
+        unmount(root);
+
+        document.body.innerHTML = treeMarkup({
+            persistenceKey: 'tree-search-fixture',
+            searchable: true,
+            items: [{ id: 'docs', label: 'Documentation', children: [{ id: 'api', label: 'API reference' }] }],
+        });
+        const restored = document.querySelector('[data-daisy-kit-module="tree"]');
+        restored.querySelector('[data-daisy-kit-content]').insertAdjacentHTML('afterbegin', '<label>Search <input data-daisy-kit-tree-search type="search"></label>');
+        mount(restored);
+
+        expect(api.hidden).toBe(false);
+        expect(restored.querySelector('[data-daisy-kit-tree-node="docs"]').getAttribute('aria-expanded')).toBe('true');
+        expect(restored.querySelector('[data-daisy-kit-tree-node="api"]').getAttribute('aria-selected')).toBe('true');
+    });
+
     it('expands, selects, and supports arrow-key focus navigation', () => {
         document.body.innerHTML = treeMarkup({
             items: [{ id: 'root', label: 'Root', children: [{ id: 'child', label: 'Child' }] }],
