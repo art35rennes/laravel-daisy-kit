@@ -256,7 +256,10 @@ try {
         throw new Error(`File Preview modal close control did not release the modal; state was ${JSON.stringify(modalState)}.`);
     }
     await actionOnlyPreview.locator('[data-daisy-kit-file-preview-open-preview]').click();
-    await actionOnlyPreview.locator('[data-daisy-kit-file-preview-frame]').waitFor({ state: 'visible' });
+    const actionOnlyModal = actionOnlyPreview.locator('[data-daisy-kit-file-preview-modal]');
+    await actionOnlyModal.waitFor({ state: 'visible' });
+    await actionOnlyModal.getByRole('button', { name: 'Close preview' }).click();
+    await actionOnlyModal.waitFor({ state: 'hidden' });
 
     const frame = preview.locator('[data-daisy-kit-file-preview-frame]');
     const frameSource = await frame.getAttribute('srcdoc');
