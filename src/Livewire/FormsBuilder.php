@@ -291,6 +291,7 @@ class FormsBuilder extends Component
         $selectedField = $this->selectedId === null ? null : $this->findField($this->schema['fields'], $this->selectedId);
 
         return view('daisy-kit::components.forms.livewire-builder', [
+            'outline' => $this->outlineFields($this->schema['fields']),
             'selectedField' => $selectedField,
         ]);
     }
@@ -423,6 +424,28 @@ class FormsBuilder extends Component
         }
 
         return $flat;
+    }
+
+    /** @param array<int, array<string, mixed>> $fields
+     * @return list<array{field: array<string, mixed>, depth: int, identity: string}>
+     */
+    private function outlineFields(array $fields, int $depth = 1): array
+    {
+        $outline = [];
+
+        foreach ($fields as $field) {
+            $outline[] = [
+                'field' => $field,
+                'depth' => $depth,
+                'identity' => $this->fieldIdentity($field),
+            ];
+
+            if (is_array($field['fields'] ?? null)) {
+                array_push($outline, ...$this->outlineFields($field['fields'], $depth + 1));
+            }
+        }
+
+        return $outline;
     }
 
     /** @param array<int, array<string, mixed>> $fields

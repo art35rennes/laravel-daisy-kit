@@ -76,6 +76,7 @@ it('authors a nested form through the catalogue and keeps editor state synchroni
         ->assertSet('schema.fields.0.fields.0.rules.1.message', 'Choose a role')
         ->assertSet('schema.fields.0.fields.0.visibleWhen.dependsOn.0', 'accountType')
         ->assertSee('Role')
+        ->assertSee('data-daisy-kit-builder-depth="2"', false)
         ->assertSee('data-daisy-kit-builder-preview', false)
         ->assertSee('name="schema"', false)
         ->assertSee('"type":"section"', false);

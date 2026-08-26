@@ -24,14 +24,15 @@
     <div class="daisy-kit-forms-builder-livewire__workspace">
         <section aria-label="{{ __('Form fields') }}" data-daisy-kit-builder-authoring>
             <h2>{{ __('Form fields') }}</h2>
-            @forelse($schema['fields'] as $index => $field)
-                <article wire:key="daisy-kit-builder-field-{{ $field['id'] ?? $field['name'] ?? $index }}" data-daisy-kit-builder-field>
+            @forelse($outline as $index => $item)
+                @php($field = $item['field'])
+                <article wire:key="daisy-kit-builder-field-{{ $item['identity'] }}" data-daisy-kit-builder-field data-daisy-kit-builder-depth="{{ $item['depth'] }}">
                     <h3>{{ $field['label'] }}</h3>
                     <p>{{ $field['type'] }}</p>
-                    <button type="button" wire:click="selectField('{{ $field['id'] ?? $field['name'] ?? '' }}')">{{ __('Edit') }}</button>
-                    <button type="button" wire:click="moveField({{ $index }}, -1)" @disabled($index === 0)>{{ __('Move up') }}</button>
-                    <button type="button" wire:click="moveField({{ $index }}, 1)" @disabled($index === count($schema['fields']) - 1)>{{ __('Move down') }}</button>
-                    <button type="button" wire:click="removeField({{ $index }})">{{ __('Remove') }}</button>
+                    <button type="button" wire:click="selectField('{{ $item['identity'] }}')">{{ __('Edit') }}</button>
+                    <button type="button" wire:click="moveField('{{ $item['identity'] }}', -1)">{{ __('Move up') }}</button>
+                    <button type="button" wire:click="moveField('{{ $item['identity'] }}', 1)">{{ __('Move down') }}</button>
+                    <button type="button" wire:click="removeField('{{ $item['identity'] }}')">{{ __('Remove') }}</button>
                 </article>
             @empty
                 <p role="status">{{ __('Add a field from the catalogue to begin authoring.') }}</p>
