@@ -103,11 +103,11 @@ describe('file preview entry', () => {
             type: 'render',
         }), '*', [expect.any(ArrayBuffer)]));
         expect(frame.getAttribute('sandbox')).not.toContain('allow-same-origin');
-        expect(frame.srcdoc)
-            .toContain("connect-src 'none'")
-            .toContain("script-src-attr 'none'")
-            .toContain('<script src=')
-            .not.toContain('onload=');
+        expect(frame.srcdoc).toContain("connect-src 'none'");
+        expect(frame.srcdoc).toContain("script-src-attr 'none'");
+        expect(frame.srcdoc).not.toContain('frame-ancestors');
+        expect(frame.srcdoc).toContain('<script src=');
+        expect(frame.srcdoc).not.toContain('onload=');
     });
 
     it('previews validated video with metadata and an explicit layout action', async () => {
