@@ -110,6 +110,34 @@ describe('file preview entry', () => {
         expect(frame.srcdoc).not.toContain('onload=');
     });
 
+    it('regenerates a transferable payload after the sandboxed frame navigates and handshakes again', async () => {
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(new Blob(['pdf'], { type: 'application/pdf' }), {
+            headers: { 'content-type': 'application/pdf' },
+            status: 200,
+        }))));
+        const element = root({ src: '/preview.pdf', type: 'pdf' });
+
+        mount(element);
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+        const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
+        const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
+
+        frameMessage(element, { type: 'ready' });
+        await vi.waitFor(() => expect(postMessage).toHaveBeenCalledOnce());
+        const firstRender = postMessage.mock.calls[0][0];
+
+        frameMessage(element, { type: 'ready' });
+        await vi.waitFor(() => expect(postMessage).toHaveBeenCalledTimes(2));
+        const secondRender = postMessage.mock.calls[1][0];
+
+        expect(secondRender.renderId).not.toBe(firstRender.renderId);
+        expect(secondRender.payload.data).toBeInstanceOf(ArrayBuffer);
+        expect(secondRender.payload.data).not.toBe(firstRender.payload.data);
+
+        frameMessage(element, { renderId: secondRender.renderId, type: 'rendered' });
+        await vi.waitFor(() => expect(element.dataset.daisyKitState).toBe('ready'));
+    });
+
     it('previews validated video with metadata and an explicit layout action', async () => {
         vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(new Blob(['video'], { type: 'video/mp4' }), {
             headers: { 'content-type': 'video/mp4' },

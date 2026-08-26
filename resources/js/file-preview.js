@@ -189,9 +189,12 @@ function initializeFilePreview(root, configuration) {
     let frameReady = false;
     let payloadSent = false;
     let rendered = false;
-    let payload = null;
+    let payloadBlob = null;
     let actionUrl = null;
     let renderTimeout = null;
+    let handshakeId = 0;
+    let renderId = 0;
+    let activeRenderId = null;
     const rendersInline = previewLayout === 'standard' || previewLayout === 'card';
     let modalOpen = false;
     let previewOpen = rendersInline;
@@ -296,29 +299,58 @@ function initializeFilePreview(root, configuration) {
     zoomControls.forEach((control) => control.addEventListener('click', onZoomClick));
 
     function sendPayload() {
-        if (destroyed || !frameReady || payloadSent || !payload || !frame.contentWindow) return;
+        if (destroyed || !frameReady || !payloadBlob || !frame.contentWindow) return;
 
-        payloadSent = true;
-        renderTimeout = window.setTimeout(() => {
-            if (destroyed || rendered) return;
+        const currentHandshakeId = handshakeId;
+        const currentRenderId = ++renderId;
 
-            setVisible(loading, false);
-            setVisible(frame, false);
-            showError(root, 'The file preview frame did not render the file.');
-        }, frameReadyTimeout);
-        frame.contentWindow.postMessage({ channel: frameChannel, payload, token: frameToken, type: 'render' }, '*', payload.data instanceof ArrayBuffer ? [payload.data] : []);
+        void framePayload(type, payloadBlob, typeof configuration.name === 'string' ? configuration.name : 'File preview')
+            .then((payload) => {
+                if (destroyed || !frameReady || currentHandshakeId !== handshakeId || !frame.contentWindow) return;
+
+                payloadSent = true;
+                rendered = false;
+                activeRenderId = currentRenderId;
+                window.clearTimeout(renderTimeout);
+                renderTimeout = window.setTimeout(() => {
+                    if (destroyed || rendered || activeRenderId !== currentRenderId) return;
+
+                    setVisible(loading, false);
+                    setVisible(frame, false);
+                    showError(root, 'The file preview frame did not render the file.');
+                }, frameReadyTimeout);
+                frame.contentWindow.postMessage({
+                    channel: frameChannel,
+                    payload,
+                    renderId: currentRenderId,
+                    token: frameToken,
+                    type: 'render',
+                }, '*', payload.data instanceof ArrayBuffer ? [payload.data] : []);
+            })
+            .catch(() => {
+                if (!destroyed && currentHandshakeId === handshakeId) {
+                    setVisible(loading, false);
+                    setVisible(frame, false);
+                    showError(root, 'The file preview could not be prepared.');
+                }
+            });
     }
 
     function onMessage(event) {
         if (destroyed || event.source !== frame.contentWindow || !event.data || event.data.channel !== frameChannel || event.data.token !== frameToken) return;
 
-        if (event.data.type === 'ready' && !frameReady) {
+        if (event.data.type === 'ready') {
             frameReady = true;
+            handshakeId += 1;
+            payloadSent = false;
+            rendered = false;
+            activeRenderId = null;
             window.clearTimeout(readyTimeout);
+            window.clearTimeout(renderTimeout);
             sendPayload();
         }
 
-        if (event.data.type === 'rendered' && payloadSent && !rendered) {
+        if (event.data.type === 'rendered' && payloadSent && !rendered && event.data.renderId === activeRenderId) {
             rendered = true;
             window.clearTimeout(renderTimeout);
             setVisible(loading, false);
@@ -327,7 +359,7 @@ function initializeFilePreview(root, configuration) {
             emit(root, 'ready', { type });
         }
 
-        if (event.data.type === 'error') {
+        if (event.data.type === 'error' && event.data.renderId === activeRenderId) {
             window.clearTimeout(readyTimeout);
             window.clearTimeout(renderTimeout);
             setVisible(loading, false);
@@ -347,7 +379,7 @@ function initializeFilePreview(root, configuration) {
 
             showMetadata(root, blob, configuration, type);
             actionUrl = exposeActions(root, blob, configuration);
-            payload = await framePayload(type, blob, typeof configuration.name === 'string' ? configuration.name : 'File preview');
+            payloadBlob = blob;
             sendPayload();
         } catch (error) {
             if (!destroyed && !(error instanceof DOMException && error.name === 'AbortError')) {
@@ -378,7 +410,7 @@ function initializeFilePreview(root, configuration) {
         frame.removeAttribute('srcdoc');
         setVisible(frame, false);
         if (actionUrl) URL.revokeObjectURL(actionUrl);
-        payload = null;
+        payloadBlob = null;
     };
 }
 

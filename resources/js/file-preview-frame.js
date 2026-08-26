@@ -87,10 +87,10 @@ document.addEventListener('daisy-kit:file-preview:render', async (event) => {
 
     try {
         await render(message.payload);
-        window.parent.postMessage({ channel, token: message.token, type: 'rendered' }, '*');
+        window.parent.postMessage({ channel, renderId: message.renderId, token: message.token, type: 'rendered' }, '*');
     } catch {
         output.replaceChildren();
-        window.parent.postMessage({ channel, token: message.token, type: 'error' }, '*');
+        window.parent.postMessage({ channel, renderId: message.renderId, token: message.token, type: 'error' }, '*');
     }
 });
 
