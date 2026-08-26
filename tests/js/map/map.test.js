@@ -59,6 +59,7 @@ function root(configuration) {
                 <output data-daisy-kit-map-measurement></output>
                 <input data-daisy-kit-map-value type="hidden">
                 <fieldset data-daisy-kit-map-layers hidden><legend>Layers</legend></fieldset>
+                <fieldset data-daisy-kit-map-basemaps hidden><legend>Basemaps</legend></fieldset>
                 <fieldset data-daisy-kit-map-tools><button data-daisy-kit-map-mode="linestring" type="button">Draw line</button><button data-daisy-kit-map-mode="polygon" type="button">Draw area</button></fieldset>
                 <button data-daisy-kit-map-export disabled type="button">Export drawing</button>
             </div>
@@ -114,6 +115,10 @@ describe('map entry', () => {
                 label: 'Districts',
             }],
             tileUrl: 'https://tiles.example.test/{z}/{x}/{y}.png',
+            basemaps: [
+                { id: 'light', label: 'Light', selected: true, url: 'https://tiles.example.test/light/{z}/{x}/{y}.png' },
+                { id: 'dark', label: 'Dark', url: 'https://tiles.example.test/dark/{z}/{x}/{y}.png' },
+            ],
         });
         const layerEvents = [];
         element.addEventListener('daisy-kit:map:layer', (event) => layerEvents.push(event.detail));
@@ -125,12 +130,16 @@ describe('map entry', () => {
         element.querySelector('[data-daisy-kit-map-mode="polygon"]').click();
         drawings[0].handlers.finish('shape');
         element.querySelector('[data-daisy-kit-map-export]').click();
+        const dark = element.querySelector('[data-daisy-kit-map-basemap="dark"]');
+        dark.checked = true;
+        dark.dispatchEvent(new Event('change', { bubbles: true }));
 
         expect(layerEvents).toEqual([{ id: 'districts', visible: false }]);
         expect(createdLayers[0].remove).toHaveBeenCalledOnce();
         expect(element.querySelector('[data-daisy-kit-map-measurement]').textContent).toContain('m²');
         expect(element.querySelector('[data-daisy-kit-map-mode="polygon"]').getAttribute('aria-pressed')).toBe('true');
-        expect(tileLayers).toHaveLength(1);
+        expect(tileLayers).toHaveLength(2);
+        expect(dark.checked).toBe(true);
         expect(JSON.parse(element.querySelector('[data-daisy-kit-map-value]').value).features).toHaveLength(1);
     });
 });

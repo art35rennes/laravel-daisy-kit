@@ -60,7 +60,7 @@ describe('blueprint entry', () => {
         const element = root({
             editable: true,
             edges: [],
-            nodes: [{ id: 'first', label: 'First', value: { state: 'draft' } }],
+            nodes: [{ id: 'first', label: 'First', value: { state: 'draft' } }, { id: 'second', label: 'Second' }],
         });
         const changes = [];
         element.addEventListener('daisy-kit:blueprint:change', (event) => changes.push(event.detail.value));
@@ -86,5 +86,11 @@ describe('blueprint entry', () => {
         element.querySelector('[data-daisy-kit-blueprint-history="redo"]').click();
         element.querySelector('[data-daisy-kit-blueprint-history="redo"]').click();
         expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].label).toBe('Updated');
+
+        const search = element.querySelector('[data-daisy-kit-blueprint-search]');
+        search.value = 'second';
+        search.dispatchEvent(new Event('input'));
+        expect(element.querySelector('[data-node-id="first"]').hasAttribute('hidden')).toBe(true);
+        expect(element.querySelector('[data-node-id="second"]').hasAttribute('hidden')).toBe(false);
     });
 });

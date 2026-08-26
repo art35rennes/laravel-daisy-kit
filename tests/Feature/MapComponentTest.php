@@ -25,6 +25,7 @@ test('the map component exposes a semantic empty and measurement state', functio
     expect($html)
         ->toContain('data-daisy-kit-empty')
         ->toContain('data-daisy-kit-map-layers')
+        ->toContain('data-daisy-kit-map-basemaps')
         ->toContain('data-daisy-kit-map-export')
         ->toContain('data-daisy-kit-map-value')
         ->toContain('data-daisy-kit-map-measurement')

@@ -6,6 +6,7 @@
     'layers' => [],
     'tileUrl' => null,
     'tileAttribution' => '',
+    'basemaps' => [],
     'label' => 'Map',
 ])
 
@@ -22,6 +23,9 @@
         <input data-daisy-kit-map-value type="hidden">
         <fieldset data-daisy-kit-map-layers hidden>
             <legend>Layers</legend>
+        </fieldset>
+        <fieldset data-daisy-kit-map-basemaps hidden>
+            <legend>Basemaps</legend>
         </fieldset>
         @if($drawing)
             <fieldset data-daisy-kit-map-tools>
@@ -41,6 +45,7 @@
         'layers' => $layers,
         'tileUrl' => $tileUrl,
         'tileAttribution' => $tileAttribution,
+        'basemaps' => $basemaps,
         'label' => $label,
     ]) !!}</script>
 </section>

@@ -60,6 +60,30 @@ function validTileUrl(value) {
     }
 }
 
+function validBasemaps(value) {
+    if (!Array.isArray(value)) return [];
+
+    const ids = new Set();
+
+    return value.flatMap((basemap) => {
+        if (!basemap || typeof basemap.id !== 'string' || basemap.id.length === 0 || ids.has(basemap.id)) return [];
+
+        const url = validTileUrl(basemap.url);
+
+        if (!url) return [];
+
+        ids.add(basemap.id);
+
+        return [{
+            attribution: typeof basemap.attribution === 'string' ? basemap.attribution : '',
+            id: basemap.id,
+            label: typeof basemap.label === 'string' && basemap.label.length > 0 ? basemap.label : basemap.id,
+            selected: basemap.selected === true,
+            url,
+        }];
+    });
+}
+
 function measurement(feature) {
     if (!feature?.geometry) {
         return null;
@@ -82,17 +106,19 @@ function initializeMap(root, configuration) {
     const output = root.querySelector('[data-daisy-kit-map-measurement]');
     const tools = root.querySelector('[data-daisy-kit-map-tools]');
     const layerTools = root.querySelector('[data-daisy-kit-map-layers]');
+    const basemapTools = root.querySelector('[data-daisy-kit-map-basemaps]');
     const exportControl = root.querySelector('[data-daisy-kit-map-export]');
     const value = root.querySelector('[data-daisy-kit-map-value]');
     const geojson = validGeojson(configuration.geojson);
     const layers = validLayers(configuration.layers);
     const tileUrl = validTileUrl(configuration.tileUrl);
+    const basemaps = validBasemaps(configuration.basemaps);
 
     if (!canvas || !empty || !output || !layerTools) {
         throw new Error('Map markup is incomplete.');
     }
 
-    if (!geojson && layers.length === 0 && !configuration.drawing) {
+    if (!geojson && layers.length === 0 && basemaps.length === 0 && !tileUrl && !configuration.drawing) {
         empty.hidden = false;
         root.dataset.daisyKitState = 'empty';
         root.dispatchEvent(new CustomEvent('daisy-kit:map:empty', { bubbles: true }));
@@ -108,11 +134,32 @@ function initializeMap(root, configuration) {
     const dataLayers = [];
     let tileLayer = null;
 
-    if (tileUrl) {
+    if (tileUrl && basemaps.length === 0) {
         tileLayer = L.tileLayer(tileUrl, {
             attribution: typeof configuration.tileAttribution === 'string' ? configuration.tileAttribution : '',
         }).addTo(map);
     }
+
+    const configuredBasemaps = basemaps.map((basemap) => {
+        const leafletLayer = L.tileLayer(basemap.url, { attribution: basemap.attribution });
+        const control = document.createElement('input');
+        control.checked = false;
+        control.name = 'daisy-kit-map-basemap';
+        control.setAttribute('data-daisy-kit-map-basemap', basemap.id);
+        control.type = 'radio';
+        const label = document.createElement('label');
+        label.append(control, document.createTextNode(basemap.label));
+        basemapTools?.append(label);
+
+        return { ...basemap, control, leafletLayer };
+    });
+    let activeBasemap = configuredBasemaps.find((basemap) => basemap.selected) ?? configuredBasemaps[0] ?? null;
+
+    if (activeBasemap) {
+        activeBasemap.control.checked = true;
+        activeBasemap.leafletLayer.addTo(map);
+    }
+    if (basemapTools) basemapTools.hidden = configuredBasemaps.length === 0;
 
     if (geojson) {
         const dataLayer = L.geoJSON(geojson).addTo(map);
@@ -220,9 +267,27 @@ function initializeMap(root, configuration) {
             detail: { id: layer.id, visible: control.checked },
         }));
     };
+    const onBasemapChange = (event) => {
+        const control = event.target.closest('[data-daisy-kit-map-basemap]');
+
+        if (!(control instanceof HTMLInputElement) || !control.checked) return;
+
+        const next = configuredBasemaps.find((basemap) => basemap.id === control.dataset.daisyKitMapBasemap);
+
+        if (!next || next === activeBasemap) return;
+
+        activeBasemap?.leafletLayer.remove();
+        next.leafletLayer.addTo(map);
+        activeBasemap = next;
+        root.dispatchEvent(new CustomEvent('daisy-kit:map:basemap', {
+            bubbles: true,
+            detail: { id: next.id },
+        }));
+    };
 
     tools?.addEventListener('click', onToolClick);
     layerTools.addEventListener('change', onLayerChange);
+    basemapTools?.addEventListener('change', onBasemapChange);
     exportControl?.addEventListener('click', onExport);
 
     root.dataset.daisyKitState = 'ready';
@@ -231,6 +296,7 @@ function initializeMap(root, configuration) {
     return () => {
         tools?.removeEventListener('click', onToolClick);
         layerTools.removeEventListener('change', onLayerChange);
+        basemapTools?.removeEventListener('change', onBasemapChange);
         exportControl?.removeEventListener('click', onExport);
 
         if (drawing && onFinish) {
@@ -240,8 +306,11 @@ function initializeMap(root, configuration) {
 
         dataLayers.forEach((layer) => layer.remove());
         tileLayer?.remove();
+        configuredBasemaps.forEach((basemap) => basemap.leafletLayer.remove());
         layerTools.replaceChildren();
         layerTools.hidden = true;
+        basemapTools?.replaceChildren();
+        if (basemapTools) basemapTools.hidden = true;
         map.remove();
         output.replaceChildren();
     };

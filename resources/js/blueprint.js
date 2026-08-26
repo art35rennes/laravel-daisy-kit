@@ -134,6 +134,7 @@ function renderBlueprint(root, configuration) {
     let historyIndex = -1;
     let editor = null;
     let valueEditor = null;
+    let search = null;
     let undo = null;
     let redo = null;
 
@@ -255,6 +256,20 @@ function renderBlueprint(root, configuration) {
             valueEditor.setAttribute('aria-invalid', 'true');
         }
     };
+    const onSearchInput = () => {
+        if (!(search instanceof HTMLInputElement)) return;
+
+        const query = search.value.trim().toLocaleLowerCase();
+        renderedNodes.forEach((candidate) => {
+            const matches = query.length === 0 || candidate.label.textContent.toLocaleLowerCase().includes(query);
+            candidate.control.hidden = !matches;
+            candidate.group.toggleAttribute('hidden', !matches);
+        });
+        root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:search', {
+            bubbles: true,
+            detail: { query },
+        }));
+    };
     const onKeydown = (event) => {
         const currentIndex = renderedNodes.findIndex(({ control }) => control === document.activeElement);
 
@@ -312,6 +327,13 @@ function renderBlueprint(root, configuration) {
         valueEditor.setAttribute('data-daisy-kit-blueprint-value-editor', '');
         controls.append(valueEditor);
         valueEditor.addEventListener('change', onValueChange);
+
+        search = document.createElement('input');
+        search.setAttribute('aria-label', 'Find a blueprint node');
+        search.setAttribute('data-daisy-kit-blueprint-search', '');
+        search.type = 'search';
+        controls.append(search);
+        search.addEventListener('input', onSearchInput);
         remember();
     }
     synchronizeValue();
@@ -323,6 +345,7 @@ function renderBlueprint(root, configuration) {
         controls.removeEventListener('keydown', onKeydown);
         editor?.removeEventListener('change', onEditorChange);
         valueEditor?.removeEventListener('change', onValueChange);
+        search?.removeEventListener('input', onSearchInput);
         controls.remove();
         canvas.replaceChildren();
     };
