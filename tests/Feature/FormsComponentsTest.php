@@ -33,3 +33,25 @@ it('renders a forms builder mount point without executable configuration', funct
         ->not->toContain(' style=')
         ->not->toContain(' on');
 });
+
+it('serializes viewer errors, readonly state, and submit mode as non-executable configuration', function (): void {
+    $html = view('daisy-kit::components.forms.viewer', [
+        'schema' => [
+            'fields' => [[
+                'name' => 'email',
+                'type' => 'email',
+            ]],
+        ],
+        'value' => ['email' => 'ada@example.test'],
+        'errors' => ['email' => ['This address is already used.']],
+        'readonly' => true,
+        'submitMode' => 'none',
+    ])->render();
+
+    expect($html)
+        ->toContain('"errors":{"email":["This address is already used."]}')
+        ->toContain('"readonly":true')
+        ->toContain('"submitMode":"none"')
+        ->toContain('type="application/json"')
+        ->not->toContain('onerror=');
+});

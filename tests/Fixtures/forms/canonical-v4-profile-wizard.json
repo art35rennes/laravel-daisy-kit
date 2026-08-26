@@ -1,0 +1,70 @@
+{
+    "schema": {
+        "submit": {
+            "label": "Save profile",
+            "mode": "event"
+        },
+        "fields": [
+            {
+                "id": "profile",
+                "type": "section",
+                "label": "Profile",
+                "fields": [
+                    {
+                        "id": "display-name",
+                        "name": "display_name",
+                        "type": "text",
+                        "label": "Display name",
+                        "readonly": true
+                    }
+                ]
+            },
+            {
+                "id": "contact",
+                "type": "wizardStep",
+                "label": "Contact",
+                "fields": [
+                    {
+                        "id": "email",
+                        "name": "email",
+                        "type": "email",
+                        "label": "Email",
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "id": "preferences",
+                "type": "wizardStep",
+                "label": "Preferences",
+                "fields": [
+                    {
+                        "id": "role",
+                        "name": "role",
+                        "type": "select",
+                        "label": "Role",
+                        "options": [
+                            { "label": "Member", "value": "member" },
+                            { "label": "Administrator", "value": "admin" }
+                        ]
+                    },
+                    {
+                        "id": "legacy-value",
+                        "name": "legacy_value",
+                        "type": "unsafe-legacy-type",
+                        "label": "Legacy value"
+                    }
+                ]
+            }
+        ]
+    },
+    "value": {
+        "display_name": "Ada",
+        "email": "ada@example.test",
+        "role": "member",
+        "legacy_value": "safe fallback"
+    },
+    "errors": {
+        "email": ["This address is already used."]
+    }
+}

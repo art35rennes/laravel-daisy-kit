@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { installLivewireAdapter, mount, mountAll, unmount } from '../../../resources/js/forms/viewer.js';
+import canonicalProfileWizard from '../../Fixtures/forms/canonical-v4-profile-wizard.json';
 
 async function settle() {
     await Promise.resolve();
@@ -93,6 +94,85 @@ describe('forms viewer', () => {
 
         expect(invalidRoot.dataset.daisyKitState).toBe('error');
         expect(invalidRoot.querySelector('[data-daisy-kit-status]').hidden).toBe(false);
+    });
+
+    it('renders canonical nested sections and steps with safe controls, errors, readonly fields, and event submission', async () => {
+        const root = viewerRoot(JSON.stringify(canonicalProfileWizard));
+        const submitted = [];
+        const errors = [];
+        root.addEventListener('daisy-kit:forms-viewer:submitted', (event) => submitted.push(event.detail));
+        root.addEventListener('daisy-kit:forms-viewer:error', (event) => errors.push(event.detail));
+
+        await mount(root);
+        await settle();
+
+        const form = root.querySelector('form');
+        const email = root.querySelector('input[name="email"]');
+        const displayName = root.querySelector('input[name="display_name"]');
+        const legacyValue = root.querySelector('input[name="legacy_value"]');
+        const steps = root.querySelectorAll('[data-daisy-kit-forms-step]');
+
+        expect(root.querySelector('fieldset[data-daisy-kit-forms-section="profile"]')).not.toBeNull();
+        expect(displayName.readOnly).toBe(true);
+        expect(email.getAttribute('aria-invalid')).toBe('true');
+        expect(root.querySelector('[data-daisy-kit-forms-error="email"]').textContent).toBe('This address is already used.');
+        expect(legacyValue.type).toBe('text');
+        expect(root.querySelector('[data-daisy-kit-forms-type-error="legacy_value"]').textContent).toContain('unsafe-legacy-type');
+        expect(errors).toContainEqual({
+            field: 'legacy_value',
+            reason: 'unsupported-type',
+            type: 'unsafe-legacy-type',
+        });
+        expect(steps).toHaveLength(2);
+        expect(steps[0].hidden).toBe(false);
+        expect(steps[1].hidden).toBe(true);
+
+        root.querySelector('[data-daisy-kit-forms-next]').click();
+        await settle();
+        expect(steps[0].hidden).toBe(true);
+        expect(steps[1].hidden).toBe(false);
+
+        const submission = new Event('submit', { bubbles: true, cancelable: true });
+        form.dispatchEvent(submission);
+
+        expect(submission.defaultPrevented).toBe(true);
+        expect(submitted).toEqual([{
+            values: canonicalProfileWizard.value,
+            mode: 'event',
+        }]);
+    });
+
+    it('keeps HTML submission native and prevents submission for readonly and none modes', async () => {
+        const htmlRoot = viewerRoot(JSON.stringify({
+            schema: { submit: { mode: 'html' }, fields: [{ name: 'name', type: 'text' }] },
+            value: { name: 'Ada' },
+        }));
+        const htmlSubmissions = [];
+        htmlRoot.addEventListener('daisy-kit:forms-viewer:submitted', (event) => htmlSubmissions.push(event.detail));
+
+        await mount(htmlRoot);
+        const htmlSubmission = new Event('submit', { bubbles: true, cancelable: true });
+        htmlRoot.querySelector('form').dispatchEvent(htmlSubmission);
+
+        expect(htmlSubmission.defaultPrevented).toBe(false);
+        expect(htmlSubmissions).toEqual([]);
+
+        unmount(htmlRoot);
+
+        const noneRoot = viewerRoot(JSON.stringify({
+            schema: { fields: [{ name: 'name', type: 'text' }] },
+            submitMode: 'none',
+            readonly: true,
+            value: { name: 'Ada' },
+        }));
+
+        await mount(noneRoot);
+        const noneSubmission = new Event('submit', { bubbles: true, cancelable: true });
+        noneRoot.querySelector('form').dispatchEvent(noneSubmission);
+
+        expect(noneRoot.querySelector('input[name="name"]').readOnly).toBe(true);
+        expect(noneRoot.querySelector('button')).toBeNull();
+        expect(noneSubmission.defaultPrevented).toBe(true);
     });
 
     it('remounts explicitly when the optional Livewire adapter receives a navigation event', async () => {

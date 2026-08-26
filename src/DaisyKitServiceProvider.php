@@ -23,29 +23,31 @@ class DaisyKitServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'daisy-kit');
         Blade::anonymousComponentNamespace('daisy-kit::', 'daisy-kit');
 
-        $this->registerLivewireBuilder();
+        $this->app->booted(fn (): bool => $this->registerLivewireBuilder());
         $this->registerAboutInformation();
     }
 
-    private function registerLivewireBuilder(): void
+    private function registerLivewireBuilder(): bool
     {
         if (! config('daisy-kit.livewire_builder', true)) {
-            return;
+            return false;
         }
 
         if (! class_exists(Livewire::class)) {
-            return;
+            return false;
         }
 
         if (! InstalledVersions::isInstalled('livewire/livewire')) {
-            return;
+            return false;
         }
 
-        if (! str_starts_with(InstalledVersions::getPrettyVersion('livewire/livewire') ?? '', '4.')) {
-            return;
+        if (! $this->hasLivewireFour()) {
+            return false;
         }
 
         Livewire::component('daisy-kit.forms.builder', FormsBuilder::class);
+
+        return true;
     }
 
     private function registerAboutInformation(): void
@@ -68,6 +70,6 @@ class DaisyKitServiceProvider extends ServiceProvider
             return false;
         }
 
-        return str_starts_with(InstalledVersions::getPrettyVersion('livewire/livewire') ?? '', '4.');
+        return str_starts_with(ltrim(InstalledVersions::getPrettyVersion('livewire/livewire') ?? '', 'vV'), '4.');
     }
 }
