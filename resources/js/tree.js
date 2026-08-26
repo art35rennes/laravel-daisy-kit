@@ -70,12 +70,22 @@ function initialize(root, configuration) {
     }
 
     const initialMarkup = treeRoot.innerHTML;
-    const items = normalizeItems(configuration.items);
+    let items = normalizeItems(configuration.items);
+    const initialItems = items;
     const multiple = configuration.multiple === true;
     const valueInput = root.querySelector('[data-daisy-kit-tree-value]');
     const persistenceKey = typeof configuration.persistenceKey === 'string' && configuration.persistenceKey !== ''
         ? `daisy-kit:tree:${configuration.persistenceKey}`
         : null;
+    let searchSource = null;
+    if (typeof configuration.searchSource === 'string' && configuration.searchSource !== '') {
+        try {
+            const url = new URL(configuration.searchSource, window.location.href);
+            if (['http:', 'https:'].includes(url.protocol)) searchSource = url;
+        } catch {
+            // Invalid remote-search endpoints fall back to local filtering.
+        }
+    }
     const itemsById = new Map();
     const buttonsById = new Map();
     const expandedIds = new Set();
@@ -83,6 +93,8 @@ function initialize(root, configuration) {
     const selectedIds = new Set();
     let selectedId = null;
     let searchQuery = '';
+    let searchAbortController = null;
+    let searchTimer = null;
 
     function persistedState() {
         if (!persistenceKey) return null;
@@ -218,6 +230,14 @@ function initialize(root, configuration) {
         }
 
         itemsToSearch.forEach(visit);
+    }
+
+    function rebuild() {
+        buttonsById.clear();
+        itemsById.clear();
+        index(items);
+        treeRoot.replaceChildren(renderItems(items));
+        applyVisibility(items);
     }
 
     function visibleButtons() {
@@ -446,9 +466,43 @@ function initialize(root, configuration) {
     treeRoot.addEventListener('keydown', onKeyDown);
     const onSearch = (event) => {
         searchQuery = event.currentTarget.value.trim();
-        if (searchQuery !== '') expandMatchingPaths(items);
-        applyVisibility(items);
-        persist();
+        if (!searchSource) {
+            if (searchQuery !== '') expandMatchingPaths(items);
+            applyVisibility(items);
+            persist();
+
+            return;
+        }
+
+        searchAbortController?.abort();
+        if (searchTimer !== null) clearTimeout(searchTimer);
+        if (searchQuery === '') {
+            items = initialItems;
+            rebuild();
+
+            return;
+        }
+        searchTimer = setTimeout(async () => {
+            searchAbortController = new AbortController();
+            const request = new URL(searchSource);
+            request.searchParams.set('query', searchQuery);
+            root.setAttribute('aria-busy', 'true');
+            try {
+                const response = await fetch(request, { credentials: 'same-origin', signal: searchAbortController.signal });
+                const payload = await response.json();
+                if (!response.ok || !payload || !Array.isArray(payload.items)) throw new Error('Invalid tree search response.');
+                items = normalizeItems(payload.items);
+                expandMatchingPaths(items);
+                rebuild();
+            } catch (error) {
+                if (!(error instanceof DOMException && error.name === 'AbortError')) {
+                    updateStatus(root, 'The tree search could not be loaded.');
+                    emit(root, 'error', { reason: 'search-source-unavailable' });
+                }
+            } finally {
+                root.setAttribute('aria-busy', 'false');
+            }
+        }, 200);
     };
     searchInput?.addEventListener('input', onSearch);
 
@@ -456,6 +510,8 @@ function initialize(root, configuration) {
         treeRoot.removeEventListener('click', onClick);
         treeRoot.removeEventListener('keydown', onKeyDown);
         searchInput?.removeEventListener('input', onSearch);
+        if (searchTimer !== null) clearTimeout(searchTimer);
+        searchAbortController?.abort();
         treeRoot.innerHTML = initialMarkup;
     };
 }

@@ -36,6 +36,7 @@ it('renders the tree as a semantic CSP-safe module', function (): void {
             'name' => null,
             'persistenceKey' => null,
             'searchable' => false,
+            'searchSource' => null,
         ]);
 });
 

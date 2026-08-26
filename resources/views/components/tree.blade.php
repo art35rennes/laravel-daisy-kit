@@ -5,6 +5,7 @@
     'name' => null,
     'persistenceKey' => null,
     'searchable' => false,
+    'searchSource' => null,
 ])
 
 @php
@@ -14,6 +15,7 @@
         'name' => $name,
         'persistenceKey' => $persistenceKey,
         'searchable' => $searchable,
+        'searchSource' => $searchSource,
     ]);
 @endphp
 

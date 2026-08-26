@@ -37,6 +37,31 @@ describe('tree module', () => {
         expect(root.dataset.daisyKitState).toBe('ready');
     });
 
+    it('debounces remote search results and expands their matching path', async () => {
+        vi.useFakeTimers();
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+            items: [{ id: 'guides', label: 'Guides', children: [{ id: 'api', label: 'API guide' }] }],
+        }), { headers: { 'content-type': 'application/json' } })));
+        document.body.innerHTML = treeMarkup({
+            searchSource: '/tree/search',
+            searchable: true,
+            items: [],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="tree"]');
+        root.querySelector('[data-daisy-kit-content]').insertAdjacentHTML('afterbegin', '<label>Search <input data-daisy-kit-tree-search type="search"></label>');
+
+        mount(root);
+        const search = root.querySelector('[data-daisy-kit-tree-search]');
+        search.value = 'api';
+        search.dispatchEvent(new Event('input'));
+        await vi.advanceTimersByTimeAsync(200);
+        await vi.waitFor(() => expect(root.querySelector('[data-daisy-kit-tree-node="api"]')).not.toBeNull());
+
+        expect(String(fetch.mock.calls[0][0])).toContain('query=api');
+        expect(root.querySelector('[data-daisy-kit-tree-node="guides"]').getAttribute('aria-expanded')).toBe('true');
+        vi.useRealTimers();
+    });
+
     it('propagates multiple selection, exposes an indeterminate parent, and binds selected IDs', () => {
         document.body.innerHTML = treeMarkup({
             multiple: true,
