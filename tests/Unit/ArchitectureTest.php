@@ -114,15 +114,13 @@ it('keeps File Preview frame helpers relative to its Vite entry', function (): v
     $distribution = (string) file_get_contents(packagePath('dist/file-preview.js'));
 
     expect($entry)
-        ->toContain("import frameBootstrapUrl from './file-preview-frame-bootstrap.js?url&no-inline';")
-        ->toContain("import frameRendererUrl from '../../.tmp/file-preview-frame/file-preview-frame.js?url&no-inline';")
-        ->toContain('new URL(frameBootstrapUrl, import.meta.url)')
-        ->toContain('new URL(frameRendererUrl, import.meta.url)')
+        ->toContain("new URL('../../.tmp/file-preview-frame/file-preview-frame.js', import.meta.url)")
+        ->not->toContain('file-preview-frame-bootstrap')
         ->not->toContain("'/file-preview-frame.html'");
 
     expect($distribution)
-        ->toContain('file-preview-frame-bootstrap.js')
         ->toContain('file-preview-frame.js')
+        ->not->toContain('file-preview-frame-bootstrap')
         ->not->toContain('/file-preview-frame.html')
         ->not->toContain('data:text/javascript');
 });

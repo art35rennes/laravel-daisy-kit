@@ -2,6 +2,16 @@ import { renderAsync } from 'docx-preview';
 
 const channel = 'daisy-kit:file-preview:frame';
 const output = document.querySelector('[data-daisy-kit-file-preview-output]');
+const token = output?.dataset.daisyKitFilePreviewToken;
+let ready = false;
+
+function announceReady() {
+    if (ready) return;
+
+    ready = true;
+    document.documentElement.dataset.daisyKitFilePreviewFrame = 'ready';
+    window.parent.postMessage({ channel, token, type: 'ready' }, '*');
+}
 let objectUrl = null;
 
 async function render(payload) {
@@ -69,3 +79,5 @@ document.addEventListener('daisy-kit:file-preview:render', async (event) => {
         window.parent.postMessage({ channel, token: message.token, type: 'error' }, '*');
     }
 });
+
+queueMicrotask(announceReady);

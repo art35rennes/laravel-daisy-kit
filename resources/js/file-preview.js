@@ -1,6 +1,4 @@
 import '../css/file-preview.css';
-import frameBootstrapUrl from './file-preview-frame-bootstrap.js?url&no-inline';
-import frameRendererUrl from '../../.tmp/file-preview-frame/file-preview-frame.js?url&no-inline';
 import { createInstanceIdentifier } from './core/identifiers.js';
 import { createMountable } from './core/mountable.js';
 
@@ -10,8 +8,7 @@ const frameReadyTimeout = 10_000;
 const frameChannel = 'daisy-kit:file-preview:frame';
 const supportedTypes = new Set(['docx', 'image', 'pdf', 'text', 'video']);
 const frameAssets = [
-    new URL(frameBootstrapUrl, import.meta.url),
-    new URL(frameRendererUrl, import.meta.url),
+    new URL('../../.tmp/file-preview-frame/file-preview-frame.js', import.meta.url),
 ];
 
 function emit(root, name, detail = {}) {
@@ -64,7 +61,7 @@ function validContentType(type, contentType) {
 
 function frameDocument(token) {
     const scriptSources = [...new Set(frameAssets.map((asset) => asset.origin))].join(' ');
-    const [bootstrap, renderer] = frameAssets.map((asset) => asset.href);
+    const [renderer] = frameAssets.map((asset) => asset.href);
 
     return `<!doctype html>
 <html lang="en">
@@ -76,7 +73,6 @@ function frameDocument(token) {
 <body>
     <main data-daisy-kit-file-preview-output data-daisy-kit-file-preview-token="${token}"></main>
     <script src="${renderer}"></script>
-    <script src="${bootstrap}"></script>
 </body>
 </html>`;
 }

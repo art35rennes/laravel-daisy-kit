@@ -39,10 +39,6 @@
       "blueprint.css"
     ]
   },
-  "resources/js/file-preview-frame-bootstrap.js": {
-    "file": "file-preview-frame-bootstrap.js",
-    "src": "resources/js/file-preview-frame-bootstrap.js"
-  },
   "resources/js/file-preview.js": {
     "file": "file-preview.js",
     "name": "file-preview",
@@ -56,7 +52,6 @@
       "file-preview.css"
     ],
     "assets": [
-      "file-preview-frame-bootstrap.js",
       "file-preview-frame.js"
     ]
   },
