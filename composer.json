@@ -16,6 +16,7 @@
     },
     "require-dev": {
         "larastan/larastan": "^3.9",
+        "laravel/boost": "^2.6",
         "laravel/framework": "^13.0",
         "laravel/pint": "^1.29",
         "livewire/livewire": "^4.0",
@@ -48,10 +49,10 @@
         "analyse": ["vendor/bin/phpstan analyse --memory-limit=1G"],
         "test:types": ["vendor/bin/pest --ci --no-tia --exclude-group=browser --type-coverage --min=100"],
         "test:unit": ["vendor/bin/pest --ci --no-tia --parallel --exclude-group=browser"],
-        "test:browser": ["npm run build:browser-assets", "vendor/bin/pest --ci --no-tia --group=browser"],
+        "test:browser": ["npm run build", "npm run build:browser-assets", "vendor/bin/pest --ci --no-tia --group=browser"],
         "test:full": ["@test:unit", "@test:browser"],
-        "test:tia": ["@build:workbench", "npm run build:browser-assets", "vendor/bin/pest --tia --baselined"],
-        "test:tia:fresh": ["@build:workbench", "npm run build:browser-assets", "vendor/bin/pest --tia --fresh"],
+        "test:tia": ["npm run build", "@build:workbench", "npm run build:browser-assets", "vendor/bin/pest --tia --baselined"],
+        "test:tia:fresh": ["npm run build", "@build:workbench", "npm run build:browser-assets", "vendor/bin/pest --tia --fresh"],
         "test": ["@analyse", "@lint:check", "@test:types", "@test:full"]
     },
     "extra": {

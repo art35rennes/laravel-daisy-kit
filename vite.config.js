@@ -8,6 +8,7 @@ const entries = {
     tree: resolve(import.meta.dirname, 'resources/js/tree.js'),
     blueprint: resolve(import.meta.dirname, 'resources/js/blueprint.js'),
     'file-preview': resolve(import.meta.dirname, 'resources/js/file-preview.js'),
+    'file-preview-frame-bootstrap': resolve(import.meta.dirname, 'resources/js/file-preview-frame-bootstrap.js'),
     map: resolve(import.meta.dirname, 'resources/js/map.js'),
 };
 

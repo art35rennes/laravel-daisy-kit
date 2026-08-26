@@ -21,3 +21,18 @@ introduce globals, inline handlers/styles/scripts, or cross-module implicit impo
 - Keep `dist/` as intentionally tracked runtime output; do not track `node_modules` or
   Workbench build artefacts.
 - Record changes to the public contract in `docs/decisions/` before implementation.
+
+## Agent resources
+
+- The package ships concise Laravel Boost resources in `resources/boost/`. Keep the
+  guideline foundational and place detailed package instructions only in its on-demand
+  skill; do not copy Laravel's generated guidance into this repository.
+- In a consuming Laravel application with Boost 2.6+, install positive capabilities with
+  `php artisan boost:install --guidelines --skills --mcp`, then use
+  `php artisan boost:update --discover` after adding or updating packages. These are host
+  commands, not package-root commands.
+- Boost-generated agent outputs and caches (`.ai/`, `.agents/`, `.codex/`, `boost.json`,
+  and `CLAUDE.md`) are local state. Version the package-owned sources above and this
+  repository convention file instead.
+- When Boost exposes `laravel-best-practices`, activate it for Laravel PHP work; this
+  repository-specific skill complements it and does not restate generic Laravel rules.

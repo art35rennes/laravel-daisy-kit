@@ -4,7 +4,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
+        "build": "vite build && vite build --config vite.file-preview-frame.config.js",
         "build:workbench-assets": "vite build --config workbench/vite.config.js",
         "build:browser-assets": "vite build --config workbench/vite.config.js --outDir ../vendor/orchestra/testbench-core/laravel/public/build",
         "test:js": "vitest run --coverage",

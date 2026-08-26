@@ -52,3 +52,25 @@ it('requires PHP 8.4 and keeps Livewire optional', function (): void {
         ->and($composer['require'])->not->toHaveKey('livewire/livewire')
         ->and($composer['suggest'])->toHaveKey('livewire/livewire');
 });
+
+it('ships concise Laravel Boost resources for package consumers', function (): void {
+    $guideline = (string) file_get_contents(packagePath('resources/boost/guidelines/core.blade.php'));
+    $skill = (string) file_get_contents(packagePath('resources/boost/skills/laravel-daisy-kit-development/SKILL.md'));
+
+    expect($guideline)
+        ->toContain('Laravel Daisy Kit')
+        ->toContain('PHP 8.4')
+        ->toContain('Laravel 13')
+        ->toContain('x-daisy-kit::forms.viewer')
+        ->toContain('`mount(root)`, `mountAll(scope = document)`, and `unmount(root)`')
+        ->toContain('daisy-kit:{module}:*')
+        ->toContain('CSP');
+
+    expect($skill)
+        ->toStartWith("---\nname: laravel-daisy-kit-development\n")
+        ->toContain('DaisyUI and Tailwind CSS')
+        ->toContain('Pest 5')
+        ->toContain('Test Impact Analysis')
+        ->toContain('laravel-best-practices')
+        ->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|codemirror|trix|gridstack|vendor:publish/i');
+});

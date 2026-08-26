@@ -7,6 +7,10 @@
     "file": "chunks/rolldown-runtime-BHe-jwch.js",
     "name": "rolldown-runtime"
   },
+  "resources/file-preview-frame.html": {
+    "file": "file-preview-frame.html",
+    "src": "resources/file-preview-frame.html"
+  },
   "resources/js/blueprint.js": {
     "file": "blueprint.js",
     "name": "blueprint",
@@ -19,17 +23,25 @@
       "blueprint.css"
     ]
   },
+  "resources/js/file-preview-frame-bootstrap.js": {
+    "file": "file-preview-frame-bootstrap.js",
+    "name": "file-preview-frame-bootstrap",
+    "src": "resources/js/file-preview-frame-bootstrap.js",
+    "isEntry": true
+  },
   "resources/js/file-preview.js": {
     "file": "file-preview.js",
     "name": "file-preview",
     "src": "resources/js/file-preview.js",
     "isEntry": true,
     "imports": [
-      "_rolldown-runtime-BHe-jwch.js",
       "_mountable-D1lQW1nF.js"
     ],
     "css": [
       "file-preview.css"
+    ],
+    "assets": [
+      "file-preview-frame.html"
     ]
   },
   "resources/js/forms/builder.js": {

@@ -67,6 +67,22 @@ racing that server while recording every test in the graph. Both TIA commands re
 Testbench Workbench before testing, so CI never relies on generated local state. CI records a
 fresh, complete baseline artifact. `composer test:full` remains the cache-independent release gate.
 
+## AI agent resources
+
+This package ships concise, distributable Laravel Boost guidance for consuming applications:
+`resources/boost/guidelines/core.blade.php` is loaded as foundational context and
+`resources/boost/skills/laravel-daisy-kit-development/` is an on-demand package skill.
+With Laravel Boost 2.6+ installed in the consuming application, run:
+
+```bash
+php artisan boost:install --guidelines --skills --mcp
+php artisan boost:update --discover
+```
+
+Boost's generated agent files are host-local state; this repository versions only the package
+resources and its own [`AGENTS.md`](AGENTS.md) conventions. The package skill complements the
+official `laravel-best-practices` skill when Boost makes it available.
+
 ## Status
 
 v5 is under active alpha validation. Existing v4 applications should remain on
