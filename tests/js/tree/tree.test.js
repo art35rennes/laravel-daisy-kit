@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount, mountAll, unmount } from '../../../resources/js/tree.js';
 
 function treeMarkup(configuration) {
@@ -12,6 +12,31 @@ function treeMarkup(configuration) {
 }
 
 describe('tree module', () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it('loads a lazy branch from its endpoint and keeps arrow-key navigation', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+            items: [{ id: 'api', label: 'API reference' }],
+        }), { headers: { 'content-type': 'application/json' } })));
+        document.body.innerHTML = treeMarkup({
+            items: [{ id: 'docs', label: 'Documentation', source: '/tree/docs' }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="tree"]');
+
+        mount(root);
+        const docs = root.querySelector('[data-daisy-kit-tree-node="docs"]');
+        expect(docs.getAttribute('aria-expanded')).toBe('false');
+        docs.focus();
+        docs.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' }));
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+        await vi.waitFor(() => expect(root.querySelector('[data-daisy-kit-tree-node="api"]')).not.toBeNull());
+        root.querySelector('[data-daisy-kit-tree-node="docs"]').dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' }));
+
+        expect(fetch).toHaveBeenCalledOnce();
+        expect(document.activeElement).toBe(root.querySelector('[data-daisy-kit-tree-node="api"]'));
+        expect(root.dataset.daisyKitState).toBe('ready');
+    });
+
     it('propagates multiple selection, exposes an indeterminate parent, and binds selected IDs', () => {
         document.body.innerHTML = treeMarkup({
             multiple: true,

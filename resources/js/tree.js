@@ -26,11 +26,22 @@ function normalizeItems(items, usedIds = new Set(), trail = []) {
 
         usedIds.add(id);
 
+        let source = null;
+        if (typeof item.source === 'string' && item.source !== '') {
+            try {
+                const url = new URL(item.source, window.location.href);
+                if (['http:', 'https:'].includes(url.protocol)) source = url;
+            } catch {
+                // Invalid lazy endpoints are treated as absent configuration.
+            }
+        }
+
         return [{
             children: normalizeItems(item.children, usedIds, [...trail, index]),
             expanded: item.expanded === true,
             id,
             label: typeof item.label === 'string' && item.label !== '' ? item.label : id,
+            source,
         }];
     });
 }
@@ -68,6 +79,7 @@ function initialize(root, configuration) {
     const itemsById = new Map();
     const buttonsById = new Map();
     const expandedIds = new Set();
+    const loadingIds = new Set();
     const selectedIds = new Set();
     let selectedId = null;
     let searchQuery = '';
@@ -100,7 +112,8 @@ function initialize(root, configuration) {
 
     function index(itemsToIndex, parentId = null) {
         itemsToIndex.forEach((item) => {
-            itemsById.set(item.id, { ...item, parentId });
+            item.parentId = parentId;
+            itemsById.set(item.id, item);
 
             if (item.expanded) {
                 expandedIds.add(item.id);
@@ -116,7 +129,7 @@ function initialize(root, configuration) {
         itemsToRender.forEach((item) => {
             const listItem = document.createElement('li');
             const button = document.createElement('button');
-            const hasChildren = item.children.length > 0;
+            const hasChildren = item.children.length > 0 || item.source !== null;
 
             listItem.role = 'none';
             button.dataset.daisyKitTreeNode = item.id;
@@ -283,7 +296,7 @@ function initialize(root, configuration) {
     function setExpanded(id, expanded) {
         const item = itemsById.get(id);
 
-        if (!item || item.children.length === 0 || expandedIds.has(id) === expanded) {
+        if (!item || (item.children.length === 0 && item.source === null) || expandedIds.has(id) === expanded) {
             return;
         }
 
@@ -296,6 +309,33 @@ function initialize(root, configuration) {
         applyVisibility(items);
         persist();
         emit(root, expanded ? 'expanded' : 'collapsed', { id: item.id, label: item.label });
+    }
+
+    async function loadChildren(id) {
+        const item = itemsById.get(id);
+
+        if (!item?.source || loadingIds.has(id) || item.children.length > 0) return;
+
+        loadingIds.add(id);
+        root.setAttribute('aria-busy', 'true');
+        try {
+            const response = await fetch(item.source, { credentials: 'same-origin' });
+            const payload = await response.json();
+            if (!response.ok || !payload || !Array.isArray(payload.items)) throw new Error('Invalid lazy tree response.');
+
+            item.children = normalizeItems(payload.items, new Set(itemsById.keys()), [item.id]);
+            index(item.children, item.id);
+            expandedIds.add(id);
+            treeRoot.replaceChildren(renderItems(items));
+            applyVisibility(items);
+            persist();
+        } catch {
+            updateStatus(root, 'The tree branch could not be loaded.');
+            emit(root, 'error', { reason: 'lazy-source-unavailable' });
+        } finally {
+            loadingIds.delete(id);
+            root.setAttribute('aria-busy', 'false');
+        }
     }
 
     function onClick(event) {
@@ -334,6 +374,12 @@ function initialize(root, configuration) {
 
         if (event.key === 'ArrowRight' && item) {
             event.preventDefault();
+
+            if (item.children.length === 0 && item.source !== null) {
+                void loadChildren(item.id);
+
+                return;
+            }
 
             if (item.children.length > 0 && !expandedIds.has(item.id)) {
                 setExpanded(item.id, true);
