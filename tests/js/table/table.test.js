@@ -79,6 +79,22 @@ describe('table module', () => {
         expect(root.querySelector('tbody td').textContent).toBe('Alpha');
     });
 
+    it('lets users reveal a configured hidden column without affecting other columns', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [{ id: 'name', label: 'Name' }, { id: 'internal', label: 'Internal', visible: false }],
+            rows: [{ internal: 'private', name: 'Alpha' }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+        expect(root.querySelector('tbody').textContent).not.toContain('private');
+        const control = root.querySelector('[data-daisy-kit-table-column-visibility="internal"]');
+        control.checked = true;
+        control.dispatchEvent(new Event('change'));
+
+        expect(root.querySelector('tbody').textContent).toContain('private');
+    });
+
     it('sorts, filters, and reports state changes without global state', () => {
         document.body.innerHTML = tableMarkup({
             columns: [{ id: 'name', label: 'Name' }],

@@ -48,6 +48,7 @@ function normalizeColumns(columns) {
             meta: { filterOptions, filterType },
             header: label,
             id,
+            initialVisible: column.visible !== false,
         }];
     });
 }
@@ -132,6 +133,7 @@ function initialize(root, configuration) {
     const state = {
         columnPinning: { left: [], right: [] },
         columnFilters: [],
+        columnVisibility: Object.fromEntries(normalizeColumns(configuration.columns).map((column) => [column.id, column.initialVisible])),
         globalFilter: '',
         pagination: { pageIndex: 0, pageSize: normalizePageSize(configuration.pageSize) },
         sorting: [],
@@ -160,6 +162,10 @@ function initialize(root, configuration) {
             state.pagination.pageIndex = 0;
             render();
             emit(root, 'filtered', { filters: state.columnFilters });
+        },
+        onColumnVisibilityChange: (updater) => {
+            state.columnVisibility = functionalUpdate(updater, state.columnVisibility);
+            render();
         },
         onPaginationChange: (updater) => {
             state.pagination = functionalUpdate(updater, state.pagination);
@@ -195,6 +201,25 @@ function initialize(root, configuration) {
 
         head.replaceChildren();
         body.replaceChildren();
+        let visibilityControls = content.querySelector('[data-daisy-kit-table-column-controls]');
+        if (!visibilityControls) {
+            visibilityControls = document.createElement('fieldset');
+            visibilityControls.setAttribute('data-daisy-kit-table-column-controls', '');
+            const legend = document.createElement('legend');
+            legend.textContent = 'Columns';
+            visibilityControls.append(legend);
+            tableElement.parentElement.insertAdjacentElement('beforebegin', visibilityControls);
+        }
+        visibilityControls.replaceChildren(...[...table.getAllLeafColumns()].flatMap((column) => {
+            const label = document.createElement('label');
+            const control = document.createElement('input');
+            control.checked = column.getIsVisible();
+            control.dataset.daisyKitTableColumnVisibility = column.id;
+            control.type = 'checkbox';
+            control.addEventListener('change', () => column.toggleVisibility(control.checked));
+            label.append(control, document.createTextNode(String(column.columnDef.header ?? column.id)));
+            return [label];
+        }));
 
         const headerRow = document.createElement('tr');
 
