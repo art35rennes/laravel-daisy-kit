@@ -15,7 +15,7 @@
             </div>
         </header>
 
-        <section aria-labelledby="forms-viewer-heading">
+        <section class="min-w-0" aria-labelledby="forms-viewer-heading">
             <h2 id="forms-viewer-heading">Forms Viewer</h2>
             <x-daisy-kit::forms.viewer
                 :schema="[
@@ -30,7 +30,7 @@
             />
         </section>
 
-        <section aria-labelledby="forms-builder-heading">
+        <section class="min-w-0" aria-labelledby="forms-builder-heading">
             <h2 id="forms-builder-heading">Forms Builder</h2>
             <x-daisy-kit::forms.builder
                 :schema="['fields' => [['name' => 'email', 'label' => 'Email address', 'type' => 'email', 'rules' => ['required', 'email']]]]"
@@ -38,7 +38,7 @@
             />
         </section>
 
-        <section aria-labelledby="table-heading">
+        <section class="min-w-0" aria-labelledby="table-heading">
             <h2 id="table-heading">Table</h2>
             <x-daisy-kit::table
                 :columns="[
@@ -53,7 +53,7 @@
             />
         </section>
 
-        <section aria-labelledby="tree-heading">
+        <section class="min-w-0" aria-labelledby="tree-heading">
             <h2 id="tree-heading">Tree</h2>
             <x-daisy-kit::tree
                 :items="[
@@ -69,7 +69,7 @@
             />
         </section>
 
-        <section aria-labelledby="blueprint-heading">
+        <section class="min-w-0" aria-labelledby="blueprint-heading">
             <h2 id="blueprint-heading">Blueprint</h2>
             <x-daisy-kit::blueprint
                 :nodes="[
@@ -84,7 +84,7 @@
             />
         </section>
 
-        <section aria-labelledby="file-preview-heading">
+        <section class="min-w-0" aria-labelledby="file-preview-heading">
             <h2 id="file-preview-heading">File Preview</h2>
             <x-daisy-kit::file-preview
                 src="/_daisy-kit-test/files/preview.txt"
@@ -94,7 +94,7 @@
             />
         </section>
 
-        <section aria-labelledby="map-heading">
+        <section class="min-w-0" aria-labelledby="map-heading">
             <h2 id="map-heading">Map</h2>
             <x-daisy-kit::map
                 :drawing="true"

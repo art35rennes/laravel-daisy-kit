@@ -2,6 +2,11 @@
     display: none;
 }
 
+[data-daisy-kit-module],
+[data-daisy-kit-module] [data-daisy-kit-content] {
+    min-inline-size: 0;
+}
+
 [data-daisy-kit-module][data-daisy-kit-state='error'] [data-daisy-kit-content] {
     display: none;
 }

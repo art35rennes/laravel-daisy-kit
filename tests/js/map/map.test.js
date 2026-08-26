@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mergeIconOptions } = vi.hoisted(() => ({ mergeIconOptions: vi.fn() }));
+const { leafletMap, mergeIconOptions } = vi.hoisted(() => ({ leafletMap: vi.fn(), mergeIconOptions: vi.fn() }));
 
 const map = {
     fitBounds: vi.fn(),
+    invalidateSize: vi.fn(),
     on: vi.fn(),
     off: vi.fn(),
     remove: vi.fn(),
@@ -26,7 +27,7 @@ vi.mock('leaflet', () => ({
     default: {
         Icon: { Default: { mergeOptions: mergeIconOptions } },
         geoJSON: vi.fn(() => createLayer()),
-        map: vi.fn(() => map),
+        map: leafletMap,
         marker: vi.fn(() => {
             const marker = { addTo: vi.fn(() => marker), off: vi.fn(), on: vi.fn(), remove: vi.fn() };
             markers.push(marker);
@@ -104,10 +105,13 @@ describe('map entry', () => {
         wmsLayers.splice(0);
         markers.splice(0);
         map.fitBounds.mockClear();
+        map.invalidateSize.mockClear();
         map.remove.mockClear();
         map.setView.mockClear();
         map.on.mockClear();
         map.off.mockClear();
+        leafletMap.mockClear();
+        leafletMap.mockImplementation(() => map);
     });
 
     it('configures Leaflet marker assets through statically imported Vite URLs', () => {
@@ -133,6 +137,34 @@ describe('map entry', () => {
         unmount(element);
 
         expect(map.remove).toHaveBeenCalledOnce();
+    });
+
+    it('uses a positive-size observer instead of Leaflet resize animation', () => {
+        let resizeCallback;
+        const observe = vi.fn();
+        const disconnect = vi.fn();
+        vi.stubGlobal('ResizeObserver', class {
+            constructor(callback) { resizeCallback = callback; }
+            disconnect = disconnect;
+            observe = observe;
+        });
+        const element = root({ geojson: { type: 'FeatureCollection', features: [] } });
+        const canvas = element.querySelector('[data-daisy-kit-map-canvas]');
+        Object.defineProperties(canvas, {
+            clientHeight: { configurable: true, value: 240 },
+            clientWidth: { configurable: true, value: 320 },
+        });
+
+        mount(element);
+        resizeCallback();
+
+        expect(map.invalidateSize).toHaveBeenCalledWith({ animate: false, pan: false });
+        expect(vi.mocked(map.setView)).toHaveBeenCalled();
+        expect(leafletMap.mock.calls.at(-1)?.[1]).toMatchObject({ trackResize: false });
+
+        unmount(element);
+
+        expect(disconnect).toHaveBeenCalledOnce();
     });
 
     it('shows an empty state without data or drawing', () => {

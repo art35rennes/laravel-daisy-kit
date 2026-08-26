@@ -223,10 +223,21 @@ function initializeMap(root, configuration) {
     }
 
     empty.hidden = true;
-    const map = L.map(canvas, { attributionControl: true, zoomControl: true }).setView(
+    // Leaflet's window-resize animation can calculate a transient zero-sized
+    // container during responsive reflow. Own resize invalidation so it only
+    // runs once the canvas has a measurable box.
+    const map = L.map(canvas, { attributionControl: true, trackResize: false, zoomControl: true }).setView(
         validCenter(configuration.center),
         Number.isFinite(configuration.zoom) ? Number(configuration.zoom) : 12,
     );
+    const resizeObserver = typeof ResizeObserver === 'function'
+        ? new ResizeObserver(() => {
+            if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
+                map.invalidateSize({ animate: false, pan: false });
+            }
+        })
+        : null;
+    resizeObserver?.observe(canvas);
     const dataLayers = [];
     const markerLayers = [];
     let tileLayer = null;
@@ -520,6 +531,7 @@ function initializeMap(root, configuration) {
         redoControl?.removeEventListener('click', onRedo);
         geolocate?.removeEventListener('click', onGeolocate);
         map.off?.('click', onMapClick);
+        resizeObserver?.disconnect();
 
         if (drawing && onFinish) {
             drawing.off('finish', onFinish);

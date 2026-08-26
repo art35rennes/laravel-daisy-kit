@@ -37,6 +37,10 @@
     resize: vertical;
 }
 
+[data-daisy-kit-module="forms-builder"] [data-daisy-kit-builder-export] {
+    overflow-wrap: anywhere;
+}
+
 @media (min-width: 48rem) {
     [data-daisy-kit-module="forms-builder"] .daisy-kit-forms-builder-livewire__workspace {
         grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.8fr);
