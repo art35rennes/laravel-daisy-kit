@@ -258,8 +258,10 @@ function initialize(root, configuration) {
     const expandedRowIds = new Set();
     const detailDialogs = new Set();
     let abortController = null;
+    const editAbortControllers = new Set();
     let editing = null;
     let requestSerial = 0;
+    let active = true;
     let rows = normalizeRows(configuration.rows);
     let total = rows.length;
     const state = {
@@ -377,6 +379,11 @@ function initialize(root, configuration) {
             value,
         };
         let nextRow = { ...originalRow, [column.columnDef.accessorKey]: value };
+        const editAbortController = editable?.endpoint ? new AbortController() : null;
+
+        if (editAbortController) {
+            editAbortControllers.add(editAbortController);
+        }
 
         try {
             if (editable?.endpoint) {
@@ -388,6 +395,7 @@ function initialize(root, configuration) {
                     credentials: 'same-origin',
                     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
                     method: editable.method,
+                    signal: editAbortController.signal,
                 });
 
                 if (!response.ok) {
@@ -403,13 +411,19 @@ function initialize(root, configuration) {
                 nextRow = { ...nextRow, ...responsePayload.row };
             }
 
+            if (!active) return;
             updateRow(row.id, nextRow);
             editing = null;
             render();
             emit(root, 'edited', { column: column.id, row: nextRow, rowId: row.id, value });
         } catch (error) {
+            if (!active || (error instanceof DOMException && error.name === 'AbortError')) return;
             updateStatus(root, error instanceof Error ? error.message : 'The table edit could not be saved.');
             emit(root, 'error', { column: column.id, reason: 'edit-failed', rowId: row.id });
+        } finally {
+            if (editAbortController) {
+                editAbortControllers.delete(editAbortController);
+            }
         }
     }
 
@@ -801,10 +815,13 @@ function initialize(root, configuration) {
     requestRows();
 
     return () => {
+        active = false;
         filter.removeEventListener('input', onFilterInput);
         previousButton.removeEventListener('click', onPreviousPage);
         nextButton.removeEventListener('click', onNextPage);
         abortController?.abort();
+        editAbortControllers.forEach((editAbortController) => editAbortController.abort());
+        editAbortControllers.clear();
         requestSerial += 1;
         detailDialogs.forEach((dialog) => dialog.remove());
         detailDialogs.clear();

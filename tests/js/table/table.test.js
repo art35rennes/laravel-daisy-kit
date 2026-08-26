@@ -15,6 +15,16 @@ function tableMarkup(configuration) {
     `;
 }
 
+function deferred() {
+    let resolve;
+
+    const promise = new Promise((resolvePromise) => {
+        resolve = resolvePromise;
+    });
+
+    return { promise, resolve };
+}
+
 describe('table module', () => {
     afterEach(() => {
         vi.restoreAllMocks();
@@ -207,6 +217,38 @@ describe('table module', () => {
             rowId: 'a',
             value: 'Approved',
         }]);
+    });
+
+    it('aborts and ignores a pending remote edit after its table unmounts', async () => {
+        const response = deferred();
+        const fetch = vi.fn().mockReturnValue(response.promise);
+        vi.stubGlobal('fetch', fetch);
+        document.body.innerHTML = tableMarkup({
+            columns: [{ id: 'name', label: 'Name' }],
+            editable: { columns: ['name'], endpoint: '/api/people/{rowId}', method: 'PATCH' },
+            rows: [{ id: 'a', name: 'Alpha' }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+        const edits = [];
+        root.addEventListener('daisy-kit:table:edited', (event) => edits.push(event.detail));
+
+        mount(root);
+        root.querySelector('[data-daisy-kit-table-edit="a:name"]').click();
+        const input = root.querySelector('[data-daisy-kit-table-edit-input="a:name"]');
+        input.value = 'Approved';
+        root.querySelector('[data-daisy-kit-table-edit-save="a:name"]').click();
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+
+        unmount(root);
+        response.resolve(new Response(JSON.stringify({ row: { id: 'a', name: 'Approved' } }), {
+            headers: { 'content-type': 'application/json' },
+        }));
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(fetch.mock.calls[0][1].signal.aborted).toBe(true);
+        expect(root.querySelector('tbody').textContent).not.toContain('Approved');
+        expect(edits).toEqual([]);
     });
 
     it('restores and writes an instance-scoped URL persistence contract without global table state', () => {

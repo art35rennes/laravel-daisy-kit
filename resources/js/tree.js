@@ -69,6 +69,7 @@ function initialize(root, configuration) {
         return;
     }
 
+    const initialAriaBusy = root.getAttribute('aria-busy');
     const initialMarkup = treeRoot.innerHTML;
     let items = normalizeItems(configuration.items);
     const initialItems = items;
@@ -89,12 +90,14 @@ function initialize(root, configuration) {
     const itemsById = new Map();
     const buttonsById = new Map();
     const expandedIds = new Set();
+    const lazyAbortControllers = new Map();
     const loadingIds = new Set();
     const selectedIds = new Set();
     let selectedId = null;
     let searchQuery = '';
     let searchAbortController = null;
     let searchTimer = null;
+    let active = true;
 
     function persistedState() {
         if (!persistenceKey) return null;
@@ -336,11 +339,14 @@ function initialize(root, configuration) {
 
         if (!item?.source || loadingIds.has(id) || item.children.length > 0) return;
 
+        const abortController = new AbortController();
         loadingIds.add(id);
+        lazyAbortControllers.set(id, abortController);
         root.setAttribute('aria-busy', 'true');
         try {
-            const response = await fetch(item.source, { credentials: 'same-origin' });
+            const response = await fetch(item.source, { credentials: 'same-origin', signal: abortController.signal });
             const payload = await response.json();
+            if (!active || lazyAbortControllers.get(id) !== abortController) return;
             if (!response.ok || !payload || !Array.isArray(payload.items)) throw new Error('Invalid lazy tree response.');
 
             item.children = normalizeItems(payload.items, new Set(itemsById.keys()), [item.id]);
@@ -349,12 +355,15 @@ function initialize(root, configuration) {
             treeRoot.replaceChildren(renderItems(items));
             applyVisibility(items);
             persist();
-        } catch {
+        } catch (error) {
+            if (!active || lazyAbortControllers.get(id) !== abortController || (error instanceof DOMException && error.name === 'AbortError')) return;
             updateStatus(root, 'The tree branch could not be loaded.');
             emit(root, 'error', { reason: 'lazy-source-unavailable' });
         } finally {
+            if (lazyAbortControllers.get(id) !== abortController) return;
+            lazyAbortControllers.delete(id);
             loadingIds.delete(id);
-            root.setAttribute('aria-busy', 'false');
+            if (active) root.setAttribute('aria-busy', 'false');
         }
     }
 
@@ -507,11 +516,19 @@ function initialize(root, configuration) {
     searchInput?.addEventListener('input', onSearch);
 
     return () => {
+        active = false;
         treeRoot.removeEventListener('click', onClick);
         treeRoot.removeEventListener('keydown', onKeyDown);
         searchInput?.removeEventListener('input', onSearch);
         if (searchTimer !== null) clearTimeout(searchTimer);
         searchAbortController?.abort();
+        lazyAbortControllers.forEach((abortController) => abortController.abort());
+        lazyAbortControllers.clear();
+        if (initialAriaBusy === null) {
+            root.removeAttribute('aria-busy');
+        } else {
+            root.setAttribute('aria-busy', initialAriaBusy);
+        }
         treeRoot.innerHTML = initialMarkup;
     };
 }

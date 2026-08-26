@@ -11,6 +11,16 @@ function treeMarkup(configuration) {
     `;
 }
 
+function deferred() {
+    let resolve;
+
+    const promise = new Promise((resolvePromise) => {
+        resolve = resolvePromise;
+    });
+
+    return { promise, resolve };
+}
+
 describe('tree module', () => {
     afterEach(() => vi.restoreAllMocks());
 
@@ -35,6 +45,31 @@ describe('tree module', () => {
         expect(fetch).toHaveBeenCalledOnce();
         expect(document.activeElement).toBe(root.querySelector('[data-daisy-kit-tree-node="api"]'));
         expect(root.dataset.daisyKitState).toBe('ready');
+    });
+
+    it('aborts and ignores a lazy branch response after its tree unmounts', async () => {
+        const response = deferred();
+        const fetch = vi.fn().mockReturnValue(response.promise);
+        vi.stubGlobal('fetch', fetch);
+        document.body.innerHTML = treeMarkup({
+            items: [{ id: 'docs', label: 'Documentation', source: '/tree/docs' }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="tree"]');
+
+        mount(root);
+        root.querySelector('[data-daisy-kit-tree-node="docs"]').dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' }));
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+
+        unmount(root);
+        response.resolve(new Response(JSON.stringify({ items: [{ id: 'api', label: 'API reference' }] }), {
+            headers: { 'content-type': 'application/json' },
+        }));
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(fetch.mock.calls[0][1].signal.aborted).toBe(true);
+        expect(root.querySelector('[data-daisy-kit-tree-node="api"]')).toBeNull();
+        expect(root.hasAttribute('aria-busy')).toBe(false);
     });
 
     it('debounces remote search results and expands their matching path', async () => {
