@@ -8,6 +8,7 @@ const map = {
 const createdLayers = [];
 const drawings = [];
 const tileLayers = [];
+const wmsLayers = [];
 
 function createLayer() {
     const layer = { addTo: vi.fn(() => layer), getBounds: vi.fn(() => ({ isValid: () => true })), remove: vi.fn() };
@@ -20,11 +21,18 @@ vi.mock('leaflet', () => ({
     default: {
         geoJSON: vi.fn(() => createLayer()),
         map: vi.fn(() => map),
-        tileLayer: vi.fn(() => {
+        tileLayer: Object.assign(vi.fn(() => {
             const layer = { addTo: vi.fn(() => layer), remove: vi.fn() };
             tileLayers.push(layer);
 
             return layer;
+        }), {
+            wms: vi.fn(() => {
+                const layer = { addTo: vi.fn(() => layer), remove: vi.fn() };
+                wmsLayers.push(layer);
+
+                return layer;
+            }),
         }),
     },
 }));
@@ -38,12 +46,16 @@ vi.mock('terra-draw', () => ({
         }));
         off = vi.fn();
         on = vi.fn((event, handler) => { this.handlers[event] = handler; });
+        redo = vi.fn(() => true);
         setMode = vi.fn();
         start = vi.fn();
         stop = vi.fn();
+        undo = vi.fn(() => true);
     },
     TerraDrawLineStringMode: class {},
     TerraDrawPolygonMode: class {},
+    TerraDrawSelectMode: class {},
+    TerraDrawSessionUndoRedo: class {},
 }));
 vi.mock('terra-draw-leaflet-adapter', () => ({ TerraDrawLeafletAdapter: class {} }));
 
@@ -60,7 +72,7 @@ function root(configuration) {
                 <input data-daisy-kit-map-value type="hidden">
                 <fieldset data-daisy-kit-map-layers hidden><legend>Layers</legend></fieldset>
                 <fieldset data-daisy-kit-map-basemaps hidden><legend>Basemaps</legend></fieldset>
-                <fieldset data-daisy-kit-map-tools><button data-daisy-kit-map-mode="linestring" type="button">Draw line</button><button data-daisy-kit-map-mode="polygon" type="button">Draw area</button></fieldset>
+                <fieldset data-daisy-kit-map-tools><button data-daisy-kit-map-mode="linestring" type="button">Draw line</button><button data-daisy-kit-map-mode="polygon" type="button">Draw area</button><button data-daisy-kit-map-mode="select" type="button">Select drawing</button><button data-daisy-kit-map-history="undo" disabled type="button">Undo</button><button data-daisy-kit-map-history="redo" disabled type="button">Redo</button></fieldset>
                 <button data-daisy-kit-map-export disabled type="button">Export drawing</button>
             </div>
             <script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script>
@@ -75,6 +87,7 @@ describe('map entry', () => {
         createdLayers.splice(0);
         drawings.splice(0);
         tileLayers.splice(0);
+        wmsLayers.splice(0);
         map.fitBounds.mockClear();
         map.remove.mockClear();
         map.setView.mockClear();
@@ -119,9 +132,12 @@ describe('map entry', () => {
                 { id: 'light', label: 'Light', selected: true, url: 'https://tiles.example.test/light/{z}/{x}/{y}.png' },
                 { id: 'dark', label: 'Dark', url: 'https://tiles.example.test/dark/{z}/{x}/{y}.png' },
             ],
+            wms: [{ id: 'zoning', label: 'Zoning', layers: 'city:zoning', url: 'https://maps.example.test/wms' }],
         });
         const layerEvents = [];
+        const selectionEvents = [];
         element.addEventListener('daisy-kit:map:layer', (event) => layerEvents.push(event.detail));
+        element.addEventListener('daisy-kit:map:select', (event) => selectionEvents.push(event.detail));
 
         mount(element);
         const layer = element.querySelector('[data-daisy-kit-map-layer="districts"]');
@@ -129,16 +145,27 @@ describe('map entry', () => {
         layer.dispatchEvent(new Event('change', { bubbles: true }));
         element.querySelector('[data-daisy-kit-map-mode="polygon"]').click();
         drawings[0].handlers.finish('shape');
+        drawings[0].handlers.history({ redoStackSize: 0, undoStackSize: 1 });
+        element.querySelector('[data-daisy-kit-map-history="undo"]').click();
+        drawings[0].handlers.select('shape');
         element.querySelector('[data-daisy-kit-map-export]').click();
         const dark = element.querySelector('[data-daisy-kit-map-basemap="dark"]');
         dark.checked = true;
         dark.dispatchEvent(new Event('change', { bubbles: true }));
+        const zoning = element.querySelector('[data-daisy-kit-map-wms="zoning"]');
+        zoning.checked = false;
+        zoning.dispatchEvent(new Event('change', { bubbles: true }));
 
         expect(layerEvents).toEqual([{ id: 'districts', visible: false }]);
         expect(createdLayers[0].remove).toHaveBeenCalledOnce();
         expect(element.querySelector('[data-daisy-kit-map-measurement]').textContent).toContain('m²');
+        expect(selectionEvents).toMatchObject([{ id: 'shape', measurement: expect.stringContaining('m²') }]);
         expect(element.querySelector('[data-daisy-kit-map-mode="polygon"]').getAttribute('aria-pressed')).toBe('true');
+        expect(drawings[0].undo).toHaveBeenCalledOnce();
+        expect(element.querySelector('[data-daisy-kit-map-history="undo"]').disabled).toBe(false);
         expect(tileLayers).toHaveLength(2);
+        expect(wmsLayers).toHaveLength(1);
+        expect(wmsLayers[0].remove).toHaveBeenCalledOnce();
         expect(dark.checked).toBe(true);
         expect(JSON.parse(element.querySelector('[data-daisy-kit-map-value]').value).features).toHaveLength(1);
     });

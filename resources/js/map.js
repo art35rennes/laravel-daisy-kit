@@ -1,7 +1,7 @@
 import area from '@turf/area';
 import length from '@turf/length';
 import L from 'leaflet';
-import { TerraDraw, TerraDrawLineStringMode, TerraDrawPolygonMode } from 'terra-draw';
+import { TerraDraw, TerraDrawLineStringMode, TerraDrawPolygonMode, TerraDrawSelectMode, TerraDrawSessionUndoRedo } from 'terra-draw';
 import { TerraDrawLeafletAdapter } from 'terra-draw-leaflet-adapter';
 
 import '../css/map.css';
@@ -84,6 +84,35 @@ function validBasemaps(value) {
     });
 }
 
+function validWmsOverlays(value) {
+    if (!Array.isArray(value)) return [];
+
+    const ids = new Set();
+
+    return value.flatMap((overlay) => {
+        if (!overlay || typeof overlay.id !== 'string' || overlay.id.length === 0 || ids.has(overlay.id) || typeof overlay.layers !== 'string' || overlay.layers.length === 0) return [];
+
+        try {
+            const url = new URL(overlay.url);
+
+            if (url.protocol !== 'https:') return [];
+        } catch {
+            return [];
+        }
+
+        ids.add(overlay.id);
+
+        return [{
+            attribution: typeof overlay.attribution === 'string' ? overlay.attribution : '',
+            id: overlay.id,
+            label: typeof overlay.label === 'string' && overlay.label.length > 0 ? overlay.label : overlay.id,
+            layers: overlay.layers,
+            url: overlay.url,
+            visible: overlay.visible !== false,
+        }];
+    });
+}
+
 function measurement(feature) {
     if (!feature?.geometry) {
         return null;
@@ -108,17 +137,20 @@ function initializeMap(root, configuration) {
     const layerTools = root.querySelector('[data-daisy-kit-map-layers]');
     const basemapTools = root.querySelector('[data-daisy-kit-map-basemaps]');
     const exportControl = root.querySelector('[data-daisy-kit-map-export]');
+    const undoControl = root.querySelector('[data-daisy-kit-map-history="undo"]');
+    const redoControl = root.querySelector('[data-daisy-kit-map-history="redo"]');
     const value = root.querySelector('[data-daisy-kit-map-value]');
     const geojson = validGeojson(configuration.geojson);
     const layers = validLayers(configuration.layers);
     const tileUrl = validTileUrl(configuration.tileUrl);
     const basemaps = validBasemaps(configuration.basemaps);
+    const wmsOverlays = validWmsOverlays(configuration.wms);
 
     if (!canvas || !empty || !output || !layerTools) {
         throw new Error('Map markup is incomplete.');
     }
 
-    if (!geojson && layers.length === 0 && basemaps.length === 0 && !tileUrl && !configuration.drawing) {
+    if (!geojson && layers.length === 0 && basemaps.length === 0 && wmsOverlays.length === 0 && !tileUrl && !configuration.drawing) {
         empty.hidden = false;
         root.dataset.daisyKitState = 'empty';
         root.dispatchEvent(new CustomEvent('daisy-kit:map:empty', { bubbles: true }));
@@ -188,16 +220,39 @@ function initializeMap(root, configuration) {
 
         return { ...layer, control, leafletLayer };
     });
-    layerTools.hidden = configuredLayers.length === 0;
+    const configuredWms = wmsOverlays.map((overlay) => {
+        const leafletLayer = L.tileLayer.wms(overlay.url, {
+            attribution: overlay.attribution,
+            format: 'image/png',
+            layers: overlay.layers,
+            transparent: true,
+        });
+
+        if (overlay.visible) leafletLayer.addTo(map);
+
+        const control = document.createElement('input');
+        control.checked = overlay.visible;
+        control.setAttribute('data-daisy-kit-map-wms', overlay.id);
+        control.type = 'checkbox';
+        const label = document.createElement('label');
+        label.append(control, document.createTextNode(overlay.label));
+        layerTools.append(label);
+
+        return { ...overlay, control, leafletLayer };
+    });
+    layerTools.hidden = configuredLayers.length + configuredWms.length === 0;
 
     let drawing = null;
     let onFinish = null;
+    let onHistory = null;
+    let onSelect = null;
     const drawnFeatures = [];
 
     if (configuration.drawing) {
         drawing = new TerraDraw({
             adapter: new TerraDrawLeafletAdapter({ lib: L, map }),
-            modes: [new TerraDrawLineStringMode(), new TerraDrawPolygonMode()],
+            modes: [new TerraDrawLineStringMode(), new TerraDrawPolygonMode(), new TerraDrawSelectMode()],
+            undoRedo: { sessionLevel: new TerraDrawSessionUndoRedo() },
         });
         onFinish = (id, context) => {
             const feature = drawing.getSnapshotFeature(id) ?? context?.feature;
@@ -218,6 +273,19 @@ function initializeMap(root, configuration) {
             }));
         };
         drawing.on('finish', onFinish);
+        onHistory = ({ redoStackSize, undoStackSize }) => {
+            undoControl?.toggleAttribute('disabled', undoStackSize === 0);
+            redoControl?.toggleAttribute('disabled', redoStackSize === 0);
+        };
+        onSelect = (id) => {
+            const feature = drawing.getSnapshotFeature(id);
+            root.dispatchEvent(new CustomEvent('daisy-kit:map:select', {
+                bubbles: true,
+                detail: { feature, id, measurement: measurement(feature) },
+            }));
+        };
+        drawing.on('history', onHistory);
+        drawing.on('select', onSelect);
         drawing.start();
     }
 
@@ -247,6 +315,17 @@ function initializeMap(root, configuration) {
             detail: { collection, value: serialized },
         }));
     };
+    const applyHistory = (action) => {
+        if (!drawing) return;
+
+        const changed = action === 'undo' ? drawing.undo() : drawing.redo();
+
+        if (changed) {
+            root.dispatchEvent(new CustomEvent(`daisy-kit:map:${action}`, { bubbles: true }));
+        }
+    };
+    const onUndo = () => applyHistory('undo');
+    const onRedo = () => applyHistory('redo');
     const onLayerChange = (event) => {
         const control = event.target.closest('[data-daisy-kit-map-layer]');
 
@@ -284,11 +363,34 @@ function initializeMap(root, configuration) {
             detail: { id: next.id },
         }));
     };
+    const onWmsChange = (event) => {
+        const control = event.target.closest('[data-daisy-kit-map-wms]');
+
+        if (!(control instanceof HTMLInputElement)) return;
+
+        const overlay = configuredWms.find((candidate) => candidate.id === control.dataset.daisyKitMapWms);
+
+        if (!overlay) return;
+
+        if (control.checked) {
+            overlay.leafletLayer.addTo(map);
+        } else {
+            overlay.leafletLayer.remove();
+        }
+
+        root.dispatchEvent(new CustomEvent('daisy-kit:map:wms', {
+            bubbles: true,
+            detail: { id: overlay.id, visible: control.checked },
+        }));
+    };
 
     tools?.addEventListener('click', onToolClick);
     layerTools.addEventListener('change', onLayerChange);
+    layerTools.addEventListener('change', onWmsChange);
     basemapTools?.addEventListener('change', onBasemapChange);
     exportControl?.addEventListener('click', onExport);
+    undoControl?.addEventListener('click', onUndo);
+    redoControl?.addEventListener('click', onRedo);
 
     root.dataset.daisyKitState = 'ready';
     root.dispatchEvent(new CustomEvent('daisy-kit:map:ready', { bubbles: true }));
@@ -296,15 +398,21 @@ function initializeMap(root, configuration) {
     return () => {
         tools?.removeEventListener('click', onToolClick);
         layerTools.removeEventListener('change', onLayerChange);
+        layerTools.removeEventListener('change', onWmsChange);
         basemapTools?.removeEventListener('change', onBasemapChange);
         exportControl?.removeEventListener('click', onExport);
+        undoControl?.removeEventListener('click', onUndo);
+        redoControl?.removeEventListener('click', onRedo);
 
         if (drawing && onFinish) {
             drawing.off('finish', onFinish);
+            drawing.off('history', onHistory);
+            drawing.off('select', onSelect);
             drawing.stop();
         }
 
         dataLayers.forEach((layer) => layer.remove());
+        configuredWms.forEach((overlay) => overlay.leafletLayer.remove());
         tileLayer?.remove();
         configuredBasemaps.forEach((basemap) => basemap.leafletLayer.remove());
         layerTools.replaceChildren();

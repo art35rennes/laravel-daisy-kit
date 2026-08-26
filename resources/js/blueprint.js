@@ -4,6 +4,7 @@ import '../css/blueprint.css';
 import { createMountable } from './core/mountable.js';
 
 const svgNamespace = 'http://www.w3.org/2000/svg';
+const structuralHistory = new WeakMap();
 
 function createSvgElement(name, attributes = {}) {
     const element = document.createElementNS(svgNamespace, name);
@@ -71,6 +72,7 @@ function renderBlueprint(root, configuration) {
     graph.setGraph({ rankdir: 'LR', nodesep: 32, ranksep: 72, marginx: 16, marginy: 16 });
     graph.setDefaultEdgeLabel(() => ({}));
     const nodeIds = new Set(nodes.map((node) => node.id));
+    const edges = validEdges(configuration.edges, nodeIds).map((edge) => ({ ...edge }));
 
     nodes.forEach((node) => {
         graph.setNode(node.id, {
@@ -80,7 +82,7 @@ function renderBlueprint(root, configuration) {
         });
     });
 
-    validEdges(configuration.edges, nodeIds).forEach((edge, index) => {
+    edges.forEach((edge, index) => {
         graph.setEdge(edge.source, edge.target, { label: typeof edge.label === 'string' ? edge.label : '' }, String(index));
     });
 
@@ -129,18 +131,33 @@ function renderBlueprint(root, configuration) {
         return { control, group, id: nodeId, label };
     });
 
+    const arrange = document.createElement('button');
+    arrange.setAttribute('data-daisy-kit-blueprint-view', 'arrange');
+    arrange.type = 'button';
+    arrange.textContent = 'Arrange diagram';
+    controls.append(arrange);
+
+    const fit = document.createElement('button');
+    fit.setAttribute('data-daisy-kit-blueprint-view', 'fit');
+    fit.type = 'button';
+    fit.textContent = 'Fit diagram';
+    controls.append(fit);
+
     let selectedId = null;
-    const history = [];
-    let historyIndex = -1;
+    const restoredHistory = structuralHistory.get(root);
+    structuralHistory.delete(root);
+    const history = restoredHistory?.entries ?? [];
+    let historyIndex = restoredHistory?.index ?? -1;
     let editor = null;
     let valueEditor = null;
     let search = null;
+    let transitionTarget = null;
     let undo = null;
     let redo = null;
 
     const synchronizeValue = () => {
         if (value instanceof HTMLInputElement) {
-            value.value = JSON.stringify({ edges: validEdges(configuration.edges, nodeIds), nodes });
+            value.value = JSON.stringify({ edges, nodes });
         }
     };
 
@@ -150,8 +167,30 @@ function renderBlueprint(root, configuration) {
     };
 
     const applySnapshot = (snapshot, emitChange = true) => {
+        const nextNodes = validNodes(snapshot.nodes).map((node) => ({ ...node }));
+        const nextNodeIds = new Set(nextNodes.map((node) => node.id));
+        const nextEdges = validEdges(snapshot.edges, nextNodeIds).map((edge) => ({ ...edge }));
+        const changedStructure = (
+            nodes.length !== nextNodes.length
+            || nodes.some((node, index) => node.id !== nextNodes[index]?.id)
+            || JSON.stringify(edges) !== JSON.stringify(nextEdges)
+        );
+
+        if (changedStructure) {
+            const configurationNode = root.querySelector('[data-daisy-kit-config]');
+
+            if (configurationNode instanceof HTMLScriptElement) {
+                configurationNode.textContent = JSON.stringify({ ...configuration, edges: nextEdges, nodes: nextNodes });
+                structuralHistory.set(root, { entries: history, index: historyIndex });
+                module.unmount(root);
+                module.mount(root);
+            }
+
+            return true;
+        }
+
         nodes.forEach((node, index) => {
-            const next = snapshot[index] ?? {};
+            const next = nextNodes[index] ?? {};
             node.label = next.label ?? node.id;
             node.value = next.value;
             const rendered = renderedNodes.find((candidate) => candidate.id === node.id);
@@ -166,17 +205,19 @@ function renderBlueprint(root, configuration) {
         if (emitChange) {
             root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:change', {
                 bubbles: true,
-                detail: { value: value instanceof HTMLInputElement ? value.value : JSON.stringify({ edges: validEdges(configuration.edges, nodeIds), nodes }) },
+                detail: { value: value instanceof HTMLInputElement ? value.value : JSON.stringify({ edges, nodes }) },
             }));
         }
+
+        return false;
     };
 
     const remember = () => {
         history.splice(historyIndex + 1);
-        history.push(nodes.map((node) => ({
-            label: typeof node.label === 'string' ? node.label : node.id,
-            value: node.value,
-        })));
+        history.push({
+            edges: edges.map((edge) => ({ ...edge })),
+            nodes: nodes.map((node) => ({ ...node })),
+        });
         historyIndex = history.length - 1;
         synchronizeHistory();
     };
@@ -197,6 +238,16 @@ function renderBlueprint(root, configuration) {
             valueEditor.disabled = false;
             valueEditor.value = JSON.stringify(nodes.find((node) => node.id === nodeId)?.value ?? null);
         }
+        if (transitionTarget instanceof HTMLSelectElement) {
+            transitionTarget.replaceChildren();
+            nodes.filter((node) => node.id !== nodeId).forEach((node) => {
+                const option = document.createElement('option');
+                option.value = node.id;
+                option.textContent = node.label ?? node.id;
+                transitionTarget.append(option);
+            });
+            transitionTarget.disabled = transitionTarget.options.length === 0;
+        }
         root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:select', {
             bubbles: true,
             detail: { id: nodeId },
@@ -210,6 +261,23 @@ function renderBlueprint(root, configuration) {
         }
     };
     const onControlsClick = (event) => {
+        const view = event.target.closest('[data-daisy-kit-blueprint-view]')?.dataset.daisyKitBlueprintView;
+
+        if (view === 'arrange' || view === 'fit') {
+            canvas.setAttribute('viewBox', `0 0 ${graphOptions.width} ${graphOptions.height}`);
+
+            if (view === 'fit') {
+                canvas.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+            }
+
+            root.dispatchEvent(new CustomEvent(`daisy-kit:blueprint:${view}`, {
+                bubbles: true,
+                detail: { viewBox: canvas.getAttribute('viewBox') },
+            }));
+
+            return;
+        }
+
         const action = event.target.closest('[data-daisy-kit-blueprint-history]');
 
         if (action && history.length > 0) {
@@ -217,8 +285,11 @@ function renderBlueprint(root, configuration) {
 
             if (nextIndex >= 0 && nextIndex < history.length) {
                 historyIndex = nextIndex;
-                applySnapshot(history[historyIndex]);
-                synchronizeHistory();
+                const remounted = applySnapshot(history[historyIndex]);
+
+                if (!remounted) {
+                    synchronizeHistory();
+                }
             }
 
             return;
@@ -269,6 +340,60 @@ function renderBlueprint(root, configuration) {
             bubbles: true,
             detail: { query },
         }));
+    };
+    const persistStructure = () => {
+        const configurationNode = root.querySelector('[data-daisy-kit-config]');
+
+        if (!(configurationNode instanceof HTMLScriptElement)) return;
+
+        remember();
+        configurationNode.textContent = JSON.stringify({ ...configuration, edges, nodes });
+        root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:change', {
+            bubbles: true,
+            detail: { value: configurationNode.textContent },
+        }));
+        structuralHistory.set(root, { entries: history, index: historyIndex });
+        module.unmount(root);
+        module.mount(root);
+    };
+    const onStructureClick = (event) => {
+        const action = event.target.closest('[data-daisy-kit-blueprint-structure]')?.dataset.daisyKitBlueprintStructure;
+
+        if (!action) return;
+
+        if (action === 'add-node') {
+            let index = nodes.length + 1;
+            let id = `node-${index}`;
+
+            while (nodeIds.has(id)) {
+                index += 1;
+                id = `node-${index}`;
+            }
+
+            nodes.push({ id, label: `Node ${index}` });
+            nodeIds.add(id);
+            persistStructure();
+        }
+
+        if (action === 'remove-node' && selectedId) {
+            const index = nodes.findIndex((node) => node.id === selectedId);
+
+            if (index >= 0) {
+                nodes.splice(index, 1);
+                nodeIds.delete(selectedId);
+                edges.splice(0, edges.length, ...edges.filter((edge) => edge.source !== selectedId && edge.target !== selectedId));
+                persistStructure();
+            }
+        }
+
+        if (action === 'add-transition' && selectedId && transitionTarget instanceof HTMLSelectElement && transitionTarget.value !== '') {
+            const exists = edges.some((edge) => edge.source === selectedId && edge.target === transitionTarget.value);
+
+            if (!exists) {
+                edges.push({ source: selectedId, target: transitionTarget.value });
+                persistStructure();
+            }
+        }
     };
     const onKeydown = (event) => {
         const currentIndex = renderedNodes.findIndex(({ control }) => control === document.activeElement);
@@ -334,7 +459,36 @@ function renderBlueprint(root, configuration) {
         search.type = 'search';
         controls.append(search);
         search.addEventListener('input', onSearchInput);
-        remember();
+
+        const addNode = document.createElement('button');
+        addNode.setAttribute('data-daisy-kit-blueprint-structure', 'add-node');
+        addNode.type = 'button';
+        addNode.textContent = 'Add node';
+        controls.append(addNode);
+
+        const removeNode = document.createElement('button');
+        removeNode.setAttribute('data-daisy-kit-blueprint-structure', 'remove-node');
+        removeNode.type = 'button';
+        removeNode.textContent = 'Remove selected node';
+        controls.append(removeNode);
+
+        transitionTarget = document.createElement('select');
+        transitionTarget.disabled = true;
+        transitionTarget.setAttribute('aria-label', 'Transition target');
+        transitionTarget.setAttribute('data-daisy-kit-blueprint-transition-target', '');
+        controls.append(transitionTarget);
+
+        const addTransition = document.createElement('button');
+        addTransition.setAttribute('data-daisy-kit-blueprint-structure', 'add-transition');
+        addTransition.type = 'button';
+        addTransition.textContent = 'Add transition';
+        controls.append(addTransition);
+        controls.addEventListener('click', onStructureClick);
+        if (history.length === 0) {
+            remember();
+        } else {
+            synchronizeHistory();
+        }
     }
     synchronizeValue();
     root.dataset.daisyKitState = 'ready';
@@ -346,6 +500,7 @@ function renderBlueprint(root, configuration) {
         editor?.removeEventListener('change', onEditorChange);
         valueEditor?.removeEventListener('change', onValueChange);
         search?.removeEventListener('input', onSearchInput);
+        controls.removeEventListener('click', onStructureClick);
         controls.remove();
         canvas.replaceChildren();
     };

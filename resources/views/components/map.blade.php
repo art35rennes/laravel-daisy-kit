@@ -7,6 +7,7 @@
     'tileUrl' => null,
     'tileAttribution' => '',
     'basemaps' => [],
+    'wms' => [],
     'label' => 'Map',
 ])
 
@@ -32,6 +33,9 @@
                 <legend>Drawing tools</legend>
                 <button data-daisy-kit-map-mode="linestring" type="button">Draw line</button>
                 <button data-daisy-kit-map-mode="polygon" type="button">Draw area</button>
+                <button data-daisy-kit-map-mode="select" type="button">Select drawing</button>
+                <button data-daisy-kit-map-history="undo" disabled type="button">Undo</button>
+                <button data-daisy-kit-map-history="redo" disabled type="button">Redo</button>
                 <button data-daisy-kit-map-export disabled type="button">Export drawing</button>
             </fieldset>
         @endif
@@ -46,6 +50,7 @@
         'tileUrl' => $tileUrl,
         'tileAttribution' => $tileAttribution,
         'basemaps' => $basemaps,
+        'wms' => $wms,
         'label' => $label,
     ]) !!}</script>
 </section>

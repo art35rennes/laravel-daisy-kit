@@ -56,6 +56,26 @@ describe('blueprint entry', () => {
         expect(element.querySelector('[data-daisy-kit-empty]').hidden).toBe(false);
     });
 
+    it('keeps structural controls out of read-only blueprints while arranging and fitting the diagram', () => {
+        const element = root({
+            edges: [{ source: 'first', target: 'second' }],
+            nodes: [{ id: 'first', label: 'First' }, { id: 'second', label: 'Second' }],
+        });
+        const events = [];
+        element.addEventListener('daisy-kit:blueprint:arrange', (event) => events.push(event.type));
+        element.addEventListener('daisy-kit:blueprint:fit', (event) => events.push(event.type));
+
+        mount(element);
+        const canvas = element.querySelector('[data-daisy-kit-blueprint-canvas]');
+        element.querySelector('[data-daisy-kit-blueprint-view="arrange"]').click();
+        element.querySelector('[data-daisy-kit-blueprint-view="fit"]').click();
+
+        expect(element.querySelector('[data-daisy-kit-blueprint-structure]')).toBeNull();
+        expect(events).toEqual(['daisy-kit:blueprint:arrange', 'daisy-kit:blueprint:fit']);
+        expect(canvas.getAttribute('preserveAspectRatio')).toBe('xMidYMid meet');
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes).toHaveLength(2);
+    });
+
     it('edits labels with undo and redo while synchronizing hidden JSON', () => {
         const element = root({
             editable: true,
@@ -92,5 +112,24 @@ describe('blueprint entry', () => {
         search.dispatchEvent(new Event('input'));
         expect(element.querySelector('[data-node-id="first"]').hasAttribute('hidden')).toBe(true);
         expect(element.querySelector('[data-node-id="second"]').hasAttribute('hidden')).toBe(false);
+
+        search.value = '';
+        search.dispatchEvent(new Event('input'));
+        element.querySelector('[data-daisy-kit-blueprint-structure="add-node"]').click();
+        expect(element.querySelectorAll('[data-daisy-kit-blueprint-node-control]')).toHaveLength(3);
+
+        element.querySelector('[data-daisy-kit-blueprint-history="undo"]').click();
+        expect(element.querySelectorAll('[data-daisy-kit-blueprint-node-control]')).toHaveLength(2);
+        element.querySelector('[data-daisy-kit-blueprint-history="redo"]').click();
+        expect(element.querySelectorAll('[data-daisy-kit-blueprint-node-control]')).toHaveLength(3);
+
+        element.querySelector('[data-daisy-kit-blueprint-node-control]').click();
+        element.querySelector('[data-daisy-kit-blueprint-transition-target]').value = 'second';
+        element.querySelector('[data-daisy-kit-blueprint-structure="add-transition"]').click();
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).edges).toContainEqual({ source: 'first', target: 'second' });
+
+        element.querySelector('[data-daisy-kit-blueprint-node-control]').click();
+        element.querySelector('[data-daisy-kit-blueprint-structure="remove-node"]').click();
+        expect(element.querySelectorAll('[data-daisy-kit-blueprint-node-control]')).toHaveLength(2);
     });
 });

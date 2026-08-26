@@ -26,7 +26,10 @@ test('the map component exposes a semantic empty and measurement state', functio
         ->toContain('data-daisy-kit-empty')
         ->toContain('data-daisy-kit-map-layers')
         ->toContain('data-daisy-kit-map-basemaps')
+        ->toContain('"wms"')
         ->toContain('data-daisy-kit-map-export')
+        ->toContain('data-daisy-kit-map-history="undo"')
+        ->toContain('data-daisy-kit-map-mode="select"')
         ->toContain('data-daisy-kit-map-value')
         ->toContain('data-daisy-kit-map-measurement')
         ->toContain('role="application"');
