@@ -1,3 +1,7 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+import { JSDOM } from 'jsdom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { mount, unmount } from '../../../resources/js/file-preview.js';
@@ -45,6 +49,28 @@ function frameMessage(element, message, source = null, origin = 'null') {
 afterEach(() => {
     vi.unstubAllGlobals();
     vi.useRealTimers();
+});
+
+describe('file preview frame bootstrap', () => {
+    it('announces readiness when its external script runs after the child load event', async () => {
+        const child = new JSDOM('<main data-daisy-kit-file-preview-token="instance-token"></main>', { runScripts: 'outside-only' });
+        const postMessage = vi.fn();
+        Object.defineProperty(child.window, 'parent', { configurable: true, value: { postMessage } });
+        child.window.dispatchEvent(new child.window.Event('load'));
+        const bootstrap = readFileSync(resolve(import.meta.dirname, '../../../resources/js/file-preview-frame-bootstrap.js'), 'utf8');
+
+        child.window.Function(bootstrap)();
+        await Promise.resolve();
+        child.window.dispatchEvent(new child.window.Event('load'));
+
+        expect(postMessage).toHaveBeenCalledWith({
+            channel: 'daisy-kit:file-preview:frame',
+            token: 'instance-token',
+            type: 'ready',
+        }, '*');
+        expect(postMessage).toHaveBeenCalledOnce();
+        child.window.close();
+    });
 });
 
 describe('file preview entry', () => {

@@ -1,6 +1,14 @@
 const channel = 'daisy-kit:file-preview:frame';
 const token = document.querySelector('[data-daisy-kit-file-preview-token]')?.dataset.daisyKitFilePreviewToken;
+let ready = false;
 
+function announceReady() {
+    if (ready) return;
+
+    ready = true;
+    document.documentElement.dataset.daisyKitFilePreviewFrame = 'ready';
+    window.parent.postMessage({ channel, token, type: 'ready' }, '*');
+}
 function validMessage(event) {
     return event.source === window.parent
         && event.data
@@ -15,7 +23,5 @@ window.addEventListener('message', (event) => {
     document.dispatchEvent(new CustomEvent('daisy-kit:file-preview:render', { detail: event.data }));
 });
 
-window.addEventListener('load', () => {
-    document.documentElement.dataset.daisyKitFilePreviewFrame = 'ready';
-    window.parent.postMessage({ channel, token, type: 'ready' }, '*');
-}, { once: true });
+window.addEventListener('load', announceReady, { once: true });
+queueMicrotask(announceReady);

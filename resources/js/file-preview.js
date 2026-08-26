@@ -73,8 +73,8 @@ function frameDocument(token) {
 </head>
 <body>
     <main data-daisy-kit-file-preview-output data-daisy-kit-file-preview-token="${token}"></main>
-    <script src="${bootstrap}"></script>
     <script src="${renderer}"></script>
+    <script src="${bootstrap}"></script>
 </body>
 </html>`;
 }
