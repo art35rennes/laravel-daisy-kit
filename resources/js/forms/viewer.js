@@ -4,7 +4,11 @@ import '../../css/forms-viewer.css';
 import { createInstanceIdentifier } from '../core/identifiers.js';
 import { createMountable, installLivewireAdapter as createLivewireAdapter } from '../core/mountable.js';
 
-const controlTypes = new Set(['checkbox', 'date', 'email', 'file', 'number', 'radio', 'select', 'textarea', 'text']);
+const controlTypes = new Set([
+    'checkbox', 'color', 'date', 'datetime-local', 'email', 'file', 'hidden', 'month',
+    'number', 'password', 'radio', 'range', 'select', 'tel', 'textarea', 'text', 'time',
+    'toggle', 'url',
+]);
 const containerTypes = new Set(['section', 'wizardStep']);
 const submitModes = new Set(['event', 'fetch', 'html', 'none']);
 
@@ -48,8 +52,8 @@ function setInputValue(input, field, value) {
         return;
     }
 
-    if (fieldType(field) === 'checkbox') {
-        input.checked = value === true;
+    if (fieldType(field) === 'checkbox' || fieldType(field) === 'toggle') {
+        input.checked = value === true || value === 1 || value === '1' || value === 'on';
 
         return;
     }
@@ -73,6 +77,83 @@ function setReadonly(input, field, readonly) {
 
 function optionsFor(field) {
     return Array.isArray(field.options) ? field.options : [];
+}
+
+function rulesFor(field) {
+    if (typeof field.rules === 'string') {
+        return field.rules.split('|').filter((rule) => rule !== '');
+    }
+
+    return Array.isArray(field.rules) ? field.rules.filter((rule) => typeof rule === 'string') : [];
+}
+
+function ruleArgument(rules, name) {
+    const rule = rules.find((candidate) => candidate.startsWith(`${name}:`));
+
+    return rule ? rule.slice(name.length + 1) : null;
+}
+
+function applySafeAttributes(input, field) {
+    const attributes = field.attrs && typeof field.attrs === 'object' && !Array.isArray(field.attrs)
+        ? field.attrs
+        : {};
+    const permitted = ['accept', 'autocomplete', 'inputmode', 'max', 'maxlength', 'min', 'minlength', 'multiple', 'pattern', 'placeholder', 'step'];
+
+    permitted.forEach((name) => {
+        const value = attributes[name];
+
+        if (typeof value === 'string' || typeof value === 'number') {
+            input.setAttribute(name, String(value));
+        }
+
+        if (name === 'multiple' && value === true) {
+            input.setAttribute('multiple', '');
+        }
+    });
+}
+
+function applyRules(input, field) {
+    const rules = rulesFor(field);
+    const type = fieldType(field);
+    const minimum = ruleArgument(rules, 'min');
+    const maximum = ruleArgument(rules, 'max');
+    const between = ruleArgument(rules, 'between')?.split(',') ?? [];
+
+    input.required = field.required === true || rules.includes('required') || rules.includes('accepted');
+
+    if (rules.includes('email') && input instanceof HTMLInputElement && type === 'text') {
+        input.type = 'email';
+    }
+
+    const setMinimum = (value) => {
+        if (value === null || value === undefined || value === '') {
+            return;
+        }
+
+        if (type === 'number' || type === 'range') {
+            input.setAttribute('min', value);
+
+            return;
+        }
+
+        input.setAttribute('minlength', value);
+    };
+    const setMaximum = (value) => {
+        if (value === null || value === undefined || value === '') {
+            return;
+        }
+
+        if (type === 'number' || type === 'range') {
+            input.setAttribute('max', value);
+
+            return;
+        }
+
+        input.setAttribute('maxlength', value);
+    };
+
+    setMinimum(between[0] ?? minimum);
+    setMaximum(between[1] ?? maximum);
 }
 
 function optionValue(option) {
@@ -100,6 +181,8 @@ function createControl(field, value, fieldId, readonly) {
             input.id = `${fieldId}-${optionIndex}`;
             input.value = optionValueAsString;
             input.checked = value === optionValueAsString;
+            applySafeAttributes(input, field);
+            applyRules(input, field);
             setReadonly(input, field, readonly);
             label.htmlFor = input.id;
             label.append(input, document.createTextNode(String(optionLabel(option) ?? optionValueAsString)));
@@ -115,10 +198,11 @@ function createControl(field, value, fieldId, readonly) {
 
     input.name = field.name;
     input.id = fieldId;
-    input.required = field.required === true;
+    applySafeAttributes(input, field);
+    applyRules(input, field);
 
     if (type !== 'textarea' && type !== 'select') {
-        input.type = type;
+        input.type = type === 'toggle' ? 'checkbox' : type;
     }
 
     if (type === 'select') {
@@ -132,7 +216,7 @@ function createControl(field, value, fieldId, readonly) {
         });
     }
 
-    setInputValue(input, field, value);
+    setInputValue(input, field, value ?? field.default);
     setReadonly(input, field, readonly);
 
     return input;
@@ -148,7 +232,35 @@ function errorMessages(errors, fieldName) {
     return typeof messages === 'string' ? [messages] : [];
 }
 
+function applyLayout(wrapper, field) {
+    const width = field.ui && typeof field.ui === 'object' && !Array.isArray(field.ui)
+        ? field.ui.width
+        : null;
+    const widths = {
+        '1/4': 'quarter',
+        '1/3': 'third',
+        '1/2': 'half',
+        '2/3': 'two-thirds',
+        '3/4': 'three-quarters',
+    };
+
+    wrapper.classList.add(`daisy-kit-forms-field--span-${widths[width] ?? 'full'}`);
+}
+
 function renderField(root, parent, field, values, errors, onChange, fieldId, readonly, entries, parentEntry) {
+    if (field.type === 'staticText') {
+        const content = document.createElement('p');
+
+        content.dataset.daisyKitFormsStaticText = '';
+        content.textContent = typeof field.text === 'string'
+            ? field.text
+            : (typeof field.label === 'string' ? field.label : '');
+        parent.append(content);
+        entries.push({ field, parent: parentEntry, wrapper: content });
+
+        return;
+    }
+
     if (typeof field.name !== 'string' || field.name === '') {
         return;
     }
@@ -156,26 +268,32 @@ function renderField(root, parent, field, values, errors, onChange, fieldId, rea
     const wrapper = document.createElement('div');
     const label = document.createElement('label');
     const messages = errorMessages(errors, field.name);
-    const control = createControl(field, values[field.name], fieldId, readonly);
-    const inputs = control instanceof HTMLInputElement || control instanceof HTMLSelectElement || control instanceof HTMLTextAreaElement
-        ? [control]
-        : [...control.querySelectorAll('input')];
-
     wrapper.dataset.daisyKitFormsField = field.name;
+    applyLayout(wrapper, field);
     label.textContent = typeof field.label === 'string' ? field.label : field.name;
-
-    if (inputs.length === 1) {
-        label.htmlFor = inputs[0].id;
-    }
 
     if (hasUnsupportedType(field)) {
         const typeError = document.createElement('p');
 
         typeError.dataset.daisyKitFormsTypeError = field.name;
         typeError.setAttribute('role', 'alert');
-        typeError.textContent = `Unsupported field type "${field.type}" was rendered as text.`;
-        wrapper.append(typeError);
+        typeError.textContent = `Unsupported field type "${field.type}" is unavailable.`;
+        wrapper.append(label, typeError);
         emit(root, 'error', { field: field.name, reason: 'unsupported-type', type: field.type });
+
+        parent.append(wrapper);
+        entries.push({ field, parent: parentEntry, wrapper });
+
+        return;
+    }
+
+    const control = createControl(field, values[field.name], fieldId, readonly);
+    const inputs = control instanceof HTMLInputElement || control instanceof HTMLSelectElement || control instanceof HTMLTextAreaElement
+        ? [control]
+        : [...control.querySelectorAll('input')];
+
+    if (inputs.length === 1) {
+        label.htmlFor = inputs[0].id;
     }
 
     if (messages.length > 0) {
@@ -212,6 +330,7 @@ function renderNodes(parent, fields, context, parentEntry = null) {
             legend.textContent = typeof field.label === 'string' ? field.label : 'Section';
             container.append(legend);
             container.dataset.daisyKitFormsContainer = field.type;
+            applyLayout(container, field);
 
             if (field.type === 'section') {
                 container.dataset.daisyKitFormsSection = typeof field.id === 'string' ? field.id : '';
@@ -259,7 +378,7 @@ async function isVisible(root, field, values) {
 }
 
 function valueForField(input, field) {
-    if (fieldType(field) === 'checkbox') {
+    if (fieldType(field) === 'checkbox' || fieldType(field) === 'toggle') {
         return input.checked;
     }
 
@@ -287,6 +406,24 @@ function syncValues(root, entries, values) {
     });
 }
 
+function containsFileField(fields) {
+    return fields.some((field) => fieldType(field) === 'file' || containsFileField(fieldsFrom({ schema: field })));
+}
+
+function validateStep(step) {
+    const controls = [...step.wrapper.querySelectorAll('input, select, textarea')]
+        .filter((control) => control instanceof HTMLInputElement || control instanceof HTMLSelectElement || control instanceof HTMLTextAreaElement);
+    const invalid = controls.find((control) => control.willValidate && !control.checkValidity());
+
+    if (!invalid) {
+        return true;
+    }
+
+    invalid.reportValidity();
+
+    return false;
+}
+
 function initialize(root, configuration) {
     const form = root.querySelector('[data-daisy-kit-forms-content]');
 
@@ -303,6 +440,15 @@ function initialize(root, configuration) {
     const mode = submitModes.has(configuration.submitMode)
         ? configuration.submitMode
         : (submitModes.has(configuration.schema?.submit?.mode) ? configuration.schema.submit.mode : 'event');
+    const action = typeof configuration.action === 'string'
+        ? configuration.action
+        : (typeof configuration.schema?.submit?.action === 'string' ? configuration.schema.submit.action : '');
+    const method = typeof configuration.method === 'string'
+        ? configuration.method.toUpperCase()
+        : (typeof configuration.schema?.submit?.method === 'string' ? configuration.schema.submit.method.toUpperCase() : 'POST');
+    const validateOn = ['change', 'input', 'submit'].includes(configuration.validateOn)
+        ? configuration.validateOn
+        : (['change', 'input', 'submit'].includes(configuration.schema?.validateOn) ? configuration.schema.validateOn : 'submit');
     const instanceId = root.dataset.daisyKitFormsInstance ?? createInstanceIdentifier('daisy-kit-forms');
     const context = {
         entries: [],
@@ -317,6 +463,24 @@ function initialize(root, configuration) {
     };
     let active = true;
     let currentStep = 0;
+
+    if (action !== '') {
+        form.action = action;
+    }
+
+    form.method = method === 'GET' ? 'GET' : 'POST';
+    if (!['GET', 'POST'].includes(method)) {
+        const methodOverride = document.createElement('input');
+
+        methodOverride.name = '_method';
+        methodOverride.type = 'hidden';
+        methodOverride.value = method;
+        form.append(methodOverride);
+    }
+
+    if (containsFileField(fields)) {
+        form.enctype = 'multipart/form-data';
+    }
 
     async function refreshVisibility() {
         const visibility = new Map();
@@ -365,6 +529,10 @@ function initialize(root, configuration) {
 
         values[field.name] = valueForField(input, field);
         emit(root, 'changed', { name: field.name, value: values[field.name], values: { ...values } });
+        if (validateOn === event.type && !input.checkValidity()) {
+            input.reportValidity();
+            emit(root, 'error', { field: field.name, reason: 'validation-failed' });
+        }
         void refreshVisibility();
     };
 
@@ -383,6 +551,8 @@ function initialize(root, configuration) {
         if (! readonly && mode !== 'none') {
             const actions = document.createElement('div');
 
+            actions.dataset.daisyKitFormsActions = '';
+
             if (context.steps.length > 1) {
                 const previous = document.createElement('button');
                 const next = document.createElement('button');
@@ -399,6 +569,12 @@ function initialize(root, configuration) {
                 next.textContent = 'Next';
                 next.dataset.daisyKitFormsNext = '';
                 next.addEventListener('click', () => {
+                    if (!validateStep(context.steps[currentStep])) {
+                        emit(root, 'error', { reason: 'validation-failed', step: currentStep });
+
+                        return;
+                    }
+
                     currentStep = Math.min(context.steps.length - 1, currentStep + 1);
                     void refreshVisibility();
                     emit(root, 'step-changed', { step: currentStep });
@@ -441,13 +617,6 @@ function initialize(root, configuration) {
         }
 
         if (mode === 'fetch') {
-            const action = typeof configuration.schema?.submit?.action === 'string'
-                ? configuration.schema.submit.action
-                : form.action;
-            const method = typeof configuration.schema?.submit?.method === 'string'
-                ? configuration.schema.submit.method
-                : 'POST';
-
             try {
                 const response = await fetch(action, {
                     body: new FormData(form),

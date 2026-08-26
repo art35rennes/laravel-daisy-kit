@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\MessageBag;
+
 it('renders a JSON-safe forms viewer mount point with a semantic loading state', function (): void {
     $html = view('daisy-kit::components.forms.viewer', [
         'schema' => [
@@ -54,4 +56,36 @@ it('serializes viewer errors, readonly state, and submit mode as non-executable 
         ->toContain('"submitMode":"none"')
         ->toContain('type="application/json"')
         ->not->toContain('onerror=');
+});
+
+it('serializes native form transport and progressive validation configuration without inline handlers', function (): void {
+    $html = view('daisy-kit::components.forms.viewer', [
+        'schema' => [
+            'fields' => [[
+                'name' => 'attachment',
+                'type' => 'file',
+            ]],
+        ],
+        'action' => '/profiles/1',
+        'method' => 'PATCH',
+        'validateOn' => 'input',
+    ])->render();
+
+    expect($html)
+        ->toContain('"action":"\\/profiles\\/1"')
+        ->toContain('"method":"PATCH"')
+        ->toContain('"validateOn":"input"')
+        ->not->toContain(' onsubmit=')
+        ->not->toContain(' style=');
+});
+
+it('maps Laravel message bags into the viewer error configuration', function (): void {
+    $html = view('daisy-kit::components.forms.viewer', [
+        'schema' => ['fields' => [['name' => 'email', 'type' => 'email']]],
+        'errors' => new MessageBag([
+            'email' => ['This address is already used.'],
+        ]),
+    ])->render();
+
+    expect($html)->toContain('"errors":{"email":["This address is already used."]}');
 });

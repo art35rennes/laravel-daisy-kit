@@ -52,6 +52,23 @@ describe('forms viewer', () => {
         expect(root.dataset.daisyKitState).toBeUndefined();
     });
 
+    it('normalizes Laravel boolean values for checkbox and toggle controls', async () => {
+        const root = viewerRoot(JSON.stringify({
+            schema: {
+                fields: [
+                    { name: 'terms', type: 'checkbox', rules: ['accepted'] },
+                    { name: 'newsletter', type: 'toggle' },
+                ],
+            },
+            value: { terms: '1', newsletter: 1 },
+        }));
+
+        await mount(root);
+
+        expect(root.querySelector('input[name="terms"]').checked).toBe(true);
+        expect(root.querySelector('input[name="newsletter"]').checked).toBe(true);
+    });
+
     it('mounts on an HTTP host that does not provide crypto.randomUUID', async () => {
         vi.stubGlobal('crypto', {});
         const root = viewerRoot(JSON.stringify({
@@ -116,7 +133,7 @@ describe('forms viewer', () => {
         expect(displayName.readOnly).toBe(true);
         expect(email.getAttribute('aria-invalid')).toBe('true');
         expect(root.querySelector('[data-daisy-kit-forms-error="email"]').textContent).toBe('This address is already used.');
-        expect(legacyValue.type).toBe('text');
+        expect(legacyValue).toBeNull();
         expect(root.querySelector('[data-daisy-kit-forms-type-error="legacy_value"]').textContent).toContain('unsafe-legacy-type');
         expect(errors).toContainEqual({
             field: 'legacy_value',
@@ -140,6 +157,24 @@ describe('forms viewer', () => {
             values: canonicalProfileWizard.value,
             mode: 'event',
         }]);
+    });
+
+    it('renders static content without a false input and keeps unknown types unavailable', async () => {
+        const root = viewerRoot(JSON.stringify({
+            schema: {
+                fields: [
+                    { type: 'staticText', text: 'This profile is reviewed by the account team.' },
+                    { name: 'legacy', type: 'signature', label: 'Legacy signature' },
+                ],
+            },
+        }));
+
+        await mount(root);
+        await settle();
+
+        expect(root.querySelector('[data-daisy-kit-forms-static-text]').textContent).toContain('reviewed');
+        expect(root.querySelector('input[name="legacy"]')).toBeNull();
+        expect(root.querySelector('[data-daisy-kit-forms-type-error="legacy"]').getAttribute('role')).toBe('alert');
     });
 
     it('keeps HTML submission native and prevents submission for readonly and none modes', async () => {
@@ -246,6 +281,80 @@ describe('forms viewer', () => {
         await settle();
 
         expect(total.value).toBe('36');
+    });
+
+    it('applies safe schema attributes and Laravel-style rules before advancing a wizard step', async () => {
+        const root = viewerRoot(JSON.stringify({
+            schema: {
+                fields: [
+                    {
+                        id: 'account',
+                        type: 'wizardStep',
+                        label: 'Account',
+                        fields: [{
+                            name: 'email',
+                            type: 'email',
+                            label: 'Email',
+                            attrs: { autocomplete: 'email', placeholder: 'name@example.test', maxlength: 120 },
+                            rules: ['required', 'email', 'max:120'],
+                            ui: { width: '1/2' },
+                        }],
+                    },
+                    {
+                        id: 'profile',
+                        type: 'wizardStep',
+                        label: 'Profile',
+                        fields: [{ name: 'phone', type: 'tel', label: 'Phone', attrs: { minlength: 8 } }],
+                    },
+                ],
+            },
+            value: { email: '' },
+        }));
+        const errors = [];
+        root.addEventListener('daisy-kit:forms-viewer:error', (event) => errors.push(event.detail));
+
+        await mount(root);
+        await settle();
+        const email = root.querySelector('input[name="email"]');
+        const steps = root.querySelectorAll('[data-daisy-kit-forms-step]');
+
+        expect(email.required).toBe(true);
+        expect(email.type).toBe('email');
+        expect(email.autocomplete).toBe('email');
+        expect(email.placeholder).toBe('name@example.test');
+        expect(email.maxLength).toBe(120);
+        expect(email.closest('[data-daisy-kit-forms-field]').classList).toContain('daisy-kit-forms-field--span-half');
+
+        root.querySelector('[data-daisy-kit-forms-next]').click();
+        await settle();
+
+        expect(steps[0].hidden).toBe(false);
+        expect(steps[1].hidden).toBe(true);
+        expect(errors).toContainEqual({ reason: 'validation-failed', step: 0 });
+
+        email.value = 'ada@example.test';
+        email.dispatchEvent(new Event('input', { bubbles: true }));
+        root.querySelector('[data-daisy-kit-forms-next]').click();
+        await settle();
+
+        expect(steps[0].hidden).toBe(true);
+        expect(steps[1].hidden).toBe(false);
+    });
+
+    it('reports a progressive validation diagnostic when configured to validate on input', async () => {
+        const root = viewerRoot(JSON.stringify({
+            schema: { fields: [{ name: 'email', type: 'email', rules: ['required', 'email'] }] },
+            validateOn: 'input',
+        }));
+        const errors = [];
+        root.addEventListener('daisy-kit:forms-viewer:error', (event) => errors.push(event.detail));
+
+        await mount(root);
+        const email = root.querySelector('input[name="email"]');
+        email.value = 'not-an-email';
+        email.dispatchEvent(new Event('input', { bubbles: true }));
+
+        expect(errors).toContainEqual({ field: 'email', reason: 'validation-failed' });
     });
 
     it('remounts explicitly when the optional Livewire adapter receives a navigation event', async () => {
