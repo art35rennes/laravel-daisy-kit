@@ -4,6 +4,7 @@ workbench:
   start: '/'
   install: true
   discovers:
+    config: true
     web: true
     views: true
   build:

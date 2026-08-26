@@ -25,6 +25,42 @@ it('mounts the Workbench modules accessibly on desktop and mobile', function ():
         ->assertScript('window.innerWidth <= 430');
 })->group('browser');
 
+it('authors, histories, edits, reorders, removes, imports, and previews a Builder schema through Livewire', function (): void {
+    $page = $this->visit('/')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->wait(2)
+        ->assertNoSmoke();
+
+    $builder = '[data-daisy-kit-module="forms-builder"]';
+
+    $page
+        ->assertCount("{$builder} [data-daisy-kit-builder-field]", 1)
+        ->click("{$builder} .daisy-kit-forms-builder-livewire__catalogue button:first-child")
+        ->wait(2)
+        ->assertCount("{$builder} [data-daisy-kit-builder-field]", 2)
+        ->assertScript("document.querySelector('{$builder} [data-daisy-kit-builder-export]').textContent.includes('text_2')")
+        ->assertScript("!Array.from(document.querySelectorAll('{$builder} button')).find((button) => button.textContent.trim() === 'Undo').disabled")
+        ->click("{$builder} .daisy-kit-forms-builder-livewire__history button:nth-of-type(3)")
+        ->assertCount("{$builder} [data-daisy-kit-builder-field]", 1)
+        ->click("{$builder} .daisy-kit-forms-builder-livewire__history button:nth-of-type(4)")
+        ->assertCount("{$builder} [data-daisy-kit-builder-field]", 2)
+        ->click("{$builder} [data-daisy-kit-builder-field]:last-of-type .card-actions button:first-child")
+        ->fill("{$builder} [data-daisy-kit-builder-inspector] label:first-of-type input", 'preferred_name')
+        ->keys("{$builder} [data-daisy-kit-builder-inspector] label:first-of-type input", 'Tab')
+        ->wait(1)
+        ->assertScript("document.querySelector('{$builder} [data-daisy-kit-builder-export]').textContent.includes('preferred_name')")
+        ->click("{$builder} [data-daisy-kit-builder-field]:last-of-type .card-actions button:nth-of-type(2)")
+        ->wait(1)
+        ->assertScript("document.querySelector('{$builder} [data-daisy-kit-builder-export]').textContent.includes('\"fields\":[{\"name\":\"preferred_name\"')")
+        ->click("{$builder} [data-daisy-kit-builder-field]:first-of-type .card-actions button:nth-of-type(4)")
+        ->assertCount("{$builder} [data-daisy-kit-builder-field]", 1)
+        ->fill("{$builder} [data-daisy-kit-builder-json] textarea", '{"layout":{"type":"one-page"},"fields":[{"name":"bio","label":"Biography","type":"textarea"}]}')
+        ->click("{$builder} [data-daisy-kit-builder-json] button")
+        ->wait(1)
+        ->assertScript("document.querySelector('{$builder} [data-daisy-kit-builder-export]').textContent.includes('Biography')")
+        ->assertCount("{$builder} [data-daisy-kit-builder-preview] [data-daisy-kit-module=\"forms-viewer\"]", 1);
+})->group('browser');
+
 it('composes visible host DaisyUI primitives across themes and responsive widths', function (): void {
     $page = $this->visit('/')->on()->desktop()
         ->waitForEvent('networkidle')
