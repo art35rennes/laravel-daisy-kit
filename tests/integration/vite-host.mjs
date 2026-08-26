@@ -313,7 +313,10 @@ try {
     await map.locator('[data-daisy-kit-map-geolocate]').click();
     await page.waitForFunction(() => document.querySelector('[data-daisy-kit-module="map"]')?.dataset.fixtureGeolocated === 'true');
     await map.locator('[data-daisy-kit-map-mode="spatial-select"]').click();
-    await map.locator('[data-daisy-kit-map-canvas]').click({ position: { x: 300, y: 192 } });
+    const mapCanvas = map.locator('[data-daisy-kit-map-canvas]');
+    const mapBounds = await mapCanvas.boundingBox();
+    if (!mapBounds) throw new Error('Map did not expose a measurable canvas for spatial selection.');
+    await mapCanvas.click({ position: { x: mapBounds.width / 2, y: mapBounds.height / 2 } });
     await page.waitForFunction(() => document.querySelector('[data-daisy-kit-module="map"]')?.dataset.daisyKitSpatialSelection === 'fixture-district');
 
     if (responses.length > 0) {
