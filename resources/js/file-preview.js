@@ -1,4 +1,6 @@
 import '../css/file-preview.css';
+import frameBootstrapUrl from './file-preview-frame-bootstrap.js?url&no-inline';
+import frameRendererUrl from '../../.tmp/file-preview-frame/file-preview-frame.js?url&no-inline';
 import { createInstanceIdentifier } from './core/identifiers.js';
 import { createMountable } from './core/mountable.js';
 
@@ -8,8 +10,8 @@ const frameReadyTimeout = 10_000;
 const frameChannel = 'daisy-kit:file-preview:frame';
 const supportedTypes = new Set(['docx', 'image', 'pdf', 'text', 'video']);
 const frameAssets = [
-    new URL('./file-preview-frame-bootstrap.js', import.meta.url),
-    new URL('../../.tmp/file-preview-frame/file-preview-frame.js', import.meta.url),
+    new URL(frameBootstrapUrl, import.meta.url),
+    new URL(frameRendererUrl, import.meta.url),
 ];
 
 function emit(root, name, detail = {}) {
