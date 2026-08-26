@@ -195,6 +195,7 @@ function initializeFilePreview(root, configuration) {
     let handshakeId = 0;
     let renderId = 0;
     let activeRenderId = null;
+    let modalCloseHandled = false;
     const rendersInline = previewLayout === 'standard' || previewLayout === 'card';
     let modalOpen = false;
     let previewOpen = rendersInline;
@@ -219,7 +220,7 @@ function initializeFilePreview(root, configuration) {
         previewOpen = rendersInline;
         root.dataset.daisyKitPreviewOpen = String(previewOpen);
 
-        if (modal instanceof HTMLDialogElement && modal.contains(frame) && content) {
+        if (rendersInline && modal instanceof HTMLDialogElement && modal.contains(frame) && content) {
             content.append(frame);
         }
 
@@ -232,20 +233,27 @@ function initializeFilePreview(root, configuration) {
     const closePreviewModal = () => {
         if (!(modal instanceof HTMLDialogElement)) {
             restoreInlinePreview();
+            emit(root, 'preview', { open: false });
 
             return;
         }
 
         if (modal.open && typeof modal.close === 'function') {
+            modalCloseHandled = true;
+            restoreInlinePreview(false);
+            emit(root, 'preview', { open: false });
             modal.close();
+            if (openPreview instanceof HTMLElement) openPreview.focus({ preventScroll: true });
 
             return;
         }
 
         modal.open = false;
         restoreInlinePreview();
+        emit(root, 'preview', { open: false });
     };
     const openPreviewModal = () => {
+        modalCloseHandled = false;
         modalOpen = true;
         previewOpen = true;
         root.dataset.daisyKitPreviewOpen = 'true';
@@ -263,6 +271,8 @@ function initializeFilePreview(root, configuration) {
         (closePreview instanceof HTMLElement ? closePreview : modal).focus({ preventScroll: true });
     };
     const onModalClose = () => {
+        if (modalCloseHandled) return;
+
         restoreInlinePreview();
         emit(root, 'preview', { open: false });
     };

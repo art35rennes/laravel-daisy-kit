@@ -215,6 +215,35 @@ describe('file preview entry', () => {
         expect(element.dataset.daisyKitPreviewOpen).toBe('false');
     });
 
+    it('commits modal close state before a native close event is delivered', async () => {
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('plain text', {
+            headers: { 'content-type': 'text/plain' },
+            status: 200,
+        }))));
+        const element = root({ layout: 'modal', src: '/notes.txt', type: 'text' });
+        const events = [];
+        element.addEventListener('daisy-kit:file-preview:preview', (event) => events.push(event.detail));
+
+        mount(element);
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+        const modal = element.querySelector('[data-daisy-kit-file-preview-modal]');
+        const trigger = element.querySelector('[data-daisy-kit-file-preview-open-preview]');
+        modal.close = vi.fn(() => {
+            modal.open = false;
+        });
+
+        trigger.click();
+        modal.querySelector('[data-daisy-kit-file-preview-close-preview]').click();
+
+        expect(modal.open).toBe(false);
+        expect(element.dataset.daisyKitPreviewOpen).toBe('false');
+        expect(document.activeElement).toBe(trigger);
+        expect(events).toEqual([{ open: true }, { open: false }]);
+
+        modal.dispatchEvent(new Event('close'));
+        expect(events).toEqual([{ open: true }, { open: false }]);
+    });
+
     it('opens the preview dialog from a standard layout and restores its inline frame after close', async () => {
         vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('plain text', {
             headers: { 'content-type': 'text/plain' },
