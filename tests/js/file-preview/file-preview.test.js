@@ -12,6 +12,7 @@ function root(configuration) {
                 <iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts"></iframe>
                 <dl data-daisy-kit-file-preview-metadata hidden><dd data-daisy-kit-file-preview-name></dd><dd data-daisy-kit-file-preview-type></dd><dd data-daisy-kit-file-preview-size></dd></dl>
                 <button data-daisy-kit-file-preview-layout type="button">Toggle expanded layout</button>
+                <p data-daisy-kit-file-preview-actions hidden><a data-daisy-kit-file-preview-open hidden rel="noopener" target="_blank">Open file</a><a data-daisy-kit-file-preview-download hidden>Download file</a></p>
             </div>
             <script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script>
         </section>
@@ -128,6 +129,35 @@ describe('file preview entry', () => {
         expect(layouts).toEqual(['expanded']);
         expect(element.querySelector('[data-daisy-kit-file-preview-name]').textContent).toBe('Clip');
         expect(frame.srcdoc).toContain('media-src blob:');
+    });
+
+    it('hands a PDF to a nested sandbox and exposes revocable user actions only after validation', async () => {
+        const revokeObjectURL = vi.fn();
+        const NativeURL = URL;
+        vi.stubGlobal('URL', Object.assign(class extends NativeURL {}, {
+            createObjectURL: vi.fn(() => 'blob:preview'),
+            revokeObjectURL,
+        }));
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(new Blob(['pdf'], { type: 'application/pdf' }), {
+            headers: { 'content-type': 'application/pdf' },
+            status: 200,
+        }))));
+        const element = root({ name: 'Report.pdf', src: '/report.pdf', type: 'pdf' });
+
+        mount(element);
+        await vi.waitFor(() => expect(element.querySelector('[data-daisy-kit-file-preview-actions]').hidden).toBe(false));
+        const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
+        const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
+        frameMessage(element, { type: 'ready' });
+        await vi.waitFor(() => expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
+            payload: expect.objectContaining({ type: 'pdf' }),
+        }), '*', [expect.any(ArrayBuffer)]));
+
+        expect(element.querySelector('[data-daisy-kit-file-preview-open]').getAttribute('rel')).toBe('noopener');
+        expect(element.querySelector('[data-daisy-kit-file-preview-download]').download).toBe('Report.pdf');
+        expect(frame.srcdoc).toContain('frame-src blob:');
+        unmount(element);
+        expect(revokeObjectURL).toHaveBeenCalledWith('blob:preview');
     });
 
     it('accepts an opaque-origin ready message only from its frame with its token', async () => {

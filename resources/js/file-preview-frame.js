@@ -40,6 +40,17 @@ async function render(payload) {
         return;
     }
 
+    if (payload.type === 'pdf') {
+        const pdf = document.createElement('iframe');
+        pdf.setAttribute('sandbox', '');
+        pdf.title = payload.name;
+        objectUrl = URL.createObjectURL(new Blob([payload.data], { type: 'application/pdf' }));
+        pdf.src = objectUrl;
+        output.append(pdf);
+
+        return;
+    }
+
     await renderAsync(payload.data, output, document.head, {
         renderAltChunks: false,
         renderComments: false,

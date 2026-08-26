@@ -6,7 +6,7 @@ const defaultMaximumBytes = 5 * 1024 * 1024;
 const absoluteMaximumBytes = 10 * 1024 * 1024;
 const frameReadyTimeout = 10_000;
 const frameChannel = 'daisy-kit:file-preview:frame';
-const supportedTypes = new Set(['docx', 'image', 'text', 'video']);
+const supportedTypes = new Set(['docx', 'image', 'pdf', 'text', 'video']);
 const frameAssets = [
     new URL('./file-preview-frame-bootstrap.js', import.meta.url),
     new URL('../../.tmp/file-preview-frame/file-preview-frame.js', import.meta.url),
@@ -24,6 +24,7 @@ function previewType(configuration) {
     const path = typeof configuration.src === 'string' ? configuration.src.toLowerCase() : '';
 
     if (path.endsWith('.docx')) return 'docx';
+    if (path.endsWith('.pdf')) return 'pdf';
     if (/\.(avif|gif|jpe?g|png|svg|webp)$/.test(path)) return 'image';
     if (/\.(m4v|mov|mp4|webm)$/.test(path)) return 'video';
 
@@ -53,6 +54,7 @@ function validContentType(type, contentType) {
 
     if (type === 'docx') return mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     if (type === 'image') return mime.startsWith('image/');
+    if (type === 'pdf') return mime === 'application/pdf';
     if (type === 'video') return mime.startsWith('video/');
 
     return mime === 'text/plain';
@@ -66,7 +68,7 @@ function frameDocument(token) {
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; connect-src 'none'; form-action 'none'; frame-ancestors 'self'; img-src data: blob:; font-src data: blob:; media-src blob:; object-src 'none'; script-src-attr 'none'; script-src-elem ${scriptSources}; style-src 'unsafe-inline'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; connect-src 'none'; form-action 'none'; frame-ancestors 'self'; frame-src blob:; img-src data: blob:; font-src data: blob:; media-src blob:; object-src 'none'; script-src-attr 'none'; script-src-elem ${scriptSources}; style-src 'unsafe-inline'">
     <title>File preview</title>
 </head>
 <body>
@@ -107,6 +109,26 @@ function showMetadata(root, blob, configuration, type) {
     if (size) size.textContent = `${blob.size.toLocaleString()} bytes`;
     if (previewType) previewType.textContent = type;
     metadata.hidden = false;
+}
+
+function exposeActions(root, blob, configuration) {
+    const actions = root.querySelector('[data-daisy-kit-file-preview-actions]');
+    const download = root.querySelector('[data-daisy-kit-file-preview-download]');
+    const open = root.querySelector('[data-daisy-kit-file-preview-open]');
+
+    if (!actions || !download || !open) return null;
+
+    const url = URL.createObjectURL(blob);
+    const filename = typeof configuration.name === 'string' && configuration.name.length > 0 ? configuration.name : 'file-preview';
+
+    download.download = filename;
+    download.href = url;
+    download.hidden = false;
+    open.href = url;
+    open.hidden = false;
+    actions.hidden = false;
+
+    return url;
 }
 
 async function fetchBlob(source, type, limit, abortController) {
@@ -162,6 +184,7 @@ function initializeFilePreview(root, configuration) {
     let payloadSent = false;
     let rendered = false;
     let payload = null;
+    let actionUrl = null;
     let renderTimeout = null;
     const readyTimeout = window.setTimeout(() => {
         if (destroyed || frameReady) return;
@@ -236,6 +259,7 @@ function initializeFilePreview(root, configuration) {
             if (destroyed) return;
 
             showMetadata(root, blob, configuration, type);
+            actionUrl = exposeActions(root, blob, configuration);
             payload = await framePayload(type, blob, typeof configuration.name === 'string' ? configuration.name : 'File preview');
             sendPayload();
         } catch (error) {
@@ -257,6 +281,7 @@ function initializeFilePreview(root, configuration) {
         layout?.removeEventListener('click', onLayoutClick);
         frame.removeAttribute('srcdoc');
         setVisible(frame, false);
+        if (actionUrl) URL.revokeObjectURL(actionUrl);
         payload = null;
     };
 }

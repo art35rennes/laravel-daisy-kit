@@ -22,6 +22,10 @@
             <dt>Size</dt><dd data-daisy-kit-file-preview-size></dd>
         </dl>
         <button data-daisy-kit-file-preview-layout type="button">Toggle expanded layout</button>
+        <p data-daisy-kit-file-preview-actions hidden>
+            <a data-daisy-kit-file-preview-open hidden rel="noopener" target="_blank">Open file</a>
+            <a data-daisy-kit-file-preview-download hidden>Download file</a>
+        </p>
     </div>
 
     <script data-daisy-kit-config type="application/json">{!! \Art35rennes\DaisyKit\Support\JsonConfiguration::encode([

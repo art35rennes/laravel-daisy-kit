@@ -13,6 +13,8 @@ test('the file preview component emits a CSP-safe configuration', function (): v
         ->toContain('data-daisy-kit-file-preview-frame')
         ->toContain('data-daisy-kit-file-preview-metadata')
         ->toContain('data-daisy-kit-file-preview-layout')
+        ->toContain('data-daisy-kit-file-preview-actions')
+        ->toContain('rel="noopener"')
         ->toContain('sandbox="allow-scripts"')
         ->not->toContain('allow-same-origin')
         ->not->toContain('</script><img')
