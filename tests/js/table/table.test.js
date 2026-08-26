@@ -50,6 +50,35 @@ describe('table module', () => {
         expect(selections).toEqual([{ ids: ['alpha'] }]);
     });
 
+    it('filters typed text, number, and select columns independently', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [
+                { id: 'name', label: 'Name', filter: { type: 'text' } },
+                { id: 'amount', label: 'Amount', filter: { type: 'number' } },
+                { id: 'status', label: 'Status', filter: { options: ['open', 'closed'], type: 'select' } },
+            ],
+            rows: [
+                { amount: 12, name: 'Alpha', status: 'open' },
+                { amount: 20, name: 'Beta', status: 'closed' },
+            ],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+        const textFilter = root.querySelector('[data-daisy-kit-table-column-filter="name"]');
+        textFilter.value = 'alpha';
+        textFilter.dispatchEvent(new Event('input'));
+        const amountFilter = root.querySelector('[data-daisy-kit-table-column-filter="amount"]');
+        amountFilter.value = '12';
+        amountFilter.dispatchEvent(new Event('input'));
+        const statusFilter = root.querySelector('[data-daisy-kit-table-column-filter="status"]');
+        statusFilter.value = 'open';
+        statusFilter.dispatchEvent(new Event('change'));
+
+        expect(root.querySelectorAll('tbody tr')).toHaveLength(1);
+        expect(root.querySelector('tbody td').textContent).toBe('Alpha');
+    });
+
     it('sorts, filters, and reports state changes without global state', () => {
         document.body.innerHTML = tableMarkup({
             columns: [{ id: 'name', label: 'Name' }],

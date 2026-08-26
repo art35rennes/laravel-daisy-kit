@@ -27,10 +27,25 @@ function normalizeColumns(columns) {
         const id = typeof column.id === 'string' && column.id !== '' ? column.id : `column-${index}`;
         const accessorKey = typeof column.accessor === 'string' && column.accessor !== '' ? column.accessor : id;
         const label = typeof column.label === 'string' && column.label !== '' ? column.label : id;
+        const filter = column.filter && typeof column.filter === 'object' && !Array.isArray(column.filter)
+            ? column.filter
+            : null;
+        const filterType = ['number', 'select', 'text'].includes(filter?.type) ? filter.type : null;
+        const filterOptions = Array.isArray(filter?.options)
+            ? filter.options.filter((option) => typeof option === 'string' || typeof option === 'number').map(String)
+            : [];
 
         return [{
             accessorKey,
             enableSorting: column.sortable !== false,
+            filterFn: filterType === 'number'
+                ? (row, columnId, value) => value === '' || Number(row.getValue(columnId)) === Number(value)
+                : filterType === 'select'
+                    ? (row, columnId, value) => value === '' || String(row.getValue(columnId)) === value
+                    : filterType === 'text'
+                        ? (row, columnId, value) => String(row.getValue(columnId)).toLocaleLowerCase().includes(String(value).toLocaleLowerCase())
+                        : undefined,
+            meta: { filterOptions, filterType },
             header: label,
             id,
         }];
@@ -116,6 +131,7 @@ function initialize(root, configuration) {
     let total = rows.length;
     const state = {
         columnPinning: { left: [], right: [] },
+        columnFilters: [],
         globalFilter: '',
         pagination: { pageIndex: 0, pageSize: normalizePageSize(configuration.pageSize) },
         sorting: [],
@@ -138,6 +154,12 @@ function initialize(root, configuration) {
             render();
             emit(root, 'filtered', { query: state.globalFilter });
             requestRows();
+        },
+        onColumnFiltersChange: (updater) => {
+            state.columnFilters = functionalUpdate(updater, state.columnFilters);
+            state.pagination.pageIndex = 0;
+            render();
+            emit(root, 'filtered', { filters: state.columnFilters });
         },
         onPaginationChange: (updater) => {
             state.pagination = functionalUpdate(updater, state.pagination);
@@ -227,6 +249,43 @@ function initialize(root, configuration) {
         });
 
         head.append(headerRow);
+
+        const filterRow = document.createElement('tr');
+        let hasFilters = false;
+
+        if (selectable) filterRow.append(document.createElement('td'));
+
+        table.getAllLeafColumns().forEach((column) => {
+            const cell = document.createElement('td');
+            const { filterOptions, filterType } = column.columnDef.meta ?? {};
+
+            if (filterType) {
+                hasFilters = true;
+                const control = filterType === 'select' ? document.createElement('select') : document.createElement('input');
+
+                control.dataset.daisyKitTableColumnFilter = column.id;
+                control.setAttribute('aria-label', `Filter ${String(column.columnDef.header ?? column.id)}`);
+                if (control instanceof HTMLInputElement) control.type = filterType === 'number' ? 'number' : 'search';
+                if (control instanceof HTMLSelectElement) {
+                    const emptyOption = document.createElement('option');
+                    emptyOption.value = '';
+                    emptyOption.textContent = 'All';
+                    control.append(emptyOption);
+                    filterOptions.forEach((option) => {
+                        const element = document.createElement('option');
+                        element.value = option;
+                        element.textContent = option;
+                        control.append(element);
+                    });
+                }
+                control.value = column.getFilterValue() ?? '';
+                control.addEventListener(control instanceof HTMLSelectElement ? 'change' : 'input', () => column.setFilterValue(control.value));
+                cell.append(control);
+            }
+            filterRow.append(cell);
+        });
+
+        if (hasFilters) head.append(filterRow);
 
         const rows = table.getRowModel().rows;
 
