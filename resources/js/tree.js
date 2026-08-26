@@ -152,6 +152,7 @@ function initialize(root, configuration) {
             button.tabIndex = -1;
             button.type = 'button';
             button.textContent = item.label;
+            button.classList.add('btn', 'btn-ghost', 'btn-sm', 'justify-start', 'w-full');
             button.setAttribute('aria-level', String(level));
             button.setAttribute('aria-selected', 'false');
 
@@ -171,6 +172,7 @@ function initialize(root, configuration) {
                 const group = document.createElement('ul');
 
                 group.role = 'group';
+                group.classList.add('menu', 'menu-sm');
                 group.append(renderItems(item.children, level + 1));
                 listItem.append(group);
             }

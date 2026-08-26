@@ -28,12 +28,12 @@
 @endphp
 
 <section
-    {{ $attributes->class(['daisy-kit-forms-viewer']) }}
+    {{ $attributes->class(['card', 'border', 'border-base-300', 'bg-base-100', 'shadow-sm', 'daisy-kit-forms-viewer']) }}
     aria-busy="true"
     data-daisy-kit-module="forms-viewer"
     data-daisy-kit-state="loading"
 >
-    <p data-daisy-kit-status role="status">Loading form…</p>
-    <form data-daisy-kit-forms-content></form>
+    <p class="alert" data-daisy-kit-status role="status">Loading form…</p>
+    <form class="card-body" data-daisy-kit-forms-content></form>
     <script data-daisy-kit-config type="application/json">{!! $configuration !!}</script>
 </section>

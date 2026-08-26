@@ -35,6 +35,8 @@ describe('tree module', () => {
 
         mount(root);
         const docs = root.querySelector('[data-daisy-kit-tree-node="docs"]');
+        expect(docs.classList.contains('btn-ghost')).toBe(true);
+        expect(docs.classList.contains('justify-start')).toBe(true);
         expect(docs.getAttribute('aria-expanded')).toBe('false');
         docs.focus();
         docs.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' }));

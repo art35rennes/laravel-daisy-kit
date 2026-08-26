@@ -2,6 +2,7 @@
 @plugin 'daisyui';
 
 @source '../../../resources/views';
+@source '../../../resources/js';
 
 main {
     margin-inline: auto;

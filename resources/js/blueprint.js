@@ -82,6 +82,7 @@ function renderBlueprint(root, configuration) {
     controls.setAttribute('aria-label', typeof configuration.label === 'string' ? configuration.label : 'Blueprint nodes');
     controls.setAttribute('data-daisy-kit-blueprint-controls', '');
     controls.setAttribute('role', 'group');
+    controls.classList.add('flex', 'flex-wrap', 'gap-2');
     canvas.insertAdjacentElement('afterend', controls);
     const graph = new graphlib.Graph({ multigraph: true });
     graph.setGraph({ rankdir: 'LR', nodesep: 32, ranksep: 72, marginx: 16, marginy: 16 });
@@ -141,6 +142,7 @@ function renderBlueprint(root, configuration) {
         control.setAttribute('tabindex', index === 0 ? '0' : '-1');
         control.type = 'button';
         control.textContent = node.label;
+        control.classList.add('btn', 'btn-sm', 'btn-outline');
         controls.append(control);
 
         return { control, group, id: nodeId, label };
@@ -150,12 +152,14 @@ function renderBlueprint(root, configuration) {
     arrange.setAttribute('data-daisy-kit-blueprint-view', 'arrange');
     arrange.type = 'button';
     arrange.textContent = 'Arrange diagram';
+    arrange.classList.add('btn', 'btn-sm');
     controls.append(arrange);
 
     const fit = document.createElement('button');
     fit.setAttribute('data-daisy-kit-blueprint-view', 'fit');
     fit.type = 'button';
     fit.textContent = 'Fit diagram';
+    fit.classList.add('btn', 'btn-sm');
     controls.append(fit);
 
     let selectedId = null;
@@ -453,6 +457,7 @@ function renderBlueprint(root, configuration) {
         editor.setAttribute('aria-label', 'Selected node label');
         editor.setAttribute('data-daisy-kit-blueprint-editor', '');
         editor.type = 'text';
+        editor.classList.add('input', 'input-bordered', 'input-sm');
         controls.append(editor);
 
         undo = document.createElement('button');
@@ -460,6 +465,7 @@ function renderBlueprint(root, configuration) {
         undo.setAttribute('data-daisy-kit-blueprint-history', 'undo');
         undo.type = 'button';
         undo.textContent = 'Undo';
+        undo.classList.add('btn', 'btn-sm');
         controls.append(undo);
 
         redo = document.createElement('button');
@@ -467,6 +473,7 @@ function renderBlueprint(root, configuration) {
         redo.setAttribute('data-daisy-kit-blueprint-history', 'redo');
         redo.type = 'button';
         redo.textContent = 'Redo';
+        redo.classList.add('btn', 'btn-sm');
         controls.append(redo);
 
         editor.addEventListener('change', onEditorChange);
@@ -475,6 +482,7 @@ function renderBlueprint(root, configuration) {
         valueEditor.disabled = true;
         valueEditor.setAttribute('aria-label', 'Selected node value as JSON');
         valueEditor.setAttribute('data-daisy-kit-blueprint-value-editor', '');
+        valueEditor.classList.add('textarea', 'textarea-bordered', 'textarea-sm');
         controls.append(valueEditor);
         valueEditor.addEventListener('change', onValueChange);
 
@@ -482,6 +490,7 @@ function renderBlueprint(root, configuration) {
         search.setAttribute('aria-label', 'Find a blueprint node');
         search.setAttribute('data-daisy-kit-blueprint-search', '');
         search.type = 'search';
+        search.classList.add('input', 'input-bordered', 'input-sm');
         controls.append(search);
         search.addEventListener('input', onSearchInput);
 
@@ -489,24 +498,28 @@ function renderBlueprint(root, configuration) {
         addNode.setAttribute('data-daisy-kit-blueprint-structure', 'add-node');
         addNode.type = 'button';
         addNode.textContent = 'Add node';
+        addNode.classList.add('btn', 'btn-primary', 'btn-sm');
         controls.append(addNode);
 
         const removeNode = document.createElement('button');
         removeNode.setAttribute('data-daisy-kit-blueprint-structure', 'remove-node');
         removeNode.type = 'button';
         removeNode.textContent = 'Remove selected node';
+        removeNode.classList.add('btn', 'btn-error', 'btn-sm');
         controls.append(removeNode);
 
         transitionTarget = document.createElement('select');
         transitionTarget.disabled = true;
         transitionTarget.setAttribute('aria-label', 'Transition target');
         transitionTarget.setAttribute('data-daisy-kit-blueprint-transition-target', '');
+        transitionTarget.classList.add('select', 'select-bordered', 'select-sm');
         controls.append(transitionTarget);
 
         const addTransition = document.createElement('button');
         addTransition.setAttribute('data-daisy-kit-blueprint-structure', 'add-transition');
         addTransition.type = 'button';
         addTransition.textContent = 'Add transition';
+        addTransition.classList.add('btn', 'btn-sm');
         controls.append(addTransition);
         controls.addEventListener('click', onStructureClick);
         if (history.length === 0) {

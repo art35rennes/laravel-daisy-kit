@@ -166,6 +166,8 @@ describe('map entry', () => {
 
         mount(element);
         const layer = element.querySelector('[data-daisy-kit-map-layer="districts"]');
+        expect(layer.classList.contains('checkbox-primary')).toBe(true);
+        expect(element.querySelector('[data-daisy-kit-map-basemap="light"]').classList.contains('radio-primary')).toBe(true);
         layer.checked = false;
         layer.dispatchEvent(new Event('change', { bubbles: true }));
         element.querySelector('[data-daisy-kit-map-mode="polygon"]').click();

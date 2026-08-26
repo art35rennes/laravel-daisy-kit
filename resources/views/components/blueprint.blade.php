@@ -8,18 +8,18 @@
 ])
 
 <section
-    {{ $attributes->merge(['data-daisy-kit-module' => 'blueprint']) }}
+    {{ $attributes->class(['card', 'border', 'border-base-300', 'bg-base-100', 'shadow-sm', 'daisy-kit-blueprint'])->merge(['data-daisy-kit-module' => 'blueprint']) }}
     aria-label="{{ $label }}"
 >
-    <p data-daisy-kit-status hidden role="alert"></p>
+    <p class="alert alert-error" data-daisy-kit-status hidden role="alert"></p>
 
-    <div data-daisy-kit-content>
+    <div class="card-body" data-daisy-kit-content>
         <svg
             aria-hidden="true"
             data-daisy-kit-blueprint-canvas
             focusable="false"
         ></svg>
-        <p data-daisy-kit-empty hidden>No blueprint nodes are available.</p>
+        <p class="alert" data-daisy-kit-empty hidden>No blueprint nodes are available.</p>
         <input data-daisy-kit-blueprint-value @if(is_string($name) && $name !== '') name="{{ $name }}" @endif type="hidden">
     </div>
 

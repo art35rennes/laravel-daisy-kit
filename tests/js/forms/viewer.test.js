@@ -44,6 +44,9 @@ describe('forms viewer', () => {
         await settle();
 
         expect(root.querySelectorAll('label')).toHaveLength(1);
+        expect(input.classList.contains('input')).toBe(true);
+        expect(input.classList.contains('input-bordered')).toBe(true);
+        expect(root.querySelector('[data-daisy-kit-forms-actions] button[type="submit"]').classList.contains('btn-primary')).toBe(true);
         expect(input.required).toBe(true);
         expect(root.dataset.daisyKitState).toBe('ready');
         expect(changes).toEqual([{ name: 'name', value: 'Grace', values: { name: 'Grace' } }]);

@@ -25,6 +25,55 @@ it('mounts the Workbench modules accessibly on desktop and mobile', function ():
         ->assertScript('window.innerWidth <= 430');
 })->group('browser');
 
+it('composes visible host DaisyUI primitives across themes and responsive widths', function (): void {
+    $page = $this->visit('/')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->wait(1)
+        ->assertNoSmoke();
+
+    foreach ([320, 768, 1024, 1440] as $width) {
+        $page->resize($width, 900)
+            ->assertScript(<<<'JS'
+                (() => {
+                    const roots = [...document.querySelectorAll('[data-daisy-kit-module]')];
+                    const buttons = [
+                        document.querySelector('[data-daisy-kit-module="forms-viewer"] button[type="submit"]'),
+                        document.querySelector('[data-daisy-kit-module="forms-builder"] button'),
+                        document.querySelector('[data-daisy-kit-module="table"] button'),
+                        document.querySelector('[data-daisy-kit-tree-node]'),
+                        document.querySelector('[data-daisy-kit-blueprint-node-control]'),
+                        document.querySelector('[data-daisy-kit-file-preview-open-preview]'),
+                        document.querySelector('[data-daisy-kit-map-mode]'),
+                    ];
+                    const controls = [
+                        document.querySelector('[data-daisy-kit-module="forms-viewer"] input'),
+                        document.querySelector('[data-daisy-kit-table-filter]'),
+                    ];
+
+                    return roots.every((root) => root.classList.contains('card'))
+                        && buttons.every((button) => button?.classList.contains('btn') && getComputedStyle(button).minHeight !== '0px')
+                        && controls.every((control) => control?.classList.contains('input') && getComputedStyle(control).borderTopStyle !== 'none')
+                        && document.documentElement.scrollWidth <= window.innerWidth;
+                })()
+                JS)
+            ->assertNoAccessibilityIssues(1);
+    }
+
+    foreach (['light', 'dark'] as $theme) {
+        $page->script("document.documentElement.dataset.theme = '{$theme}';")
+            ->assertScript(<<<'JS'
+                (() => {
+                    const primary = document.querySelector('[data-daisy-kit-forms-actions] button[type="submit"]');
+                    const warning = document.querySelector('[data-daisy-kit-file-preview-notice]');
+
+                    return primary.classList.contains('btn-primary')
+                        && getComputedStyle(primary).paddingInlineStart !== '0px'
+                        && warning.classList.contains('alert-warning');
+                })()
+                JS);
+    }
+})->group('browser');
+
 it('mounts the map without a browser CSP violation', function (): void {
     $this->visit('/_daisy-kit-test/csp/map')
         ->assertSee('Daisy Kit CSP Map')

@@ -21,12 +21,12 @@
 @endphp
 
 <section
-    {{ $attributes->class(['daisy-kit-forms-builder']) }}
+    {{ $attributes->class(['card', 'border', 'border-base-300', 'bg-base-100', 'shadow-sm', 'daisy-kit-forms-builder']) }}
     aria-busy="true"
     data-daisy-kit-module="forms-builder"
     data-daisy-kit-state="loading"
 >
-    <p data-daisy-kit-status role="status">{{ $livewireAvailable ? __('Loading form builder…') : __('Forms Builder authoring requires optional Livewire 4.') }}</p>
+    <p class="alert" data-daisy-kit-status role="status">{{ $livewireAvailable ? __('Loading form builder…') : __('Forms Builder authoring requires optional Livewire 4.') }}</p>
     @if($livewireAvailable)
         @livewire('daisy-kit.forms.builder', [
             'schema' => is_array($schema) ? $schema : [],
@@ -37,7 +37,7 @@
             'jsonEditor' => $jsonEditor === true,
         ])
     @else
-        <p data-daisy-kit-forms-builder-unavailable>{{ __('The authoring enhancement is not installed.') }}</p>
+        <p class="alert alert-warning m-4" data-daisy-kit-forms-builder-unavailable>{{ __('The authoring enhancement is not installed.') }}</p>
     @endif
     <script data-daisy-kit-config type="application/json">{!! $configuration !!}</script>
 </section>

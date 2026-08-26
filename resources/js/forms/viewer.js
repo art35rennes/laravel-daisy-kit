@@ -180,6 +180,7 @@ function createControl(field, value, fieldId, readonly) {
     if (type === 'radio') {
         const controls = document.createElement('div');
         controls.setAttribute('role', 'radiogroup');
+        controls.classList.add('flex', 'flex-wrap', 'gap-3');
 
         optionsFor(field).forEach((option, optionIndex) => {
             const label = document.createElement('label');
@@ -191,10 +192,12 @@ function createControl(field, value, fieldId, readonly) {
             input.id = `${fieldId}-${optionIndex}`;
             input.value = optionValueAsString;
             input.checked = value === optionValueAsString;
+            input.classList.add('radio', 'radio-primary');
             applySafeAttributes(input, field);
             applyRules(input, field);
             setReadonly(input, field, readonly);
             label.htmlFor = input.id;
+            label.classList.add('label', 'cursor-pointer', 'gap-2');
             label.append(input, document.createTextNode(String(optionLabel(option) ?? optionValueAsString)));
             controls.append(label);
         });
@@ -213,6 +216,20 @@ function createControl(field, value, fieldId, readonly) {
 
     if (type !== 'textarea' && type !== 'select') {
         input.type = type === 'toggle' ? 'checkbox' : type;
+    }
+
+    if (type === 'textarea') {
+        input.classList.add('textarea', 'textarea-bordered', 'w-full');
+    } else if (type === 'select') {
+        input.classList.add('select', 'select-bordered', 'w-full');
+    } else if (type === 'checkbox') {
+        input.classList.add('checkbox', 'checkbox-primary');
+    } else if (type === 'toggle') {
+        input.classList.add('toggle', 'toggle-primary');
+    } else if (type === 'file') {
+        input.classList.add('file-input', 'file-input-bordered', 'w-full');
+    } else {
+        input.classList.add('input', 'input-bordered', 'w-full');
     }
 
     if (type === 'select') {
@@ -262,6 +279,7 @@ function renderField(root, parent, field, values, errors, onChange, fieldId, rea
         const content = document.createElement('p');
 
         content.dataset.daisyKitFormsStaticText = '';
+        content.classList.add('alert');
         content.textContent = typeof field.text === 'string'
             ? field.text
             : (typeof field.label === 'string' ? field.label : '');
@@ -281,12 +299,14 @@ function renderField(root, parent, field, values, errors, onChange, fieldId, rea
     wrapper.dataset.daisyKitFormsField = field.name;
     applyLayout(wrapper, field);
     label.textContent = typeof field.label === 'string' ? field.label : field.name;
+    label.classList.add('label', 'label-text', 'font-medium');
 
     if (hasUnsupportedType(field)) {
         const typeError = document.createElement('p');
 
         typeError.dataset.daisyKitFormsTypeError = field.name;
         typeError.setAttribute('role', 'alert');
+        typeError.classList.add('alert', 'alert-error', 'text-sm');
         typeError.textContent = `Unsupported field type "${field.type}" is unavailable.`;
         wrapper.append(label, typeError);
         emit(root, 'error', { field: field.name, reason: 'unsupported-type', type: field.type });
@@ -312,6 +332,7 @@ function renderField(root, parent, field, values, errors, onChange, fieldId, rea
         error.id = `${fieldId}-error`;
         error.dataset.daisyKitFormsError = field.name;
         error.setAttribute('role', 'alert');
+        error.classList.add('alert', 'alert-error', 'text-sm');
         error.textContent = messages.join(' ');
         inputs.forEach((input) => {
             input.setAttribute('aria-describedby', error.id);
@@ -338,6 +359,8 @@ function renderNodes(parent, fields, context, parentEntry = null) {
             const entry = { field, parent: parentEntry, wrapper: container };
 
             legend.textContent = typeof field.label === 'string' ? field.label : 'Section';
+            container.classList.add('card', 'border', 'border-base-300', 'bg-base-200', 'p-4');
+            legend.classList.add('font-semibold');
             container.append(legend);
             container.dataset.daisyKitFormsContainer = field.type;
             applyLayout(container, field);
@@ -593,12 +616,14 @@ function initialize(root, configuration) {
             const actions = document.createElement('div');
 
             actions.dataset.daisyKitFormsActions = '';
+            actions.classList.add('flex', 'flex-wrap', 'gap-2');
 
             if (context.steps.length > 1) {
                 const previous = document.createElement('button');
                 const next = document.createElement('button');
 
                 previous.type = 'button';
+                previous.classList.add('btn');
                 previous.textContent = 'Previous';
                 previous.dataset.daisyKitFormsPrevious = '';
                 previous.addEventListener('click', () => {
@@ -607,6 +632,7 @@ function initialize(root, configuration) {
                     emit(root, 'step-changed', { step: currentStep });
                 });
                 next.type = 'button';
+                next.classList.add('btn', 'btn-primary');
                 next.textContent = 'Next';
                 next.dataset.daisyKitFormsNext = '';
                 next.addEventListener('click', () => {
@@ -626,6 +652,7 @@ function initialize(root, configuration) {
             const submit = document.createElement('button');
 
             submit.type = 'submit';
+            submit.classList.add('btn', 'btn-primary');
             submit.textContent = typeof configuration.schema?.submit?.label === 'string'
                 ? configuration.schema.submit.label
                 : 'Submit';

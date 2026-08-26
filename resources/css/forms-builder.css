@@ -31,14 +31,6 @@
     gap: 1rem;
 }
 
-[data-daisy-kit-module="forms-builder"] [data-daisy-kit-builder-field],
-[data-daisy-kit-module="forms-builder"] [data-daisy-kit-builder-inspector],
-[data-daisy-kit-module="forms-builder"] [data-daisy-kit-builder-json],
-[data-daisy-kit-module="forms-builder"] [data-daisy-kit-builder-diagnostics] {
-    border: 1px solid currentColor;
-    padding: 0.75rem;
-}
-
 [data-daisy-kit-module="forms-builder"] [data-daisy-kit-builder-inspector] textarea,
 [data-daisy-kit-module="forms-builder"] [data-daisy-kit-builder-json] textarea {
     min-block-size: 7rem;

@@ -38,6 +38,8 @@ describe('blueprint entry', () => {
 
         expect(nodes).toHaveLength(2);
         expect(controls).toHaveLength(2);
+        expect(controls.every((control) => control.classList.contains('btn-outline'))).toBe(true);
+        expect(element.querySelector('[data-daisy-kit-blueprint-view="arrange"]').classList.contains('btn')).toBe(true);
         expect(nodes.every((node) => !node.hasAttribute('role') && !node.hasAttribute('tabindex'))).toBe(true);
         expect(document.activeElement).toBe(controls[1]);
         expect(selected).toEqual(['second', 'first']);

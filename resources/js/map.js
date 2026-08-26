@@ -244,7 +244,9 @@ function initializeMap(root, configuration) {
         basemapControl.name = 'daisy-kit-map-basemap';
         basemapControl.setAttribute('data-daisy-kit-map-basemap', basemap.id);
         basemapControl.type = 'radio';
+        basemapControl.classList.add('radio', 'radio-primary');
         const label = document.createElement('label');
+        label.classList.add('label', 'cursor-pointer', 'justify-start', 'gap-2');
         label.append(basemapControl, document.createTextNode(basemap.label));
         basemapTools?.append(label);
 
@@ -290,7 +292,9 @@ function initializeMap(root, configuration) {
         layerControl.checked = layer.visible;
         layerControl.setAttribute('data-daisy-kit-map-layer', layer.id);
         layerControl.type = 'checkbox';
+        layerControl.classList.add('checkbox', 'checkbox-primary');
         const label = document.createElement('label');
+        label.classList.add('label', 'cursor-pointer', 'justify-start', 'gap-2');
         label.append(layerControl, document.createTextNode(layer.label));
         layerTools.append(label);
 
@@ -310,7 +314,9 @@ function initializeMap(root, configuration) {
         overlayControl.checked = overlay.visible;
         overlayControl.setAttribute('data-daisy-kit-map-wms', overlay.id);
         overlayControl.type = 'checkbox';
+        overlayControl.classList.add('checkbox', 'checkbox-primary');
         const label = document.createElement('label');
+        label.classList.add('label', 'cursor-pointer', 'justify-start', 'gap-2');
         label.append(overlayControl, document.createTextNode(overlay.label));
         layerTools.append(label);
 

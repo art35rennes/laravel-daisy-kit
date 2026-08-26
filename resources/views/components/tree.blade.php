@@ -19,14 +19,14 @@
     ]);
 @endphp
 
-<section {{ $attributes->only(['id', 'class', 'aria-describedby'])->class(['daisy-kit-tree']) }} data-daisy-kit-module="tree">
-    <p data-daisy-kit-status hidden role="status" aria-live="polite"></p>
+<section {{ $attributes->only(['id', 'class', 'aria-describedby'])->class(['card', 'border', 'border-base-300', 'bg-base-100', 'shadow-sm', 'daisy-kit-tree']) }} data-daisy-kit-module="tree">
+    <p class="alert alert-error" data-daisy-kit-status hidden role="status" aria-live="polite"></p>
 
-    <div data-daisy-kit-content>
+    <div class="card-body" data-daisy-kit-content>
         @if ($searchable)
-            <label>
-                <span>Search tree</span>
-                <input data-daisy-kit-tree-search type="search" autocomplete="off">
+            <label class="form-control w-full">
+                <span class="label-text">Search tree</span>
+                <input class="input input-bordered w-full" data-daisy-kit-tree-search type="search" autocomplete="off">
             </label>
         @endif
         <ul data-daisy-kit-tree-root aria-label="{{ $label }}" role="tree"></ul>

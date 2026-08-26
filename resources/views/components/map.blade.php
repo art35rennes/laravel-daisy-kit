@@ -15,18 +15,18 @@
 ])
 
 <section
-    {{ $attributes->merge(['data-daisy-kit-module' => 'map']) }}
+    {{ $attributes->class(['card', 'border', 'border-base-300', 'bg-base-100', 'shadow-sm', 'daisy-kit-map'])->merge(['data-daisy-kit-module' => 'map']) }}
     aria-label="{{ $label }}"
 >
-    <p data-daisy-kit-status hidden role="alert"></p>
+    <p class="alert alert-error" data-daisy-kit-status hidden role="alert"></p>
 
-    <div data-daisy-kit-content>
-        <div aria-label="{{ $label }}" data-daisy-kit-map-canvas role="application" tabindex="0"></div>
-        <p data-daisy-kit-empty hidden>No geographic data is available.</p>
-        <output aria-live="polite" data-daisy-kit-map-measurement></output>
+    <div class="card-body" data-daisy-kit-content>
+        <div class="rounded-box border border-base-300" aria-label="{{ $label }}" data-daisy-kit-map-canvas role="application" tabindex="0"></div>
+        <p class="alert" data-daisy-kit-empty hidden>No geographic data is available.</p>
+        <output class="badge badge-neutral" aria-live="polite" data-daisy-kit-map-measurement></output>
         <input data-daisy-kit-map-value type="hidden">
         @if($geolocation)
-            <button data-daisy-kit-map-geolocate type="button">Use my location</button>
+            <button class="btn btn-sm" data-daisy-kit-map-geolocate type="button">Use my location</button>
         @endif
         <fieldset data-daisy-kit-map-layers hidden>
             <legend>Layers</legend>
@@ -35,21 +35,21 @@
             <legend>Basemaps</legend>
         </fieldset>
         @if($drawing || $spatialSelection)
-            <fieldset data-daisy-kit-map-tools>
+            <fieldset class="flex flex-wrap gap-2" data-daisy-kit-map-tools>
                 <legend>Drawing tools</legend>
                 @if($drawing)
-                    <button data-daisy-kit-map-mode="point" type="button">Draw point</button>
-                    <button data-daisy-kit-map-mode="linestring" type="button">Draw line</button>
-                    <button data-daisy-kit-map-mode="polygon" type="button">Draw area</button>
-                    <button data-daisy-kit-map-mode="edit" type="button">Edit drawing</button>
-                    <button data-daisy-kit-map-mode="select" type="button">Select drawing</button>
+                    <button class="btn btn-sm" data-daisy-kit-map-mode="point" type="button">Draw point</button>
+                    <button class="btn btn-sm" data-daisy-kit-map-mode="linestring" type="button">Draw line</button>
+                    <button class="btn btn-sm" data-daisy-kit-map-mode="polygon" type="button">Draw area</button>
+                    <button class="btn btn-sm" data-daisy-kit-map-mode="edit" type="button">Edit drawing</button>
+                    <button class="btn btn-sm" data-daisy-kit-map-mode="select" type="button">Select drawing</button>
                 @endif
                 @if($spatialSelection)
-                    <button data-daisy-kit-map-mode="spatial-select" type="button">Select geographic feature</button>
+                    <button class="btn btn-sm" data-daisy-kit-map-mode="spatial-select" type="button">Select geographic feature</button>
                 @endif
-                <button data-daisy-kit-map-history="undo" disabled type="button">Undo</button>
-                <button data-daisy-kit-map-history="redo" disabled type="button">Redo</button>
-                <button data-daisy-kit-map-export disabled type="button">Export drawing</button>
+                <button class="btn btn-sm" data-daisy-kit-map-history="undo" disabled type="button">Undo</button>
+                <button class="btn btn-sm" data-daisy-kit-map-history="redo" disabled type="button">Redo</button>
+                <button class="btn btn-sm" data-daisy-kit-map-export disabled type="button">Export drawing</button>
             </fieldset>
         @endif
     </div>
