@@ -70,14 +70,22 @@ export function createMountable(moduleName, initialize) {
 }
 
 export function installLivewireAdapter(moduleName, mountAll, unmount) {
+    function rootsInDocument() {
+        return new Set(document.querySelectorAll(`[data-daisy-kit-module="${moduleName}"]`));
+    }
+
+    let mountedRoots = rootsInDocument();
+
     const handler = () => {
-        document.querySelectorAll(`[data-daisy-kit-module="${moduleName}"]`).forEach((root) => {
-            unmount(root);
-            mountAll(root.parentElement ?? document);
-        });
+        mountedRoots.forEach(unmount);
+        mountAll(document);
+        mountedRoots = rootsInDocument();
     };
 
     document.addEventListener('livewire:navigated', handler);
 
-    return () => document.removeEventListener('livewire:navigated', handler);
+    return () => {
+        document.removeEventListener('livewire:navigated', handler);
+        mountedRoots.clear();
+    };
 }

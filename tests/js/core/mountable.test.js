@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { createMountable } from '../../../resources/js/core/mountable.js';
+import { describe, expect, it, vi } from 'vitest';
+import { createMountable, installLivewireAdapter } from '../../../resources/js/core/mountable.js';
 
 describe('mountable module contract', () => {
     it('mounts once, supports multiple roots, and destroys each instance', () => {
@@ -59,5 +59,36 @@ describe('mountable module contract', () => {
             code: 'initialization-failed',
             message: 'The configured source cannot be reached.',
         }]);
+    });
+
+    it('destroys orphaned Livewire roots for every module before mounting each replacement once', () => {
+        document.body.innerHTML = `
+            <section data-daisy-kit-module="first"><script data-daisy-kit-config type="application/json">{}</script></section>
+            <section data-daisy-kit-module="second"><script data-daisy-kit-config type="application/json">{}</script></section>
+        `;
+        const [firstRoot, secondRoot] = [...document.querySelectorAll('[data-daisy-kit-module]')];
+        const firstUnmount = vi.fn();
+        const secondUnmount = vi.fn();
+        const firstMountAll = vi.fn();
+        const secondMountAll = vi.fn();
+        const detachFirst = installLivewireAdapter('first', firstMountAll, firstUnmount);
+        const detachSecond = installLivewireAdapter('second', secondMountAll, secondUnmount);
+
+        document.body.innerHTML = `
+            <section data-daisy-kit-module="first"><script data-daisy-kit-config type="application/json">{}</script></section>
+            <section data-daisy-kit-module="second"><script data-daisy-kit-config type="application/json">{}</script></section>
+        `;
+        expect(document.querySelector('[data-daisy-kit-module="first"]')).not.toBe(firstRoot);
+        expect(document.querySelector('[data-daisy-kit-module="second"]')).not.toBe(secondRoot);
+        document.dispatchEvent(new Event('livewire:navigated'));
+        detachFirst();
+        detachSecond();
+
+        expect(firstUnmount).toHaveBeenCalledTimes(1);
+        expect(secondUnmount).toHaveBeenCalledTimes(1);
+        expect(firstUnmount.mock.calls[0][0]).toBe(firstRoot);
+        expect(secondUnmount.mock.calls[0][0]).toBe(secondRoot);
+        expect(firstMountAll).toHaveBeenCalledExactlyOnceWith(document);
+        expect(secondMountAll).toHaveBeenCalledExactlyOnceWith(document);
     });
 });
