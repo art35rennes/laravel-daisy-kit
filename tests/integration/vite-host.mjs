@@ -206,8 +206,12 @@ try {
     const table = page.locator('[data-daisy-kit-module="table"]');
     await table.getByRole('button', { name: 'Name', exact: true }).click();
     await table.getByRole('button', { name: 'Name', exact: true }).click();
-    if (await table.locator('tbody tr').first().innerText() !== 'Bertarchived') {
-        throw new Error('Table sorting did not update the host-rendered rows.');
+    const tableHeaders = await table.locator('thead tr').first().locator('th').allTextContents();
+    const sortedRows = await table.locator('tbody tr').evaluateAll((rows) => rows.map((row) => [...row.querySelectorAll('td')].map((cell) => cell.textContent?.trim() ?? '')));
+    const nameColumn = tableHeaders.indexOf('Name');
+    const sortedNames = sortedRows.map((row) => row[nameColumn]);
+    if (nameColumn === -1 || JSON.stringify(sortedNames) !== JSON.stringify(['Bert', 'Ada'])) {
+        throw new Error(`Table descending sort did not reorder the configured Name column; headers were ${JSON.stringify(tableHeaders)} and rows were ${JSON.stringify(sortedRows)}.`);
     }
     await table.locator('[data-daisy-kit-table-column-filter="status"]').selectOption('active');
     if (await table.locator('tbody tr').count() !== 1 || !(await table.locator('tbody tr').first().innerText()).includes('Ada')) {
@@ -227,10 +231,10 @@ try {
         throw new Error('Tree keyboard selection did not synchronize its hidden host form value.');
     }
 
-    const preview = page.locator('[data-daisy-kit-module="file-preview"]');
+    const preview = page.locator('[data-daisy-kit-module="file-preview"]').first();
     await preview.locator('[data-daisy-kit-file-preview-open-preview]').click();
     await preview.locator('[data-daisy-kit-file-preview-modal][open]').waitFor({ state: 'visible' });
-    await page.frameLocator('[data-daisy-kit-file-preview-frame]').locator('pre').waitFor({ state: 'visible' });
+    await preview.frameLocator('[data-daisy-kit-file-preview-frame]').locator('pre').waitFor({ state: 'visible' });
     if (!(await preview.locator('[data-daisy-kit-file-preview-notice]').isVisible())) {
         throw new Error('File Preview did not expose its configured notice in the isolated host frame.');
     }
@@ -245,7 +249,7 @@ try {
     await actionOnlyPreview.locator('[data-daisy-kit-file-preview-open-preview]').click();
     await actionOnlyPreview.locator('[data-daisy-kit-file-preview-frame]').waitFor({ state: 'visible' });
 
-    const frame = page.locator('[data-daisy-kit-file-preview-frame]');
+    const frame = preview.locator('[data-daisy-kit-file-preview-frame]');
     const frameSource = await frame.getAttribute('srcdoc');
 
     if (!frameSource?.includes('/assets/') || frameSource.includes('/file-preview-frame.html')) {
