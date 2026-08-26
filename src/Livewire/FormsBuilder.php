@@ -14,14 +14,12 @@ use Livewire\Component;
  */
 class FormsBuilder extends Component
 {
-    /** @var list<string> */
-    private const FieldTypes = [
+    private const array FieldTypes = [
         'checkbox', 'color', 'date', 'email', 'file', 'hidden', 'number', 'password',
         'radio', 'range', 'select', 'tel', 'text', 'textarea', 'url', 'section', 'wizardStep',
     ];
 
-    /** @var list<string> */
-    private const ContainerTypes = ['section', 'wizardStep'];
+    private const array ContainerTypes = ['section', 'wizardStep'];
 
     /** @var array{layout: array{type: string}, fields: array<int, array<string, mixed>>} */
     public array $schema = ['layout' => ['type' => 'one-page'], 'fields' => []];
@@ -108,7 +106,7 @@ class FormsBuilder extends Component
         $this->schema['layout']['type'] = 'multi-step';
         $field = $this->newField('wizardStep', count($this->flattenFields($this->schema['fields'])) + 1);
         $this->schema['fields'][] = $field;
-        $this->selectedId = $field['id'];
+        $this->selectedId = $this->fieldIdentity($field);
         $this->finishMutation();
     }
 
@@ -323,19 +321,21 @@ class FormsBuilder extends Component
      */
     private function normalizeSchema(array $schema): array
     {
-        $layout = is_array($schema['layout'] ?? null) ? $schema['layout'] : [];
+        $layout = $this->schemaObject($schema['layout'] ?? null);
         $layoutType = in_array($layout['type'] ?? null, ['one-page', 'sections', 'multi-step'], true)
             ? $layout['type']
             : 'one-page';
-        $fields = is_array($schema['fields'] ?? null) ? $schema['fields'] : [];
+        $fields = $this->fieldList($schema['fields'] ?? null);
+
+        $normalizedFields = [];
+
+        foreach ($fields as $index => $field) {
+            $normalizedFields[] = $this->normalizeField($field, $index);
+        }
 
         return [
             'layout' => ['type' => $layoutType],
-            'fields' => array_values(array_map(
-                fn (mixed $field, int $index): array => $this->normalizeField($field, $index),
-                $fields,
-                array_keys($fields),
-            )),
+            'fields' => $normalizedFields,
         ];
     }
 
@@ -362,12 +362,12 @@ class FormsBuilder extends Component
         }
 
         if (in_array($type, self::ContainerTypes, true)) {
-            $children = is_array($value['fields'] ?? null) ? $value['fields'] : [];
-            $field['fields'] = array_values(array_map(
-                fn (mixed $child, int $childIndex): array => $this->normalizeField($child, $childIndex),
-                $children,
-                array_keys($children),
-            ));
+            $children = $this->fieldList($value['fields'] ?? null);
+            $field['fields'] = [];
+
+            foreach ($children as $childIndex => $child) {
+                $field['fields'][] = $this->normalizeField($child, $childIndex);
+            }
         }
 
         return $field;
@@ -381,6 +381,46 @@ class FormsBuilder extends Component
     private function stringValue(mixed $value, string $fallback): string
     {
         return is_string($value) && trim($value) !== '' ? trim($value) : $fallback;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function schemaObject(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $object = [];
+
+        foreach ($value as $key => $item) {
+            if (is_string($key)) {
+                $object[$key] = $item;
+            }
+        }
+
+        return $object;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function fieldList(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $fields = [];
+
+        foreach ($value as $field) {
+            if (is_array($field)) {
+                $fields[] = $this->schemaObject($field);
+            }
+        }
+
+        return $fields;
     }
 
     /** @return array<string, mixed> */
@@ -418,8 +458,10 @@ class FormsBuilder extends Component
         foreach ($fields as $field) {
             $flat[] = $field;
 
-            if (is_array($field['fields'] ?? null)) {
-                array_push($flat, ...$this->flattenFields($field['fields']));
+            $children = $this->fieldList($field['fields'] ?? null);
+
+            if ($children !== []) {
+                array_push($flat, ...$this->flattenFields($children));
             }
         }
 
@@ -440,8 +482,10 @@ class FormsBuilder extends Component
                 'identity' => $this->fieldIdentity($field),
             ];
 
-            if (is_array($field['fields'] ?? null)) {
-                array_push($outline, ...$this->outlineFields($field['fields'], $depth + 1));
+            $children = $this->fieldList($field['fields'] ?? null);
+
+            if ($children !== []) {
+                array_push($outline, ...$this->outlineFields($children, $depth + 1));
             }
         }
 
@@ -458,8 +502,10 @@ class FormsBuilder extends Component
                 return $field;
             }
 
-            if (is_array($field['fields'] ?? null)) {
-                $found = $this->findField($field['fields'], $id);
+            $children = $this->fieldList($field['fields'] ?? null);
+
+            if ($children !== []) {
+                $found = $this->findField($children, $id);
 
                 if ($found !== null) {
                     return $found;
@@ -481,16 +527,20 @@ class FormsBuilder extends Component
     {
         return is_string($field['id'] ?? null) && $field['id'] !== ''
             ? $field['id']
-            : (string) ($field['name'] ?? '');
+            : $this->stringValue($field['name'] ?? null, '');
     }
 
     private function resolveReference(int|string $reference): ?string
     {
-        if (is_int($reference) && isset($this->schema['fields'][$reference])) {
+        if (is_int($reference)) {
+            if (! isset($this->schema['fields'][$reference])) {
+                return null;
+            }
+
             return $this->fieldIdentity($this->schema['fields'][$reference]);
         }
 
-        return $this->findField($this->schema['fields'], (string) $reference) === null ? null : (string) $reference;
+        return $this->findField($this->schema['fields'], $reference) === null ? null : $reference;
     }
 
     /** @param array<int, array<string, mixed>> $fields
@@ -501,7 +551,7 @@ class FormsBuilder extends Component
     {
         return $this->mapTree($fields, function (array $field) use ($parentId, $child): array {
             if ($this->fieldIdentity($field) === $parentId) {
-                $field['fields'][] = $child;
+                $field['fields'] = [...$this->fieldList($field['fields'] ?? null), $child];
             }
 
             return $field;
@@ -517,8 +567,10 @@ class FormsBuilder extends Component
         $result = [];
 
         foreach ($fields as $field) {
-            if (is_array($field['fields'] ?? null)) {
-                $field['fields'] = $this->insertAfter($field['fields'], $targetId, $child);
+            $children = $this->fieldList($field['fields'] ?? null);
+
+            if ($children !== []) {
+                $field['fields'] = $this->insertAfter($children, $targetId, $child);
             }
 
             $result[] = $field;
@@ -543,8 +595,10 @@ class FormsBuilder extends Component
                 continue;
             }
 
-            if (is_array($field['fields'] ?? null)) {
-                $field['fields'] = $this->removeFromTree($field['fields'], $targetId);
+            $children = $this->fieldList($field['fields'] ?? null);
+
+            if ($children !== []) {
+                $field['fields'] = $this->removeFromTree($children, $targetId);
             }
 
             $result[] = $field;
@@ -570,8 +624,10 @@ class FormsBuilder extends Component
                 return $fields;
             }
 
-            if (is_array($field['fields'] ?? null)) {
-                $fields[$index]['fields'] = $this->moveInTree($field['fields'], $targetId, $direction, $moved);
+            $children = $this->fieldList($field['fields'] ?? null);
+
+            if ($children !== []) {
+                $fields[$index]['fields'] = $this->moveInTree($children, $targetId, $direction, $moved);
 
                 if ($moved) {
                     return $fields;
@@ -589,11 +645,14 @@ class FormsBuilder extends Component
     private function mapTree(array $fields, callable $callback): array
     {
         foreach ($fields as $index => $field) {
-            $fields[$index] = $callback($field);
+            $field = $callback($field);
+            $children = $this->fieldList($field['fields'] ?? null);
 
-            if (is_array($fields[$index]['fields'] ?? null)) {
-                $fields[$index]['fields'] = $this->mapTree($fields[$index]['fields'], $callback);
+            if ($children !== []) {
+                $field['fields'] = $this->mapTree($children, $callback);
             }
+
+            $fields[$index] = $field;
         }
 
         return $fields;
@@ -618,7 +677,7 @@ class FormsBuilder extends Component
         }
 
         $this->remember();
-        $this->schema = $this->normalizeSchema($decoded);
+        $this->schema = $this->normalizeSchema($this->schemaObject($decoded));
         $this->selectedId = null;
         $this->jsonError = null;
         $this->finishMutation();
@@ -659,13 +718,13 @@ class FormsBuilder extends Component
             }
 
             $seenIds[] = $identity;
-            $type = $field['type'] ?? '';
+            $type = $this->stringValue($field['type'] ?? null, '');
 
-            if (! in_array($type, self::ContainerTypes, true) && $type !== 'hidden' && trim((string) ($field['name'] ?? '')) === '') {
+            $name = $this->stringValue($field['name'] ?? null, '');
+
+            if (! in_array($type, self::ContainerTypes, true) && $type !== 'hidden' && $name === '') {
                 $diagnostics[] = ['path' => $path, 'code' => 'missing_name', 'message' => 'A submitting field needs a name.'];
             }
-
-            $name = (string) ($field['name'] ?? '');
 
             if ($name !== '' && ! in_array($type, self::ContainerTypes, true) && in_array($name, $seenNames, true)) {
                 $diagnostics[] = ['path' => $path, 'code' => 'duplicate_name', 'message' => "Field name {$name} is duplicated."];
@@ -675,7 +734,7 @@ class FormsBuilder extends Component
             foreach (['visibleWhen', 'computed'] as $expressionKey) {
                 $expression = $field[$expressionKey] ?? null;
 
-                if ($expression !== null && (! is_array($expression) || ($expression['type'] ?? null) !== 'jsonata' || trim((string) ($expression['expression'] ?? '')) === '')) {
+                if ($expression !== null && (! is_array($expression) || ($expression['type'] ?? null) !== 'jsonata' || ! is_string($expression['expression'] ?? null) || trim($expression['expression']) === '')) {
                     $diagnostics[] = ['path' => "{$path}/{$expressionKey}", 'code' => 'invalid_jsonata', 'message' => "{$expressionKey} must be a JSONata expression."];
                 }
             }
