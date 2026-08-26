@@ -127,8 +127,8 @@ describe('forms viewer', () => {
 
     it('evaluates JSONata visibility expressions independently for each root', async () => {
         document.body.innerHTML = `
-            <section data-daisy-kit-module="forms-viewer"><p data-daisy-kit-status role="status"></p><form data-daisy-kit-forms-content></form><script data-daisy-kit-config type="application/json">{"schema":{"fields":[{"name":"name","label":"Name","type":"text"},{"name":"advanced","label":"Advanced","type":"text","visibleWhen":"enabled = true"}]},"value":{"enabled":true}}</script></section>
-            <section data-daisy-kit-module="forms-viewer"><p data-daisy-kit-status role="status"></p><form data-daisy-kit-forms-content></form><script data-daisy-kit-config type="application/json">{"schema":{"fields":[{"name":"name","label":"Name","type":"text"},{"name":"advanced","label":"Advanced","type":"text","visibleWhen":"enabled = true"}]},"value":{"enabled":false}}</script></section>
+            <section data-daisy-kit-module="forms-viewer"><p data-daisy-kit-status role="status"></p><form data-daisy-kit-forms-content></form><script data-daisy-kit-config type="application/json">{"schema":{"fields":[{"name":"name","label":"Name","type":"text"},{"name":"advanced","label":"Advanced","type":"text","visibleWhen":{"type":"jsonata","expression":"enabled = true"}}]},"value":{"enabled":true}}</script></section>
+            <section data-daisy-kit-module="forms-viewer"><p data-daisy-kit-status role="status"></p><form data-daisy-kit-forms-content></form><script data-daisy-kit-config type="application/json">{"schema":{"fields":[{"name":"name","label":"Name","type":"text"},{"name":"advanced","label":"Advanced","type":"text","visibleWhen":{"type":"jsonata","expression":"enabled = true"}}]},"value":{"enabled":false}}</script></section>
         `;
 
         const roots = [...document.querySelectorAll('[data-daisy-kit-module="forms-viewer"]')];
@@ -177,6 +177,25 @@ describe('forms viewer', () => {
         expect(root.querySelector('[name="advanced"]').closest('[data-daisy-kit-forms-field]').hidden).toBe(false);
     });
 
+    it('does not evaluate legacy string JSONata expressions', async () => {
+        const root = viewerRoot(JSON.stringify({
+            schema: {
+                fields: [{
+                    name: 'advanced',
+                    label: 'Advanced',
+                    type: 'text',
+                    visibleWhen: 'enabled = true',
+                }],
+            },
+            value: { enabled: false },
+        }));
+
+        await mount(root);
+        await settle();
+
+        expect(root.querySelector('[name="advanced"]').closest('[data-daisy-kit-forms-field]').hidden).toBe(false);
+    });
+
     it('excludes conditionally hidden sections and future wizard steps from validation and FormData', async () => {
         const root = viewerRoot(JSON.stringify({
             schema: {
@@ -186,7 +205,7 @@ describe('forms viewer', () => {
                         id: 'advanced-section',
                         type: 'section',
                         label: 'Advanced',
-                        visibleWhen: 'advanced = true',
+                        visibleWhen: { type: 'jsonata', expression: 'advanced = true' },
                         fields: [{ name: 'advanced_note', label: 'Advanced note', type: 'text', rules: ['required'] }],
                     },
                     {
@@ -406,7 +425,7 @@ describe('forms viewer', () => {
                 fields: [
                     { name: 'quantity', type: 'number' },
                     { name: 'unit_price', type: 'number' },
-                    { name: 'total', type: 'number', computed: 'quantity * unit_price' },
+                    { name: 'total', type: 'number', computed: { type: 'jsonata', expression: 'quantity * unit_price' } },
                 ],
             },
             value: { quantity: 2, unit_price: 12 },

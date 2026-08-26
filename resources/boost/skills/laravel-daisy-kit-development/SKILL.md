@@ -69,6 +69,11 @@ Tree preserve data-selection workflows; Blueprint preserves an accessible editor
 JSON; File Preview preserves isolated media/document actions; Map preserves editable layers and
 spatial tools. Keep generic DaisyUI primitives in the host rather than reintroducing wrappers.
 
+When Livewire 4 is present, its Builder component is the sole authoring DOM owner; the Builder ESM
+entry only supplies the standard mount lifecycle. Without Livewire, expose the documented
+unavailable state rather than a reduced second editor. Builder exports JSONata as
+`{ type: 'jsonata', expression: '…' }`; Viewer accepts that single descriptor contract.
+
 ## Configuration and CSP
 
 Pass complex component configuration as escaped, non-executable JSON; reject invalid JSON with

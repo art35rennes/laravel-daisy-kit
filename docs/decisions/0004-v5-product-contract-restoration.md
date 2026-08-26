@@ -31,6 +31,13 @@ an HTTP development origin. Authentication material for the sandboxed File Previ
 continues to require source-and-token validation; a non-Web-Crypto fallback is deliberately
 scoped and tested rather than silently relying on a secure context.
 
+Forms Builder has exactly one authoring owner: when Livewire 4 is available, its
+server-rendered component owns the authoring DOM and mutations while the ESM entry provides
+only the common mount lifecycle; when it is unavailable, the public component reports that
+enhancement clearly and does not mount a reduced second editor. Builder exports JSONata as the
+canonical non-executable descriptor `{ "type": "jsonata", "expression": "…" }`. Viewer
+evaluates that descriptor only; no second legacy dialect is retained in v5.
+
 ## Consequences
 
 - The prior intentionally reduced descriptions in the public-contract document are

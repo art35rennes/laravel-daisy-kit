@@ -38,10 +38,6 @@ function errorsFrom(configuration) {
 }
 
 function jsonataExpression(value) {
-    if (typeof value === 'string' && value.trim() !== '') {
-        return value;
-    }
-
     if (value && typeof value === 'object' && value.type === 'jsonata'
         && typeof value.expression === 'string' && value.expression.trim() !== '') {
         return value.expression;

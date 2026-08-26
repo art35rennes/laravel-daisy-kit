@@ -9,7 +9,7 @@ architecture-test failure. The detailed business outcomes and test oracle are in
 | Module | Blade component | Essential contract |
 | --- | --- | --- |
 | Forms viewer | `x-daisy-kit::forms.viewer` | Schema-driven, recursive and progressively validated form viewer with JSONata and safe submission modes. |
-| Forms builder | `x-daisy-kit::forms.builder` | Livewire 4-optional authoring surface for the same Viewer schema, including diagnostics, history and synchronized JSON. |
+| Forms builder | `x-daisy-kit::forms.builder` | Livewire 4-optional authoring surface for the same Viewer schema, including diagnostics, history and synchronized JSON; without Livewire it reports the unavailable enhancement rather than rendering a reduced editor. |
 | Table | `x-daisy-kit::table` | Client/server TanStack data workbench with typed filters, persistent selection and configurable data actions. |
 | Tree | `x-daisy-kit::tree` | Keyboard-accessible hierarchical selector with multiple/indeterminate selection, lazy loading and search. |
 | Blueprint | `x-daisy-kit::blueprint` | Accessible directed-graph viewer/editor with inspector, history and synchronized JSON. |
@@ -42,6 +42,9 @@ import specifier. Hosts configure `@daisy-kit` to resolve to
 Configuration is emitted in a non-executable `application/json` script element and is parsed with
 strict validation. Invalid JSON activates an accessible error state. No public component emits an
 inline handler, executable script, or `style` attribute.
+
+Forms Builder emits `visibleWhen` and `computed` JSONata expressions in the canonical descriptor
+shape `{ "type": "jsonata", "expression": "…" }`. Forms Viewer accepts this shape only.
 
 ## Deliberate non-goals
 

@@ -60,9 +60,7 @@ final class FormSchemaContract
 
         foreach (['attrs', 'options', 'rules', 'visibleWhen', 'computed'] as $key) {
             if (array_key_exists($key, $value)) {
-                $field[$key] = in_array($key, ['visibleWhen', 'computed'], true)
-                    ? $this->normalizeJsonataDescriptor($value[$key])
-                    : $value[$key];
+                $field[$key] = $value[$key];
             }
         }
 
@@ -80,18 +78,6 @@ final class FormSchemaContract
     public function normalizeFieldType(mixed $type): string
     {
         return is_string($type) && in_array($type, self::FIELD_TYPES, true) ? $type : 'text';
-    }
-
-    public function normalizeJsonataDescriptor(mixed $expression): mixed
-    {
-        if (is_string($expression) && trim($expression) !== '') {
-            return [
-                'type' => 'jsonata',
-                'expression' => trim($expression),
-            ];
-        }
-
-        return $expression;
     }
 
     public function stringValue(mixed $value, string $fallback): string

@@ -34,15 +34,13 @@ it('exports a synchronized hidden schema value', function (): void {
         ->assertSee('"name":"email"', false);
 });
 
-it('imports JSON schema metadata for authored fields', function (): void {
+it('diagnoses non-canonical JSONata input instead of translating it to a legacy dialect', function (): void {
     Livewire::test('daisy-kit.forms.builder')
         ->call('importSchema', '{"fields":[{"name":"role","label":"Role","type":"select","options":["member"],"rules":["required"],"visibleWhen":"enabled"}]}')
         ->assertSet('schema.fields.0.options.0', 'member')
         ->assertSet('schema.fields.0.rules.0', 'required')
-        ->assertSet('schema.fields.0.visibleWhen', [
-            'type' => 'jsonata',
-            'expression' => 'enabled',
-        ]);
+        ->assertSet('schema.fields.0.visibleWhen', 'enabled')
+        ->assertSet('diagnostics.0.code', 'invalid_jsonata');
 });
 
 it('removes, reorders, and restores authored fields', function (): void {
