@@ -1,0 +1,1 @@
+<x-daisy::templates.reporting.operations-dashboard :show-summary="true" :detail-modal="false" />

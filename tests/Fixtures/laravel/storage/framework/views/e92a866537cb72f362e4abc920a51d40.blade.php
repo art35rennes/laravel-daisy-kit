@@ -1,0 +1,1 @@
+    <x-daisy::ui.data-display.table :columns="[['key' => 'name'], ['key' => 'name']]" />

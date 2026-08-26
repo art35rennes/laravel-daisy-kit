@@ -1,0 +1,10 @@
+    <x-daisy::layout.navbar-sidebar-layout
+        collapsed
+        searchable
+        storage-key="admin-navigation"
+        name="Admin"
+        logo="/logo.svg"
+        :show-theme-controller="false"
+    >
+        Content
+    </x-daisy::layout.navbar-sidebar-layout>

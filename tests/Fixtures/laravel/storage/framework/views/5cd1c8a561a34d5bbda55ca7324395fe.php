@@ -1,0 +1,2 @@
+    <?php echo $__env->make('daisy::components.partials.custom-themes', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+    <?php echo $__env->yieldPushContent('styles'); ?><?php /**PATH /Users/asicard/.codex/worktrees/2849/laravel-daisy-kit/tests/Fixtures/laravel/storage/framework/views/f096d8439c42fb45f04e8f6a98d2826c.blade.php ENDPATH**/ ?>

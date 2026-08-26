@@ -1,32 +1,32 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
     "name": "art35rennes/laravel-daisy-kit",
-    "type": "library",
-    "description": "Reusable Laravel Blade UI kit built with DaisyUI and Tailwind CSS.",
-    "keywords": [
-        "laravel",
-        "blade",
-        "components",
-        "daisyui",
-        "tailwindcss"
-    ],
+    "description": "Focused, explicitly mounted Laravel UI modules for DaisyUI host applications.",
+    "keywords": ["laravel", "blade", "daisyui", "tailwindcss", "forms", "table", "map"],
+    "homepage": "https://github.com/art35rennes/laravel-daisy-kit",
     "license": "MIT",
+    "support": {
+        "issues": "https://github.com/art35rennes/laravel-daisy-kit/issues",
+        "source": "https://github.com/art35rennes/laravel-daisy-kit"
+    },
     "require": {
         "php": "^8.3",
-        "blade-ui-kit/blade-icons": "^1.10",
-        "davidhsianturi/blade-bootstrap-icons": "^2.2",
-        "illuminate/http": "^13.0",
-        "illuminate/routing": "^13.0",
         "illuminate/support": "^13.0",
-        "illuminate/view": "^13.0",
-        "livewire/livewire": "^4.3"
+        "illuminate/view": "^13.0"
     },
     "require-dev": {
-        "laravel/boost": "^2.4",
+        "larastan/larastan": "^3.9",
         "laravel/framework": "^13.0",
-        "laravel/pao": "^1.1",
         "laravel/pint": "^1.29",
-        "pestphp/pest": "^4.7"
+        "livewire/livewire": "^4.0",
+        "orchestra/testbench": "^11.0",
+        "pestphp/pest": "^5.0",
+        "pestphp/pest-plugin-laravel": "^5.0",
+        "pestphp/pest-plugin-type-coverage": "^5.0",
+        "phpstan/extension-installer": "^1.4"
+    },
+    "suggest": {
+        "livewire/livewire": "Required only to enhance x-daisy-kit::forms.builder with Livewire 4."
     },
     "autoload": {
         "psr-4": {
@@ -35,31 +35,30 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": "tests/"
-        }
-    },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "Art35rennes\\DaisyKit\\DaisyKitServiceProvider"
-            ]
+            "Art35rennes\\DaisyKit\\Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/"
         }
     },
     "scripts": {
-        "ai:catalog": "@php tools/generate-ai-catalog.php",
-        "test": "pest",
-        "lint": "pint --parallel"
+        "post-autoload-dump": ["@php vendor/bin/testbench package:discover --ansi"],
+        "build:workbench": ["@php vendor/bin/testbench workbench:build --ansi"],
+        "lint": ["vendor/bin/pint --parallel"],
+        "lint:check": ["vendor/bin/pint --parallel --test"],
+        "analyse": ["vendor/bin/phpstan analyse"],
+        "test:types": ["vendor/bin/pest --type-coverage --min=100"],
+        "test:unit": ["vendor/bin/pest --parallel"],
+        "test": ["@analyse", "@lint:check", "@test:types", "@test:unit"]
+    },
+    "extra": {
+        "laravel": {
+            "providers": ["Art35rennes\\DaisyKit\\DaisyKitServiceProvider"]
+        }
     },
     "config": {
-        "platform": {
-            "php": "8.3.0"
-        },
-        "optimize-autoloader": true,
-        "preferred-install": "dist",
         "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true,
-            "php-http/discovery": true
+            "phpstan/extension-installer": true
         }
     },
     "minimum-stability": "stable",

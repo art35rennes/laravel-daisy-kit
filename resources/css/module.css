@@ -1,0 +1,7 @@
+[data-daisy-kit-module] [data-daisy-kit-status][hidden] {
+    display: none;
+}
+
+[data-daisy-kit-module][data-daisy-kit-state='error'] [data-daisy-kit-content] {
+    display: none;
+}

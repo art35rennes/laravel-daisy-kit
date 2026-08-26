@@ -1,18 +1,17 @@
 <?php
 
-namespace Tests;
+declare(strict_types=1);
 
-use Illuminate\Contracts\Console\Kernel;
-use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+namespace Art35rennes\DaisyKit\Tests;
 
-abstract class TestCase extends BaseTestCase
+use Art35rennes\DaisyKit\DaisyKitServiceProvider;
+use Orchestra\Testbench\TestCase as Orchestra;
+
+class TestCase extends Orchestra
 {
-    public function createApplication(): Application
+    /** @return array<int, class-string> */
+    protected function getPackageProviders($app): array
     {
-        $app = require __DIR__.'/Fixtures/laravel/bootstrap/app.php';
-        $app->make(Kernel::class)->bootstrap();
-
-        return $app;
+        return [DaisyKitServiceProvider::class];
     }
 }

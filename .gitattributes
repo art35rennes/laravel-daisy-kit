@@ -1,27 +1,7 @@
 * text=auto eol=lf
-
-# Exclure les artefacts de développement lors de l'export du package
-/.cursor export-ignore
-/.env* export-ignore
+/.env export-ignore
 /.github export-ignore
-/.idea export-ignore
-/.specification export-ignore
-/.vscode export-ignore
-/bug.md export-ignore
 /node_modules export-ignore
-/package-lock.json export-ignore
-/phpunit.xml export-ignore
-/storage export-ignore
 /tests export-ignore
-/tests-audit-report.md export-ignore
 /vendor export-ignore
-
-*.blade.php diff=html
-*.css diff=css
-*.html diff=html
-*.md diff=markdown
-*.php diff=php
-
-/.github export-ignore
-CHANGELOG.md export-ignore
-.styleci.yml export-ignore
+/workbench export-ignore

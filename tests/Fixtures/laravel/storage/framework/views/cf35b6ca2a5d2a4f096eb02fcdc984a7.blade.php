@@ -1,0 +1,1 @@
+<x-daisy::ui.advanced.blueprint />

@@ -1,0 +1,14 @@
+laravel: '@testbench'
+
+workbench:
+  start: '/'
+  install: true
+  discovers:
+    web: true
+    views: true
+  build:
+    - create-sqlite-db
+  sync:
+    - from: storage
+      to: workbench/storage
+      reverse: true

@@ -1,0 +1,2 @@
+<button type="button" data-row="<?php echo e($row['id']); ?>" data-value="<?php echo e($value); ?>"><?php echo e(data_get($item, 'name')); ?> <?php echo e($column['key']); ?> <?php echo e(data_get($table, 'name', 'Table')); ?></button>
+<?php /**PATH /Users/asicard/.codex/worktrees/2849/laravel-daisy-kit/tests/Fixtures/views/table/actions.blade.php ENDPATH**/ ?>

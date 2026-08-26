@@ -1,0 +1,1 @@
+    <x-daisy::ui.navigation.sidebar brand="Acme" brand-url="/dashboard" />

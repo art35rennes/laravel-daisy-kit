@@ -1,0 +1,1 @@
+<x-daisy::templates.auth.two-factor use-recovery-code />

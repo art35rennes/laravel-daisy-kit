@@ -1,0 +1,11 @@
+{
+    "preset": "laravel",
+    "rules": {
+        "blank_line_before_statement": {
+            "statements": ["declare", "if", "return", "throw"]
+        },
+        "trailing_comma_in_multiline": {
+            "elements": ["arguments", "arrays", "parameters"]
+        }
+    }
+}

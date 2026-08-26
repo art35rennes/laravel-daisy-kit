@@ -1,0 +1,1 @@
+    <x-daisy::ui.inputs.otp name="token" :length="4" :numeric="false" />

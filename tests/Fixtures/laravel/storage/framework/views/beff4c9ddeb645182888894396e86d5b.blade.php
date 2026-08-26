@@ -1,0 +1,1 @@
+<x-daisy::ui.navigation.breadcrumbs :items="$items" />

@@ -1,0 +1,1 @@
+    <x-daisy::ui.data-display.radial-progress :value="70" size="7rem" thickness="0.7rem">70%</x-daisy::ui.data-display.radial-progress>

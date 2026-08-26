@@ -1,8 +1,0 @@
-{
-    "resources/css/app.css": {
-        "file": "assets/app.css"
-    },
-    "resources/js/app.js": {
-        "file": "assets/app.js"
-    }
-}

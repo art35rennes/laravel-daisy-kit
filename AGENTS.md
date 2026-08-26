@@ -1,36 +1,23 @@
-# Laravel Daisy Kit
+# Laravel Daisy Kit v5
 
-This repository is the source package for `art35rennes/laravel-daisy-kit`.
+This repository is the source package for `art35rennes/laravel-daisy-kit` v5.
 
-## Reuse First
+## Public surface
 
-- Treat Daisy Kit as the default reusable UI system.
-- Before adding or rewriting Blade UI, check:
-  - `resources/boost/skills/daisy-kit-component-reuse/references/component-catalog.md`
-  - `resources/boost/skills/daisy-kit-component-reuse/references/components.json`
-  - `resources/views/components`
-  - `resources/views/templates`
-- Prefer existing `x-daisy::layout.*`, `x-daisy::ui.*`, and `x-daisy::templates.*` aliases before creating new package or host-side Blade files.
-- Compose existing package components before creating a new one.
-- In host applications, prefer published overrides under `resources/views/vendor/daisy/...` when only light visual or markup adjustments are needed.
-- Reuse existing package JavaScript behavior before adding parallel host-side interactivity.
+The only supported Blade components are listed in `docs/specs/v5-public-contract.md`.
+Their namespace is `x-daisy-kit::`; do not add aliases, DaisyUI primitive wrappers,
+templates, routes, or asset publishing.
 
-## Public UI Surface
+## Frontend modules
 
-- Blade namespace: `daisy::`
-- Component aliases: `x-daisy::...`
-- Template aliases and views: `x-daisy::templates.*` and `daisy::templates.*`
-- Primary discovery reference: `resources/boost/skills/daisy-kit-component-reuse/references/component-catalog.md`
+Each public module owns independent ESM and CSS entries. Use the shared module helpers
+in `resources/js/core/` and retain the `mount`, `mountAll`, `unmount` contract. Do not
+introduce globals, inline handlers/styles/scripts, or cross-module implicit imports.
 
-## When The Surface Changes
+## Package conventions
 
-- If you add, rename, or remove a public component, layout, or template, run `composer ai:catalog`.
-- Keep `resources/boost/guidelines/core.blade.php` and the `daisy-kit-component-reuse` skill aligned with the current package surface.
-- Do not let AI guidance drift away from the actual Blade API.
-
-## Agent Skills And Boost
-
-- Codex skills are installed in `.agents/skills`.
-- Cursor skills are installed in `.cursor/skills`.
-- This repository is a Laravel package and does not expose an `artisan` executable at the root. Do not configure Boost MCP here unless a real package-level Artisan entry point is added.
-- `laravel/boost` and `laravel/pao` are development dependencies. PAO is expected to optimize Pest/PHPUnit output for agent consumption.
+- This is a Laravel package: use Testbench and Workbench rather than a root `artisan`.
+- Livewire is optional at runtime. Never reference it outside a guarded integration.
+- Keep `dist/` as intentionally tracked runtime output; do not track `node_modules` or
+  Workbench build artefacts.
+- Record changes to the public contract in `docs/decisions/` before implementation.
