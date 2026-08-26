@@ -139,6 +139,44 @@ describe('forms viewer', () => {
         expect(roots[1].querySelector('[name="advanced"]').closest('[data-daisy-kit-forms-field]').hidden).toBe(true);
     });
 
+    it('accepts the Builder JSONata descriptor for visible and computed fields', async () => {
+        const root = viewerRoot(JSON.stringify({
+            schema: {
+                fields: [
+                    { name: 'enabled', label: 'Enabled', type: 'checkbox' },
+                    {
+                        name: 'advanced',
+                        label: 'Advanced',
+                        type: 'text',
+                        visibleWhen: { type: 'jsonata', expression: 'enabled = true' },
+                    },
+                    { name: 'quantity', label: 'Quantity', type: 'number' },
+                    { name: 'unit_price', label: 'Unit price', type: 'number' },
+                    {
+                        name: 'total',
+                        label: 'Total',
+                        type: 'number',
+                        computed: { type: 'jsonata', expression: 'quantity * unit_price' },
+                    },
+                ],
+            },
+            value: { enabled: false, quantity: 2, unit_price: 12 },
+        }));
+
+        await mount(root);
+        await settle();
+
+        expect(root.querySelector('[name="advanced"]').closest('[data-daisy-kit-forms-field]').hidden).toBe(true);
+        expect(root.querySelector('[name="total"]').value).toBe('24');
+
+        const enabled = root.querySelector('input[name="enabled"]');
+        enabled.checked = true;
+        enabled.dispatchEvent(new Event('change', { bubbles: true }));
+        await settle();
+
+        expect(root.querySelector('[name="advanced"]').closest('[data-daisy-kit-forms-field]').hidden).toBe(false);
+    });
+
     it('excludes conditionally hidden sections and future wizard steps from validation and FormData', async () => {
         const root = viewerRoot(JSON.stringify({
             schema: {

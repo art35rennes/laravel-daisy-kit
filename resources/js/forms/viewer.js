@@ -37,6 +37,19 @@ function errorsFrom(configuration) {
         : {};
 }
 
+function jsonataExpression(value) {
+    if (typeof value === 'string' && value.trim() !== '') {
+        return value;
+    }
+
+    if (value && typeof value === 'object' && value.type === 'jsonata'
+        && typeof value.expression === 'string' && value.expression.trim() !== '') {
+        return value.expression;
+    }
+
+    return null;
+}
+
 function setStatus(root, message, state) {
     const status = root.querySelector('[data-daisy-kit-status]');
     root.dataset.daisyKitState = state;
@@ -63,7 +76,7 @@ function setInputValue(input, field, value) {
 }
 
 function setReadonly(input, field, readonly) {
-    if (! readonly && field.readonly !== true && typeof field.computed !== 'string') {
+    if (! readonly && field.readonly !== true && jsonataExpression(field.computed) === null) {
         return;
     }
 
@@ -365,12 +378,14 @@ function renderNodes(parent, fields, context, parentEntry = null) {
 }
 
 async function isVisible(root, field, values) {
-    if (typeof field.visibleWhen !== 'string' || field.visibleWhen.trim() === '') {
+    const expression = jsonataExpression(field.visibleWhen);
+
+    if (expression === null) {
         return true;
     }
 
     try {
-        return Boolean(await jsonata(field.visibleWhen).evaluate(values));
+        return Boolean(await jsonata(expression).evaluate(values));
     } catch {
         emit(root, 'error', { field: field.name, reason: 'invalid-expression' });
 
@@ -503,12 +518,14 @@ function initialize(root, configuration) {
         const steps = new Map(context.steps.map((entry, index) => [entry, index]));
 
         for (const { field } of context.entries) {
-            if (typeof field.name !== 'string' || typeof field.computed !== 'string' || field.computed.trim() === '') {
+            const expression = jsonataExpression(field.computed);
+
+            if (typeof field.name !== 'string' || expression === null) {
                 continue;
             }
 
             try {
-                values[field.name] = await jsonata(field.computed).evaluate(values);
+                values[field.name] = await jsonata(expression).evaluate(values);
                 const input = [...root.querySelectorAll('[name]')].find((candidate) => candidate.getAttribute('name') === field.name);
 
                 if (input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement) {
