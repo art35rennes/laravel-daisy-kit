@@ -7,6 +7,7 @@ const map = {
 };
 const createdLayers = [];
 const drawings = [];
+const tileLayers = [];
 
 function createLayer() {
     const layer = { addTo: vi.fn(() => layer), getBounds: vi.fn(() => ({ isValid: () => true })), remove: vi.fn() };
@@ -19,6 +20,12 @@ vi.mock('leaflet', () => ({
     default: {
         geoJSON: vi.fn(() => createLayer()),
         map: vi.fn(() => map),
+        tileLayer: vi.fn(() => {
+            const layer = { addTo: vi.fn(() => layer), remove: vi.fn() };
+            tileLayers.push(layer);
+
+            return layer;
+        }),
     },
 }));
 vi.mock('terra-draw', () => ({
@@ -50,8 +57,10 @@ function root(configuration) {
                 <div data-daisy-kit-map-canvas></div>
                 <p data-daisy-kit-empty hidden></p>
                 <output data-daisy-kit-map-measurement></output>
+                <input data-daisy-kit-map-value type="hidden">
                 <fieldset data-daisy-kit-map-layers hidden><legend>Layers</legend></fieldset>
                 <fieldset data-daisy-kit-map-tools><button data-daisy-kit-map-mode="linestring" type="button">Draw line</button><button data-daisy-kit-map-mode="polygon" type="button">Draw area</button></fieldset>
+                <button data-daisy-kit-map-export disabled type="button">Export drawing</button>
             </div>
             <script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script>
         </section>
@@ -64,6 +73,7 @@ describe('map entry', () => {
     beforeEach(() => {
         createdLayers.splice(0);
         drawings.splice(0);
+        tileLayers.splice(0);
         map.fitBounds.mockClear();
         map.remove.mockClear();
         map.setView.mockClear();
@@ -103,6 +113,7 @@ describe('map entry', () => {
                 id: 'districts',
                 label: 'Districts',
             }],
+            tileUrl: 'https://tiles.example.test/{z}/{x}/{y}.png',
         });
         const layerEvents = [];
         element.addEventListener('daisy-kit:map:layer', (event) => layerEvents.push(event.detail));
@@ -113,10 +124,13 @@ describe('map entry', () => {
         layer.dispatchEvent(new Event('change', { bubbles: true }));
         element.querySelector('[data-daisy-kit-map-mode="polygon"]').click();
         drawings[0].handlers.finish('shape');
+        element.querySelector('[data-daisy-kit-map-export]').click();
 
         expect(layerEvents).toEqual([{ id: 'districts', visible: false }]);
         expect(createdLayers[0].remove).toHaveBeenCalledOnce();
         expect(element.querySelector('[data-daisy-kit-map-measurement]').textContent).toContain('m²');
         expect(element.querySelector('[data-daisy-kit-map-mode="polygon"]').getAttribute('aria-pressed')).toBe('true');
+        expect(tileLayers).toHaveLength(1);
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-map-value]').value).features).toHaveLength(1);
     });
 });

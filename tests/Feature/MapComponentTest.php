@@ -20,11 +20,13 @@ test('the map component serializes geojson safely', function (): void {
 });
 
 test('the map component exposes a semantic empty and measurement state', function (): void {
-    $html = view('daisy-kit::components.map')->render();
+    $html = view('daisy-kit::components.map', ['drawing' => true])->render();
 
     expect($html)
         ->toContain('data-daisy-kit-empty')
         ->toContain('data-daisy-kit-map-layers')
+        ->toContain('data-daisy-kit-map-export')
+        ->toContain('data-daisy-kit-map-value')
         ->toContain('data-daisy-kit-map-measurement')
         ->toContain('role="application"');
 });

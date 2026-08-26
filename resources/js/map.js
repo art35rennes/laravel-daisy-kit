@@ -48,6 +48,18 @@ function validLayers(value) {
     });
 }
 
+function validTileUrl(value) {
+    if (typeof value !== 'string' || value.length === 0) return null;
+
+    try {
+        const url = new URL(value);
+
+        return url.protocol === 'https:' && ['{x}', '{y}', '{z}'].every((placeholder) => decodeURIComponent(url.pathname).includes(placeholder)) ? value : null;
+    } catch {
+        return null;
+    }
+}
+
 function measurement(feature) {
     if (!feature?.geometry) {
         return null;
@@ -70,8 +82,11 @@ function initializeMap(root, configuration) {
     const output = root.querySelector('[data-daisy-kit-map-measurement]');
     const tools = root.querySelector('[data-daisy-kit-map-tools]');
     const layerTools = root.querySelector('[data-daisy-kit-map-layers]');
+    const exportControl = root.querySelector('[data-daisy-kit-map-export]');
+    const value = root.querySelector('[data-daisy-kit-map-value]');
     const geojson = validGeojson(configuration.geojson);
     const layers = validLayers(configuration.layers);
+    const tileUrl = validTileUrl(configuration.tileUrl);
 
     if (!canvas || !empty || !output || !layerTools) {
         throw new Error('Map markup is incomplete.');
@@ -91,6 +106,13 @@ function initializeMap(root, configuration) {
         Number.isFinite(configuration.zoom) ? Number(configuration.zoom) : 12,
     );
     const dataLayers = [];
+    let tileLayer = null;
+
+    if (tileUrl) {
+        tileLayer = L.tileLayer(tileUrl, {
+            attribution: typeof configuration.tileAttribution === 'string' ? configuration.tileAttribution : '',
+        }).addTo(map);
+    }
 
     if (geojson) {
         const dataLayer = L.geoJSON(geojson).addTo(map);
@@ -123,6 +145,7 @@ function initializeMap(root, configuration) {
 
     let drawing = null;
     let onFinish = null;
+    const drawnFeatures = [];
 
     if (configuration.drawing) {
         drawing = new TerraDraw({
@@ -135,6 +158,11 @@ function initializeMap(root, configuration) {
 
             if (value) {
                 output.textContent = value;
+            }
+
+            if (feature) {
+                drawnFeatures.push(feature);
+                exportControl?.removeAttribute('disabled');
             }
 
             root.dispatchEvent(new CustomEvent('daisy-kit:map:drawn', {
@@ -160,6 +188,18 @@ function initializeMap(root, configuration) {
             detail: { mode: button.dataset.daisyKitMapMode },
         }));
     };
+    const onExport = () => {
+        if (drawnFeatures.length === 0) return;
+
+        const collection = { features: drawnFeatures, type: 'FeatureCollection' };
+        const serialized = JSON.stringify(collection);
+
+        if (value instanceof HTMLInputElement) value.value = serialized;
+        root.dispatchEvent(new CustomEvent('daisy-kit:map:export', {
+            bubbles: true,
+            detail: { collection, value: serialized },
+        }));
+    };
     const onLayerChange = (event) => {
         const control = event.target.closest('[data-daisy-kit-map-layer]');
 
@@ -183,6 +223,7 @@ function initializeMap(root, configuration) {
 
     tools?.addEventListener('click', onToolClick);
     layerTools.addEventListener('change', onLayerChange);
+    exportControl?.addEventListener('click', onExport);
 
     root.dataset.daisyKitState = 'ready';
     root.dispatchEvent(new CustomEvent('daisy-kit:map:ready', { bubbles: true }));
@@ -190,6 +231,7 @@ function initializeMap(root, configuration) {
     return () => {
         tools?.removeEventListener('click', onToolClick);
         layerTools.removeEventListener('change', onLayerChange);
+        exportControl?.removeEventListener('click', onExport);
 
         if (drawing && onFinish) {
             drawing.off('finish', onFinish);
@@ -197,6 +239,7 @@ function initializeMap(root, configuration) {
         }
 
         dataLayers.forEach((layer) => layer.remove());
+        tileLayer?.remove();
         layerTools.replaceChildren();
         layerTools.hidden = true;
         map.remove();

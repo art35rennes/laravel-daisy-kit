@@ -4,6 +4,8 @@
     'zoom' => 12,
     'drawing' => false,
     'layers' => [],
+    'tileUrl' => null,
+    'tileAttribution' => '',
     'label' => 'Map',
 ])
 
@@ -17,6 +19,7 @@
         <div aria-label="{{ $label }}" data-daisy-kit-map-canvas role="application" tabindex="0"></div>
         <p data-daisy-kit-empty hidden>No geographic data is available.</p>
         <output aria-live="polite" data-daisy-kit-map-measurement></output>
+        <input data-daisy-kit-map-value type="hidden">
         <fieldset data-daisy-kit-map-layers hidden>
             <legend>Layers</legend>
         </fieldset>
@@ -25,6 +28,7 @@
                 <legend>Drawing tools</legend>
                 <button data-daisy-kit-map-mode="linestring" type="button">Draw line</button>
                 <button data-daisy-kit-map-mode="polygon" type="button">Draw area</button>
+                <button data-daisy-kit-map-export disabled type="button">Export drawing</button>
             </fieldset>
         @endif
     </div>
@@ -35,6 +39,8 @@
         'zoom' => $zoom,
         'drawing' => $drawing,
         'layers' => $layers,
+        'tileUrl' => $tileUrl,
+        'tileAttribution' => $tileAttribution,
         'label' => $label,
     ]) !!}</script>
 </section>
