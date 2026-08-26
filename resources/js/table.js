@@ -148,9 +148,17 @@ function readPersistedState(persistence) {
     }
 
     const storageKey = `daisy-kit-table[${persistence.key}]`;
-    const serialized = persistence.mode === 'url'
-        ? new URLSearchParams(window.location.search).get(storageKey)
-        : window.localStorage.getItem(storageKey);
+    let serialized = null;
+
+    if (persistence.mode === 'url') {
+        serialized = new URLSearchParams(window.location.search).get(storageKey);
+    } else {
+        try {
+            serialized = window.localStorage.getItem(storageKey);
+        } catch {
+            return {};
+        }
+    }
 
     if (!serialized || serialized.length > 4096) {
         return {};
@@ -185,7 +193,11 @@ function persistState(persistence, state) {
         return;
     }
 
-    window.localStorage.setItem(storageKey, serialized);
+    try {
+        window.localStorage.setItem(storageKey, serialized);
+    } catch {
+        // Storage can be disabled, full, or unavailable in a privacy-restricted host.
+    }
 }
 
 function normalizeSource(value) {

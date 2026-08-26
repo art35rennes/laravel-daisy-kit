@@ -283,6 +283,27 @@ describe('table module', () => {
         expect(persisted.globalFilter).toBe('Alpha');
     });
 
+    it('keeps the table usable when local storage cannot be read or written', () => {
+        vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+            throw new DOMException('Storage is unavailable.', 'SecurityError');
+        });
+        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new DOMException('Storage quota exceeded.', 'QuotaExceededError');
+        });
+        document.body.innerHTML = tableMarkup({
+            columns: [{ id: 'name', label: 'Name' }],
+            persistence: { key: 'private-context', mode: 'local' },
+            rows: [{ name: 'Beta' }, { name: 'Alpha' }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        expect(() => mount(root)).not.toThrow();
+        expect(root.querySelector('tbody').textContent).toContain('Beta');
+
+        expect(() => root.querySelector('th button').click()).not.toThrow();
+        expect(root.querySelector('tbody').textContent).toContain('Alpha');
+    });
+
     it('applies a declared initial state before a persistence backend is configured', () => {
         document.body.innerHTML = tableMarkup({
             columns: [{ id: 'name', label: 'Name' }, { id: 'status', label: 'Status' }],
