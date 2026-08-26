@@ -125,6 +125,7 @@ function initialize(root, configuration) {
     const initialContent = content.innerHTML;
     const source = normalizeSource(configuration.source);
     const selectable = configuration.selectable === true;
+    const bulkActions = Array.isArray(configuration.bulkActions) ? configuration.bulkActions.filter((action) => action && typeof action.id === 'string' && typeof action.label === 'string') : [];
     const selectedIds = new Set();
     let abortController = null;
     let requestSerial = 0;
@@ -234,6 +235,22 @@ function initialize(root, configuration) {
             label.append(control, document.createTextNode(String(column.columnDef.header ?? column.id)), pin);
             return [label];
         }));
+        let actions = content.querySelector('[data-daisy-kit-table-bulk-actions]');
+        if (!actions && bulkActions.length > 0) {
+            actions = document.createElement('div');
+            actions.setAttribute('data-daisy-kit-table-bulk-actions', '');
+            tableElement.parentElement.insertAdjacentElement('beforebegin', actions);
+        }
+        if (actions) {
+            actions.replaceChildren(...bulkActions.map((action) => {
+                const button = document.createElement('button');
+                button.dataset.daisyKitTableBulkAction = action.id;
+                button.textContent = action.label;
+                button.type = 'button';
+                button.addEventListener('click', () => emit(root, 'bulk-action', { id: action.id, ids: [...selectedIds] }));
+                return button;
+            }));
+        }
 
         const headerRow = document.createElement('tr');
 
