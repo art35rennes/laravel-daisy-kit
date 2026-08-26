@@ -32,6 +32,8 @@ it('renders the tree as a semantic CSP-safe module', function (): void {
                     'children' => [['id' => 'child', 'label' => 'Child']],
                 ],
             ],
+            'multiple' => false,
+            'name' => null,
         ]);
 });
 

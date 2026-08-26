@@ -59,9 +59,12 @@ function initialize(root, configuration) {
 
     const initialMarkup = treeRoot.innerHTML;
     const items = normalizeItems(configuration.items);
+    const multiple = configuration.multiple === true;
+    const valueInput = root.querySelector('[data-daisy-kit-tree-value]');
     const itemsById = new Map();
     const buttonsById = new Map();
     const expandedIds = new Set();
+    const selectedIds = new Set();
     let selectedId = null;
 
     function index(itemsToIndex, parentId = null) {
@@ -93,6 +96,10 @@ function initialize(root, configuration) {
             button.setAttribute('aria-level', String(level));
             button.setAttribute('aria-selected', 'false');
 
+            if (multiple) {
+                button.setAttribute('aria-checked', 'false');
+            }
+
             if (hasChildren) {
                 button.setAttribute('aria-expanded', String(expandedIds.has(item.id)));
             }
@@ -122,6 +129,11 @@ function initialize(root, configuration) {
                 button.hidden = !ancestorsVisible;
                 button.setAttribute('aria-selected', String(selectedId === item.id));
 
+                if (multiple) {
+                    const selection = selectionState(item);
+                    button.setAttribute('aria-checked', selection);
+                }
+
                 if (item.children.length > 0) {
                     button.setAttribute('aria-expanded', String(expanded));
                 }
@@ -147,10 +159,53 @@ function initialize(root, configuration) {
         button.focus();
     }
 
+    function descendantIds(item) {
+        if (item.children.length === 0) {
+            return [item.id];
+        }
+
+        return item.children.flatMap(descendantIds);
+    }
+
+    function selectionState(item) {
+        const ids = descendantIds(item);
+        const selected = ids.filter((id) => selectedIds.has(id)).length;
+
+        if (selected === 0) {
+            return 'false';
+        }
+
+        return selected === ids.length ? 'true' : 'mixed';
+    }
+
+    function syncValue() {
+        if (valueInput instanceof HTMLInputElement) {
+            valueInput.value = JSON.stringify([...selectedIds]);
+        }
+    }
+
     function setSelected(id) {
         const item = itemsById.get(id);
 
         if (!item) {
+            return;
+        }
+
+        if (multiple) {
+            const ids = descendantIds(item);
+            const shouldSelect = ids.some((candidate) => !selectedIds.has(candidate));
+
+            ids.forEach((candidate) => {
+                if (shouldSelect) {
+                    selectedIds.add(candidate);
+                } else {
+                    selectedIds.delete(candidate);
+                }
+            });
+            syncValue();
+            applyVisibility(items);
+            emit(root, 'selection-changed', { ids: [...selectedIds] });
+
             return;
         }
 

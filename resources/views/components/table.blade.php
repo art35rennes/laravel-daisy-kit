@@ -2,6 +2,8 @@
     'columns' => [],
     'rows' => [],
     'pageSize' => 10,
+    'selectable' => false,
+    'source' => null,
 ])
 
 @php
@@ -9,6 +11,8 @@
         'columns' => $columns,
         'rows' => $rows,
         'pageSize' => $pageSize,
+        'selectable' => $selectable,
+        'source' => $source,
     ]);
 @endphp
 

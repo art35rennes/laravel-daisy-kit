@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount, mountAll, unmount } from '../../../resources/js/table.js';
 
 function tableMarkup(configuration) {
@@ -16,6 +16,40 @@ function tableMarkup(configuration) {
 }
 
 describe('table module', () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it('loads a server-backed filtered page and retains selected row identifiers', async () => {
+        const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+            rows: [{ id: 'alpha', name: 'Alpha' }],
+            total: 1,
+        }), { headers: { 'content-type': 'application/json' } }));
+        vi.stubGlobal('fetch', fetch);
+        document.body.innerHTML = tableMarkup({
+            columns: [{ id: 'name', label: 'Name' }],
+            pageSize: 10,
+            selectable: true,
+            source: '/api/people',
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+        const selections = [];
+        root.addEventListener('daisy-kit:table:selection-changed', (event) => selections.push(event.detail));
+
+        mount(root);
+        await vi.waitFor(() => expect(root.querySelector('[data-daisy-kit-table-row-select="alpha"]')).not.toBeNull());
+
+        const filter = root.querySelector('[data-daisy-kit-table-filter]');
+        filter.value = 'Alpha';
+        filter.dispatchEvent(new Event('input'));
+        await vi.waitFor(() => expect(String(fetch.mock.calls.at(-1)[0])).toContain('filter=Alpha'));
+        await vi.waitFor(() => expect(root.querySelector('[data-daisy-kit-table-row-select="alpha"]')).not.toBeNull());
+        root.querySelector('[data-daisy-kit-table-row-select="alpha"]').click();
+
+        expect(String(fetch.mock.calls.at(-1)[0])).toContain('filter=Alpha');
+        expect(root.querySelector('tbody td:last-child').textContent).toBe('Alpha');
+        expect(root.dataset.daisyKitState).toBe('ready');
+        expect(selections).toEqual([{ ids: ['alpha'] }]);
+    });
+
     it('sorts, filters, and reports state changes without global state', () => {
         document.body.innerHTML = tableMarkup({
             columns: [{ id: 'name', label: 'Name' }],

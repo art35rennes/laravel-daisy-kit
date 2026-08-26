@@ -28,6 +28,8 @@ it('renders the table as a CSP-safe explicitly mounted module', function (): voi
             'columns' => [['id' => 'name', 'label' => 'Name']],
             'rows' => [['name' => '</script><img src=x onerror=alert(1)>']],
             'pageSize' => 20,
+            'selectable' => false,
+            'source' => null,
         ]);
 });
 

@@ -1,11 +1,15 @@
 @props([
     'items' => [],
     'label' => 'Tree',
+    'multiple' => false,
+    'name' => null,
 ])
 
 @php
     $configuration = \Art35rennes\DaisyKit\Support\JsonConfiguration::encode([
         'items' => $items,
+        'multiple' => $multiple,
+        'name' => $name,
     ]);
 @endphp
 
@@ -14,6 +18,9 @@
 
     <div data-daisy-kit-content>
         <ul data-daisy-kit-tree-root aria-label="{{ $label }}" role="tree"></ul>
+        @if (is_string($name) && $name !== '')
+            <input data-daisy-kit-tree-value name="{{ $name }}" type="hidden" value="[]">
+        @endif
     </div>
 
     <script data-daisy-kit-config type="application/json">{!! $configuration !!}</script>

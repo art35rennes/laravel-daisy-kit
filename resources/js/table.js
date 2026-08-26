@@ -53,6 +53,20 @@ function normalizePageSize(value) {
     return Math.min(value, 100);
 }
 
+function normalizeSource(value) {
+    if (typeof value !== 'string' || value === '') {
+        return null;
+    }
+
+    try {
+        const source = new URL(value, window.location.href);
+
+        return ['http:', 'https:'].includes(source.protocol) ? source : null;
+    } catch {
+        return null;
+    }
+}
+
 function formatCell(value) {
     if (value === null || value === undefined) {
         return '';
@@ -93,6 +107,13 @@ function initialize(root, configuration) {
     }
 
     const initialContent = content.innerHTML;
+    const source = normalizeSource(configuration.source);
+    const selectable = configuration.selectable === true;
+    const selectedIds = new Set();
+    let abortController = null;
+    let requestSerial = 0;
+    let rows = normalizeRows(configuration.rows);
+    let total = rows.length;
     const state = {
         columnPinning: { left: [], right: [] },
         globalFilter: '',
@@ -101,21 +122,28 @@ function initialize(root, configuration) {
     };
     const table = createTable({
         columns: normalizeColumns(configuration.columns),
-        data: normalizeRows(configuration.rows),
+        data: rows,
+        getRowId: (row, index) => typeof row.id === 'string' || typeof row.id === 'number' ? String(row.id) : String(index),
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
+        manualFiltering: source !== null,
+        manualPagination: source !== null,
+        manualSorting: source !== null,
+        pageCount: source ? Math.max(Math.ceil(total / state.pagination.pageSize), 1) : undefined,
         onGlobalFilterChange: (updater) => {
             state.globalFilter = functionalUpdate(updater, state.globalFilter);
             state.pagination.pageIndex = 0;
             render();
             emit(root, 'filtered', { query: state.globalFilter });
+            requestRows();
         },
         onPaginationChange: (updater) => {
             state.pagination = functionalUpdate(updater, state.pagination);
             render();
             emit(root, 'page-changed', { page: state.pagination.pageIndex + 1 });
+            requestRows();
         },
         onSortingChange: (updater) => {
             state.sorting = functionalUpdate(updater, state.sorting);
@@ -129,6 +157,8 @@ function initialize(root, configuration) {
                     direction: sorting.desc ? 'desc' : 'asc',
                 });
             }
+
+            requestRows();
         },
         state,
     });
@@ -145,6 +175,29 @@ function initialize(root, configuration) {
         body.replaceChildren();
 
         const headerRow = document.createElement('tr');
+
+        if (selectable) {
+            const selectionHeader = document.createElement('th');
+            const selectAll = document.createElement('input');
+            const visibleIds = table.getRowModel().rows.map((row) => row.id);
+            const selectedCount = visibleIds.filter((id) => selectedIds.has(id)).length;
+
+            selectAll.setAttribute('aria-label', 'Select all visible rows');
+            selectAll.checked = visibleIds.length > 0 && selectedCount === visibleIds.length;
+            selectAll.indeterminate = selectedCount > 0 && selectedCount < visibleIds.length;
+            selectAll.type = 'checkbox';
+            selectionHeader.scope = 'col';
+            selectAll.addEventListener('change', () => {
+                visibleIds.forEach((id) => {
+                    if (selectAll.checked) selectedIds.add(id);
+                    else selectedIds.delete(id);
+                });
+                emit(root, 'selection-changed', { ids: [...selectedIds] });
+                render();
+            });
+            selectionHeader.append(selectAll);
+            headerRow.append(selectionHeader);
+        }
 
         table.getFlatHeaders().forEach((header) => {
             const headerCell = document.createElement('th');
@@ -180,6 +233,24 @@ function initialize(root, configuration) {
         rows.forEach((row) => {
             const tableRow = document.createElement('tr');
 
+            if (selectable) {
+                const selectionCell = document.createElement('td');
+                const selectRow = document.createElement('input');
+
+                selectRow.setAttribute('aria-label', `Select row ${row.id}`);
+                selectRow.dataset.daisyKitTableRowSelect = row.id;
+                selectRow.checked = selectedIds.has(row.id);
+                selectRow.type = 'checkbox';
+                selectRow.addEventListener('change', () => {
+                    if (selectRow.checked) selectedIds.add(row.id);
+                    else selectedIds.delete(row.id);
+                    emit(root, 'selection-changed', { ids: [...selectedIds] });
+                    render();
+                });
+                selectionCell.append(selectRow);
+                tableRow.append(selectionCell);
+            }
+
             row.getVisibleCells().forEach((cell) => {
                 const tableCell = document.createElement('td');
 
@@ -204,6 +275,60 @@ function initialize(root, configuration) {
         page.textContent = `Page ${state.pagination.pageIndex + 1} of ${pageCount}`;
     }
 
+    async function requestRows() {
+        if (!source) {
+            return;
+        }
+
+        abortController?.abort();
+        abortController = new AbortController();
+        const requestSerialAtStart = ++requestSerial;
+        const request = new URL(source);
+        const [sorting] = state.sorting;
+
+        request.searchParams.set('filter', state.globalFilter);
+        request.searchParams.set('page', String(state.pagination.pageIndex + 1));
+        request.searchParams.set('pageSize', String(state.pagination.pageSize));
+        if (sorting) {
+            request.searchParams.set('sort', sorting.id);
+            request.searchParams.set('direction', sorting.desc ? 'desc' : 'asc');
+        }
+
+        root.dataset.daisyKitState = 'loading';
+        root.setAttribute('aria-busy', 'true');
+        tableElement.setAttribute('aria-busy', 'true');
+
+        try {
+            const response = await fetch(request, { credentials: 'same-origin', signal: abortController.signal });
+
+            if (!response.ok) throw new Error('The table source did not respond successfully.');
+
+            const payload = await response.json();
+            if (requestSerialAtStart !== requestSerial) return;
+
+            if (!payload || !Array.isArray(payload.rows) || !Number.isInteger(payload.total) || payload.total < 0) {
+                throw new Error('The table source returned an invalid response.');
+            }
+
+            rows = normalizeRows(payload.rows);
+            total = payload.total;
+            table.setOptions((current) => ({
+                ...current,
+                data: rows,
+                pageCount: Math.max(Math.ceil(total / state.pagination.pageSize), 1),
+            }));
+            render();
+        } catch (error) {
+            if (requestSerialAtStart !== requestSerial || (error instanceof DOMException && error.name === 'AbortError')) return;
+
+            updateStatus(root, 'The table data could not be loaded.');
+            root.dataset.daisyKitState = 'error';
+            root.setAttribute('aria-busy', 'false');
+            tableElement.setAttribute('aria-busy', 'false');
+            emit(root, 'error', { reason: 'source-unavailable' });
+        }
+    }
+
     function onFilterInput(event) {
         table.setGlobalFilter(event.currentTarget.value);
     }
@@ -220,11 +345,14 @@ function initialize(root, configuration) {
     previousButton.addEventListener('click', onPreviousPage);
     nextButton.addEventListener('click', onNextPage);
     render();
+    requestRows();
 
     return () => {
         filter.removeEventListener('input', onFilterInput);
         previousButton.removeEventListener('click', onPreviousPage);
         nextButton.removeEventListener('click', onNextPage);
+        abortController?.abort();
+        requestSerial += 1;
         content.innerHTML = initialContent;
     };
 }

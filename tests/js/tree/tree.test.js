@@ -5,13 +5,38 @@ function treeMarkup(configuration) {
     return `
         <section data-daisy-kit-module="tree">
             <p data-daisy-kit-status hidden role="status" aria-live="polite"></p>
-            <div data-daisy-kit-content><ul data-daisy-kit-tree-root aria-label="Tree" role="tree"></ul></div>
+            <div data-daisy-kit-content><ul data-daisy-kit-tree-root aria-label="Tree" role="tree"></ul>${configuration.name ? `<input data-daisy-kit-tree-value name="${configuration.name}" type="hidden" value="[]">` : ''}</div>
             <script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script>
         </section>
     `;
 }
 
 describe('tree module', () => {
+    it('propagates multiple selection, exposes an indeterminate parent, and binds selected IDs', () => {
+        document.body.innerHTML = treeMarkup({
+            multiple: true,
+            name: 'permissions',
+            items: [{
+                id: 'content',
+                label: 'Content',
+                children: [{ id: 'read', label: 'Read' }, { id: 'write', label: 'Write' }],
+            }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="tree"]');
+
+        mount(root);
+        root.querySelector('[data-daisy-kit-tree-node="content"]').dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' }));
+        root.querySelector('[data-daisy-kit-tree-node="read"]').click();
+
+        expect(root.querySelector('[data-daisy-kit-tree-node="content"]').getAttribute('aria-checked')).toBe('mixed');
+        expect(root.querySelector('[data-daisy-kit-tree-value]').value).toBe('["read"]');
+
+        root.querySelector('[data-daisy-kit-tree-node="content"]').click();
+
+        expect(root.querySelector('[data-daisy-kit-tree-node="content"]').getAttribute('aria-checked')).toBe('true');
+        expect(root.querySelector('[data-daisy-kit-tree-value]').value).toBe('["read","write"]');
+    });
+
     it('expands, selects, and supports arrow-key focus navigation', () => {
         document.body.innerHTML = treeMarkup({
             items: [{ id: 'root', label: 'Root', children: [{ id: 'child', label: 'Child' }] }],
