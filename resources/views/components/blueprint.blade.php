@@ -2,6 +2,7 @@
     'nodes' => [],
     'edges' => [],
     'label' => 'Blueprint',
+    'editable' => false,
 ])
 
 <section
@@ -17,11 +18,13 @@
             focusable="false"
         ></svg>
         <p data-daisy-kit-empty hidden>No blueprint nodes are available.</p>
+        <input data-daisy-kit-blueprint-value type="hidden">
     </div>
 
     <script data-daisy-kit-config type="application/json">{!! \Art35rennes\DaisyKit\Support\JsonConfiguration::encode([
         'nodes' => $nodes,
         'edges' => $edges,
         'label' => $label,
+        'editable' => $editable,
     ]) !!}</script>
 </section>

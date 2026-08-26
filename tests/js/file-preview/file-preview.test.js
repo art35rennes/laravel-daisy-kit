@@ -78,6 +78,31 @@ describe('file preview entry', () => {
         expect(frame.getAttribute('srcdoc')).toBeNull();
     });
 
+    it('hands media to an isolated frame with a network-denying child CSP', async () => {
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(new Blob(['image'], { type: 'image/png' }), {
+            headers: { 'content-type': 'image/png' },
+            status: 200,
+        }))));
+        const element = root({ src: '/preview.png', type: 'image' });
+
+        mount(element);
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+        const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
+        const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
+        frameMessage(element, { type: 'ready' });
+
+        await vi.waitFor(() => expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
+            payload: expect.objectContaining({ data: expect.any(ArrayBuffer), type: 'image' }),
+            type: 'render',
+        }), '*', [expect.any(ArrayBuffer)]));
+        expect(frame.getAttribute('sandbox')).not.toContain('allow-same-origin');
+        expect(frame.srcdoc)
+            .toContain("connect-src 'none'")
+            .toContain("script-src-attr 'none'")
+            .toContain('<script src=')
+            .not.toContain('onload=');
+    });
+
     it('accepts an opaque-origin ready message only from its frame with its token', async () => {
         vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('plain text', {
             headers: { 'content-type': 'text/plain' },

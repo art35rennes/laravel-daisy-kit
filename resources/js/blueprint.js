@@ -38,7 +38,9 @@ function validEdges(edges, nodeIds) {
 function renderBlueprint(root, configuration) {
     const canvas = root.querySelector('[data-daisy-kit-blueprint-canvas]');
     const empty = root.querySelector('[data-daisy-kit-empty]');
-    const nodes = validNodes(configuration.nodes);
+    const value = root.querySelector('[data-daisy-kit-blueprint-value]');
+    const nodes = validNodes(configuration.nodes).map((node) => ({ ...node }));
+    const editable = configuration.editable === true;
 
     if (!canvas || !empty) {
         throw new Error('Blueprint markup is incomplete.');
@@ -124,8 +126,53 @@ function renderBlueprint(root, configuration) {
         control.textContent = node.label;
         controls.append(control);
 
-        return { control, group, id: nodeId };
+        return { control, group, id: nodeId, label };
     });
+
+    let selectedId = null;
+    const history = [];
+    let historyIndex = -1;
+    let editor = null;
+    let undo = null;
+    let redo = null;
+
+    const synchronizeValue = () => {
+        if (value instanceof HTMLInputElement) {
+            value.value = JSON.stringify({ edges: validEdges(configuration.edges, nodeIds), nodes });
+        }
+    };
+
+    const synchronizeHistory = () => {
+        undo?.toggleAttribute('disabled', historyIndex <= 0);
+        redo?.toggleAttribute('disabled', historyIndex >= history.length - 1);
+    };
+
+    const applyLabels = (labels, emitChange = true) => {
+        nodes.forEach((node, index) => {
+            node.label = labels[index] ?? node.id;
+            const rendered = renderedNodes.find((candidate) => candidate.id === node.id);
+
+            if (rendered) {
+                rendered.label.textContent = node.label;
+                rendered.control.textContent = node.label;
+            }
+        });
+        synchronizeValue();
+
+        if (emitChange) {
+            root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:change', {
+                bubbles: true,
+                detail: { value: value instanceof HTMLInputElement ? value.value : JSON.stringify({ edges: validEdges(configuration.edges, nodeIds), nodes }) },
+            }));
+        }
+    };
+
+    const remember = () => {
+        history.splice(historyIndex + 1);
+        history.push(nodes.map((node) => typeof node.label === 'string' ? node.label : node.id));
+        historyIndex = history.length - 1;
+        synchronizeHistory();
+    };
 
     const selectNode = (nodeId) => {
         renderedNodes.forEach((candidate) => {
@@ -133,6 +180,12 @@ function renderBlueprint(root, configuration) {
             candidate.control.setAttribute('aria-pressed', String(selected));
             candidate.group.toggleAttribute('data-daisy-kit-selected', selected);
         });
+        selectedId = nodeId;
+
+        if (editor instanceof HTMLInputElement) {
+            editor.disabled = false;
+            editor.value = renderedNodes.find((candidate) => candidate.id === nodeId)?.label.textContent ?? '';
+        }
         root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:select', {
             bubbles: true,
             detail: { id: nodeId },
@@ -144,6 +197,37 @@ function renderBlueprint(root, configuration) {
         if (node) {
             selectNode(node.dataset.nodeId);
         }
+    };
+    const onControlsClick = (event) => {
+        const action = event.target.closest('[data-daisy-kit-blueprint-history]');
+
+        if (action && history.length > 0) {
+            const nextIndex = action.dataset.daisyKitBlueprintHistory === 'undo' ? historyIndex - 1 : historyIndex + 1;
+
+            if (nextIndex >= 0 && nextIndex < history.length) {
+                historyIndex = nextIndex;
+                applyLabels(history[historyIndex]);
+                synchronizeHistory();
+            }
+
+            return;
+        }
+
+        const control = event.target.closest('[data-daisy-kit-blueprint-node-control]');
+
+        if (control) selectNode(control.dataset.nodeId);
+    };
+    const onEditorChange = () => {
+        if (!editable || !selectedId || !(editor instanceof HTMLInputElement)) return;
+
+        const nextLabel = editor.value.trim();
+        const index = nodes.findIndex((node) => node.id === selectedId);
+
+        if (index < 0 || nextLabel.length === 0 || nodes[index].label === nextLabel) return;
+
+        nodes[index].label = nextLabel;
+        remember();
+        applyLabels(history[historyIndex]);
     };
     const onKeydown = (event) => {
         const currentIndex = renderedNodes.findIndex(({ control }) => control === document.activeElement);
@@ -169,12 +253,42 @@ function renderBlueprint(root, configuration) {
     };
 
     canvas.addEventListener('click', onClick);
+    controls.addEventListener('click', onControlsClick);
     controls.addEventListener('keydown', onKeydown);
+
+    if (editable) {
+        editor = document.createElement('input');
+        editor.disabled = true;
+        editor.setAttribute('aria-label', 'Selected node label');
+        editor.setAttribute('data-daisy-kit-blueprint-editor', '');
+        editor.type = 'text';
+        controls.append(editor);
+
+        undo = document.createElement('button');
+        undo.disabled = true;
+        undo.setAttribute('data-daisy-kit-blueprint-history', 'undo');
+        undo.type = 'button';
+        undo.textContent = 'Undo';
+        controls.append(undo);
+
+        redo = document.createElement('button');
+        redo.disabled = true;
+        redo.setAttribute('data-daisy-kit-blueprint-history', 'redo');
+        redo.type = 'button';
+        redo.textContent = 'Redo';
+        controls.append(redo);
+
+        editor.addEventListener('change', onEditorChange);
+        remember();
+    }
+    synchronizeValue();
     root.dataset.daisyKitState = 'ready';
 
     return () => {
         canvas.removeEventListener('click', onClick);
+        controls.removeEventListener('click', onControlsClick);
         controls.removeEventListener('keydown', onKeydown);
+        editor?.removeEventListener('change', onEditorChange);
         controls.remove();
         canvas.replaceChildren();
     };

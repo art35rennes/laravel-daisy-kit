@@ -9,6 +9,7 @@ function root(configuration) {
             <div data-daisy-kit-content>
                 <svg data-daisy-kit-blueprint-canvas></svg>
                 <p data-daisy-kit-empty hidden></p>
+                <input data-daisy-kit-blueprint-value type="hidden">
             </div>
             <script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script>
         </section>
@@ -53,5 +54,30 @@ describe('blueprint entry', () => {
 
         expect(element.dataset.daisyKitState).toBe('empty');
         expect(element.querySelector('[data-daisy-kit-empty]').hidden).toBe(false);
+    });
+
+    it('edits labels with undo and redo while synchronizing hidden JSON', () => {
+        const element = root({
+            editable: true,
+            edges: [],
+            nodes: [{ id: 'first', label: 'First' }],
+        });
+        const changes = [];
+        element.addEventListener('daisy-kit:blueprint:change', (event) => changes.push(event.detail.value));
+
+        mount(element);
+        element.querySelector('[data-daisy-kit-blueprint-node-control]').click();
+        const editor = element.querySelector('[data-daisy-kit-blueprint-editor]');
+        editor.value = 'Updated';
+        editor.dispatchEvent(new Event('change'));
+
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].label).toBe('Updated');
+        expect(changes).toHaveLength(1);
+
+        element.querySelector('[data-daisy-kit-blueprint-history="undo"]').click();
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].label).toBe('First');
+
+        element.querySelector('[data-daisy-kit-blueprint-history="redo"]').click();
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].label).toBe('Updated');
     });
 });

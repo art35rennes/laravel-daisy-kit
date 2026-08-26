@@ -3,6 +3,7 @@
     'center' => [48.1173, -1.6778],
     'zoom' => 12,
     'drawing' => false,
+    'layers' => [],
     'label' => 'Map',
 ])
 
@@ -16,6 +17,9 @@
         <div aria-label="{{ $label }}" data-daisy-kit-map-canvas role="application" tabindex="0"></div>
         <p data-daisy-kit-empty hidden>No geographic data is available.</p>
         <output aria-live="polite" data-daisy-kit-map-measurement></output>
+        <fieldset data-daisy-kit-map-layers hidden>
+            <legend>Layers</legend>
+        </fieldset>
         @if($drawing)
             <fieldset data-daisy-kit-map-tools>
                 <legend>Drawing tools</legend>
@@ -30,6 +34,7 @@
         'center' => $center,
         'zoom' => $zoom,
         'drawing' => $drawing,
+        'layers' => $layers,
         'label' => $label,
     ]) !!}</script>
 </section>

@@ -23,6 +23,7 @@ test('the blueprint component exposes semantic empty and error states', function
         ->toContain('data-daisy-kit-empty')
         ->toContain('role="alert"')
         ->toContain('data-daisy-kit-blueprint-canvas')
+        ->toContain('data-daisy-kit-blueprint-value')
         ->toContain('aria-hidden="true"')
         ->toContain('focusable="false"')
         ->not->toContain('role="img"')
