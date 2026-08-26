@@ -1,0 +1,16 @@
+import '@daisy-kit/forms-viewer.css';
+import { mountAll as mountFormsViewer } from '@daisy-kit/forms-viewer.js';
+import '@daisy-kit/forms-builder.css';
+import { mountAll as mountFormsBuilder } from '@daisy-kit/forms-builder.js';
+import '@daisy-kit/table.css';
+import { mountAll as mountTable } from '@daisy-kit/table.js';
+import '@daisy-kit/tree.css';
+import { mountAll as mountTree } from '@daisy-kit/tree.js';
+import '@daisy-kit/blueprint.css';
+import { mountAll as mountBlueprint } from '@daisy-kit/blueprint.js';
+import '@daisy-kit/file-preview.css';
+import { mountAll as mountFilePreview } from '@daisy-kit/file-preview.js';
+import '@daisy-kit/map.css';
+import { mountAll as mountMap } from '@daisy-kit/map.js';
+
+void [mountFormsViewer, mountFormsBuilder, mountTable, mountTree, mountBlueprint, mountFilePreview, mountMap];

@@ -11,6 +11,9 @@
 /.pest
 /tests/.pest
 /tests/Browser/Screenshots
+/tests/Fixtures/vite-host/build
+/tests/Fixtures/vite-host/node_modules
+/tests/Fixtures/vite-host/vendor
 /.ai
 /.agents
 /.codex

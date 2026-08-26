@@ -51,9 +51,10 @@
         "test:unit": ["vendor/bin/pest --ci --no-tia --parallel --exclude-group=browser"],
         "test:browser": ["npm run build", "npm run build:browser-assets", "vendor/bin/pest --ci --no-tia --group=browser"],
         "test:full": ["@test:unit", "@test:browser"],
+        "test:vite-host": ["npm run test:vite-host"],
         "test:tia": ["npm run build", "@build:workbench", "npm run build:browser-assets", "vendor/bin/pest --tia --baselined"],
         "test:tia:fresh": ["npm run build", "@build:workbench", "npm run build:browser-assets", "vendor/bin/pest --tia --fresh"],
-        "test": ["@analyse", "@lint:check", "@test:types", "@test:full"]
+        "test": ["@analyse", "@lint:check", "@test:types", "@test:full", "@test:vite-host"]
     },
     "extra": {
         "laravel": {

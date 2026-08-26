@@ -7,10 +7,11 @@ that already own their Tailwind CSS and DaisyUI setup. It provides exactly these
 - `x-daisy-kit::table`, `x-daisy-kit::tree`, and `x-daisy-kit::blueprint`
 - `x-daisy-kit::file-preview` and `x-daisy-kit::map`
 
-Import each used ESM and CSS file explicitly from `art35rennes/laravel-daisy-kit/dist`. Every
-module exposes `mount(root)`, `mountAll(scope = document)`, and `unmount(root)`; do not add a
-global bootstrap or make one module load another implicitly. Listen only to
-`daisy-kit:{module}:*` events.
+This is a Composer/VCS package, not an npm package. In the host Vite configuration, resolve the
+stable `@daisy-kit` alias to `vendor/art35rennes/laravel-daisy-kit/dist`; then import each used
+entry explicitly, such as `@daisy-kit/table.js` and `@daisy-kit/table.css`. Every module exposes
+`mount(root)`, `mountAll(scope = document)`, and `unmount(root)`; do not add a global bootstrap
+or make one module load another implicitly. Listen only to `daisy-kit:{module}:*` events.
 
 Configuration is escaped, non-executable JSON. Preserve the modular CSP boundary: no inline
 script, handler, view-authored style attribute, or view-authored style block. File Preview keeps

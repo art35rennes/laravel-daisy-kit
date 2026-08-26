@@ -74,3 +74,34 @@ it('ships concise Laravel Boost resources for package consumers', function (): v
         ->toContain('laravel-best-practices')
         ->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|codemirror|trix|gridstack|vendor:publish/i');
 });
+
+it('documents the Vite alias for Composer-installed module entries', function (): void {
+    $documentation = collect([
+        packagePath('AGENTS.md'),
+        packagePath('README.md'),
+        packagePath('docs/decisions/0003-vite-composer-alias.md'),
+        packagePath('docs/specs/v5-public-contract.md'),
+        packagePath('resources/boost/guidelines/core.blade.php'),
+        packagePath('resources/boost/skills/laravel-daisy-kit-development/SKILL.md'),
+    ])->mapWithKeys(fn (string $path): array => [$path => (string) file_get_contents($path)]);
+
+    $nonResolvableNpmSpecifier = 'art35rennes/'.'laravel-daisy-kit/dist';
+    $fakeNpmImport = '/(?:from\\s+|import\\s*(?:\\(\\s*)?)[\'\"]'.preg_quote($nonResolvableNpmSpecifier, '/').'/';
+
+    expect($documentation->get(packagePath('README.md')))
+        ->toContain("import { resolve } from 'node:path';")
+        ->toContain("import { fileURLToPath } from 'node:url';")
+        ->toContain("const __dirname = fileURLToPath(new URL('.', import.meta.url));")
+        ->toContain("'@daisy-kit': resolve(__dirname, 'vendor/art35rennes/laravel-daisy-kit/dist'),")
+        ->toContain("import '@daisy-kit/table.css';")
+        ->toContain("from '@daisy-kit/table.js'");
+
+    expect($documentation->implode("\n"))
+        ->toContain('@daisy-kit/forms-viewer.js')
+        ->toContain('@daisy-kit/forms-builder.css')
+        ->toContain('@daisy-kit/tree.js')
+        ->toContain('@daisy-kit/blueprint.css')
+        ->toContain('@daisy-kit/file-preview.js')
+        ->toContain('@daisy-kit/map.css')
+        ->not->toMatch($fakeNpmImport);
+});

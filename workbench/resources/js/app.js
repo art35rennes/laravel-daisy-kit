@@ -1,38 +1,38 @@
 const modules = [
     ['forms-viewer', async () => {
-        await import('../../../dist/forms-viewer.css');
+        await import('@daisy-kit/forms-viewer.css');
 
-        return import('../../../dist/forms-viewer.js');
+        return import('@daisy-kit/forms-viewer.js');
     }],
     ['forms-builder', async () => {
-        await import('../../../dist/forms-builder.css');
+        await import('@daisy-kit/forms-builder.css');
 
-        return import('../../../dist/forms-builder.js');
+        return import('@daisy-kit/forms-builder.js');
     }],
     ['table', async () => {
-        await import('../../../dist/table.css');
+        await import('@daisy-kit/table.css');
 
-        return import('../../../dist/table.js');
+        return import('@daisy-kit/table.js');
     }],
     ['tree', async () => {
-        await import('../../../dist/tree.css');
+        await import('@daisy-kit/tree.css');
 
-        return import('../../../dist/tree.js');
+        return import('@daisy-kit/tree.js');
     }],
     ['blueprint', async () => {
-        await import('../../../dist/blueprint.css');
+        await import('@daisy-kit/blueprint.css');
 
-        return import('../../../dist/blueprint.js');
+        return import('@daisy-kit/blueprint.js');
     }],
     ['file-preview', async () => {
-        await import('../../../dist/file-preview.css');
+        await import('@daisy-kit/file-preview.css');
 
-        return import('../../../dist/file-preview.js');
+        return import('@daisy-kit/file-preview.js');
     }],
     ['map', async () => {
-        await import('../../../dist/map.css');
+        await import('@daisy-kit/map.css');
 
-        return import('../../../dist/map.js');
+        return import('@daisy-kit/map.js');
     }],
 ];
 

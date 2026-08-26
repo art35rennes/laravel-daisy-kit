@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { resolve } from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 import laravel from 'laravel-vite-plugin';
 
@@ -17,5 +18,10 @@ export default defineConfig({
     build: {
         emptyOutDir: true,
         outDir: 'public/build',
+    },
+    resolve: {
+        alias: {
+            '@daisy-kit': resolve(import.meta.dirname, '../dist'),
+        },
     },
 });

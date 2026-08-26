@@ -8,6 +8,7 @@
         "build:workbench-assets": "vite build --config workbench/vite.config.js",
         "build:browser-assets": "vite build --config workbench/vite.config.js --outDir ../vendor/orchestra/testbench-core/laravel/public/build",
         "test:js": "vitest run --coverage",
+        "test:vite-host": "node tests/integration/vite-host.mjs",
         "test:js:watch": "vitest"
     },
     "dependencies": {

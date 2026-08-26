@@ -17,7 +17,7 @@ Install it from GitHub/VCS rather than Packagist:
 ```json
 {
     "repositories": [{ "type": "vcs", "url": "https://github.com/art35rennes/laravel-daisy-kit" }],
-    "require": { "art35rennes/laravel-daisy-kit": "v5.0.0-alpha.1" }
+    "require": { "art35rennes/laravel-daisy-kit": "v5.0.0-alpha.2" }
 }
 ```
 
@@ -30,14 +30,38 @@ Install it from GitHub/VCS rather than Packagist:
 
 ## Explicit assets
 
-Import only the JavaScript and CSS modules used on a host page. For example:
+Composer installs this package under `vendor/art35rennes/laravel-daisy-kit`; it is not an npm
+package. Configure this stable Vite alias in the host application's `vite.config.js`:
 
 ```js
-import 'art35rennes/laravel-daisy-kit/dist/table.css';
-import { mountAll } from 'art35rennes/laravel-daisy-kit/dist/table.js';
+import { defineConfig } from 'vite';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+
+export default defineConfig({
+    resolve: {
+        alias: {
+            '@daisy-kit': resolve(__dirname, 'vendor/art35rennes/laravel-daisy-kit/dist'),
+        },
+    },
+});
+```
+
+Import only the JavaScript and CSS modules used on a host page through that alias. For example:
+
+```js
+import '@daisy-kit/table.css';
+import { mountAll } from '@daisy-kit/table.js';
 
 mountAll();
 ```
+
+The available pairs are `forms-viewer`, `forms-builder`, `table`, `tree`, `blueprint`,
+`file-preview`, and `map` — for example `@daisy-kit/forms-viewer.js` and
+`@daisy-kit/forms-viewer.css`. Do not import this Composer package by its package name in a Vite
+source file.
 
 Each ESM entry exports `mount(root)`, `mountAll(scope = document)`, and `unmount(root)`.
 There is no global bootstrap or `vendor:publish` step. Configuration is rendered as encoded

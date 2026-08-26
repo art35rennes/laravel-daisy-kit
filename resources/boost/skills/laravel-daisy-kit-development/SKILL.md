@@ -29,15 +29,31 @@ only to Forms Builder and is optional when Livewire 4 is installed.
 
 ## Assets and lifecycle
 
-The host application installs and compiles DaisyUI and Tailwind CSS. Import the package's ESM and
-CSS entry for every module used on a page, for example:
+The host application installs and compiles DaisyUI and Tailwind CSS. This package is installed by
+Composer/VCS, not npm. Configure this Vite alias once in the host application's `vite.config.js`:
 
 ```js
-import 'art35rennes/laravel-daisy-kit/dist/table.css';
-import { mountAll } from 'art35rennes/laravel-daisy-kit/dist/table.js';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+
+// Inside defineConfig({ resolve: { alias: { ... } } }):
+'@daisy-kit': resolve(__dirname, 'vendor/art35rennes/laravel-daisy-kit/dist'),
+```
+
+Then import the ESM and CSS entry for every module used on a page, for example:
+
+```js
+import '@daisy-kit/table.css';
+import { mountAll } from '@daisy-kit/table.js';
 
 mountAll();
 ```
+
+The entry stems are `forms-viewer`, `forms-builder`, `table`, `tree`, `blueprint`,
+`file-preview`, and `map`; use `@daisy-kit/{stem}.js` and `@daisy-kit/{stem}.css` only for
+modules rendered on the page.
 
 Each entry independently exposes `mount(root)`, `mountAll(scope = document)`, and
 `unmount(root)`. Keep mounting idempotent, support multiple roots, and destroy listeners,

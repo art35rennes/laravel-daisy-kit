@@ -14,6 +14,11 @@ Each public module owns independent ESM and CSS entries. Use the shared module h
 in `resources/js/core/` and retain the `mount`, `mountAll`, `unmount` contract. Do not
 introduce globals, inline handlers/styles/scripts, or cross-module implicit imports.
 
+Consumers configure Vite's stable `@daisy-kit` alias to
+`vendor/art35rennes/laravel-daisy-kit/dist`, then import explicit entries such as
+`@daisy-kit/table.js` and `@daisy-kit/table.css`. This is a Composer/VCS package, never an npm
+specifier.
+
 ## Package conventions
 
 - This is a Laravel package: use Testbench and Workbench rather than a root `artisan`.

@@ -22,6 +22,22 @@ exports `mount(root)`, `mountAll(scope = document)`, and `unmount(root)`. Mounti
 supports multiple roots, and returns no global state. `unmount` removes listeners, observers, and
 third-party instances. An optional Livewire adapter remounts roots after Livewire navigations.
 
+The package is Composer/VCS-installed, so host Vite source must not use its Composer name as an
+import specifier. Hosts configure `@daisy-kit` to resolve to
+`vendor/art35rennes/laravel-daisy-kit/dist`, then import explicit module pairs as
+`@daisy-kit/{module}.js` and `@daisy-kit/{module}.css`. The allowed entry stems are
+`forms-viewer`, `forms-builder`, `table`, `tree`, `blueprint`, `file-preview`, and `map`.
+
+| Module | ESM import | CSS import |
+| --- | --- | --- |
+| Forms viewer | `@daisy-kit/forms-viewer.js` | `@daisy-kit/forms-viewer.css` |
+| Forms builder | `@daisy-kit/forms-builder.js` | `@daisy-kit/forms-builder.css` |
+| Table | `@daisy-kit/table.js` | `@daisy-kit/table.css` |
+| Tree | `@daisy-kit/tree.js` | `@daisy-kit/tree.css` |
+| Blueprint | `@daisy-kit/blueprint.js` | `@daisy-kit/blueprint.css` |
+| File Preview | `@daisy-kit/file-preview.js` | `@daisy-kit/file-preview.css` |
+| Map | `@daisy-kit/map.js` | `@daisy-kit/map.css` |
+
 Configuration is emitted in a non-executable `application/json` script element and is parsed with
 strict validation. Invalid JSON activates an accessible error state. No public component emits an
 inline handler, executable script, or `style` attribute.

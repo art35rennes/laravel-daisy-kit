@@ -1,0 +1,8 @@
+{
+    "name": "daisy-kit-vite-host-fixture",
+    "private": true,
+    "type": "module",
+    "devDependencies": {
+        "vite": "^8.1.4"
+    }
+}
