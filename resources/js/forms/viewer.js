@@ -11,6 +11,7 @@ const controlTypes = new Set([
 ]);
 const containerTypes = new Set(['section', 'wizardStep']);
 const submitModes = new Set(['event', 'fetch', 'html', 'none']);
+const runtimeApis = new WeakMap();
 
 function emit(root, name, detail = {}) {
     root.dispatchEvent(new CustomEvent(`daisy-kit:forms-viewer:${name}`, { bubbles: true, detail }));
@@ -636,8 +637,30 @@ function initialize(root, configuration) {
 
     form.addEventListener('submit', onSubmit);
 
+    runtimeApis.set(root, {
+        destroy: () => unmount(root),
+        getValue: () => {
+            syncValues(root, context.entries, values);
+
+            return { ...values };
+        },
+        validate: () => {
+            syncValues(root, context.entries, values);
+
+            if (form.checkValidity()) {
+                return true;
+            }
+
+            form.reportValidity();
+            emit(root, 'error', { reason: 'validation-failed' });
+
+            return false;
+        },
+    });
+
     return () => {
         active = false;
+        runtimeApis.delete(root);
         form.removeEventListener('submit', onSubmit);
         form.replaceChildren();
     };
@@ -645,7 +668,19 @@ function initialize(root, configuration) {
 
 const module = createMountable('forms-viewer', initialize);
 
-export const { mount, mountAll, unmount } = module;
+export function mount(root) {
+    const instance = module.mount(root);
+
+    return runtimeApis.get(root) ?? instance;
+}
+
+export function mountAll(scope = document) {
+    return [...scope.querySelectorAll('[data-daisy-kit-module="forms-viewer"]')].map(mount);
+}
+
+export function unmount(root) {
+    module.unmount(root);
+}
 
 export function installLivewireAdapter() {
     return createLivewireAdapter('forms-viewer', mountAll, unmount);

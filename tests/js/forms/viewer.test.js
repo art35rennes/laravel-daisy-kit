@@ -84,6 +84,47 @@ describe('forms viewer', () => {
         expect(root.querySelector('input[name="name"]')).not.toBeNull();
     });
 
+    it('returns an instance-local runtime API that reads values, validates, and destroys only its own viewer', async () => {
+        const root = viewerRoot(JSON.stringify({
+            schema: {
+                fields: [
+                    { name: 'email', label: 'Email', type: 'email', rules: ['required', 'email'] },
+                    { name: 'newsletter', label: 'Newsletter', type: 'checkbox' },
+                ],
+            },
+            value: { email: '', newsletter: false },
+        }));
+
+        const runtime = mount(root);
+        const repeatedMount = mount(root);
+        await settle();
+
+        expect(runtime).toEqual(expect.objectContaining({
+            destroy: expect.any(Function),
+            getValue: expect.any(Function),
+            validate: expect.any(Function),
+        }));
+        expect(repeatedMount).toBe(runtime);
+        expect(runtime.getValue()).toEqual({ email: '', newsletter: false });
+        expect(runtime.validate()).toBe(false);
+
+        const email = root.querySelector('input[name="email"]');
+        const newsletter = root.querySelector('input[name="newsletter"]');
+        email.value = 'ada@example.test';
+        email.dispatchEvent(new Event('input', { bubbles: true }));
+        newsletter.checked = true;
+        newsletter.dispatchEvent(new Event('change', { bubbles: true }));
+        await settle();
+
+        expect(runtime.getValue()).toEqual({ email: 'ada@example.test', newsletter: true });
+        expect(runtime.validate()).toBe(true);
+
+        runtime.destroy();
+
+        expect(root.dataset.daisyKitState).toBeUndefined();
+        expect(root.querySelector('[data-daisy-kit-forms-content]').children).toHaveLength(0);
+    });
+
     it('evaluates JSONata visibility expressions independently for each root', async () => {
         document.body.innerHTML = `
             <section data-daisy-kit-module="forms-viewer"><p data-daisy-kit-status role="status"></p><form data-daisy-kit-forms-content></form><script data-daisy-kit-config type="application/json">{"schema":{"fields":[{"name":"name","label":"Name","type":"text"},{"name":"advanced","label":"Advanced","type":"text","visibleWhen":"enabled = true"}]},"value":{"enabled":true}}</script></section>
