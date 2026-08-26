@@ -84,8 +84,9 @@ it('composes visible host DaisyUI primitives across themes and responsive widths
     }
 
     foreach (['light', 'dark'] as $theme) {
-        $page->script("document.documentElement.dataset.theme = '{$theme}';")
-            ->assertScript(<<<'JS'
+        $page->script("document.documentElement.dataset.theme = '{$theme}';");
+
+        $page->assertScript(<<<'JS'
                 (() => {
                     const primary = document.querySelector('[data-daisy-kit-forms-actions] button[type="submit"]');
                     const warning = document.querySelector('[data-daisy-kit-file-preview-notice]');
