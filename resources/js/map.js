@@ -230,16 +230,16 @@ function initializeMap(root, configuration) {
 
     const configuredBasemaps = basemaps.map((basemap) => {
         const leafletLayer = L.tileLayer(basemap.url, { attribution: basemap.attribution });
-        const control = document.createElement('input');
-        control.checked = false;
-        control.name = 'daisy-kit-map-basemap';
-        control.setAttribute('data-daisy-kit-map-basemap', basemap.id);
-        control.type = 'radio';
+        const basemapControl = document.createElement('input');
+        basemapControl.checked = false;
+        basemapControl.name = 'daisy-kit-map-basemap';
+        basemapControl.setAttribute('data-daisy-kit-map-basemap', basemap.id);
+        basemapControl.type = 'radio';
         const label = document.createElement('label');
-        label.append(control, document.createTextNode(basemap.label));
+        label.append(basemapControl, document.createTextNode(basemap.label));
         basemapTools?.append(label);
 
-        return { ...basemap, control, leafletLayer };
+        return { ...basemap, control: basemapControl, leafletLayer };
     });
     let activeBasemap = configuredBasemaps.find((basemap) => basemap.selected) ?? configuredBasemaps[0] ?? null;
 
@@ -277,15 +277,15 @@ function initializeMap(root, configuration) {
 
         dataLayers.push(leafletLayer);
 
-        const control = document.createElement('input');
-        control.checked = layer.visible;
-        control.setAttribute('data-daisy-kit-map-layer', layer.id);
-        control.type = 'checkbox';
+        const layerControl = document.createElement('input');
+        layerControl.checked = layer.visible;
+        layerControl.setAttribute('data-daisy-kit-map-layer', layer.id);
+        layerControl.type = 'checkbox';
         const label = document.createElement('label');
-        label.append(control, document.createTextNode(layer.label));
+        label.append(layerControl, document.createTextNode(layer.label));
         layerTools.append(label);
 
-        return { ...layer, control, leafletLayer };
+        return { ...layer, control: layerControl, leafletLayer };
     });
     const configuredWms = wmsOverlays.map((overlay) => {
         const leafletLayer = L.tileLayer.wms(overlay.url, {
@@ -297,15 +297,15 @@ function initializeMap(root, configuration) {
 
         if (overlay.visible) leafletLayer.addTo(map);
 
-        const control = document.createElement('input');
-        control.checked = overlay.visible;
-        control.setAttribute('data-daisy-kit-map-wms', overlay.id);
-        control.type = 'checkbox';
+        const overlayControl = document.createElement('input');
+        overlayControl.checked = overlay.visible;
+        overlayControl.setAttribute('data-daisy-kit-map-wms', overlay.id);
+        overlayControl.type = 'checkbox';
         const label = document.createElement('label');
-        label.append(control, document.createTextNode(overlay.label));
+        label.append(overlayControl, document.createTextNode(overlay.label));
         layerTools.append(label);
 
-        return { ...overlay, control, leafletLayer };
+        return { ...overlay, control: overlayControl, leafletLayer };
     });
     layerTools.hidden = configuredLayers.length + configuredWms.length === 0;
 
