@@ -139,6 +139,71 @@ describe('forms viewer', () => {
         expect(roots[1].querySelector('[name="advanced"]').closest('[data-daisy-kit-forms-field]').hidden).toBe(true);
     });
 
+    it('excludes conditionally hidden sections and future wizard steps from validation and FormData', async () => {
+        const root = viewerRoot(JSON.stringify({
+            schema: {
+                fields: [
+                    { name: 'advanced', label: 'Enable advanced', type: 'checkbox' },
+                    {
+                        id: 'advanced-section',
+                        type: 'section',
+                        label: 'Advanced',
+                        visibleWhen: 'advanced = true',
+                        fields: [{ name: 'advanced_note', label: 'Advanced note', type: 'text', rules: ['required'] }],
+                    },
+                    {
+                        id: 'account',
+                        type: 'wizardStep',
+                        label: 'Account',
+                        fields: [{ name: 'email', label: 'Email', type: 'email', rules: ['required', 'email'] }],
+                    },
+                    {
+                        id: 'profile',
+                        type: 'wizardStep',
+                        label: 'Profile',
+                        fields: [{ name: 'phone', label: 'Phone', type: 'tel', rules: ['required'] }],
+                    },
+                ],
+            },
+            value: { advanced: false, email: 'ada@example.test' },
+        }));
+
+        await mount(root);
+        await settle();
+
+        const form = root.querySelector('form');
+        const advanced = root.querySelector('input[name="advanced"]');
+        const advancedNote = root.querySelector('input[name="advanced_note"]');
+        const email = root.querySelector('input[name="email"]');
+        const phone = root.querySelector('input[name="phone"]');
+
+        expect(advancedNote.disabled).toBe(true);
+        expect(advancedNote.required).toBe(false);
+        expect(phone.disabled).toBe(true);
+        expect(phone.required).toBe(false);
+        expect(form.checkValidity()).toBe(true);
+        expect([...new FormData(form).keys()]).toEqual(['email']);
+
+        advanced.checked = true;
+        advanced.dispatchEvent(new Event('change', { bubbles: true }));
+        await settle();
+
+        expect(advancedNote.disabled).toBe(false);
+        expect(advancedNote.required).toBe(true);
+        expect(form.checkValidity()).toBe(false);
+
+        advancedNote.value = 'Required only while visible';
+        advancedNote.dispatchEvent(new Event('input', { bubbles: true }));
+        await settle();
+        root.querySelector('[data-daisy-kit-forms-next]').click();
+        await settle();
+
+        expect(email.disabled).toBe(true);
+        expect(phone.disabled).toBe(false);
+        expect(phone.required).toBe(true);
+        expect([...new FormData(form).keys()]).toEqual(['advanced', 'advanced_note', 'phone']);
+    });
+
     it('shows an accessible empty state and an error for invalid JSON', async () => {
         const emptyRoot = viewerRoot(JSON.stringify({ schema: { fields: [] }, value: {} }));
         await mount(emptyRoot);

@@ -462,8 +462,22 @@ function initialize(root, configuration) {
         steps: [],
         values,
     };
+    const controlStates = new WeakMap();
     let active = true;
     let currentStep = 0;
+
+    function setEntryInteractivity(entry, interactive) {
+        entry.wrapper.querySelectorAll('input, select, textarea').forEach((control) => {
+            const state = controlStates.get(control) ?? {
+                disabled: control.disabled,
+                required: control.required,
+            };
+
+            controlStates.set(control, state);
+            control.disabled = state.disabled || !interactive;
+            control.required = state.required && interactive;
+        });
+    }
 
     if (action !== '') {
         form.action = action;
@@ -485,6 +499,8 @@ function initialize(root, configuration) {
 
     async function refreshVisibility() {
         const visibility = new Map();
+        const interactivity = new Map();
+        const steps = new Map(context.steps.map((entry, index) => [entry, index]));
 
         for (const { field } of context.entries) {
             if (typeof field.name !== 'string' || typeof field.computed !== 'string' || field.computed.trim() === '') {
@@ -513,6 +529,17 @@ function initialize(root, configuration) {
 
         context.steps.forEach((entry, index) => {
             entry.wrapper.hidden = visibility.get(entry) === false || index !== currentStep;
+        });
+
+        context.entries.forEach((entry) => {
+            const parentInteractive = entry.parent ? interactivity.get(entry.parent) === true : true;
+            const step = steps.get(entry);
+            const interactive = parentInteractive
+                && visibility.get(entry) !== false
+                && (step === undefined || step === currentStep);
+
+            interactivity.set(entry, interactive);
+            setEntryInteractivity(entry, interactive);
         });
 
         if (active && fields.length > 0) {
