@@ -161,6 +161,7 @@ function initializeFilePreview(root, configuration) {
     const frame = root.querySelector('[data-daisy-kit-file-preview-frame]');
     const layout = root.querySelector('[data-daisy-kit-file-preview-layout]');
     const modal = root.querySelector('[data-daisy-kit-file-preview-modal]');
+    const content = root.querySelector('[data-daisy-kit-content]');
     const notice = root.querySelector('[data-daisy-kit-file-preview-notice]');
     const openPreview = root.querySelector('[data-daisy-kit-file-preview-open-preview]');
     const closePreview = root.querySelector('[data-daisy-kit-file-preview-close-preview]');
@@ -191,7 +192,9 @@ function initializeFilePreview(root, configuration) {
     let payload = null;
     let actionUrl = null;
     let renderTimeout = null;
-    let previewOpen = previewLayout !== 'action-only' && previewLayout !== 'modal';
+    const rendersInline = previewLayout === 'standard' || previewLayout === 'card';
+    let modalOpen = false;
+    let previewOpen = rendersInline;
     const readyTimeout = window.setTimeout(() => {
         if (destroyed || frameReady) return;
 
@@ -200,7 +203,7 @@ function initializeFilePreview(root, configuration) {
         showError(root, 'The file preview frame did not become ready.');
     }, frameReadyTimeout);
     setVisible(loading, true);
-    setVisible(frame, previewOpen);
+    setVisible(frame, rendersInline);
     root.dataset.daisyKitState = 'loading';
     emit(root, 'loading');
 
@@ -208,30 +211,64 @@ function initializeFilePreview(root, configuration) {
         notice.textContent = configuration.notice;
         setVisible(notice, true);
     }
-    if (previewLayout === 'modal' && modal instanceof HTMLDialogElement) {
-        modal.append(frame);
-    }
-    const setPreviewOpen = (open) => {
-        previewOpen = open;
-        root.dataset.daisyKitPreviewOpen = String(open);
-        setVisible(frame, open);
-        if (previewLayout === 'modal' && modal instanceof HTMLDialogElement) {
-            if (open) {
-                if (typeof modal.showModal === 'function') modal.showModal();
-                else modal.open = true;
-            } else if (modal.open) {
-                if (typeof modal.close === 'function') modal.close();
-                else modal.open = false;
-            }
+    const restoreInlinePreview = (restoreFocus = true) => {
+        modalOpen = false;
+        previewOpen = rendersInline;
+        root.dataset.daisyKitPreviewOpen = String(previewOpen);
+
+        if (modal instanceof HTMLDialogElement && modal.contains(frame) && content) {
+            content.append(frame);
+        }
+
+        setVisible(frame, rendersInline);
+
+        if (restoreFocus && openPreview instanceof HTMLElement) {
+            openPreview.focus({ preventScroll: true });
         }
     };
+    const closePreviewModal = () => {
+        if (!(modal instanceof HTMLDialogElement)) {
+            restoreInlinePreview();
+
+            return;
+        }
+
+        if (modal.open && typeof modal.close === 'function') {
+            modal.close();
+
+            return;
+        }
+
+        modal.open = false;
+        restoreInlinePreview();
+    };
+    const openPreviewModal = () => {
+        modalOpen = true;
+        previewOpen = true;
+        root.dataset.daisyKitPreviewOpen = 'true';
+        setVisible(frame, true);
+
+        if (!(modal instanceof HTMLDialogElement)) return;
+
+        if (!modal.contains(frame)) modal.append(frame);
+
+        if (!modal.open) {
+            if (typeof modal.showModal === 'function') modal.showModal();
+            else modal.open = true;
+        }
+
+        (closePreview instanceof HTMLElement ? closePreview : modal).focus({ preventScroll: true });
+    };
+    const onModalClose = () => {
+        restoreInlinePreview();
+        emit(root, 'preview', { open: false });
+    };
     const onPreviewClick = () => {
-        setPreviewOpen(!previewOpen);
-        emit(root, 'preview', { open: previewOpen });
+        openPreviewModal();
+        emit(root, 'preview', { open: true });
     };
     const onClosePreview = () => {
-        setPreviewOpen(false);
-        emit(root, 'preview', { open: false });
+        closePreviewModal();
     };
     const onLayoutClick = () => {
         const expanded = root.dataset.daisyKitLayout !== 'expanded';
@@ -255,6 +292,7 @@ function initializeFilePreview(root, configuration) {
     layout?.addEventListener('click', onLayoutClick);
     openPreview?.addEventListener('click', onPreviewClick);
     closePreview?.addEventListener('click', onClosePreview);
+    modal?.addEventListener('close', onModalClose);
     zoomControls.forEach((control) => control.addEventListener('click', onZoomClick));
 
     function sendPayload() {
@@ -284,7 +322,7 @@ function initializeFilePreview(root, configuration) {
             rendered = true;
             window.clearTimeout(renderTimeout);
             setVisible(loading, false);
-            setPreviewOpen(previewOpen);
+            if (!modalOpen) setVisible(frame, rendersInline);
             root.dataset.daisyKitState = 'ready';
             emit(root, 'ready', { type });
         }
@@ -330,11 +368,12 @@ function initializeFilePreview(root, configuration) {
         layout?.removeEventListener('click', onLayoutClick);
         openPreview?.removeEventListener('click', onPreviewClick);
         closePreview?.removeEventListener('click', onClosePreview);
+        modal?.removeEventListener('close', onModalClose);
         zoomControls.forEach((control) => control.removeEventListener('click', onZoomClick));
         if (modal instanceof HTMLDialogElement && modal.contains(frame)) {
             if (typeof modal.close === 'function') modal.close();
             else modal.open = false;
-            root.querySelector('[data-daisy-kit-content]')?.append(frame);
+            content?.append(frame);
         }
         frame.removeAttribute('srcdoc');
         setVisible(frame, false);

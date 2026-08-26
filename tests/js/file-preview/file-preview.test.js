@@ -187,6 +187,68 @@ describe('file preview entry', () => {
         expect(element.dataset.daisyKitPreviewOpen).toBe('false');
     });
 
+    it('opens the preview dialog from a standard layout and restores its inline frame after close', async () => {
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('plain text', {
+            headers: { 'content-type': 'text/plain' },
+            status: 200,
+        }))));
+        const element = root({ layout: 'standard', src: '/notes.txt', type: 'text' });
+
+        mount(element);
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+        const modal = element.querySelector('[data-daisy-kit-file-preview-modal]');
+        const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
+        const trigger = element.querySelector('[data-daisy-kit-file-preview-open-preview]');
+
+        trigger.click();
+
+        expect(modal.open).toBe(true);
+        expect(element.dataset.daisyKitPreviewOpen).toBe('true');
+        expect(modal.contains(frame)).toBe(true);
+
+        modal.querySelector('[data-daisy-kit-file-preview-close-preview]').click();
+
+        expect(modal.open).toBe(false);
+        expect(element.dataset.daisyKitPreviewOpen).toBe('true');
+        expect(element.querySelector('[data-daisy-kit-content]').contains(frame)).toBe(true);
+        expect(frame.hidden).toBe(false);
+    });
+
+    it('keeps modal state and focus isolated between multiple standard previews', () => {
+        vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+        document.body.innerHTML = `
+            <section data-daisy-kit-module="file-preview">
+                <div data-daisy-kit-content><dialog data-daisy-kit-file-preview-modal><button data-daisy-kit-file-preview-close-preview type="button">Close</button></dialog><iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts"></iframe></div>
+                <button data-daisy-kit-file-preview-open-preview type="button">Preview first</button>
+                <script data-daisy-kit-config type="application/json">{"layout":"standard","src":"/first.txt","type":"text"}</script>
+            </section>
+            <section data-daisy-kit-module="file-preview">
+                <div data-daisy-kit-content><dialog data-daisy-kit-file-preview-modal><button data-daisy-kit-file-preview-close-preview type="button">Close</button></dialog><iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts"></iframe></div>
+                <button data-daisy-kit-file-preview-open-preview type="button">Preview second</button>
+                <script data-daisy-kit-config type="application/json">{"layout":"standard","src":"/second.txt","type":"text"}</script>
+            </section>`;
+        const [first, second] = document.querySelectorAll('[data-daisy-kit-module="file-preview"]');
+
+        mount(first);
+        mount(second);
+        const firstDialog = first.querySelector('[data-daisy-kit-file-preview-modal]');
+        const secondDialog = second.querySelector('[data-daisy-kit-file-preview-modal]');
+        const firstTrigger = first.querySelector('[data-daisy-kit-file-preview-open-preview]');
+
+        firstTrigger.click();
+
+        expect(firstDialog.open).toBe(true);
+        expect(secondDialog.open).toBe(false);
+        expect(second.dataset.daisyKitPreviewOpen).toBe('true');
+
+        firstDialog.querySelector('[data-daisy-kit-file-preview-close-preview]').click();
+
+        expect(firstDialog.open).toBe(false);
+        expect(document.activeElement).toBe(firstTrigger);
+        expect(first.dataset.daisyKitPreviewOpen).toBe('true');
+        expect(second.dataset.daisyKitPreviewOpen).toBe('true');
+    });
+
     it('retains card as an explicit non-modal layout', () => {
         vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
         const element = root({ layout: 'card', src: '/notes.txt', type: 'text' });
