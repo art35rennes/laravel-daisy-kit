@@ -133,6 +133,7 @@ function renderBlueprint(root, configuration) {
     const history = [];
     let historyIndex = -1;
     let editor = null;
+    let valueEditor = null;
     let undo = null;
     let redo = null;
 
@@ -147,9 +148,11 @@ function renderBlueprint(root, configuration) {
         redo?.toggleAttribute('disabled', historyIndex >= history.length - 1);
     };
 
-    const applyLabels = (labels, emitChange = true) => {
+    const applySnapshot = (snapshot, emitChange = true) => {
         nodes.forEach((node, index) => {
-            node.label = labels[index] ?? node.id;
+            const next = snapshot[index] ?? {};
+            node.label = next.label ?? node.id;
+            node.value = next.value;
             const rendered = renderedNodes.find((candidate) => candidate.id === node.id);
 
             if (rendered) {
@@ -169,7 +172,10 @@ function renderBlueprint(root, configuration) {
 
     const remember = () => {
         history.splice(historyIndex + 1);
-        history.push(nodes.map((node) => typeof node.label === 'string' ? node.label : node.id));
+        history.push(nodes.map((node) => ({
+            label: typeof node.label === 'string' ? node.label : node.id,
+            value: node.value,
+        })));
         historyIndex = history.length - 1;
         synchronizeHistory();
     };
@@ -185,6 +191,10 @@ function renderBlueprint(root, configuration) {
         if (editor instanceof HTMLInputElement) {
             editor.disabled = false;
             editor.value = renderedNodes.find((candidate) => candidate.id === nodeId)?.label.textContent ?? '';
+        }
+        if (valueEditor instanceof HTMLTextAreaElement) {
+            valueEditor.disabled = false;
+            valueEditor.value = JSON.stringify(nodes.find((node) => node.id === nodeId)?.value ?? null);
         }
         root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:select', {
             bubbles: true,
@@ -206,7 +216,7 @@ function renderBlueprint(root, configuration) {
 
             if (nextIndex >= 0 && nextIndex < history.length) {
                 historyIndex = nextIndex;
-                applyLabels(history[historyIndex]);
+                applySnapshot(history[historyIndex]);
                 synchronizeHistory();
             }
 
@@ -227,7 +237,23 @@ function renderBlueprint(root, configuration) {
 
         nodes[index].label = nextLabel;
         remember();
-        applyLabels(history[historyIndex]);
+        applySnapshot(history[historyIndex]);
+    };
+    const onValueChange = () => {
+        if (!editable || !selectedId || !(valueEditor instanceof HTMLTextAreaElement)) return;
+
+        try {
+            const nextValue = JSON.parse(valueEditor.value);
+            const node = nodes.find((candidate) => candidate.id === selectedId);
+
+            if (!node || JSON.stringify(node.value ?? null) === JSON.stringify(nextValue)) return;
+
+            node.value = nextValue;
+            remember();
+            applySnapshot(history[historyIndex]);
+        } catch {
+            valueEditor.setAttribute('aria-invalid', 'true');
+        }
     };
     const onKeydown = (event) => {
         const currentIndex = renderedNodes.findIndex(({ control }) => control === document.activeElement);
@@ -279,6 +305,13 @@ function renderBlueprint(root, configuration) {
         controls.append(redo);
 
         editor.addEventListener('change', onEditorChange);
+
+        valueEditor = document.createElement('textarea');
+        valueEditor.disabled = true;
+        valueEditor.setAttribute('aria-label', 'Selected node value as JSON');
+        valueEditor.setAttribute('data-daisy-kit-blueprint-value-editor', '');
+        controls.append(valueEditor);
+        valueEditor.addEventListener('change', onValueChange);
         remember();
     }
     synchronizeValue();
@@ -289,6 +322,7 @@ function renderBlueprint(root, configuration) {
         controls.removeEventListener('click', onControlsClick);
         controls.removeEventListener('keydown', onKeydown);
         editor?.removeEventListener('change', onEditorChange);
+        valueEditor?.removeEventListener('change', onValueChange);
         controls.remove();
         canvas.replaceChildren();
     };

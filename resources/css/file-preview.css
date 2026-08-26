@@ -11,6 +11,10 @@
     min-block-size: 24rem;
 }
 
+[data-daisy-kit-module='file-preview'][data-daisy-kit-layout='expanded'] [data-daisy-kit-file-preview-frame] {
+    min-block-size: 36rem;
+}
+
 [data-daisy-kit-module='file-preview'][data-daisy-kit-state='error'] [data-daisy-kit-content] {
     display: none;
 }

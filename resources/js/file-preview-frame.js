@@ -2,8 +2,13 @@ import { renderAsync } from 'docx-preview';
 
 const channel = 'daisy-kit:file-preview:frame';
 const output = document.querySelector('[data-daisy-kit-file-preview-output]');
+let objectUrl = null;
 
 async function render(payload) {
+    if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = null;
+    }
     output.replaceChildren();
 
     if (payload.type === 'text') {
@@ -17,8 +22,20 @@ async function render(payload) {
     if (payload.type === 'image') {
         const image = document.createElement('img');
         image.alt = payload.name;
-        image.src = URL.createObjectURL(new Blob([payload.data]));
+        objectUrl = URL.createObjectURL(new Blob([payload.data]));
+        image.src = objectUrl;
         output.append(image);
+
+        return;
+    }
+
+    if (payload.type === 'video') {
+        const video = document.createElement('video');
+        video.controls = true;
+        video.preload = 'metadata';
+        objectUrl = URL.createObjectURL(new Blob([payload.data]));
+        video.src = objectUrl;
+        output.append(video);
 
         return;
     }

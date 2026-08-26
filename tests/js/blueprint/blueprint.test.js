@@ -60,7 +60,7 @@ describe('blueprint entry', () => {
         const element = root({
             editable: true,
             edges: [],
-            nodes: [{ id: 'first', label: 'First' }],
+            nodes: [{ id: 'first', label: 'First', value: { state: 'draft' } }],
         });
         const changes = [];
         element.addEventListener('daisy-kit:blueprint:change', (event) => changes.push(event.detail.value));
@@ -70,13 +70,20 @@ describe('blueprint entry', () => {
         const editor = element.querySelector('[data-daisy-kit-blueprint-editor]');
         editor.value = 'Updated';
         editor.dispatchEvent(new Event('change'));
+        const valueEditor = element.querySelector('[data-daisy-kit-blueprint-value-editor]');
+        valueEditor.value = '{"state":"published"}';
+        valueEditor.dispatchEvent(new Event('change'));
 
         expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].label).toBe('Updated');
-        expect(changes).toHaveLength(1);
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].value).toEqual({ state: 'published' });
+        expect(changes).toHaveLength(2);
 
+        element.querySelector('[data-daisy-kit-blueprint-history="undo"]').click();
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].value).toEqual({ state: 'draft' });
         element.querySelector('[data-daisy-kit-blueprint-history="undo"]').click();
         expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].label).toBe('First');
 
+        element.querySelector('[data-daisy-kit-blueprint-history="redo"]').click();
         element.querySelector('[data-daisy-kit-blueprint-history="redo"]').click();
         expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].label).toBe('Updated');
     });

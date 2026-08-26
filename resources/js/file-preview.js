@@ -6,7 +6,7 @@ const defaultMaximumBytes = 5 * 1024 * 1024;
 const absoluteMaximumBytes = 10 * 1024 * 1024;
 const frameReadyTimeout = 10_000;
 const frameChannel = 'daisy-kit:file-preview:frame';
-const supportedTypes = new Set(['docx', 'image', 'text']);
+const supportedTypes = new Set(['docx', 'image', 'text', 'video']);
 const frameAssets = [
     new URL('./file-preview-frame-bootstrap.js', import.meta.url),
     new URL('../../.tmp/file-preview-frame/file-preview-frame.js', import.meta.url),
@@ -25,6 +25,7 @@ function previewType(configuration) {
 
     if (path.endsWith('.docx')) return 'docx';
     if (/\.(avif|gif|jpe?g|png|svg|webp)$/.test(path)) return 'image';
+    if (/\.(m4v|mov|mp4|webm)$/.test(path)) return 'video';
 
     return 'text';
 }
@@ -52,6 +53,7 @@ function validContentType(type, contentType) {
 
     if (type === 'docx') return mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     if (type === 'image') return mime.startsWith('image/');
+    if (type === 'video') return mime.startsWith('video/');
 
     return mime === 'text/plain';
 }
@@ -64,7 +66,7 @@ function frameDocument(token) {
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; connect-src 'none'; form-action 'none'; frame-ancestors 'self'; img-src data: blob:; font-src data: blob:; media-src 'none'; object-src 'none'; script-src-attr 'none'; script-src-elem ${scriptSources}; style-src 'unsafe-inline'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; connect-src 'none'; form-action 'none'; frame-ancestors 'self'; img-src data: blob:; font-src data: blob:; media-src blob:; object-src 'none'; script-src-attr 'none'; script-src-elem ${scriptSources}; style-src 'unsafe-inline'">
     <title>File preview</title>
 </head>
 <body>
@@ -89,6 +91,22 @@ function showError(root, message) {
     }
 
     emit(root, 'error', { message });
+}
+
+function showMetadata(root, blob, configuration, type) {
+    const metadata = root.querySelector('[data-daisy-kit-file-preview-metadata]');
+
+    if (!metadata) return;
+
+    const name = root.querySelector('[data-daisy-kit-file-preview-name]');
+    const size = root.querySelector('[data-daisy-kit-file-preview-size]');
+    const previewType = root.querySelector('[data-daisy-kit-file-preview-type]');
+    const filename = typeof configuration.name === 'string' && configuration.name.length > 0 ? configuration.name : 'File preview';
+
+    if (name) name.textContent = filename;
+    if (size) size.textContent = `${blob.size.toLocaleString()} bytes`;
+    if (previewType) previewType.textContent = type;
+    metadata.hidden = false;
 }
 
 async function fetchBlob(source, type, limit, abortController) {
@@ -121,6 +139,7 @@ function initializeFilePreview(root, configuration) {
     const loading = root.querySelector('[data-daisy-kit-loading]');
     const empty = root.querySelector('[data-daisy-kit-empty]');
     const frame = root.querySelector('[data-daisy-kit-file-preview-frame]');
+    const layout = root.querySelector('[data-daisy-kit-file-preview-layout]');
 
     if (!source) {
         setVisible(empty, true);
@@ -155,6 +174,17 @@ function initializeFilePreview(root, configuration) {
     setVisible(frame, true);
     root.dataset.daisyKitState = 'loading';
     emit(root, 'loading');
+
+    const onLayoutClick = () => {
+        const expanded = root.dataset.daisyKitLayout !== 'expanded';
+
+        root.dataset.daisyKitLayout = expanded ? 'expanded' : 'standard';
+        layout?.setAttribute('aria-pressed', String(expanded));
+        emit(root, 'layout', { layout: root.dataset.daisyKitLayout });
+    };
+    root.dataset.daisyKitLayout = configuration.layout === 'expanded' ? 'expanded' : 'standard';
+    layout?.setAttribute('aria-pressed', String(root.dataset.daisyKitLayout === 'expanded'));
+    layout?.addEventListener('click', onLayoutClick);
 
     function sendPayload() {
         if (destroyed || !frameReady || payloadSent || !payload || !frame.contentWindow) return;
@@ -205,6 +235,7 @@ function initializeFilePreview(root, configuration) {
 
             if (destroyed) return;
 
+            showMetadata(root, blob, configuration, type);
             payload = await framePayload(type, blob, typeof configuration.name === 'string' ? configuration.name : 'File preview');
             sendPayload();
         } catch (error) {
@@ -223,6 +254,7 @@ function initializeFilePreview(root, configuration) {
         window.clearTimeout(readyTimeout);
         window.clearTimeout(renderTimeout);
         window.removeEventListener('message', onMessage);
+        layout?.removeEventListener('click', onLayoutClick);
         frame.removeAttribute('srcdoc');
         setVisible(frame, false);
         payload = null;

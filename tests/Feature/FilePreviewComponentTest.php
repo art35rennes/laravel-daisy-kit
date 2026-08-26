@@ -11,6 +11,8 @@ test('the file preview component emits a CSP-safe configuration', function (): v
     expect($html)
         ->toContain('data-daisy-kit-module="file-preview"')
         ->toContain('data-daisy-kit-file-preview-frame')
+        ->toContain('data-daisy-kit-file-preview-metadata')
+        ->toContain('data-daisy-kit-file-preview-layout')
         ->toContain('sandbox="allow-scripts"')
         ->not->toContain('allow-same-origin')
         ->not->toContain('</script><img')
