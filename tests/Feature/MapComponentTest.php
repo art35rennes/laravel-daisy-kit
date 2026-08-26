@@ -30,9 +30,25 @@ test('the map component exposes a semantic empty and measurement state', functio
         ->toContain('data-daisy-kit-map-export')
         ->toContain('data-daisy-kit-map-history="undo"')
         ->toContain('data-daisy-kit-map-mode="select"')
+        ->toContain('data-daisy-kit-map-mode="point"')
+        ->toContain('data-daisy-kit-map-mode="edit"')
         ->toContain('data-daisy-kit-map-value')
         ->toContain('data-daisy-kit-map-measurement')
         ->toContain('role="application"');
+});
+
+test('the map component exposes optional marker, geolocation and spatial-selection configuration', function (): void {
+    $html = view('daisy-kit::components.map', [
+        'geolocation' => true,
+        'markers' => [['position' => [48.1, -1.6]]],
+        'spatialSelection' => true,
+    ])->render();
+
+    expect($html)
+        ->toContain('data-daisy-kit-map-geolocate')
+        ->toContain('data-daisy-kit-map-mode="spatial-select"')
+        ->toContain('"markers"')
+        ->toContain('"spatialSelection":true');
 });
 
 test('the map component is available through the public blade namespace', function (): void {

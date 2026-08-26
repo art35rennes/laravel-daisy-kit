@@ -3,6 +3,8 @@
     'edges' => [],
     'label' => 'Blueprint',
     'editable' => false,
+    'name' => null,
+    'value' => null,
 ])
 
 <section
@@ -18,7 +20,7 @@
             focusable="false"
         ></svg>
         <p data-daisy-kit-empty hidden>No blueprint nodes are available.</p>
-        <input data-daisy-kit-blueprint-value type="hidden">
+        <input data-daisy-kit-blueprint-value @if(is_string($name) && $name !== '') name="{{ $name }}" @endif type="hidden">
     </div>
 
     <script data-daisy-kit-config type="application/json">{!! \Art35rennes\DaisyKit\Support\JsonConfiguration::encode([
@@ -26,5 +28,7 @@
         'edges' => $edges,
         'label' => $label,
         'editable' => $editable,
+        'name' => $name,
+        'value' => $value,
     ]) !!}</script>
 </section>

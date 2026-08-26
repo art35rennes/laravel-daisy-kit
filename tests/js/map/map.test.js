@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const map = {
     fitBounds: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
     remove: vi.fn(),
     setView: vi.fn(() => map),
 };
@@ -9,6 +11,7 @@ const createdLayers = [];
 const drawings = [];
 const tileLayers = [];
 const wmsLayers = [];
+const markers = [];
 
 function createLayer() {
     const layer = { addTo: vi.fn(() => layer), getBounds: vi.fn(() => ({ isValid: () => true })), remove: vi.fn() };
@@ -21,6 +24,12 @@ vi.mock('leaflet', () => ({
     default: {
         geoJSON: vi.fn(() => createLayer()),
         map: vi.fn(() => map),
+        marker: vi.fn(() => {
+            const marker = { addTo: vi.fn(() => marker), off: vi.fn(), on: vi.fn(), remove: vi.fn() };
+            markers.push(marker);
+
+            return marker;
+        }),
         tileLayer: Object.assign(vi.fn(() => {
             const layer = { addTo: vi.fn(() => layer), remove: vi.fn() };
             tileLayers.push(layer);
@@ -53,6 +62,7 @@ vi.mock('terra-draw', () => ({
         undo = vi.fn(() => true);
     },
     TerraDrawLineStringMode: class {},
+    TerraDrawPointMode: class {},
     TerraDrawPolygonMode: class {},
     TerraDrawSelectMode: class {},
     TerraDrawSessionUndoRedo: class {},
@@ -70,9 +80,10 @@ function root(configuration) {
                 <p data-daisy-kit-empty hidden></p>
                 <output data-daisy-kit-map-measurement></output>
                 <input data-daisy-kit-map-value type="hidden">
+                <button data-daisy-kit-map-geolocate type="button">Use my location</button>
                 <fieldset data-daisy-kit-map-layers hidden><legend>Layers</legend></fieldset>
                 <fieldset data-daisy-kit-map-basemaps hidden><legend>Basemaps</legend></fieldset>
-                <fieldset data-daisy-kit-map-tools><button data-daisy-kit-map-mode="linestring" type="button">Draw line</button><button data-daisy-kit-map-mode="polygon" type="button">Draw area</button><button data-daisy-kit-map-mode="select" type="button">Select drawing</button><button data-daisy-kit-map-history="undo" disabled type="button">Undo</button><button data-daisy-kit-map-history="redo" disabled type="button">Redo</button></fieldset>
+                <fieldset data-daisy-kit-map-tools><button data-daisy-kit-map-mode="point" type="button">Draw point</button><button data-daisy-kit-map-mode="linestring" type="button">Draw line</button><button data-daisy-kit-map-mode="polygon" type="button">Draw area</button><button data-daisy-kit-map-mode="edit" type="button">Edit drawing</button><button data-daisy-kit-map-mode="select" type="button">Select drawing</button><button data-daisy-kit-map-mode="spatial-select" type="button">Select geographic feature</button><button data-daisy-kit-map-history="undo" disabled type="button">Undo</button><button data-daisy-kit-map-history="redo" disabled type="button">Redo</button></fieldset>
                 <button data-daisy-kit-map-export disabled type="button">Export drawing</button>
             </div>
             <script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script>
@@ -88,9 +99,12 @@ describe('map entry', () => {
         drawings.splice(0);
         tileLayers.splice(0);
         wmsLayers.splice(0);
+        markers.splice(0);
         map.fitBounds.mockClear();
         map.remove.mockClear();
         map.setView.mockClear();
+        map.on.mockClear();
+        map.off.mockClear();
     });
 
     it('mounts GeoJSON data and removes its Leaflet instance', () => {
@@ -168,5 +182,43 @@ describe('map entry', () => {
         expect(wmsLayers[0].remove).toHaveBeenCalledOnce();
         expect(dark.checked).toBe(true);
         expect(JSON.parse(element.querySelector('[data-daisy-kit-map-value]').value).features).toHaveLength(1);
+    });
+
+    it('renders markers and supports optional geolocation, point/edit modes and spatial selection', () => {
+        const originalGeolocation = navigator.geolocation;
+        const getCurrentPosition = vi.fn((success) => success({ coords: { latitude: 48.11, longitude: -1.67 } }));
+        Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition } });
+        const element = root({
+            drawing: true,
+            geolocation: true,
+            geojson: {
+                features: [{ geometry: { coordinates: [[[-1.7, 48.1], [-1.6, 48.1], [-1.6, 48.2], [-1.7, 48.1]]], type: 'Polygon' }, id: 'district', type: 'Feature' }],
+                type: 'FeatureCollection',
+            },
+            markers: [{ id: 'city-hall', label: 'City hall', position: [48.11, -1.67] }],
+            spatialSelection: true,
+        });
+        const selections = [];
+        element.addEventListener('daisy-kit:map:spatial-select', (event) => selections.push(event.detail));
+
+        mount(element);
+        element.querySelector('[data-daisy-kit-map-geolocate]').click();
+        element.querySelector('[data-daisy-kit-map-mode="point"]').click();
+        element.querySelector('[data-daisy-kit-map-mode="edit"]').click();
+        element.querySelector('[data-daisy-kit-map-mode="spatial-select"]').click();
+        const clickHandler = map.on.mock.calls.find(([event]) => event === 'click')?.[1];
+        clickHandler({ latlng: { lat: 48.15, lng: -1.65 } });
+
+        expect(getCurrentPosition).toHaveBeenCalledOnce();
+        expect(markers).toHaveLength(1);
+        expect(map.setView).toHaveBeenCalledWith([48.11, -1.67], 12);
+        expect(drawings[0].setMode).toHaveBeenNthCalledWith(1, 'point');
+        expect(drawings[0].setMode).toHaveBeenNthCalledWith(2, 'select');
+        expect(selections).toEqual([expect.objectContaining({ feature: expect.objectContaining({ id: 'district' }) })]);
+        expect(element.dataset.daisyKitSpatialSelection).toBe('district');
+        unmount(element);
+        expect(markers[0].remove).toHaveBeenCalledOnce();
+        expect(map.off).toHaveBeenCalledWith('click', expect.any(Function));
+        Object.defineProperty(navigator, 'geolocation', { configurable: true, value: originalGeolocation });
     });
 });

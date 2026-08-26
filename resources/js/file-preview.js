@@ -162,6 +162,10 @@ function initializeFilePreview(root, configuration) {
     const empty = root.querySelector('[data-daisy-kit-empty]');
     const frame = root.querySelector('[data-daisy-kit-file-preview-frame]');
     const layout = root.querySelector('[data-daisy-kit-file-preview-layout]');
+    const modal = root.querySelector('[data-daisy-kit-file-preview-modal]');
+    const notice = root.querySelector('[data-daisy-kit-file-preview-notice]');
+    const openPreview = root.querySelector('[data-daisy-kit-file-preview-open-preview]');
+    const zoomControls = [...root.querySelectorAll('[data-daisy-kit-file-preview-zoom]')];
 
     if (!source) {
         setVisible(empty, true);
@@ -178,6 +182,8 @@ function initializeFilePreview(root, configuration) {
     }
 
     const abortController = new AbortController();
+    const requestedLayout = typeof configuration.layout === 'string' ? configuration.layout : 'standard';
+    const previewLayout = ['action-only', 'card', 'modal'].includes(requestedLayout) ? requestedLayout : 'standard';
     const frameToken = createInstanceIdentifier('daisy-kit-file-preview');
     let destroyed = false;
     let frameReady = false;
@@ -186,6 +192,7 @@ function initializeFilePreview(root, configuration) {
     let payload = null;
     let actionUrl = null;
     let renderTimeout = null;
+    let previewOpen = previewLayout !== 'action-only' && previewLayout !== 'modal';
     const readyTimeout = window.setTimeout(() => {
         if (destroyed || frameReady) return;
 
@@ -194,10 +201,35 @@ function initializeFilePreview(root, configuration) {
         showError(root, 'The file preview frame did not become ready.');
     }, frameReadyTimeout);
     setVisible(loading, true);
-    setVisible(frame, true);
+    setVisible(frame, previewOpen);
     root.dataset.daisyKitState = 'loading';
     emit(root, 'loading');
 
+    if (typeof configuration.notice === 'string' && configuration.notice.trim() !== '') {
+        notice.textContent = configuration.notice;
+        setVisible(notice, true);
+    }
+    if (previewLayout === 'modal' && modal instanceof HTMLDialogElement) {
+        modal.append(frame);
+    }
+    const setPreviewOpen = (open) => {
+        previewOpen = open;
+        root.dataset.daisyKitPreviewOpen = String(open);
+        setVisible(frame, open);
+        if (previewLayout === 'modal' && modal instanceof HTMLDialogElement) {
+            if (open) {
+                if (typeof modal.showModal === 'function') modal.showModal();
+                else modal.open = true;
+            } else if (modal.open) {
+                if (typeof modal.close === 'function') modal.close();
+                else modal.open = false;
+            }
+        }
+    };
+    const onPreviewClick = () => {
+        setPreviewOpen(!previewOpen);
+        emit(root, 'preview', { open: previewOpen });
+    };
     const onLayoutClick = () => {
         const expanded = root.dataset.daisyKitLayout !== 'expanded';
 
@@ -205,9 +237,21 @@ function initializeFilePreview(root, configuration) {
         layout?.setAttribute('aria-pressed', String(expanded));
         emit(root, 'layout', { layout: root.dataset.daisyKitLayout });
     };
-    root.dataset.daisyKitLayout = configuration.layout === 'expanded' ? 'expanded' : 'standard';
+    const onZoomClick = (event) => {
+        const direction = event.currentTarget.dataset.daisyKitFilePreviewZoom;
+        const current = Number(root.dataset.daisyKitZoom ?? '100');
+        const zoom = Math.max(50, Math.min(200, current + (direction === 'in' ? 25 : -25)));
+
+        root.dataset.daisyKitZoom = String(zoom);
+        emit(root, 'zoom', { zoom });
+    };
+    root.dataset.daisyKitLayout = requestedLayout === 'expanded' ? 'expanded' : previewLayout;
+    root.dataset.daisyKitZoom = '100';
+    root.dataset.daisyKitPreviewOpen = String(previewOpen);
     layout?.setAttribute('aria-pressed', String(root.dataset.daisyKitLayout === 'expanded'));
     layout?.addEventListener('click', onLayoutClick);
+    openPreview?.addEventListener('click', onPreviewClick);
+    zoomControls.forEach((control) => control.addEventListener('click', onZoomClick));
 
     function sendPayload() {
         if (destroyed || !frameReady || payloadSent || !payload || !frame.contentWindow) return;
@@ -236,6 +280,7 @@ function initializeFilePreview(root, configuration) {
             rendered = true;
             window.clearTimeout(renderTimeout);
             setVisible(loading, false);
+            setPreviewOpen(previewOpen);
             root.dataset.daisyKitState = 'ready';
             emit(root, 'ready', { type });
         }
@@ -279,6 +324,13 @@ function initializeFilePreview(root, configuration) {
         window.clearTimeout(renderTimeout);
         window.removeEventListener('message', onMessage);
         layout?.removeEventListener('click', onLayoutClick);
+        openPreview?.removeEventListener('click', onPreviewClick);
+        zoomControls.forEach((control) => control.removeEventListener('click', onZoomClick));
+        if (modal instanceof HTMLDialogElement && modal.contains(frame)) {
+            if (typeof modal.close === 'function') modal.close();
+            else modal.open = false;
+            root.querySelector('[data-daisy-kit-content]')?.append(frame);
+        }
         frame.removeAttribute('srcdoc');
         setVisible(frame, false);
         if (actionUrl) URL.revokeObjectURL(actionUrl);

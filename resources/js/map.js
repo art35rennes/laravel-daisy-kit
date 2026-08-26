@@ -1,7 +1,7 @@
 import area from '@turf/area';
 import length from '@turf/length';
 import L from 'leaflet';
-import { TerraDraw, TerraDrawLineStringMode, TerraDrawPolygonMode, TerraDrawSelectMode, TerraDrawSessionUndoRedo } from 'terra-draw';
+import { TerraDraw, TerraDrawLineStringMode, TerraDrawPointMode, TerraDrawPolygonMode, TerraDrawSelectMode, TerraDrawSessionUndoRedo } from 'terra-draw';
 import { TerraDrawLeafletAdapter } from 'terra-draw-leaflet-adapter';
 
 import '../css/map.css';
@@ -113,6 +113,59 @@ function validWmsOverlays(value) {
     });
 }
 
+function validMarkers(value) {
+    if (!Array.isArray(value)) return [];
+
+    return value.flatMap((marker, index) => {
+        const position = marker?.position ?? marker?.coordinates;
+
+        if (!Array.isArray(position) || position.length !== 2) return [];
+
+        const [latitude, longitude] = position.map(Number);
+
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return [];
+
+        return [{
+            id: typeof marker.id === 'string' && marker.id !== '' ? marker.id : `marker-${index + 1}`,
+            label: typeof marker.label === 'string' && marker.label !== '' ? marker.label : null,
+            position: [latitude, longitude],
+        }];
+    });
+}
+
+function spatialFeatures(value) {
+    if (value?.type === 'FeatureCollection' && Array.isArray(value.features)) return value.features.filter((feature) => feature?.geometry);
+    if (value?.type === 'Feature' && value.geometry) return [value];
+
+    return [];
+}
+
+function pointInRing(point, ring) {
+    let inside = false;
+
+    for (let index = 0, previous = ring.length - 1; index < ring.length; previous = index++) {
+        const [x, y] = ring[index];
+        const [previousX, previousY] = ring[previous];
+        const crosses = ((y > point[1]) !== (previousY > point[1]))
+            && point[0] < (((previousX - x) * (point[1] - y)) / (previousY - y)) + x;
+
+        if (crosses) inside = !inside;
+    }
+
+    return inside;
+}
+
+function containsPoint(feature, point) {
+    const geometry = feature?.geometry;
+
+    if (!geometry) return false;
+    if (geometry.type === 'Point') return geometry.coordinates[0] === point[0] && geometry.coordinates[1] === point[1];
+    if (geometry.type === 'Polygon') return pointInRing(point, geometry.coordinates[0] ?? []);
+    if (geometry.type === 'MultiPolygon') return geometry.coordinates.some((polygon) => pointInRing(point, polygon[0] ?? []));
+
+    return false;
+}
+
 function measurement(feature) {
     if (!feature?.geometry) {
         return null;
@@ -145,12 +198,14 @@ function initializeMap(root, configuration) {
     const tileUrl = validTileUrl(configuration.tileUrl);
     const basemaps = validBasemaps(configuration.basemaps);
     const wmsOverlays = validWmsOverlays(configuration.wms);
+    const markers = validMarkers(configuration.markers);
+    const selectableFeatures = [...spatialFeatures(geojson), ...layers.flatMap((layer) => spatialFeatures(layer.geojson))];
 
     if (!canvas || !empty || !output || !layerTools) {
         throw new Error('Map markup is incomplete.');
     }
 
-    if (!geojson && layers.length === 0 && basemaps.length === 0 && wmsOverlays.length === 0 && !tileUrl && !configuration.drawing) {
+    if (!geojson && layers.length === 0 && basemaps.length === 0 && wmsOverlays.length === 0 && markers.length === 0 && !tileUrl && !configuration.drawing) {
         empty.hidden = false;
         root.dataset.daisyKitState = 'empty';
         root.dispatchEvent(new CustomEvent('daisy-kit:map:empty', { bubbles: true }));
@@ -164,6 +219,7 @@ function initializeMap(root, configuration) {
         Number.isFinite(configuration.zoom) ? Number(configuration.zoom) : 12,
     );
     const dataLayers = [];
+    const markerLayers = [];
     let tileLayer = null;
 
     if (tileUrl && basemaps.length === 0) {
@@ -202,6 +258,17 @@ function initializeMap(root, configuration) {
             map.fitBounds(bounds, { padding: [16, 16] });
         }
     }
+
+    markers.forEach((marker) => {
+        const leafletMarker = L.marker(marker.position, { title: marker.label ?? marker.id }).addTo(map);
+        const onMarkerClick = () => root.dispatchEvent(new CustomEvent('daisy-kit:map:marker', {
+            bubbles: true,
+            detail: marker,
+        }));
+
+        leafletMarker.on?.('click', onMarkerClick);
+        markerLayers.push({ leafletMarker, onMarkerClick });
+    });
 
     const configuredLayers = layers.map((layer) => {
         const leafletLayer = L.geoJSON(layer.geojson);
@@ -251,7 +318,7 @@ function initializeMap(root, configuration) {
     if (configuration.drawing) {
         drawing = new TerraDraw({
             adapter: new TerraDrawLeafletAdapter({ lib: L, map }),
-            modes: [new TerraDrawLineStringMode(), new TerraDrawPolygonMode(), new TerraDrawSelectMode()],
+            modes: [new TerraDrawPointMode(), new TerraDrawLineStringMode(), new TerraDrawPolygonMode(), new TerraDrawSelectMode()],
             undoRedo: { sessionLevel: new TerraDrawSessionUndoRedo() },
         });
         onFinish = (id, context) => {
@@ -289,19 +356,50 @@ function initializeMap(root, configuration) {
         drawing.start();
     }
 
+    let spatialSelection = false;
     const onToolClick = (event) => {
         const button = event.target.closest('[data-daisy-kit-map-mode]');
 
-        if (!button || !drawing) {
+        if (!button) {
             return;
         }
 
-        drawing.setMode(button.dataset.daisyKitMapMode);
+        const mode = button.dataset.daisyKitMapMode;
+        spatialSelection = mode === 'spatial-select';
+        if (!spatialSelection && !drawing) return;
+
+        if (!spatialSelection) drawing.setMode(mode === 'edit' ? 'select' : mode);
         tools?.querySelectorAll('[data-daisy-kit-map-mode]').forEach((candidate) => candidate.setAttribute('aria-pressed', String(candidate === button)));
         root.dispatchEvent(new CustomEvent('daisy-kit:map:mode', {
             bubbles: true,
-            detail: { mode: button.dataset.daisyKitMapMode },
+            detail: { mode },
         }));
+    };
+    const onMapClick = (event) => {
+        if (!spatialSelection || !event?.latlng) return;
+
+        const point = [Number(event.latlng.lng), Number(event.latlng.lat)];
+        const feature = selectableFeatures.find((candidate) => containsPoint(candidate, point)) ?? null;
+        root.dataset.daisyKitSpatialSelection = feature?.id === undefined ? '' : String(feature.id);
+        root.dispatchEvent(new CustomEvent('daisy-kit:map:spatial-select', { bubbles: true, detail: { feature, point } }));
+    };
+    const geolocate = root.querySelector('[data-daisy-kit-map-geolocate]');
+    const onGeolocate = () => {
+        if (!navigator.geolocation) {
+            root.dispatchEvent(new CustomEvent('daisy-kit:map:error', { bubbles: true, detail: { message: 'Geolocation is unavailable.' } }));
+
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            ({ coords }) => {
+                const center = [coords.latitude, coords.longitude];
+                map.setView(center, Number.isFinite(configuration.zoom) ? Number(configuration.zoom) : 12);
+                root.dispatchEvent(new CustomEvent('daisy-kit:map:geolocate', { bubbles: true, detail: { center } }));
+            },
+            () => root.dispatchEvent(new CustomEvent('daisy-kit:map:error', { bubbles: true, detail: { message: 'Geolocation was denied.' } })),
+            { enableHighAccuracy: false, maximumAge: 60_000, timeout: 10_000 },
+        );
     };
     const onExport = () => {
         if (drawnFeatures.length === 0) return;
@@ -391,6 +489,8 @@ function initializeMap(root, configuration) {
     exportControl?.addEventListener('click', onExport);
     undoControl?.addEventListener('click', onUndo);
     redoControl?.addEventListener('click', onRedo);
+    geolocate?.addEventListener('click', onGeolocate);
+    map.on('click', onMapClick);
 
     root.dataset.daisyKitState = 'ready';
     root.dispatchEvent(new CustomEvent('daisy-kit:map:ready', { bubbles: true }));
@@ -403,6 +503,8 @@ function initializeMap(root, configuration) {
         exportControl?.removeEventListener('click', onExport);
         undoControl?.removeEventListener('click', onUndo);
         redoControl?.removeEventListener('click', onRedo);
+        geolocate?.removeEventListener('click', onGeolocate);
+        map.off?.('click', onMapClick);
 
         if (drawing && onFinish) {
             drawing.off('finish', onFinish);
@@ -412,6 +514,10 @@ function initializeMap(root, configuration) {
         }
 
         dataLayers.forEach((layer) => layer.remove());
+        markerLayers.forEach(({ leafletMarker, onMarkerClick }) => {
+            leafletMarker.off?.('click', onMarkerClick);
+            leafletMarker.remove();
+        });
         configuredWms.forEach((overlay) => overlay.leafletLayer.remove());
         tileLayer?.remove();
         configuredBasemaps.forEach((basemap) => basemap.leafletLayer.remove());

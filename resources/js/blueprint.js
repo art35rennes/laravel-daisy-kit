@@ -36,11 +36,26 @@ function validEdges(edges, nodeIds) {
     ));
 }
 
+function initialGraph(configuration) {
+    let candidate = configuration.value;
+
+    if (typeof candidate === 'string') {
+        try {
+            candidate = JSON.parse(candidate);
+        } catch {
+            candidate = null;
+        }
+    }
+
+    return candidate && typeof candidate === 'object' ? candidate : configuration;
+}
+
 function renderBlueprint(root, configuration) {
     const canvas = root.querySelector('[data-daisy-kit-blueprint-canvas]');
     const empty = root.querySelector('[data-daisy-kit-empty]');
     const value = root.querySelector('[data-daisy-kit-blueprint-value]');
-    const nodes = validNodes(configuration.nodes).map((node) => ({ ...node }));
+    const initialValue = initialGraph(configuration);
+    const nodes = validNodes(initialValue.nodes).map((node) => ({ ...node }));
     const editable = configuration.editable === true;
 
     if (!canvas || !empty) {
@@ -72,7 +87,7 @@ function renderBlueprint(root, configuration) {
     graph.setGraph({ rankdir: 'LR', nodesep: 32, ranksep: 72, marginx: 16, marginy: 16 });
     graph.setDefaultEdgeLabel(() => ({}));
     const nodeIds = new Set(nodes.map((node) => node.id));
-    const edges = validEdges(configuration.edges, nodeIds).map((edge) => ({ ...edge }));
+    const edges = validEdges(initialValue.edges, nodeIds).map((edge) => ({ ...edge }));
 
     nodes.forEach((node) => {
         graph.setNode(node.id, {
@@ -161,6 +176,13 @@ function renderBlueprint(root, configuration) {
         }
     };
 
+    const notifyValueChange = () => {
+        if (!(value instanceof HTMLInputElement)) return;
+
+        value.dispatchEvent(new Event('input', { bubbles: true }));
+        value.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
     const synchronizeHistory = () => {
         undo?.toggleAttribute('disabled', historyIndex <= 0);
         redo?.toggleAttribute('disabled', historyIndex >= history.length - 1);
@@ -203,6 +225,7 @@ function renderBlueprint(root, configuration) {
         synchronizeValue();
 
         if (emitChange) {
+            notifyValueChange();
             root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:change', {
                 bubbles: true,
                 detail: { value: value instanceof HTMLInputElement ? value.value : JSON.stringify({ edges, nodes }) },
@@ -347,6 +370,8 @@ function renderBlueprint(root, configuration) {
         if (!(configurationNode instanceof HTMLScriptElement)) return;
 
         remember();
+        synchronizeValue();
+        notifyValueChange();
         configurationNode.textContent = JSON.stringify({ ...configuration, edges, nodes });
         root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:change', {
             bubbles: true,

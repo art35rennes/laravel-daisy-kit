@@ -8,6 +8,9 @@
     'tileAttribution' => '',
     'basemaps' => [],
     'wms' => [],
+    'markers' => [],
+    'geolocation' => false,
+    'spatialSelection' => false,
     'label' => 'Map',
 ])
 
@@ -22,18 +25,28 @@
         <p data-daisy-kit-empty hidden>No geographic data is available.</p>
         <output aria-live="polite" data-daisy-kit-map-measurement></output>
         <input data-daisy-kit-map-value type="hidden">
+        @if($geolocation)
+            <button data-daisy-kit-map-geolocate type="button">Use my location</button>
+        @endif
         <fieldset data-daisy-kit-map-layers hidden>
             <legend>Layers</legend>
         </fieldset>
         <fieldset data-daisy-kit-map-basemaps hidden>
             <legend>Basemaps</legend>
         </fieldset>
-        @if($drawing)
+        @if($drawing || $spatialSelection)
             <fieldset data-daisy-kit-map-tools>
                 <legend>Drawing tools</legend>
-                <button data-daisy-kit-map-mode="linestring" type="button">Draw line</button>
-                <button data-daisy-kit-map-mode="polygon" type="button">Draw area</button>
-                <button data-daisy-kit-map-mode="select" type="button">Select drawing</button>
+                @if($drawing)
+                    <button data-daisy-kit-map-mode="point" type="button">Draw point</button>
+                    <button data-daisy-kit-map-mode="linestring" type="button">Draw line</button>
+                    <button data-daisy-kit-map-mode="polygon" type="button">Draw area</button>
+                    <button data-daisy-kit-map-mode="edit" type="button">Edit drawing</button>
+                    <button data-daisy-kit-map-mode="select" type="button">Select drawing</button>
+                @endif
+                @if($spatialSelection)
+                    <button data-daisy-kit-map-mode="spatial-select" type="button">Select geographic feature</button>
+                @endif
                 <button data-daisy-kit-map-history="undo" disabled type="button">Undo</button>
                 <button data-daisy-kit-map-history="redo" disabled type="button">Redo</button>
                 <button data-daisy-kit-map-export disabled type="button">Export drawing</button>
@@ -51,6 +64,9 @@
         'tileAttribution' => $tileAttribution,
         'basemaps' => $basemaps,
         'wms' => $wms,
+        'markers' => $markers,
+        'geolocation' => $geolocation,
+        'spatialSelection' => $spatialSelection,
         'label' => $label,
     ]) !!}</script>
 </section>

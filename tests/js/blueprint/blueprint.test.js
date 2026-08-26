@@ -132,4 +132,38 @@ describe('blueprint entry', () => {
         element.querySelector('[data-daisy-kit-blueprint-structure="remove-node"]').click();
         expect(element.querySelectorAll('[data-daisy-kit-blueprint-node-control]')).toHaveLength(2);
     });
+
+    it('keeps its named hidden JSON field synchronized after a structural edit', () => {
+        const element = root({
+            editable: true,
+            edges: [],
+            name: 'workflow',
+            nodes: [{ id: 'first', label: 'First' }],
+        });
+        const value = element.querySelector('[data-daisy-kit-blueprint-value]');
+        value.name = 'workflow';
+        const changes = [];
+        value.addEventListener('change', () => changes.push(value.value));
+
+        mount(element);
+        element.querySelector('[data-daisy-kit-blueprint-structure="add-node"]').click();
+
+        expect(value.name).toBe('workflow');
+        expect(JSON.parse(value.value).nodes).toHaveLength(2);
+        expect(changes).toHaveLength(1);
+    });
+
+    it('uses an initial JSON value as the named graph field contract', () => {
+        const element = root({
+            edges: [],
+            name: 'workflow',
+            nodes: [],
+            value: JSON.stringify({ edges: [], nodes: [{ id: 'from-value', label: 'From value' }] }),
+        });
+
+        mount(element);
+
+        expect(element.querySelector('[data-daisy-kit-blueprint-node-control]').textContent).toBe('From value');
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].id).toBe('from-value');
+    });
 });

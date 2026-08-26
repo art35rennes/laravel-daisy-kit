@@ -9,9 +9,13 @@ function root(configuration) {
             <div data-daisy-kit-content>
                 <p data-daisy-kit-loading hidden></p>
                 <p data-daisy-kit-empty hidden></p>
+                <dialog data-daisy-kit-file-preview-modal></dialog>
                 <iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts"></iframe>
                 <dl data-daisy-kit-file-preview-metadata hidden><dd data-daisy-kit-file-preview-name></dd><dd data-daisy-kit-file-preview-type></dd><dd data-daisy-kit-file-preview-size></dd></dl>
+                <p data-daisy-kit-file-preview-notice hidden></p>
+                <button data-daisy-kit-file-preview-open-preview type="button">Preview file</button>
                 <button data-daisy-kit-file-preview-layout type="button">Toggle expanded layout</button>
+                <button data-daisy-kit-file-preview-zoom="out" type="button">Zoom out</button><button data-daisy-kit-file-preview-zoom="in" type="button">Zoom in</button>
                 <p data-daisy-kit-file-preview-actions hidden><a data-daisy-kit-file-preview-open hidden rel="noopener" target="_blank">Open file</a><a data-daisy-kit-file-preview-download hidden>Download file</a></p>
             </div>
             <script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script>
@@ -129,6 +133,65 @@ describe('file preview entry', () => {
         expect(layouts).toEqual(['expanded']);
         expect(element.querySelector('[data-daisy-kit-file-preview-name]').textContent).toBe('Clip');
         expect(frame.srcdoc).toContain('media-src blob:');
+    });
+
+    it('supports modal and action-only preview controls with zoom and notices', async () => {
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('plain text', {
+            headers: { 'content-type': 'text/plain' },
+            status: 200,
+        }))));
+        const element = root({
+            layout: 'action-only',
+            name: 'Notes',
+            notice: 'Sensitive document',
+            src: '/notes.txt',
+            type: 'text',
+        });
+        const events = [];
+        element.addEventListener('daisy-kit:file-preview:preview', (event) => events.push(event.detail));
+        element.addEventListener('daisy-kit:file-preview:zoom', (event) => events.push(event.detail));
+
+        mount(element);
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+        frameMessage(element, { type: 'ready' });
+        frameMessage(element, { type: 'rendered' });
+
+        expect(element.querySelector('[data-daisy-kit-file-preview-frame]').hidden).toBe(true);
+        expect(element.querySelector('[data-daisy-kit-file-preview-notice]').textContent).toBe('Sensitive document');
+        element.querySelector('[data-daisy-kit-file-preview-open-preview]').click();
+        element.querySelector('[data-daisy-kit-file-preview-zoom="in"]').click();
+
+        expect(element.querySelector('[data-daisy-kit-file-preview-frame]').hidden).toBe(false);
+        expect(element.dataset.daisyKitZoom).toBe('125');
+        expect(events).toEqual([{ open: true }, { zoom: 125 }]);
+    });
+
+    it('opens a modal layout only when the explicit preview action is requested', async () => {
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('plain text', {
+            headers: { 'content-type': 'text/plain' },
+            status: 200,
+        }))));
+        const element = root({ layout: 'modal', src: '/notes.txt', type: 'text' });
+
+        mount(element);
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+        const modal = element.querySelector('[data-daisy-kit-file-preview-modal]');
+
+        expect(modal.open).toBe(false);
+        element.querySelector('[data-daisy-kit-file-preview-open-preview]').click();
+
+        expect(modal.open).toBe(true);
+        expect(modal.querySelector('[data-daisy-kit-file-preview-frame]')).not.toBeNull();
+    });
+
+    it('retains card as an explicit non-modal layout', () => {
+        vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+        const element = root({ layout: 'card', src: '/notes.txt', type: 'text' });
+
+        mount(element);
+
+        expect(element.dataset.daisyKitLayout).toBe('card');
+        expect(element.dataset.daisyKitPreviewOpen).toBe('true');
     });
 
     it('hands a PDF to a nested sandbox and exposes revocable user actions only after validation', async () => {

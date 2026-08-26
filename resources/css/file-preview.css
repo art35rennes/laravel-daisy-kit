@@ -15,6 +15,16 @@
     min-block-size: 36rem;
 }
 
+[data-daisy-kit-module='file-preview'][data-daisy-kit-zoom='125'] [data-daisy-kit-file-preview-frame] {
+    min-block-size: 30rem;
+}
+
+[data-daisy-kit-module='file-preview'][data-daisy-kit-zoom='150'] [data-daisy-kit-file-preview-frame],
+[data-daisy-kit-module='file-preview'][data-daisy-kit-zoom='175'] [data-daisy-kit-file-preview-frame],
+[data-daisy-kit-module='file-preview'][data-daisy-kit-zoom='200'] [data-daisy-kit-file-preview-frame] {
+    min-block-size: 36rem;
+}
+
 [data-daisy-kit-module='file-preview'][data-daisy-kit-state='error'] [data-daisy-kit-content] {
     display: none;
 }
