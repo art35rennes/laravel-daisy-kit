@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Art35rennes\DaisyKit;
 
+use Art35rennes\DaisyKit\Livewire\FormsBuilder;
 use Composer\InstalledVersions;
 use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\Facades\Blade;
@@ -44,7 +45,7 @@ class DaisyKitServiceProvider extends ServiceProvider
             return;
         }
 
-        Livewire::component('daisy-kit.forms.builder', Livewire\FormsBuilder::class);
+        Livewire::component('daisy-kit.forms.builder', FormsBuilder::class);
     }
 
     private function registerAboutInformation(): void

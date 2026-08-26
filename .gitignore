@@ -8,5 +8,8 @@
 /.env
 /.phpunit.result.cache
 /.vite
+/.pest
+/tests/.pest
+/tests/Browser/Screenshots
 /.DS_Store
 npm-debug.log

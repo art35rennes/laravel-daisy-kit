@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+@plugin 'daisyui';
+
+@source '../../../resources/views';
+
+main {
+    margin-inline: auto;
+    max-width: 72rem;
+    padding: 2rem;
+}
+
+[data-daisy-kit-module] {
+    min-height: 6rem;
+}

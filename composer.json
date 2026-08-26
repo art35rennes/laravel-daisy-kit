@@ -10,7 +10,7 @@
         "source": "https://github.com/art35rennes/laravel-daisy-kit"
     },
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "illuminate/support": "^13.0",
         "illuminate/view": "^13.0"
     },
@@ -21,6 +21,7 @@
         "livewire/livewire": "^4.0",
         "orchestra/testbench": "^11.0",
         "pestphp/pest": "^5.0",
+        "pestphp/pest-plugin-browser": "^5.0",
         "pestphp/pest-plugin-laravel": "^5.0",
         "pestphp/pest-plugin-type-coverage": "^5.0",
         "phpstan/extension-installer": "^1.4"
@@ -41,13 +42,17 @@
     },
     "scripts": {
         "post-autoload-dump": ["@php vendor/bin/testbench package:discover --ansi"],
-        "build:workbench": ["@php vendor/bin/testbench workbench:build --ansi"],
+        "build:workbench": ["@php vendor/bin/testbench workbench:build --ansi", "npm run build:workbench-assets"],
         "lint": ["vendor/bin/pint --parallel"],
         "lint:check": ["vendor/bin/pint --parallel --test"],
-        "analyse": ["vendor/bin/phpstan analyse"],
-        "test:types": ["vendor/bin/pest --type-coverage --min=100"],
-        "test:unit": ["vendor/bin/pest --parallel"],
-        "test": ["@analyse", "@lint:check", "@test:types", "@test:unit"]
+        "analyse": ["vendor/bin/phpstan analyse --memory-limit=1G"],
+        "test:types": ["vendor/bin/pest --ci --no-tia --exclude-group=browser --type-coverage --min=100"],
+        "test:unit": ["vendor/bin/pest --ci --no-tia --parallel --exclude-group=browser"],
+        "test:browser": ["npm run build:browser-assets", "vendor/bin/pest --ci --no-tia --group=browser"],
+        "test:full": ["@test:unit", "@test:browser"],
+        "test:tia": ["npm run build:browser-assets", "vendor/bin/pest --tia --baselined --parallel"],
+        "test:tia:fresh": ["npm run build:browser-assets", "vendor/bin/pest --tia --fresh --parallel"],
+        "test": ["@analyse", "@lint:check", "@test:types", "@test:full"]
     },
     "extra": {
         "laravel": {

@@ -1,0 +1,15 @@
+[data-daisy-kit-module="forms-viewer"] [data-daisy-kit-forms-content] {
+    display: grid;
+    gap: 1rem;
+}
+
+[data-daisy-kit-module="forms-viewer"] [data-daisy-kit-forms-field] {
+    display: grid;
+    gap: 0.375rem;
+}
+
+[data-daisy-kit-module="forms-viewer"] input,
+[data-daisy-kit-module="forms-viewer"] select,
+[data-daisy-kit-module="forms-viewer"] textarea {
+    width: 100%;
+}

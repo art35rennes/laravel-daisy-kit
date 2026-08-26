@@ -1,0 +1,28 @@
+.daisy-kit-table__filter {
+    display: grid;
+    gap: 0.25rem;
+    max-width: 20rem;
+}
+
+.daisy-kit-table__scroll {
+    overflow-x: auto;
+}
+
+.daisy-kit-table [data-daisy-kit-table] {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.daisy-kit-table th,
+.daisy-kit-table td {
+    border-bottom: 1px solid currentColor;
+    padding: 0.5rem;
+    text-align: left;
+}
+
+.daisy-kit-table__pagination {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}

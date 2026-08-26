@@ -26,6 +26,20 @@ class JsonConfiguration
             return null;
         }
 
-        return is_array($configuration) ? $configuration : null;
+        if (! is_array($configuration)) {
+            return null;
+        }
+
+        $result = [];
+
+        foreach ($configuration as $key => $value) {
+            if (! is_string($key)) {
+                return null;
+            }
+
+            $result[$key] = $value;
+        }
+
+        return $result;
     }
 }

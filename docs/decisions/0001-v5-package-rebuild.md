@@ -12,7 +12,7 @@ package hard to evolve safely. Version 5 is a deliberately incompatible new prod
 
 ## Decision
 
-Version 5 uses the Laravel package skeleton conventions and supports PHP 8.3+ with
+Version 5 uses the Laravel package skeleton conventions and supports PHP 8.4+ with
 Illuminate 13 only. It exposes exactly seven Blade entries in the `daisy-kit` namespace:
 Forms viewer, Forms builder, Table, Tree, Blueprint, File Preview, and Map.
 

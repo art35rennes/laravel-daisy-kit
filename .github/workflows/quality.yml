@@ -1,0 +1,32 @@
+name: Quality
+
+on:
+  push:
+    branches: [next/v5]
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: pcov
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: composer install --no-interaction --prefer-dist
+      - run: npm ci --no-audit
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: composer build:workbench
+      - run: composer lint:check
+      - run: composer analyse
+      - run: composer test:types
+      - run: composer test:full
+      - run: npm run test:js
+      - run: composer audit --no-interaction
+      - run: npm audit --audit-level=high

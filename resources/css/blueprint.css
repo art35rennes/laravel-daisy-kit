@@ -1,0 +1,36 @@
+[data-daisy-kit-module='blueprint'] [data-daisy-kit-status][hidden],
+[data-daisy-kit-module='blueprint'] [data-daisy-kit-empty][hidden] {
+    display: none;
+}
+
+[data-daisy-kit-module='blueprint'] [data-daisy-kit-blueprint-canvas] {
+    block-size: auto;
+    inline-size: 100%;
+    min-block-size: 12rem;
+    overflow: visible;
+}
+
+[data-daisy-kit-module='blueprint'] [data-daisy-kit-blueprint-node] {
+    cursor: pointer;
+}
+
+[data-daisy-kit-module='blueprint'] [data-daisy-kit-blueprint-node]:focus rect,
+[data-daisy-kit-module='blueprint'] [data-daisy-kit-blueprint-node]:hover rect {
+    stroke-width: 3;
+}
+
+[data-daisy-kit-module='blueprint'] [data-daisy-kit-blueprint-node] rect {
+    fill: Canvas;
+    stroke: currentColor;
+    stroke-width: 1;
+}
+
+[data-daisy-kit-module='blueprint'] [data-daisy-kit-blueprint-edge] {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+}
+
+[data-daisy-kit-module='blueprint'][data-daisy-kit-state='error'] [data-daisy-kit-content] {
+    display: none;
+}

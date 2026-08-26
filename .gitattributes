@@ -1,7 +1,1 @@
-* text=auto eol=lf
-/.env export-ignore
-/.github export-ignore
-/node_modules export-ignore
-/tests export-ignore
-/vendor export-ignore
-/workbench export-ignore
+dist/*.js whitespace=-trailing-space

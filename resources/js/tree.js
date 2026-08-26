@@ -1,0 +1,278 @@
+import '../css/tree.css';
+import { createMountable } from './core/mountable.js';
+
+function emit(root, name, detail) {
+    root.dispatchEvent(new CustomEvent(`daisy-kit:tree:${name}`, { bubbles: true, detail }));
+}
+
+function normalizeItems(items, usedIds = new Set(), trail = []) {
+    if (!Array.isArray(items)) {
+        return [];
+    }
+
+    return items.flatMap((item, index) => {
+        if (!item || Array.isArray(item) || typeof item !== 'object') {
+            return [];
+        }
+
+        const candidate = typeof item.id === 'string' && item.id !== '' ? item.id : `node-${[...trail, index].join('-')}`;
+        let id = candidate;
+        let suffix = 1;
+
+        while (usedIds.has(id)) {
+            id = `${candidate}-${suffix}`;
+            suffix += 1;
+        }
+
+        usedIds.add(id);
+
+        return [{
+            children: normalizeItems(item.children, usedIds, [...trail, index]),
+            expanded: item.expanded === true,
+            id,
+            label: typeof item.label === 'string' && item.label !== '' ? item.label : id,
+        }];
+    });
+}
+
+function updateStatus(root, message = null) {
+    const status = root.querySelector('[data-daisy-kit-status]');
+
+    if (!status) {
+        return;
+    }
+
+    status.hidden = message === null;
+    status.textContent = message ?? '';
+}
+
+function initialize(root, configuration) {
+    const treeRoot = root.querySelector('[data-daisy-kit-tree-root]');
+
+    if (!treeRoot) {
+        updateStatus(root, 'This tree is missing its required markup.');
+        root.dataset.daisyKitState = 'error';
+        emit(root, 'error', { reason: 'missing-content' });
+
+        return;
+    }
+
+    const initialMarkup = treeRoot.innerHTML;
+    const items = normalizeItems(configuration.items);
+    const itemsById = new Map();
+    const buttonsById = new Map();
+    const expandedIds = new Set();
+    let selectedId = null;
+
+    function index(itemsToIndex, parentId = null) {
+        itemsToIndex.forEach((item) => {
+            itemsById.set(item.id, { ...item, parentId });
+
+            if (item.expanded) {
+                expandedIds.add(item.id);
+            }
+
+            index(item.children, item.id);
+        });
+    }
+
+    function renderItems(itemsToRender, level = 1) {
+        const fragment = document.createDocumentFragment();
+
+        itemsToRender.forEach((item) => {
+            const listItem = document.createElement('li');
+            const button = document.createElement('button');
+            const hasChildren = item.children.length > 0;
+
+            listItem.role = 'none';
+            button.dataset.daisyKitTreeNode = item.id;
+            button.role = 'treeitem';
+            button.tabIndex = -1;
+            button.type = 'button';
+            button.textContent = item.label;
+            button.setAttribute('aria-level', String(level));
+            button.setAttribute('aria-selected', 'false');
+
+            if (hasChildren) {
+                button.setAttribute('aria-expanded', String(expandedIds.has(item.id)));
+            }
+
+            buttonsById.set(item.id, button);
+            listItem.append(button);
+            fragment.append(listItem);
+
+            if (hasChildren) {
+                const group = document.createElement('ul');
+
+                group.role = 'group';
+                group.append(renderItems(item.children, level + 1));
+                listItem.append(group);
+            }
+        });
+
+        return fragment;
+    }
+
+    function applyVisibility(itemsToApply, ancestorsVisible = true) {
+        itemsToApply.forEach((item) => {
+            const button = buttonsById.get(item.id);
+            const expanded = expandedIds.has(item.id);
+
+            if (button) {
+                button.hidden = !ancestorsVisible;
+                button.setAttribute('aria-selected', String(selectedId === item.id));
+
+                if (item.children.length > 0) {
+                    button.setAttribute('aria-expanded', String(expanded));
+                }
+            }
+
+            applyVisibility(item.children, ancestorsVisible && expanded);
+        });
+    }
+
+    function visibleButtons() {
+        return [...buttonsById.values()].filter((button) => !button.hidden);
+    }
+
+    function focusButton(button) {
+        if (!button) {
+            return;
+        }
+
+        buttonsById.forEach((node) => {
+            node.tabIndex = -1;
+        });
+        button.tabIndex = 0;
+        button.focus();
+    }
+
+    function setSelected(id) {
+        const item = itemsById.get(id);
+
+        if (!item) {
+            return;
+        }
+
+        selectedId = id;
+        applyVisibility(items);
+        emit(root, 'selected', { id: item.id, label: item.label });
+    }
+
+    function setExpanded(id, expanded) {
+        const item = itemsById.get(id);
+
+        if (!item || item.children.length === 0 || expandedIds.has(id) === expanded) {
+            return;
+        }
+
+        if (expanded) {
+            expandedIds.add(id);
+        } else {
+            expandedIds.delete(id);
+        }
+
+        applyVisibility(items);
+        emit(root, expanded ? 'expanded' : 'collapsed', { id: item.id, label: item.label });
+    }
+
+    function onClick(event) {
+        const button = event.target.closest('[data-daisy-kit-tree-node]');
+
+        if (!(button instanceof HTMLButtonElement) || !treeRoot.contains(button)) {
+            return;
+        }
+
+        setSelected(button.dataset.daisyKitTreeNode);
+        focusButton(button);
+    }
+
+    function onKeyDown(event) {
+        const button = event.target.closest('[data-daisy-kit-tree-node]');
+        const current = button instanceof HTMLButtonElement && treeRoot.contains(button) ? button : visibleButtons()[0];
+
+        if (!current) {
+            return;
+        }
+
+        const id = current.dataset.daisyKitTreeNode;
+        const item = itemsById.get(id);
+        const visible = visibleButtons();
+        const position = visible.indexOf(current);
+
+        if (event.key === 'ArrowDown' && position < visible.length - 1) {
+            event.preventDefault();
+            focusButton(visible[position + 1]);
+        }
+
+        if (event.key === 'ArrowUp' && position > 0) {
+            event.preventDefault();
+            focusButton(visible[position - 1]);
+        }
+
+        if (event.key === 'ArrowRight' && item) {
+            event.preventDefault();
+
+            if (item.children.length > 0 && !expandedIds.has(item.id)) {
+                setExpanded(item.id, true);
+
+                return;
+            }
+
+            if (item.children.length > 0) {
+                focusButton(buttonsById.get(item.children[0].id));
+            }
+        }
+
+        if (event.key === 'ArrowLeft' && item) {
+            event.preventDefault();
+
+            if (item.children.length > 0 && expandedIds.has(item.id)) {
+                setExpanded(item.id, false);
+
+                return;
+            }
+
+            focusButton(buttonsById.get(item.parentId));
+        }
+
+        if (event.key === 'Home') {
+            event.preventDefault();
+            focusButton(visible[0]);
+        }
+
+        if (event.key === 'End') {
+            event.preventDefault();
+            focusButton(visible.at(-1));
+        }
+
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            setSelected(id);
+        }
+    }
+
+    index(items);
+    treeRoot.replaceChildren(renderItems(items));
+    applyVisibility(items);
+
+    if (items.length === 0) {
+        updateStatus(root, 'No tree items are available.');
+        root.dataset.daisyKitState = 'empty';
+    } else {
+        root.dataset.daisyKitState = 'ready';
+    }
+
+    treeRoot.addEventListener('click', onClick);
+    treeRoot.addEventListener('keydown', onKeyDown);
+
+    return () => {
+        treeRoot.removeEventListener('click', onClick);
+        treeRoot.removeEventListener('keydown', onKeyDown);
+        treeRoot.innerHTML = initialMarkup;
+    };
+}
+
+const module = createMountable('tree', initialize);
+
+export const { mount, mountAll, unmount } = module;

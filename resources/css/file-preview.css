@@ -1,0 +1,22 @@
+[data-daisy-kit-module='file-preview'] [data-daisy-kit-status][hidden],
+[data-daisy-kit-module='file-preview'] [data-daisy-kit-loading][hidden],
+[data-daisy-kit-module='file-preview'] [data-daisy-kit-empty][hidden],
+[data-daisy-kit-module='file-preview'] [data-daisy-kit-file-preview-image][hidden],
+[data-daisy-kit-module='file-preview'] [data-daisy-kit-file-preview-text][hidden],
+[data-daisy-kit-module='file-preview'] [data-daisy-kit-file-preview-docx][hidden] {
+    display: none;
+}
+
+[data-daisy-kit-module='file-preview'] [data-daisy-kit-file-preview-image] {
+    block-size: auto;
+    max-inline-size: 100%;
+}
+
+[data-daisy-kit-module='file-preview'] [data-daisy-kit-file-preview-text] {
+    overflow: auto;
+    white-space: pre-wrap;
+}
+
+[data-daisy-kit-module='file-preview'][data-daisy-kit-state='error'] [data-daisy-kit-content] {
+    display: none;
+}

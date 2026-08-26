@@ -1,4 +1,4 @@
-import { readConfiguration, showConfigurationError } from './configuration.js';
+import { readConfiguration, showConfigurationError, showError } from './configuration.js';
 
 export function createMountable(moduleName, initialize) {
     const instances = new WeakMap();
@@ -20,11 +20,22 @@ export function createMountable(moduleName, initialize) {
             return null;
         }
 
-        const destroy = initialize(root, value) ?? (() => {});
+        let destroy;
+
+        try {
+            destroy = initialize(root, value) ?? (() => {});
+        } catch {
+            showError(root, 'This module could not be initialized.');
+            root.dispatchEvent(new CustomEvent(`daisy-kit:${moduleName}:error`, { bubbles: true }));
+
+            return null;
+        }
         const instance = { destroy };
 
         instances.set(root, instance);
-        root.dataset.daisyKitState = 'ready';
+        if (!root.dataset.daisyKitState) {
+            root.dataset.daisyKitState = 'ready';
+        }
         root.dispatchEvent(new CustomEvent(`daisy-kit:${moduleName}:mounted`, { bubbles: true }));
 
         return instance;

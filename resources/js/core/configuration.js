@@ -19,12 +19,16 @@ export function readConfiguration(root) {
 }
 
 export function showConfigurationError(root) {
+    showError(root, 'This module configuration is invalid.');
+}
+
+export function showError(root, message) {
     root.dataset.daisyKitState = 'error';
 
     const status = root.querySelector('[data-daisy-kit-status]');
 
     if (status) {
         status.hidden = false;
-        status.textContent = 'This module configuration is invalid.';
+        status.textContent = message;
     }
 }

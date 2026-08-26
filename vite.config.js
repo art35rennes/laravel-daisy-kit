@@ -18,6 +18,7 @@ export default defineConfig({
         outDir: 'dist',
         rollupOptions: {
             input: entries,
+            preserveEntrySignatures: 'strict',
             output: {
                 entryFileNames: '[name].js',
                 assetFileNames: '[name][extname]',
