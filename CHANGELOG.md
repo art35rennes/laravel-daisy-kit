@@ -6,6 +6,12 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 
 ## Unreleased
 
+No changes are planned for the current legacy line.
+
+## [4.0.0] - 2026-08-26
+
+> **Legacy release.** This is the final continuity release for the current Laravel Daisy Kit architecture. Existing integrations can remain on `^4.0` without migrating while the package is redesigned separately.
+
 ### Added
 
 - Add DaisyUI 5.6 wrappers for native OTP inputs, Aura effects, and Megamenu navigation.
@@ -34,6 +40,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 
 - Add Laravel CSRF tokens and method spoofing to non-GET newsletter forms.
 - Audit the floating tooltip's required runtime positioning styles and make sidebar rendering tests whitespace-tolerant.
+- Update locked transitive PHP and npm dependencies to versions that resolve the release-time security advisories.
 
 ## [3.0.0] - 2026-06-09
 
@@ -93,4 +100,5 @@ Initial stable release.
 - Package tests covering rendering, helpers, assets, service provider behavior, and JavaScript modules.
 
 [3.0.0]: https://github.com/art35rennes/laravel-daisy-kit/compare/v2.0.1...v3.0.0
+[4.0.0]: https://github.com/art35rennes/laravel-daisy-kit/compare/v3.0.0...v4.0.0
 [1.0.0]: https://github.com/art35rennes/laravel-daisy-kit/releases/tag/v1.0.0

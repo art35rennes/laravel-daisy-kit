@@ -13,6 +13,10 @@ This package follows [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
 The initial stable release baseline is `v1.0.0`.
 See [CHANGELOG.md](CHANGELOG.md) for released versions, [UPGRADE.md](UPGRADE.md) for major-version migrations, and [CONTRIBUTING.md](CONTRIBUTING.md) for the project release rules.
 
+## Legacy release status
+
+`v4.0.0` is the final continuity release for the current Laravel Daisy Kit architecture. It is intentionally marked **legacy** so existing integrations can remain on the stable `^4.0` line without migrating while the package is redesigned separately. No migration is required for applications that stay on this legacy line; future feature work belongs to the forthcoming redesign.
+
 ## Requirements
 
 - PHP `^8.3`

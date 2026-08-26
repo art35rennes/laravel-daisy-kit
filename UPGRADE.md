@@ -1,5 +1,9 @@
 # Upgrade Guide
 
+## Legacy status
+
+`v4.0.0` is the final continuity release of the current Laravel Daisy Kit architecture. Existing integrations may remain on `^4.0` without migrating while the package is redesigned separately. This legacy line has no planned feature work; migration guidance for the redesign will be published with that separate release.
+
 ## Upgrading from 3.x to 4.0
 
 Laravel Daisy Kit 4 targets the current Laravel and Livewire generations. Before updating the package, move the host application to:
