@@ -71,6 +71,14 @@ function closeServer(server) {
     return new Promise((resolveServer) => server.close(resolveServer));
 }
 
+async function fixtureModuleStates(page) {
+    return page.evaluate(() => [...document.querySelectorAll('[data-daisy-kit-module]')].map((root) => ({
+        module: root.getAttribute('data-daisy-kit-module'),
+        state: root.getAttribute('data-daisy-kit-state') ?? 'missing',
+        status: root.querySelector('[data-daisy-kit-status]')?.textContent?.trim() ?? '',
+    })));
+}
+
 let server;
 let browser;
 
@@ -120,20 +128,25 @@ try {
     });
 
     await page.goto(url, { waitUntil: 'networkidle' });
-    await page.waitForFunction(() => {
-        const expected = {
-            blueprint: 'ready',
-            'file-preview': 'ready',
-            'forms-builder': 'empty',
-            'forms-viewer': 'ready',
-            map: 'ready',
-            table: 'ready',
-            tree: 'ready',
-        };
+    try {
+        await page.waitForFunction(() => {
+            const expected = {
+                blueprint: 'ready',
+                'file-preview': 'ready',
+                'forms-builder': 'empty',
+                'forms-viewer': 'ready',
+                map: 'ready',
+                table: 'ready',
+                tree: 'ready',
+            };
+            const roots = [...document.querySelectorAll('[data-daisy-kit-module]')];
 
-        return Object.entries(expected).every(([module, state]) => document.querySelector(`[data-daisy-kit-module="${module}"]`)?.dataset.daisyKitState === state)
-            && [...document.querySelectorAll('[data-daisy-kit-module="file-preview"]')].every((root) => root.dataset.daisyKitState === 'ready');
-    });
+            return roots.length === 9
+                && roots.every((root) => root.dataset.daisyKitState === expected[root.getAttribute('data-daisy-kit-module')]);
+        });
+    } catch (error) {
+        throw new Error(`Fresh host modules did not reach their expected terminal states: ${JSON.stringify(await fixtureModuleStates(page))}`, { cause: error });
+    }
 
     const viewer = page.locator('[data-daisy-kit-module="forms-viewer"]').first();
     const title = viewer.locator('input[name="title"]');
