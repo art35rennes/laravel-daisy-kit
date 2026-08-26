@@ -1,11 +1,20 @@
 import area from '@turf/area';
 import length from '@turf/length';
 import L from 'leaflet';
+import markerIconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIconUrl from 'leaflet/dist/images/marker-icon.png';
+import markerShadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import { TerraDraw, TerraDrawLineStringMode, TerraDrawPointMode, TerraDrawPolygonMode, TerraDrawSelectMode, TerraDrawSessionUndoRedo } from 'terra-draw';
 import { TerraDrawLeafletAdapter } from 'terra-draw-leaflet-adapter';
 
 import '../css/map.css';
 import { createMountable } from './core/mountable.js';
+
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: markerIconRetinaUrl,
+    iconUrl: markerIconUrl,
+    shadowUrl: markerShadowUrl,
+});
 
 function validCenter(center) {
     if (!Array.isArray(center) || center.length !== 2) {

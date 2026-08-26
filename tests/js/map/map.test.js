@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const { mergeIconOptions } = vi.hoisted(() => ({ mergeIconOptions: vi.fn() }));
+
 const map = {
     fitBounds: vi.fn(),
     on: vi.fn(),
@@ -22,6 +24,7 @@ function createLayer() {
 
 vi.mock('leaflet', () => ({
     default: {
+        Icon: { Default: { mergeOptions: mergeIconOptions } },
         geoJSON: vi.fn(() => createLayer()),
         map: vi.fn(() => map),
         marker: vi.fn(() => {
@@ -105,6 +108,14 @@ describe('map entry', () => {
         map.setView.mockClear();
         map.on.mockClear();
         map.off.mockClear();
+    });
+
+    it('configures Leaflet marker assets through statically imported Vite URLs', () => {
+        expect(mergeIconOptions).toHaveBeenCalledWith(expect.objectContaining({
+            iconRetinaUrl: expect.any(String),
+            iconUrl: expect.any(String),
+            shadowUrl: expect.any(String),
+        }));
     });
 
     it('mounts GeoJSON data and removes its Leaflet instance', () => {
