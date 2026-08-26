@@ -8,28 +8,92 @@
 </head>
 <body>
     <main>
-        <section data-daisy-kit-module="forms-viewer">
+        <h1>Daisy Kit Vite host fixture</h1>
+
+        <section aria-labelledby="viewer-heading" data-daisy-kit-module="forms-viewer">
+            <h2 id="viewer-heading">Forms Viewer</h2>
             <p data-daisy-kit-status hidden role="status"></p>
             <form data-daisy-kit-forms-content></form>
-            <script data-daisy-kit-config type="application/json">{"schema":{"fields":[{"name":"title","label":"Title","type":"text"}]},"value":{"title":"HTTP fixture"}}</script>
+            <script data-daisy-kit-config type="application/json">{"schema":{"submit":{"label":"Save profile","mode":"event"},"fields":[{"name":"title","label":"Title","type":"text","rules":["required"]},{"name":"role","label":"Role","type":"select","options":[{"label":"Member","value":"member"},{"label":"Administrator","value":"admin"}]}]},"value":{"title":"HTTP fixture","role":"member"}}</script>
         </section>
 
-        <section aria-label="Fixture blueprint" data-daisy-kit-module="blueprint">
+        <section aria-labelledby="viewer-secondary-heading" data-daisy-kit-module="forms-viewer">
+            <h2 id="viewer-secondary-heading">Second Forms Viewer</h2>
+            <p data-daisy-kit-status hidden role="status"></p>
+            <form data-daisy-kit-forms-content></form>
+            <script data-daisy-kit-config type="application/json">{"schema":{"fields":[{"name":"summary","label":"Summary","type":"textarea","rules":["required"]}]},"value":{"summary":"A distinct second instance"}}</script>
+        </section>
+
+        <section aria-labelledby="builder-heading" data-daisy-kit-module="forms-builder">
+            <h2 id="builder-heading">Forms Builder</h2>
+            <p data-daisy-kit-status hidden role="status">Forms Builder authoring requires optional Livewire 4.</p>
+            <p data-daisy-kit-forms-builder-unavailable>The authoring enhancement is not installed.</p>
+            <script data-daisy-kit-config type="application/json">{"livewireAvailable":false,"schema":{"fields":[{"name":"title","label":"Title","type":"text"}]}}</script>
+        </section>
+
+        <section aria-labelledby="table-heading" data-daisy-kit-module="table">
+            <h2 id="table-heading">Table</h2>
+            <p data-daisy-kit-status hidden role="status" aria-live="polite"></p>
             <div data-daisy-kit-content>
-                <svg data-daisy-kit-blueprint-canvas></svg>
-                <p data-daisy-kit-empty hidden>No blueprint nodes are available.</p>
+                <label><span>Filter table</span><input data-daisy-kit-table-filter type="search" autocomplete="off"></label>
+                <div><table data-daisy-kit-table aria-busy="true"><thead></thead><tbody></tbody></table></div>
+                <nav aria-label="Table pagination"><button data-daisy-kit-table-previous type="button">Previous page</button><span data-daisy-kit-table-page aria-live="polite"></span><button data-daisy-kit-table-next type="button">Next page</button></nav>
             </div>
-            <script data-daisy-kit-config type="application/json">{"nodes":[{"id":"source","label":"Source"},{"id":"destination","label":"Destination"}],"edges":[{"source":"source","target":"destination"}],"label":"Fixture blueprint"}</script>
+            <script data-daisy-kit-config type="application/json">{"columns":[{"id":"name","accessor":"name","label":"Name","filter":{"type":"text"}},{"id":"status","accessor":"status","label":"Status","filter":{"type":"select","options":["active","archived"]}}],"rows":[{"id":"ada","name":"Ada","status":"active"},{"id":"bert","name":"Bert","status":"archived"}],"pageSize":10,"selectable":true}</script>
         </section>
 
-        <section data-daisy-kit-module="file-preview">
+        <section aria-labelledby="tree-heading" data-daisy-kit-module="tree">
+            <h2 id="tree-heading">Tree</h2>
+            <p data-daisy-kit-status hidden role="status" aria-live="polite"></p>
+            <div data-daisy-kit-content>
+                <label><span>Search tree</span><input data-daisy-kit-tree-search type="search" autocomplete="off"></label>
+                <ul data-daisy-kit-tree-root aria-label="Fixture tree" role="tree"></ul>
+                <input data-daisy-kit-tree-value name="fixture-tree" type="hidden" value="[]">
+            </div>
+            <script data-daisy-kit-config type="application/json">{"items":[{"id":"projects","label":"Projects","expanded":true,"children":[{"id":"daisy-kit","label":"Daisy Kit"},{"id":"demo","label":"Demo"}]}],"multiple":true,"name":"fixture-tree","searchable":true}</script>
+        </section>
+
+        <section aria-labelledby="blueprint-heading" data-daisy-kit-module="blueprint">
+            <h2 id="blueprint-heading">Blueprint</h2>
+            <p data-daisy-kit-status hidden role="alert"></p>
+            <div data-daisy-kit-content><svg aria-hidden="true" data-daisy-kit-blueprint-canvas focusable="false"></svg><p data-daisy-kit-empty hidden>No blueprint nodes are available.</p><input data-daisy-kit-blueprint-value name="fixture-blueprint" type="hidden"></div>
+            <script data-daisy-kit-config type="application/json">{"nodes":[{"id":"source","label":"Source"},{"id":"destination","label":"Destination"}],"edges":[{"source":"source","target":"destination"}],"label":"Fixture blueprint","editable":true,"name":"fixture-blueprint"}</script>
+        </section>
+
+        <section aria-labelledby="preview-heading" data-daisy-kit-module="file-preview">
+            <h2 id="preview-heading">File Preview</h2>
             <p data-daisy-kit-status hidden role="alert"></p>
             <div data-daisy-kit-content>
-                <p data-daisy-kit-loading hidden>Loading file preview…</p>
-                <p data-daisy-kit-empty hidden>No file preview is available.</p>
-                <iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts" title="Fixture file preview"></iframe>
+                <p data-daisy-kit-loading hidden role="status">Loading preview…</p><p data-daisy-kit-empty hidden>No file preview is available.</p><dialog data-daisy-kit-file-preview-modal aria-label="Fixture file preview"></dialog><iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts" title="Fixture file preview"></iframe>
+                <dl data-daisy-kit-file-preview-metadata hidden><dt>Name</dt><dd data-daisy-kit-file-preview-name></dd><dt>Type</dt><dd data-daisy-kit-file-preview-type></dd><dt>Size</dt><dd data-daisy-kit-file-preview-size></dd></dl>
+                <p data-daisy-kit-file-preview-notice hidden role="status"></p>
+                <p data-daisy-kit-file-preview-controls><button data-daisy-kit-file-preview-open-preview type="button">Preview file</button><button data-daisy-kit-file-preview-layout type="button">Toggle expanded layout</button><button data-daisy-kit-file-preview-zoom="out" type="button">Zoom out</button><button data-daisy-kit-file-preview-zoom="in" type="button">Zoom in</button></p>
+                <p data-daisy-kit-file-preview-actions hidden><a data-daisy-kit-file-preview-open hidden rel="noopener" target="_blank">Open file</a><a data-daisy-kit-file-preview-download hidden>Download file</a></p>
             </div>
-            <script data-daisy-kit-config type="application/json">{"src":"/preview.txt","type":"text","name":"Fixture file preview"}</script>
+            <script data-daisy-kit-config type="application/json">{"src":"/preview.txt","type":"text","name":"Fixture file preview","layout":"modal","notice":"A sandboxed local preview."}</script>
+        </section>
+
+        <section aria-labelledby="preview-action-heading" data-daisy-kit-module="file-preview">
+            <h2 id="preview-action-heading">Action-only File Preview</h2>
+            <p data-daisy-kit-status hidden role="alert"></p>
+            <div data-daisy-kit-content>
+                <p data-daisy-kit-loading hidden role="status">Loading preview…</p><p data-daisy-kit-empty hidden>No file preview is available.</p><dialog data-daisy-kit-file-preview-modal aria-label="Action-only file preview"></dialog><iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts" title="Action-only file preview"></iframe>
+                <dl data-daisy-kit-file-preview-metadata hidden><dt>Name</dt><dd data-daisy-kit-file-preview-name></dd><dt>Type</dt><dd data-daisy-kit-file-preview-type></dd><dt>Size</dt><dd data-daisy-kit-file-preview-size></dd></dl><p data-daisy-kit-file-preview-notice hidden role="status"></p>
+                <p data-daisy-kit-file-preview-controls><button data-daisy-kit-file-preview-open-preview type="button">Preview file</button><button data-daisy-kit-file-preview-layout type="button">Toggle expanded layout</button><button data-daisy-kit-file-preview-zoom="out" type="button">Zoom out</button><button data-daisy-kit-file-preview-zoom="in" type="button">Zoom in</button></p>
+                <p data-daisy-kit-file-preview-actions hidden><a data-daisy-kit-file-preview-open hidden rel="noopener" target="_blank">Open file</a><a data-daisy-kit-file-preview-download hidden>Download file</a></p>
+            </div>
+            <script data-daisy-kit-config type="application/json">{"src":"/preview.txt","type":"text","name":"Action-only fixture preview","layout":"action-only"}</script>
+        </section>
+
+        <section aria-labelledby="map-heading" data-daisy-kit-module="map">
+            <h2 id="map-heading">Map</h2>
+            <p data-daisy-kit-status hidden role="alert"></p>
+            <div data-daisy-kit-content>
+                <div aria-label="Fixture map" data-daisy-kit-map-canvas role="application" tabindex="0"></div><p data-daisy-kit-empty hidden>No geographic data is available.</p><output aria-live="polite" data-daisy-kit-map-measurement></output><input data-daisy-kit-map-value type="hidden"><button data-daisy-kit-map-geolocate type="button">Use my location</button>
+                <fieldset data-daisy-kit-map-layers hidden><legend>Layers</legend></fieldset><fieldset data-daisy-kit-map-basemaps hidden><legend>Basemaps</legend></fieldset>
+                <fieldset data-daisy-kit-map-tools><legend>Drawing tools</legend><button data-daisy-kit-map-mode="point" type="button">Draw point</button><button data-daisy-kit-map-mode="linestring" type="button">Draw line</button><button data-daisy-kit-map-mode="polygon" type="button">Draw area</button><button data-daisy-kit-map-mode="edit" type="button">Edit drawing</button><button data-daisy-kit-map-mode="select" type="button">Select drawing</button><button data-daisy-kit-map-mode="spatial-select" type="button">Select geographic feature</button><button data-daisy-kit-map-history="undo" disabled type="button">Undo</button><button data-daisy-kit-map-history="redo" disabled type="button">Redo</button><button data-daisy-kit-map-export disabled type="button">Export drawing</button></fieldset>
+            </div>
+            <script data-daisy-kit-config type="application/json">{"center":[48.1173,-1.6778],"zoom":12,"drawing":true,"geolocation":true,"spatialSelection":true,"markers":[{"id":"city-hall","label":"City hall","position":[48.1173,-1.6778]}],"geojson":{"type":"FeatureCollection","features":[{"id":"fixture-district","type":"Feature","properties":{"name":"Fixture district"},"geometry":{"type":"Polygon","coordinates":[[[-1.69,48.11],[-1.66,48.11],[-1.66,48.13],[-1.69,48.11]]]}}]},"layers":[{"id":"fixture-layer","label":"Fixture layer","visible":true,"geojson":{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[-1.677,48.118]}}]}}],"label":"Fixture map"}</script>
         </section>
     </main>
 </body>

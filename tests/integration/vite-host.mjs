@@ -105,6 +105,12 @@ try {
     const page = await browser.newPage();
     await page.addInitScript(() => {
         Object.defineProperty(window, 'crypto', { configurable: true, value: {} });
+        Object.defineProperty(navigator, 'geolocation', {
+            configurable: true,
+            value: {
+                getCurrentPosition: (success) => success({ coords: { latitude: 48.1173, longitude: -1.6778 } }),
+            },
+        });
     });
     page.on('response', (response) => {
         if (response.status() >= 400) responses.push(`${response.status()} ${response.url()}`);
@@ -114,9 +120,88 @@ try {
     });
 
     await page.goto(url, { waitUntil: 'networkidle' });
-    await page.waitForFunction(() => document.querySelector('[data-daisy-kit-module="forms-viewer"]')?.dataset.daisyKitState === 'ready');
-    await page.waitForFunction(() => document.querySelector('[data-daisy-kit-module="file-preview"]')?.dataset.daisyKitState === 'ready');
+    await page.waitForFunction(() => {
+        const expected = {
+            blueprint: 'ready',
+            'file-preview': 'ready',
+            'forms-builder': 'empty',
+            'forms-viewer': 'ready',
+            map: 'ready',
+            table: 'ready',
+            tree: 'ready',
+        };
+
+        return Object.entries(expected).every(([module, state]) => document.querySelector(`[data-daisy-kit-module="${module}"]`)?.dataset.daisyKitState === state)
+            && [...document.querySelectorAll('[data-daisy-kit-module="file-preview"]')].every((root) => root.dataset.daisyKitState === 'ready');
+    });
+
+    const viewer = page.locator('[data-daisy-kit-module="forms-viewer"]').first();
+    const title = viewer.locator('input[name="title"]');
+
+    if (await title.inputValue() !== 'HTTP fixture') {
+        throw new Error('Forms Viewer did not expose its configured value in the fresh Vite host.');
+    }
+
+    await title.fill('');
+    if (await viewer.locator('form').evaluate((form) => form.checkValidity())) {
+        throw new Error('Forms Viewer did not retain required-field validation in the fresh Vite host.');
+    }
+    await title.fill('Verified host value');
+    if (!(await viewer.locator('form').evaluate((form) => form.checkValidity()))) {
+        throw new Error('Forms Viewer did not restore validity after a user value was entered.');
+    }
+
+    const secondaryViewer = page.locator('[data-daisy-kit-module="forms-viewer"]').nth(1);
+    if (await secondaryViewer.locator('textarea[name="summary"]').inputValue() !== 'A distinct second instance') {
+        throw new Error('A second Forms Viewer instance did not mount independently.');
+    }
+
+    const builder = page.locator('[data-daisy-kit-module="forms-builder"]');
+    if (!(await builder.locator('[data-daisy-kit-forms-builder-unavailable]').isVisible())) {
+        throw new Error('Forms Builder did not clearly report that its optional Livewire authoring runtime is unavailable.');
+    }
+
+    const table = page.locator('[data-daisy-kit-module="table"]');
+    await table.getByRole('button', { name: 'Name', exact: true }).click();
+    await table.getByRole('button', { name: 'Name', exact: true }).click();
+    if (await table.locator('tbody tr').first().innerText() !== 'Bertarchived') {
+        throw new Error('Table sorting did not update the host-rendered rows.');
+    }
+    await table.locator('[data-daisy-kit-table-column-filter="status"]').selectOption('active');
+    if (await table.locator('tbody tr').count() !== 1 || !(await table.locator('tbody tr').first().innerText()).includes('Ada')) {
+        throw new Error('Table typed filtering did not select the expected host-rendered row.');
+    }
+    await table.getByRole('checkbox', { name: 'Select all visible rows' }).check();
+    if (!(await table.locator('[data-daisy-kit-table-row-select="ada"]').isChecked())) {
+        throw new Error('Table selection did not persist through the filtered host view.');
+    }
+
+    const tree = page.locator('[data-daisy-kit-module="tree"]');
+    const projects = tree.locator('[data-daisy-kit-tree-node="projects"]');
+    await projects.focus();
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press(' ');
+    if (await tree.locator('[data-daisy-kit-tree-value]').inputValue() !== '["daisy-kit"]') {
+        throw new Error('Tree keyboard selection did not synchronize its hidden host form value.');
+    }
+
+    const preview = page.locator('[data-daisy-kit-module="file-preview"]');
+    await preview.locator('[data-daisy-kit-file-preview-open-preview]').click();
+    await preview.locator('[data-daisy-kit-file-preview-modal][open]').waitFor({ state: 'visible' });
     await page.frameLocator('[data-daisy-kit-file-preview-frame]').locator('pre').waitFor({ state: 'visible' });
+    if (!(await preview.locator('[data-daisy-kit-file-preview-notice]').isVisible())) {
+        throw new Error('File Preview did not expose its configured notice in the isolated host frame.');
+    }
+    await preview.locator('[data-daisy-kit-file-preview-zoom="in"]').click();
+    if (await preview.getAttribute('data-daisy-kit-zoom') !== '125') {
+        throw new Error('File Preview zoom controls did not update the isolated preview state.');
+    }
+    const actionOnlyPreview = page.locator('[data-daisy-kit-module="file-preview"]').nth(1);
+    if (await actionOnlyPreview.getAttribute('data-daisy-kit-layout') !== 'action-only') {
+        throw new Error('File Preview did not retain its action-only layout contract.');
+    }
+    await actionOnlyPreview.locator('[data-daisy-kit-file-preview-open-preview]').click();
+    await actionOnlyPreview.locator('[data-daisy-kit-file-preview-frame]').waitFor({ state: 'visible' });
 
     const frame = page.locator('[data-daisy-kit-file-preview-frame]');
     const frameSource = await frame.getAttribute('srcdoc');
@@ -148,6 +233,33 @@ try {
     if (selected !== 'true') {
         throw new Error('Blueprint keyboard selection did not select the next semantic node control.');
     }
+
+    const map = page.locator('[data-daisy-kit-module="map"]');
+    await map.locator('.leaflet-marker-icon[title="City hall"]').waitFor({ state: 'visible' });
+    await map.locator('[data-daisy-kit-map-layer="fixture-layer"]').uncheck();
+    if (await map.locator('[data-daisy-kit-map-layer="fixture-layer"]').isChecked()) {
+        throw new Error('Map layer controls did not toggle the configured GeoJSON overlay.');
+    }
+    await map.locator('[data-daisy-kit-map-mode="linestring"]').click();
+    if (await map.locator('[data-daisy-kit-map-mode="linestring"]').getAttribute('aria-pressed') !== 'true') {
+        throw new Error('Map drawing controls did not activate the requested drawing mode.');
+    }
+    await map.locator('[data-daisy-kit-map-mode="point"]').click();
+    if (await map.locator('[data-daisy-kit-map-mode="point"]').getAttribute('aria-pressed') !== 'true') {
+        throw new Error('Map point drawing mode did not become active in the host.');
+    }
+    await map.locator('[data-daisy-kit-map-mode="edit"]').click();
+    if (await map.locator('[data-daisy-kit-map-mode="edit"]').getAttribute('aria-pressed') !== 'true') {
+        throw new Error('Map edit mode did not become active in the host.');
+    }
+    await map.evaluate((root) => root.addEventListener('daisy-kit:map:geolocate', () => {
+        root.dataset.fixtureGeolocated = 'true';
+    }, { once: true }));
+    await map.locator('[data-daisy-kit-map-geolocate]').click();
+    await page.waitForFunction(() => document.querySelector('[data-daisy-kit-module="map"]')?.dataset.fixtureGeolocated === 'true');
+    await map.locator('[data-daisy-kit-map-mode="spatial-select"]').click();
+    await map.locator('[data-daisy-kit-map-canvas]').click({ position: { x: 300, y: 192 } });
+    await page.waitForFunction(() => document.querySelector('[data-daisy-kit-module="map"]')?.dataset.daisyKitSpatialSelection === 'fixture-district');
 
     if (responses.length > 0) {
         throw new Error(`The served host requested missing assets:\n${responses.join('\n')}`);

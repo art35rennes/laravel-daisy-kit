@@ -9,11 +9,14 @@ import { mountAll as mountTree } from '@daisy-kit/tree.js';
 import '@daisy-kit/blueprint.css';
 import { mount as mountBlueprint } from '@daisy-kit/blueprint.js';
 import '@daisy-kit/file-preview.css';
-import { mount as mountFilePreview } from '@daisy-kit/file-preview.js';
+import { mountAll as mountFilePreviews } from '@daisy-kit/file-preview.js';
 import '@daisy-kit/map.css';
 import { mountAll as mountMap } from '@daisy-kit/map.js';
 
-void [mountFormsViewer, mountFormsBuilder, mountTable, mountTree, mountMap];
-
+mountFormsViewer(document);
+mountFormsBuilder(document);
+mountTable(document);
+mountTree(document);
+mountMap(document);
 mountBlueprint(document.querySelector('[data-daisy-kit-module="blueprint"]'));
-mountFilePreview(document.querySelector('[data-daisy-kit-module="file-preview"]'));
+mountFilePreviews(document);
