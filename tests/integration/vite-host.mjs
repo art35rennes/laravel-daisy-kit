@@ -238,13 +238,21 @@ try {
     if (!(await preview.locator('[data-daisy-kit-file-preview-notice]').isVisible())) {
         throw new Error('File Preview did not expose its configured notice in the isolated host frame.');
     }
-    await preview.locator('[data-daisy-kit-file-preview-zoom="in"]').click();
+    await preview.locator('[data-daisy-kit-file-preview-modal]').getByRole('button', { name: 'Zoom in' }).click();
     if (await preview.getAttribute('data-daisy-kit-zoom') !== '125') {
         throw new Error('File Preview zoom controls did not update the isolated preview state.');
     }
     const actionOnlyPreview = page.locator('[data-daisy-kit-module="file-preview"]').nth(1);
     if (await actionOnlyPreview.getAttribute('data-daisy-kit-layout') !== 'action-only') {
         throw new Error('File Preview did not retain its action-only layout contract.');
+    }
+    await preview.locator('[data-daisy-kit-file-preview-modal]').getByRole('button', { name: 'Close preview' }).click();
+    const modalState = await preview.locator('[data-daisy-kit-file-preview-modal]').evaluate((modal) => ({
+        open: modal.open,
+        previewOpen: modal.closest('[data-daisy-kit-module]')?.dataset.daisyKitPreviewOpen,
+    }));
+    if (modalState.open || modalState.previewOpen !== 'false') {
+        throw new Error(`File Preview modal close control did not release the modal; state was ${JSON.stringify(modalState)}.`);
     }
     await actionOnlyPreview.locator('[data-daisy-kit-file-preview-open-preview]').click();
     await actionOnlyPreview.locator('[data-daisy-kit-file-preview-frame]').waitFor({ state: 'visible' });

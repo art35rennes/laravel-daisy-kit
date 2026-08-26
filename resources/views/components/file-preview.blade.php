@@ -16,7 +16,13 @@
     <div data-daisy-kit-content>
         <p data-daisy-kit-loading hidden role="status">Loading preview…</p>
         <p data-daisy-kit-empty hidden>No file is selected for preview.</p>
-        <dialog data-daisy-kit-file-preview-modal aria-label="{{ $name }}"></dialog>
+        <dialog data-daisy-kit-file-preview-modal aria-label="{{ $name }}">
+            <p>
+                <button data-daisy-kit-file-preview-zoom="out" type="button">Zoom out</button>
+                <button data-daisy-kit-file-preview-zoom="in" type="button">Zoom in</button>
+                <button data-daisy-kit-file-preview-close-preview type="button">Close preview</button>
+            </p>
+        </dialog>
         <iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts" title="{{ $name }}"></iframe>
         <dl data-daisy-kit-file-preview-metadata hidden>
             <dt>Name</dt><dd data-daisy-kit-file-preview-name></dd>

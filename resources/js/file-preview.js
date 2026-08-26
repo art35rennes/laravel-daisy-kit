@@ -163,6 +163,7 @@ function initializeFilePreview(root, configuration) {
     const modal = root.querySelector('[data-daisy-kit-file-preview-modal]');
     const notice = root.querySelector('[data-daisy-kit-file-preview-notice]');
     const openPreview = root.querySelector('[data-daisy-kit-file-preview-open-preview]');
+    const closePreview = root.querySelector('[data-daisy-kit-file-preview-close-preview]');
     const zoomControls = [...root.querySelectorAll('[data-daisy-kit-file-preview-zoom]')];
 
     if (!source) {
@@ -228,6 +229,10 @@ function initializeFilePreview(root, configuration) {
         setPreviewOpen(!previewOpen);
         emit(root, 'preview', { open: previewOpen });
     };
+    const onClosePreview = () => {
+        setPreviewOpen(false);
+        emit(root, 'preview', { open: false });
+    };
     const onLayoutClick = () => {
         const expanded = root.dataset.daisyKitLayout !== 'expanded';
 
@@ -249,6 +254,7 @@ function initializeFilePreview(root, configuration) {
     layout?.setAttribute('aria-pressed', String(root.dataset.daisyKitLayout === 'expanded'));
     layout?.addEventListener('click', onLayoutClick);
     openPreview?.addEventListener('click', onPreviewClick);
+    closePreview?.addEventListener('click', onClosePreview);
     zoomControls.forEach((control) => control.addEventListener('click', onZoomClick));
 
     function sendPayload() {
@@ -323,6 +329,7 @@ function initializeFilePreview(root, configuration) {
         window.removeEventListener('message', onMessage);
         layout?.removeEventListener('click', onLayoutClick);
         openPreview?.removeEventListener('click', onPreviewClick);
+        closePreview?.removeEventListener('click', onClosePreview);
         zoomControls.forEach((control) => control.removeEventListener('click', onZoomClick));
         if (modal instanceof HTMLDialogElement && modal.contains(frame)) {
             if (typeof modal.close === 'function') modal.close();

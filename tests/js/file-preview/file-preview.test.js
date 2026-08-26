@@ -9,7 +9,7 @@ function root(configuration) {
             <div data-daisy-kit-content>
                 <p data-daisy-kit-loading hidden></p>
                 <p data-daisy-kit-empty hidden></p>
-                <dialog data-daisy-kit-file-preview-modal></dialog>
+                <dialog data-daisy-kit-file-preview-modal><button data-daisy-kit-file-preview-close-preview type="button">Close preview</button></dialog>
                 <iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts"></iframe>
                 <dl data-daisy-kit-file-preview-metadata hidden><dd data-daisy-kit-file-preview-name></dd><dd data-daisy-kit-file-preview-type></dd><dd data-daisy-kit-file-preview-size></dd></dl>
                 <p data-daisy-kit-file-preview-notice hidden></p>
@@ -182,6 +182,9 @@ describe('file preview entry', () => {
 
         expect(modal.open).toBe(true);
         expect(modal.querySelector('[data-daisy-kit-file-preview-frame]')).not.toBeNull();
+        modal.querySelector('[data-daisy-kit-file-preview-close-preview]').click();
+        expect(modal.open).toBe(false);
+        expect(element.dataset.daisyKitPreviewOpen).toBe('false');
     });
 
     it('retains card as an explicit non-modal layout', () => {
