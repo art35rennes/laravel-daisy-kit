@@ -357,7 +357,9 @@ class FormsBuilder extends Component
 
         foreach (['attrs', 'options', 'rules', 'visibleWhen', 'computed'] as $key) {
             if (array_key_exists($key, $value)) {
-                $field[$key] = $value[$key];
+                $field[$key] = in_array($key, ['visibleWhen', 'computed'], true)
+                    ? $this->normalizeJsonataDescriptor($value[$key])
+                    : $value[$key];
             }
         }
 
@@ -376,6 +378,18 @@ class FormsBuilder extends Component
     private function normalizeFieldType(mixed $type): string
     {
         return is_string($type) && in_array($type, self::FieldTypes, true) ? $type : 'text';
+    }
+
+    private function normalizeJsonataDescriptor(mixed $expression): mixed
+    {
+        if (is_string($expression) && trim($expression) !== '') {
+            return [
+                'type' => 'jsonata',
+                'expression' => trim($expression),
+            ];
+        }
+
+        return $expression;
     }
 
     private function stringValue(mixed $value, string $fallback): string

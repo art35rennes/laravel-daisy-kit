@@ -28,12 +28,50 @@ it('renders a forms builder mount point without executable configuration', funct
         'schema' => ['fields' => []],
     ])->render();
 
+    expect($html)->not->toContain('<livewire:');
+
     expect($html)->toContain('data-daisy-kit-module="forms-builder"')
         ->toContain('type="application/json"')
         ->toContain('role="status"')
         ->not->toContain('<script>')
         ->not->toContain(' style=')
         ->not->toContain(' on');
+});
+
+it('keeps the forms builder JSON configuration as a direct mount child when Livewire is available', function (): void {
+    $html = view('daisy-kit::components.forms.builder', [
+        'schema' => ['fields' => []],
+    ])->render();
+
+    $document = new DOMDocument;
+    @$document->loadHTML($html);
+
+    $root = $document->getElementById('daisy-kit-forms-builder-contract')
+        ?? (new DOMXPath($document))->query('//*[@data-daisy-kit-module="forms-builder"]')->item(0);
+
+    expect($root)->toBeInstanceOf(DOMElement::class);
+
+    $configuration = (new DOMXPath($document))->query('./script[@data-daisy-kit-config]', $root);
+
+    expect($configuration)->toHaveCount(1)
+        ->and($configuration->item(0)?->textContent)->toBe('{"livewireAvailable":true,"schema":{"fields":[]}}');
+});
+
+it('forwards the complete public Builder contract to the optional Livewire authoring surface', function (): void {
+    $html = view('daisy-kit::components.forms.builder', [
+        'schema' => ['fields' => [['name' => 'email', 'label' => 'Email', 'type' => 'email']]],
+        'name' => 'profile_schema',
+        'value' => ['email' => 'ada@example.test'],
+        'errors' => ['email' => ['Already taken.']],
+        'preview' => false,
+        'jsonEditor' => false,
+    ])->render();
+
+    expect($html)
+        ->toContain('name="profile_schema"')
+        ->toContain('data-daisy-kit-livewire-builder')
+        ->not->toContain('data-daisy-kit-builder-preview')
+        ->not->toContain('data-daisy-kit-builder-json');
 });
 
 it('serializes viewer errors, readonly state, and submit mode as non-executable configuration', function (): void {

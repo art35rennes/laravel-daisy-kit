@@ -39,5 +39,8 @@ const modules = [
 modules.forEach(async ([moduleName, loadModule]) => {
     const module = await loadModule();
 
-    module.mountAll(document.querySelector(`[data-daisy-kit-module="${moduleName}"]`)?.parentElement ?? document);
+    // A Livewire Builder preview contains a second Viewer root. Each independent
+    // entry must discover every root it owns, rather than only the first root's
+    // section wrapper.
+    module.mountAll();
 });

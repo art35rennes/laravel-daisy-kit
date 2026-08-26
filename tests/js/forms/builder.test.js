@@ -1,16 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { mount, unmount } from '../../../resources/js/forms/builder.js';
 
-async function settle() {
-    await Promise.resolve();
-}
-
-function builderRoot(configuration) {
+function builderRoot(configuration, content = '') {
     document.body.innerHTML = `
         <section data-daisy-kit-module="forms-builder" data-daisy-kit-state="loading">
             <p data-daisy-kit-status role="status">Loading form builder…</p>
-            <div data-daisy-kit-forms-builder-content></div>
-            <script data-daisy-kit-config type="application/json">${configuration}</script>
+            ${content}
+            <script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script>
         </section>
     `;
 
@@ -18,57 +14,52 @@ function builderRoot(configuration) {
 }
 
 describe('forms builder', () => {
-    it('updates a schema locally and cleans listeners on unmount', async () => {
-        const root = builderRoot(JSON.stringify({ schema: { fields: [{ name: 'email', label: 'Email', type: 'email' }] } }));
-        const updates = [];
-        root.addEventListener('daisy-kit:forms-builder:changed', (event) => updates.push(event.detail));
+    it('uses Livewire as the sole owner when its server-rendered authoring surface is present', () => {
+        const root = builderRoot(
+            { livewireAvailable: true, schema: { fields: [] } },
+            '<div data-daisy-kit-livewire-builder><button type="button">Add field</button></div>',
+        );
 
         mount(root);
-        await settle();
-        const label = root.querySelector('[data-daisy-kit-builder-label]');
-        label.value = 'Email address';
-        label.dispatchEvent(new Event('input', { bubbles: true }));
 
         expect(root.dataset.daisyKitState).toBe('ready');
-        expect(updates).toEqual([{ schema: { fields: [{ name: 'email', label: 'Email address', type: 'email' }] } }]);
+        expect(root.querySelector('[data-daisy-kit-livewire-builder]')).not.toBeNull();
+        expect(root.querySelector('[data-daisy-kit-status]').hidden).toBe(true);
 
         unmount(root);
-        label.value = 'Ignored';
-        label.dispatchEvent(new Event('input', { bubbles: true }));
-
-        expect(updates).toHaveLength(1);
-    });
-
-    it('shows empty and invalid-configuration states', async () => {
-        const emptyRoot = builderRoot(JSON.stringify({ schema: { fields: [] } }));
-        mount(emptyRoot);
-        await settle();
-        expect(emptyRoot.dataset.daisyKitState).toBe('empty');
-
-        const invalidRoot = builderRoot('{invalid');
-        mount(invalidRoot);
-        expect(invalidRoot.dataset.daisyKitState).toBe('error');
-    });
-
-    it('does not render or emit after unmount', async () => {
-        const root = builderRoot(JSON.stringify({ schema: { fields: [] } }));
-        const updates = [];
-        root.addEventListener('daisy-kit:forms-builder:changed', (event) => updates.push(event.detail));
-
-        mount(root);
-        unmount(root);
-        await settle();
 
         expect(root.dataset.daisyKitState).toBeUndefined();
-        expect(root.querySelector('[data-daisy-kit-forms-builder-content]').children).toHaveLength(0);
+        expect(root.querySelector('[data-daisy-kit-livewire-builder]')).not.toBeNull();
+    });
+
+    it('reports the optional Livewire enhancement as unavailable instead of mounting a reduced second builder', () => {
+        const root = builderRoot({ livewireAvailable: false, schema: { fields: [] } });
+        const unavailable = [];
+        root.addEventListener('daisy-kit:forms-builder:unavailable', (event) => unavailable.push(event.detail));
 
         mount(root);
-        await settle();
-        const detachedButton = root.querySelector('button');
-        unmount(root);
-        detachedButton.click();
 
-        expect(updates).toEqual([]);
-        expect(root.querySelector('[data-daisy-kit-forms-builder-content]').children).toHaveLength(0);
+        expect(root.dataset.daisyKitState).toBe('empty');
+        expect(root.querySelector('[data-daisy-kit-status]').textContent).toContain('requires optional Livewire 4');
+        expect(root.querySelector('[data-daisy-kit-forms-builder-content]')).toBeNull();
+        expect(unavailable).toEqual([{ reason: 'livewire-unavailable' }]);
+    });
+
+    it('keeps a diagnostic error for a broken Livewire render rather than silently falling back', () => {
+        const root = builderRoot({ livewireAvailable: true, schema: { fields: [] } });
+
+        mount(root);
+
+        expect(root.dataset.daisyKitState).toBe('error');
+        expect(root.querySelector('[data-daisy-kit-status]').textContent).toContain('Livewire form builder mount point');
+    });
+
+    it('keeps invalid configuration as an explicit error', () => {
+        document.body.innerHTML = '<section data-daisy-kit-module="forms-builder"><p data-daisy-kit-status role="status"></p><script data-daisy-kit-config type="application/json">{invalid</script></section>';
+        const root = document.querySelector('[data-daisy-kit-module="forms-builder"]');
+
+        mount(root);
+
+        expect(root.dataset.daisyKitState).toBe('error');
     });
 });

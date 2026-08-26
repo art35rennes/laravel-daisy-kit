@@ -39,7 +39,10 @@ it('imports JSON schema metadata for authored fields', function (): void {
         ->call('importSchema', '{"fields":[{"name":"role","label":"Role","type":"select","options":["member"],"rules":["required"],"visibleWhen":"enabled"}]}')
         ->assertSet('schema.fields.0.options.0', 'member')
         ->assertSet('schema.fields.0.rules.0', 'required')
-        ->assertSet('schema.fields.0.visibleWhen', 'enabled');
+        ->assertSet('schema.fields.0.visibleWhen', [
+            'type' => 'jsonata',
+            'expression' => 'enabled',
+        ]);
 });
 
 it('removes, reorders, and restores authored fields', function (): void {

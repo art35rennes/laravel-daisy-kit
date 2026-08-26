@@ -1,9 +1,21 @@
 @props([
     'schema' => [],
+    'name' => 'schema',
+    'value' => [],
+    'errors' => [],
+    'preview' => true,
+    'jsonEditor' => true,
 ])
 
 @php
+    $livewireAvailable = class_exists(\Livewire\Livewire::class) && app()->bound('livewire');
+    $builderErrors = $errors instanceof \Illuminate\Support\ViewErrorBag
+        ? $errors->getBag('default')->toArray()
+        : ($errors instanceof \Illuminate\Contracts\Support\MessageProvider
+            ? $errors->getMessageBag()->toArray()
+            : (is_array($errors) ? $errors : []));
     $configuration = \Art35rennes\DaisyKit\Support\JsonConfiguration::encode([
+        'livewireAvailable' => $livewireAvailable,
         'schema' => is_array($schema) ? $schema : [],
     ]);
 @endphp
@@ -14,11 +26,18 @@
     data-daisy-kit-module="forms-builder"
     data-daisy-kit-state="loading"
 >
-    <p data-daisy-kit-status role="status">Loading form builder…</p>
-    @if(class_exists(\Livewire\Livewire::class) && app()->bound('livewire'))
-        <livewire:daisy-kit.forms.builder :schema="$schema" />
+    <p data-daisy-kit-status role="status">{{ $livewireAvailable ? __('Loading form builder…') : __('Forms Builder authoring requires optional Livewire 4.') }}</p>
+    @if($livewireAvailable)
+        @livewire('daisy-kit.forms.builder', [
+            'schema' => is_array($schema) ? $schema : [],
+            'name' => is_string($name) ? $name : 'schema',
+            'value' => is_array($value) ? $value : [],
+            'errors' => $builderErrors,
+            'preview' => $preview === true,
+            'jsonEditor' => $jsonEditor === true,
+        ])
     @else
-        <div data-daisy-kit-forms-builder-content></div>
+        <p data-daisy-kit-forms-builder-unavailable>{{ __('The authoring enhancement is not installed.') }}</p>
     @endif
     <script data-daisy-kit-config type="application/json">{!! $configuration !!}</script>
 </section>
