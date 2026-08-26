@@ -85,6 +85,21 @@ it('authors a nested form through the catalogue and keeps editor state synchroni
         ->assertSee('"type":"section"', false);
 });
 
+it('keeps nested tree mutations and their reversible history stable', function (): void {
+    Livewire::test('daisy-kit.forms.builder')
+        ->call('addSection')
+        ->call('selectField', 'section_1')
+        ->call('addField', 'select')
+        ->call('addField', 'text')
+        ->call('moveField', 'text_3', -1)
+        ->assertSet('schema.fields.0.fields.0.name', 'text_3')
+        ->assertSet('schema.fields.0.fields.1.name', 'select_2')
+        ->call('removeField', 'select_2')
+        ->assertSet('schema.fields.0.fields.0.name', 'text_3')
+        ->call('undo')
+        ->assertSet('schema.fields.0.fields.1.name', 'select_2');
+});
+
 it('reports invalid authoring JSON without discarding the last valid schema and can undo it', function (): void {
     Livewire::test('daisy-kit.forms.builder', ['schema' => ['fields' => [
         ['id' => 'email', 'name' => 'email', 'label' => 'Email', 'type' => 'email'],

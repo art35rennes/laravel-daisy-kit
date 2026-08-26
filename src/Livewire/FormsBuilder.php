@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Art35rennes\DaisyKit\Livewire;
 
+use Art35rennes\DaisyKit\Livewire\Support\FormSchemaContract;
+use Art35rennes\DaisyKit\Livewire\Support\FormSchemaTree;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -14,13 +16,6 @@ use Livewire\Component;
  */
 class FormsBuilder extends Component
 {
-    private const array FieldTypes = [
-        'checkbox', 'color', 'date', 'email', 'file', 'hidden', 'number', 'password',
-        'radio', 'range', 'select', 'tel', 'text', 'textarea', 'url', 'section', 'wizardStep',
-    ];
-
-    private const array ContainerTypes = ['section', 'wizardStep'];
-
     /** @var array{layout: array{type: string}, fields: array<int, array<string, mixed>>} */
     public array $schema = ['layout' => ['type' => 'one-page'], 'fields' => []];
 
@@ -67,7 +62,7 @@ class FormsBuilder extends Component
         bool $preview = true,
         bool $jsonEditor = true,
     ): void {
-        $this->schema = $this->normalizeSchema($schema);
+        $this->schema = $this->contract()->normalizeSchema($schema);
         $this->name = trim($name) === '' ? 'schema' : $name;
         $this->value = $value;
         $this->errors = $errors;
@@ -79,19 +74,20 @@ class FormsBuilder extends Component
 
     public function addField(string $type = 'text'): void
     {
-        $type = $this->normalizeFieldType($type);
+        $contract = $this->contract();
+        $type = $contract->normalizeFieldType($type);
         $this->remember();
-        $field = $this->newField($type, count($this->flattenFields($this->schema['fields'])) + 1);
+        $field = $contract->newField($type, count(FormSchemaTree::flatten($this->schema['fields'], $contract)) + 1);
 
-        if ($this->selectedId !== null && $this->isContainer($this->findField($this->schema['fields'], $this->selectedId))) {
-            $this->schema['fields'] = $this->appendChild($this->schema['fields'], $this->selectedId, $field);
+        if ($this->selectedId !== null && $contract->isContainer(FormSchemaTree::find($this->schema['fields'], $this->selectedId, $contract))) {
+            $this->schema['fields'] = FormSchemaTree::appendChild($this->schema['fields'], $this->selectedId, $field, $contract);
         } elseif ($this->selectedId !== null) {
-            $this->schema['fields'] = $this->insertAfter($this->schema['fields'], $this->selectedId, $field);
+            $this->schema['fields'] = FormSchemaTree::insertAfter($this->schema['fields'], $this->selectedId, $field, $contract);
         } else {
             $this->schema['fields'][] = $field;
         }
 
-        $this->selectedId = $this->fieldIdentity($field);
+        $this->selectedId = $contract->identity($field);
         $this->finishMutation();
     }
 
@@ -102,18 +98,20 @@ class FormsBuilder extends Component
 
     public function addStep(): void
     {
+        $contract = $this->contract();
         $this->remember();
         $this->schema['layout']['type'] = 'multi-step';
-        $field = $this->newField('wizardStep', count($this->flattenFields($this->schema['fields'])) + 1);
+        $field = $contract->newField('wizardStep', count(FormSchemaTree::flatten($this->schema['fields'], $contract)) + 1);
         $this->schema['fields'][] = $field;
-        $this->selectedId = $this->fieldIdentity($field);
+        $this->selectedId = $contract->identity($field);
         $this->finishMutation();
     }
 
     public function selectField(string $id): void
     {
-        $field = $this->findField($this->schema['fields'], $id);
-        $this->selectedId = $field === null ? null : $this->fieldIdentity($field);
+        $contract = $this->contract();
+        $field = FormSchemaTree::find($this->schema['fields'], $id, $contract);
+        $this->selectedId = $field === null ? null : $contract->identity($field);
     }
 
     public function clearSelection(): void
@@ -130,7 +128,7 @@ class FormsBuilder extends Component
         }
 
         $this->remember();
-        $this->schema['fields'] = $this->removeFromTree($this->schema['fields'], $id);
+        $this->schema['fields'] = FormSchemaTree::remove($this->schema['fields'], $id, $this->contract());
         $this->selectedId = null;
         $this->finishMutation();
     }
@@ -145,7 +143,7 @@ class FormsBuilder extends Component
 
         $this->remember();
         $moved = false;
-        $this->schema['fields'] = $this->moveInTree($this->schema['fields'], $id, $direction, $moved);
+        $this->schema['fields'] = FormSchemaTree::move($this->schema['fields'], $id, $direction, $moved, $this->contract());
 
         if (! $moved) {
             array_pop($this->undoStack);
@@ -165,7 +163,7 @@ class FormsBuilder extends Component
             return;
         }
 
-        $this->selectedId = $this->fieldIdentity($field);
+        $this->selectedId = $this->contract()->identity($field);
         $this->updateSelectedPath($property, $value);
     }
 
@@ -178,15 +176,16 @@ class FormsBuilder extends Component
         $this->remember();
         $updated = false;
         $nextSelectedId = null;
-        $this->schema['fields'] = $this->mapTree($this->schema['fields'], function (array $field) use ($path, $value, &$nextSelectedId, &$updated): array {
-            if ($this->fieldIdentity($field) !== $this->selectedId) {
+        $contract = $this->contract();
+        $this->schema['fields'] = FormSchemaTree::map($this->schema['fields'], function (array $field) use ($path, $value, &$nextSelectedId, &$updated, $contract): array {
+            if ($contract->identity($field) !== $this->selectedId) {
                 return $field;
             }
 
             $updated = true;
 
             if ($path === 'type') {
-                $field[$path] = $this->normalizeFieldType(is_string($value) ? $value : '');
+                $field[$path] = $contract->normalizeFieldType(is_string($value) ? $value : '');
             } elseif (in_array($path, ['name', 'label'], true)) {
                 $field[$path] = is_string($value) ? trim($value) : '';
 
@@ -198,7 +197,7 @@ class FormsBuilder extends Component
             }
 
             return $field;
-        });
+        }, $contract);
 
         if (! $updated) {
             array_pop($this->undoStack);
@@ -280,16 +279,17 @@ class FormsBuilder extends Component
 
     public function updatedSchema(): void
     {
-        $this->schema = $this->normalizeSchema($this->schema);
+        $this->schema = $this->contract()->normalizeSchema($this->schema);
         $this->refreshDerivedState();
     }
 
     public function render(): View
     {
-        $selectedField = $this->selectedId === null ? null : $this->findField($this->schema['fields'], $this->selectedId);
+        $contract = $this->contract();
+        $selectedField = $this->selectedId === null ? null : FormSchemaTree::find($this->schema['fields'], $this->selectedId, $contract);
 
         return view('daisy-kit::internal.forms-builder', [
-            'outline' => $this->outlineFields($this->schema['fields']),
+            'outline' => FormSchemaTree::outline($this->schema['fields'], $contract),
             'selectedField' => $selectedField,
         ]);
     }
@@ -316,360 +316,19 @@ class FormsBuilder extends Component
         ];
     }
 
-    /** @param array<string, mixed> $schema
-     * @return array{layout: array{type: string}, fields: array<int, array<string, mixed>>}
-     */
-    private function normalizeSchema(array $schema): array
-    {
-        $layout = $this->schemaObject($schema['layout'] ?? null);
-        $layoutType = in_array($layout['type'] ?? null, ['one-page', 'sections', 'multi-step'], true)
-            ? $layout['type']
-            : 'one-page';
-        $fields = $this->fieldList($schema['fields'] ?? null);
-
-        $normalizedFields = [];
-
-        foreach ($fields as $index => $field) {
-            $normalizedFields[] = $this->normalizeField($field, $index);
-        }
-
-        return [
-            'layout' => ['type' => $layoutType],
-            'fields' => $normalizedFields,
-        ];
-    }
-
-    /** @return array<string, mixed> */
-    private function normalizeField(mixed $raw, int $index): array
-    {
-        $value = is_array($raw) ? $raw : [];
-        $position = $index + 1;
-        $type = $this->normalizeFieldType($value['type'] ?? null);
-        $field = [
-            'name' => $this->stringValue($value['name'] ?? null, "field_{$position}"),
-            'label' => $this->stringValue($value['label'] ?? null, "Field {$position}"),
-            'type' => $type,
-        ];
-
-        if (is_string($value['id'] ?? null) && trim($value['id']) !== '') {
-            $field['id'] = trim($value['id']);
-        }
-
-        foreach (['attrs', 'options', 'rules', 'visibleWhen', 'computed'] as $key) {
-            if (array_key_exists($key, $value)) {
-                $field[$key] = in_array($key, ['visibleWhen', 'computed'], true)
-                    ? $this->normalizeJsonataDescriptor($value[$key])
-                    : $value[$key];
-            }
-        }
-
-        if (in_array($type, self::ContainerTypes, true)) {
-            $children = $this->fieldList($value['fields'] ?? null);
-            $field['fields'] = [];
-
-            foreach ($children as $childIndex => $child) {
-                $field['fields'][] = $this->normalizeField($child, $childIndex);
-            }
-        }
-
-        return $field;
-    }
-
-    private function normalizeFieldType(mixed $type): string
-    {
-        return is_string($type) && in_array($type, self::FieldTypes, true) ? $type : 'text';
-    }
-
-    private function normalizeJsonataDescriptor(mixed $expression): mixed
-    {
-        if (is_string($expression) && trim($expression) !== '') {
-            return [
-                'type' => 'jsonata',
-                'expression' => trim($expression),
-            ];
-        }
-
-        return $expression;
-    }
-
-    private function stringValue(mixed $value, string $fallback): string
-    {
-        return is_string($value) && trim($value) !== '' ? trim($value) : $fallback;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function schemaObject(mixed $value): array
-    {
-        if (! is_array($value)) {
-            return [];
-        }
-
-        $object = [];
-
-        foreach ($value as $key => $item) {
-            if (is_string($key)) {
-                $object[$key] = $item;
-            }
-        }
-
-        return $object;
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private function fieldList(mixed $value): array
-    {
-        if (! is_array($value)) {
-            return [];
-        }
-
-        $fields = [];
-
-        foreach ($value as $field) {
-            if (is_array($field)) {
-                $fields[] = $this->schemaObject($field);
-            }
-        }
-
-        return $fields;
-    }
-
-    /** @return array<string, mixed> */
-    private function newField(string $type, int $position): array
-    {
-        $id = strtolower(preg_replace('/[^A-Za-z0-9_-]+/', '_', "{$type}_{$position}") ?? "field_{$position}");
-        $field = [
-            'name' => in_array($type, self::ContainerTypes, true) ? '' : $id,
-            'label' => "Field {$position}",
-            'type' => $type,
-        ];
-
-        if (in_array($type, self::ContainerTypes, true)) {
-            $field['id'] = $id;
-        }
-
-        if ($type === 'select' || $type === 'radio') {
-            $field['options'] = [['label' => 'Option 1', 'value' => 'option_1']];
-        }
-
-        if (in_array($type, self::ContainerTypes, true)) {
-            $field['fields'] = [];
-        }
-
-        return $field;
-    }
-
-    /** @param array<int, array<string, mixed>> $fields
-     * @return list<array<string, mixed>>
-     */
-    private function flattenFields(array $fields): array
-    {
-        $flat = [];
-
-        foreach ($fields as $field) {
-            $flat[] = $field;
-
-            $children = $this->fieldList($field['fields'] ?? null);
-
-            if ($children !== []) {
-                array_push($flat, ...$this->flattenFields($children));
-            }
-        }
-
-        return $flat;
-    }
-
-    /** @param array<int, array<string, mixed>> $fields
-     * @return list<array{field: array<string, mixed>, depth: int, identity: string}>
-     */
-    private function outlineFields(array $fields, int $depth = 1): array
-    {
-        $outline = [];
-
-        foreach ($fields as $field) {
-            $outline[] = [
-                'field' => $field,
-                'depth' => $depth,
-                'identity' => $this->fieldIdentity($field),
-            ];
-
-            $children = $this->fieldList($field['fields'] ?? null);
-
-            if ($children !== []) {
-                array_push($outline, ...$this->outlineFields($children, $depth + 1));
-            }
-        }
-
-        return $outline;
-    }
-
-    /** @param array<int, array<string, mixed>> $fields
-     * @return array<string, mixed>|null
-     */
-    private function findField(array $fields, string $id): ?array
-    {
-        foreach ($fields as $field) {
-            if ($this->fieldIdentity($field) === $id) {
-                return $field;
-            }
-
-            $children = $this->fieldList($field['fields'] ?? null);
-
-            if ($children !== []) {
-                $found = $this->findField($children, $id);
-
-                if ($found !== null) {
-                    return $found;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /** @param array<string, mixed>|null $field */
-    private function isContainer(?array $field): bool
-    {
-        return $field !== null && in_array($field['type'] ?? null, self::ContainerTypes, true);
-    }
-
-    /** @param array<string, mixed> $field */
-    private function fieldIdentity(array $field): string
-    {
-        return is_string($field['id'] ?? null) && $field['id'] !== ''
-            ? $field['id']
-            : $this->stringValue($field['name'] ?? null, '');
-    }
-
     private function resolveReference(int|string $reference): ?string
     {
+        $contract = $this->contract();
+
         if (is_int($reference)) {
             if (! isset($this->schema['fields'][$reference])) {
                 return null;
             }
 
-            return $this->fieldIdentity($this->schema['fields'][$reference]);
+            return $contract->identity($this->schema['fields'][$reference]);
         }
 
-        return $this->findField($this->schema['fields'], $reference) === null ? null : $reference;
-    }
-
-    /** @param array<int, array<string, mixed>> $fields
-     * @param  array<string, mixed>  $child
-     * @return array<int, array<string, mixed>>
-     */
-    private function appendChild(array $fields, string $parentId, array $child): array
-    {
-        return $this->mapTree($fields, function (array $field) use ($parentId, $child): array {
-            if ($this->fieldIdentity($field) === $parentId) {
-                $field['fields'] = [...$this->fieldList($field['fields'] ?? null), $child];
-            }
-
-            return $field;
-        });
-    }
-
-    /** @param array<int, array<string, mixed>> $fields
-     * @param  array<string, mixed>  $child
-     * @return array<int, array<string, mixed>>
-     */
-    private function insertAfter(array $fields, string $targetId, array $child): array
-    {
-        $result = [];
-
-        foreach ($fields as $field) {
-            $children = $this->fieldList($field['fields'] ?? null);
-
-            if ($children !== []) {
-                $field['fields'] = $this->insertAfter($children, $targetId, $child);
-            }
-
-            $result[] = $field;
-
-            if ($this->fieldIdentity($field) === $targetId) {
-                $result[] = $child;
-            }
-        }
-
-        return $result;
-    }
-
-    /** @param array<int, array<string, mixed>> $fields
-     * @return array<int, array<string, mixed>>
-     */
-    private function removeFromTree(array $fields, string $targetId): array
-    {
-        $result = [];
-
-        foreach ($fields as $field) {
-            if ($this->fieldIdentity($field) === $targetId) {
-                continue;
-            }
-
-            $children = $this->fieldList($field['fields'] ?? null);
-
-            if ($children !== []) {
-                $field['fields'] = $this->removeFromTree($children, $targetId);
-            }
-
-            $result[] = $field;
-        }
-
-        return $result;
-    }
-
-    /** @param array<int, array<string, mixed>> $fields
-     * @return array<int, array<string, mixed>>
-     */
-    private function moveInTree(array $fields, string $targetId, int $direction, bool &$moved): array
-    {
-        foreach ($fields as $index => $field) {
-            if ($this->fieldIdentity($field) === $targetId) {
-                $target = $index + $direction;
-
-                if (isset($fields[$target])) {
-                    [$fields[$index], $fields[$target]] = [$fields[$target], $fields[$index]];
-                    $moved = true;
-                }
-
-                return $fields;
-            }
-
-            $children = $this->fieldList($field['fields'] ?? null);
-
-            if ($children !== []) {
-                $fields[$index]['fields'] = $this->moveInTree($children, $targetId, $direction, $moved);
-
-                if ($moved) {
-                    return $fields;
-                }
-            }
-        }
-
-        return $fields;
-    }
-
-    /** @param array<int, array<string, mixed>> $fields
-     * @param  callable(array<string, mixed>): array<string, mixed>  $callback
-     * @return array<int, array<string, mixed>>
-     */
-    private function mapTree(array $fields, callable $callback): array
-    {
-        foreach ($fields as $index => $field) {
-            $field = $callback($field);
-            $children = $this->fieldList($field['fields'] ?? null);
-
-            if ($children !== []) {
-                $field['fields'] = $this->mapTree($children, $callback);
-            }
-
-            $fields[$index] = $field;
-        }
-
-        return $fields;
+        return FormSchemaTree::find($this->schema['fields'], $reference, $contract) === null ? null : $reference;
     }
 
     private function replaceFromJson(string $json): void
@@ -691,7 +350,7 @@ class FormsBuilder extends Component
         }
 
         $this->remember();
-        $this->schema = $this->normalizeSchema($this->schemaObject($decoded));
+        $this->schema = $this->contract()->normalizeSchema($this->contract()->object($decoded));
         $this->selectedId = null;
         $this->jsonError = null;
         $this->finishMutation();
@@ -705,7 +364,7 @@ class FormsBuilder extends Component
 
     private function finishMutation(): void
     {
-        $this->schema = $this->normalizeSchema($this->schema);
+        $this->schema = $this->contract()->normalizeSchema($this->schema);
         $this->refreshDerivedState();
     }
 
@@ -717,13 +376,14 @@ class FormsBuilder extends Component
 
     private function refreshDiagnostics(): void
     {
+        $contract = $this->contract();
         $diagnostics = [];
         $seenIds = [];
         $seenNames = [];
 
-        foreach ($this->flattenFields($this->schema['fields']) as $index => $field) {
+        foreach (FormSchemaTree::flatten($this->schema['fields'], $contract) as $index => $field) {
             $path = "/fields/{$index}";
-            $identity = $this->fieldIdentity($field);
+            $identity = $contract->identity($field);
 
             if ($identity === '') {
                 $diagnostics[] = ['path' => $path, 'code' => 'missing_id', 'message' => 'A field needs a stable id or name.'];
@@ -732,15 +392,15 @@ class FormsBuilder extends Component
             }
 
             $seenIds[] = $identity;
-            $type = $this->stringValue($field['type'] ?? null, '');
+            $type = $contract->stringValue($field['type'] ?? null, '');
 
-            $name = $this->stringValue($field['name'] ?? null, '');
+            $name = $contract->stringValue($field['name'] ?? null, '');
 
-            if (! in_array($type, self::ContainerTypes, true) && $type !== 'hidden' && $name === '') {
+            if (! in_array($type, FormSchemaContract::CONTAINER_TYPES, true) && $type !== 'hidden' && $name === '') {
                 $diagnostics[] = ['path' => $path, 'code' => 'missing_name', 'message' => 'A submitting field needs a name.'];
             }
 
-            if ($name !== '' && ! in_array($type, self::ContainerTypes, true) && in_array($name, $seenNames, true)) {
+            if ($name !== '' && ! in_array($type, FormSchemaContract::CONTAINER_TYPES, true) && in_array($name, $seenNames, true)) {
                 $diagnostics[] = ['path' => $path, 'code' => 'duplicate_name', 'message' => "Field name {$name} is duplicated."];
             }
             $seenNames[] = $name;
@@ -759,5 +419,10 @@ class FormsBuilder extends Component
         }
 
         $this->diagnostics = $diagnostics;
+    }
+
+    private function contract(): FormSchemaContract
+    {
+        return new FormSchemaContract;
     }
 }
