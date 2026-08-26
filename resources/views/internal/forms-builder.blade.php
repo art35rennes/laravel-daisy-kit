@@ -46,15 +46,15 @@
             @if($selectedField)
                 <label class="form-control">
                     {{ __('Name') }}
-                    <input class="input input-bordered" type="text" value="{{ $selectedField['name'] ?? '' }}" wire:change="updateSelectedPath('name', $event.target.value)">
+                    <input class="input input-bordered" type="text" wire:model.live.debounce.250ms="inspector.name">
                 </label>
                 <label class="form-control">
                     {{ __('Label') }}
-                    <input class="input input-bordered" type="text" value="{{ $selectedField['label'] ?? '' }}" wire:change="updateSelectedPath('label', $event.target.value)">
+                    <input class="input input-bordered" type="text" wire:model.live.debounce.250ms="inspector.label">
                 </label>
                 <label class="form-control">
                     {{ __('Type') }}
-                    <select class="select select-bordered" wire:change="updateSelectedPath('type', $event.target.value)">
+                    <select class="select select-bordered" wire:model.live.debounce.250ms="inspector.type">
                         @foreach($fieldCatalogue as $fieldType)
                             <option value="{{ $fieldType['type'] }}" @selected($selectedField['type'] === $fieldType['type'])>{{ __($fieldType['label']) }}</option>
                         @endforeach
@@ -63,7 +63,7 @@
                 @foreach(['attrs' => 'Attributes', 'options' => 'Options', 'rules' => 'Rules', 'visibleWhen' => 'Visible when (JSONata)', 'computed' => 'Computed (JSONata)'] as $path => $label)
                     <label class="form-control">
                         {{ __($label) }}
-                        <textarea class="textarea textarea-bordered" wire:change="updateSelectedJson('{{ $path }}', $event.target.value)">{{ json_encode($selectedField[$path] ?? ($path === 'attrs' ? new stdClass : []), JSON_UNESCAPED_SLASHES) }}</textarea>
+                        <textarea class="textarea textarea-bordered" wire:model.live.debounce.250ms="inspector.{{ $path }}"></textarea>
                     </label>
                 @endforeach
             @else

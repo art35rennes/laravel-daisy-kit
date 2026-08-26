@@ -34,6 +34,21 @@ it('exports a synchronized hidden schema value', function (): void {
         ->assertSee('"name":"email"', false);
 });
 
+it('commits the selected inspector projection into the authored schema', function (): void {
+    Livewire::test('daisy-kit.forms.builder', ['schema' => ['fields' => [
+        ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
+    ]]])
+        ->call('selectField', 'email')
+        ->assertSet('inspector.name', 'email')
+        ->set('inspector.name', 'preferred_email')
+        ->set('inspector.label', 'Preferred email')
+        ->set('inspector.attrs', '{"autocomplete":"email"}')
+        ->assertSet('schema.fields.0.name', 'preferred_email')
+        ->assertSet('schema.fields.0.label', 'Preferred email')
+        ->assertSet('schema.fields.0.attrs.autocomplete', 'email')
+        ->assertSet('schemaJson', '{"layout":{"type":"one-page"},"fields":[{"name":"preferred_email","label":"Preferred email","type":"email","attrs":{"autocomplete":"email"}}]}');
+});
+
 it('diagnoses non-canonical JSONata input instead of translating it to a legacy dialect', function (): void {
     Livewire::test('daisy-kit.forms.builder')
         ->call('importSchema', '{"fields":[{"name":"role","label":"Role","type":"select","options":["member"],"rules":["required"],"visibleWhen":"enabled"}]}')

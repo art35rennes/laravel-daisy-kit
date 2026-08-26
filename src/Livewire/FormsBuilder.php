@@ -31,6 +31,22 @@ class FormsBuilder extends Component
     /** @var array<string, mixed> */
     public array $errors = [];
 
+    /**
+     * Serializable selected-field projection bound by the Livewire 4 inspector.
+     *
+     * @var array{name: string, label: string, type: string, attrs: string, options: string, rules: string, visibleWhen: string, computed: string}
+     */
+    public array $inspector = [
+        'name' => '',
+        'label' => '',
+        'type' => '',
+        'attrs' => '{}',
+        'options' => '[]',
+        'rules' => '[]',
+        'visibleWhen' => 'null',
+        'computed' => 'null',
+    ];
+
     /** @var list<array{layout: array{type: string}, fields: array<int, array<string, mixed>>}> */
     public array $undoStack = [];
 
@@ -112,11 +128,28 @@ class FormsBuilder extends Component
         $contract = $this->contract();
         $field = FormSchemaTree::find($this->schema['fields'], $id, $contract);
         $this->selectedId = $field === null ? null : $contract->identity($field);
+        $this->syncInspector();
     }
 
     public function clearSelection(): void
     {
         $this->selectedId = null;
+        $this->syncInspector();
+    }
+
+    public function updatedInspector(mixed $value, string $path): void
+    {
+        if (! in_array($path, ['name', 'label', 'type', 'attrs', 'options', 'rules', 'visibleWhen', 'computed'], true)) {
+            return;
+        }
+
+        if (in_array($path, ['attrs', 'options', 'rules', 'visibleWhen', 'computed'], true)) {
+            $this->updateSelectedJson($path, is_string($value) ? $value : 'null');
+
+            return;
+        }
+
+        $this->updateSelectedPath($path, $value);
     }
 
     public function removeField(int|string $reference): void
@@ -371,7 +404,46 @@ class FormsBuilder extends Component
     private function refreshDerivedState(): void
     {
         $this->schemaJson = $this->exportSchema();
+        $this->syncInspector();
         $this->refreshDiagnostics();
+    }
+
+    private function syncInspector(): void
+    {
+        $field = $this->selectedId === null
+            ? null
+            : FormSchemaTree::find($this->schema['fields'], $this->selectedId, $this->contract());
+
+        if ($field === null) {
+            $this->inspector = [
+                'name' => '',
+                'label' => '',
+                'type' => '',
+                'attrs' => '{}',
+                'options' => '[]',
+                'rules' => '[]',
+                'visibleWhen' => 'null',
+                'computed' => 'null',
+            ];
+
+            return;
+        }
+
+        $this->inspector = [
+            'name' => is_string($field['name'] ?? null) ? $field['name'] : '',
+            'label' => is_string($field['label'] ?? null) ? $field['label'] : '',
+            'type' => is_string($field['type'] ?? null) ? $field['type'] : '',
+            'attrs' => $this->encodeInspectorJson($field['attrs'] ?? new \stdClass),
+            'options' => $this->encodeInspectorJson($field['options'] ?? []),
+            'rules' => $this->encodeInspectorJson($field['rules'] ?? []),
+            'visibleWhen' => $this->encodeInspectorJson($field['visibleWhen'] ?? null),
+            'computed' => $this->encodeInspectorJson($field['computed'] ?? null),
+        ];
+    }
+
+    private function encodeInspectorJson(mixed $value): string
+    {
+        return json_encode($value, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
     }
 
     private function refreshDiagnostics(): void
