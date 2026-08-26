@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Daisy Kit Vite Host Fixture</title>
+    <script type="module" src="/resources/js/app.js"></script>
+</head>
+<body>
+    <main>
+        <section aria-label="Fixture blueprint" data-daisy-kit-module="blueprint">
+            <div data-daisy-kit-content>
+                <svg data-daisy-kit-blueprint-canvas></svg>
+                <p data-daisy-kit-empty hidden>No blueprint nodes are available.</p>
+            </div>
+            <script data-daisy-kit-config type="application/json">{"nodes":[{"id":"source","label":"Source"},{"id":"destination","label":"Destination"}],"edges":[{"source":"source","target":"destination"}],"label":"Fixture blueprint"}</script>
+        </section>
+
+        <section data-daisy-kit-module="file-preview">
+            <p data-daisy-kit-status hidden role="alert"></p>
+            <div data-daisy-kit-content>
+                <p data-daisy-kit-loading hidden>Loading file preview…</p>
+                <p data-daisy-kit-empty hidden>No file preview is available.</p>
+                <iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts" title="Fixture file preview"></iframe>
+            </div>
+            <script data-daisy-kit-config type="application/json">{"src":"/preview.txt","type":"text","name":"Fixture file preview"}</script>
+        </section>
+    </main>
+</body>
+</html>

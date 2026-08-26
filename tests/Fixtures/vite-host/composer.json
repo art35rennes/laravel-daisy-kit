@@ -3,15 +3,12 @@
     "description": "Fresh Composer host fixture for Laravel Daisy Kit Vite imports.",
     "repositories": [
         {
-            "type": "path",
-            "url": "__PACKAGE_ROOT__",
-            "options": {
-                "symlink": true
-            }
+            "type": "vcs",
+            "url": "__PACKAGE_ROOT__"
         }
     ],
     "require": {
-        "art35rennes/laravel-daisy-kit": "@dev"
+        "art35rennes/laravel-daisy-kit": "dev-next/v5"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

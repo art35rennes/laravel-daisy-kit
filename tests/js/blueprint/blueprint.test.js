@@ -29,13 +29,17 @@ describe('blueprint entry', () => {
         mountAll();
         mount(element);
         const nodes = [...element.querySelectorAll('[data-daisy-kit-blueprint-node]')];
-        nodes[0].focus();
-        nodes[0].dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' }));
-        nodes[1].dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+        const controls = [...element.querySelectorAll('[data-daisy-kit-blueprint-node-control]')];
+        controls[0].focus();
+        controls[0].dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' }));
+        controls[1].dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+        nodes[0].dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
         expect(nodes).toHaveLength(2);
-        expect(document.activeElement).toBe(nodes[1]);
-        expect(selected).toEqual(['second']);
+        expect(controls).toHaveLength(2);
+        expect(nodes.every((node) => !node.hasAttribute('role') && !node.hasAttribute('tabindex'))).toBe(true);
+        expect(document.activeElement).toBe(controls[1]);
+        expect(selected).toEqual(['second', 'first']);
 
         unmount(element);
 

@@ -1,5 +1,5 @@
 const channel = 'daisy-kit:file-preview:frame';
-const token = new URLSearchParams(location.hash.slice(1)).get('token');
+const token = document.querySelector('[data-daisy-kit-file-preview-token]')?.dataset.daisyKitFilePreviewToken;
 
 function validMessage(event) {
     return event.source === window.parent

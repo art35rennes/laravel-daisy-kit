@@ -46,7 +46,15 @@
 
         <section aria-labelledby="blueprint-heading">
             <h2 id="blueprint-heading">Blueprint</h2>
-            <x-daisy-kit::blueprint />
+            <x-daisy-kit::blueprint
+                :nodes="[
+                    ['id' => 'source', 'label' => 'Source'],
+                    ['id' => 'destination', 'label' => 'Destination'],
+                ]"
+                :edges="[
+                    ['source' => 'source', 'target' => 'destination'],
+                ]"
+            />
         </section>
 
         <section aria-labelledby="file-preview-heading">

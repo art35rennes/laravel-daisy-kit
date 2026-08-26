@@ -66,6 +66,8 @@ source file.
 Each ESM entry exports `mount(root)`, `mountAll(scope = document)`, and `unmount(root)`.
 There is no global bootstrap or `vendor:publish` step. Configuration is rendered as encoded
 JSON, so a host can keep a strict CSP without inline script, handler, or style exceptions.
+`@daisy-kit/file-preview.js` also causes Vite to emit File Preview's sandboxed-frame chunks;
+do not add a route, proxy, copy step, or manual asset import for them.
 
 ## Development
 

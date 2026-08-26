@@ -45,6 +45,11 @@ function renderBlueprint(root, configuration) {
     }
 
     canvas.replaceChildren();
+    canvas.removeAttribute('aria-label');
+    canvas.removeAttribute('role');
+    canvas.removeAttribute('tabindex');
+    canvas.setAttribute('aria-hidden', 'true');
+    canvas.setAttribute('focusable', 'false');
 
     if (nodes.length === 0) {
         empty.hidden = false;
@@ -55,6 +60,11 @@ function renderBlueprint(root, configuration) {
     }
 
     empty.hidden = true;
+    const controls = document.createElement('div');
+    controls.setAttribute('aria-label', typeof configuration.label === 'string' ? configuration.label : 'Blueprint nodes');
+    controls.setAttribute('data-daisy-kit-blueprint-controls', '');
+    controls.setAttribute('role', 'group');
+    canvas.insertAdjacentElement('afterend', controls);
     const graph = new graphlib.Graph({ multigraph: true });
     graph.setGraph({ rankdir: 'LR', nodesep: 32, ranksep: 72, marginx: 16, marginy: 16 });
     graph.setDefaultEdgeLabel(() => ({}));
@@ -86,14 +96,11 @@ function renderBlueprint(root, configuration) {
         canvas.append(line);
     });
 
-    const renderedNodes = graph.nodes().map((nodeId) => {
+    const renderedNodes = graph.nodes().map((nodeId, index) => {
         const node = graph.node(nodeId);
         const group = createSvgElement('g', {
-            'aria-label': node.label,
             'data-daisy-kit-blueprint-node': '',
             'data-node-id': nodeId,
-            role: 'button',
-            tabindex: '-1',
             transform: `translate(${node.x - (node.width / 2)}, ${node.y - (node.height / 2)})`,
         });
         const rectangle = createSvgElement('rect', { height: node.height, rx: 6, width: node.width });
@@ -108,26 +115,38 @@ function renderBlueprint(root, configuration) {
         group.append(rectangle, label);
         canvas.append(group);
 
-        return group;
+        const control = document.createElement('button');
+        control.setAttribute('aria-pressed', 'false');
+        control.setAttribute('data-daisy-kit-blueprint-node-control', '');
+        control.setAttribute('data-node-id', nodeId);
+        control.setAttribute('tabindex', index === 0 ? '0' : '-1');
+        control.type = 'button';
+        control.textContent = node.label;
+        controls.append(control);
+
+        return { control, group, id: nodeId };
     });
 
-    renderedNodes[0].setAttribute('tabindex', '0');
-    const selectNode = (node) => {
-        renderedNodes.forEach((candidate) => candidate.setAttribute('aria-pressed', String(candidate === node)));
+    const selectNode = (nodeId) => {
+        renderedNodes.forEach((candidate) => {
+            const selected = candidate.id === nodeId;
+            candidate.control.setAttribute('aria-pressed', String(selected));
+            candidate.group.toggleAttribute('data-daisy-kit-selected', selected);
+        });
         root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:select', {
             bubbles: true,
-            detail: { id: node.dataset.nodeId },
+            detail: { id: nodeId },
         }));
     };
     const onClick = (event) => {
         const node = event.target.closest('[data-daisy-kit-blueprint-node]');
 
         if (node) {
-            selectNode(node);
+            selectNode(node.dataset.nodeId);
         }
     };
     const onKeydown = (event) => {
-        const currentIndex = renderedNodes.indexOf(document.activeElement);
+        const currentIndex = renderedNodes.findIndex(({ control }) => control === document.activeElement);
 
         if (!['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
             return;
@@ -137,7 +156,7 @@ function renderBlueprint(root, configuration) {
 
         if (event.key === 'Enter' || event.key === ' ') {
             if (currentIndex >= 0) {
-                selectNode(document.activeElement);
+                selectNode(renderedNodes[currentIndex].id);
             }
 
             return;
@@ -145,17 +164,18 @@ function renderBlueprint(root, configuration) {
 
         const direction = ['ArrowLeft', 'ArrowUp'].includes(event.key) ? -1 : 1;
         const nextIndex = (currentIndex + direction + renderedNodes.length) % renderedNodes.length;
-        renderedNodes.forEach((node, index) => node.setAttribute('tabindex', index === nextIndex ? '0' : '-1'));
-        renderedNodes[nextIndex].focus();
+        renderedNodes.forEach(({ control }, index) => control.setAttribute('tabindex', index === nextIndex ? '0' : '-1'));
+        renderedNodes[nextIndex].control.focus();
     };
 
     canvas.addEventListener('click', onClick);
-    canvas.addEventListener('keydown', onKeydown);
+    controls.addEventListener('keydown', onKeydown);
     root.dataset.daisyKitState = 'ready';
 
     return () => {
         canvas.removeEventListener('click', onClick);
-        canvas.removeEventListener('keydown', onKeydown);
+        controls.removeEventListener('keydown', onKeydown);
+        controls.remove();
         canvas.replaceChildren();
     };
 }

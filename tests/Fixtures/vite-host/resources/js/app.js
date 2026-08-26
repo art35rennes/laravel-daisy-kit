@@ -7,10 +7,13 @@ import { mountAll as mountTable } from '@daisy-kit/table.js';
 import '@daisy-kit/tree.css';
 import { mountAll as mountTree } from '@daisy-kit/tree.js';
 import '@daisy-kit/blueprint.css';
-import { mountAll as mountBlueprint } from '@daisy-kit/blueprint.js';
+import { mount as mountBlueprint } from '@daisy-kit/blueprint.js';
 import '@daisy-kit/file-preview.css';
-import { mountAll as mountFilePreview } from '@daisy-kit/file-preview.js';
+import { mount as mountFilePreview } from '@daisy-kit/file-preview.js';
 import '@daisy-kit/map.css';
 import { mountAll as mountMap } from '@daisy-kit/map.js';
 
-void [mountFormsViewer, mountFormsBuilder, mountTable, mountTree, mountBlueprint, mountFilePreview, mountMap];
+void [mountFormsViewer, mountFormsBuilder, mountTable, mountTree, mountMap];
+
+mountBlueprint(document.querySelector('[data-daisy-kit-module="blueprint"]'));
+mountFilePreview(document.querySelector('[data-daisy-kit-module="file-preview"]'));

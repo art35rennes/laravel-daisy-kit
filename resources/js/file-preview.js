@@ -1,5 +1,4 @@
 import '../css/file-preview.css';
-import frameUrl from '../file-preview-frame.html?url';
 import { createMountable } from './core/mountable.js';
 
 const defaultMaximumBytes = 5 * 1024 * 1024;
@@ -7,6 +6,10 @@ const absoluteMaximumBytes = 10 * 1024 * 1024;
 const frameReadyTimeout = 10_000;
 const frameChannel = 'daisy-kit:file-preview:frame';
 const supportedTypes = new Set(['docx', 'image', 'text']);
+const frameAssets = [
+    new URL('./file-preview-frame-bootstrap.js', import.meta.url),
+    new URL('../../.tmp/file-preview-frame/file-preview-frame.js', import.meta.url),
+];
 
 function emit(root, name, detail = {}) {
     root.dispatchEvent(new CustomEvent(`daisy-kit:file-preview:${name}`, { bubbles: true, detail }));
@@ -52,11 +55,23 @@ function validContentType(type, contentType) {
     return mime === 'text/plain';
 }
 
-function frameSource(token) {
-    const url = new URL(frameUrl, window.location.href);
-    url.hash = new URLSearchParams({ token }).toString();
+function frameDocument(token) {
+    const scriptSources = [...new Set(frameAssets.map((asset) => asset.origin))].join(' ');
+    const [bootstrap, renderer] = frameAssets.map((asset) => asset.href);
 
-    return url.toString();
+    return `<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; connect-src 'none'; form-action 'none'; frame-ancestors 'self'; img-src data: blob:; font-src data: blob:; media-src 'none'; object-src 'none'; script-src-attr 'none'; script-src-elem ${scriptSources}; style-src 'unsafe-inline'">
+    <title>File preview</title>
+</head>
+<body>
+    <main data-daisy-kit-file-preview-output data-daisy-kit-file-preview-token="${token}"></main>
+    <script src="${bootstrap}"></script>
+    <script src="${renderer}"></script>
+</body>
+</html>`;
 }
 
 function setVisible(element, visible) {
@@ -181,7 +196,7 @@ function initializeFilePreview(root, configuration) {
     }
 
     window.addEventListener('message', onMessage);
-    frame.src = frameSource(frameToken);
+    frame.srcdoc = frameDocument(frameToken);
 
     void (async () => {
         try {
@@ -207,7 +222,7 @@ function initializeFilePreview(root, configuration) {
         window.clearTimeout(readyTimeout);
         window.clearTimeout(renderTimeout);
         window.removeEventListener('message', onMessage);
-        frame.removeAttribute('src');
+        frame.removeAttribute('srcdoc');
         setVisible(frame, false);
         payload = null;
     };

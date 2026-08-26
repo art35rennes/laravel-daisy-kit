@@ -14,9 +14,20 @@
     cursor: pointer;
 }
 
-[data-daisy-kit-module='blueprint'] [data-daisy-kit-blueprint-node]:focus rect,
+[data-daisy-kit-module='blueprint'] [data-daisy-kit-blueprint-node][data-daisy-kit-selected] rect,
 [data-daisy-kit-module='blueprint'] [data-daisy-kit-blueprint-node]:hover rect {
     stroke-width: 3;
+}
+
+[data-daisy-kit-module='blueprint'] [data-daisy-kit-blueprint-controls] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-block-start: 0.5rem;
+}
+
+[data-daisy-kit-module='blueprint'] [data-daisy-kit-blueprint-node-control][aria-pressed='true'] {
+    font-weight: 700;
 }
 
 [data-daisy-kit-module='blueprint'] [data-daisy-kit-blueprint-node] rect {

@@ -9,7 +9,7 @@ export default defineConfig({
         manifest: true,
         outDir: 'build',
         rollupOptions: {
-            input: resolve(__dirname, 'resources/js/app.js'),
+            input: resolve(__dirname, 'index.html'),
         },
     },
     resolve: {

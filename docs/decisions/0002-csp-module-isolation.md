@@ -20,14 +20,17 @@ browser's violations rather than inspecting a final DOM snapshot.
 is first verified under that same policy; a real violation requires replacing the map engine with
 the documented MapLibre + Terra Draw integration and its narrow worker/image directives.
 
-Untrusted document previews are rendered only in a separately loaded iframe with `sandbox`
-without `allow-same-origin`; its child policy permits only its two same-origin external scripts,
-data/blob media and the document renderer's inline styles. It denies connections, forms and
-navigation. An opaque sandbox origin emits `message` events with `origin === 'null'`, so the
-parent authenticates every message by both `event.source === iframe.contentWindow` and a random
-per-instance token. Sending back to an opaque origin necessarily uses `targetOrigin: '*'`; no
-weaker trust decision is made from that value. The parent validates source, type and size, aborts
-requests on unmount, and removes the frame and message listener.
+Untrusted document previews are rendered only in a `srcdoc` iframe with `sandbox` without
+`allow-same-origin`. The static `import.meta.url` references in the File Preview entry make Vite
+emit the bootstrap and renderer chunks into the host build; this requires neither a package route,
+a proxy, an asset copy, nor a publish step. The child policy permits only those external
+same-origin scripts, data/blob media and the document renderer's inline styles. It denies
+connections, forms and navigation. An opaque sandbox origin emits `message` events with
+`origin === 'null'`, so the parent authenticates every message by both
+`event.source === iframe.contentWindow` and a random per-instance token. Sending back to an
+opaque origin necessarily uses `targetOrigin: '*'`; no weaker trust decision is made from that
+value. The parent validates source, type and size, aborts requests on unmount, and removes the
+frame and message listener.
 
 ## Sources
 

@@ -1,4 +1,8 @@
 {
+  ".tmp/file-preview-frame/file-preview-frame.js": {
+    "file": "file-preview-frame.js",
+    "src": ".tmp/file-preview-frame/file-preview-frame.js"
+  },
   "_mountable-D1lQW1nF.js": {
     "file": "chunks/mountable-D1lQW1nF.js",
     "name": "mountable"
@@ -7,9 +11,17 @@
     "file": "chunks/rolldown-runtime-BHe-jwch.js",
     "name": "rolldown-runtime"
   },
-  "resources/file-preview-frame.html": {
-    "file": "file-preview-frame.html",
-    "src": "resources/file-preview-frame.html"
+  "node_modules/leaflet/dist/images/layers-2x.png": {
+    "file": "layers-2x.png",
+    "src": "node_modules/leaflet/dist/images/layers-2x.png"
+  },
+  "node_modules/leaflet/dist/images/layers.png": {
+    "file": "layers.png",
+    "src": "node_modules/leaflet/dist/images/layers.png"
+  },
+  "node_modules/leaflet/dist/images/marker-icon.png": {
+    "file": "marker-icon.png",
+    "src": "node_modules/leaflet/dist/images/marker-icon.png"
   },
   "resources/js/blueprint.js": {
     "file": "blueprint.js",
@@ -25,9 +37,7 @@
   },
   "resources/js/file-preview-frame-bootstrap.js": {
     "file": "file-preview-frame-bootstrap.js",
-    "name": "file-preview-frame-bootstrap",
-    "src": "resources/js/file-preview-frame-bootstrap.js",
-    "isEntry": true
+    "src": "resources/js/file-preview-frame-bootstrap.js"
   },
   "resources/js/file-preview.js": {
     "file": "file-preview.js",
@@ -41,7 +51,8 @@
       "file-preview.css"
     ],
     "assets": [
-      "file-preview-frame.html"
+      "file-preview-frame-bootstrap.js",
+      "file-preview-frame.js"
     ]
   },
   "resources/js/forms/builder.js": {
@@ -80,6 +91,11 @@
     ],
     "css": [
       "map.css"
+    ],
+    "assets": [
+      "layers.png",
+      "layers-2x.png",
+      "marker-icon.png"
     ]
   },
   "resources/js/table.js": {

@@ -20,7 +20,7 @@ function root(configuration) {
 
 function frameMessage(element, message, source = null, origin = 'null') {
     const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
-    const token = new URL(frame.src).hashParams?.get('token') ?? new URL(frame.src).hash.slice(1).replace('token=', '');
+    const token = frame.srcdoc.match(/data-daisy-kit-file-preview-token="([a-f0-9]+)"/)?.[1];
 
     window.dispatchEvent(new MessageEvent('message', {
         data: { channel: 'daisy-kit:file-preview:frame', token, ...message },
@@ -58,7 +58,7 @@ describe('file preview entry', () => {
 
         unmount(element);
 
-        expect(frame.getAttribute('src')).toBeNull();
+        expect(frame.getAttribute('srcdoc')).toBeNull();
     });
 
     it('accepts an opaque-origin ready message only from its frame with its token', async () => {
@@ -72,7 +72,7 @@ describe('file preview entry', () => {
         await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
         const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
         const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
-        const token = new URL(frame.src).hash.slice(1).replace('token=', '');
+        const token = frame.srcdoc.match(/data-daisy-kit-file-preview-token="([a-f0-9]+)"/)?.[1];
 
         frameMessage(element, { token: 'a'.repeat(32), type: 'ready' });
         frameMessage(element, { type: 'ready' }, window);
@@ -101,7 +101,7 @@ describe('file preview entry', () => {
         mount(element);
         const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
         const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
-        const token = new URL(frame.src).hash.slice(1).replace('token=', '');
+        const token = frame.srcdoc.match(/data-daisy-kit-file-preview-token="([a-f0-9]+)"/)?.[1];
         unmount(element);
         window.dispatchEvent(new MessageEvent('message', {
             data: { channel: 'daisy-kit:file-preview:frame', token, type: 'ready' },
@@ -110,7 +110,7 @@ describe('file preview entry', () => {
         }));
 
         expect(postMessage).not.toHaveBeenCalled();
-        expect(frame.getAttribute('src')).toBeNull();
+        expect(frame.getAttribute('srcdoc')).toBeNull();
     });
 
     it('keeps opaque-origin handshakes isolated between multiple instances', async () => {
@@ -182,6 +182,6 @@ describe('file preview entry', () => {
         await Promise.resolve();
 
         expect(element.dataset.daisyKitState).toBeUndefined();
-        expect(frame.getAttribute('src')).toBeNull();
+        expect(frame.getAttribute('srcdoc')).toBeNull();
     });
 });

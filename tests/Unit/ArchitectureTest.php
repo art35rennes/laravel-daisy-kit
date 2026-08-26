@@ -105,3 +105,19 @@ it('documents the Vite alias for Composer-installed module entries', function ()
         ->toContain('@daisy-kit/map.css')
         ->not->toMatch($fakeNpmImport);
 });
+
+it('keeps File Preview frame helpers relative to its Vite entry', function (): void {
+    $entry = (string) file_get_contents(packagePath('resources/js/file-preview.js'));
+    $distribution = (string) file_get_contents(packagePath('dist/file-preview.js'));
+
+    expect($entry)
+        ->toContain("new URL('./file-preview-frame-bootstrap.js', import.meta.url)")
+        ->toContain("new URL('../../.tmp/file-preview-frame/file-preview-frame.js', import.meta.url)")
+        ->not->toContain("'/file-preview-frame.html'");
+
+    expect($distribution)
+        ->toContain('file-preview-frame-bootstrap.js')
+        ->toContain('file-preview-frame.js')
+        ->not->toContain('/file-preview-frame.html')
+        ->not->toContain('data:text/javascript');
+});

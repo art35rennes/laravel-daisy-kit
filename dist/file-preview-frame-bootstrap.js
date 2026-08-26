@@ -1,1 +1,21 @@
-var e=`daisy-kit:file-preview:frame`,t=new URLSearchParams(location.hash.slice(1)).get(`token`);function n(n){return n.source===window.parent&&n.data&&n.data.channel===e&&n.data.token===t&&n.data.type===`render`}window.addEventListener(`message`,e=>{n(e)&&document.dispatchEvent(new CustomEvent(`daisy-kit:file-preview:render`,{detail:e.data}))}),window.addEventListener(`load`,()=>{document.documentElement.dataset.daisyKitFilePreviewFrame=`ready`,window.parent.postMessage({channel:e,token:t,type:`ready`},`*`)},{once:!0});
+const channel = 'daisy-kit:file-preview:frame';
+const token = document.querySelector('[data-daisy-kit-file-preview-token]')?.dataset.daisyKitFilePreviewToken;
+
+function validMessage(event) {
+    return event.source === window.parent
+        && event.data
+        && event.data.channel === channel
+        && event.data.token === token
+        && event.data.type === 'render';
+}
+
+window.addEventListener('message', (event) => {
+    if (!validMessage(event)) return;
+
+    document.dispatchEvent(new CustomEvent('daisy-kit:file-preview:render', { detail: event.data }));
+});
+
+window.addEventListener('load', () => {
+    document.documentElement.dataset.daisyKitFilePreviewFrame = 'ready';
+    window.parent.postMessage({ channel, token, type: 'ready' }, '*');
+}, { once: true });

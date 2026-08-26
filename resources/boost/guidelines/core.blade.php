@@ -15,7 +15,8 @@ or make one module load another implicitly. Listen only to `daisy-kit:{module}:*
 
 Configuration is escaped, non-executable JSON. Preserve the modular CSP boundary: no inline
 script, handler, view-authored style attribute, or view-authored style block. File Preview keeps
-untrusted document rendering in its sandboxed child frame.
+untrusted document rendering in its sandboxed child frame; its auxiliary chunks are emitted by
+the explicit Vite entry and need no route, proxy, copy, or published asset.
 
 There is no compatibility layer, alias namespace, asset publication, route, or host template.
 For implementation and verification details, activate the `laravel-daisy-kit-development` skill.

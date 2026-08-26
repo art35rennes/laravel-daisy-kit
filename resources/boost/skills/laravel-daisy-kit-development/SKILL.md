@@ -67,9 +67,11 @@ an accessible error state. Do not add inline scripts, handlers, executable confi
 `eval`, inline styles, or template-authored `<style>` blocks.
 
 The host policy remains strict for the core modules. File Preview handles untrusted documents in
-a separately loaded sandboxed iframe without `allow-same-origin`; keep document scripts, forms,
-navigation, and unnecessary network access disabled. Validate file type and size, and release
-frames, listeners, requests, and renderer resources on destruction.
+a `srcdoc` sandboxed iframe without `allow-same-origin`; its two external child chunks are emitted
+by Vite from the `@daisy-kit/file-preview.js` import, so do not add a route, proxy, copy step, or
+asset publication. Keep document scripts, forms, navigation, and unnecessary network access
+disabled. Validate file type and size, and release frames, listeners, requests, and renderer
+resources on destruction.
 
 ## Verification
 

@@ -12,10 +12,9 @@
 
     <div data-daisy-kit-content>
         <svg
-            aria-label="{{ $label }}"
+            aria-hidden="true"
             data-daisy-kit-blueprint-canvas
-            role="img"
-            tabindex="0"
+            focusable="false"
         ></svg>
         <p data-daisy-kit-empty hidden>No blueprint nodes are available.</p>
     </div>

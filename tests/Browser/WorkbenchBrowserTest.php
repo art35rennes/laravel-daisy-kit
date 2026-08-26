@@ -30,6 +30,19 @@ it('mounts the map without a browser CSP violation', function (): void {
         ->assertNoSmoke();
 })->group('browser');
 
+it('keeps Blueprint controls outside its inert SVG and supports keyboard selection', function (): void {
+    $this->visit('/')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->wait(1)
+        ->assertNoSmoke()
+        ->assertNoAccessibilityIssues(1)
+        ->assertScript("(() => { const svg = document.querySelector('[data-daisy-kit-blueprint-canvas]'); return svg.getAttribute('aria-hidden') === 'true' && !svg.hasAttribute('role') && !svg.hasAttribute('tabindex') && svg.querySelectorAll('[role=button], [tabindex]').length === 0; })()")
+        ->keys('[data-daisy-kit-blueprint-node-control][data-node-id="source"]', 'ArrowRight')
+        ->assertScript("document.activeElement?.dataset.nodeId === 'destination'")
+        ->keys('[data-daisy-kit-blueprint-node-control][data-node-id="destination"]', 'Enter')
+        ->assertScript("document.querySelector('[data-daisy-kit-blueprint-node-control][data-node-id=destination]').getAttribute('aria-pressed') === 'true'");
+})->group('browser');
+
 it('isolates the file preview without a host CSP exception', function (): void {
     $this->visit('/_daisy-kit-test/csp/file-preview')
         ->assertSee('Daisy Kit CSP File Preview')
