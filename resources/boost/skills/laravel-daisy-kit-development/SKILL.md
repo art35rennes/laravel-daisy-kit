@@ -60,11 +60,25 @@ Each entry independently exposes `mount(root)`, `mountAll(scope = document)`, an
 observers, and third-party instances on unmount. Do not create globals or implicit imports
 between modules. Public events use only `daisy-kit:{module}:*`.
 
+## Product outcomes
+
+Treat `docs/specs/v5-product-contract-matrix.md` as the package's single business-contract
+oracle. A module is not complete merely because it reaches `ready`: test the user outcome.
+Forms share one recursive schema between Viewer and the optional Livewire 4 Builder; Table and
+Tree preserve data-selection workflows; Blueprint preserves an accessible editor and synchronized
+JSON; File Preview preserves isolated media/document actions; Map preserves editable layers and
+spatial tools. Keep generic DaisyUI primitives in the host rather than reintroducing wrappers.
+
 ## Configuration and CSP
 
 Pass complex component configuration as escaped, non-executable JSON; reject invalid JSON with
 an accessible error state. Do not add inline scripts, handlers, executable configuration,
 `eval`, inline styles, or template-authored `<style>` blocks.
+
+Do not assume `crypto.randomUUID()` exists on an HTTP development origin. Use the shared
+instance identifier helper for DOM identity and preserve a structured error event when module
+initialization fails. File Preview still authenticates its opaque-origin child by both frame
+source and a per-instance token; never add `allow-same-origin`.
 
 The host policy remains strict for the core modules. File Preview handles untrusted documents in
 a `srcdoc` sandboxed iframe without `allow-same-origin`; its two external child chunks are emitted

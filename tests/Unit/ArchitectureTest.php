@@ -64,7 +64,8 @@ it('ships concise Laravel Boost resources for package consumers', function (): v
         ->toContain('x-daisy-kit::forms.viewer')
         ->toContain('`mount(root)`, `mountAll(scope = document)`, and `unmount(root)`')
         ->toContain('daisy-kit:{module}:*')
-        ->toContain('CSP');
+        ->toContain('CSP')
+        ->toContain('v5-product-contract-matrix.md');
 
     expect($skill)
         ->toStartWith("---\nname: laravel-daisy-kit-development\n")
@@ -72,7 +73,9 @@ it('ships concise Laravel Boost resources for package consumers', function (): v
         ->toContain('Pest 5')
         ->toContain('Test Impact Analysis')
         ->toContain('laravel-best-practices')
-        ->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|codemirror|trix|gridstack|vendor:publish/i');
+        ->toContain('v5-product-contract-matrix.md')
+        ->toContain('crypto.randomUUID()')
+        ->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|codemirror|\\btrix\\b|gridstack|vendor:publish/i');
 });
 
 it('documents the Vite alias for Composer-installed module entries', function (): void {
