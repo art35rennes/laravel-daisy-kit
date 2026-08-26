@@ -133,6 +133,7 @@ try {
 
     const buildRoot = resolve(hostRoot, 'build');
     const axeSource = readFileSync(resolve(repositoryRoot, 'vendor/pestphp/pest-plugin-browser/resources/js/axe.min.js'), 'utf8');
+    writeFileSync(resolve(buildRoot, 'axe.min.js'), axeSource);
     const responses = [];
     const consoleErrors = [];
     server = await startHost(buildRoot);
@@ -264,7 +265,7 @@ try {
         throw new Error('File Preview did not use Vite-emitted frame chunks from the host build.');
     }
 
-    await page.addScriptTag({ content: axeSource });
+    await page.addScriptTag({ url: new URL('/axe.min.js', url).href });
     const violations = await page.evaluate(async () => {
         const result = await window.axe.run();
 
