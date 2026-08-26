@@ -12,3 +12,41 @@
     display: grid;
     gap: 0.375rem;
 }
+
+[data-daisy-kit-module="forms-builder"] .daisy-kit-forms-builder-livewire {
+    display: grid;
+    gap: 1rem;
+}
+
+[data-daisy-kit-module="forms-builder"] .daisy-kit-forms-builder-livewire__toolbar,
+[data-daisy-kit-module="forms-builder"] .daisy-kit-forms-builder-livewire__history,
+[data-daisy-kit-module="forms-builder"] .daisy-kit-forms-builder-livewire__catalogue {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+[data-daisy-kit-module="forms-builder"] .daisy-kit-forms-builder-livewire__workspace {
+    display: grid;
+    gap: 1rem;
+}
+
+[data-daisy-kit-module="forms-builder"] [data-daisy-kit-builder-field],
+[data-daisy-kit-module="forms-builder"] [data-daisy-kit-builder-inspector],
+[data-daisy-kit-module="forms-builder"] [data-daisy-kit-builder-json],
+[data-daisy-kit-module="forms-builder"] [data-daisy-kit-builder-diagnostics] {
+    border: 1px solid currentColor;
+    padding: 0.75rem;
+}
+
+[data-daisy-kit-module="forms-builder"] [data-daisy-kit-builder-inspector] textarea,
+[data-daisy-kit-module="forms-builder"] [data-daisy-kit-builder-json] textarea {
+    min-block-size: 7rem;
+    resize: vertical;
+}
+
+@media (min-width: 48rem) {
+    [data-daisy-kit-module="forms-builder"] .daisy-kit-forms-builder-livewire__workspace {
+        grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.8fr);
+    }
+}
