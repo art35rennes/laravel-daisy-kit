@@ -61,7 +61,10 @@ are not tracked.
 `composer test:full` always runs the complete Pest suite, including the Workbench browser check,
 with TIA disabled. `composer test:tia`
 uses Pest 5 Test Impact Analysis for local iteration; its graph and cached results live under
-the ignored `tests/.pest/` directory. CI records a separate baseline artifact after full checks.
+the ignored `tests/.pest/` directory. TIA is deliberately serial because the suite includes a
+real Testbench browser test with its own HTTP server; this prevents parallel workers from
+racing that server while recording every test in the graph. CI records a fresh, complete
+baseline artifact. `composer test:full` remains the cache-independent release gate.
 
 ## Status
 
