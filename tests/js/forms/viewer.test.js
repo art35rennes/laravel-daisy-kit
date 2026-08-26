@@ -175,6 +175,52 @@ describe('forms viewer', () => {
         expect(noneSubmission.defaultPrevented).toBe(true);
     });
 
+    it('submits a valid fetch form as multipart data and reports native validation errors first', async () => {
+        const fetch = vi.fn().mockResolvedValue({ ok: true, status: 202 });
+        vi.stubGlobal('fetch', fetch);
+        const root = viewerRoot(JSON.stringify({
+            schema: {
+                submit: { mode: 'fetch', action: '/profiles', method: 'PATCH' },
+                fields: [
+                    { name: 'email', type: 'email', required: true },
+                    { name: 'attachment', type: 'file' },
+                ],
+            },
+            value: { email: 'ada@example.test' },
+        }));
+        const submitted = [];
+        const errors = [];
+        root.addEventListener('daisy-kit:forms-viewer:submitted', (event) => submitted.push(event.detail));
+        root.addEventListener('daisy-kit:forms-viewer:error', (event) => errors.push(event.detail));
+
+        await mount(root);
+        const form = root.querySelector('form');
+        const fileInput = root.querySelector('input[name="attachment"]');
+        const file = new File(['report'], 'report.txt', { type: 'text/plain' });
+        Object.defineProperty(fileInput, 'files', { value: [file] });
+
+        form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        await settle();
+
+        expect(fetch).toHaveBeenCalledWith('/profiles', expect.objectContaining({
+            body: expect.any(FormData),
+            method: 'PATCH',
+        }));
+        expect(submitted).toEqual([expect.objectContaining({ mode: 'fetch', status: 202 })]);
+
+        unmount(root);
+        const invalidRoot = viewerRoot(JSON.stringify({
+            schema: { submit: { mode: 'fetch', action: '/profiles' }, fields: [{ name: 'email', type: 'email', required: true }] },
+        }));
+        invalidRoot.addEventListener('daisy-kit:forms-viewer:error', (event) => errors.push(event.detail));
+        await mount(invalidRoot);
+        invalidRoot.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        await settle();
+
+        expect(fetch).toHaveBeenCalledTimes(1);
+        expect(errors).toContainEqual({ reason: 'validation-failed' });
+    });
+
     it('remounts explicitly when the optional Livewire adapter receives a navigation event', async () => {
         const root = viewerRoot(JSON.stringify({
             schema: { fields: [{ name: 'name', label: 'Name', type: 'text' }] },

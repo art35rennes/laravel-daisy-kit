@@ -4,9 +4,9 @@ import '../../css/forms-viewer.css';
 import { createInstanceIdentifier } from '../core/identifiers.js';
 import { createMountable, installLivewireAdapter as createLivewireAdapter } from '../core/mountable.js';
 
-const controlTypes = new Set(['checkbox', 'date', 'email', 'number', 'radio', 'select', 'textarea', 'text']);
+const controlTypes = new Set(['checkbox', 'date', 'email', 'file', 'number', 'radio', 'select', 'textarea', 'text']);
 const containerTypes = new Set(['section', 'wizardStep']);
-const submitModes = new Set(['event', 'html', 'none']);
+const submitModes = new Set(['event', 'fetch', 'html', 'none']);
 
 function emit(root, name, detail = {}) {
     root.dispatchEvent(new CustomEvent(`daisy-kit:forms-viewer:${name}`, { bubbles: true, detail }));
@@ -44,6 +44,10 @@ function setStatus(root, message, state) {
 }
 
 function setInputValue(input, field, value) {
+    if (fieldType(field) === 'file') {
+        return;
+    }
+
     if (fieldType(field) === 'checkbox') {
         input.checked = value === true;
 
@@ -398,7 +402,7 @@ function initialize(root, configuration) {
         void refreshVisibility();
     }
 
-    const onSubmit = (event) => {
+    const onSubmit = async (event) => {
         if (readonly || mode === 'none') {
             event.preventDefault();
 
@@ -411,6 +415,36 @@ function initialize(root, configuration) {
 
         event.preventDefault();
         syncValues(root, context.entries, values);
+
+        if (! form.checkValidity()) {
+            form.reportValidity();
+            emit(root, 'error', { reason: 'validation-failed' });
+
+            return;
+        }
+
+        if (mode === 'fetch') {
+            const action = typeof configuration.schema?.submit?.action === 'string'
+                ? configuration.schema.submit.action
+                : form.action;
+            const method = typeof configuration.schema?.submit?.method === 'string'
+                ? configuration.schema.submit.method
+                : 'POST';
+
+            try {
+                const response = await fetch(action, {
+                    body: new FormData(form),
+                    method,
+                });
+
+                emit(root, 'submitted', { mode, status: response.status, values: { ...values } });
+            } catch {
+                emit(root, 'error', { reason: 'submission-failed' });
+            }
+
+            return;
+        }
+
         emit(root, 'submitted', { mode, values: { ...values } });
     };
 
