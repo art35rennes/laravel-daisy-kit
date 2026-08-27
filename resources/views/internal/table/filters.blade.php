@@ -1,0 +1,42 @@
+@if ($tableView['filters'] !== [])
+    <fieldset class="daisy-kit-table__filters">
+        <legend class="daisy-kit-table__filters-title">{{ __('Filters') }}</legend>
+
+        @foreach ($tableView['filters'] as $filter)
+            @php
+                $filterId = is_string($filter['id'] ?? null) ? $filter['id'] : '';
+                $filterLabel = is_string($filter['label'] ?? null) ? $filter['label'] : $filterId;
+                $filterType = is_string($filter['type'] ?? null) ? $filter['type'] : 'text';
+            @endphp
+
+            <label class="form-control" @if ($filterId !== '') data-daisy-kit-table-filter-field="{{ $filterId }}" @endif>
+                <span class="label-text">{{ $filterLabel }}</span>
+
+                @if ($filterType === 'boolean')
+                    <select class="select select-bordered select-sm" data-daisy-kit-table-filter="{{ $filterId }}">
+                        <option value="">{{ __('All') }}</option>
+                        <option value="true">{{ __('Yes') }}</option>
+                        <option value="false">{{ __('No') }}</option>
+                    </select>
+                @elseif ($filterType === 'select')
+                    <select class="select select-bordered select-sm" data-daisy-kit-table-filter="{{ $filterId }}">
+                        <option value="">{{ __('All') }}</option>
+                        @foreach (($filter['options'] ?? []) as $option)
+                            @php
+                                $optionValue = is_array($option) ? ($option['value'] ?? '') : $option;
+                                $optionLabel = is_array($option) ? ($option['label'] ?? $optionValue) : $option;
+                            @endphp
+                            <option value="{{ $optionValue }}">{{ $optionLabel }}</option>
+                        @endforeach
+                    </select>
+                @else
+                    <input
+                        class="input input-bordered input-sm"
+                        data-daisy-kit-table-filter="{{ $filterId }}"
+                        type="{{ in_array($filterType, ['date', 'number'], true) ? $filterType : 'search' }}"
+                    >
+                @endif
+            </label>
+        @endforeach
+    </fieldset>
+@endif

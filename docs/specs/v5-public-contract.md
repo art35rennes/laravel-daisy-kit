@@ -46,6 +46,18 @@ inline handler, executable script, or `style` attribute.
 Forms Builder emits `visibleWhen` and `computed` JSONata expressions in the canonical descriptor
 shape `{ "type": "jsonata", "expression": "…" }`. Forms Viewer accepts this shape only.
 
+### Table configuration
+
+`x-daisy-kit::table` is the only public table component. Its product vocabulary is based on v4:
+`mode`/`endpoint`, keyed `columns`, `rows`, typed `filters`, `search`, `pageSizeOptions`,
+`columnVisibility`, `selection`/`rowKey`, `persistState`/`stateKey`, presentation options, row
+actions/details and editing. The corrective line does not preserve the smaller v5 alpha dialect.
+
+The package normalizes this data in PHP before emitting CSP-safe JSON. Internal toolbar, filter,
+selection, table and pagination views live outside the anonymous component namespace and are not
+public aliases. The runtime remains TanStack v9 with explicit `mount`, `mountAll`, and `unmount`,
+instance-local state and `daisy-kit:table:*` events.
+
 ## Corrective development line
 
 The corrective development contract deliberately has no compatibility layer for v5.0.0 or its

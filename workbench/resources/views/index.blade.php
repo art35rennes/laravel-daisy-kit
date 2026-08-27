@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Daisy Kit v5 Workbench</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -38,18 +39,93 @@
             />
         </section>
 
-        <section class="min-w-0" aria-labelledby="table-heading">
+        <section class="min-w-0 space-y-6" aria-labelledby="table-heading">
             <h2 id="table-heading">Table</h2>
+
+            <h3 id="table-client-heading">Client directory</h3>
             <x-daisy-kit::table
                 :columns="[
-                    ['id' => 'name', 'label' => 'Name'],
-                    ['id' => 'status', 'label' => 'Status'],
+                    ['key' => 'name', 'label' => 'Name', 'sortable' => true],
+                    ['key' => 'team', 'label' => 'Team', 'sortable' => true],
+                    ['key' => 'status', 'label' => 'Status', 'sortable' => true],
                 ]"
                 :rows="[
-                    ['id' => 'ada', 'name' => 'Ada Lovelace', 'status' => 'Ready'],
-                    ['id' => 'grace', 'name' => 'Grace Hopper', 'status' => 'Review'],
+                    ['id' => 'ada', 'name' => 'Ada Lovelace', 'team' => 'Platform', 'status' => 'ready'],
+                    ['id' => 'grace', 'name' => 'Grace Hopper', 'team' => 'Infrastructure', 'status' => 'review'],
+                    ['id' => 'margaret', 'name' => 'Margaret Hamilton', 'team' => 'Flight software', 'status' => 'ready'],
+                    ['id' => 'katherine', 'name' => 'Katherine Johnson', 'team' => 'Research', 'status' => 'paused'],
                 ]"
-                :selectable="true"
+                :filters="[[
+                    'id' => 'status',
+                    'label' => 'Status',
+                    'type' => 'select',
+                    'options' => [
+                        ['value' => 'ready', 'label' => 'Ready'],
+                        ['value' => 'review', 'label' => 'Review'],
+                        ['value' => 'paused', 'label' => 'Paused'],
+                    ],
+                ]]"
+                :page-size="2"
+                :page-size-options="[2, 4, 10]"
+                caption="People directory"
+                state-key="workbench-client-directory"
+                persist-state="url"
+            />
+
+            <h3 id="table-server-heading">Server queue and bulk selection</h3>
+            <x-daisy-kit::table
+                mode="server"
+                :endpoint="route('workbench.table.rows')"
+                :columns="[
+                    ['key' => 'reference', 'label' => 'Reference'],
+                    ['key' => 'customer', 'label' => 'Customer'],
+                    ['key' => 'priority', 'label' => 'Priority'],
+                    ['key' => 'status', 'label' => 'Status'],
+                ]"
+                selection="multiple"
+                row-key="id"
+                :bulk-actions="[
+                    ['id' => 'assign', 'label' => 'Assign selected'],
+                    ['id' => 'close', 'label' => 'Close selected'],
+                ]"
+                :page-size="3"
+                :page-size-options="[3, 6, 12]"
+                caption="Support queue"
+            />
+
+            <h3 id="table-details-heading">Contextual details</h3>
+            <x-daisy-kit::table
+                :columns="[
+                    ['key' => 'service', 'label' => 'Service'],
+                    ['key' => 'owner', 'label' => 'Owner'],
+                    ['key' => 'health', 'label' => 'Health'],
+                ]"
+                :rows="[
+                    ['id' => 'api', 'service' => 'Public API', 'owner' => 'Platform', 'health' => 'Operational', 'summary' => '12 instances across three regions. Last deployment succeeded.'],
+                    ['id' => 'worker', 'service' => 'Media workers', 'owner' => 'Content', 'health' => 'Degraded', 'summary' => 'Two delayed jobs. Automatic retry is in progress.'],
+                    ['id' => 'billing', 'service' => 'Billing gateway', 'owner' => 'Finance', 'health' => 'Operational', 'summary' => 'All payment providers are responding normally.'],
+                ]"
+                :row-details="['accessor' => 'summary', 'label' => 'Show details', 'mode' => 'inline']"
+                caption="Service health"
+            />
+
+            <h3 id="table-editing-heading">Inline editing</h3>
+            <x-daisy-kit::table
+                :columns="[
+                    ['key' => 'name', 'label' => 'Project'],
+                    ['key' => 'state', 'label' => 'State'],
+                    ['key' => 'owner', 'label' => 'Owner'],
+                ]"
+                :rows="[
+                    ['id' => 'atlas', 'name' => 'Atlas migration', 'state' => 'Review', 'owner' => 'Ada'],
+                    ['id' => 'relay', 'name' => 'Relay launch', 'state' => 'Draft', 'owner' => 'Grace'],
+                ]"
+                :editable="[
+                    'columns' => ['name', 'state', 'owner'],
+                    'endpoint' => url('/_daisy-kit-test/table/rows/{rowId}'),
+                    'method' => 'PATCH',
+                ]"
+                caption="Project planning"
             />
         </section>
 

@@ -36,25 +36,54 @@ function emit(root, name, detail) {
     root.dispatchEvent(new CustomEvent(`daisy-kit:table:${name}`, { bubbles: true, detail }));
 }
 
-function normalizeColumns(columns) {
+function normalizeColumns(columns, filters = []) {
     if (!Array.isArray(columns)) {
         return [];
     }
+
+    const standaloneFilters = new Map((Array.isArray(filters) ? filters : []).flatMap((filter) => {
+        if (!filter || Array.isArray(filter) || typeof filter !== 'object' || typeof filter.id !== 'string') {
+            return [];
+        }
+
+        return [[filter.id, filter]];
+    }));
 
     return columns.flatMap((column, index) => {
         if (!column || Array.isArray(column) || typeof column !== 'object') {
             return [];
         }
 
-        const id = typeof column.id === 'string' && column.id !== '' ? column.id : `column-${index}`;
+        const id = typeof column.key === 'string' && column.key !== ''
+            ? column.key
+            : (typeof column.id === 'string' && column.id !== '' ? column.id : `column-${index}`);
         const accessorKey = typeof column.accessor === 'string' && column.accessor !== '' ? column.accessor : id;
         const label = typeof column.label === 'string' && column.label !== '' ? column.label : id;
+        const configuredFilter = standaloneFilters.get(id);
         const filter = column.filter && typeof column.filter === 'object' && !Array.isArray(column.filter)
             ? column.filter
-            : null;
-        const filterType = ['number', 'select', 'text'].includes(filter?.type) ? filter.type : null;
+            : (configuredFilter ?? null);
+        const filterType = ['boolean', 'date', 'number', 'select', 'text'].includes(filter?.type) ? filter.type : null;
         const filterOptions = Array.isArray(filter?.options)
-            ? filter.options.filter((option) => typeof option === 'string' || typeof option === 'number').map(String)
+            ? filter.options.flatMap((option) => {
+                if (typeof option === 'string' || typeof option === 'number') {
+                    return [{ label: String(option), value: String(option) }];
+                }
+
+                if (!option || Array.isArray(option) || typeof option !== 'object') {
+                    return [];
+                }
+
+                const value = option.value;
+                if (typeof value !== 'string' && typeof value !== 'number') {
+                    return [];
+                }
+
+                return [{
+                    label: typeof option.label === 'string' ? option.label : String(value),
+                    value: String(value),
+                }];
+            })
             : [];
 
         return [{
@@ -62,12 +91,16 @@ function normalizeColumns(columns) {
             enableSorting: column.sortable !== false,
             filterFn: filterType === 'number'
                 ? (row, columnId, value) => value === '' || Number(row.getValue(columnId)) === Number(value)
-                : filterType === 'select'
+                : ['boolean', 'date', 'select'].includes(filterType)
                     ? (row, columnId, value) => value === '' || String(row.getValue(columnId)) === value
                     : filterType === 'text'
                         ? (row, columnId, value) => String(row.getValue(columnId)).toLocaleLowerCase().includes(String(value).toLocaleLowerCase())
                         : undefined,
-            meta: { filterOptions, filterType },
+            meta: {
+                filterOptions,
+                filterPlacement: column.filter ? 'column' : (configuredFilter ? 'toolbar' : null),
+                filterType,
+            },
             header: label,
             id,
             initialVisible: column.visible !== false,
@@ -89,6 +122,33 @@ function normalizePageSize(value) {
     }
 
     return Math.min(value, 100);
+}
+
+function matchesGlobalFilter(value, query, mode) {
+    const haystack = String(value ?? '').toLocaleLowerCase();
+    const needle = String(query ?? '').trim().toLocaleLowerCase();
+
+    if (needle === '' || haystack.includes(needle)) {
+        return true;
+    }
+
+    if (mode !== 'fuzzy') {
+        return false;
+    }
+
+    let position = 0;
+
+    for (const character of needle) {
+        position = haystack.indexOf(character, position);
+
+        if (position === -1) {
+            return false;
+        }
+
+        position += 1;
+    }
+
+    return true;
 }
 
 function normalizeRowActions(actions) {
@@ -266,6 +326,10 @@ function initialize(root, configuration) {
     const previousButton = root.querySelector('[data-daisy-kit-table-previous]');
     const nextButton = root.querySelector('[data-daisy-kit-table-next]');
     const page = root.querySelector('[data-daisy-kit-table-page]');
+    const pageSizeControl = root.querySelector('[data-daisy-kit-table-page-size]');
+    const results = root.querySelector('[data-daisy-kit-table-results]');
+    const selectionSummary = root.querySelector('[data-daisy-kit-table-selection]');
+    const selectionCount = root.querySelector('[data-daisy-kit-table-selection-count]');
 
     if (!content || !tableElement || !filter || !previousButton || !nextButton || !page) {
         updateStatus(root, 'This table is missing its required markup.');
@@ -283,14 +347,28 @@ function initialize(root, configuration) {
     page.classList.add('badge', 'badge-outline');
 
     const initialContent = content.innerHTML;
-    const source = normalizeSource(configuration.source);
-    const selectable = configuration.selectable === true;
+    const source = normalizeSource(configuration.mode === 'server' ? configuration.endpoint : null);
+    const selection = configuration.selection && !Array.isArray(configuration.selection) && typeof configuration.selection === 'object'
+        ? configuration.selection
+        : {};
+    const selectionMode = ['single', 'multiple'].includes(selection.mode)
+        ? selection.mode
+        : 'none';
+    const selectable = selectionMode !== 'none';
+    const rowKey = typeof selection.rowKey === 'string' && selection.rowKey !== '' ? selection.rowKey : 'id';
     const bulkActions = Array.isArray(configuration.bulkActions) ? configuration.bulkActions.filter((action) => action && typeof action.id === 'string' && typeof action.label === 'string') : [];
     const rowActions = normalizeRowActions(configuration.rowActions);
     const rowDetails = normalizeRowDetails(configuration.rowDetails);
     const editable = normalizeEditable(configuration.editable);
-    const persistence = normalizePersistence(configuration.persistence);
-    const columns = normalizeColumns(configuration.columns);
+    const persistence = normalizePersistence(configuration.persistState);
+    const columns = normalizeColumns(configuration.columns, configuration.filters);
+    const toolbarFilters = [...root.querySelectorAll('[data-daisy-kit-table-filter]')]
+        .filter((control) => control.dataset.daisyKitTableFilter !== '');
+    const searchDebounce = configuration.search && !Array.isArray(configuration.search) && typeof configuration.search === 'object'
+        && Number.isInteger(configuration.search.debounce)
+        ? Math.max(0, Math.min(configuration.search.debounce, 5000))
+        : 0;
+    const searchMode = configuration.search?.mode === 'fuzzy' ? 'fuzzy' : 'includes';
     const configuredState = configuration.initialState && !Array.isArray(configuration.initialState) && typeof configuration.initialState === 'object'
         ? configuration.initialState
         : {};
@@ -302,6 +380,7 @@ function initialize(root, configuration) {
     let editing = null;
     let requestSerial = 0;
     let active = true;
+    let searchTimer = null;
     let rows = normalizeRows(configuration.rows);
     let total = rows.length;
     const state = {
@@ -339,8 +418,10 @@ function initialize(root, configuration) {
     const table = constructTable({
         columns,
         data: rows,
+        enableMultiRowSelection: selectionMode === 'multiple',
         features: daisyKitTableFeatures,
-        getRowId: (row, index) => typeof row.id === 'string' || typeof row.id === 'number' ? String(row.id) : String(index),
+        getRowId: (row, index) => typeof row[rowKey] === 'string' || typeof row[rowKey] === 'number' ? String(row[rowKey]) : String(index),
+        globalFilterFn: (row, columnId, value) => matchesGlobalFilter(row.getValue(columnId), value, searchMode),
         manualFiltering: source !== null,
         manualPagination: source !== null,
         manualSorting: source !== null,
@@ -417,7 +498,7 @@ function initialize(root, configuration) {
 
     function updateRow(rowId, nextRow) {
         rows = rows.map((row, index) => {
-            const id = typeof row.id === 'string' || typeof row.id === 'number' ? String(row.id) : String(index);
+            const id = typeof row[rowKey] === 'string' || typeof row[rowKey] === 'number' ? String(row[rowKey]) : String(index);
 
             return id === rowId ? nextRow : row;
         });
@@ -445,10 +526,17 @@ function initialize(root, configuration) {
                 const endpoint = editable.endpoint.toString()
                     .replaceAll('{rowId}', encodeURIComponent(row.id))
                     .replaceAll('%7BrowId%7D', encodeURIComponent(row.id));
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const headers = { Accept: 'application/json', 'Content-Type': 'application/json' };
+
+                if (csrfToken && editable.endpoint.origin === window.location.origin) {
+                    headers['X-CSRF-TOKEN'] = csrfToken;
+                }
+
                 const response = await fetch(endpoint, {
                     body: JSON.stringify(payload),
                     credentials: 'same-origin',
-                    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+                    headers,
                     method: editable.method,
                     signal: editAbortController.signal,
                 });
@@ -494,7 +582,11 @@ function initialize(root, configuration) {
         body.replaceChildren();
         filter.value = state.globalFilter;
         let visibilityControls = content.querySelector('[data-daisy-kit-table-column-controls]');
-        if (!visibilityControls) {
+        if (configuration.columnVisibility === false) {
+            visibilityControls?.closest('details')?.remove();
+            visibilityControls?.remove();
+            visibilityControls = null;
+        } else if (!visibilityControls) {
             visibilityControls = document.createElement('fieldset');
             visibilityControls.className = 'fieldset border border-base-300 rounded-box p-3';
             visibilityControls.setAttribute('data-daisy-kit-table-column-controls', '');
@@ -503,7 +595,7 @@ function initialize(root, configuration) {
             visibilityControls.append(legend);
             tableElement.parentElement.insertAdjacentElement('beforebegin', visibilityControls);
         }
-        visibilityControls.replaceChildren(...[...table.getAllLeafColumns()].flatMap((column) => {
+        visibilityControls?.replaceChildren(...[...table.getAllLeafColumns()].flatMap((column) => {
             const label = document.createElement('label');
             const control = document.createElement('input');
             label.className = 'label gap-2';
@@ -526,6 +618,10 @@ function initialize(root, configuration) {
             label.append(control, document.createTextNode(String(column.columnDef.header ?? column.id)), pin);
             return [label];
         }));
+        toolbarFilters.forEach((control) => {
+            const activeFilter = state.columnFilters.find((item) => item.id === control.dataset.daisyKitTableFilter);
+            control.value = activeFilter?.value ?? '';
+        });
         let actions = content.querySelector('[data-daisy-kit-table-bulk-actions]');
         if (!actions && bulkActions.length > 0) {
             actions = document.createElement('div');
@@ -549,17 +645,21 @@ function initialize(root, configuration) {
 
         if (selectable) {
             const selectionHeader = document.createElement('th');
-            const selectAll = document.createElement('input');
-            selectAll.className = 'checkbox checkbox-sm';
-            selectAll.setAttribute('aria-label', 'Select all visible rows');
-            selectAll.checked = table.getIsAllPageRowsSelected();
-            selectAll.indeterminate = table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected();
-            selectAll.type = 'checkbox';
             selectionHeader.scope = 'col';
-            selectAll.addEventListener('change', () => {
-                table.toggleAllPageRowsSelected(selectAll.checked);
-            });
-            selectionHeader.append(selectAll);
+
+            if (selectionMode === 'multiple') {
+                const selectAll = document.createElement('input');
+                selectAll.className = 'checkbox checkbox-sm';
+                selectAll.setAttribute('aria-label', 'Select all visible rows');
+                selectAll.checked = table.getIsAllPageRowsSelected();
+                selectAll.indeterminate = table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected();
+                selectAll.type = 'checkbox';
+                selectAll.addEventListener('change', () => {
+                    table.toggleAllPageRowsSelected(selectAll.checked);
+                });
+                selectionHeader.append(selectAll);
+            }
+
             headerRow.append(selectionHeader);
         }
 
@@ -574,9 +674,7 @@ function initialize(root, configuration) {
 
             headerCell.scope = 'col';
 
-            if (sortDirection) {
-                headerCell.setAttribute('aria-sort', sortDirection === 'desc' ? 'descending' : 'ascending');
-            }
+            headerCell.setAttribute('aria-sort', sortDirection === 'desc' ? 'descending' : (sortDirection === 'asc' ? 'ascending' : 'none'));
 
             if (column.getCanSort()) {
                 const button = document.createElement('button');
@@ -612,9 +710,9 @@ function initialize(root, configuration) {
 
         table.getAllLeafColumns().forEach((column) => {
             const cell = document.createElement('td');
-            const { filterOptions, filterType } = column.columnDef.meta ?? {};
+            const { filterOptions, filterPlacement, filterType } = column.columnDef.meta ?? {};
 
-            if (filterType) {
+            if (filterType && filterPlacement === 'column') {
                 hasFilters = true;
                 const control = filterType === 'select' ? document.createElement('select') : document.createElement('input');
 
@@ -630,8 +728,8 @@ function initialize(root, configuration) {
                     control.append(emptyOption);
                     filterOptions.forEach((option) => {
                         const element = document.createElement('option');
-                        element.value = option;
-                        element.textContent = option;
+                        element.value = option.value;
+                        element.textContent = option.label;
                         control.append(element);
                     });
                 }
@@ -807,6 +905,16 @@ function initialize(root, configuration) {
         previousButton.disabled = !table.getCanPreviousPage();
         nextButton.disabled = !table.getCanNextPage();
         page.textContent = `Page ${state.pagination.pageIndex + 1} of ${pageCount}`;
+        if (pageSizeControl) pageSizeControl.value = String(state.pagination.pageSize);
+
+        const resultTotal = source ? total : filteredRows.length;
+        const resultStart = resultTotal === 0 ? 0 : (state.pagination.pageIndex * state.pagination.pageSize) + 1;
+        const resultEnd = Math.min(resultStart + table.getRowModel().rows.length - 1, resultTotal);
+        if (results) results.textContent = resultTotal === 0 ? 'No results' : `${resultStart}–${resultEnd} of ${resultTotal} results`;
+
+        const selectedTotal = table.getSelectedRowIds().length;
+        if (selectionSummary) selectionSummary.hidden = selectedTotal === 0;
+        if (selectionCount) selectionCount.textContent = String(selectedTotal);
     }
 
     async function requestRows() {
@@ -867,7 +975,20 @@ function initialize(root, configuration) {
     }
 
     function onFilterInput(event) {
-        table.setGlobalFilter(event.currentTarget.value);
+        window.clearTimeout(searchTimer);
+        const value = event.currentTarget.value;
+
+        if (searchDebounce === 0) {
+            table.setGlobalFilter(value);
+            return;
+        }
+
+        searchTimer = window.setTimeout(() => table.setGlobalFilter(value), searchDebounce);
+    }
+
+    function onToolbarFilter(event) {
+        const column = table.getColumn(event.currentTarget.dataset.daisyKitTableFilter);
+        column?.setFilterValue(event.currentTarget.value);
     }
 
     function onPreviousPage() {
@@ -878,9 +999,22 @@ function initialize(root, configuration) {
         table.nextPage();
     }
 
+    function onPageSizeChange(event) {
+        const nextPageSize = Number.parseInt(event.currentTarget.value, 10);
+
+        if (Number.isInteger(nextPageSize) && nextPageSize > 0) {
+            table.setPageSize(nextPageSize);
+        }
+    }
+
     filter.addEventListener('input', onFilterInput);
     previousButton.addEventListener('click', onPreviousPage);
     nextButton.addEventListener('click', onNextPage);
+    pageSizeControl?.addEventListener('change', onPageSizeChange);
+    toolbarFilters.forEach((control) => control.addEventListener(
+        control instanceof HTMLSelectElement ? 'change' : 'input',
+        onToolbarFilter,
+    ));
     render();
     requestRows();
 
@@ -889,6 +1023,12 @@ function initialize(root, configuration) {
         filter.removeEventListener('input', onFilterInput);
         previousButton.removeEventListener('click', onPreviousPage);
         nextButton.removeEventListener('click', onNextPage);
+        pageSizeControl?.removeEventListener('change', onPageSizeChange);
+        toolbarFilters.forEach((control) => control.removeEventListener(
+            control instanceof HTMLSelectElement ? 'change' : 'input',
+            onToolbarFilter,
+        ));
+        window.clearTimeout(searchTimer);
         abortController?.abort();
         editAbortControllers.forEach((editAbortController) => editAbortController.abort());
         editAbortControllers.clear();

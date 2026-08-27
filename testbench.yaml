@@ -1,5 +1,8 @@
 laravel: '@testbench'
 
+providers:
+  - Art35rennes\DaisyKit\DaisyKitServiceProvider
+
 workbench:
   start: '/'
   install: true

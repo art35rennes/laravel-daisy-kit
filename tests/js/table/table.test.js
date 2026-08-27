@@ -7,7 +7,12 @@ function tableMarkup(configuration) {
             <p data-daisy-kit-status hidden role="status" aria-live="polite"></p>
             <div data-daisy-kit-content>
                 <label>Filter <input data-daisy-kit-table-filter type="search"></label>
+                <select data-daisy-kit-table-filter="status"><option value="">All</option><option value="true">Yes</option><option value="false">No</option></select>
+                <select data-daisy-kit-table-page-size><option value="1">1</option><option value="10">10</option></select>
+                <fieldset data-daisy-kit-table-column-controls></fieldset>
+                <aside data-daisy-kit-table-selection hidden><strong data-daisy-kit-table-selection-count>0</strong><div data-daisy-kit-table-bulk-actions></div></aside>
                 <table data-daisy-kit-table aria-busy="true"><thead></thead><tbody></tbody></table>
+                <p data-daisy-kit-table-results></p>
                 <nav aria-label="Table pagination"><button data-daisy-kit-table-previous type="button">Previous</button><span data-daisy-kit-table-page></span><button data-daisy-kit-table-next type="button">Next</button></nav>
             </div>
             <script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script>
@@ -28,6 +33,8 @@ function deferred() {
 describe('table module', () => {
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.useRealTimers();
+        document.head.innerHTML = '';
         window.history.replaceState({}, '', '/');
     });
 
@@ -35,7 +42,7 @@ describe('table module', () => {
         document.body.innerHTML = tableMarkup({
             columns: [{ id: 'name', label: 'Name', filter: { type: 'text' } }],
             rows: [{ id: 'ada', name: 'Ada' }],
-            selectable: true,
+            selection: { mode: 'multiple', rowKey: 'id' },
         });
         const root = document.querySelector('[data-daisy-kit-module="table"]');
 
@@ -49,6 +56,80 @@ describe('table module', () => {
         expect(root.querySelector('[data-daisy-kit-table-row-select="ada"]').classList).toContain('checkbox');
     });
 
+    it('supports the restored client contract for keys, page size, selection, and result feedback', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [{ key: 'name', label: 'Name' }],
+            pageSize: 1,
+            rows: [{ uuid: 'ada', name: 'Ada' }, { uuid: 'grace', name: 'Grace' }],
+            selection: { mode: 'multiple', rowKey: 'uuid', selectFiltered: true },
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+
+        expect(root.querySelector('tbody').textContent).toContain('Ada');
+        expect(root.querySelector('tbody').textContent).not.toContain('Grace');
+        expect(root.querySelector('[data-daisy-kit-table-results]').textContent).toBe('1–1 of 2 results');
+
+        root.querySelector('[data-daisy-kit-table-row-select="ada"]').click();
+        expect(root.querySelector('[data-daisy-kit-table-selection]').hidden).toBe(false);
+        expect(root.querySelector('[data-daisy-kit-table-selection-count]').textContent).toBe('1');
+
+        const pageSize = root.querySelector('[data-daisy-kit-table-page-size]');
+        pageSize.value = '10';
+        pageSize.dispatchEvent(new Event('change'));
+
+        expect(root.querySelectorAll('tbody tr')).toHaveLength(2);
+        expect(root.querySelector('[data-daisy-kit-table-results]').textContent).toBe('1–2 of 2 results');
+    });
+
+    it('connects toolbar filters and debounced search to client data', () => {
+        vi.useFakeTimers();
+        document.body.innerHTML = tableMarkup({
+            columns: [{ key: 'name', label: 'Name' }, { key: 'status', label: 'Active' }],
+            filters: [{ id: 'status', label: 'Active only', type: 'boolean' }],
+            rows: [{ name: 'Ada', status: true }, { name: 'Grace', status: false }],
+            search: { debounce: 300, enabled: true, mode: 'includes' },
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+        expect(root.querySelector('[data-daisy-kit-table-column-filter="status"]')).toBeNull();
+        const status = root.querySelector('[data-daisy-kit-table-filter="status"]');
+        status.value = 'true';
+        status.dispatchEvent(new Event('change'));
+        expect(root.querySelector('tbody').textContent).toContain('Ada');
+        expect(root.querySelector('tbody').textContent).not.toContain('Grace');
+
+        status.value = '';
+        status.dispatchEvent(new Event('change'));
+        const search = root.querySelector('[data-daisy-kit-table-filter=""]');
+        search.value = 'Grace';
+        search.dispatchEvent(new Event('input'));
+        expect(root.querySelector('tbody').textContent).toContain('Ada');
+
+        vi.advanceTimersByTime(300);
+        expect(root.querySelector('tbody').textContent).not.toContain('Ada');
+        expect(root.querySelector('tbody').textContent).toContain('Grace');
+    });
+
+    it('supports fuzzy search without changing the includes mode', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [{ key: 'name', label: 'Name' }],
+            rows: [{ name: 'Margaret Hamilton' }, { name: 'Grace Hopper' }],
+            search: { debounce: 0, enabled: true, mode: 'fuzzy' },
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+        const search = root.querySelector('[data-daisy-kit-table-filter=""]');
+        search.value = 'mrgt';
+        search.dispatchEvent(new Event('input'));
+
+        expect(root.querySelector('tbody').textContent).toContain('Margaret Hamilton');
+        expect(root.querySelector('tbody').textContent).not.toContain('Grace Hopper');
+    });
+
     it('loads a server-backed filtered page and retains selected row identifiers', async () => {
         const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
             rows: [{ id: 'alpha', name: 'Alpha' }],
@@ -58,8 +139,9 @@ describe('table module', () => {
         document.body.innerHTML = tableMarkup({
             columns: [{ id: 'name', label: 'Name' }],
             pageSize: 10,
-            selectable: true,
-            source: '/api/people',
+            endpoint: '/api/people',
+            mode: 'server',
+            selection: { mode: 'multiple', rowKey: 'id' },
         });
         const root = document.querySelector('[data-daisy-kit-module="table"]');
         const selections = [];
@@ -95,8 +177,9 @@ describe('table module', () => {
         document.body.innerHTML = tableMarkup({
             bulkActions: [{ id: 'archive', label: 'Archive' }],
             columns: [{ id: 'name', label: 'Name' }],
-            selectable: true,
-            source: '/api/people',
+            endpoint: '/api/people',
+            mode: 'server',
+            selection: { mode: 'multiple', rowKey: 'id' },
         });
         const root = document.querySelector('[data-daisy-kit-module="table"]');
         const bulkEvents = [];
@@ -161,6 +244,19 @@ describe('table module', () => {
         expect(root.querySelector('tbody').textContent).toContain('private');
     });
 
+    it('removes column controls when column visibility is disabled', () => {
+        document.body.innerHTML = tableMarkup({
+            columnVisibility: false,
+            columns: [{ id: 'name', label: 'Name' }],
+            rows: [{ name: 'Alpha' }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+
+        expect(root.querySelector('[data-daisy-kit-table-column-controls]')).toBeNull();
+    });
+
     it('pins a column through the native column controls', () => {
         document.body.innerHTML = tableMarkup({
             columns: [{ id: 'name', label: 'Name' }, { id: 'status', label: 'Status' }],
@@ -178,7 +274,7 @@ describe('table module', () => {
     });
 
     it('executes a configured bulk action for selected rows', () => {
-        document.body.innerHTML = tableMarkup({ columns: [{ id: 'name', label: 'Name' }], rows: [{ id: 'a', name: 'Alpha' }], selectable: true, bulkActions: [{ id: 'archive', label: 'Archive' }] });
+        document.body.innerHTML = tableMarkup({ columns: [{ id: 'name', label: 'Name' }], rows: [{ id: 'a', name: 'Alpha' }], selection: { mode: 'multiple', rowKey: 'id' }, bulkActions: [{ id: 'archive', label: 'Archive' }] });
         const root = document.querySelector('[data-daisy-kit-module="table"]');
         const events = [];
         root.addEventListener('daisy-kit:table:bulk-action', (event) => events.push(event.detail));
@@ -238,6 +334,7 @@ describe('table module', () => {
             row: { id: 'a', name: 'Approved' },
         }), { headers: { 'content-type': 'application/json' } }));
         vi.stubGlobal('fetch', fetch);
+        document.head.innerHTML = '<meta name="csrf-token" content="workbench-token">';
         document.body.innerHTML = tableMarkup({
             columns: [{ id: 'name', label: 'Name' }],
             editable: { columns: ['name'], endpoint: '/api/people/{rowId}', method: 'PATCH' },
@@ -256,6 +353,7 @@ describe('table module', () => {
         await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
         expect(fetch.mock.calls[0][0]).toContain('/api/people/a');
         expect(fetch.mock.calls[0][1]).toMatchObject({ method: 'PATCH' });
+        expect(fetch.mock.calls[0][1].headers).toMatchObject({ 'X-CSRF-TOKEN': 'workbench-token' });
         expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({
             column: 'name',
             dirty: { name: 'Approved' },
@@ -316,7 +414,7 @@ describe('table module', () => {
         window.history.replaceState({}, '', `/?${query}`);
         document.body.innerHTML = tableMarkup({
             columns: [{ id: 'name', label: 'Name' }, { id: 'status', label: 'Status' }],
-            persistence: { key: 'orders', mode: 'url' },
+            persistState: { key: 'orders', mode: 'url' },
             rows: [{ name: 'Beta', status: 'closed' }, { name: 'Alpha', status: 'open' }],
         });
         const root = document.querySelector('[data-daisy-kit-module="table"]');
@@ -345,7 +443,7 @@ describe('table module', () => {
         });
         document.body.innerHTML = tableMarkup({
             columns: [{ id: 'name', label: 'Name' }],
-            persistence: { key: 'private-context', mode: 'local' },
+            persistState: { key: 'private-context', mode: 'local' },
             rows: [{ name: 'Beta' }, { name: 'Alpha' }],
         });
         const root = document.querySelector('[data-daisy-kit-module="table"]');
@@ -386,7 +484,8 @@ describe('table module', () => {
                 { id: 'name', label: 'Name', filter: { type: 'text' } },
                 { id: 'status', label: 'Status', filter: { options: ['open'], type: 'select' } },
             ],
-            source: '/api/orders',
+            endpoint: '/api/orders',
+            mode: 'server',
         });
         const root = document.querySelector('[data-daisy-kit-module="table"]');
 

@@ -113,31 +113,45 @@ The submitted hidden value and preview use the same canonical schema. JSONata is
 
 ## Table
 
-Table accepts local rows or a server `source`, typed column filters, search, sorting, pagination,
-visibility/pinning, persistent selection, bulk/row actions, details and editing. `persistence`
-controls URL/local state only when the host explicitly opts in.
+Table uses the restored v4 product vocabulary on the v5 runtime. Use `mode="client"` with local
+rows or `mode="server"` with an `endpoint`. Search, typed filters, sorting, pagination, column
+controls and selection remain isolated per table. `persist-state` opts into URL or local state.
 
 ```blade
 <x-daisy-kit::table
     :columns="[
-        ['id' => 'name', 'label' => 'Name', 'filter' => ['type' => 'text']],
-        ['id' => 'state', 'label' => 'State', 'filter' => ['type' => 'select', 'options' => ['draft', 'ready']]],
+        ['key' => 'name', 'label' => 'Name', 'sortable' => true],
+        ['key' => 'state', 'label' => 'State', 'sortable' => true],
     ]"
     :rows="$projects"
+    :filters="[[
+        'id' => 'state',
+        'label' => 'State',
+        'type' => 'select',
+        'options' => [
+            ['value' => 'draft', 'label' => 'Draft'],
+            ['value' => 'ready', 'label' => 'Ready'],
+        ],
+    ]]"
     :page-size="25"
-    :selectable="true"
+    :page-size-options="[10, 25, 50]"
+    selection="multiple"
+    row-key="id"
+    persist-state="url"
+    state-key="projects"
+    caption="Projects"
     :bulk-actions="[['id' => 'archive', 'label' => 'Archive selected']]"
     :row-actions="[['id' => 'open', 'label' => 'Open']]"
     :row-details="true"
-    :editable="['columns' => ['name', 'state'], 'endpoint' => route('projects.update', ['project' => '{rowId}'])]"
-    :persistence="['key' => 'projects', 'mode' => 'url']"
+    :editable="['columns' => ['name', 'state'], 'endpoint' => url('/projects/{rowId}')]"
 />
 ```
 
-For server data, pass `source="/projects/table"`; the endpoint receives `filter`, `page`,
+For server data, pass `mode="server" endpoint="/projects/table"`; the endpoint receives `filter`, `page`,
 `pageSize`, `sort`, `direction`, `columnFilters`, `columnPinning`, and `columnVisibility` query
 parameters and returns `{ "rows": [/* rows */], "total": 42 }`. An editable endpoint may contain
-`{rowId}` and returns `{ "row": { /* updated row */ } }`. Listen for
+`{rowId}` and returns `{ "row": { /* updated row */ } }`. Same-origin mutations use the host's
+`meta[name="csrf-token"]` value when present. Listen for
 `daisy-kit:table:*` events to perform application actions.
 
 ## Tree
