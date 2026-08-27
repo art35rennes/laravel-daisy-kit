@@ -79,6 +79,13 @@
                 :edges="[
                     ['source' => 'source', 'target' => 'destination'],
                 ]"
+                :value="[
+                    'nodes' => [
+                        ['id' => 'source', 'label' => 'Source', 'value' => ['state' => 'ready']],
+                        ['id' => 'destination', 'label' => 'Destination'],
+                    ],
+                    'edges' => [],
+                ]"
                 :editable="true"
                 name="workbench_blueprint"
             />

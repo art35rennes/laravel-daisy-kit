@@ -50,6 +50,20 @@ function initialGraph(configuration) {
     return candidate && typeof candidate === 'object' ? candidate : configuration;
 }
 
+function configurationWithGraph(configuration, nodes, edges) {
+    const nextNodes = nodes.map((node) => ({ ...node }));
+    const nextEdges = edges.map((edge) => ({ ...edge }));
+
+    return {
+        ...configuration,
+        edges: nextEdges,
+        nodes: nextNodes,
+        // `value` wins during initialGraph() after a structural remount, so it must
+        // describe the same current snapshot as the structural configuration.
+        value: { edges: nextEdges, nodes: nextNodes },
+    };
+}
+
 function renderBlueprint(root, configuration) {
     const canvas = root.querySelector('[data-daisy-kit-blueprint-canvas]');
     const empty = root.querySelector('[data-daisy-kit-empty]');
@@ -206,7 +220,7 @@ function renderBlueprint(root, configuration) {
             const configurationNode = root.querySelector('[data-daisy-kit-config]');
 
             if (configurationNode instanceof HTMLScriptElement) {
-                configurationNode.textContent = JSON.stringify({ ...configuration, edges: nextEdges, nodes: nextNodes });
+                configurationNode.textContent = JSON.stringify(configurationWithGraph(configuration, nextNodes, nextEdges));
                 structuralHistory.set(root, { entries: history, index: historyIndex });
                 module.unmount(root);
                 module.mount(root);
@@ -376,7 +390,7 @@ function renderBlueprint(root, configuration) {
         remember();
         synchronizeValue();
         notifyValueChange();
-        configurationNode.textContent = JSON.stringify({ ...configuration, edges, nodes });
+        configurationNode.textContent = JSON.stringify(configurationWithGraph(configuration, nodes, edges));
         root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:change', {
             bubbles: true,
             detail: { value: configurationNode.textContent },

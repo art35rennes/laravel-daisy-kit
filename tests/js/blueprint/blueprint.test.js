@@ -168,4 +168,66 @@ describe('blueprint entry', () => {
         expect(element.querySelector('[data-daisy-kit-blueprint-node-control]').textContent).toBe('From value');
         expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].id).toBe('from-value');
     });
+
+    it('retains structural edits, history, and hidden JSON after remounting an initial value graph', () => {
+        const element = root({
+            editable: true,
+            value: JSON.stringify({
+                edges: [],
+                nodes: [{ id: 'first', label: 'First' }, { id: 'second', label: 'Second' }],
+            }),
+        });
+
+        mount(element);
+        element.querySelector('[data-daisy-kit-blueprint-structure="add-node"]').click();
+
+        expect(element.querySelectorAll('[data-daisy-kit-blueprint-node-control]')).toHaveLength(3);
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes.map((node) => node.id))
+            .toEqual(['first', 'second', 'node-3']);
+
+        element.querySelector('[data-daisy-kit-blueprint-history="undo"]').click();
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes).toHaveLength(2);
+
+        element.querySelector('[data-daisy-kit-blueprint-history="redo"]').click();
+        element.querySelector('[data-daisy-kit-blueprint-node-control][data-node-id="first"]').click();
+        element.querySelector('[data-daisy-kit-blueprint-transition-target]').value = 'second';
+        element.querySelector('[data-daisy-kit-blueprint-structure="add-transition"]').click();
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).edges)
+            .toContainEqual({ source: 'first', target: 'second' });
+
+        element.querySelector('[data-daisy-kit-blueprint-node-control][data-node-id="node-3"]').click();
+        element.querySelector('[data-daisy-kit-blueprint-structure="remove-node"]').click();
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes.map((node) => node.id))
+            .toEqual(['first', 'second']);
+
+        unmount(element);
+        mount(element);
+
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value)).toEqual({
+            edges: [{ source: 'first', target: 'second' }],
+            nodes: [{ id: 'first', label: 'First' }, { id: 'second', label: 'Second' }],
+        });
+    });
+
+    it('keeps value-backed structural state isolated across multiple Blueprint instances', () => {
+        const first = root({
+            editable: true,
+            value: JSON.stringify({ edges: [], nodes: [{ id: 'first', label: 'First' }] }),
+        });
+        const second = first.cloneNode(true);
+
+        second.querySelector('[data-daisy-kit-config]').textContent = JSON.stringify({
+            editable: true,
+            value: JSON.stringify({ edges: [], nodes: [{ id: 'second', label: 'Second' }] }),
+        });
+        document.body.append(second);
+
+        mountAll();
+        first.querySelector('[data-daisy-kit-blueprint-structure="add-node"]').click();
+
+        expect(JSON.parse(first.querySelector('[data-daisy-kit-blueprint-value]').value).nodes.map((node) => node.id))
+            .toEqual(['first', 'node-2']);
+        expect(JSON.parse(second.querySelector('[data-daisy-kit-blueprint-value]').value).nodes.map((node) => node.id))
+            .toEqual(['second']);
+    });
 });

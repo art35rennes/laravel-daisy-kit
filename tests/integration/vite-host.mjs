@@ -292,6 +292,24 @@ try {
         throw new Error('Blueprint keyboard selection did not select the next semantic node control.');
     }
 
+    const blueprint = page.locator('[data-daisy-kit-module="blueprint"]');
+    await blueprint.locator('[data-daisy-kit-blueprint-structure="add-node"]').click();
+    if (await blueprint.locator('[data-daisy-kit-blueprint-node-control]').count() !== 3) {
+        throw new Error('Value-backed Blueprint did not retain the added node after its structural remount.');
+    }
+    await blueprint.locator('[data-daisy-kit-blueprint-history="undo"]').click();
+    if (await blueprint.locator('[data-daisy-kit-blueprint-node-control]').count() !== 2) {
+        throw new Error('Value-backed Blueprint undo did not restore the pre-add graph.');
+    }
+    await blueprint.locator('[data-daisy-kit-blueprint-history="redo"]').click();
+    await blueprint.locator('[data-daisy-kit-blueprint-node-control][data-node-id="source"]').click();
+    await blueprint.locator('[data-daisy-kit-blueprint-transition-target]').selectOption('destination');
+    await blueprint.locator('[data-daisy-kit-blueprint-structure="add-transition"]').click();
+    const blueprintGraph = JSON.parse(await blueprint.locator('[data-daisy-kit-blueprint-value]').inputValue());
+    if (!blueprintGraph.nodes.some((node) => node.id === 'node-3') || !blueprintGraph.edges.some((edge) => edge.source === 'source' && edge.target === 'destination')) {
+        throw new Error(`Value-backed Blueprint did not synchronize its structural graph: ${JSON.stringify(blueprintGraph)}.`);
+    }
+
     const map = page.locator('[data-daisy-kit-module="map"]');
     await map.locator('.leaflet-marker-icon[title="City hall"]').waitFor({ state: 'visible' });
     await map.locator('[data-daisy-kit-map-layer="fixture-layer"]').uncheck();

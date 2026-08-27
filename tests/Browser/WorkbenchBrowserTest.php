@@ -157,6 +157,33 @@ it('keeps Blueprint controls outside its inert SVG and supports keyboard selecti
         ->assertScript("document.querySelector('[data-daisy-kit-blueprint-node-control][data-node-id=destination]').getAttribute('aria-pressed') === 'true'");
 })->group('browser');
 
+it('persists value-backed Blueprint structure through history and remounts', function (): void {
+    $blueprint = '[data-daisy-kit-module="blueprint"]';
+    $hiddenGraph = "JSON.parse(document.querySelector('{$blueprint} [data-daisy-kit-blueprint-value]').value)";
+
+    $this->visit('/')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->wait(1)
+        ->assertNoSmoke()
+        ->click("{$blueprint} [data-daisy-kit-blueprint-structure=add-node]")
+        ->assertCount("{$blueprint} [data-daisy-kit-blueprint-node-control]", 3)
+        ->assertScript("{$hiddenGraph}.nodes.some((node) => node.id === 'node-3')")
+        ->click("{$blueprint} [data-daisy-kit-blueprint-history=undo]")
+        ->assertCount("{$blueprint} [data-daisy-kit-blueprint-node-control]", 2)
+        ->click("{$blueprint} [data-daisy-kit-blueprint-history=redo]")
+        ->assertCount("{$blueprint} [data-daisy-kit-blueprint-node-control]", 3)
+        ->click("{$blueprint} [data-daisy-kit-blueprint-node-control][data-node-id=source]")
+        ->select("{$blueprint} [data-daisy-kit-blueprint-transition-target]", 'destination')
+        ->click("{$blueprint} [data-daisy-kit-blueprint-structure=add-transition]")
+        ->assertScript("{$hiddenGraph}.edges.some((edge) => edge.source === 'source' && edge.target === 'destination')")
+        ->click("{$blueprint} [data-daisy-kit-blueprint-node-control][data-node-id=node-3]")
+        ->click("{$blueprint} [data-daisy-kit-blueprint-structure=remove-node]")
+        ->assertCount("{$blueprint} [data-daisy-kit-blueprint-node-control]", 2)
+        ->assertScript("{$hiddenGraph}.nodes.map((node) => node.id).join(',') === 'source,destination'")
+        ->assertScript("{$hiddenGraph}.edges.length === 1")
+        ->assertNoSmoke();
+})->group('browser');
+
 it('isolates the file preview without a host CSP exception', function (): void {
     $this->visit('/_daisy-kit-test/csp/file-preview')
         ->assertSee('Daisy Kit CSP File Preview')
