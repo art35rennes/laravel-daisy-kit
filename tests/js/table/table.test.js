@@ -10,7 +10,17 @@ function tableMarkup(configuration) {
                 <select data-daisy-kit-table-filter="status"><option value="">All</option><option value="true">Yes</option><option value="false">No</option></select>
                 <select data-daisy-kit-table-page-size><option value="1">1</option><option value="10">10</option></select>
                 <fieldset data-daisy-kit-table-column-controls></fieldset>
-                <aside data-daisy-kit-table-selection hidden><strong data-daisy-kit-table-selection-count>0</strong><div data-daisy-kit-table-bulk-actions></div></aside>
+                <aside data-daisy-kit-table-selection>
+                    <strong data-daisy-kit-table-selection-count>0</strong>
+                    <span data-daisy-kit-table-selection-breakdown hidden>
+                        <strong data-daisy-kit-table-selection-page-count>0</strong>
+                        <strong data-daisy-kit-table-selection-off-page-count>0</strong>
+                    </span>
+                    <button data-daisy-kit-table-select-page type="button">Select page</button>
+                    <button data-daisy-kit-table-select-filtered type="button">Select all results</button>
+                    <button data-daisy-kit-table-clear-selection type="button">Clear</button>
+                    <div data-daisy-kit-table-bulk-actions></div>
+                </aside>
                 <table data-daisy-kit-table aria-busy="true"><thead></thead><tbody></tbody></table>
                 <p data-daisy-kit-table-results></p>
                 <nav aria-label="Table pagination"><button data-daisy-kit-table-previous type="button">Previous</button><span data-daisy-kit-table-page></span><button data-daisy-kit-table-next type="button">Next</button></nav>
@@ -81,6 +91,49 @@ describe('table module', () => {
 
         expect(root.querySelectorAll('tbody tr')).toHaveLength(2);
         expect(root.querySelector('[data-daisy-kit-table-results]').textContent).toBe('1–2 of 2 results');
+    });
+
+    it('reports page and off-page selection and can select every filtered result', () => {
+        document.body.innerHTML = tableMarkup({
+            bulkActions: [{ id: 'archive', label: 'Archive' }],
+            columns: [{ key: 'name', label: 'Name' }],
+            pageSize: 1,
+            rows: [{ id: 'ada', name: 'Ada' }, { id: 'grace', name: 'Grace' }, { id: 'margaret', name: 'Margaret' }],
+            selection: { mode: 'multiple', rowKey: 'id', selectFiltered: true },
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+        const bulkEvents = [];
+        root.addEventListener('daisy-kit:table:bulk-action', (event) => bulkEvents.push(event.detail));
+
+        mount(root);
+        root.querySelector('[data-daisy-kit-table-row-select="ada"]').click();
+        root.querySelector('[data-daisy-kit-table-next]').click();
+        root.querySelector('[data-daisy-kit-table-row-select="grace"]').click();
+
+        expect(root.querySelector('[data-daisy-kit-table-selection-count]').textContent).toBe('2');
+        expect(root.querySelector('[data-daisy-kit-table-selection-page-count]').textContent).toBe('1');
+        expect(root.querySelector('[data-daisy-kit-table-selection-off-page-count]').textContent).toBe('1');
+        expect(root.querySelector('[data-daisy-kit-table-selection-breakdown]').hidden).toBe(false);
+
+        root.querySelector('[data-daisy-kit-table-select-filtered]').click();
+        expect(root.querySelector('[data-daisy-kit-table-selection-count]').textContent).toBe('3');
+        expect(root.querySelector('[data-daisy-kit-table-row-select="grace"]').checked).toBe(true);
+
+        root.querySelector('[data-daisy-kit-table-bulk-action="archive"]').click();
+        expect(bulkEvents).toEqual([{
+            id: 'archive',
+            selection: {
+                columnFilters: [],
+                excludedIds: [],
+                globalFilter: '',
+                mode: 'filtered',
+                sorting: [],
+            },
+        }]);
+
+        root.querySelector('[data-daisy-kit-table-clear-selection]').click();
+        expect(root.querySelector('[data-daisy-kit-table-selection-count]').textContent).toBe('0');
+        expect(root.querySelector('[data-daisy-kit-table-row-select="grace"]').checked).toBe(false);
     });
 
     it('connects toolbar filters and debounced search to client data', () => {
@@ -197,6 +250,47 @@ describe('table module', () => {
         root.querySelector('[data-daisy-kit-table-bulk-action="archive"]').click();
 
         expect(bulkEvents).toEqual([{ id: 'archive', ids: ['alpha'] }]);
+    });
+
+    it('selects every server result without loading every page and tracks exclusions', async () => {
+        const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+            rows: [{ id: 'alpha', name: 'Alpha' }],
+            total: 3,
+        }), { headers: { 'content-type': 'application/json' } }));
+        vi.stubGlobal('fetch', fetch);
+        document.body.innerHTML = tableMarkup({
+            bulkActions: [{ id: 'archive', label: 'Archive' }],
+            columns: [{ key: 'name', label: 'Name' }],
+            endpoint: '/api/people',
+            mode: 'server',
+            pageSize: 1,
+            selection: { mode: 'multiple', rowKey: 'id', selectFiltered: true },
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+        const bulkEvents = [];
+        root.addEventListener('daisy-kit:table:bulk-action', (event) => bulkEvents.push(event.detail));
+
+        mount(root);
+        await vi.waitFor(() => expect(root.querySelector('[data-daisy-kit-table-row-select="alpha"]')).not.toBeNull());
+        root.querySelector('[data-daisy-kit-table-select-filtered]').click();
+
+        expect(root.querySelector('[data-daisy-kit-table-selection-count]').textContent).toBe('3');
+        root.querySelector('[data-daisy-kit-table-row-select="alpha"]').click();
+        expect(root.querySelector('[data-daisy-kit-table-selection-count]').textContent).toBe('2');
+        expect(root.querySelector('[data-daisy-kit-table-selection-page-count]').textContent).toBe('0');
+        expect(root.querySelector('[data-daisy-kit-table-selection-off-page-count]').textContent).toBe('2');
+
+        root.querySelector('[data-daisy-kit-table-bulk-action="archive"]').click();
+        expect(bulkEvents).toEqual([{
+            id: 'archive',
+            selection: {
+                columnFilters: [],
+                excludedIds: ['alpha'],
+                globalFilter: '',
+                mode: 'filtered',
+                sorting: [],
+            },
+        }]);
     });
 
     it('filters typed text, number, and select columns independently', () => {

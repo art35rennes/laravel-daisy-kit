@@ -84,6 +84,22 @@
     gap: 0.5rem;
 }
 
+.daisy-kit-table__selection-summary {
+    display: grid;
+    gap: 0.125rem;
+}
+
+.daisy-kit-table__selection-breakdown {
+    color: color-mix(in oklab, currentColor 70%, transparent);
+    font-size: 0.8125rem;
+}
+
+.daisy-kit-table__selection-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
 .daisy-kit-table__scroll {
     min-inline-size: 0;
     overflow-x: auto;

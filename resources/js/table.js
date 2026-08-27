@@ -330,6 +330,12 @@ function initialize(root, configuration) {
     const results = root.querySelector('[data-daisy-kit-table-results]');
     const selectionSummary = root.querySelector('[data-daisy-kit-table-selection]');
     const selectionCount = root.querySelector('[data-daisy-kit-table-selection-count]');
+    const selectionPageCount = root.querySelector('[data-daisy-kit-table-selection-page-count]');
+    const selectionOffPageCount = root.querySelector('[data-daisy-kit-table-selection-off-page-count]');
+    const selectionBreakdown = root.querySelector('[data-daisy-kit-table-selection-breakdown]');
+    const selectPageButton = root.querySelector('[data-daisy-kit-table-select-page]');
+    const selectFilteredButton = root.querySelector('[data-daisy-kit-table-select-filtered]');
+    const clearSelectionButton = root.querySelector('[data-daisy-kit-table-clear-selection]');
 
     if (!content || !tableElement || !filter || !previousButton || !nextButton || !page) {
         updateStatus(root, 'This table is missing its required markup.');
@@ -371,6 +377,14 @@ function initialize(root, configuration) {
     const configuredState = configuration.initialState && !Array.isArray(configuration.initialState) && typeof configuration.initialState === 'object'
         ? configuration.initialState
         : {};
+    const configuredSelection = configuredState.selection && !Array.isArray(configuredState.selection) && typeof configuredState.selection === 'object'
+        ? configuredState.selection
+        : {};
+    let selectionState = {
+        allFilteredSelected: configuredSelection.allFilteredSelected === true,
+        excludedIds: new Set(Array.isArray(configuredSelection.excludedIds) ? configuredSelection.excludedIds.map(String) : []),
+        selectedIds: new Set(Array.isArray(configuredSelection.selectedIds) ? configuredSelection.selectedIds.map(String) : []),
+    };
     const persistedState = readPersistedState(persistence);
     const expandedRowIds = new Set();
     const detailDialogs = new Set();
@@ -482,12 +496,6 @@ function initialize(root, configuration) {
 
             requestRows();
         },
-        onRowSelectionChange: (updater) => {
-            state.rowSelection = functionalUpdate(updater, state.rowSelection);
-            synchronizeTableState();
-            emit(root, 'selection-changed', { ids: table.getSelectedRowIds() });
-            render();
-        },
         state,
     });
 
@@ -502,6 +510,115 @@ function initialize(root, configuration) {
             return id === rowId ? nextRow : row;
         });
         table.setOptions((current) => ({ ...current, data: rows }));
+    }
+
+    function isSelected(rowId) {
+        return selectionState.allFilteredSelected
+            ? !selectionState.excludedIds.has(rowId)
+            : selectionState.selectedIds.has(rowId);
+    }
+
+    function selectedIds() {
+        return [...selectionState.selectedIds];
+    }
+
+    function selectionActionPayload() {
+        if (!selectionState.allFilteredSelected) {
+            return { ids: selectedIds(), mode: 'ids' };
+        }
+
+        return {
+            columnFilters: state.columnFilters.map((filter) => ({ ...filter })),
+            excludedIds: [...selectionState.excludedIds],
+            globalFilter: state.globalFilter,
+            mode: 'filtered',
+            sorting: state.sorting.map((sorting) => ({ ...sorting })),
+        };
+    }
+
+    function selectionDetails(visibleRows = table.getRowModel().rows) {
+        const visibleSelectedCount = visibleRows.filter((row) => isSelected(row.id)).length;
+        const resultTotal = source ? total : table.getFilteredRowModel().rows.length;
+        const selectedTotal = selectionState.allFilteredSelected
+            ? Math.max(0, resultTotal - selectionState.excludedIds.size)
+            : selectionState.selectedIds.size;
+
+        return {
+            offPageCount: Math.max(0, selectedTotal - visibleSelectedCount),
+            selectedTotal,
+            visibleSelectedCount,
+        };
+    }
+
+    function emitSelectionChanged() {
+        if (selectionState.allFilteredSelected) {
+            emit(root, 'selection-changed', {
+                allFilteredSelected: true,
+                excludedIds: [...selectionState.excludedIds],
+                ...selectionDetails(),
+            });
+            return;
+        }
+
+        emit(root, 'selection-changed', { ids: selectedIds() });
+    }
+
+    function toggleRowSelection(rowId, selected) {
+        if (selectionMode === 'single') {
+            selectionState = {
+                allFilteredSelected: false,
+                excludedIds: new Set(),
+                selectedIds: new Set(selected ? [rowId] : []),
+            };
+        } else if (selectionState.allFilteredSelected) {
+            if (selected) selectionState.excludedIds.delete(rowId);
+            else selectionState.excludedIds.add(rowId);
+        } else if (selected) {
+            selectionState.selectedIds.add(rowId);
+        } else {
+            selectionState.selectedIds.delete(rowId);
+        }
+
+        emitSelectionChanged();
+        render();
+    }
+
+    function selectPage() {
+        if (selectionMode !== 'multiple') return;
+
+        table.getRowModel().rows.forEach((row) => {
+            if (selectionState.allFilteredSelected) selectionState.excludedIds.delete(row.id);
+            else selectionState.selectedIds.add(row.id);
+        });
+        emitSelectionChanged();
+        render();
+    }
+
+    function clearPage() {
+        if (selectionMode !== 'multiple') return;
+
+        table.getRowModel().rows.forEach((row) => {
+            if (selectionState.allFilteredSelected) selectionState.excludedIds.add(row.id);
+            else selectionState.selectedIds.delete(row.id);
+        });
+        emitSelectionChanged();
+        render();
+    }
+
+    function selectFiltered() {
+        if (selectionMode !== 'multiple' || selection.selectFiltered !== true) return;
+
+        selectionState = { allFilteredSelected: true, excludedIds: new Set(), selectedIds: new Set() };
+        emitSelectionChanged();
+        render();
+    }
+
+    function clearSelection(shouldRender = true) {
+        const hadSelection = selectionState.allFilteredSelected || selectionState.selectedIds.size > 0 || selectionState.excludedIds.size > 0;
+
+        selectionState = { allFilteredSelected: false, excludedIds: new Set(), selectedIds: new Set() };
+        if (hadSelection) emitSelectionChanged();
+        if (shouldRender) render();
     }
 
     async function saveEdit(row, column, value) {
@@ -634,11 +751,17 @@ function initialize(root, configuration) {
                 button.dataset.daisyKitTableBulkAction = action.id;
                 button.textContent = action.label;
                 button.type = 'button';
-                button.addEventListener('click', () => emit(root, 'bulk-action', { id: action.id, ids: table.getSelectedRowIds() }));
+                button.addEventListener('click', () => {
+                    const payload = selectionActionPayload();
+                    emit(root, 'bulk-action', payload.mode === 'ids'
+                        ? { id: action.id, ids: payload.ids }
+                        : { id: action.id, selection: payload });
+                });
                 return button;
             }));
         }
 
+        const visibleRows = table.getRowModel().rows;
         const headerRow = document.createElement('tr');
         const hasRowControls = rowActions.length > 0 || rowDetails !== null;
 
@@ -650,11 +773,17 @@ function initialize(root, configuration) {
                 const selectAll = document.createElement('input');
                 selectAll.className = 'checkbox checkbox-sm';
                 selectAll.setAttribute('aria-label', 'Select all visible rows');
-                selectAll.checked = table.getIsAllPageRowsSelected();
-                selectAll.indeterminate = table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected();
+                const selectedOnPage = visibleRows.filter((row) => isSelected(row.id)).length;
+                selectAll.checked = visibleRows.length > 0 && selectedOnPage === visibleRows.length;
+                selectAll.indeterminate = selectedOnPage > 0 && selectedOnPage < visibleRows.length;
                 selectAll.type = 'checkbox';
                 selectAll.addEventListener('change', () => {
-                    table.toggleAllPageRowsSelected(selectAll.checked);
+                    if (selectAll.checked) {
+                        selectPage();
+                        return;
+                    }
+
+                    clearPage();
                 });
                 selectionHeader.append(selectAll);
             }
@@ -741,9 +870,7 @@ function initialize(root, configuration) {
 
         if (hasFilters) head.append(filterRow);
 
-        const rows = table.getRowModel().rows;
-
-        rows.forEach((row) => {
+        visibleRows.forEach((row) => {
             const tableRow = document.createElement('tr');
 
             if (selectable) {
@@ -754,10 +881,10 @@ function initialize(root, configuration) {
 
                 selectRow.setAttribute('aria-label', `Select row ${row.id}`);
                 selectRow.dataset.daisyKitTableRowSelect = row.id;
-                selectRow.checked = row.getIsSelected();
+                selectRow.checked = isSelected(row.id);
                 selectRow.type = 'checkbox';
                 selectRow.addEventListener('change', () => {
-                    row.toggleSelected(selectRow.checked);
+                    toggleRowSelection(row.id, selectRow.checked);
                 });
                 selectionCell.append(selectRow);
                 tableRow.append(selectionCell);
@@ -920,9 +1047,21 @@ function initialize(root, configuration) {
         const resultEnd = Math.min(resultStart + table.getRowModel().rows.length - 1, resultTotal);
         if (results) results.textContent = resultTotal === 0 ? 'No results' : `${resultStart}–${resultEnd} of ${resultTotal} results`;
 
-        const selectedTotal = table.getSelectedRowIds().length;
-        if (selectionSummary) selectionSummary.hidden = selectedTotal === 0;
-        if (selectionCount) selectionCount.textContent = String(selectedTotal);
+        const selectionSummaryState = selectionDetails(visibleRows);
+        if (selectionSummary) selectionSummary.hidden = selectionMode === 'single' && selectionSummaryState.selectedTotal === 0;
+        if (selectionCount) selectionCount.textContent = String(selectionSummaryState.selectedTotal);
+        if (selectionPageCount) selectionPageCount.textContent = String(selectionSummaryState.visibleSelectedCount);
+        if (selectionOffPageCount) selectionOffPageCount.textContent = String(selectionSummaryState.offPageCount);
+        if (selectionBreakdown) selectionBreakdown.hidden = selectionSummaryState.offPageCount === 0;
+        if (selectPageButton) selectPageButton.disabled = visibleRows.length === 0 || visibleRows.every((row) => isSelected(row.id));
+        if (selectFilteredButton) {
+            selectFilteredButton.disabled = resultTotal === 0 || (selectionState.allFilteredSelected && selectionState.excludedIds.size === 0);
+            selectFilteredButton.textContent = `Select all ${resultTotal} results`;
+        }
+        if (clearSelectionButton) clearSelectionButton.disabled = selectionSummaryState.selectedTotal === 0;
+        root.dataset.daisyKitTableSelectionCount = String(selectionSummaryState.selectedTotal);
+        root.dataset.daisyKitTableSelectionPageCount = String(selectionSummaryState.visibleSelectedCount);
+        root.dataset.daisyKitTableSelectionOffPageCount = String(selectionSummaryState.offPageCount);
     }
 
     async function requestRows() {
@@ -1019,6 +1158,9 @@ function initialize(root, configuration) {
     previousButton.addEventListener('click', onPreviousPage);
     nextButton.addEventListener('click', onNextPage);
     pageSizeControl?.addEventListener('change', onPageSizeChange);
+    selectPageButton?.addEventListener('click', selectPage);
+    selectFilteredButton?.addEventListener('click', selectFiltered);
+    clearSelectionButton?.addEventListener('click', clearSelection);
     toolbarFilters.forEach((control) => control.addEventListener(
         control instanceof HTMLSelectElement ? 'change' : 'input',
         onToolbarFilter,
@@ -1032,6 +1174,9 @@ function initialize(root, configuration) {
         previousButton.removeEventListener('click', onPreviousPage);
         nextButton.removeEventListener('click', onNextPage);
         pageSizeControl?.removeEventListener('change', onPageSizeChange);
+        selectPageButton?.removeEventListener('click', selectPage);
+        selectFilteredButton?.removeEventListener('click', selectFiltered);
+        clearSelectionButton?.removeEventListener('click', clearSelection);
         toolbarFilters.forEach((control) => control.removeEventListener(
             control instanceof HTMLSelectElement ? 'change' : 'input',
             onToolbarFilter,
