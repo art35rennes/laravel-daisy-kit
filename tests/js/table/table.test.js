@@ -216,6 +216,45 @@ describe('table module', () => {
         expect(selections).toEqual([{ ids: ['alpha'] }]);
     });
 
+    it('uses Spatie Query Builder parameters and paginator responses', async () => {
+        const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+            data: [{ id: 'alpha', name: 'Alpha', status: 'active' }],
+            meta: { current_page: 2, last_page: 3, per_page: 1, total: 3 },
+        }), { headers: { 'content-type': 'application/json' } }));
+        vi.stubGlobal('fetch', fetch);
+        document.body.innerHTML = tableMarkup({
+            columns: [
+                { key: 'name', label: 'Name', sortKey: 'users.name' },
+                { key: 'status', label: 'Status' },
+            ],
+            endpoint: '/api/people',
+            filters: [{ id: 'status', filterKey: 'state', label: 'State', type: 'select' }],
+            globalFilterKey: 'people',
+            initialState: {
+                columnFilters: [{ id: 'status', value: 'active' }],
+                globalFilter: 'alpha',
+                pagination: { pageIndex: 1, pageSize: 1 },
+                sorting: [{ id: 'name', desc: true }],
+            },
+            mode: 'server',
+            pageSize: 1,
+            serverAdapter: 'spatie-query-builder',
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+        await vi.waitFor(() => expect(root.dataset.daisyKitState).toBe('ready'));
+
+        const request = new URL(fetch.mock.calls[0][0]);
+        expect(request.searchParams.get('filter[people]')).toBe('alpha');
+        expect(request.searchParams.get('filter[state]')).toBe('active');
+        expect(request.searchParams.get('sort')).toBe('-users.name');
+        expect(request.searchParams.get('page[number]')).toBe('2');
+        expect(request.searchParams.get('page[size]')).toBe('1');
+        expect(root.querySelector('tbody').textContent).toContain('Alpha');
+        expect(root.querySelector('[data-daisy-kit-table-page]').textContent).toBe('Page 2 of 3');
+    });
+
     it('keeps a selected server row available to bulk actions after the next page replaces it', async () => {
         const fetch = vi.fn()
             .mockResolvedValueOnce(new Response(JSON.stringify({

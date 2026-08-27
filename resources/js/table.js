@@ -100,9 +100,13 @@ function normalizeColumns(columns, filters = []) {
                 cell: column.cell && !Array.isArray(column.cell) && typeof column.cell === 'object'
                     ? column.cell
                     : { renderer: 'text', view: null },
+                filterKey: typeof filter?.filterKey === 'string' && filter.filterKey !== ''
+                    ? filter.filterKey
+                    : id,
                 filterOptions,
                 filterPlacement: column.filter ? 'column' : (configuredFilter ? 'toolbar' : null),
                 filterType,
+                sortKey: typeof column.sortKey === 'string' && column.sortKey !== '' ? column.sortKey : id,
             },
             header: label,
             id,
@@ -329,6 +333,35 @@ function renderCellValue(element, value, cell = {}) {
     element.textContent = formatted;
 }
 
+function normalizeServerPayload(payload, serverAdapter) {
+    if (serverAdapter === 'spatie-query-builder') {
+        const pagination = payload?.meta && !Array.isArray(payload.meta) && typeof payload.meta === 'object'
+            ? payload.meta
+            : payload;
+        const rows = payload?.data;
+        const total = Number(pagination?.total);
+        const page = Number(pagination?.current_page);
+        const pageSize = Number(pagination?.per_page);
+
+        if (!Array.isArray(rows) || !Number.isInteger(total) || total < 0) {
+            return null;
+        }
+
+        return {
+            page: Number.isInteger(page) && page > 0 ? page : null,
+            pageSize: Number.isInteger(pageSize) && pageSize > 0 ? pageSize : null,
+            rows,
+            total,
+        };
+    }
+
+    if (!payload || !Array.isArray(payload.rows) || !Number.isInteger(payload.total) || payload.total < 0) {
+        return null;
+    }
+
+    return { page: null, pageSize: null, rows: payload.rows, total: payload.total };
+}
+
 function updateStatus(root, message = null) {
     const status = root.querySelector('[data-daisy-kit-status]');
 
@@ -402,6 +435,9 @@ function initialize(root, configuration) {
 
     const initialContent = content.innerHTML;
     const source = normalizeSource(configuration.mode === 'server' ? configuration.endpoint : null);
+    const serverAdapter = configuration.serverAdapter === 'spatie-query-builder'
+        ? configuration.serverAdapter
+        : null;
     const selection = configuration.selection && !Array.isArray(configuration.selection) && typeof configuration.selection === 'object'
         ? configuration.selection
         : {};
@@ -1131,16 +1167,39 @@ function initialize(root, configuration) {
         const request = new URL(source);
         const [sorting] = state.sorting;
 
-        request.searchParams.set('filter', state.globalFilter);
-        request.searchParams.set('page', String(state.pagination.pageIndex + 1));
-        request.searchParams.set('pageSize', String(state.pagination.pageSize));
-        if (sorting) {
-            request.searchParams.set('sort', sorting.id);
-            request.searchParams.set('direction', sorting.desc ? 'desc' : 'asc');
+        if (serverAdapter === 'spatie-query-builder') {
+            const globalFilterKey = typeof configuration.globalFilterKey === 'string' && configuration.globalFilterKey !== ''
+                ? configuration.globalFilterKey
+                : 'global';
+
+            request.searchParams.set('page[number]', String(state.pagination.pageIndex + 1));
+            request.searchParams.set('page[size]', String(state.pagination.pageSize));
+            if (state.globalFilter !== '') {
+                request.searchParams.set(`filter[${globalFilterKey}]`, state.globalFilter);
+            }
+            state.columnFilters.forEach((filter) => {
+                if (filter.value === '' || filter.value === null || filter.value === undefined) return;
+
+                const filterKey = table.getColumn(filter.id)?.columnDef.meta?.filterKey ?? filter.id;
+                const value = Array.isArray(filter.value) ? filter.value.join(',') : String(filter.value);
+                request.searchParams.set(`filter[${filterKey}]`, value);
+            });
+            if (sorting) {
+                const sortKey = table.getColumn(sorting.id)?.columnDef.meta?.sortKey ?? sorting.id;
+                request.searchParams.set('sort', `${sorting.desc ? '-' : ''}${sortKey}`);
+            }
+        } else {
+            request.searchParams.set('filter', state.globalFilter);
+            request.searchParams.set('page', String(state.pagination.pageIndex + 1));
+            request.searchParams.set('pageSize', String(state.pagination.pageSize));
+            if (sorting) {
+                request.searchParams.set('sort', sorting.id);
+                request.searchParams.set('direction', sorting.desc ? 'desc' : 'asc');
+            }
+            request.searchParams.set('columnFilters', JSON.stringify(state.columnFilters));
+            request.searchParams.set('columnPinning', JSON.stringify(state.columnPinning));
+            request.searchParams.set('columnVisibility', JSON.stringify(state.columnVisibility));
         }
-        request.searchParams.set('columnFilters', JSON.stringify(state.columnFilters));
-        request.searchParams.set('columnPinning', JSON.stringify(state.columnPinning));
-        request.searchParams.set('columnVisibility', JSON.stringify(state.columnVisibility));
 
         root.dataset.daisyKitState = 'loading';
         root.setAttribute('aria-busy', 'true');
@@ -1154,16 +1213,21 @@ function initialize(root, configuration) {
             const payload = await response.json();
             if (requestSerialAtStart !== requestSerial) return;
 
-            if (!payload || !Array.isArray(payload.rows) || !Number.isInteger(payload.total) || payload.total < 0) {
+            const normalizedPayload = normalizeServerPayload(payload, serverAdapter);
+
+            if (!normalizedPayload) {
                 throw new Error(labels.sourceResponseError);
             }
 
-            rows = normalizeRows(payload.rows);
-            total = payload.total;
+            rows = normalizeRows(normalizedPayload.rows);
+            total = normalizedPayload.total;
+            if (normalizedPayload.page !== null) state.pagination.pageIndex = normalizedPayload.page - 1;
+            if (normalizedPayload.pageSize !== null) state.pagination.pageSize = normalizedPayload.pageSize;
             table.setOptions((current) => ({
                 ...current,
                 data: rows,
                 pageCount: Math.max(Math.ceil(total / state.pagination.pageSize), 1),
+                state: { ...state },
             }));
             render();
         } catch (error) {

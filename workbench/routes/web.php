@@ -15,30 +15,61 @@ Route::get('/_daisy-kit-test/table/rows', function (Request $request) {
         ['id' => 'case-1045', 'reference' => 'CASE-1045', 'customer' => 'Studio Armor', 'priority' => 'Low', 'status' => 'Waiting'],
         ['id' => 'case-1046', 'reference' => 'CASE-1046', 'customer' => 'Bretagne Cloud', 'priority' => 'High', 'status' => 'Review'],
         ['id' => 'case-1047', 'reference' => 'CASE-1047', 'customer' => 'Rennes Data', 'priority' => 'Normal', 'status' => 'Open'],
+        ['id' => 'case-1048', 'reference' => 'CASE-1048', 'customer' => 'Océan Conseil', 'priority' => 'Low', 'status' => 'Closed'],
+        ['id' => 'case-1049', 'reference' => 'CASE-1049', 'customer' => 'Lumen Studio', 'priority' => 'Urgent', 'status' => 'Review'],
+        ['id' => 'case-1050', 'reference' => 'CASE-1050', 'customer' => 'Armor Habitat', 'priority' => 'High', 'status' => 'Waiting'],
+        ['id' => 'case-1051', 'reference' => 'CASE-1051', 'customer' => 'Noroît Finance', 'priority' => 'Normal', 'status' => 'Closed'],
+        ['id' => 'case-1052', 'reference' => 'CASE-1052', 'customer' => 'Pixel Ouest', 'priority' => 'Urgent', 'status' => 'Open'],
+        ['id' => 'case-1053', 'reference' => 'CASE-1053', 'customer' => 'Korrigan Foods', 'priority' => 'Low', 'status' => 'Review'],
     ]);
 
-    $search = mb_strtolower($request->string('filter')->toString());
+    $filters = $request->array('filter');
+    $search = mb_strtolower((string) ($filters['global'] ?? ''));
 
     if ($search !== '') {
         $rows = $rows->filter(fn (array $row): bool => collect($row)
             ->contains(fn (mixed $value): bool => str_contains(mb_strtolower((string) $value), $search)));
     }
 
-    $sort = $request->string('sort')->toString();
+    if (is_string($filters['customer'] ?? null) && $filters['customer'] !== '') {
+        $customer = mb_strtolower($filters['customer']);
+        $rows = $rows->filter(fn (array $row): bool => str_contains(mb_strtolower($row['customer']), $customer));
+    }
 
-    if (in_array($sort, ['reference', 'customer', 'priority', 'status'], true)) {
-        $rows = $request->string('direction')->toString() === 'desc'
+    foreach (['priority' => 'priority', 'state' => 'status'] as $filterKey => $column) {
+        if (is_string($filters[$filterKey] ?? null) && $filters[$filterKey] !== '') {
+            $rows = $rows->where($column, $filters[$filterKey]);
+        }
+    }
+
+    $sortExpression = $request->string('sort')->toString();
+    $descending = str_starts_with($sortExpression, '-');
+    $sort = [
+        'cases.reference' => 'reference',
+        'cases.customer' => 'customer',
+        'cases.priority' => 'priority',
+        'cases.status' => 'status',
+    ][ltrim($sortExpression, '-')] ?? null;
+
+    if ($sort !== null) {
+        $rows = $descending
             ? $rows->sortByDesc($sort)
             : $rows->sortBy($sort);
     }
 
     $total = $rows->count();
-    $page = max($request->integer('page', 1), 1);
-    $pageSize = min(max($request->integer('pageSize', 3), 1), 100);
+    $page = $request->array('page');
+    $pageNumber = max((int) ($page['number'] ?? 1), 1);
+    $pageSize = min(max((int) ($page['size'] ?? 3), 1), 100);
 
     return response()->json([
-        'rows' => $rows->forPage($page, $pageSize)->values(),
-        'total' => $total,
+        'data' => $rows->forPage($pageNumber, $pageSize)->values(),
+        'meta' => [
+            'current_page' => $pageNumber,
+            'last_page' => max((int) ceil($total / $pageSize), 1),
+            'per_page' => $pageSize,
+            'total' => $total,
+        ],
     ]);
 })->name('workbench.table.rows');
 

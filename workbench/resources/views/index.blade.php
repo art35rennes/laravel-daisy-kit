@@ -103,11 +103,18 @@
             <x-daisy-kit::table
                 mode="server"
                 :endpoint="route('workbench.table.rows')"
+                server-adapter="spatie-query-builder"
+                global-filter-key="global"
                 :columns="[
-                    ['key' => 'reference', 'label' => 'Reference'],
-                    ['key' => 'customer', 'label' => 'Customer'],
-                    ['key' => 'priority', 'label' => 'Priority'],
-                    ['key' => 'status', 'label' => 'Status'],
+                    ['key' => 'reference', 'label' => 'Reference', 'sortKey' => 'cases.reference'],
+                    ['key' => 'customer', 'label' => 'Customer', 'sortKey' => 'cases.customer'],
+                    ['key' => 'priority', 'label' => 'Priority', 'sortKey' => 'cases.priority'],
+                    ['key' => 'status', 'label' => 'Status', 'sortKey' => 'cases.status'],
+                ]"
+                :filters="[
+                    ['id' => 'customer', 'label' => 'Customer', 'type' => 'text'],
+                    ['id' => 'priority', 'label' => 'Priority', 'type' => 'select', 'options' => ['Urgent', 'High', 'Normal', 'Low']],
+                    ['id' => 'status', 'filterKey' => 'state', 'label' => 'Status', 'type' => 'select', 'options' => ['Open', 'Review', 'Waiting', 'Closed']],
                 ]"
                 selection="multiple"
                 row-key="id"

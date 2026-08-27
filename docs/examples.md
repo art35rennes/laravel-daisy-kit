@@ -147,9 +147,26 @@ controls and selection remain isolated per table. `persist-state` opts into URL 
 />
 ```
 
-For server data, pass `mode="server" endpoint="/projects/table"`; the endpoint receives `filter`, `page`,
-`pageSize`, `sort`, `direction`, `columnFilters`, `columnPinning`, and `columnVisibility` query
-parameters and returns `{ "rows": [/* rows */], "total": 42 }`. An editable endpoint may contain
+For server data, pass `mode="server" endpoint="/projects/table"`; the default transport receives
+`filter`, `page`, `pageSize`, `sort`, `direction`, `columnFilters`, `columnPinning`, and
+`columnVisibility` query parameters and returns `{ "rows": [/* rows */], "total": 42 }`.
+
+The Spatie Query Builder adapter emits its native `filter[...]`, signed `sort`, `page[number]`, and
+`page[size]` vocabulary and accepts Laravel paginator resources with `data` plus pagination `meta`:
+
+```blade
+<x-daisy-kit::table
+    mode="server"
+    endpoint="/projects/table"
+    server-adapter="spatie-query-builder"
+    global-filter-key="global"
+    :columns="[['key' => 'name', 'sortKey' => 'users.name']]"
+    :filters="[['id' => 'status', 'filterKey' => 'state', 'type' => 'select']]"
+/>
+```
+
+Register the corresponding allowed filters and sorts in the endpoint's Spatie Query Builder; the
+adapter intentionally leaves authorization and allowed-field policy server-side. An editable endpoint may contain
 `{rowId}` and returns `{ "row": { /* updated row */ } }`. Same-origin mutations use the host's
 `meta[name="csrf-token"]` value when present. Listen for
 `daisy-kit:table:*` events to perform application actions.

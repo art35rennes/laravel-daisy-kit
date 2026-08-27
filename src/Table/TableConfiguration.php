@@ -24,6 +24,7 @@ final class TableConfiguration
         $selection = self::selection($input);
         $persistence = self::persistence($input);
         $labels = self::labels();
+        $serverAdapter = $input['serverAdapter'] ?? null;
 
         $endpoint = $input['endpoint'] ?? null;
 
@@ -31,9 +32,25 @@ final class TableConfiguration
             throw new InvalidArgumentException('A non-empty endpoint is required when table mode is server.');
         }
 
+        if ($serverAdapter !== null) {
+            $serverAdapter = self::enum($serverAdapter, ['spatie-query-builder'], 'serverAdapter');
+
+            if ($mode !== 'server') {
+                throw new InvalidArgumentException('Table serverAdapter is only available in server mode.');
+            }
+        }
+
+        $globalFilterKey = $input['globalFilterKey'] ?? 'global';
+
+        if (! is_string($globalFilterKey) || trim($globalFilterKey) === '') {
+            throw new InvalidArgumentException('Table globalFilterKey must be a non-empty string.');
+        }
+
         $configuration = [
             'mode' => $mode,
             'endpoint' => $endpoint,
+            'serverAdapter' => $serverAdapter,
+            'globalFilterKey' => $globalFilterKey,
             'columns' => $columns,
             'rows' => self::rows($input['rows'] ?? [], $columns, $selection['rowKey']),
             'filters' => $filters,
@@ -107,7 +124,10 @@ final class TableConfiguration
         return $normalized;
     }
 
-    /** @return array{renderer: string, view: ?string} */
+    /**
+     * @param  array<string, mixed>  $column
+     * @return array{renderer: string, view: ?string}
+     */
     private static function cell(array $column): array
     {
         $cell = is_array($column['cell'] ?? null) ? $column['cell'] : [];
@@ -144,8 +164,9 @@ final class TableConfiguration
     private static function rows(mixed $rows, array $columns, string $rowKey): array
     {
         $rows = self::array($rows, 'rows');
+        $normalizedRows = [];
 
-        return array_values(array_map(function (mixed $row) use ($columns, $rowKey): array {
+        foreach ($rows as $row) {
             if (! is_array($row)) {
                 throw new InvalidArgumentException('Every table row must be an array.');
             }
@@ -153,12 +174,20 @@ final class TableConfiguration
             $normalized = self::stringKeyedArray($row, 'row');
 
             foreach ($columns as $column) {
-                if (($column['cell']['renderer'] ?? null) !== 'blade') {
+                $cell = $column['cell'] ?? null;
+                $key = $column['key'] ?? null;
+
+                if (! is_array($cell) || ($cell['renderer'] ?? null) !== 'blade' || ! is_string($key)) {
                     continue;
                 }
 
-                $key = $column['key'];
-                $normalized[$key] = trim(View::make($column['cell']['view'], [
+                $view = $cell['view'] ?? null;
+
+                if (! is_string($view)) {
+                    continue;
+                }
+
+                $normalized[$key] = trim(View::make($view, [
                     'column' => $column,
                     'item' => $row,
                     'row' => $normalized,
@@ -167,8 +196,10 @@ final class TableConfiguration
                 ])->render());
             }
 
-            return $normalized;
-        }, $rows));
+            $normalizedRows[] = $normalized;
+        }
+
+        return $normalizedRows;
     }
 
     /** @return array<string, string> */

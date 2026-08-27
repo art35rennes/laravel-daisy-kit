@@ -46,6 +46,37 @@ it('requires an endpoint for server mode', function (): void {
         ->toThrow(InvalidArgumentException::class, 'A non-empty endpoint is required when table mode is server.');
 });
 
+it('normalizes the Spatie Query Builder server adapter', function (): void {
+    $table = TableConfiguration::make([
+        'mode' => 'server',
+        'endpoint' => '/people',
+        'serverAdapter' => 'spatie-query-builder',
+        'globalFilterKey' => 'people',
+        'columns' => [['key' => 'name', 'sortKey' => 'users.name']],
+        'filters' => [['id' => 'status', 'filterKey' => 'state']],
+    ]);
+
+    expect($table['configuration'])
+        ->serverAdapter->toBe('spatie-query-builder')
+        ->globalFilterKey->toBe('people')
+        ->columns->sequence(fn ($column) => $column->sortKey->toBe('users.name'))
+        ->filters->sequence(fn ($filter) => $filter->filterKey->toBe('state'));
+});
+
+it('rejects invalid server adapters', function (array $configuration, string $message): void {
+    expect(fn (): array => TableConfiguration::make($configuration))
+        ->toThrow(InvalidArgumentException::class, $message);
+})->with([
+    'unknown adapter' => [[
+        'mode' => 'server',
+        'endpoint' => '/people',
+        'serverAdapter' => 'unknown',
+    ], 'Invalid table serverAdapter value.'],
+    'adapter in client mode' => [[
+        'serverAdapter' => 'spatie-query-builder',
+    ], 'Table serverAdapter is only available in server mode.'],
+]);
+
 it('rejects ambiguous filter definitions', function (array $filters, string $message): void {
     expect(fn (): array => TableConfiguration::make(['filters' => $filters]))
         ->toThrow(InvalidArgumentException::class, $message);

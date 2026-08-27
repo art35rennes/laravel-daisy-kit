@@ -209,3 +209,42 @@ it('uses package translations for Blade and runtime table labels', function (): 
             'showingResults' => ':from–:to sur :total résultats',
         ]);
 });
+
+it('exposes the Spatie Query Builder adapter through the Blade contract', function (): void {
+    $html = (string) $this->blade(<<<'BLADE'
+        <x-daisy-kit::table
+            mode="server"
+            endpoint="/people"
+            server-adapter="spatie-query-builder"
+            global-filter-key="people"
+            :columns="[['key' => 'name', 'sortKey' => 'users.name']]"
+            :filters="[['id' => 'status', 'filterKey' => 'state']]"
+        />
+        BLADE);
+
+    preg_match('/<script data-daisy-kit-config type="application\/json">(.*?)<\/script>/s', $html, $matches);
+    $configuration = JsonConfiguration::decode(html_entity_decode($matches[1] ?? ''));
+
+    expect($configuration)->toMatchArray([
+        'mode' => 'server',
+        'endpoint' => '/people',
+        'serverAdapter' => 'spatie-query-builder',
+        'globalFilterKey' => 'people',
+    ])->and($configuration['columns'][0])->toMatchArray([
+        'key' => 'name',
+        'sortKey' => 'users.name',
+    ])->and($configuration['filters'][0])->toMatchArray([
+        'id' => 'status',
+        'filterKey' => 'state',
+    ]);
+});
+
+it('demonstrates cumulative Spatie Query Builder filters in the Workbench endpoint', function (): void {
+    $response = $this->get('/_daisy-kit-test/table/rows?filter%5Bstate%5D=Open&filter%5Bpriority%5D=Urgent&sort=-cases.reference&page%5Bnumber%5D=1&page%5Bsize%5D=1');
+
+    $response->assertOk()
+        ->assertJsonPath('data.0.reference', 'CASE-1052')
+        ->assertJsonPath('meta.current_page', 1)
+        ->assertJsonPath('meta.per_page', 1)
+        ->assertJsonPath('meta.total', 2);
+});
