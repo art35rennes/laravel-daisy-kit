@@ -3,6 +3,7 @@
 return [
     'actions' => 'Actions',
     'all' => 'Tous',
+    'apply_filters' => 'Appliquer les filtres',
     'cancel' => 'Annuler',
     'clear_selection' => 'Effacer la sélection',
     'close' => 'Fermer',

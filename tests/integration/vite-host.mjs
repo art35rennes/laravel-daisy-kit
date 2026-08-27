@@ -218,7 +218,7 @@ try {
     if (await table.locator('tbody tr').count() !== 1 || !(await table.locator('tbody tr').first().innerText()).includes('Ada')) {
         throw new Error('Table typed filtering did not select the expected host-rendered row.');
     }
-    await table.getByRole('checkbox', { name: 'Select all visible rows' }).check();
+    await table.getByRole('checkbox', { name: 'Select every row on this page' }).check();
     if (!(await table.locator('[data-daisy-kit-table-row-select="ada"]').isChecked())) {
         throw new Error('Table selection did not persist through the filtered host view.');
     }

@@ -18,6 +18,8 @@ import { storeReactivityBindings } from '@tanstack/table-core/store-reactivity-b
 import '../css/table.css';
 import { createMountable } from './core/mountable.js';
 
+const tableInstances = new WeakMap();
+
 const daisyKitTableFeatures = tableFeatures({
     coreReactivityFeature: storeReactivityBindings(),
     columnFilteringFeature,
@@ -322,6 +324,20 @@ function formatLabel(template, replacements) {
     );
 }
 
+function replaceColumnFilter(filters, id, value) {
+    const next = filters.filter((filter) => filter.id !== id);
+
+    if (value === '' || value === null || value === undefined || (Array.isArray(value) && value.length === 0)) {
+        return next;
+    }
+
+    return [...next, { id, value }];
+}
+
+function filterSignature(filters) {
+    return JSON.stringify([...filters].sort((first, second) => first.id.localeCompare(second.id)));
+}
+
 function renderCellValue(element, value, cell = {}) {
     const formatted = formatCell(value);
 
@@ -377,6 +393,7 @@ function initialize(root, configuration) {
     const labels = {
         actions: 'Actions',
         all: 'All',
+        applyFilters: 'Apply filters',
         cancel: 'Cancel',
         close: 'Close',
         columns: 'Columns',
@@ -418,6 +435,7 @@ function initialize(root, configuration) {
     const selectPageButton = root.querySelector('[data-daisy-kit-table-select-page]');
     const selectFilteredButton = root.querySelector('[data-daisy-kit-table-select-filtered]');
     const clearSelectionButton = root.querySelector('[data-daisy-kit-table-clear-selection]');
+    const applyFiltersButton = root.querySelector('[data-daisy-kit-table-apply-filters]');
 
     if (!content || !tableElement || !filter || !previousButton || !nextButton || !page) {
         updateStatus(root, labels.missingContent);
@@ -438,6 +456,7 @@ function initialize(root, configuration) {
     const serverAdapter = configuration.serverAdapter === 'spatie-query-builder'
         ? configuration.serverAdapter
         : null;
+    const manualFilters = configuration.filterMode === 'manual';
     const selection = configuration.selection && !Array.isArray(configuration.selection) && typeof configuration.selection === 'object'
         ? configuration.selection
         : {};
@@ -513,6 +532,7 @@ function initialize(root, configuration) {
         rowSelection: Object.fromEntries(Object.entries(configuredState.rowSelection ?? {})
             .filter(([id, selected]) => typeof id === 'string' && selected === true)),
     };
+    let pendingColumnFilters = state.columnFilters.map((columnFilter) => ({ ...columnFilter }));
     const table = constructTable({
         columns,
         data: rows,
@@ -586,6 +606,28 @@ function initialize(root, configuration) {
 
     function synchronizeTableState() {
         table.setOptions((current) => ({ ...current, state: { ...state } }));
+    }
+
+    function filtersArePending() {
+        return filterSignature(pendingColumnFilters) !== filterSignature(state.columnFilters);
+    }
+
+    function stageColumnFilter(columnId, value) {
+        pendingColumnFilters = replaceColumnFilter(pendingColumnFilters, columnId, value);
+        if (applyFiltersButton) applyFiltersButton.disabled = !filtersArePending();
+    }
+
+    function applyPendingFilters() {
+        if (!manualFilters || !filtersArePending()) return;
+
+        state.columnFilters = pendingColumnFilters.map((columnFilter) => ({ ...columnFilter }));
+        state.pagination.pageIndex = 0;
+        synchronizeTableState();
+        persistState(persistence, state);
+        render();
+        emit(root, 'filtered', { filters: state.columnFilters.map((columnFilter) => ({ ...columnFilter })) });
+        emit(root, 'filters-applied', { filters: state.columnFilters.map((columnFilter) => ({ ...columnFilter })) });
+        requestRows();
     }
 
     function updateRow(rowId, nextRow) {
@@ -820,9 +862,11 @@ function initialize(root, configuration) {
             return [label];
         }));
         toolbarFilters.forEach((control) => {
-            const activeFilter = state.columnFilters.find((item) => item.id === control.dataset.daisyKitTableFilter);
+            const filters = manualFilters ? pendingColumnFilters : state.columnFilters;
+            const activeFilter = filters.find((item) => item.id === control.dataset.daisyKitTableFilter);
             control.value = activeFilter?.value ?? '';
         });
+        if (applyFiltersButton) applyFiltersButton.disabled = !filtersArePending();
         let actions = content.querySelector('[data-daisy-kit-table-bulk-actions]');
         if (!actions && bulkActions.length > 0) {
             actions = document.createElement('div');
@@ -946,8 +990,17 @@ function initialize(root, configuration) {
                         control.append(element);
                     });
                 }
-                control.value = column.getFilterValue() ?? '';
-                control.addEventListener(control instanceof HTMLSelectElement ? 'change' : 'input', () => column.setFilterValue(control.value));
+                const activeFilter = (manualFilters ? pendingColumnFilters : state.columnFilters)
+                    .find((item) => item.id === column.id);
+                control.value = activeFilter?.value ?? '';
+                control.addEventListener(control instanceof HTMLSelectElement ? 'change' : 'input', () => {
+                    if (manualFilters) {
+                        stageColumnFilter(column.id, control.value);
+                        return;
+                    }
+
+                    column.setFilterValue(control.value);
+                });
                 cell.append(control);
             }
             filterRow.append(cell);
@@ -1255,6 +1308,12 @@ function initialize(root, configuration) {
 
     function onToolbarFilter(event) {
         const column = table.getColumn(event.currentTarget.dataset.daisyKitTableFilter);
+
+        if (manualFilters && column) {
+            stageColumnFilter(column.id, event.currentTarget.value);
+            return;
+        }
+
         column?.setFilterValue(event.currentTarget.value);
     }
 
@@ -1274,6 +1333,109 @@ function initialize(root, configuration) {
         }
     }
 
+    const controller = Object.freeze({
+        clearFilters() {
+            state.columnFilters = [];
+            pendingColumnFilters = [];
+            state.globalFilter = '';
+            state.pagination.pageIndex = 0;
+            synchronizeTableState();
+            persistState(persistence, state);
+            render();
+            emit(root, 'filtered', { filters: [], query: '' });
+            requestRows();
+        },
+        clearSelection,
+        getState() {
+            const selectionSummaryState = selectionDetails();
+
+            return {
+                columnFilters: state.columnFilters.map((columnFilter) => ({ ...columnFilter })),
+                columnPinning: {
+                    end: [...state.columnPinning.end],
+                    start: [...state.columnPinning.start],
+                },
+                columnVisibility: { ...state.columnVisibility },
+                globalFilter: state.globalFilter,
+                pagination: { ...state.pagination },
+                pendingColumnFilters: pendingColumnFilters.map((columnFilter) => ({ ...columnFilter })),
+                selection: {
+                    allFilteredSelected: selectionState.allFilteredSelected,
+                    excludedIds: [...selectionState.excludedIds],
+                    selectedIds: [...selectionState.selectedIds],
+                    ...selectionSummaryState,
+                },
+                sorting: state.sorting.map((sorting) => ({ ...sorting })),
+                total: source ? total : table.getFilteredRowModel().rows.length,
+            };
+        },
+        getVisibleRows() {
+            return table.getRowModel().rows.map((row) => ({ ...row.original }));
+        },
+        refresh: requestRows,
+        applyFilters: applyPendingFilters,
+        selectAllResults: selectFiltered,
+        selectPage,
+        selectRow(rowId, selected = true) {
+            if (!selectable || (typeof rowId !== 'string' && typeof rowId !== 'number')) return false;
+
+            toggleRowSelection(String(rowId), selected === true);
+
+            return true;
+        },
+        setColumnFilter(columnId, value) {
+            const column = typeof columnId === 'string' ? table.getColumn(columnId) : null;
+
+            if (!column) return false;
+
+            if (manualFilters) {
+                stageColumnFilter(column.id, value);
+                render();
+            } else {
+                column.setFilterValue(value);
+            }
+
+            return true;
+        },
+        setColumnVisibility(columnId, visible) {
+            const column = typeof columnId === 'string' ? table.getColumn(columnId) : null;
+
+            if (!column) return false;
+
+            column.toggleVisibility(visible === true);
+
+            return true;
+        },
+        setGlobalFilter(value) {
+            table.setGlobalFilter(value === null || value === undefined ? '' : String(value));
+        },
+        setPage(pageNumber) {
+            if (!Number.isInteger(pageNumber) || pageNumber < 1) {
+                throw new RangeError('Table page numbers must be positive integers.');
+            }
+
+            table.setPageIndex(pageNumber - 1);
+        },
+        setPageSize(pageSize) {
+            if (!Number.isInteger(pageSize) || pageSize < 1) {
+                throw new RangeError('Table page sizes must be positive integers.');
+            }
+
+            table.setPageSize(pageSize);
+        },
+        setSorting(columnId, direction = 'asc') {
+            const column = typeof columnId === 'string' ? table.getColumn(columnId) : null;
+
+            if (!column || !['asc', 'desc', null].includes(direction)) return false;
+
+            table.setSorting(direction === null ? [] : [{ desc: direction === 'desc', id: columnId }]);
+
+            return true;
+        },
+    });
+
+    tableInstances.set(root, controller);
+
     filter.addEventListener('input', onFilterInput);
     previousButton.addEventListener('click', onPreviousPage);
     nextButton.addEventListener('click', onNextPage);
@@ -1281,6 +1443,7 @@ function initialize(root, configuration) {
     selectPageButton?.addEventListener('click', selectPage);
     selectFilteredButton?.addEventListener('click', selectFiltered);
     clearSelectionButton?.addEventListener('click', clearSelection);
+    applyFiltersButton?.addEventListener('click', applyPendingFilters);
     toolbarFilters.forEach((control) => control.addEventListener(
         control instanceof HTMLSelectElement ? 'change' : 'input',
         onToolbarFilter,
@@ -1290,6 +1453,7 @@ function initialize(root, configuration) {
 
     return () => {
         active = false;
+        tableInstances.delete(root);
         filter.removeEventListener('input', onFilterInput);
         previousButton.removeEventListener('click', onPreviousPage);
         nextButton.removeEventListener('click', onNextPage);
@@ -1297,6 +1461,7 @@ function initialize(root, configuration) {
         selectPageButton?.removeEventListener('click', selectPage);
         selectFilteredButton?.removeEventListener('click', selectFiltered);
         clearSelectionButton?.removeEventListener('click', clearSelection);
+        applyFiltersButton?.removeEventListener('click', applyPendingFilters);
         toolbarFilters.forEach((control) => control.removeEventListener(
             control instanceof HTMLSelectElement ? 'change' : 'input',
             onToolbarFilter,
@@ -1314,4 +1479,20 @@ function initialize(root, configuration) {
 
 const module = createMountable('table', initialize);
 
-export const { mount, mountAll, unmount } = module;
+export function getInstance(root) {
+    return tableInstances.get(root) ?? null;
+}
+
+export function mount(root) {
+    const mounted = module.mount(root);
+
+    return mounted ? getInstance(root) : null;
+}
+
+export function mountAll(scope = document) {
+    return [...scope.querySelectorAll('[data-daisy-kit-module="table"]')].map(mount);
+}
+
+export function unmount(root) {
+    module.unmount(root);
+}

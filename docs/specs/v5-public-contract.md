@@ -56,7 +56,11 @@ actions/details and editing. The corrective line does not preserve the smaller v
 The package normalizes this data in PHP before emitting CSP-safe JSON. Internal toolbar, filter,
 selection, table and pagination views live outside the anonymous component namespace and are not
 public aliases. The runtime remains TanStack v9 with explicit `mount`, `mountAll`, and `unmount`,
-instance-local state and `daisy-kit:table:*` events.
+instance-local state and `daisy-kit:table:*` events. `mount(root)` returns the table's stable facade;
+`getInstance(root)` retrieves the same facade after automatic mounting. It exposes state snapshots,
+visible rows, refresh, filters, pagination, sorting, visibility and selection controls without leaking
+the underlying TanStack instance or creating global state. `filterMode="manual"` stages column filters
+until the translated Apply filters action or facade `applyFilters()` method is invoked.
 
 ## Corrective development line
 

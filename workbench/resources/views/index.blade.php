@@ -101,10 +101,12 @@
 
             <h3 id="table-server-heading">Server queue and bulk selection</h3>
             <x-daisy-kit::table
+                id="server-queue-table"
                 mode="server"
                 :endpoint="route('workbench.table.rows')"
                 server-adapter="spatie-query-builder"
                 global-filter-key="global"
+                filter-mode="manual"
                 :columns="[
                     ['key' => 'reference', 'label' => 'Reference', 'sortKey' => 'cases.reference'],
                     ['key' => 'customer', 'label' => 'Customer', 'sortKey' => 'cases.customer'],

@@ -1,6 +1,6 @@
 @if($tableView['selection']['mode'] !== 'none')
     <aside
-        class="daisy-kit-table__selection"
+        class="daisy-kit-table__selection border border-primary/30 bg-primary/10"
         data-daisy-kit-table-selection
         @if($tableView['selection']['mode'] === 'single') hidden @endif
         aria-live="polite"

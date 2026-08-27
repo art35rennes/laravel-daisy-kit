@@ -160,6 +160,7 @@ The Spatie Query Builder adapter emits its native `filter[...]`, signed `sort`, 
     endpoint="/projects/table"
     server-adapter="spatie-query-builder"
     global-filter-key="global"
+    filter-mode="manual"
     :columns="[['key' => 'name', 'sortKey' => 'users.name']]"
     :filters="[['id' => 'status', 'filterKey' => 'state', 'type' => 'select']]"
 />
@@ -170,6 +171,30 @@ adapter intentionally leaves authorization and allowed-field policy server-side.
 `{rowId}` and returns `{ "row": { /* updated row */ } }`. Same-origin mutations use the host's
 `meta[name="csrf-token"]` value when present. Listen for
 `daisy-kit:table:*` events to perform application actions.
+
+Host controls can drive one table instance without querying or mutating its private DOM. `mount(root)`
+returns the same facade later available through `getInstance(root)`:
+
+```js
+import { getInstance, mount } from '@daisy-kit/table.js';
+
+const root = document.querySelector('#people-table');
+const table = mount(root) ?? getInstance(root);
+
+externalSearch.addEventListener('input', (event) => table.setGlobalFilter(event.currentTarget.value));
+teamFilter.addEventListener('change', (event) => table.setColumnFilter('team', event.currentTarget.value));
+```
+
+The facade provides `getState()`, `getVisibleRows()`, `refresh()`, `clearFilters()`,
+`setGlobalFilter()`, `setColumnFilter()`, `setPage()`, `setPageSize()`, `setSorting()`,
+`setColumnVisibility()`, `applyFilters()`, `selectRow()`, `selectPage()`, `selectAllResults()`, and
+`clearSelection()`. Each method remains scoped to its root; business notifications still use the
+`daisy-kit:table:*` event family.
+
+Filters are instant by default. `filter-mode="manual"` stages toolbar and column-filter changes,
+shows a translated DaisyUI primary button, and applies the whole set in one client update or server
+request. External controls use the same staging contract through `setColumnFilter()` followed by
+`applyFilters()`.
 
 Custom cell layouts remain server-owned. A Blade renderer receives `$item`, `$row`, `$value`, `$column`,
 and `$table`, so it may compose host Blade components without exposing an additional Daisy Kit alias:

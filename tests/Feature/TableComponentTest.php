@@ -62,14 +62,30 @@ it('renders a semantic table shell for an empty dataset', function (): void {
         ->toContain('aria-live="polite"');
 });
 
-it('renders one compact pagination group with a readable page status', function (): void {
+it('renders compact muted pagination with a readable page status', function (): void {
     $html = view('daisy-kit::components.table')->render();
 
     expect($html)
-        ->toContain('daisy-kit-table__pagination join')
+        ->toContain('daisy-kit-table__pagination')
+        ->not->toContain('daisy-kit-table__pagination join')
+        ->not->toContain('join-item')
         ->toContain('data-daisy-kit-table-page-status')
         ->toContain('data-daisy-kit-table-previous')
         ->toContain('data-daisy-kit-table-next');
+});
+
+it('renders a translated manual filter action on demand', function (): void {
+    app()->setLocale('fr');
+
+    $html = view('daisy-kit::components.table', [
+        'filterMode' => 'manual',
+        'columns' => [['key' => 'status', 'label' => 'Statut', 'filter' => ['type' => 'select']]],
+    ])->render();
+
+    expect($html)
+        ->toContain('data-daisy-kit-table-apply-filters')
+        ->toContain('Appliquer les filtres')
+        ->toContain('btn btn-primary btn-sm');
 });
 
 it('keeps host attributes while protecting module lifecycle hooks', function (): void {

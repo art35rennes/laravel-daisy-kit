@@ -7,9 +7,9 @@ it('mounts the Workbench modules accessibly on desktop and mobile', function ():
 
     $desktop
         ->assertSee('Daisy Kit v5 Workbench')
-        // The Livewire Builder owns one real Viewer preview in addition to the seven
+        // The Livewire Builder owns one real Viewer preview in addition to the ten
         // Workbench mount roots. Both must participate in the normal mount contract.
-        ->assertCount('[data-daisy-kit-module]', 8)
+        ->assertCount('[data-daisy-kit-module]', 11)
         ->waitForEvent('networkidle')
         ->wait(1)
         ->assertNoSmoke()
@@ -21,7 +21,7 @@ it('mounts the Workbench modules accessibly on desktop and mobile', function ():
         ->assertScript("document.activeElement?.dataset.daisyKitTreeNode === 'getting-started'");
 
     $this->visit('/')->on()->mobile()
-        ->assertCount('[data-daisy-kit-module]', 8)
+        ->assertCount('[data-daisy-kit-module]', 11)
         ->assertScript('window.innerWidth <= 430');
 })->group('browser');
 
@@ -126,13 +126,39 @@ it('composes visible host DaisyUI primitives across themes and responsive widths
                 (() => {
                     const primary = document.querySelector('[data-daisy-kit-forms-actions] button[type="submit"]');
                     const warning = document.querySelector('[data-daisy-kit-file-preview-notice]');
+                    const table = document.querySelector('[data-daisy-kit-module="table"]');
+                    const tablePage = table.querySelector('[data-daisy-kit-table-page-status]');
+                    const tableResults = table.querySelector('[data-daisy-kit-table-results]');
+                    const tableApply = document.querySelector('[data-daisy-kit-table-apply-filters]');
 
                     return primary.classList.contains('btn-primary')
                         && getComputedStyle(primary).paddingInlineStart !== '0px'
-                        && warning.classList.contains('alert-warning');
+                        && warning.classList.contains('alert-warning')
+                        && table.classList.contains('bg-base-100')
+                        && table.classList.contains('border-base-300')
+                        && tablePage.classList.contains('text-base-content/70')
+                        && tableResults.classList.contains('text-base-content/70')
+                        && tableApply.classList.contains('btn-primary')
+                        && getComputedStyle(table).backgroundColor !== 'rgba(0, 0, 0, 0)';
                 })()
                 JS);
     }
+})->group('browser');
+
+it('applies the Workbench server filters only on request', function (): void {
+    $table = '#server-queue-table';
+
+    $this->visit('/')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->wait(1)
+        ->fill("{$table} [data-daisy-kit-table-filter=customer]", 'Maison')
+        ->assertScript("document.querySelector('{$table} [data-daisy-kit-table-apply-filters]').disabled === false")
+        ->assertCount("{$table} tbody tr", 3)
+        ->click("{$table} [data-daisy-kit-table-apply-filters]")
+        ->wait(1)
+        ->assertCount("{$table} tbody tr", 1)
+        ->assertSee('CASE-1044')
+        ->assertNoSmoke();
 })->group('browser');
 
 it('mounts the map without a browser CSP violation', function (): void {

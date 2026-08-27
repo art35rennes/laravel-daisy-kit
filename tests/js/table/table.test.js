@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mount, mountAll, unmount } from '../../../resources/js/table.js';
+import { getInstance, mount, mountAll, unmount } from '../../../resources/js/table.js';
 
 function tableMarkup(configuration) {
     return `
@@ -10,6 +10,7 @@ function tableMarkup(configuration) {
                 <select data-daisy-kit-table-filter="status"><option value="">All</option><option value="true">Yes</option><option value="false">No</option></select>
                 <select data-daisy-kit-table-page-size><option value="1">1</option><option value="10">10</option></select>
                 <fieldset data-daisy-kit-table-column-controls></fieldset>
+                <button data-daisy-kit-table-apply-filters type="button">Apply filters</button>
                 <aside data-daisy-kit-table-selection>
                     <strong data-daisy-kit-table-selection-count>0</strong>
                     <span data-daisy-kit-table-selection-breakdown hidden>
@@ -164,6 +165,31 @@ describe('table module', () => {
         vi.advanceTimersByTime(300);
         expect(root.querySelector('tbody').textContent).not.toContain('Ada');
         expect(root.querySelector('tbody').textContent).toContain('Grace');
+    });
+
+    it('can defer filter changes until the host applies them', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [{ key: 'name', label: 'Name' }, { key: 'status', label: 'Status' }],
+            filterMode: 'manual',
+            filters: [{ id: 'status', label: 'Status', type: 'select' }],
+            rows: [{ name: 'Ada', status: 'true' }, { name: 'Grace', status: 'false' }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+        const instance = mount(root);
+        const status = root.querySelector('[data-daisy-kit-table-filter="status"]');
+
+        status.value = 'true';
+        status.dispatchEvent(new Event('change'));
+
+        expect(root.querySelector('tbody').textContent).toContain('Ada');
+        expect(root.querySelector('tbody').textContent).toContain('Grace');
+        expect(instance.getState().pendingColumnFilters).toEqual([{ id: 'status', value: 'true' }]);
+
+        root.querySelector('[data-daisy-kit-table-apply-filters]').click();
+
+        expect(root.querySelector('tbody').textContent).toContain('Ada');
+        expect(root.querySelector('tbody').textContent).not.toContain('Grace');
+        expect(instance.getState().columnFilters).toEqual([{ id: 'status', value: 'true' }]);
     });
 
     it('supports fuzzy search without changing the includes mode', () => {
@@ -691,6 +717,47 @@ describe('table module', () => {
         expect(events).toEqual([{ column: 'name', direction: 'asc' }]);
         expect(root.querySelector('th').getAttribute('aria-sort')).toBe('ascending');
         expect(root.getAttribute('aria-busy')).toBe('false');
+    });
+
+    it('exposes an instance-local facade for host filters and wrapped controls', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [{ key: 'name', label: 'Name' }, { key: 'status', label: 'Status' }],
+            filters: [{ id: 'status', label: 'Status', type: 'select' }],
+            pageSize: 1,
+            rows: [
+                { id: 'ada', name: 'Ada', status: 'ready' },
+                { id: 'grace', name: 'Grace', status: 'review' },
+                { id: 'margaret', name: 'Margaret', status: 'ready' },
+            ],
+            selection: { mode: 'multiple', rowKey: 'id' },
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        const instance = mount(root);
+
+        expect(instance).toBe(getInstance(root));
+        expect(mount(root)).toBe(instance);
+        instance.setColumnFilter('status', 'ready');
+        instance.setGlobalFilter('Margaret');
+        expect(root.querySelector('tbody').textContent).toContain('Margaret');
+        expect(instance.getState()).toMatchObject({
+            columnFilters: [{ id: 'status', value: 'ready' }],
+            globalFilter: 'Margaret',
+            total: 1,
+        });
+
+        instance.clearFilters();
+        instance.setPage(2);
+        expect(root.querySelector('tbody').textContent).toContain('Grace');
+        instance.selectPage();
+        expect(instance.getState().selection).toMatchObject({ selectedIds: ['grace'], selectedTotal: 1 });
+
+        instance.setPageSize(3);
+        expect(root.querySelectorAll('tbody tr')).toHaveLength(3);
+        expect(instance.getVisibleRows()).toHaveLength(3);
+
+        unmount(root);
+        expect(getInstance(root)).toBeNull();
     });
 
     it('mounts multiple roots idempotently and restores them on teardown', () => {

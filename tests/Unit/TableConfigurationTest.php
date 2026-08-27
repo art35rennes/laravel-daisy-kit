@@ -30,7 +30,23 @@ it('normalizes the restored client table vocabulary', function (): void {
             'search' => ['enabled' => true, 'debounce' => 400, 'mode' => 'includes'],
             'selection' => ['mode' => 'multiple', 'rowKey' => 'uuid', 'selectFiltered' => true],
             'persistState' => ['mode' => 'local', 'key' => 'people'],
+            'filterMode' => 'instant',
         ]);
+});
+
+it('normalizes manual filter application', function (): void {
+    $table = TableConfiguration::make([
+        'filterMode' => 'manual',
+        'filters' => [['id' => 'status']],
+    ]);
+
+    expect($table['configuration']['filterMode'])->toBe('manual')
+        ->and($table['view']['filterMode'])->toBe('manual');
+});
+
+it('rejects an unknown filter application mode', function (): void {
+    expect(fn (): array => TableConfiguration::make(['filterMode' => 'deferred']))
+        ->toThrow(InvalidArgumentException::class, 'Invalid table filterMode value.');
 });
 
 it('rejects duplicate and missing column keys', function (array $columns, string $message): void {

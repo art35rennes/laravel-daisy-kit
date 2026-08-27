@@ -1,4 +1,4 @@
-@if ($tableView['filters'] !== [])
+@if ($tableView['filters'] !== [] || ($tableView['filterMode'] === 'manual' && $tableView['hasColumnFilters']))
     <fieldset class="daisy-kit-table__filters">
         <legend class="daisy-kit-table__filters-title">{{ $tableView['labels']['filters'] }}</legend>
 
@@ -38,5 +38,13 @@
                 @endif
             </label>
         @endforeach
+
+        @if ($tableView['filterMode'] === 'manual')
+            <div class="daisy-kit-table__filter-actions">
+                <button class="btn btn-primary btn-sm" data-daisy-kit-table-apply-filters type="button">
+                    {{ $tableView['labels']['applyFilters'] }}
+                </button>
+            </div>
+        @endif
     </fieldset>
 @endif

@@ -18,6 +18,7 @@ final class TableConfiguration
         $mode = self::enum($input['mode'] ?? 'client', ['client', 'server'], 'mode');
         $columns = self::columns($input['columns'] ?? []);
         $filters = self::filters($input['filters'] ?? []);
+        $filterMode = self::enum($input['filterMode'] ?? 'instant', ['instant', 'manual'], 'filterMode');
         $pageSizeOptions = self::pageSizeOptions($input['pageSizeOptions'] ?? [10, 25, 50, 100]);
         $pageSize = self::pageSize($input, $pageSizeOptions);
         $search = self::search($input);
@@ -54,6 +55,7 @@ final class TableConfiguration
             'columns' => $columns,
             'rows' => self::rows($input['rows'] ?? [], $columns, $selection['rowKey']),
             'filters' => $filters,
+            'filterMode' => $filterMode,
             'pageSize' => $pageSize,
             'pageSizeOptions' => $pageSizeOptions,
             'search' => $search,
@@ -81,6 +83,8 @@ final class TableConfiguration
                 'caption' => $configuration['presentation']['caption'],
                 'columnVisibility' => $configuration['columnVisibility'],
                 'filters' => $configuration['filters'],
+                'filterMode' => $filterMode,
+                'hasColumnFilters' => collect($columns)->contains(fn (array $column): bool => is_array($column['filter'] ?? null)),
                 'pageSize' => $pageSize,
                 'pageSizeOptions' => $pageSizeOptions,
                 'search' => $search,
@@ -206,7 +210,7 @@ final class TableConfiguration
     private static function labels(): array
     {
         $keys = [
-            'actions', 'all', 'cancel', 'clear_selection', 'close', 'columns', 'details', 'edit', 'edit_error',
+            'actions', 'all', 'apply_filters', 'cancel', 'clear_selection', 'close', 'columns', 'details', 'edit', 'edit_error',
             'edit_response_error', 'filter_column', 'filters', 'loading_error', 'missing_content', 'next',
             'no_matching_rows', 'no_results', 'normal', 'on_this_page', 'outside_this_page', 'page', 'pagination',
             'pin_end', 'pin_start', 'previous', 'rows_per_page', 'rows_selected', 'save', 'scroll_hint',
