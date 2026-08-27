@@ -21,6 +21,7 @@ class DaisyKitServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'daisy-kit');
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'daisy-kit');
         Blade::anonymousComponentNamespace('daisy-kit::', 'daisy-kit');
 
         $this->app->booted(fn (): bool => $this->registerLivewireBuilder());

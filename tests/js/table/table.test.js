@@ -322,6 +322,29 @@ describe('table module', () => {
         expect(root.querySelector('tbody td').textContent).toBe('Alpha');
     });
 
+    it('renders only explicitly trusted or server-rendered cell markup as HTML', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [
+                { key: 'safe', label: 'Safe' },
+                { key: 'status', label: 'Status', cell: { renderer: 'trusted-html' } },
+                { key: 'person', label: 'Person', cell: { renderer: 'blade', view: 'people.cell' } },
+            ],
+            rows: [{
+                person: '<span data-person>Ada</span>',
+                safe: '<img data-unsafe src=x>',
+                status: '<span class="badge badge-success">Ready</span>',
+            }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+
+        expect(root.querySelector('[data-unsafe]')).toBeNull();
+        expect(root.querySelector('tbody').textContent).toContain('<img data-unsafe src=x>');
+        expect(root.querySelector('.badge-success').textContent).toBe('Ready');
+        expect(root.querySelector('[data-person]').textContent).toBe('Ada');
+    });
+
     it('lets users reveal a configured hidden column without affecting other columns', () => {
         document.body.innerHTML = tableMarkup({
             columns: [{ id: 'name', label: 'Name' }, { id: 'internal', label: 'Internal', visible: false }],

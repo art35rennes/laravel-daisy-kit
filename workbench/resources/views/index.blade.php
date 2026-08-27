@@ -45,7 +45,12 @@
             <h3 id="table-client-heading">Client directory</h3>
             <x-daisy-kit::table
                 :columns="[
-                    ['key' => 'name', 'label' => 'Name', 'sortable' => true],
+                    [
+                        'key' => 'name',
+                        'label' => 'Name',
+                        'sortable' => true,
+                        'cell' => ['renderer' => 'blade', 'view' => 'workbench::table.cells.person'],
+                    ],
                     ['key' => 'team', 'label' => 'Team', 'sortable' => true],
                     ['key' => 'status', 'label' => 'Status', 'sortable' => true],
                 ]"

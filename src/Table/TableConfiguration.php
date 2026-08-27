@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Art35rennes\DaisyKit\Table;
 
+use Illuminate\Support\Facades\View;
 use InvalidArgumentException;
 
 final class TableConfiguration
@@ -22,6 +23,7 @@ final class TableConfiguration
         $search = self::search($input);
         $selection = self::selection($input);
         $persistence = self::persistence($input);
+        $labels = self::labels();
 
         $endpoint = $input['endpoint'] ?? null;
 
@@ -33,7 +35,7 @@ final class TableConfiguration
             'mode' => $mode,
             'endpoint' => $endpoint,
             'columns' => $columns,
-            'rows' => self::array($input['rows'] ?? [], 'rows'),
+            'rows' => self::rows($input['rows'] ?? [], $columns, $selection['rowKey']),
             'filters' => $filters,
             'pageSize' => $pageSize,
             'pageSizeOptions' => $pageSizeOptions,
@@ -45,6 +47,7 @@ final class TableConfiguration
             'rowDetails' => $input['rowDetails'] ?? null,
             'editable' => $input['editable'] ?? false,
             'persistState' => $persistence,
+            'labels' => $labels,
             'initialState' => self::array($input['initialState'] ?? [], 'initialState'),
             'presentation' => [
                 'caption' => is_string($input['caption'] ?? null) ? $input['caption'] : null,
@@ -68,6 +71,7 @@ final class TableConfiguration
                 'size' => $configuration['presentation']['size'],
                 'zebra' => $configuration['presentation']['zebra'],
                 'hover' => $configuration['presentation']['hover'],
+                'labels' => $labels,
             ],
         ];
     }
@@ -97,10 +101,92 @@ final class TableConfiguration
             }
 
             $seen[$id] = true;
-            $normalized[] = [...$column, 'id' => $id, 'key' => $id];
+            $normalized[] = [...$column, 'cell' => self::cell($column), 'id' => $id, 'key' => $id];
         }
 
         return $normalized;
+    }
+
+    /** @return array{renderer: string, view: ?string} */
+    private static function cell(array $column): array
+    {
+        $cell = is_array($column['cell'] ?? null) ? $column['cell'] : [];
+        $renderer = $cell['renderer'] ?? null;
+
+        if (($column['html'] ?? false) === true || $renderer === 'html') {
+            throw new InvalidArgumentException('Table HTML cells require cell.renderer to be trusted-html explicitly.');
+        }
+
+        if (is_string($column['view'] ?? null) && trim($column['view']) !== '') {
+            $renderer = 'blade';
+            $cell['view'] = $column['view'];
+        }
+
+        $renderer ??= 'text';
+
+        if (! in_array($renderer, ['blade', 'text', 'trusted-html'], true)) {
+            throw new InvalidArgumentException('Invalid table cell renderer.');
+        }
+
+        $view = is_string($cell['view'] ?? null) && trim($cell['view']) !== '' ? $cell['view'] : null;
+
+        if ($renderer === 'blade' && ($view === null || ! View::exists($view))) {
+            throw new InvalidArgumentException("Table Blade cell view [{$view}] does not exist.");
+        }
+
+        return ['renderer' => $renderer, 'view' => $view];
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $columns
+     * @return list<array<string, mixed>>
+     */
+    private static function rows(mixed $rows, array $columns, string $rowKey): array
+    {
+        $rows = self::array($rows, 'rows');
+
+        return array_values(array_map(function (mixed $row) use ($columns, $rowKey): array {
+            if (! is_array($row)) {
+                throw new InvalidArgumentException('Every table row must be an array.');
+            }
+
+            $normalized = self::stringKeyedArray($row, 'row');
+
+            foreach ($columns as $column) {
+                if (($column['cell']['renderer'] ?? null) !== 'blade') {
+                    continue;
+                }
+
+                $key = $column['key'];
+                $normalized[$key] = trim(View::make($column['cell']['view'], [
+                    'column' => $column,
+                    'item' => $row,
+                    'row' => $normalized,
+                    'table' => ['rowKey' => $rowKey],
+                    'value' => data_get($normalized, $key),
+                ])->render());
+            }
+
+            return $normalized;
+        }, $rows));
+    }
+
+    /** @return array<string, string> */
+    private static function labels(): array
+    {
+        $keys = [
+            'actions', 'all', 'cancel', 'clear_selection', 'close', 'columns', 'details', 'edit', 'edit_error',
+            'edit_response_error', 'filter_column', 'filters', 'loading_error', 'missing_content', 'next',
+            'no_matching_rows', 'no_results', 'normal', 'on_this_page', 'outside_this_page', 'page', 'pagination',
+            'pin_end', 'pin_start', 'previous', 'rows_per_page', 'rows_selected', 'save', 'scroll_hint',
+            'scrollable_table', 'search', 'search_placeholder', 'select_all_results', 'select_page',
+            'select_page_aria', 'select_row_aria', 'showing_results', 'source_error', 'source_response_error',
+            'table_controls', 'visible_columns', 'yes', 'no',
+        ];
+
+        return collect($keys)
+            ->mapWithKeys(fn (string $key): array => [str($key)->camel()->toString() => __("daisy-kit::table.{$key}")])
+            ->all();
     }
 
     /**

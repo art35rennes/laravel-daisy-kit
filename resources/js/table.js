@@ -97,6 +97,9 @@ function normalizeColumns(columns, filters = []) {
                         ? (row, columnId, value) => String(row.getValue(columnId)).toLocaleLowerCase().includes(String(value).toLocaleLowerCase())
                         : undefined,
             meta: {
+                cell: column.cell && !Array.isArray(column.cell) && typeof column.cell === 'object'
+                    ? column.cell
+                    : { renderer: 'text', view: null },
                 filterOptions,
                 filterPlacement: column.filter ? 'column' : (configuredFilter ? 'toolbar' : null),
                 filterType,
@@ -169,9 +172,9 @@ function normalizeRowActions(actions) {
     });
 }
 
-function normalizeRowDetails(details) {
+function normalizeRowDetails(details, labels) {
     if (details === true) {
-        return { accessor: null, label: 'Details', mode: 'inline' };
+        return { accessor: null, label: labels.details, mode: 'inline' };
     }
 
     if (!details || Array.isArray(details) || typeof details !== 'object') {
@@ -180,7 +183,7 @@ function normalizeRowDetails(details) {
 
     return {
         accessor: typeof details.accessor === 'string' && details.accessor !== '' ? details.accessor : null,
-        label: typeof details.label === 'string' && details.label !== '' ? details.label : 'Details',
+        label: typeof details.label === 'string' && details.label !== '' ? details.label : labels.details,
         mode: details.mode === 'modal' ? 'modal' : 'inline',
     };
 }
@@ -308,6 +311,24 @@ function formatCell(value) {
     return String(value);
 }
 
+function formatLabel(template, replacements) {
+    return Object.entries(replacements).sort(([first], [second]) => second.length - first.length).reduce(
+        (label, [key, value]) => label.replaceAll(`:${key}`, String(value)),
+        String(template),
+    );
+}
+
+function renderCellValue(element, value, cell = {}) {
+    const formatted = formatCell(value);
+
+    if (['blade', 'trusted-html'].includes(cell.renderer)) {
+        element.innerHTML = formatted;
+        return;
+    }
+
+    element.textContent = formatted;
+}
+
 function updateStatus(root, message = null) {
     const status = root.querySelector('[data-daisy-kit-status]');
 
@@ -320,6 +341,34 @@ function updateStatus(root, message = null) {
 }
 
 function initialize(root, configuration) {
+    const labels = {
+        actions: 'Actions',
+        all: 'All',
+        cancel: 'Cancel',
+        close: 'Close',
+        columns: 'Columns',
+        details: 'Details',
+        edit: 'Edit',
+        editError: 'The table edit could not be saved.',
+        editResponseError: 'The table edit response must include the updated row.',
+        filterColumn: 'Filter :column',
+        loadingError: 'The table data could not be loaded.',
+        missingContent: 'This table is missing its required markup.',
+        noMatchingRows: 'No table rows match the current filter.',
+        noResults: 'No results',
+        normal: 'Normal',
+        page: 'Page :current of :total',
+        pinEnd: 'Pin end',
+        pinStart: 'Pin start',
+        save: 'Save',
+        selectAllResults: 'Select all :count results',
+        selectPageAria: 'Select every row on this page',
+        selectRowAria: 'Select row :row',
+        showingResults: ':from–:to of :total results',
+        sourceError: 'The table source did not respond successfully.',
+        sourceResponseError: 'The table source returned an invalid response.',
+        ...(configuration.labels ?? {}),
+    };
     const content = root.querySelector('[data-daisy-kit-content]');
     const tableElement = root.querySelector('[data-daisy-kit-table]');
     const filter = root.querySelector('[data-daisy-kit-table-filter]');
@@ -338,7 +387,7 @@ function initialize(root, configuration) {
     const clearSelectionButton = root.querySelector('[data-daisy-kit-table-clear-selection]');
 
     if (!content || !tableElement || !filter || !previousButton || !nextButton || !page) {
-        updateStatus(root, 'This table is missing its required markup.');
+        updateStatus(root, labels.missingContent);
         root.dataset.daisyKitState = 'error';
         emit(root, 'error', { reason: 'missing-content' });
 
@@ -363,7 +412,7 @@ function initialize(root, configuration) {
     const rowKey = typeof selection.rowKey === 'string' && selection.rowKey !== '' ? selection.rowKey : 'id';
     const bulkActions = Array.isArray(configuration.bulkActions) ? configuration.bulkActions.filter((action) => action && typeof action.id === 'string' && typeof action.label === 'string') : [];
     const rowActions = normalizeRowActions(configuration.rowActions);
-    const rowDetails = normalizeRowDetails(configuration.rowDetails);
+    const rowDetails = normalizeRowDetails(configuration.rowDetails, labels);
     const editable = normalizeEditable(configuration.editable);
     const persistence = normalizePersistence(configuration.persistState);
     const columns = normalizeColumns(configuration.columns, configuration.filters);
@@ -658,13 +707,13 @@ function initialize(root, configuration) {
                 });
 
                 if (!response.ok) {
-                    throw new Error('The table edit could not be saved.');
+                    throw new Error(labels.editError);
                 }
 
                 const responsePayload = await response.json();
 
                 if (!responsePayload?.row || Array.isArray(responsePayload.row) || typeof responsePayload.row !== 'object') {
-                    throw new Error('The table edit response must include the updated row.');
+                    throw new Error(labels.editResponseError);
                 }
 
                 nextRow = { ...nextRow, ...responsePayload.row };
@@ -677,7 +726,7 @@ function initialize(root, configuration) {
             emit(root, 'edited', { column: column.id, row: nextRow, rowId: row.id, value });
         } catch (error) {
             if (!active || (error instanceof DOMException && error.name === 'AbortError')) return;
-            updateStatus(root, error instanceof Error ? error.message : 'The table edit could not be saved.');
+            updateStatus(root, error instanceof Error ? error.message : labels.editError);
             emit(root, 'error', { column: column.id, reason: 'edit-failed', rowId: row.id });
         } finally {
             if (editAbortController) {
@@ -707,7 +756,7 @@ function initialize(root, configuration) {
             visibilityControls.className = 'fieldset border border-base-300 rounded-box p-3';
             visibilityControls.setAttribute('data-daisy-kit-table-column-controls', '');
             const legend = document.createElement('legend');
-            legend.textContent = 'Columns';
+            legend.textContent = labels.columns;
             visibilityControls.append(legend);
             tableElement.parentElement.insertAdjacentElement('beforebegin', visibilityControls);
         }
@@ -723,7 +772,7 @@ function initialize(root, configuration) {
             const pin = document.createElement('select');
             pin.className = 'select select-bordered select-sm';
             pin.dataset.daisyKitTableColumnPinning = column.id;
-            [['false', 'Normal'], ['start', 'Pin start'], ['end', 'Pin end']].forEach(([value, text]) => {
+            [['false', labels.normal], ['start', labels.pinStart], ['end', labels.pinEnd]].forEach(([value, text]) => {
                 const option = document.createElement('option');
                 option.value = value;
                 option.textContent = text;
@@ -772,7 +821,7 @@ function initialize(root, configuration) {
             if (selectionMode === 'multiple') {
                 const selectAll = document.createElement('input');
                 selectAll.className = 'checkbox checkbox-sm';
-                selectAll.setAttribute('aria-label', 'Select all visible rows');
+                selectAll.setAttribute('aria-label', labels.selectPageAria);
                 const selectedOnPage = visibleRows.filter((row) => isSelected(row.id)).length;
                 selectAll.checked = visibleRows.length > 0 && selectedOnPage === visibleRows.length;
                 selectAll.indeterminate = selectedOnPage > 0 && selectedOnPage < visibleRows.length;
@@ -825,7 +874,7 @@ function initialize(root, configuration) {
         if (hasRowControls) {
             const actionsHeader = document.createElement('th');
             actionsHeader.scope = 'col';
-            actionsHeader.textContent = 'Actions';
+            actionsHeader.textContent = labels.actions;
             headerRow.append(actionsHeader);
         }
 
@@ -847,12 +896,12 @@ function initialize(root, configuration) {
                 control.className = filterType === 'select' ? 'select select-bordered select-sm w-full' : 'input input-bordered input-sm w-full';
 
                 control.dataset.daisyKitTableColumnFilter = column.id;
-                control.setAttribute('aria-label', `Filter ${String(column.columnDef.header ?? column.id)}`);
+                control.setAttribute('aria-label', formatLabel(labels.filterColumn, { column: String(column.columnDef.header ?? column.id) }));
                 if (control instanceof HTMLInputElement) control.type = filterType === 'number' ? 'number' : 'search';
                 if (control instanceof HTMLSelectElement) {
                     const emptyOption = document.createElement('option');
                     emptyOption.value = '';
-                    emptyOption.textContent = 'All';
+                    emptyOption.textContent = labels.all;
                     control.append(emptyOption);
                     filterOptions.forEach((option) => {
                         const element = document.createElement('option');
@@ -879,7 +928,7 @@ function initialize(root, configuration) {
 
                 selectRow.className = 'checkbox checkbox-sm';
 
-                selectRow.setAttribute('aria-label', `Select row ${row.id}`);
+                selectRow.setAttribute('aria-label', formatLabel(labels.selectRowAria, { row: row.id }));
                 selectRow.dataset.daisyKitTableRowSelect = row.id;
                 selectRow.checked = isSelected(row.id);
                 selectRow.type = 'checkbox';
@@ -895,7 +944,10 @@ function initialize(root, configuration) {
                 const cell = cellsByColumn.get(column.id);
                 const tableCell = document.createElement('td');
                 const editKey = `${row.id}:${column.id}`;
-                const canEdit = editable !== null && (editable.columns.length === 0 || editable.columns.includes(column.id));
+                const cellRenderer = column.columnDef.meta?.cell ?? { renderer: 'text' };
+                const canEdit = cellRenderer.renderer === 'text'
+                    && editable !== null
+                    && (editable.columns.length === 0 || editable.columns.includes(column.id));
 
                 if (canEdit && editing?.key === editKey) {
                     const input = document.createElement('input');
@@ -913,11 +965,11 @@ function initialize(root, configuration) {
                     input.dataset.daisyKitTableEditInput = editKey;
                     input.value = editing.value;
                     save.dataset.daisyKitTableEditSave = editKey;
-                    save.textContent = 'Save';
+                    save.textContent = labels.save;
                     save.type = 'button';
                     save.addEventListener('click', () => saveEdit(row, column, input.value));
                     cancel.dataset.daisyKitTableEditCancel = editKey;
-                    cancel.textContent = 'Cancel';
+                    cancel.textContent = labels.cancel;
                     cancel.type = 'button';
                     cancel.addEventListener('click', () => {
                         editing = null;
@@ -935,10 +987,10 @@ function initialize(root, configuration) {
                     edit.className = 'btn btn-ghost btn-sm';
                     display.className = 'daisy-kit-table__cell-display';
 
-                    output.textContent = value;
-                    edit.setAttribute('aria-label', `Edit ${String(column.columnDef.header ?? column.id)} in row ${row.id}`);
+                    renderCellValue(output, value, cellRenderer);
+                    edit.setAttribute('aria-label', `${labels.edit} ${String(column.columnDef.header ?? column.id)} ${row.id}`);
                     edit.dataset.daisyKitTableEdit = editKey;
-                    edit.textContent = 'Edit';
+                    edit.textContent = labels.edit;
                     edit.type = 'button';
                     edit.addEventListener('click', () => {
                         editing = { key: editKey, value };
@@ -947,7 +999,7 @@ function initialize(root, configuration) {
                     display.append(output, edit);
                     tableCell.append(display);
                 } else {
-                    tableCell.textContent = cell ? formatCell(cell.getValue()) : '';
+                    renderCellValue(tableCell, cell?.getValue(), cellRenderer);
                 }
                 tableRow.append(tableCell);
             });
@@ -976,7 +1028,7 @@ function initialize(root, configuration) {
 
                             dialog.dataset.daisyKitTableDetail = row.id;
                             title.textContent = rowDetails.label;
-                            close.textContent = 'Close';
+                            close.textContent = labels.close;
                             close.type = 'button';
                             close.addEventListener('click', () => dialog.close());
                             dialog.append(title, document.createTextNode(formatCell(rowDetails.accessor ? row.original[rowDetails.accessor] : row.original)), close);
@@ -1033,19 +1085,23 @@ function initialize(root, configuration) {
 
         const empty = filteredRows.length === 0;
 
-        updateStatus(root, empty ? 'No table rows match the current filter.' : null);
+        updateStatus(root, empty ? labels.noMatchingRows : null);
         root.dataset.daisyKitState = empty ? 'empty' : 'ready';
         root.setAttribute('aria-busy', 'false');
         tableElement.setAttribute('aria-busy', 'false');
         previousButton.disabled = !table.getCanPreviousPage();
         nextButton.disabled = !table.getCanNextPage();
-        page.textContent = `Page ${state.pagination.pageIndex + 1} of ${pageCount}`;
+        page.textContent = formatLabel(labels.page, { current: state.pagination.pageIndex + 1, total: pageCount });
         if (pageSizeControl) pageSizeControl.value = String(state.pagination.pageSize);
 
         const resultTotal = source ? total : filteredRows.length;
         const resultStart = resultTotal === 0 ? 0 : (state.pagination.pageIndex * state.pagination.pageSize) + 1;
         const resultEnd = Math.min(resultStart + table.getRowModel().rows.length - 1, resultTotal);
-        if (results) results.textContent = resultTotal === 0 ? 'No results' : `${resultStart}–${resultEnd} of ${resultTotal} results`;
+        if (results) {
+            results.textContent = resultTotal === 0
+                ? labels.noResults
+                : formatLabel(labels.showingResults, { from: resultStart, to: resultEnd, total: resultTotal });
+        }
 
         const selectionSummaryState = selectionDetails(visibleRows);
         if (selectionSummary) selectionSummary.hidden = selectionMode === 'single' && selectionSummaryState.selectedTotal === 0;
@@ -1056,7 +1112,7 @@ function initialize(root, configuration) {
         if (selectPageButton) selectPageButton.disabled = visibleRows.length === 0 || visibleRows.every((row) => isSelected(row.id));
         if (selectFilteredButton) {
             selectFilteredButton.disabled = resultTotal === 0 || (selectionState.allFilteredSelected && selectionState.excludedIds.size === 0);
-            selectFilteredButton.textContent = `Select all ${resultTotal} results`;
+            selectFilteredButton.textContent = formatLabel(labels.selectAllResults, { count: resultTotal });
         }
         if (clearSelectionButton) clearSelectionButton.disabled = selectionSummaryState.selectedTotal === 0;
         root.dataset.daisyKitTableSelectionCount = String(selectionSummaryState.selectedTotal);
@@ -1093,13 +1149,13 @@ function initialize(root, configuration) {
         try {
             const response = await fetch(request, { credentials: 'same-origin', signal: abortController.signal });
 
-            if (!response.ok) throw new Error('The table source did not respond successfully.');
+            if (!response.ok) throw new Error(labels.sourceError);
 
             const payload = await response.json();
             if (requestSerialAtStart !== requestSerial) return;
 
             if (!payload || !Array.isArray(payload.rows) || !Number.isInteger(payload.total) || payload.total < 0) {
-                throw new Error('The table source returned an invalid response.');
+                throw new Error(labels.sourceResponseError);
             }
 
             rows = normalizeRows(payload.rows);
@@ -1113,7 +1169,7 @@ function initialize(root, configuration) {
         } catch (error) {
             if (requestSerialAtStart !== requestSerial || (error instanceof DOMException && error.name === 'AbortError')) return;
 
-            updateStatus(root, 'The table data could not be loaded.');
+            updateStatus(root, labels.loadingError);
             root.dataset.daisyKitState = 'error';
             root.setAttribute('aria-busy', 'false');
             tableElement.setAttribute('aria-busy', 'false');

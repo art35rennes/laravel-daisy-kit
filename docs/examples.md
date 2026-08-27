@@ -154,6 +154,21 @@ parameters and returns `{ "rows": [/* rows */], "total": 42 }`. An editable endp
 `meta[name="csrf-token"]` value when present. Listen for
 `daisy-kit:table:*` events to perform application actions.
 
+Custom cell layouts remain server-owned. A Blade renderer receives `$item`, `$row`, `$value`, `$column`,
+and `$table`, so it may compose host Blade components without exposing an additional Daisy Kit alias:
+
+```blade
+:columns="[[
+    'key' => 'owner',
+    'label' => 'Owner',
+    'cell' => ['renderer' => 'blade', 'view' => 'tables.cells.owner'],
+]]"
+```
+
+Plain cells are always escaped. Raw markup requires the explicit
+`['cell' => ['renderer' => 'trusted-html']]` boundary. Built-in labels use the `daisy-kit::table`
+translation namespace and may be overridden through Laravel's normal package translation mechanism.
+
 ## Tree
 
 Tree is a keyboard-accessible selector with single/multiple selection, indeterminate propagation,

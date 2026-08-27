@@ -32,7 +32,12 @@ it('renders the table as a CSP-safe explicitly mounted module', function (): voi
         ->not->toContain('x-daisy::')
         ->and(JsonConfiguration::decode(html_entity_decode($matches[1] ?? '')))->toMatchArray([
             'mode' => 'client',
-            'columns' => [['id' => 'name', 'key' => 'name', 'label' => 'Name']],
+            'columns' => [[
+                'id' => 'name',
+                'key' => 'name',
+                'label' => 'Name',
+                'cell' => ['renderer' => 'text', 'view' => null],
+            ]],
             'rows' => [['name' => '</script><img src=x onerror=alert(1)>']],
             'pageSize' => 20,
             'bulkActions' => [],
@@ -160,5 +165,47 @@ it('renders the restored product table contract with private structured controls
             'columnVisibility' => true,
             'selection' => ['mode' => 'multiple', 'rowKey' => 'id', 'selectFiltered' => true],
             'persistState' => ['mode' => 'url', 'key' => 'people-table'],
+        ]);
+});
+
+it('renders explicit Blade cell views before serializing client rows', function (): void {
+    view()->addNamespace('table-test', __DIR__.'/../Fixtures/views');
+
+    $html = view('daisy-kit::components.table', [
+        'columns' => [[
+            'key' => 'name',
+            'label' => 'Name',
+            'cell' => ['renderer' => 'blade', 'view' => 'table-test::table.person'],
+        ]],
+        'rows' => [['id' => 'ada', 'name' => 'Ada', 'team' => 'Platform']],
+    ])->render();
+
+    preg_match('/<script data-daisy-kit-config type="application\/json">(.*?)<\/script>/s', $html, $matches);
+    $configuration = JsonConfiguration::decode(html_entity_decode($matches[1] ?? ''));
+
+    expect($configuration['columns'][0]['cell'])->toBe([
+        'renderer' => 'blade',
+        'view' => 'table-test::table.person',
+    ])->and($configuration['rows'][0]['name'])
+        ->toContain('data-person-cell')
+        ->toContain('<strong>Ada</strong>')
+        ->toContain('Platform');
+});
+
+it('uses package translations for Blade and runtime table labels', function (): void {
+    app()->setLocale('fr');
+
+    $html = view('daisy-kit::components.table')->render();
+    preg_match('/<script data-daisy-kit-config type="application\/json">(.*?)<\/script>/s', $html, $matches);
+    $configuration = JsonConfiguration::decode(html_entity_decode($matches[1] ?? ''));
+
+    expect($html)
+        ->toContain('Rechercher')
+        ->toContain('Lignes par page')
+        ->and($configuration['labels'])->toMatchArray([
+            'actions' => 'Actions',
+            'edit' => 'Modifier',
+            'page' => 'Page :current sur :total',
+            'showingResults' => ':from–:to sur :total résultats',
         ]);
 });

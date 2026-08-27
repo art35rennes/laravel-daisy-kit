@@ -1,6 +1,6 @@
 @if ($tableView['filters'] !== [])
     <fieldset class="daisy-kit-table__filters">
-        <legend class="daisy-kit-table__filters-title">{{ __('Filters') }}</legend>
+        <legend class="daisy-kit-table__filters-title">{{ $tableView['labels']['filters'] }}</legend>
 
         @foreach ($tableView['filters'] as $filter)
             @php
@@ -14,13 +14,13 @@
 
                 @if ($filterType === 'boolean')
                     <select class="select select-bordered select-sm" data-daisy-kit-table-filter="{{ $filterId }}">
-                        <option value="">{{ __('All') }}</option>
-                        <option value="true">{{ __('Yes') }}</option>
-                        <option value="false">{{ __('No') }}</option>
+                        <option value="">{{ $tableView['labels']['all'] }}</option>
+                        <option value="true">{{ $tableView['labels']['yes'] }}</option>
+                        <option value="false">{{ $tableView['labels']['no'] }}</option>
                     </select>
                 @elseif ($filterType === 'select')
                     <select class="select select-bordered select-sm" data-daisy-kit-table-filter="{{ $filterId }}">
-                        <option value="">{{ __('All') }}</option>
+                        <option value="">{{ $tableView['labels']['all'] }}</option>
                         @foreach (($filter['options'] ?? []) as $option)
                             @php
                                 $optionValue = is_array($option) ? ($option['value'] ?? '') : $option;

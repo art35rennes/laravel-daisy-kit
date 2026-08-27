@@ -19,7 +19,12 @@ it('normalizes the restored client table vocabulary', function (): void {
     expect($table['configuration'])
         ->toMatchArray([
             'mode' => 'client',
-            'columns' => [['id' => 'name', 'key' => 'name', 'label' => 'Name']],
+            'columns' => [[
+                'id' => 'name',
+                'key' => 'name',
+                'label' => 'Name',
+                'cell' => ['renderer' => 'text', 'view' => null],
+            ]],
             'pageSize' => 25,
             'pageSizeOptions' => [10, 25, 50],
             'search' => ['enabled' => true, 'debounce' => 400, 'mode' => 'includes'],
@@ -53,3 +58,11 @@ it('requires an instance key when persistence is enabled', function (): void {
     expect(fn (): array => TableConfiguration::make(['persistState' => 'url']))
         ->toThrow(InvalidArgumentException::class, 'Table stateKey is required when state persistence is enabled.');
 });
+
+it('rejects implicit or missing custom cell renderers', function (array $column, string $message): void {
+    expect(fn (): array => TableConfiguration::make(['columns' => [$column]]))
+        ->toThrow(InvalidArgumentException::class, $message);
+})->with([
+    'implicit html' => [['key' => 'status', 'html' => true], 'Table HTML cells require cell.renderer to be trusted-html explicitly.'],
+    'missing blade view' => [['key' => 'status', 'cell' => ['renderer' => 'blade', 'view' => 'missing::cell']], 'Table Blade cell view [missing::cell] does not exist.'],
+]);
