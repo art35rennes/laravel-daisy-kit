@@ -57,6 +57,16 @@ it('renders a semantic table shell for an empty dataset', function (): void {
         ->toContain('aria-live="polite"');
 });
 
+it('renders one compact pagination group with a readable page status', function (): void {
+    $html = view('daisy-kit::components.table')->render();
+
+    expect($html)
+        ->toContain('daisy-kit-table__pagination join')
+        ->toContain('data-daisy-kit-table-page-status')
+        ->toContain('data-daisy-kit-table-previous')
+        ->toContain('data-daisy-kit-table-next');
+});
+
 it('keeps host attributes while protecting module lifecycle hooks', function (): void {
     $html = (string) $this->blade(<<<'BLADE'
         <x-daisy-kit::table

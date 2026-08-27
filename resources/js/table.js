@@ -344,7 +344,6 @@ function initialize(root, configuration) {
     filter.classList.add('input', 'input-bordered', 'w-full');
     previousButton.classList.add('btn', 'btn-sm');
     nextButton.classList.add('btn', 'btn-sm');
-    page.classList.add('badge', 'badge-outline');
 
     const initialContent = content.innerHTML;
     const source = normalizeSource(configuration.mode === 'server' ? configuration.endpoint : null);
@@ -775,10 +774,14 @@ function initialize(root, configuration) {
                     const input = document.createElement('input');
                     const save = document.createElement('button');
                     const cancel = document.createElement('button');
+                    const editor = document.createElement('div');
+                    const editorActions = document.createElement('div');
 
                     input.className = 'input input-bordered input-sm';
                     save.className = 'btn btn-primary btn-sm';
                     cancel.className = 'btn btn-ghost btn-sm';
+                    editor.className = 'daisy-kit-table__cell-editor';
+                    editorActions.className = 'daisy-kit-table__cell-editor-actions';
 
                     input.dataset.daisyKitTableEditInput = editKey;
                     input.value = editing.value;
@@ -793,13 +796,17 @@ function initialize(root, configuration) {
                         editing = null;
                         render();
                     });
-                    tableCell.append(input, save, cancel);
+                    editorActions.append(save, cancel);
+                    editor.append(input, editorActions);
+                    tableCell.append(editor);
                 } else if (canEdit) {
                     const value = cell ? formatCell(cell.getValue()) : '';
                     const output = document.createElement('span');
                     const edit = document.createElement('button');
+                    const display = document.createElement('div');
 
                     edit.className = 'btn btn-ghost btn-sm';
+                    display.className = 'daisy-kit-table__cell-display';
 
                     output.textContent = value;
                     edit.setAttribute('aria-label', `Edit ${String(column.columnDef.header ?? column.id)} in row ${row.id}`);
@@ -810,7 +817,8 @@ function initialize(root, configuration) {
                         editing = { key: editKey, value };
                         render();
                     });
-                    tableCell.append(output, edit);
+                    display.append(output, edit);
+                    tableCell.append(display);
                 } else {
                     tableCell.textContent = cell ? formatCell(cell.getValue()) : '';
                 }

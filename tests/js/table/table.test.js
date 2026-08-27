@@ -346,6 +346,9 @@ describe('table module', () => {
 
         mount(root);
         root.querySelector('[data-daisy-kit-table-edit="a:name"]').click();
+        expect(root.querySelector('[data-daisy-kit-table-edit="a:name"]')).toBeNull();
+        expect(root.querySelector('[data-daisy-kit-table-edit-input="a:name"]').closest('.daisy-kit-table__cell-editor')).not.toBeNull();
+        expect(root.querySelector('[data-daisy-kit-table-edit-save="a:name"]').closest('.daisy-kit-table__cell-editor-actions')).not.toBeNull();
         const input = root.querySelector('[data-daisy-kit-table-edit-input="a:name"]');
         input.value = 'Approved';
         root.querySelector('[data-daisy-kit-table-edit-save="a:name"]').click();

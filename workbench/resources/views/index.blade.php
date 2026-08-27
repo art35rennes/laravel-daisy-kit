@@ -54,19 +54,41 @@
                     ['id' => 'grace', 'name' => 'Grace Hopper', 'team' => 'Infrastructure', 'status' => 'review'],
                     ['id' => 'margaret', 'name' => 'Margaret Hamilton', 'team' => 'Flight software', 'status' => 'ready'],
                     ['id' => 'katherine', 'name' => 'Katherine Johnson', 'team' => 'Research', 'status' => 'paused'],
+                    ['id' => 'dorothy', 'name' => 'Dorothy Vaughan', 'team' => 'Research', 'status' => 'ready'],
+                    ['id' => 'mary', 'name' => 'Mary Jackson', 'team' => 'Platform', 'status' => 'review'],
+                    ['id' => 'annie', 'name' => 'Annie Easley', 'team' => 'Infrastructure', 'status' => 'paused'],
+                    ['id' => 'joan', 'name' => 'Joan Clarke', 'team' => 'Research', 'status' => 'ready'],
+                    ['id' => 'hedy', 'name' => 'Hedy Lamarr', 'team' => 'Platform', 'status' => 'review'],
+                    ['id' => 'radia', 'name' => 'Radia Perlman', 'team' => 'Infrastructure', 'status' => 'ready'],
+                    ['id' => 'evelyn', 'name' => 'Evelyn Boyd Granville', 'team' => 'Flight software', 'status' => 'paused'],
+                    ['id' => 'susan', 'name' => 'Susan Kare', 'team' => 'Platform', 'status' => 'ready'],
                 ]"
-                :filters="[[
-                    'id' => 'status',
-                    'label' => 'Status',
-                    'type' => 'select',
-                    'options' => [
-                        ['value' => 'ready', 'label' => 'Ready'],
-                        ['value' => 'review', 'label' => 'Review'],
-                        ['value' => 'paused', 'label' => 'Paused'],
+                :filters="[
+                    ['id' => 'name', 'label' => 'Name', 'type' => 'text'],
+                    [
+                        'id' => 'team',
+                        'label' => 'Team',
+                        'type' => 'select',
+                        'options' => [
+                            ['value' => 'Platform', 'label' => 'Platform'],
+                            ['value' => 'Infrastructure', 'label' => 'Infrastructure'],
+                            ['value' => 'Flight software', 'label' => 'Flight software'],
+                            ['value' => 'Research', 'label' => 'Research'],
+                        ],
                     ],
-                ]]"
-                :page-size="2"
-                :page-size-options="[2, 4, 10]"
+                    [
+                        'id' => 'status',
+                        'label' => 'Status',
+                        'type' => 'select',
+                        'options' => [
+                            ['value' => 'ready', 'label' => 'Ready'],
+                            ['value' => 'review', 'label' => 'Review'],
+                            ['value' => 'paused', 'label' => 'Paused'],
+                        ],
+                    ],
+                ]"
+                :page-size="4"
+                :page-size-options="[4, 8, 12]"
                 caption="People directory"
                 state-key="workbench-client-directory"
                 persist-state="url"
@@ -104,8 +126,13 @@
                     ['id' => 'api', 'service' => 'Public API', 'owner' => 'Platform', 'health' => 'Operational', 'summary' => '12 instances across three regions. Last deployment succeeded.'],
                     ['id' => 'worker', 'service' => 'Media workers', 'owner' => 'Content', 'health' => 'Degraded', 'summary' => 'Two delayed jobs. Automatic retry is in progress.'],
                     ['id' => 'billing', 'service' => 'Billing gateway', 'owner' => 'Finance', 'health' => 'Operational', 'summary' => 'All payment providers are responding normally.'],
+                    ['id' => 'search', 'service' => 'Search index', 'owner' => 'Data', 'health' => 'Operational', 'summary' => 'The last full index completed 18 minutes ago.'],
+                    ['id' => 'mail', 'service' => 'Transactional mail', 'owner' => 'Growth', 'health' => 'Delayed', 'summary' => 'Delivery is delayed by approximately four minutes.'],
+                    ['id' => 'storage', 'service' => 'Object storage', 'owner' => 'Infrastructure', 'health' => 'Operational', 'summary' => 'Replication is healthy in all configured regions.'],
                 ]"
                 :row-details="['accessor' => 'summary', 'label' => 'Show details', 'mode' => 'inline']"
+                :page-size="3"
+                :page-size-options="[3, 6, 12]"
                 caption="Service health"
             />
 
@@ -119,12 +146,18 @@
                 :rows="[
                     ['id' => 'atlas', 'name' => 'Atlas migration', 'state' => 'Review', 'owner' => 'Ada'],
                     ['id' => 'relay', 'name' => 'Relay launch', 'state' => 'Draft', 'owner' => 'Grace'],
+                    ['id' => 'orbit', 'name' => 'Orbit billing', 'state' => 'Ready', 'owner' => 'Margaret'],
+                    ['id' => 'nova', 'name' => 'Nova search', 'state' => 'Review', 'owner' => 'Katherine'],
+                    ['id' => 'harbor', 'name' => 'Harbor storage', 'state' => 'Draft', 'owner' => 'Dorothy'],
+                    ['id' => 'signal', 'name' => 'Signal alerts', 'state' => 'Ready', 'owner' => 'Mary'],
                 ]"
                 :editable="[
                     'columns' => ['name', 'state', 'owner'],
                     'endpoint' => url('/_daisy-kit-test/table/rows/{rowId}'),
                     'method' => 'PATCH',
                 ]"
+                :page-size="3"
+                :page-size-options="[3, 6, 12]"
                 caption="Project planning"
             />
         </section>
