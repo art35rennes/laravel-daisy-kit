@@ -1,7 +1,7 @@
 # Laravel Daisy Kit v5 corrective examples
 
 These examples target the corrective development line beginning with
-`v5.1.0-alpha.1`. Pin that VCS tag exactly while **validation propriétaire en attente**.
+`v5.1.0-alpha.2`. Pin that VCS tag exactly while **validation propriétaire en attente**.
 They intentionally do not provide compatibility with v5.0.0 or its historical alpha releases.
 
 ## One host Vite alias, explicit module imports

@@ -17,7 +17,7 @@ Install it from GitHub/VCS rather than Packagist:
 ```json
 {
     "repositories": [{ "type": "vcs", "url": "https://github.com/art35rennes/laravel-daisy-kit" }],
-    "require": { "art35rennes/laravel-daisy-kit": "v5.1.0-alpha.1" }
+    "require": { "art35rennes/laravel-daisy-kit": "v5.1.0-alpha.2" }
 }
 ```
 
@@ -114,7 +114,7 @@ official `laravel-best-practices` skill when Boost makes it available.
 
 ## Status
 
-`v5.1.0-alpha.1` is a VCS-only corrective development prerelease; **validation propriétaire en
+`v5.1.0-alpha.2` is a VCS-only corrective development prerelease; **validation propriétaire en
 attente**. It is not a stable release and must be pinned by its exact tag for demo integration.
 The corrective v5 contract deliberately has no compatibility layer for v5.0.0 or its historical
 alpha releases: use this documentation and tag as one coherent development line, rather than

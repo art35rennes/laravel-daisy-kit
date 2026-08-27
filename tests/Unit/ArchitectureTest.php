@@ -116,7 +116,7 @@ it('documents the corrective development contract with copyable examples for eve
     $dependencies = (string) file_get_contents(packagePath('docs/dependencies.md'));
 
     expect($readme)
-        ->toContain('v5.1.0-alpha.1')
+        ->toContain('v5.1.0-alpha.2')
         ->not->toContain('v5.0.0-alpha.2');
 
     expect($readme)
