@@ -4,7 +4,17 @@
 
 .daisy-kit-file-preview {
     min-inline-size: 0;
+}
+
+.daisy-kit-file-preview:not([data-daisy-kit-layout='action-only']) {
     container-type: inline-size;
+}
+
+[data-daisy-kit-layout='action-only'] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .daisy-kit-file-preview .card-body {
