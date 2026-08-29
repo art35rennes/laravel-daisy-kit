@@ -11,12 +11,33 @@ const renderAsync = vi.fn((_data, output) => {
 
     return Promise.resolve();
 });
+const pdfRender = vi.fn(() => ({ promise: Promise.resolve() }));
+const pdfPage = {
+    getViewport: ({ scale }) => ({ height: 1_000_000 * scale, width: 100 * scale }),
+    render: pdfRender,
+};
+let pdfPageCount = 3;
+const getDocument = vi.fn(() => ({
+    destroy: vi.fn(() => Promise.resolve()),
+    promise: Promise.resolve({
+        getPage: vi.fn(() => Promise.resolve(pdfPage)),
+        get numPages() {
+            return pdfPageCount;
+        },
+    }),
+}));
+class PdfWorker {
+    terminate = vi.fn();
+}
 
 vi.mock('docx-preview', () => ({ renderAsync }));
+vi.mock('pdfjs-dist', () => ({ getDocument, GlobalWorkerOptions: { workerPort: null } }));
+vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?worker&inline', () => ({ default: PdfWorker }));
 
 describe('file preview sandbox renderer', () => {
     it('renders every supported family with typed blobs and authenticated messages', async () => {
         document.body.innerHTML = '<main data-daisy-kit-file-preview-output data-daisy-kit-file-preview-token="token"></main>';
+        vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({});
         const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview');
         const postMessage = vi.spyOn(window.parent, 'postMessage');
 
@@ -61,18 +82,25 @@ describe('file preview sandbox renderer', () => {
         await vi.waitFor(() => expect(document.querySelector('video')?.controls).toBe(true));
 
         render({ data: new ArrayBuffer(2), mimeType: 'application/pdf', name: 'report.pdf', type: 'pdf' }, 5);
-        await vi.waitFor(() => expect(document.querySelector('iframe')?.getAttribute('sandbox')).toBe(''));
+        await vi.waitFor(() => expect(document.querySelectorAll('[data-daisy-kit-pdf-page]')).toHaveLength(3));
+        expect(document.querySelector('iframe')).toBeNull();
+        expect(pdfRender).toHaveBeenCalledTimes(3);
+        expect([...document.querySelectorAll('[data-daisy-kit-pdf-page]')].every((canvas) => (
+            canvas.width <= 8_192
+            && canvas.height <= 8_192
+            && canvas.width * canvas.height <= 16_777_216
+        ))).toBe(true);
 
         render({
             data: new ArrayBuffer(2),
-            docxView: 'width',
+            docxView: 'page',
             mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             name: 'report.docx',
             type: 'docx',
             zoom: 125,
         }, 6);
         await vi.waitFor(() => expect(renderAsync).toHaveBeenCalledOnce());
-        expect(document.querySelector('main').dataset.daisyKitDocxView).toBe('width');
+        expect(document.querySelector('main').dataset.daisyKitDocxView).toBe('page');
         expect(document.querySelector('[data-daisy-kit-file-preview-docx-styles]')).not.toBeNull();
         expect(document.querySelector('.docx-wrapper').classList).toContain('daisy-kit-file-preview-zoom-125');
 
@@ -100,5 +128,37 @@ describe('file preview sandbox renderer', () => {
             source: window.parent,
         }));
         expect(renderAsync).toHaveBeenCalledTimes(callsBeforeRejectedMessage);
+
+        let rejectStalePdfPage;
+        const stalePdfPage = new Promise((_resolve, reject) => {
+            rejectStalePdfPage = reject;
+        });
+
+        pdfRender.mockReturnValueOnce({ promise: stalePdfPage });
+        postMessage.mockClear();
+        render({ data: new ArrayBuffer(2), mimeType: 'application/pdf', name: 'stale.pdf', type: 'pdf' }, 8);
+        await vi.waitFor(() => expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
+            renderId: 8,
+            type: 'rendered',
+        }), '*'));
+        render({ data: 'Current render', mimeType: 'text/plain', name: 'current.txt', type: 'text' }, 9);
+        rejectStalePdfPage(new Error('Stale PDF paint failed.'));
+
+        await vi.waitFor(() => expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
+            renderId: 9,
+            type: 'rendered',
+        }), '*'));
+        expect(postMessage).not.toHaveBeenCalledWith(expect.objectContaining({
+            renderId: 8,
+            type: 'error',
+        }), '*');
+
+        pdfPageCount = 251;
+        render({ data: new ArrayBuffer(2), mimeType: 'application/pdf', name: 'oversized.pdf', type: 'pdf' }, 10);
+        await vi.waitFor(() => expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
+            renderId: 10,
+            type: 'error',
+        }), '*'));
+        pdfPageCount = 3;
     });
 });

@@ -17,6 +17,7 @@ test('the file preview emits the restored CSP-safe product contract', function (
         ->toContain('data-daisy-kit-file-preview-modal-box')
         ->toContain('data-daisy-kit-file-preview-modal-content')
         ->toContain('data-daisy-kit-file-preview-modal-download')
+        ->toContain('data-daisy-kit-file-preview-zoom="fit"')
         ->toContain('tabindex="0"')
         ->toContain('data-daisy-kit-file-preview-retry')
         ->toContain('class="skeleton')
@@ -69,12 +70,14 @@ test('the file preview translates its interface in French', function (): void {
     app()->setLocale('fr');
 
     $html = view('daisy-kit::components.file-preview', [
-        'url' => '/files/report.txt',
-        'name' => 'report.txt',
+        'url' => '/files/report.docx',
+        'name' => 'report.docx',
+        'type' => 'docx',
     ])->render();
 
     expect($html)
         ->toContain('Prévisualiser')
+        ->toContain('Ajuster')
         ->toContain('Télécharger')
         ->toContain('Réessayer');
 });

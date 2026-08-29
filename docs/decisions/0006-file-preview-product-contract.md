@@ -26,8 +26,8 @@ alias. The old v4 `file-preview-trigger` alias and the reduced v5 alpha `src`, `
 and modal-as-layout dialects are not retained.
 
 The ESM entry keeps `mount`, `mountAll` and `unmount`. `mount(root)` returns an instance-local
-facade, also available through `getInstance(root)`, with state, open/close, retry and zoom
-controls. It does not expose the child frame or create a browser global.
+facade, also available through `getInstance(root)`, with state, open/close, retry, zoom and
+fit-to-width controls. It does not expose the child frame or create a browser global.
 
 Untrusted content continues to render in an opaque-origin `srcdoc` iframe without
 `allow-same-origin`. Parent and child authenticate messages with the exact window source,
@@ -36,10 +36,13 @@ sizes are validated before rendering; pending requests and object URLs are relea
 retry and unmount.
 
 Modal previews repeat the validated download action in their footer so the original remains
-reachable while inspecting it. DOCX zoom transforms the complete rendered document, not only
-the control state, and the isolated frame keeps its own stylesheet while `docx-preview` writes
-generated document styles to a dedicated container. Multipage DOCX content scrolls vertically
-inside the bounded frame; multipage PDF navigation remains owned by the browser PDF viewer.
+reachable while inspecting it. DOCX controls include an explicit fit-to-width action; zoom
+changes the complete rendered document, not only the control state, and the isolated frame keeps
+its own stylesheet while `docx-preview` writes generated document styles to a dedicated
+container. Multipage DOCX content scrolls vertically inside the bounded frame. PDF pages render
+to canvases with PDF.js inside the same opaque frame instead of delegating to the browser's PDF
+plugin, which browsers may block in a nested sandbox. Internal page-count, per-canvas and aggregate
+pixel limits bound PDF rendering work independently from the transport byte limit.
 
 ## Consequences
 
@@ -48,7 +51,7 @@ inside the bounded frame; multipage PDF navigation remains owned by the browser 
 - Hosts can compose custom controls through slots and the stable facade while the renderer
   remains private and replaceable.
 - The host CSP stays strict. Only the opaque child permits the renderer's required styles,
-  data/blob media and Vite-emitted internal assets.
+  data/blob media, workers and Vite-emitted internal assets.
 - Browser fixtures are genuine text, SVG, WAV, MP4, PDF and DOCX files; the PDF and DOCX fixtures
   contain three pages so scrolling and paging are outcome-tested rather than inferred.
 - Existing v5 alpha File Preview markup is intentionally incompatible with the corrective

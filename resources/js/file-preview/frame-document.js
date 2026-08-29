@@ -14,7 +14,7 @@ export function frameDocument(token) {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; connect-src 'none'; form-action 'none'; frame-src blob:; img-src data: blob:; font-src data: blob:; media-src blob:; object-src 'none'; script-src-attr 'none'; script-src-elem ${assetOrigins}; style-src 'unsafe-inline' ${assetOrigins}">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; connect-src 'none'; form-action 'none'; frame-src 'none'; img-src data: blob:; font-src data: blob:; media-src blob:; object-src 'none'; script-src-attr 'none'; script-src-elem ${assetOrigins}; style-src 'unsafe-inline' ${assetOrigins}; worker-src blob:">
     <title>File preview</title>
     <link rel="stylesheet" href="${stylesheet.href}">
 </head>

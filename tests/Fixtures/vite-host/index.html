@@ -72,11 +72,10 @@
             <div data-daisy-kit-file-preview-inline-content></div>
             <dialog data-daisy-kit-file-preview-modal>
                 <div data-daisy-kit-file-preview-modal-box>
-                    <div data-daisy-kit-file-preview-modal-content></div>
+                    <div data-daisy-kit-file-preview-modal-content><iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts" title="Fixture file preview"></iframe></div>
                     <button data-daisy-kit-file-preview-close-preview type="button">Close</button>
                 </div>
             </dialog>
-            <div data-daisy-kit-file-preview-frame-staging><iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts" title="Fixture file preview"></iframe></div>
             <script data-daisy-kit-config type="application/json">{"url":"/preview.txt","type":"text","name":"Fixture file preview","layout":"card","previewMode":"modal","canPreview":true,"canDownload":true,"maxPreviewBytes":10000,"maxTextPreviewBytes":1000,"docxZoom":100,"labels":{"error":"Preview failed.","frameNotReady":"Frame unavailable.","invalidType":"Invalid type.","tooLarge":"Too large."}}</script>
         </section>
 
@@ -86,8 +85,7 @@
             <p data-daisy-kit-loading hidden role="status">Loading preview…</p><p data-daisy-kit-empty hidden role="status">No file is selected.</p>
             <button data-daisy-kit-file-preview-open-preview type="button">Inspect</button>
             <div data-daisy-kit-file-preview-inline-content></div>
-            <dialog data-daisy-kit-file-preview-modal><div data-daisy-kit-file-preview-modal-box><div data-daisy-kit-file-preview-modal-content></div><button data-daisy-kit-file-preview-close-preview type="button">Close</button></div></dialog>
-            <div data-daisy-kit-file-preview-frame-staging><iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts" title="Action-only file preview"></iframe></div>
+            <dialog data-daisy-kit-file-preview-modal><div data-daisy-kit-file-preview-modal-box><div data-daisy-kit-file-preview-modal-content><iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts" title="Action-only file preview"></iframe></div><button data-daisy-kit-file-preview-close-preview type="button">Close</button></div></dialog>
             <script data-daisy-kit-config type="application/json">{"url":"/preview.txt","type":"text","name":"Action-only fixture preview","layout":"action-only","previewMode":"modal","canPreview":true,"maxPreviewBytes":10000,"maxTextPreviewBytes":1000,"labels":{"error":"Preview failed.","frameNotReady":"Frame unavailable.","invalidType":"Invalid type.","tooLarge":"Too large."}}</script>
         </section>
 

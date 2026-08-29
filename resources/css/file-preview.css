@@ -102,10 +102,6 @@
     block-size: 7rem;
 }
 
-.daisy-kit-file-preview__staging {
-    display: none;
-}
-
 .daisy-kit-file-preview .modal-box {
     display: flex;
     max-block-size: calc(100dvh - 2rem);

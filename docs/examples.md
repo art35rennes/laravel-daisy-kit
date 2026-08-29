@@ -288,7 +288,7 @@ controls the interaction (`auto`, `inline`, `modal`, `download`). These concerns
 separate. Named `trigger`, `metadata`, `actions`, `notice` and `modalFooter` slots customize regions
 without exposing another public Blade component. When download is enabled, the modal footer also
 contains the validated download action. Multipage DOCX previews scroll inside the isolated frame;
-PDF paging and vertical scrolling use the browser's native PDF viewer.
+PDF pages are rendered internally and scroll vertically without depending on the browser's PDF plugin.
 
 ```blade
 <x-daisy-kit::file-preview
@@ -307,7 +307,8 @@ PDF paging and vertical scrolling use the browser's native PDF viewer.
 
 For external controls, import `getInstance` from `@daisy-kit/file-preview.js`. The returned facade
 exposes `getState()`, `open()`, `close()`, `retry()`, `setZoom()`, `zoomIn()` and `zoomOut()`. Listen
-for `daisy-kit:file-preview:loading`, `ready`, `empty`, `error`, `open`, `close`, `zoom` and `retry`
+It also exposes `fit()` to fit a DOCX page to the available width. Listen for
+`daisy-kit:file-preview:loading`, `ready`, `empty`, `error`, `open`, `close`, `zoom` and `retry`
 to synchronize application UI without depending on iframe internals.
 
 ## Map

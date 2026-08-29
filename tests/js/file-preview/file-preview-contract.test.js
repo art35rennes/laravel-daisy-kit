@@ -101,7 +101,12 @@ describe('file preview public contract', () => {
             headers: { 'content-type': 'image/svg+xml' },
             status: 200,
         }))));
-        const root = previewRoot({ mimeType: 'image/svg+xml', type: 'image', url: '/plan.svg' });
+        const root = previewRoot({
+            mimeType: 'image/svg+xml',
+            previewMode: 'inline',
+            type: 'image',
+            url: '/plan.svg',
+        });
 
         mount(root);
         await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());

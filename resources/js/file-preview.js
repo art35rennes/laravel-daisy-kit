@@ -29,7 +29,6 @@ function elements(root) {
             ...root.querySelectorAll('[data-daisy-kit-file-preview-trigger-slot]'),
         ],
         retry: root.querySelector('[data-daisy-kit-file-preview-retry]'),
-        staging: root.querySelector('[data-daisy-kit-file-preview-frame-staging]'),
         status: root.querySelector('[data-daisy-kit-status]'),
         statusMessage: root.querySelector('[data-daisy-kit-status-message]'),
         zoomControls: [...root.querySelectorAll('[data-daisy-kit-file-preview-zoom]')],
@@ -99,10 +98,20 @@ function initialize(root, input) {
         setVisible(dom.retry, false);
     }
 
+    function showReady(detail = {}) {
+        const wasReady = status === 'ready';
+
+        updateStatus('ready');
+        setVisible(dom.loading, false);
+        setVisible(dom.frame, isOpen || configuration.previewMode === 'inline');
+
+        if (!wasReady) emit('ready', { mimeType: preview?.mimeType, ...detail });
+    }
+
     function restoreFrame() {
         if (!(dom.frame instanceof HTMLIFrameElement)) return;
 
-        const target = configuration.previewMode === 'inline' ? dom.inlineHost : dom.staging;
+        const target = configuration.previewMode === 'inline' ? dom.inlineHost : dom.modalContent;
 
         if (target instanceof HTMLElement && !target.contains(dom.frame)) target.append(dom.frame);
         setVisible(dom.frame, configuration.previewMode === 'inline' && status === 'ready');
@@ -136,7 +145,7 @@ function initialize(root, input) {
         returnFocus = trigger instanceof HTMLElement ? trigger : document.activeElement;
         isOpen = true;
         root.dataset.daisyKitPreviewOpen = 'true';
-        dom.modalContent.append(dom.frame);
+        if (!dom.modalContent.contains(dom.frame)) dom.modalContent.append(dom.frame);
         setVisible(dom.frame, status !== 'error');
 
         if (!dom.modal.open) {
@@ -146,6 +155,9 @@ function initialize(root, input) {
 
         const focusTarget = dom.closeButtons.find((button) => button instanceof HTMLElement);
         focusTarget?.focus({ preventScroll: true });
+
+        if (preview && frameReady && activeRenderId === null) void sendPayload();
+
         emit('open');
     }
 
@@ -169,6 +181,21 @@ function initialize(root, input) {
         }
 
         emit('zoom', { zoom: configuration.zoom });
+
+        return configuration.zoom;
+    }
+
+    function fit() {
+        if (!frameReady || !(dom.frame instanceof HTMLIFrameElement) || !dom.frame.contentWindow) {
+            return configuration.zoom;
+        }
+
+        dom.frame.contentWindow.postMessage({
+            channel: frameChannel,
+            renderId: activeRenderId,
+            token,
+            type: 'fit',
+        }, '*');
 
         return configuration.zoom;
     }
@@ -221,6 +248,8 @@ function initialize(root, input) {
         const request = new AbortController();
 
         abortController = request;
+        activeRenderId = null;
+        renderSequence += 1;
         preview = null;
         clearError();
         updateStatus('loading');
@@ -236,7 +265,9 @@ function initialize(root, input) {
 
             preview = result;
             exposeValidatedActions(result.blob);
-            await sendPayload();
+
+            if (configuration.previewMode === 'inline' || isOpen) await sendPayload();
+            else if (frameReady) showReady({ deferred: true });
         } catch (error) {
             if (destroyed || (error instanceof DOMException && error.name === 'AbortError')) return;
 
@@ -259,18 +290,32 @@ function initialize(root, input) {
         if (event.data.type === 'ready') {
             frameReady = true;
             window.clearTimeout(frameReadyTimer);
-            void sendPayload();
+
+            if (preview) {
+                if (configuration.previewMode === 'inline' || isOpen) void sendPayload();
+                else showReady({ deferred: true });
+            }
 
             return;
         }
 
         if (event.data.renderId !== activeRenderId) return;
 
+        if (event.data.type === 'zoom') {
+            const zoom = Number(event.data.zoom);
+
+            if (!Number.isFinite(zoom)) return;
+
+            configuration.zoom = Math.max(25, Math.min(Math.round(zoom), 200));
+            root.dataset.daisyKitZoom = String(configuration.zoom);
+            if (dom.zoomOutput) dom.zoomOutput.textContent = `${configuration.zoom}%`;
+            emit('zoom', { mode: event.data.mode === 'fit' ? 'fit' : 'manual', zoom: configuration.zoom });
+
+            return;
+        }
+
         if (event.data.type === 'rendered') {
-            updateStatus('ready');
-            setVisible(dom.loading, false);
-            setVisible(dom.frame, isOpen || configuration.previewMode === 'inline');
-            emit('ready', { mimeType: preview?.mimeType });
+            showReady();
         }
 
         if (event.data.type === 'error') showError(configuration.labels.error);
@@ -297,7 +342,10 @@ function initialize(root, input) {
         dom.zoomControls.forEach((button) => button.removeEventListener('click', onZoomClick));
         dom.retry?.removeEventListener('click', retry);
 
-        if (dom.modal instanceof HTMLDialogElement && dom.modal.open) dom.modal.close();
+        if (dom.modal instanceof HTMLDialogElement && dom.modal.open) {
+            if (typeof dom.modal.close === 'function') dom.modal.close();
+            else dom.modal.open = false;
+        }
         if (dom.frame instanceof HTMLIFrameElement) dom.frame.removeAttribute('srcdoc');
         if (objectUrl) URL.revokeObjectURL(objectUrl);
         preview = null;
@@ -308,7 +356,15 @@ function initialize(root, input) {
     }
 
     function onZoomClick(event) {
-        const amount = event.currentTarget.dataset.daisyKitFilePreviewZoom === 'in' ? 10 : -10;
+        const action = event.currentTarget.dataset.daisyKitFilePreviewZoom;
+
+        if (action === 'fit') {
+            fit();
+
+            return;
+        }
+
+        const amount = action === 'in' ? 10 : -10;
 
         setZoom(configuration.zoom + amount);
     }
@@ -316,6 +372,7 @@ function initialize(root, input) {
     const facade = Object.freeze({
         close,
         destroy,
+        fit,
         getState: snapshot,
         open,
         retry,

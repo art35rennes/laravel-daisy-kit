@@ -10,6 +10,7 @@ return [
     'retry' => 'Retry',
     'zoom_in' => 'Zoom in',
     'zoom_out' => 'Zoom out',
+    'zoom_fit' => 'Fit',
     'name' => 'Name',
     'type' => 'Type',
     'size' => 'Size',

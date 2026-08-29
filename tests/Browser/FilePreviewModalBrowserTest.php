@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 it('contains a DOCX preview in its modal and restores focus after dismissal', function (): void {
     $root = '[data-daisy-kit-module="file-preview"][aria-label="Product brief.docx"]';
+    $pdfRoot = '[data-daisy-kit-module="file-preview"][aria-label="Release overview.pdf"]';
+    $pdfDialog = "{$pdfRoot} dialog[data-daisy-kit-file-preview-modal]";
     $dialog = "{$root} dialog[data-daisy-kit-file-preview-modal]";
     $trigger = "{$root} [data-daisy-kit-file-preview-open-preview]";
 
@@ -43,8 +45,23 @@ it('contains a DOCX preview in its modal and restores focus after dismissal', fu
                 })()
                 JS);
         })
+        ->click("{$dialog} [data-daisy-kit-file-preview-zoom=\"fit\"]")
+        ->withinFrame("{$dialog} [data-daisy-kit-file-preview-frame]", function ($frame): void {
+            $frame->assertScript(<<<'JS'
+                (() => {
+                    const page = document.querySelector('.docx-wrapper > section.docx');
+                    const pageBounds = page?.getBoundingClientRect();
+
+                    return pageBounds
+                        && pageBounds.left >= 0
+                        && pageBounds.right <= document.documentElement.clientWidth + 1
+                        && document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1;
+                })()
+                JS);
+        })
+        ->assertScript("(() => { const root = document.querySelector('{$root}'); root.dataset.fitZoom = root.dataset.daisyKitZoom; return Number(root.dataset.fitZoom) >= 25; })()")
         ->click("{$dialog} [data-daisy-kit-file-preview-zoom=\"in\"]")
-        ->assertScript("document.querySelector('{$root}').dataset.daisyKitZoom === '110'")
+        ->assertScript("(() => { const root = document.querySelector('{$root}'); return Number(root.dataset.daisyKitZoom) === Number(root.dataset.fitZoom) + 10; })()")
         ->withinFrame("{$dialog} [data-daisy-kit-file-preview-frame]", function ($frame): void {
             $frame->assertScript(<<<'JS'
                 (() => {
@@ -80,6 +97,38 @@ it('contains a DOCX preview in its modal and restores focus after dismissal', fu
                     && document.activeElement === trigger;
             })()
             JS)
+        ->click("{$pdfRoot} [data-daisy-kit-file-preview-open-preview]")
+        ->assertScript("document.querySelector('{$pdfDialog}').open")
+        ->withinFrame("{$pdfDialog} [data-daisy-kit-file-preview-frame]", function ($frame): void {
+            $frame->assertScript(<<<'JS'
+                (() => {
+                    const pages = [...document.querySelectorAll('[data-daisy-kit-pdf-page]')];
+                    const scrollingElement = document.scrollingElement;
+
+                    return pages.length === 3
+                        && pages.every((page) => page instanceof HTMLCanvasElement && page.width > 0 && page.height > 0)
+                        && scrollingElement.scrollHeight > scrollingElement.clientHeight;
+                })()
+                JS);
+        })
+        ->click("{$pdfDialog} header [data-daisy-kit-file-preview-close-preview]")
+        ->resize(320, 844)
+        ->click($trigger)
+        ->click("{$dialog} [data-daisy-kit-file-preview-zoom=\"fit\"]")
+        ->assertScript(<<<JS
+            (() => {
+                const dialog = document.querySelector('{$dialog}');
+                const controls = dialog.querySelector('[data-daisy-kit-file-preview-zoom="fit"]').parentElement;
+
+                return document.documentElement.scrollWidth <= window.innerWidth
+                    && dialog.querySelector('[data-daisy-kit-file-preview-modal-box]').getBoundingClientRect().right <= window.innerWidth
+                    && controls.getBoundingClientRect().right <= dialog.getBoundingClientRect().right;
+            })()
+            JS)
+        ->withinFrame("{$dialog} [data-daisy-kit-file-preview-frame]", function ($frame): void {
+            $frame->assertScript('document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1');
+        })
+        ->click("{$dialog} header [data-daisy-kit-file-preview-close-preview]")
         ->assertNoAccessibilityIssues(1);
 })->group('browser');
 

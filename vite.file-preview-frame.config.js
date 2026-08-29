@@ -2,6 +2,9 @@ import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+    define: {
+        'import.meta': '{}',
+    },
     build: {
         emptyOutDir: true,
         lib: {

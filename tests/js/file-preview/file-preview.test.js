@@ -17,15 +17,16 @@ function root(configuration = {}) {
             <p data-daisy-kit-empty hidden role="status"></p>
             <button data-daisy-kit-file-preview-open-preview type="button">Preview</button>
             <button data-daisy-kit-file-preview-zoom="out" type="button">Zoom out</button>
+            <button data-daisy-kit-file-preview-zoom="fit" type="button">Fit</button>
             <button data-daisy-kit-file-preview-zoom="in" type="button">Zoom in</button>
             <output data-daisy-kit-file-preview-zoom-output></output>
-            <div data-daisy-kit-file-preview-inline-content>
-                <iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts"></iframe>
-            </div>
+            <div data-daisy-kit-file-preview-inline-content></div>
             <dialog data-daisy-kit-file-preview-modal>
                 <div data-daisy-kit-file-preview-modal-box>
                     <button data-daisy-kit-file-preview-close-preview type="button">Close</button>
-                    <div data-daisy-kit-file-preview-modal-content></div>
+                    <div data-daisy-kit-file-preview-modal-content>
+                        <iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts"></iframe>
+                    </div>
                     <a data-daisy-kit-file-preview-download data-daisy-kit-file-preview-modal-download hidden>Download</a>
                 </div>
             </dialog>
@@ -90,7 +91,7 @@ describe('file preview runtime', () => {
     it('loads a file in an opaque, network-denying frame', async () => {
         vi.stubGlobal('crypto', {});
         vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
-        const element = root();
+        const element = root({ previewMode: 'inline' });
 
         mount(element);
         await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
@@ -110,7 +111,7 @@ describe('file preview runtime', () => {
             headers: { 'content-type': 'text/plain' },
             status: 200,
         }))));
-        const element = root();
+        const element = root({ previewMode: 'inline' });
         const controller = mount(element);
         const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
         const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
@@ -135,7 +136,7 @@ describe('file preview runtime', () => {
             headers: { 'content-type': 'text/plain' },
             status: 200,
         }))));
-        const element = root({ maxTextPreviewBytes: 4 });
+        const element = root({ maxTextPreviewBytes: 4, previewMode: 'inline' });
 
         mount(element);
         await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
@@ -279,6 +280,66 @@ describe('file preview runtime', () => {
         expect(controller.setZoom(10)).toBe(25);
         expect(controller.zoomOut()).toBe(25);
         expect(events).toEqual([200, 25, 25]);
+    });
+
+    it('fits a DOCX through the authenticated frame and reflects its measured zoom', async () => {
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(new ArrayBuffer(2), {
+            headers: { 'content-type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
+            status: 200,
+        }))));
+        const element = root({
+            docxZoom: 125,
+            mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            type: 'docx',
+        });
+        const events = [];
+        element.addEventListener('daisy-kit:file-preview:zoom', (event) => events.push(event.detail));
+        const controller = mount(element);
+        const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
+        const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
+
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+        frameMessage(element, { type: 'ready' });
+        controller.open();
+        await vi.waitFor(() => expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
+            type: 'render',
+        }), '*', expect.any(Array)));
+        controller.fit();
+
+        expect(postMessage).toHaveBeenLastCalledWith(expect.objectContaining({
+            renderId: expect.any(Number),
+            type: 'fit',
+        }), '*');
+
+        const renderId = postMessage.mock.calls.at(-1)[0].renderId;
+        frameMessage(element, { mode: 'fit', renderId, type: 'zoom', zoom: 82 });
+
+        expect(controller.getState().zoom).toBe(82);
+        expect(element.dataset.daisyKitZoom).toBe('82');
+        expect(element.querySelector('[data-daisy-kit-file-preview-zoom-output]').textContent).toBe('82%');
+        expect(events.at(-1)).toEqual(expect.objectContaining({ mode: 'fit', zoom: 82 }));
+    });
+
+    it('defers hidden modal rendering until the preview is opened', async () => {
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('Report', {
+            headers: { 'content-type': 'text/plain' },
+            status: 200,
+        }))));
+        const element = root();
+        const controller = mount(element);
+        const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
+        const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
+
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+        frameMessage(element, { type: 'ready' });
+        await vi.waitFor(() => expect(controller.getState().status).toBe('ready'));
+
+        expect(postMessage).not.toHaveBeenCalled();
+
+        controller.open();
+        await vi.waitFor(() => expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
+            type: 'render',
+        }), '*', []));
     });
 
     it('aborts transport, revokes object URLs, and removes its facade on unmount', async () => {

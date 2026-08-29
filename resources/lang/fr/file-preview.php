@@ -10,6 +10,7 @@ return [
     'retry' => 'Réessayer',
     'zoom_in' => 'Agrandir',
     'zoom_out' => 'Réduire',
+    'zoom_fit' => 'Ajuster',
     'name' => 'Nom',
     'type' => 'Type',
     'size' => 'Taille',

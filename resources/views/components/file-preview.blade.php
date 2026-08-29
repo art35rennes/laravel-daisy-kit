@@ -168,11 +168,5 @@
 
     @include('daisy-kit::internal.file-preview.modal')
 
-    @if($canPreview && $resolvedPreviewMode !== 'inline')
-        <div class="daisy-kit-file-preview__staging" data-daisy-kit-file-preview-frame-staging>
-            @include('daisy-kit::internal.file-preview.frame')
-        </div>
-    @endif
-
     <script data-daisy-kit-config type="application/json">{!! $configuration !!}</script>
 </section>

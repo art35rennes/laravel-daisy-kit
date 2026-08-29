@@ -31,6 +31,7 @@ Composer suggestion, never a runtime requirement.
 | @tanstack/table-core | 9.2.3 | Table |
 | @dagrejs/dagre | 3.1.1 | Blueprint |
 | docx-preview | 0.4.0 | File Preview |
+| pdfjs-dist | 6.3.289 | Sandboxed, browser-independent PDF rendering for File Preview |
 | leaflet | 1.9.4 | Map runtime |
 | terra-draw / leaflet adapter | 1.32.3 / 1.3.0 | Map drawing |
 | @turf/area / @turf/length / @turf/boolean-intersects | 7.4.0 | Map measurements and spatial selection |

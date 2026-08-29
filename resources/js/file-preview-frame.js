@@ -1,5 +1,7 @@
 import '../css/file-preview-frame.css';
 import { renderAsync } from 'docx-preview';
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
+import PdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker&inline';
 
 const channel = 'daisy-kit:file-preview:frame';
 const output = document.querySelector('[data-daisy-kit-file-preview-output]');
@@ -10,12 +12,18 @@ const allowedThemeTokens = new Set([
     '--color-base-content',
     '--radius-box',
 ]);
+const maximumCanvasDimension = 8_192;
+const maximumCanvasPixels = 16_777_216;
+const maximumPdfPages = 250;
+const maximumTotalCanvasPixels = 33_554_432;
 let activeRenderId = null;
 let docxStyleContainer = null;
 let objectUrl = null;
+let pdfLoadingTask = null;
+let pdfWorker = null;
 
-function post(type, renderId = null) {
-    window.parent.postMessage({ channel, renderId, token, type }, '*');
+function post(type, renderId = null, detail = {}) {
+    window.parent.postMessage({ channel, renderId, token, type, ...detail }, '*');
 }
 
 function validMessage(event) {
@@ -35,6 +43,12 @@ function releaseObjectUrl() {
 function releaseDocxStyles() {
     docxStyleContainer?.remove();
     docxStyleContainer = null;
+}
+
+function releasePdf() {
+    if (pdfLoadingTask) void pdfLoadingTask.destroy();
+
+    pdfLoadingTask = null;
 }
 
 function applyTheme(theme) {
@@ -58,6 +72,27 @@ function applyZoom(zoom) {
             .forEach((className) => element.classList.remove(className));
     });
     wrappers.forEach((wrapper) => wrapper.classList.add(`daisy-kit-file-preview-zoom-${value}`));
+
+    return value;
+}
+
+function fitDocx() {
+    const wrapper = output.querySelector('.docx-wrapper');
+    const page = wrapper?.querySelector(':scope > section.docx');
+
+    if (!(wrapper instanceof HTMLElement) || !(page instanceof HTMLElement)) return null;
+
+    applyZoom(100);
+
+    const wrapperStyle = window.getComputedStyle(wrapper);
+    const horizontalPadding = (Number.parseFloat(wrapperStyle.paddingInlineStart) || 0)
+        + (Number.parseFloat(wrapperStyle.paddingInlineEnd) || 0);
+    const availableWidth = Math.max(1, output.clientWidth - horizontalPadding - 2);
+    const pageWidth = page.getBoundingClientRect().width;
+
+    if (!Number.isFinite(pageWidth) || pageWidth <= 0) return null;
+
+    return applyZoom((availableWidth / pageWidth) * 100);
 }
 
 function blobUrl(data, mimeType) {
@@ -108,16 +143,82 @@ function renderAudio(payload) {
     output.append(audio);
 }
 
-function renderPdf(payload) {
-    const pdf = document.createElement('iframe');
+async function renderPdf(payload) {
+    if (!pdfWorker) {
+        pdfWorker = new PdfWorker();
+        GlobalWorkerOptions.workerPort = pdfWorker;
+    }
 
-    pdf.setAttribute('sandbox', '');
-    pdf.title = payload.name;
-    pdf.src = blobUrl(payload.data, payload.mimeType);
-    output.append(pdf);
+    const pages = document.createElement('div');
+
+    pages.className = 'daisy-kit-file-preview-frame__pdf-pages';
+    pages.setAttribute('aria-label', payload.name);
+    output.append(pages);
+
+    pdfLoadingTask = getDocument({
+        data: new Uint8Array(payload.data),
+        isEvalSupported: false,
+        useWorkerFetch: false,
+    });
+    const pdf = await pdfLoadingTask.promise;
+    const pageRendering = [];
+
+    if (pdf.numPages > maximumPdfPages) throw new Error('PDF page limit exceeded.');
+
+    pages.dataset.daisyKitPdfPages = String(pdf.numPages);
+
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        const page = await pdf.getPage(pageNumber);
+        const naturalViewport = page.getViewport({ scale: 1 });
+        const availableWidth = Math.max(1, output.clientWidth);
+        let viewportScale = Math.min(
+            2,
+            availableWidth / naturalViewport.width,
+            maximumCanvasDimension / naturalViewport.height,
+        );
+        let viewport = page.getViewport({ scale: viewportScale });
+        let outputScale = Math.min(window.devicePixelRatio || 1, 2);
+        const canvasPixels = viewport.width * outputScale * viewport.height * outputScale;
+
+        const pageCanvasPixels = Math.min(maximumCanvasPixels, maximumTotalCanvasPixels / pdf.numPages);
+
+        if (canvasPixels > pageCanvasPixels) {
+            outputScale *= Math.sqrt(pageCanvasPixels / canvasPixels);
+        }
+
+        if (viewport.width * outputScale > maximumCanvasDimension) {
+            viewportScale *= maximumCanvasDimension / (viewport.width * outputScale);
+            viewport = page.getViewport({ scale: viewportScale });
+        }
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d', { alpha: false });
+
+        if (!context) throw new Error('Canvas is unavailable.');
+
+        canvas.dataset.daisyKitPdfPage = String(pageNumber);
+        canvas.setAttribute('aria-label', `${payload.name} — ${pageNumber} / ${pdf.numPages}`);
+        canvas.width = Math.floor(viewport.width * outputScale);
+        canvas.height = Math.floor(viewport.height * outputScale);
+        pages.append(canvas);
+
+        pageRendering.push(() => page.render({
+            canvas,
+            canvasContext: context,
+            transform: outputScale === 1 ? null : [outputScale, 0, 0, outputScale, 0, 0],
+            viewport,
+        }).promise);
+    }
+
+    return {
+        completion: pageRendering.reduce(
+            (previousRendering, renderPage) => previousRendering.then(renderPage),
+            Promise.resolve(),
+        ),
+    };
 }
 
-async function renderDocx(payload) {
+async function renderDocx(payload, renderId) {
     output.dataset.daisyKitDocxView = payload.docxView === 'width' ? 'width' : 'page';
     docxStyleContainer = document.createElement('div');
     docxStyleContainer.hidden = true;
@@ -128,12 +229,15 @@ async function renderDocx(payload) {
         renderComments: false,
         useBase64URL: true,
     });
-    applyZoom(payload.zoom);
+    const zoom = payload.docxView === 'width' ? fitDocx() : applyZoom(payload.zoom);
+
+    if (zoom !== null && zoom !== payload.zoom) post('zoom', renderId, { mode: 'fit', zoom });
 }
 
-async function render(payload) {
+async function render(payload, renderId) {
     releaseObjectUrl();
     releaseDocxStyles();
+    releasePdf();
     output.replaceChildren();
     output.dataset.daisyKitFilePreviewType = payload.type;
     applyTheme(payload.theme);
@@ -144,7 +248,7 @@ async function render(payload) {
     if (payload.type === 'video') return renderVideo(payload);
     if (payload.type === 'audio') return renderAudio(payload);
     if (payload.type === 'pdf') return renderPdf(payload);
-    if (payload.type === 'docx') return renderDocx(payload);
+    if (payload.type === 'docx') return renderDocx(payload, renderId);
 
     throw new Error('Unsupported preview type.');
 }
@@ -158,22 +262,47 @@ window.addEventListener('message', async (event) => {
         return;
     }
 
+    if (event.data.type === 'fit' && event.data.renderId === activeRenderId) {
+        const zoom = fitDocx();
+
+        if (zoom !== null) post('zoom', activeRenderId, { mode: 'fit', zoom });
+
+        return;
+    }
+
     if (event.data.type !== 'render' || !Number.isSafeInteger(event.data.renderId)) return;
 
-    activeRenderId = event.data.renderId;
+    const renderId = event.data.renderId;
+
+    activeRenderId = renderId;
 
     try {
-        await render(event.data.payload);
-        post('rendered', activeRenderId);
+        const result = await render(event.data.payload, renderId);
+
+        if (activeRenderId !== renderId) return;
+
+        post('rendered', renderId);
+
+        void result?.completion?.catch(() => {
+            if (activeRenderId !== renderId) return;
+
+            output.replaceChildren();
+            post('error', renderId);
+        });
     } catch {
+        if (activeRenderId !== renderId) return;
+
         output.replaceChildren();
-        post('error', activeRenderId);
+        post('error', renderId);
     }
 });
 
 window.addEventListener('pagehide', () => {
     releaseObjectUrl();
     releaseDocxStyles();
+    releasePdf();
+    pdfWorker?.terminate();
+    pdfWorker = null;
 });
 queueMicrotask(() => {
     document.documentElement.dataset.daisyKitFilePreviewFrame = 'ready';
