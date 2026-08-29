@@ -19,4 +19,10 @@ mountTable(document);
 mountTree(document);
 mountMap(document);
 mountBlueprint(document.querySelector('[data-daisy-kit-module="blueprint"]'));
-mountFilePreviews(document);
+try {
+    mountFilePreviews(document);
+} catch (error) {
+    document.querySelectorAll('[data-daisy-kit-module="file-preview"]').forEach((root) => {
+        root.dataset.viteHostError = error instanceof Error ? error.message : 'Unknown File Preview mount failure.';
+    });
+}

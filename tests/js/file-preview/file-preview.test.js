@@ -99,6 +99,7 @@ describe('file preview runtime', () => {
         expect(frame.getAttribute('sandbox')).toBe('allow-scripts');
         expect(frame.srcdoc).toContain("connect-src 'none'");
         expect(frame.srcdoc).toContain("script-src-attr 'none'");
+        expect(frame.srcdoc).toContain('<link rel="stylesheet"');
         expect(frame.srcdoc).not.toContain('allow-same-origin');
         expect(frame.srcdoc).not.toContain('onload=');
     });

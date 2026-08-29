@@ -6,8 +6,7 @@ const frameAssets = [
 export const frameChannel = 'daisy-kit:file-preview:frame';
 
 export function frameDocument(token) {
-    const script = frameAssets.find((asset) => asset.pathname.endsWith('.js'));
-    const stylesheet = frameAssets.find((asset) => asset.pathname.endsWith('.css'));
+    const [script, stylesheet] = frameAssets;
     const assetOrigins = [...new Set(frameAssets.map((asset) => asset.origin))].join(' ');
 
     return `<!doctype html>

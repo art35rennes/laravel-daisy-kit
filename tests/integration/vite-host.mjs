@@ -101,6 +101,7 @@ async function fixtureModuleStates(page) {
         module: root.getAttribute('data-daisy-kit-module'),
         state: root.getAttribute('data-daisy-kit-state') ?? 'missing',
         status: root.querySelector('[data-daisy-kit-status]')?.textContent?.trim() ?? '',
+        viteHostError: root.dataset.viteHostError ?? '',
     })));
 }
 
@@ -175,7 +176,7 @@ try {
                 && roots.every((root) => root.dataset.daisyKitState === expected[root.getAttribute('data-daisy-kit-module')]);
         });
     } catch (error) {
-        throw new Error(`Fresh host modules did not reach their expected terminal states: ${JSON.stringify(await fixtureModuleStates(page))}`, { cause: error });
+        throw new Error(`Fresh host modules did not reach their expected terminal states: ${JSON.stringify(await fixtureModuleStates(page))}; responses: ${JSON.stringify(responses)}; console: ${JSON.stringify(consoleErrors)}`, { cause: error });
     }
 
     const viewer = page.locator('[data-daisy-kit-module="forms-viewer"]').first();
