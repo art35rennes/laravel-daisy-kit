@@ -295,11 +295,14 @@ spatial selection, measurements, history and GeoJSON export.
     :geojson="$projectBoundary"
     :center="[48.1173, -1.6778]"
     :zoom="12"
-    tile-url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-    tile-attribution="&copy; OpenStreetMap contributors"
+    tile-url="/maps/tiles/{z}/{x}/{y}.png"
+    tile-attribution="Local map tiles"
     :markers="[['id' => 'office', 'label' => 'Office', 'position' => [48.1173, -1.6778]]]"
-    :layers="[['id' => 'zones', 'label' => 'Zoning', 'geojson' => $zoning]]"
-    :wms="[['id' => 'cadastre', 'url' => config('services.maps.wms_url'), 'layers' => 'parcels']]"
+    :layers="[
+        ['id' => 'zones', 'label' => 'Zoning', 'type' => 'geojson', 'data' => $zoning],
+        ['id' => 'cadastre', 'label' => 'Cadastre', 'type' => 'wms',
+         'url' => config('services.maps.wms_url'), 'options' => ['layers' => 'parcels']],
+    ]"
     :drawing="true"
     :spatial-selection="true"
     :geolocation="true"
@@ -307,6 +310,6 @@ spatial selection, measurements, history and GeoJSON export.
 />
 ```
 
-Use provider URLs and attribution authorized by the host. Map's narrowly documented CSS/CSP
-exception is confined to its map runtime; all configuration remains encoded JSON and its events
-use `daisy-kit:map:*`.
+Use provider URLs and attribution authorized by the host. All configuration remains encoded JSON
+and events use `daisy-kit:map:*`. The complete layer shapes, facade, events, CSP directives and
+migration notes are in [`map.md`](map.md).

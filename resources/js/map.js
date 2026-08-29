@@ -49,12 +49,18 @@ export function mount(root) {
         .catch((error) => {
             if (instances.get(root) !== runtime) return;
             const fallback = value.labels?.error ?? 'The map could not be loaded.';
-            const message = error instanceof Error && error.message !== '' ? error.message : fallback;
+            const message = typeof error?.message === 'string' && error.message !== ''
+                ? error.message
+                : typeof error === 'string' && error !== '' ? error : fallback;
             showError(root, message);
             const errorPanel = root.querySelector('[data-daisy-kit-map-error]');
             const errorMessage = root.querySelector('[data-daisy-kit-map-error-message]');
             if (errorPanel) errorPanel.hidden = false;
             if (errorMessage) errorMessage.textContent = message;
+            root.querySelector('[data-daisy-kit-map-retry]')?.addEventListener('click', () => {
+                unmount(root);
+                mount(root);
+            }, { once: true });
             emit(root, 'error', {
                 code: 'initialization-failed',
                 message,

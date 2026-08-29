@@ -24,12 +24,14 @@ const map = {
 };
 
 function layer() {
+    const handlers = {};
     const value = {
         addTo: vi.fn(() => value),
         bindPopup: vi.fn(() => value),
         getBounds: vi.fn(() => ({ isValid: () => true })),
-        off: vi.fn(),
-        on: vi.fn(),
+        handlers,
+        off: vi.fn((event) => { delete handlers[event]; }),
+        on: vi.fn((event, handler) => { handlers[event] = handler; }),
         remove: vi.fn(),
     };
     mocks.layers.push(value);
@@ -50,7 +52,12 @@ vi.mock('leaflet', () => ({
         },
         divIcon: vi.fn((options) => options),
         featureGroup: vi.fn(() => ({ getBounds: () => ({ isValid: () => true }) })),
-        geoJSON: vi.fn(() => layer()),
+        geoJSON: vi.fn((data, options = {}) => {
+            const value = layer();
+            data?.features?.forEach((feature) => options.onEachFeature?.(feature, value));
+
+            return value;
+        }),
         icon: vi.fn((options) => options),
         map: mocks.leafletMap,
         marker: vi.fn(() => {
@@ -86,22 +93,41 @@ vi.mock('leaflet', () => ({
     },
 }));
 
-vi.mock('leaflet.markercluster', () => ({}));
+vi.mock('leaflet.markercluster/src/index.js', () => ({
+    MarkerClusterGroup: class {
+        addLayer = vi.fn();
+        addTo = vi.fn(() => {
+            mocks.clusterGroups.push(this);
+
+            return this;
+        });
+        remove = vi.fn();
+        removeLayer = vi.fn();
+    },
+}));
 vi.mock('leaflet-gesture-handling', () => ({}));
 
 vi.mock('terra-draw', () => ({
     TerraDraw: class {
         handlers = {};
         snapshot = [];
+        options;
 
-        constructor() { mocks.drawings.push(this); }
+        constructor(options) { this.options = options; mocks.drawings.push(this); }
         addFeatures = vi.fn((features) => { this.snapshot.push(...features); });
         getSnapshot = vi.fn(() => this.snapshot);
-        getSnapshotFeature = vi.fn((id) => this.snapshot.find((feature) => feature.id === id) ?? {
-            geometry: { coordinates: [[[-1.7, 48.1], [-1.6, 48.1], [-1.6, 48.2], [-1.7, 48.1]]], type: 'Polygon' },
-            id,
-            properties: {},
-            type: 'Feature',
+        getSnapshotFeature = vi.fn((id) => {
+            const existing = this.snapshot.find((feature) => feature.id === id);
+            if (existing) return existing;
+            const feature = {
+                geometry: { coordinates: [[[-1.7, 48.1], [-1.6, 48.1], [-1.6, 48.2], [-1.7, 48.1]]], type: 'Polygon' },
+                id,
+                properties: {},
+                type: 'Feature',
+            };
+            this.snapshot.push(feature);
+
+            return feature;
         });
         off = vi.fn();
         on = vi.fn((event, handler) => { this.handlers[event] = handler; });
@@ -111,6 +137,10 @@ vi.mock('terra-draw', () => ({
         start = vi.fn();
         stop = vi.fn();
         undo = vi.fn(() => true);
+        updateFeatureProperties = vi.fn((id, properties) => {
+            const feature = this.getSnapshotFeature(id);
+            feature.properties = { ...feature.properties, ...properties };
+        });
     },
     TerraDrawLineStringMode: class {},
     TerraDrawPointMode: class {},
@@ -279,7 +309,9 @@ describe('map entry', () => {
         const instance = await mounted(element);
 
         expect(errors[0]).toMatchObject({ id: 'remote', message: expect.stringContaining('503') });
+        expect(element.dataset.daisyKitState).toBe('error');
         expect(await instance.refreshLayer('remote')).toBe(true);
+        expect(element.dataset.daisyKitState).toBe('ready');
         expect(fetch).toHaveBeenCalledTimes(2);
     });
 
@@ -297,7 +329,9 @@ describe('map entry', () => {
 
         expect(mocks.clusterGroups).toHaveLength(1);
         expect(mocks.clusterGroups[0].addLayer).toHaveBeenCalledOnce();
+        expect(mocks.leafletMap).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ maxZoom: 19 }));
         expect(mocks.markers[0].bindPopup).toHaveBeenCalledWith('<strong>Office</strong>');
+        expect(window.L).toBeUndefined();
     });
 
     it('synchronizes drawing, selection, measurement, history and export', async () => {
@@ -327,10 +361,53 @@ describe('map entry', () => {
         expect(instance.getDrawLayer()).toBe('water');
         expect(instance.undo()).toBe(true);
         expect(instance.redo()).toBe(true);
-        expect(instance.exportGeoJSON()).toMatchObject({ type: 'FeatureCollection' });
+        expect(instance.exportGeoJSON()).toMatchObject({
+            features: [expect.objectContaining({ properties: expect.objectContaining({ drawLayer: 'water', objectType: 'hydrant' }) })],
+            type: 'FeatureCollection',
+        });
+        expect(instance.exportGeoJSON().features[0].properties).not.toHaveProperty('mode');
         expect(nativeEvents).toContain('change');
         expect(JSON.parse(input.value)).toMatchObject({ type: 'FeatureCollection' });
         expect(instance.deleteSelected()).toBe(true);
+    });
+
+    it('hydrates public drawing ids without leaking Terra Draw properties', async () => {
+        const instance = await mounted(root({
+            drawing: true,
+            value: {
+                features: [{ geometry: { coordinates: [-1.6, 48.1], type: 'Point' }, id: 'asset-1', properties: { asset: true }, type: 'Feature' }],
+                type: 'FeatureCollection',
+            },
+        }));
+        const drawing = mocks.drawings.at(-1);
+
+        expect(drawing.options.idStrategy.isValidId('asset-1')).toBe(true);
+        expect(drawing.addFeatures).toHaveBeenCalledWith([
+            expect.objectContaining({ properties: { asset: true, mode: 'point' } }),
+        ]);
+        expect(instance.exportGeoJSON().features[0].properties).toEqual({ asset: true });
+    });
+
+    it('selects GeoJSON features by click or by a drawn area', async () => {
+        const element = root({
+            geojson: {
+                features: [{ geometry: { coordinates: [-1.6, 48.1], type: 'Point' }, id: 'office', properties: {}, type: 'Feature' }],
+                type: 'FeatureCollection',
+            },
+            spatialSelection: { enabled: true, mode: 'both' },
+        });
+        const instance = await mounted(element);
+        const geojsonLayer = mocks.layers.find((candidate) => candidate.handlers.click);
+
+        expect(instance.setMode('feature-select')).toBe(true);
+        geojsonLayer.handlers.click();
+        expect(instance.getSelection()).toHaveLength(1);
+
+        instance.clearSelection();
+        expect(instance.getSelection()).toEqual([]);
+        expect(instance.setMode('spatial-select')).toBe(true);
+        await mocks.drawings.at(-1).handlers.finish('selection-area', {});
+        expect(instance.getSelection()).toHaveLength(1);
     });
 
     it('supports one-shot and watched geolocation', async () => {

@@ -81,6 +81,47 @@ Route::patch('/_daisy-kit-test/table/rows/{rowId}', function (Request $request, 
     return response()->json(['row' => $row]);
 })->where('rowId', '[A-Za-z0-9-]+')->name('workbench.table.update');
 
+Route::get('/_daisy-kit-test/map/districts.geojson', function () {
+    return response()->json([
+        'type' => 'FeatureCollection',
+        'features' => [[
+            'type' => 'Feature',
+            'id' => 'district-center',
+            'properties' => ['name' => 'Central district', 'popup' => 'Central district'],
+            'geometry' => [
+                'type' => 'Polygon',
+                'coordinates' => [[
+                    [-1.72, 48.09],
+                    [-1.61, 48.09],
+                    [-1.61, 48.16],
+                    [-1.72, 48.16],
+                    [-1.72, 48.09],
+                ]],
+            ],
+        ]],
+    ], headers: ['Content-Type' => 'application/geo+json']);
+})->name('workbench.map.districts');
+
+Route::get('/_daisy-kit-test/map/tiles/{style}/{z}/{x}/{y}.png', function () {
+    $transparentPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', true);
+
+    return response($transparentPng, 200, [
+        'Cache-Control' => 'public, max-age=3600',
+        'Content-Type' => 'image/png',
+    ]);
+})->where([
+    'style' => '[a-z-]+',
+    'z' => '[0-9]+',
+    'x' => '[0-9]+',
+    'y' => '[0-9]+',
+])->name('workbench.map.tiles');
+
+Route::get('/_daisy-kit-test/map/wms', function () {
+    $transparentPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', true);
+
+    return response($transparentPng, 200, ['Content-Type' => 'image/png']);
+})->name('workbench.map.wms');
+
 Route::get('/_daisy-kit-test/csp/map', function () {
     return response()
         ->view('workbench::csp-map')

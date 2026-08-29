@@ -1,11 +1,24 @@
 import { emptyCollection } from './configuration.js';
 
-function collection(features) {
-    return { features: features.map((feature) => ({ ...feature })), type: 'FeatureCollection' };
+const privateProperties = new Set([
+    'closingPoint', 'committedCoordinateCount', 'coordinatePoint', 'coordinatePointFeatureId',
+    'coordinatePointIds', 'currentlyDrawing', 'edited', 'marker', 'midPoint', 'mode',
+    'provisionalCoordinateCount', 'selected', 'selectionPoint', 'selectionPointFeatureId', 'snappingPoint',
+]);
+
+function publicFeature(feature) {
+    const copy = JSON.parse(JSON.stringify(feature));
+    copy.properties = Object.fromEntries(Object.entries(copy.properties ?? {}).filter(([key]) => !privateProperties.has(key)));
+
+    return copy;
 }
 
-export async function createDrawing({ L, configuration, emit, map, root, signal }) {
-    const enabled = configuration.drawing || configuration.spatialSelection || configuration.measure;
+function collection(features) {
+    return { features: features.map(publicFeature), type: 'FeatureCollection' };
+}
+
+export async function createDrawing({ L, configuration, emit, map, root, signal, sources }) {
+    const enabled = configuration.drawing || configuration.spatialSelection || configuration.value.features.length > 0;
     const valueInput = root.querySelector('[data-daisy-kit-map-value]');
     const measurementOutput = root.querySelector('[data-daisy-kit-map-measurement]');
     const modeOutput = root.querySelector('[data-daisy-kit-map-active-mode]');
@@ -15,6 +28,8 @@ export async function createDrawing({ L, configuration, emit, map, root, signal 
     const deleteButton = root.querySelector('[data-daisy-kit-map-delete-selected]');
     const selectionPanel = root.querySelector('[data-daisy-kit-map-selection]');
     const selectionSummary = root.querySelector('[data-daisy-kit-map-selection-summary]');
+    const objectTypeSelect = root.querySelector('[data-daisy-kit-map-object-type]');
+    const drawLayerSelect = root.querySelector('[data-daisy-kit-map-draw-layer]');
 
     if (!enabled) {
         return {
@@ -27,6 +42,7 @@ export async function createDrawing({ L, configuration, emit, map, root, signal 
             redo: () => false,
             setDrawLayer: () => false,
             setMode: () => false,
+            setObjectType: () => false,
             undo: () => false,
         };
     }
@@ -35,15 +51,24 @@ export async function createDrawing({ L, configuration, emit, map, root, signal 
     const { TerraDrawLeafletAdapter } = await import('terra-draw-leaflet-adapter');
     if (signal.aborted) return null;
 
+    const initialGeometryTypes = new Set(configuration.value.features.map((feature) => feature?.geometry?.type));
     const modes = [];
-    if (configuration.drawing?.point !== false) modes.push(new terra.TerraDrawPointMode());
-    if (configuration.drawing?.line !== false) modes.push(new terra.TerraDrawLineStringMode());
-    if (configuration.drawing?.polygon !== false) modes.push(new terra.TerraDrawPolygonMode());
-    if (configuration.drawing?.rectangle !== false && terra.TerraDrawRectangleMode) modes.push(new terra.TerraDrawRectangleMode());
+    if (configuration.drawing?.point !== false && (configuration.drawing || initialGeometryTypes.has('Point'))) modes.push(new terra.TerraDrawPointMode());
+    if (configuration.drawing?.line !== false && (configuration.drawing || initialGeometryTypes.has('LineString'))) modes.push(new terra.TerraDrawLineStringMode());
+    if (configuration.drawing?.polygon !== false && (configuration.drawing || initialGeometryTypes.has('Polygon'))) modes.push(new terra.TerraDrawPolygonMode());
+    const needsRectangle = (configuration.drawing && configuration.drawing.rectangle !== false)
+        || ['area', 'both'].includes(configuration.spatialSelection?.mode);
+    if (needsRectangle && terra.TerraDrawRectangleMode) modes.push(new terra.TerraDrawRectangleMode());
     modes.push(new terra.TerraDrawSelectMode());
+
+    let generatedFeatureId = 0;
 
     const drawing = new terra.TerraDraw({
         adapter: new TerraDrawLeafletAdapter({ lib: L, map }),
+        idStrategy: {
+            getId: () => `daisy-kit-feature-${generatedFeatureId++}`,
+            isValidId: (id) => (typeof id === 'string' && id !== '') || (typeof id === 'number' && Number.isFinite(id)),
+        },
         modes,
         undoRedo: { sessionLevel: new terra.TerraDrawSessionUndoRedo() },
     });
@@ -87,7 +112,7 @@ export async function createDrawing({ L, configuration, emit, map, root, signal 
     }
 
     function updateSelection() {
-        const features = [...selectedIds].map((id) => drawing.getSnapshotFeature?.(id)).filter(Boolean);
+        const features = [...selectedIds].map((id) => drawing.getSnapshotFeature?.(id)).filter(Boolean).map(publicFeature);
         const count = features.length;
         deleteButton?.toggleAttribute('disabled', count === 0);
         if (selectionPanel) selectionPanel.hidden = count === 0;
@@ -101,7 +126,9 @@ export async function createDrawing({ L, configuration, emit, map, root, signal 
     }
 
     function setMode(mode, options = {}) {
-        const terraMode = mode === 'edit' ? 'select' : mode;
+        const terraMode = ['edit', 'feature-select'].includes(mode)
+            ? 'select'
+            : mode === 'spatial-select' ? 'rectangle' : mode;
         try {
             drawing.setMode(terraMode);
         } catch {
@@ -111,6 +138,7 @@ export async function createDrawing({ L, configuration, emit, map, root, signal 
         currentMode = mode;
         activeObjectType = options.objectType ?? activeObjectType;
         activeDrawLayer = options.drawLayer ?? activeDrawLayer;
+        sources?.setSelectionMode(mode);
         root.querySelectorAll('[data-daisy-kit-map-mode]').forEach((button) => {
             button.setAttribute('aria-pressed', String(button.dataset.daisyKitMapMode === mode));
         });
@@ -124,8 +152,8 @@ export async function createDrawing({ L, configuration, emit, map, root, signal 
     }
 
     function clearSelection() {
+        [...selectedIds].forEach((id) => drawing.deselectFeature?.(id));
         selectedIds.clear();
-        if (currentMode === 'select') drawing.setMode('select');
         updateSelection();
     }
 
@@ -167,13 +195,28 @@ export async function createDrawing({ L, configuration, emit, map, root, signal 
     }
 
     async function onFinish(id, context) {
-        const feature = drawing.getSnapshotFeature?.(id) ?? context?.feature;
+        let feature = drawing.getSnapshotFeature?.(id) ?? context?.feature;
+        if (currentMode === 'spatial-select' && feature) {
+            const selection = await sources?.selectWithin(feature) ?? [];
+            drawing.removeFeatures([id]);
+            syncValue();
+            emit('spatial-selection', { area: publicFeature(feature), features: selection });
+
+            return;
+        }
+
         if (feature) {
-            feature.properties = {
-                ...feature.properties,
+            const objectType = configuration.objectTypes?.find((type) => type.id === activeObjectType);
+            const drawLayer = configuration.drawLayers?.find((layer) => layer.id === activeDrawLayer);
+            const properties = {
+                ...(drawLayer?.properties ?? {}),
+                ...(objectType?.properties ?? {}),
                 ...(activeDrawLayer ? { drawLayer: activeDrawLayer } : {}),
                 ...(activeObjectType ? { objectType: activeObjectType } : {}),
             };
+            privateProperties.forEach((key) => delete properties[key]);
+            drawing.updateFeatureProperties?.(id, properties);
+            feature = drawing.getSnapshotFeature?.(id) ?? { ...feature, properties: { ...feature.properties, ...properties } };
         }
         const measurement = await measureFeature(feature);
         if (measurementOutput) {
@@ -181,7 +224,7 @@ export async function createDrawing({ L, configuration, emit, map, root, signal 
             measurementOutput.textContent = measurement ?? '';
         }
         syncValue();
-        emit('geometry-finish', { feature, id, measurement });
+        emit('geometry-finish', { feature: feature ? publicFeature(feature) : null, id, measurement });
         if (measurement) emit('measurement', { id, value: measurement });
     }
 
@@ -191,8 +234,9 @@ export async function createDrawing({ L, configuration, emit, map, root, signal 
         updateSelection();
     }
 
-    function onDeselect() {
-        selectedIds.clear();
+    function onDeselect(id) {
+        if (id === undefined || id === null) selectedIds.clear();
+        else selectedIds.delete(id);
         updateSelection();
     }
 
@@ -206,7 +250,13 @@ export async function createDrawing({ L, configuration, emit, map, root, signal 
     drawing.on('deselect', onDeselect);
     drawing.on('history', onHistory);
     drawing.start();
-    if (configuration.value.features.length > 0) drawing.addFeatures(configuration.value.features);
+    if (configuration.value.features.length > 0) {
+        const modeByGeometry = { LineString: 'linestring', Point: 'point', Polygon: 'polygon' };
+        drawing.addFeatures(configuration.value.features.map((feature) => ({
+            ...feature,
+            properties: { ...feature.properties, mode: feature.properties?.mode ?? modeByGeometry[feature.geometry.type] },
+        })));
+    }
     syncValue(false);
 
     return {
@@ -222,15 +272,25 @@ export async function createDrawing({ L, configuration, emit, map, root, signal 
         },
         exportGeoJSON,
         getDrawLayer: () => activeDrawLayer,
-        getSelection: () => [...selectedIds].map((id) => drawing.getSnapshotFeature?.(id)).filter(Boolean),
+        getSelection: () => [...selectedIds].map((id) => drawing.getSnapshotFeature?.(id)).filter(Boolean).map(publicFeature),
         redo,
         setDrawLayer(id) {
             if (!configuration.drawLayers?.some((layer) => layer.id === id)) return false;
             activeDrawLayer = id;
+            if (drawLayerSelect) drawLayerSelect.value = id;
 
             return true;
         },
         setMode,
+        setObjectType(id) {
+            const type = configuration.objectTypes?.find((candidate) => candidate.id === id);
+            if (!type) return false;
+            activeObjectType = id;
+            if (objectTypeSelect) objectTypeSelect.value = id;
+            if (configuration.drawing) setMode(type.geometry === 'line' ? 'linestring' : type.geometry);
+
+            return true;
+        },
         undo,
     };
 }

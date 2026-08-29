@@ -226,15 +226,105 @@
 
         <section class="min-w-0" aria-labelledby="map-heading">
             <h2 id="map-heading">Map</h2>
-            <x-daisy-kit::map
-                :drawing="true"
-                :geojson="[
-                    'type' => 'Feature',
-                    'geometry' => ['type' => 'Point', 'coordinates' => [-1.6778, 48.1173]],
-                    'properties' => ['label' => 'Rennes'],
-                ]"
-                :markers="[['id' => 'rennes', 'label' => 'Rennes', 'position' => [48.1173, -1.6778]]]"
-            />
+
+            <div class="grid gap-8">
+                <article>
+                    <h3>Markers, popups and clustering</h3>
+                    <p class="text-base-content/70">Eight nearby operations sites are grouped as the view changes.</p>
+                    <x-daisy-kit::map
+                        id="map-cluster"
+                        label="Operations sites"
+                        :fit-bounds="false"
+                        :zoom="12"
+                        :cluster="['maxClusterRadius' => 72]"
+                        :markers="[
+                            ['id' => 'rennes', 'label' => 'Rennes office', 'position' => [48.1173, -1.6778], 'popup' => 'Rennes office'],
+                            ['id' => 'depot', 'label' => 'Central depot', 'position' => [48.1181, -1.6769], 'popup' => 'Central depot'],
+                            ['id' => 'lab', 'label' => 'Materials lab', 'position' => [48.1167, -1.6786], 'popup' => ['renderer' => 'trusted-html', 'content' => '<strong>Materials lab</strong><br>Open 08:00–18:00']],
+                            ['id' => 'workshop', 'label' => 'Workshop', 'position' => [48.1178, -1.6791], 'popup' => 'Workshop'],
+                            ['id' => 'dispatch', 'label' => 'Dispatch center', 'position' => [48.1169, -1.6762], 'popup' => 'Dispatch center'],
+                            ['id' => 'storage', 'label' => 'Storage', 'position' => [48.1185, -1.6781], 'popup' => 'Storage'],
+                            ['id' => 'training', 'label' => 'Training room', 'position' => [48.1164, -1.6771], 'popup' => 'Training room'],
+                            ['id' => 'support', 'label' => 'Support desk', 'position' => [48.1175, -1.6758], 'popup' => 'Support desk'],
+                        ]"
+                    />
+                </article>
+
+                <article>
+                    <h3>Basemaps and typed layers</h3>
+                    <p class="text-base-content/70">GeoJSON is fetched locally; XYZ and WMS overlays use deterministic local endpoints.</p>
+                    <x-daisy-kit::map
+                        id="map-layers"
+                        label="Network layers"
+                        :scale="true"
+                        :basemaps="[
+                            ['id' => 'light', 'label' => 'Light grid', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/light/{z}/{x}/{y}.png', 'selected' => true],
+                            ['id' => 'dark', 'label' => 'Dark grid', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/dark/{z}/{x}/{y}.png'],
+                        ]"
+                        :layers="[
+                            ['id' => 'districts', 'label' => 'Service districts', 'type' => 'geojson', 'url' => '/_daisy-kit-test/map/districts.geojson', 'style' => ['color' => '#2563eb', 'weight' => 2]],
+                            ['id' => 'works', 'label' => 'Works tiles', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/works/{z}/{x}/{y}.png', 'visible' => false],
+                            ['id' => 'zoning', 'label' => 'Zoning WMS', 'type' => 'wms', 'url' => '/_daisy-kit-test/map/wms', 'options' => ['layers' => 'workbench:zoning', 'format' => 'image/png', 'transparent' => true], 'visible' => false],
+                        ]"
+                    />
+                </article>
+
+                <article>
+                    <h3>Drawing, measurement and form export</h3>
+                    <p class="text-base-content/70">Draw objects, edit or select them, use history and submit the resulting GeoJSON.</p>
+                    <x-daisy-kit::map
+                        id="map-drawing"
+                        label="Maintenance drawing"
+                        name="maintenance_geometry"
+                        :drawing="true"
+                        :measure="true"
+                        :spatial-selection="['mode' => 'both']"
+                        :geojson="[
+                            'type' => 'FeatureCollection',
+                            'features' => [
+                                ['type' => 'Feature', 'id' => 'site-north', 'properties' => ['name' => 'North maintenance site'], 'geometry' => ['type' => 'Point', 'coordinates' => [-1.684, 48.124]]],
+                                ['type' => 'Feature', 'id' => 'site-south', 'properties' => ['name' => 'South maintenance site'], 'geometry' => ['type' => 'Point', 'coordinates' => [-1.671, 48.109]]],
+                            ],
+                        ]"
+                        :object-types="[
+                            ['id' => 'hydrant', 'label' => 'Hydrant', 'geometry' => 'point'],
+                            ['id' => 'pipe', 'label' => 'Pipe', 'geometry' => 'line'],
+                            ['id' => 'zone', 'label' => 'Intervention zone', 'geometry' => 'polygon'],
+                        ]"
+                        :draw-layers="[
+                            ['id' => 'water', 'label' => 'Water network'],
+                            ['id' => 'electricity', 'label' => 'Electricity network'],
+                        ]"
+                    />
+                </article>
+
+                <article>
+                    <h3>Persistence, geolocation and external controls</h3>
+                    <p class="text-base-content/70">The host drives the documented facade without accessing private state.</p>
+                    <x-daisy-kit::map
+                        id="map-controlled"
+                        label="Externally controlled map"
+                        :fullscreen="true"
+                        :gesture-handling="true"
+                        :geolocation="['watch' => true, 'setView' => true]"
+                        :persist-state="true"
+                        state-key="workbench-controlled-map"
+                        :markers="[['id' => 'center', 'label' => 'Initial center', 'position' => [48.1173, -1.6778]]]"
+                        :basemaps="[
+                            ['id' => 'offline', 'label' => 'Local test grid', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/light/{z}/{x}/{y}.png', 'selected' => true],
+                            ['id' => 'osm', 'label' => 'OpenStreetMap — activate network', 'type' => 'xyz', 'url' => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', 'attribution' => '<a href=&quot;https://www.openstreetmap.org/copyright&quot;>© OpenStreetMap contributors</a>', 'trustedAttribution' => true],
+                        ]"
+                    >
+                        <x-slot:controls>
+                            <div class="flex flex-wrap gap-2" aria-label="Host map controls">
+                                <button class="btn btn-outline btn-sm" data-workbench-map-action="view" type="button">Focus the depot</button>
+                                <button class="btn btn-outline btn-sm" data-workbench-map-action="invalidate" type="button">Refresh layout</button>
+                            </div>
+                            <p class="text-sm text-base-content/70">OpenStreetMap is only requested after selecting its basemap in the map layer menu.</p>
+                        </x-slot:controls>
+                    </x-daisy-kit::map>
+                </article>
+            </div>
         </section>
     </main>
 </body>

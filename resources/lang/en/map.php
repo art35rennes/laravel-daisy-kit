@@ -33,4 +33,9 @@ return [
     'clear_selection' => 'Clear selection',
     'measurements' => 'Measurements',
     'locked_layer' => 'Always visible',
+    'object_type' => 'Object type',
+    'drawing_layer' => 'Drawing layer',
+    'select_by_area' => 'Select by area',
+    'show_drawing_tools' => 'Show drawing tools',
+    'hide_drawing_tools' => 'Hide drawing tools',
 ];

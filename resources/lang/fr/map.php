@@ -33,4 +33,9 @@ return [
     'clear_selection' => 'Effacer la sélection',
     'measurements' => 'Mesures',
     'locked_layer' => 'Toujours visible',
+    'object_type' => 'Type d’objet',
+    'drawing_layer' => 'Couche de dessin',
+    'select_by_area' => 'Sélectionner par zone',
+    'show_drawing_tools' => 'Afficher les outils de dessin',
+    'hide_drawing_tools' => 'Masquer les outils de dessin',
 ];

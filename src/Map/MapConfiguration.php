@@ -36,6 +36,7 @@ class MapConfiguration
             'enableHighAccuracy' => false,
             'showAccuracy' => true,
         ]);
+        $spatialSelection = self::spatialSelection($input['spatialSelection'] ?? false);
 
         $configuration = [
             'center' => self::center($input['center'] ?? [48.1173, -1.6778]),
@@ -66,8 +67,8 @@ class MapConfiguration
             ]),
             'objectTypes' => self::objectTypes($input['objectTypes'] ?? []),
             'drawLayers' => self::drawLayers($input['drawLayers'] ?? []),
-            'spatialSelection' => self::featureConfiguration($input['spatialSelection'] ?? false, ['mode' => 'click']),
-            'value' => self::geojson($input['value'] ?? null, 'value') ?? self::emptyCollection(),
+            'spatialSelection' => $spatialSelection,
+            'value' => self::drawingValue($input['value'] ?? null),
             'persistState' => self::persistence($input['persistState'] ?? false, $input['stateKey'] ?? null),
             'labels' => $labels,
         ];
@@ -76,6 +77,7 @@ class MapConfiguration
             'configuration' => $configuration,
             'view' => [
                 'controls' => $controls,
+                'drawLayers' => $configuration['drawLayers'],
                 'drawing' => $drawing,
                 'geolocation' => $geolocation,
                 'fullscreen' => $configuration['fullscreen'],
@@ -83,7 +85,10 @@ class MapConfiguration
                     ? $input['label']
                     : $labels['map'],
                 'labels' => $labels,
+                'measure' => $configuration['measure'],
                 'name' => is_string($input['name'] ?? null) && trim($input['name']) !== '' ? $input['name'] : null,
+                'objectTypes' => $configuration['objectTypes'],
+                'spatialSelection' => $configuration['spatialSelection'],
                 'value' => $configuration['value'],
             ],
         ];
@@ -98,6 +103,8 @@ class MapConfiguration
             'draw_point', 'draw_line', 'draw_area', 'draw_rectangle', 'edit_drawing', 'select_drawing',
             'select_feature', 'delete_selected', 'undo', 'redo', 'export_drawing', 'active_mode',
             'selection_details', 'selected_features', 'clear_selection', 'measurements', 'locked_layer',
+            'object_type', 'drawing_layer', 'select_by_area',
+            'show_drawing_tools', 'hide_drawing_tools',
         ];
 
         return collect($keys)
@@ -140,7 +147,10 @@ class MapConfiguration
         ];
     }
 
-    /** @return array<string, mixed>|false */
+    /**
+     * @param  array<string, mixed>  $defaults
+     * @return array<string, mixed>|false
+     */
     private static function featureConfiguration(mixed $value, array $defaults): array|false
     {
         if ($value === false || $value === null) {
@@ -151,7 +161,15 @@ class MapConfiguration
             throw new InvalidArgumentException('Map feature configuration must be a boolean or array.');
         }
 
-        return [...$defaults, ...($value === true ? [] : $value), 'enabled' => true];
+        $configuration = $value === true ? [] : self::associativeArray($value, 'feature configuration');
+
+        foreach ($configuration as $key => $item) {
+            $defaults[$key] = $item;
+        }
+
+        $defaults['enabled'] = true;
+
+        return $defaults;
     }
 
     /** @return list<float> */
@@ -234,6 +252,8 @@ class MapConfiguration
                 throw new InvalidArgumentException('Every map layer must be an array.');
             }
 
+            $layer = self::associativeArray($layer, 'map layer');
+
             $id = $layer['id'] ?? null;
 
             if (! is_string($id) || trim($id) === '' || isset($seen[$id])) {
@@ -267,10 +287,14 @@ class MapConfiguration
                 'url' => $url,
                 'data' => $data,
                 'options' => self::array($layer['options'] ?? [], "layer {$id} options"),
+                'style' => $basemap ? [] : self::array($layer['style'] ?? [], "layer {$id} style"),
+                'attribution' => is_string($layer['attribution'] ?? null) ? $layer['attribution'] : '',
+                'trustedAttribution' => ($layer['trustedAttribution'] ?? false) === true,
                 'visible' => ($layer['visible'] ?? true) === true,
                 'selected' => $basemap && ($layer['selected'] ?? $layer['active'] ?? $index === 0) === true,
                 'controllable' => ($layer['controllable'] ?? $layer['control'] ?? true) === true,
                 'editable' => ! $basemap && ($layer['editable'] ?? false) === true,
+                'selectable' => ! $basemap && ($layer['selectable'] ?? true) === true,
             ];
         }
 
@@ -288,6 +312,8 @@ class MapConfiguration
                 throw new InvalidArgumentException('Every map marker must be an array.');
             }
 
+            $marker = self::associativeArray($marker, 'map marker');
+
             $position = $marker['position'] ?? $marker['coordinates'] ?? null;
 
             if (! is_array($position) || count($position) !== 2 || ! is_numeric($position[0]) || ! is_numeric($position[1])) {
@@ -295,10 +321,17 @@ class MapConfiguration
             }
 
             $id = is_string($marker['id'] ?? null) && trim($marker['id']) !== '' ? $marker['id'] : "marker-{$index}";
+            $latitude = (float) $position[0];
+            $longitude = (float) $position[1];
+
+            if ($latitude < -90 || $latitude > 90 || $longitude < -180 || $longitude > 180) {
+                throw new InvalidArgumentException("Map marker [{$id}] is outside valid latitude or longitude bounds.");
+            }
+
             $normalizedMarker = [
                 ...$marker,
                 'id' => $id,
-                'position' => [(float) $position[0], (float) $position[1]],
+                'position' => [$latitude, $longitude],
                 'label' => is_string($marker['label'] ?? null) ? $marker['label'] : $id,
                 'properties' => self::array($marker['properties'] ?? [], "marker {$id} properties"),
             ];
@@ -310,7 +343,10 @@ class MapConfiguration
         return $normalized;
     }
 
-    /** @param array<string, mixed> $marker */
+    /**
+     * @param  array<string, mixed>  $marker
+     * @return array<string, mixed>|null
+     */
     private static function popup(mixed $popup, array $marker): ?array
     {
         if ($popup === null || $popup === false) {
@@ -324,6 +360,8 @@ class MapConfiguration
         if (! is_array($popup)) {
             throw new InvalidArgumentException('Map marker popup must be text or an array.');
         }
+
+        $popup = self::associativeArray($popup, 'marker popup');
 
         $renderer = $popup['renderer'] ?? 'text';
 
@@ -354,6 +392,7 @@ class MapConfiguration
         ];
     }
 
+    /** @return array<string, mixed>|null */
     private static function icon(mixed $icon, string $markerId): ?array
     {
         if ($icon === null || $icon === false) {
@@ -364,6 +403,8 @@ class MapConfiguration
             throw new InvalidArgumentException("Map marker [{$markerId}] icon must be an array.");
         }
 
+        $icon = self::associativeArray($icon, "marker {$markerId} icon");
+
         $type = $icon['type'] ?? 'image';
 
         if (! in_array($type, ['image', 'trusted-html'], true)) {
@@ -371,10 +412,17 @@ class MapConfiguration
         }
 
         if ($type === 'image') {
+            $url = self::url($icon['url'] ?? null, "marker {$markerId} icon");
+
+            if ($url === null) {
+                throw new InvalidArgumentException("Map marker [{$markerId}] image icon requires a URL.");
+            }
+
             return [
                 ...$icon,
                 'type' => 'image',
-                'url' => self::url($icon['url'] ?? null, "marker {$markerId} icon"),
+                'url' => $url,
+                'options' => self::array($icon['options'] ?? [], "marker {$markerId} icon options"),
             ];
         }
 
@@ -389,11 +437,14 @@ class MapConfiguration
     private static function objectTypes(mixed $types): array
     {
         $types = self::array($types, 'objectTypes');
+        $normalized = [];
 
-        return collect($types)->values()->map(function (mixed $type, int $index): array {
+        foreach (array_values($types) as $index => $type) {
             if (! is_array($type)) {
                 throw new InvalidArgumentException('Every map object type must be an array.');
             }
+
+            $type = self::associativeArray($type, 'map object type');
 
             $id = is_string($type['id'] ?? null) && trim($type['id']) !== '' ? $type['id'] : "object-{$index}";
             $geometry = $type['geometry'] ?? 'point';
@@ -403,35 +454,61 @@ class MapConfiguration
                 throw new InvalidArgumentException("Map object type [{$id}] has an invalid geometry.");
             }
 
-            return [
+            $normalized[] = [
                 ...$type,
                 'id' => $id,
                 'label' => is_string($type['label'] ?? null) ? $type['label'] : $id,
                 'geometry' => $geometry,
                 'properties' => self::array($type['properties'] ?? [], "object type {$id} properties"),
             ];
-        })->all();
+        }
+
+        return $normalized;
     }
 
     /** @return list<array<string, mixed>> */
     private static function drawLayers(mixed $layers): array
     {
         $layers = self::array($layers, 'drawLayers');
+        $normalized = [];
 
-        return collect($layers)->values()->map(function (mixed $layer, int $index): array {
+        foreach (array_values($layers) as $index => $layer) {
             if (! is_array($layer)) {
                 throw new InvalidArgumentException('Every map drawing layer must be an array.');
             }
 
+            $layer = self::associativeArray($layer, 'map drawing layer');
+
             $id = is_string($layer['id'] ?? null) && trim($layer['id']) !== '' ? $layer['id'] : "draw-layer-{$index}";
 
-            return [
+            $normalized[] = [
                 ...$layer,
                 'id' => $id,
                 'label' => is_string($layer['label'] ?? null) ? $layer['label'] : $id,
                 'properties' => self::array($layer['properties'] ?? [], "drawing layer {$id} properties"),
             ];
-        })->all();
+        }
+
+        return $normalized;
+    }
+
+    /** @return array<string, mixed>|false */
+    private static function spatialSelection(mixed $value): array|false
+    {
+        $configuration = self::featureConfiguration($value, ['mode' => 'click']);
+
+        if ($configuration === false) {
+            return false;
+        }
+
+        $mode = $configuration['mode'] ?? 'click';
+        $mode = $mode === 'box' ? 'area' : $mode;
+
+        if (! is_string($mode) || ! in_array($mode, ['click', 'area', 'both'], true)) {
+            throw new InvalidArgumentException('Map spatial selection mode is invalid.');
+        }
+
+        return [...$configuration, 'mode' => $mode];
     }
 
     /** @return array{enabled: bool, key: ?string} */
@@ -459,8 +536,49 @@ class MapConfiguration
             $value = json_decode($value, true);
         }
 
-        if (! is_array($value) || ! is_string($value['type'] ?? null)) {
+        if (! is_array($value)) {
             throw new InvalidArgumentException("Map {$name} must be valid GeoJSON.");
+        }
+
+        $value = self::associativeArray($value, "{$name} GeoJSON");
+
+        if (! is_string($value['type'] ?? null)) {
+            throw new InvalidArgumentException("Map {$name} must be valid GeoJSON.");
+        }
+
+        return $value;
+    }
+
+    /** @return array<string, mixed> */
+    private static function drawingValue(mixed $value): array
+    {
+        $value = self::geojson($value, 'value') ?? self::emptyCollection();
+
+        if (($value['type'] ?? null) !== 'FeatureCollection' || ! is_array($value['features'] ?? null)) {
+            throw new InvalidArgumentException('Map value must be a GeoJSON FeatureCollection.');
+        }
+
+        foreach ($value['features'] as $feature) {
+            if (! is_array($feature)) {
+                throw new InvalidArgumentException('Map value contains an invalid feature.');
+            }
+
+            $feature = self::associativeArray($feature, 'drawing feature');
+            $geometry = $feature['geometry'] ?? null;
+
+            if (! is_array($geometry)) {
+                throw new InvalidArgumentException('Map value contains a geometry that cannot be edited.');
+            }
+
+            $geometry = self::associativeArray($geometry, 'drawing geometry');
+
+            if (! in_array($geometry['type'] ?? null, ['Point', 'LineString', 'Polygon'], true)) {
+                throw new InvalidArgumentException('Map value contains a geometry that cannot be edited.');
+            }
+
+            if (isset($feature['id']) && ! is_string($feature['id']) && ! is_int($feature['id'])) {
+                throw new InvalidArgumentException('Map drawing feature ids must be strings or integers.');
+            }
         }
 
         return $value;
@@ -480,5 +598,22 @@ class MapConfiguration
         }
 
         return $value;
+    }
+
+    /** @return array<string, mixed> */
+    private static function associativeArray(mixed $value, string $name): array
+    {
+        $value = self::array($value, $name);
+        $normalized = [];
+
+        foreach ($value as $key => $item) {
+            if (! is_string($key)) {
+                throw new InvalidArgumentException("Map {$name} must use string keys.");
+            }
+
+            $normalized[$key] = $item;
+        }
+
+        return $normalized;
     }
 }

@@ -207,6 +207,31 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
         return document.exitFullscreen?.();
     }
 
+    function setDrawingToolsVisible(visible, notify = true) {
+        state.drawingToolsVisible = visible === true;
+        const region = root.querySelector('[data-daisy-kit-map-tools]')?.closest('.daisy-kit-map__tool-region');
+        const button = root.querySelector('[data-daisy-kit-map-toggle-tools]');
+        if (region) region.hidden = !state.drawingToolsVisible;
+        if (button) {
+            const label = state.drawingToolsVisible ? configuration.labels.hideDrawingTools : configuration.labels.showDrawingTools;
+            button.setAttribute('aria-expanded', String(state.drawingToolsVisible));
+            button.setAttribute('aria-label', label);
+            button.title = label;
+        }
+        saveState();
+        if (notify) emit('tools', { visible: state.drawingToolsVisible });
+    }
+
+    function updateFullscreenControl() {
+        const button = root.querySelector('[data-daisy-kit-map-fullscreen]');
+        if (!button) return;
+        const expanded = document.fullscreenElement === root;
+        const label = expanded ? configuration.labels.exitFullscreen : configuration.labels.fullscreen;
+        button.setAttribute('aria-pressed', String(expanded));
+        button.setAttribute('aria-label', label);
+        button.title = label;
+    }
+
     function bindControls() {
         root.querySelectorAll('[data-daisy-kit-map-mode]').forEach((button) => {
             listen(button, 'click', () => facade.setMode(button.dataset.daisyKitMapMode));
@@ -214,16 +239,23 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
         listen(root.querySelector('[data-daisy-kit-map-fit-bounds]'), 'click', () => fitBounds());
         listen(root.querySelector('[data-daisy-kit-map-geolocate]'), 'click', () => locate().catch(() => {}));
         listen(root.querySelector('[data-daisy-kit-map-fullscreen]'), 'click', fullscreen);
+        listen(root.querySelector('[data-daisy-kit-map-toggle-tools]'), 'click', () => setDrawingToolsVisible(!state.drawingToolsVisible));
+        listen(document, 'fullscreenchange', updateFullscreenControl);
         listen(root.querySelector('[data-daisy-kit-map-history="undo"]'), 'click', () => facade.undo());
         listen(root.querySelector('[data-daisy-kit-map-history="redo"]'), 'click', () => facade.redo());
         listen(root.querySelector('[data-daisy-kit-map-export]'), 'click', () => facade.exportGeoJSON());
         listen(root.querySelector('[data-daisy-kit-map-delete-selected]'), 'click', () => facade.deleteSelected());
         listen(root.querySelector('[data-daisy-kit-map-clear-selection]'), 'click', () => facade.clearSelection());
+        listen(root.querySelector('[data-daisy-kit-map-object-type]'), 'change', (event) => drawing?.setObjectType(event.currentTarget.value));
+        listen(root.querySelector('[data-daisy-kit-map-draw-layer]'), 'change', (event) => facade.setDrawLayer(event.currentTarget.value));
+        listen(root, 'daisy-kit:map:measurement', (event) => { state.measurement = event.detail; });
+        listen(root, 'daisy-kit:map:mode', (event) => { state.mode = event.detail.mode; });
         listen(root.querySelector('[data-daisy-kit-map-retry]'), 'click', async () => {
-            const failed = configuration.layers.filter((layer) => layer.url && layer.type === 'geojson');
+            if (!sources) return;
+            const failed = sources.failedLayerIds();
             setFeedback('loading');
-            await Promise.all(failed.map((layer) => sources.refreshLayer(layer.id)));
-            setFeedback(hasData() ? 'ready' : 'empty');
+            await Promise.all(failed.map((id) => sources.refreshLayer(id)));
+            setFeedback(sources.failedLayerIds().length > 0 ? 'error' : hasData() ? 'ready' : 'empty', sources.failedLayerIds().length > 0 ? configuration.labels.error : '');
         });
     }
 
@@ -244,13 +276,15 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
     async function start() {
         if (!canvas) throw new Error('Map markup is incomplete.');
         setFeedback('loading');
-        if (configuration.gestureHandling) await import('leaflet-gesture-handling');
+        if (configuration.gestureHandling) {
+            await import('leaflet-gesture-handling');
+        }
         if (controller.signal.aborted) return;
 
         map = L.map(canvas, {
             attributionControl: true,
             gestureHandling: configuration.gestureHandling,
-            maxZoom: configuration.maxZoom,
+            maxZoom: configuration.maxZoom ?? (configuration.cluster ? 19 : undefined),
             minZoom: configuration.minZoom,
             preferCanvas: configuration.preferCanvas,
             trackResize: false,
@@ -269,14 +303,20 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
         }
         if (state.basemap) sources.setBasemap(state.basemap, false);
 
-        drawing = await createDrawing({ L, configuration, emit, map, root, signal: controller.signal });
+        drawing = await createDrawing({ L, configuration, emit, map, root, signal: controller.signal, sources });
         if (controller.signal.aborted) return;
+
+        setDrawingToolsVisible(state.drawingToolsVisible, false);
+        updateFullscreenControl();
+        if (configuration.geolocation?.watch) startGeolocation();
+        else if (configuration.geolocation?.auto) locate().catch(() => {});
 
         if (configuration.fitBounds) fitBounds();
         resizeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(scheduleResize) : null;
         resizeObserver?.observe(canvas);
-        setFeedback(hasData() ? 'ready' : 'empty');
-        emit(hasData() ? 'ready' : 'empty', { state: facade.getState() });
+        const readyState = sources.failedLayerIds().length > 0 ? 'error' : hasData() ? 'ready' : 'empty';
+        setFeedback(readyState, readyState === 'error' ? configuration.labels.error : '');
+        emit(readyState, { state: facade.getState() });
     }
 
     function internalDestroy() {
@@ -295,23 +335,32 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
     }
 
     const facade = {
-        clearSelection: () => drawing?.clearSelection(),
+        clearSelection() {
+            drawing?.clearSelection();
+            sources?.clearSelection();
+        },
         deleteSelected: () => drawing?.deleteSelected() ?? false,
         destroy: onDestroy,
         exportGeoJSON: () => drawing?.exportGeoJSON() ?? configuration.value,
         fitBounds,
         getDrawLayer: () => drawing?.getDrawLayer() ?? null,
         getLeafletMap: () => map,
-        getSelection: () => drawing?.getSelection() ?? [],
+        getSelection: () => clone([...(drawing?.getSelection() ?? []), ...(sources?.getSelection() ?? [])]),
         getState: () => clone({
             ...state,
             basemap: sources?.activeBasemap() ?? state.basemap,
             layerVisibility: sources?.layerVisibility() ?? state.layerVisibility,
+            selection: [...(drawing?.getSelection() ?? []), ...(sources?.getSelection() ?? [])],
         }),
         invalidateSize,
         locate,
         redo: () => drawing?.redo() ?? false,
-        refreshLayer: (id) => sources?.refreshLayer(id) ?? Promise.resolve(false),
+        async refreshLayer(id) {
+            const refreshed = await (sources?.refreshLayer(id) ?? false);
+            if (refreshed && sources.failedLayerIds().length === 0) setFeedback(hasData() ? 'ready' : 'empty');
+
+            return refreshed;
+        },
         setBasemap(id) {
             const changed = sources?.setBasemap(id) ?? false;
             if (changed) saveState();
