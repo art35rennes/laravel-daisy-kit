@@ -175,6 +175,33 @@ it('mounts the map without a browser CSP violation', function (): void {
         ->assertNoSmoke();
 })->group('browser');
 
+it('runs the four Map product scenarios without host-specific map logic', function (): void {
+    $page = $this->visit('/')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->wait(2)
+        ->assertNoSmoke()
+        ->assertCount('[data-daisy-kit-module="map"]', 4)
+        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=map]')).every((root) => root.dataset.daisyKitState === 'ready')")
+        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-map-measurement]')).every((output) => output.hidden)")
+        ->assertCount('#map-layers [data-daisy-kit-map-layer]', 3)
+        ->assertScript("Boolean(document.querySelector('#map-cluster .marker-cluster'))")
+        ->assertCount('#map-drawing [data-daisy-kit-map-object-type]', 1)
+        ->assertCount('#map-drawing [data-daisy-kit-map-draw-layer]', 1)
+        ->assertCount('#map-drawing [data-daisy-kit-map-mode="spatial-select"]', 1)
+        ->assertScript("Array.from(document.querySelectorAll('#map-controlled .leaflet-tile')).every((tile) => !tile.src.includes('tile.openstreetmap.org'))")
+        ->click('#map-drawing [data-daisy-kit-map-mode="point"]')
+        ->assertScript("document.querySelector('#map-drawing [data-daisy-kit-map-mode=point]').getAttribute('aria-pressed') === 'true'")
+        ->click('#map-controlled [data-workbench-map-action="view"]')
+        ->assertScript("document.querySelector('#map-controlled').dataset.workbenchFacade === 'view-updated'");
+
+    foreach ([320, 390, 768, 1024, 1440] as $width) {
+        $page->resize($width, 1000)
+            ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
+            ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=map]')).every((root) => { const viewport = root.querySelector('.daisy-kit-map__viewport').getBoundingClientRect(); return Array.from(root.querySelectorAll('.leaflet-control-container, [data-daisy-kit-map-layer-menu], [data-daisy-kit-map-measurement], [data-daisy-kit-map-active-mode]')).every((control) => control.hidden || (control.getBoundingClientRect().left >= viewport.left && control.getBoundingClientRect().right <= viewport.right)); })")
+            ->assertNoSmoke();
+    }
+})->group('browser');
+
 it('keeps Blueprint controls outside its inert SVG and supports keyboard selection', function (): void {
     $this->visit('/')->on()->desktop()
         ->waitForEvent('networkidle')

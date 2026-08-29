@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import inject from '@rollup/plugin-inject';
 import { defineConfig } from 'vite';
 
 const entries = {
@@ -13,9 +14,17 @@ const entries = {
 
 export default defineConfig({
     base: './',
+    plugins: [inject({
+        include: [
+            '**/node_modules/leaflet.markercluster/src/**',
+            '**/node_modules/leaflet-gesture-handling/dist/**',
+        ],
+        L: ['leaflet', 'default'],
+    })],
     build: {
         assetsInlineLimit: 0,
         emptyOutDir: true,
+        modulePreload: false,
         manifest: true,
         outDir: 'dist',
         rollupOptions: {

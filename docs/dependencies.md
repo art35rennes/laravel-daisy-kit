@@ -33,7 +33,8 @@ Composer suggestion, never a runtime requirement.
 | docx-preview | 0.4.0 | File Preview |
 | leaflet | 1.9.4 | Map runtime |
 | terra-draw / leaflet adapter | 1.32.3 / 1.3.0 | Map drawing |
-| @turf/area / @turf/length | 7.4.0 / 7.4.0 | Map measurements |
+| @turf/area / @turf/length / @turf/boolean-intersects | 7.4.0 | Map measurements and spatial selection |
+| leaflet.markercluster / leaflet-gesture-handling | 1.5.3 / 1.2.2 | Optional Map clustering and gesture controls |
 | Vite / Vitest | 8.2.2 / 4.1.11 | Reproducible module build and tests |
 | jsdom | 30.0.1 | Browser-like unit-test environment |
 

@@ -80,13 +80,26 @@ it('renders the canonical map contract as CSP-safe configuration', function (): 
             'gestureHandling' => true,
             'persistState' => ['enabled' => true, 'key' => 'project-map'],
         ])->and($configuration['layers'])->toHaveCount(2)
-        ->and($configuration['layers'][1])->toMatchArray(['id' => 'zoning', 'type' => 'wms']);
+        ->and($configuration['layers'][1])->toMatchArray(['id' => 'zoning', 'type' => 'wms'])
+        ->and($configuration['spatialSelection']['mode'])->toBe('area');
 });
 
 it('rejects unsafe map and marker asset urls', function (): void {
     expect(fn (): array => MapConfiguration::make([
         'tileUrl' => 'javascript:alert(1)',
     ]))->toThrow(InvalidArgumentException::class, 'safe same-origin path or HTTPS URL');
+
+    expect(fn (): array => MapConfiguration::make([
+        'markers' => [['id' => 'outside', 'position' => [148.1, -1.6]]],
+    ]))->toThrow(InvalidArgumentException::class, 'outside valid latitude or longitude bounds');
+
+    expect(fn (): array => MapConfiguration::make([
+        'markers' => [['id' => 'missing-icon', 'position' => [48.1, -1.6], 'icon' => ['type' => 'image']]],
+    ]))->toThrow(InvalidArgumentException::class, 'image icon requires a URL');
+
+    expect(fn (): array => MapConfiguration::make([
+        'spatialSelection' => ['mode' => 'lasso'],
+    ]))->toThrow(InvalidArgumentException::class, 'spatial selection mode is invalid');
 
     expect(fn (): array => MapConfiguration::make([
         'markers' => [[
@@ -173,6 +186,10 @@ it('synchronizes the initial GeoJSON value with a named form input', function ()
         ->toContain('name="geometry"')
         ->toContain('data-daisy-kit-map-value')
         ->and(mapConfiguration($html)['value'])->toBe($value);
+
+    expect(fn (): array => MapConfiguration::make([
+        'value' => ['type' => 'Feature', 'properties' => [], 'geometry' => ['type' => 'Point', 'coordinates' => [-1.6, 48.1]]],
+    ]))->toThrow(InvalidArgumentException::class, 'must be a GeoJSON FeatureCollection');
 });
 
 it('protects module lifecycle attributes while preserving host attributes', function (): void {

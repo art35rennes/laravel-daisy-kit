@@ -77,6 +77,15 @@ the stable File Preview facade and `getInstance(root)` retrieves the same facade
 automatic mounting. The facade exposes snapshots, open/close, retry and zoom controls but
 does not expose the iframe or renderer internals.
 
+### Map configuration
+
+`x-daisy-kit::map` uses the canonical view, source, tile, control, drawing and persistence props
+documented in [`../map.md`](../map.md). XYZ, WMS and GeoJSON overlays share the `layers` shape;
+the alpha `wms` prop and every legacy global are removed. `mount(root)` returns the Map facade and
+`getInstance(root)` retrieves it after automatic mounting. `getLeafletMap()` is the sole documented
+third-party escape hatch; all normal integration uses serializable configuration and
+`daisy-kit:map:*` events.
+
 ## Corrective development line
 
 The corrective development contract deliberately has no compatibility layer for v5.0.0 or its

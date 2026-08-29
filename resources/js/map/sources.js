@@ -10,6 +10,19 @@ function popupContent(popup) {
     return content;
 }
 
+function safeAssetUrl(value) {
+    if (typeof value !== 'string' || value === '') return null;
+    if (value.startsWith('/') && !value.startsWith('//')) return value;
+
+    try {
+        const url = new URL(value);
+
+        return url.protocol === 'https:' ? value : null;
+    } catch {
+        return null;
+    }
+}
+
 function createLayerControl(container, layer, type, onChange) {
     if (!container || layer.controllable === false) return null;
 
@@ -36,18 +49,24 @@ export async function createSources({ L, configuration, emit, map, root, signal 
     const records = new Map();
     const basemaps = new Map();
     const aborters = new Map();
+    const failedLayers = new Set();
     let activeBasemap = null;
     let markerContainer = null;
     let markerRecords = [];
     let primaryGeoJSON = null;
+    let selectionActive = false;
+    const selectableFeatures = new Map();
+    const selectedFeatures = new Map();
 
     async function createMarkerContainer() {
         if (!configuration.cluster) return map;
 
-        await import('leaflet.markercluster');
+        const { MarkerClusterGroup } = await import('leaflet.markercluster/src/index.js');
         if (signal.aborted) return map;
 
-        markerContainer = L.markerClusterGroup(configuration.cluster);
+        const clusterOptions = { ...configuration.cluster };
+        delete clusterOptions.enabled;
+        markerContainer = new MarkerClusterGroup(clusterOptions);
         markerContainer.addTo(map);
 
         return markerContainer;
@@ -55,12 +74,58 @@ export async function createSources({ L, configuration, emit, map, root, signal 
 
     const markerTarget = await createMarkerContainer();
 
-    function removePrimaryGeoJSON() {
-        primaryGeoJSON?.remove();
-        primaryGeoJSON = null;
+    function updateSelection() {
+        const features = [...selectedFeatures.values()].map(({ feature }) => feature);
+        const selectionPanel = root.querySelector('[data-daisy-kit-map-selection]');
+        const selectionSummary = root.querySelector('[data-daisy-kit-map-selection-summary]');
+        if (selectionPanel) selectionPanel.hidden = features.length === 0;
+        if (selectionSummary) {
+            const template = configuration.labels.selectedFeatures ?? ':count features selected';
+            selectionSummary.textContent = template.replace(':count', String(features.length));
+        }
+        emit('selection', { features, ids: [...selectedFeatures.keys()], source: 'layers' });
+
+        return features;
     }
 
-    function addGeoJSON(data, options = {}) {
+    function removeSelectableFeatures(owner) {
+        let selectionChanged = false;
+        for (const [key, record] of selectableFeatures) {
+            if (record.owner !== owner) continue;
+            record.layer.off?.('click', record.onClick);
+            selectableFeatures.delete(key);
+            if (selectedFeatures.has(key)) selectionChanged = true;
+            selectedFeatures.delete(key);
+        }
+
+        return selectionChanged;
+    }
+
+    function setFeatureSelected(key, selected) {
+        const record = selectableFeatures.get(key);
+        if (!record) return false;
+        if (selected) selectedFeatures.set(key, record);
+        else selectedFeatures.delete(key);
+        record.layer.getElement?.()?.classList.toggle('daisy-kit-map__selected-feature', selected);
+
+        return true;
+    }
+
+    function clearSelection(notify = true) {
+        for (const key of selectedFeatures.keys()) setFeatureSelected(key, false);
+        if (notify) updateSelection();
+    }
+
+    function removePrimaryGeoJSON() {
+        const selectionChanged = removeSelectableFeatures('__primary');
+        primaryGeoJSON?.remove();
+        primaryGeoJSON = null;
+        if (selectionChanged) updateSelection();
+    }
+
+    function addGeoJSON(data, options = {}, source = {}) {
+        let featureIndex = 0;
+
         return L.geoJSON(data, {
             ...options,
             onEachFeature(feature, layer) {
@@ -72,6 +137,19 @@ export async function createSources({ L, configuration, emit, map, root, signal 
                     content.textContent = popup;
                     layer.bindPopup?.(content);
                 }
+
+                if (configuration.spatialSelection && source.selectable !== false) {
+                    const rawId = feature?.id ?? feature?.properties?.id ?? featureIndex;
+                    const key = `${source.owner ?? '__primary'}:${String(rawId)}`;
+                    const onClick = () => {
+                        if (!selectionActive) return;
+                        setFeatureSelected(key, !selectedFeatures.has(key));
+                        updateSelection();
+                    };
+                    selectableFeatures.set(key, { feature, key, layer, onClick, owner: source.owner ?? '__primary' });
+                    layer.on?.('click', onClick);
+                    featureIndex += 1;
+                }
             },
         });
     }
@@ -81,7 +159,7 @@ export async function createSources({ L, configuration, emit, map, root, signal 
 
         if (!data?.type) return null;
 
-        primaryGeoJSON = addGeoJSON(data).addTo(map);
+        primaryGeoJSON = addGeoJSON(data, {}, { owner: '__primary', selectable: true }).addTo(map);
 
         return primaryGeoJSON;
     }
@@ -105,7 +183,9 @@ export async function createSources({ L, configuration, emit, map, root, signal 
         }
 
         if (icon.type === 'image' && icon.url) {
-            return L.icon({ iconUrl: icon.url, ...(icon.options ?? {}) });
+            const url = safeAssetUrl(icon.url);
+
+            return url ? L.icon({ iconUrl: url, ...(icon.options ?? {}) }) : undefined;
         }
 
         return undefined;
@@ -115,17 +195,20 @@ export async function createSources({ L, configuration, emit, map, root, signal 
         clearMarkers();
 
         for (const marker of Array.isArray(markers) ? markers : []) {
+            const latitude = Number(marker?.position?.[0]);
+            const longitude = Number(marker?.position?.[1]);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) continue;
             const options = { title: marker.label ?? marker.id };
             const icon = markerIcon(marker.icon);
             if (icon) options.icon = icon;
-            const layer = L.marker(marker.position, options);
+            const layer = L.marker([latitude, longitude], options);
             const content = popupContent(marker.popup);
             if (content) layer.bindPopup?.(content);
 
             const onClick = () => emit('marker', {
                 id: marker.id,
                 label: marker.label,
-                position: [...marker.position],
+                position: [latitude, longitude],
                 properties: { ...(marker.properties ?? {}) },
             });
             layer.on?.('click', onClick);
@@ -180,7 +263,7 @@ export async function createSources({ L, configuration, emit, map, root, signal 
         const data = await readLayerData(layerConfig);
         if (signal.aborted) return null;
         const leafletLayer = layerConfig.type === 'geojson'
-            ? addGeoJSON(data, { style: layerConfig.style ?? undefined })
+            ? addGeoJSON(data, { style: layerConfig.style ?? undefined }, { owner: layerConfig.id, selectable: layerConfig.selectable })
             : tileLayer(layerConfig);
         const record = {
             control: null,
@@ -202,10 +285,12 @@ export async function createSources({ L, configuration, emit, map, root, signal 
         const record = records.get(id);
         if (!record || record.layerConfig.type !== 'geojson' || !data?.type) return false;
         const wasVisible = record.visible;
+        const selectionChanged = removeSelectableFeatures(id);
         record.leafletLayer?.remove();
         record.data = data;
-        record.leafletLayer = addGeoJSON(data, { style: record.layerConfig.style ?? undefined });
+        record.leafletLayer = addGeoJSON(data, { style: record.layerConfig.style ?? undefined }, { owner: id, selectable: record.layerConfig.selectable });
         if (wasVisible) record.leafletLayer.addTo(map);
+        if (selectionChanged) updateSelection();
         emit('layer-data', { data, id });
 
         return true;
@@ -218,11 +303,15 @@ export async function createSources({ L, configuration, emit, map, root, signal 
         try {
             const data = await readLayerData(record.layerConfig);
             await setLayerData(id, data);
+            failedLayers.delete(id);
             emit('layer-refresh', { id, status: 'ready' });
 
             return true;
         } catch (error) {
-            if (error.name !== 'AbortError') emit('layer-error', { id, message: error.message });
+            if (error.name !== 'AbortError') {
+                failedLayers.add(id);
+                emit('layer-error', { id, message: error.message });
+            }
 
             return false;
         }
@@ -275,6 +364,7 @@ export async function createSources({ L, configuration, emit, map, root, signal 
             await mountLayer(layerConfig);
         } catch (error) {
             if (error.name !== 'AbortError') {
+                failedLayers.add(layerConfig.id);
                 const record = {
                     control: null,
                     data: null,
@@ -303,15 +393,35 @@ export async function createSources({ L, configuration, emit, map, root, signal 
         return layers.find((layer) => layer.getBounds)?.getBounds() ?? null;
     }
 
+    async function selectWithin(area) {
+        if (!area?.geometry) return [];
+        const { default: booleanIntersects } = await import('@turf/boolean-intersects');
+        clearSelection(false);
+        for (const [key, record] of selectableFeatures) {
+            const owner = records.get(record.owner);
+            if (owner && !owner.visible) continue;
+            try {
+                if (booleanIntersects(area, record.feature)) setFeatureSelected(key, true);
+            } catch {
+                // Invalid external features are ignored without blocking the other selections.
+            }
+        }
+
+        return updateSelection();
+    }
+
     return {
         activeBasemap: () => activeBasemap?.layerConfig.id ?? null,
         bounds,
+        clearSelection,
         destroy() {
             aborters.forEach((controller) => controller.abort());
             clearMarkers();
             markerContainer?.remove();
             primaryGeoJSON?.remove();
+            removeSelectableFeatures('__primary');
             records.forEach((record) => {
+                removeSelectableFeatures(record.layerConfig.id);
                 record.control?.destroy();
                 record.leafletLayer?.remove();
             });
@@ -323,11 +433,17 @@ export async function createSources({ L, configuration, emit, map, root, signal 
             basemaps.clear();
         },
         layerVisibility: persistableVisibility,
+        getSelection: () => [...selectedFeatures.values()].map(({ feature }) => feature),
+        failedLayerIds: () => [...failedLayers],
         refreshLayer,
+        selectWithin,
         setBasemap,
         setGeoJSON,
         setLayerData,
         setLayerVisibility,
         setMarkers,
+        setSelectionMode(mode) {
+            selectionActive = ['feature-select', 'spatial-select'].includes(mode);
+        },
     };
 }

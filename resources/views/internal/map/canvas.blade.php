@@ -39,6 +39,12 @@
                 </button>
             @endif
 
+            @if ($mapView['controls']['drawing'] && ($mapView['drawing'] || $mapView['spatialSelection']))
+                <button class="btn btn-sm btn-square bg-base-100" data-daisy-kit-map-toggle-tools type="button" title="{{ $mapView['labels']['hideDrawingTools'] }}" aria-label="{{ $mapView['labels']['hideDrawingTools'] }}" aria-expanded="true">
+                    <span aria-hidden="true">&#9998;</span>
+                </button>
+            @endif
+
             @if ($mapView['geolocation'])
                 <button class="btn btn-sm btn-square bg-base-100" data-daisy-kit-map-geolocate type="button" title="{{ $mapView['labels']['useMyLocation'] }}" aria-label="{{ $mapView['labels']['useMyLocation'] }}">
                     <span aria-hidden="true">&#9673;</span>
