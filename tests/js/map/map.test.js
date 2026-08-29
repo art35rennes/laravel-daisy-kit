@@ -464,11 +464,13 @@ describe('map entry', () => {
 
         input.value = '';
         window.dispatchEvent(new Event('pageshow'));
+        await new Promise((resolve) => requestAnimationFrame(resolve));
         expect(JSON.parse(input.value).features).toHaveLength(1);
 
         unmount(element);
         input.value = '';
         window.dispatchEvent(new Event('pageshow'));
+        await new Promise((resolve) => requestAnimationFrame(resolve));
         expect(input.value).toBe('');
     });
 

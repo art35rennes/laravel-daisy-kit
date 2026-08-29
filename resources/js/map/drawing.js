@@ -363,14 +363,23 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
     }
     setVisibleDrawLayers(getVisibleDrawLayers(), false);
     syncValue(false);
-    const onPageShow = () => syncValue(false);
+    let valueSyncFrame = null;
+    const onPageShow = () => {
+        if (valueSyncFrame !== null) cancelAnimationFrame(valueSyncFrame);
+        valueSyncFrame = requestAnimationFrame(() => {
+            valueSyncFrame = null;
+            syncValue(false);
+        });
+    };
     window.addEventListener('pageshow', onPageShow);
+    onPageShow();
 
     return {
         clearSelection,
         deleteSelected,
         destroy() {
             window.removeEventListener('pageshow', onPageShow);
+            if (valueSyncFrame !== null) cancelAnimationFrame(valueSyncFrame);
             drawing.off('finish', onFinish);
             drawing.off('select', onSelect);
             drawing.off('deselect', onDeselect);
