@@ -4,6 +4,7 @@
 
 .daisy-kit-file-preview {
     min-inline-size: 0;
+    container-type: inline-size;
 }
 
 .daisy-kit-file-preview .card-body {
@@ -103,6 +104,26 @@
 
 .daisy-kit-file-preview .modal-action {
     flex-shrink: 0;
+}
+
+@container (max-width: 36rem) {
+    .daisy-kit-file-preview__summary {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .daisy-kit-file-preview__actions-wrap {
+        grid-column: 1 / -1;
+        min-inline-size: 0;
+    }
+
+    .daisy-kit-file-preview__actions {
+        inline-size: 100%;
+    }
+
+    .daisy-kit-file-preview__actions .btn {
+        min-inline-size: 0;
+        white-space: normal;
+    }
 }
 
 @media (width < 40rem) {
