@@ -19,6 +19,7 @@ function collection(features) {
 
 export async function createDrawing({ L, configuration, emit, map, root, signal, sources }) {
     const enabled = configuration.drawing || configuration.spatialSelection || configuration.value.features.length > 0;
+    const valueInput = root.querySelector('[data-daisy-kit-map-value]');
     const measurementOutput = root.querySelector('[data-daisy-kit-map-measurement]');
     const modeOutput = root.querySelector('[data-daisy-kit-map-active-mode]');
     const undoButton = root.querySelector('[data-daisy-kit-map-history="undo"]');
@@ -112,12 +113,6 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
         return collection(drawing.getSnapshot?.() ?? []);
     }
 
-    function writeValue(valueInput, serialized) {
-        if (!(valueInput instanceof HTMLInputElement)) return;
-        if (valueInput.getAttribute('value') !== serialized) valueInput.setAttribute('value', serialized);
-        if (valueInput.value !== serialized) valueInput.value = serialized;
-    }
-
     function featureIsVisible(feature) {
         const layer = feature?.properties?.drawLayer;
 
@@ -203,9 +198,8 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
 
     function syncValue(change = true) {
         const geojson = snapshot();
-        const valueInput = root.querySelector('[data-daisy-kit-map-value]');
         if (valueInput instanceof HTMLInputElement) {
-            writeValue(valueInput, JSON.stringify(geojson));
+            valueInput.value = JSON.stringify(geojson);
             valueInput.dispatchEvent(new Event('input', { bubbles: true }));
             if (change) valueInput.dispatchEvent(new Event('change', { bubbles: true }));
         }
@@ -369,23 +363,11 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
     }
     setVisibleDrawLayers(getVisibleDrawLayers(), false);
     syncValue(false);
-    const restoreValue = () => {
-        const valueInput = root.querySelector('[data-daisy-kit-map-value]');
-        if (!(valueInput instanceof HTMLInputElement)) return;
-        const serialized = JSON.stringify(snapshot());
-        writeValue(valueInput, serialized);
-    };
-    const valueObserver = new MutationObserver(restoreValue);
-    valueObserver.observe(root, { attributeFilter: ['value'], attributes: true, childList: true, subtree: true });
-    const onPageShow = () => queueMicrotask(restoreValue);
-    window.addEventListener('pageshow', onPageShow);
 
     return {
         clearSelection,
         deleteSelected,
         destroy() {
-            window.removeEventListener('pageshow', onPageShow);
-            valueObserver?.disconnect();
             drawing.off('finish', onFinish);
             drawing.off('select', onSelect);
             drawing.off('deselect', onDeselect);
