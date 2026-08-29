@@ -1,4 +1,8 @@
 {
+  ".tmp/file-preview-frame/file-preview-frame.css": {
+    "file": "file-preview-frame.css",
+    "src": ".tmp/file-preview-frame/file-preview-frame.css"
+  },
   ".tmp/file-preview-frame/file-preview-frame.js": {
     "file": "file-preview-frame.js",
     "src": ".tmp/file-preview-frame/file-preview-frame.js"
@@ -135,13 +139,14 @@
     "isEntry": true,
     "imports": [
       "_identifiers-DZhNBAcR.js",
-      "_mountable-CMq2mq9q.js"
+      "_configuration-wAxXfjkK.js"
     ],
     "css": [
       "file-preview.css"
     ],
     "assets": [
-      "file-preview-frame.js"
+      "file-preview-frame.js",
+      "file-preview-frame.css"
     ]
   },
   "resources/js/forms/builder.js": {
