@@ -11,6 +11,7 @@ const allowedThemeTokens = new Set([
     '--radius-box',
 ]);
 let activeRenderId = null;
+let docxStyleContainer = null;
 let objectUrl = null;
 
 function post(type, renderId = null) {
@@ -31,6 +32,11 @@ function releaseObjectUrl() {
     objectUrl = null;
 }
 
+function releaseDocxStyles() {
+    docxStyleContainer?.remove();
+    docxStyleContainer = null;
+}
+
 function applyTheme(theme) {
     if (!theme || typeof theme !== 'object') return;
 
@@ -44,11 +50,14 @@ function applyTheme(theme) {
 
 function applyZoom(zoom) {
     const value = Math.max(25, Math.min(Math.round(Number(zoom) || 100), 200));
+    const wrappers = [...output.querySelectorAll('.docx-wrapper')];
 
-    [...output.classList]
-        .filter((className) => className.startsWith('daisy-kit-file-preview-zoom-'))
-        .forEach((className) => output.classList.remove(className));
-    output.classList.add(`daisy-kit-file-preview-zoom-${value}`);
+    [output, ...wrappers].forEach((element) => {
+        [...element.classList]
+            .filter((className) => className.startsWith('daisy-kit-file-preview-zoom-'))
+            .forEach((className) => element.classList.remove(className));
+    });
+    wrappers.forEach((wrapper) => wrapper.classList.add(`daisy-kit-file-preview-zoom-${value}`));
 }
 
 function blobUrl(data, mimeType) {
@@ -110,15 +119,21 @@ function renderPdf(payload) {
 
 async function renderDocx(payload) {
     output.dataset.daisyKitDocxView = payload.docxView === 'width' ? 'width' : 'page';
-    await renderAsync(payload.data, output, document.head, {
+    docxStyleContainer = document.createElement('div');
+    docxStyleContainer.hidden = true;
+    docxStyleContainer.dataset.daisyKitFilePreviewDocxStyles = '';
+    document.body.append(docxStyleContainer);
+    await renderAsync(payload.data, output, docxStyleContainer, {
         renderAltChunks: false,
         renderComments: false,
         useBase64URL: true,
     });
+    applyZoom(payload.zoom);
 }
 
 async function render(payload) {
     releaseObjectUrl();
+    releaseDocxStyles();
     output.replaceChildren();
     output.dataset.daisyKitFilePreviewType = payload.type;
     applyTheme(payload.theme);
@@ -156,7 +171,10 @@ window.addEventListener('message', async (event) => {
     }
 });
 
-window.addEventListener('pagehide', releaseObjectUrl);
+window.addEventListener('pagehide', () => {
+    releaseObjectUrl();
+    releaseDocxStyles();
+});
 queueMicrotask(() => {
     document.documentElement.dataset.daisyKitFilePreviewFrame = 'ready';
     post('ready');

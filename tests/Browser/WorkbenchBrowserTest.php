@@ -8,8 +8,8 @@ it('mounts the Workbench modules accessibly on desktop and mobile', function ():
     $desktop
         ->assertSee('Daisy Kit v5 Workbench')
         // The Livewire Builder owns one real Viewer preview, File Preview owns
-        // seven product scenarios, and Map owns four product scenarios.
-        ->assertCount('[data-daisy-kit-module]', 20)
+        // nine product scenarios, and Map owns four product scenarios.
+        ->assertCount('[data-daisy-kit-module]', 22)
         ->waitForEvent('networkidle')
         ->wait(1)
         ->assertNoSmoke()
@@ -22,7 +22,7 @@ it('mounts the Workbench modules accessibly on desktop and mobile', function ():
         ->assertScript("document.activeElement?.dataset.daisyKitTreeNode === 'getting-started'");
 
     $this->visit('/')->on()->mobile()
-        ->assertCount('[data-daisy-kit-module]', 20)
+        ->assertCount('[data-daisy-kit-module]', 22)
         ->assertScript('window.innerWidth <= 430');
 })->group('browser');
 
@@ -256,6 +256,6 @@ it('isolates the file preview without a host CSP exception', function (): void {
         ->assertScript("document.querySelector('[data-daisy-kit-module=file-preview]').dataset.daisyKitState === 'ready'")
         ->assertScript("!document.querySelector('[data-daisy-kit-file-preview-frame]').sandbox.contains('allow-same-origin')")
         ->withinFrame('[data-daisy-kit-file-preview-frame]', function ($frame): void {
-            $frame->assertSee('Sandboxed file preview');
+            $frame->assertSee('Daisy Kit File Preview');
         });
 })->group('browser');

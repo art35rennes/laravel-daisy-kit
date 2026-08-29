@@ -16,6 +16,7 @@ test('the file preview emits the restored CSP-safe product contract', function (
         ->toContain('data-daisy-kit-file-preview-frame')
         ->toContain('data-daisy-kit-file-preview-modal-box')
         ->toContain('data-daisy-kit-file-preview-modal-content')
+        ->toContain('data-daisy-kit-file-preview-modal-download')
         ->toContain('tabindex="0"')
         ->toContain('data-daisy-kit-file-preview-retry')
         ->toContain('class="skeleton')
@@ -90,7 +91,7 @@ test('the file preview de-duplicates action order and keeps audio compact', func
     expect(substr_count($html, 'data-daisy-kit-file-preview-open-preview'))
         ->toBe(1)
         ->and(substr_count($html, 'data-daisy-kit-file-preview-download'))
-        ->toBe(1)
+        ->toBe(2)
         ->and($html)
         ->toContain('data-daisy-kit-file-preview-type="audio"');
 });
@@ -98,4 +99,33 @@ test('the file preview de-duplicates action order and keeps audio compact', func
 test('the file preview remains the only public preview Blade entry', function (): void {
     $this->blade('<x-daisy-kit::file-preview url="/files/report.txt" />')
         ->assertSee('data-daisy-kit-module="file-preview"', false);
+});
+
+test('the workbench uses genuine fixtures for every preview renderer', function (): void {
+    $fixtures = dirname(__DIR__, 2).'/workbench/resources/fixtures/file-preview';
+    $document = new ZipArchive;
+
+    expect(file_get_contents("{$fixtures}/preview.txt"))
+        ->toContain('genuine UTF-8 text fixture')
+        ->and(file_get_contents("{$fixtures}/preview.svg"))
+        ->toStartWith('<svg')
+        ->and(file_get_contents("{$fixtures}/preview.wav", false, null, 0, 12))
+        ->toStartWith('RIFF')
+        ->toContain('WAVE')
+        ->and(file_get_contents("{$fixtures}/preview.pdf", false, null, 0, 5))
+        ->toBe('%PDF-')
+        ->and(file_get_contents("{$fixtures}/preview.mp4", false, null, 4, 4))
+        ->toBe('ftyp')
+        ->and($document->open("{$fixtures}/preview.docx"))
+        ->toBeTrue();
+
+    $documentXml = $document->getFromName('word/document.xml');
+    $document->close();
+
+    expect($documentXml)
+        ->toBeString()
+        ->toContain('Product preview brief')
+        ->toContain('Multipage verification')
+        ->and(substr_count($documentXml, 'w:type="page"'))
+        ->toBeGreaterThanOrEqual(2);
 });

@@ -26,6 +26,7 @@ function root(configuration = {}) {
                 <div data-daisy-kit-file-preview-modal-box>
                     <button data-daisy-kit-file-preview-close-preview type="button">Close</button>
                     <div data-daisy-kit-file-preview-modal-content></div>
+                    <a data-daisy-kit-file-preview-download data-daisy-kit-file-preview-modal-download hidden>Download</a>
                 </div>
             </dialog>
             <div data-daisy-kit-file-preview-frame-staging></div>
@@ -214,6 +215,23 @@ describe('file preview runtime', () => {
         await Promise.resolve();
 
         expect(createObjectURL).toHaveBeenCalledOnce();
+    });
+
+    it('updates every download action after validating the file', async () => {
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('Report', {
+            headers: { 'content-type': 'text/plain' },
+            status: 200,
+        }))));
+        const element = root({ canDownload: true, downloadUrl: null });
+
+        mount(element);
+
+        await vi.waitFor(() => {
+            const downloads = [...element.querySelectorAll('[data-daisy-kit-file-preview-download]')];
+
+            expect(downloads).toHaveLength(2);
+            expect(downloads.every((download) => download.hidden === false && download.href.startsWith('blob:'))).toBe(true);
+        });
     });
 
     it('keeps modal state and focus isolated between instances', () => {

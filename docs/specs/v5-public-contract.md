@@ -75,7 +75,8 @@ named slots may replace those regions without adding another public component. T
 keeps its opaque sandbox and emits `daisy-kit:file-preview:*` events. `mount(root)` returns
 the stable File Preview facade and `getInstance(root)` retrieves the same facade after
 automatic mounting. The facade exposes snapshots, open/close, retry and zoom controls but
-does not expose the iframe or renderer internals.
+does not expose the iframe or renderer internals. A validated download remains available from
+the modal footer, and multipage DOCX content scrolls within the bounded isolated frame.
 
 ### Map configuration
 

@@ -24,12 +24,26 @@
                 aria-label="{{ __('daisy-kit::file-preview.modal_title', ['name' => $resolvedName]) }}"
             ></div>
 
-            @if($showModalFooter)
+            @if($showModalFooter || ($canDownload && $showDownloadAction))
                 <footer class="daisy-kit-file-preview__modal-footer modal-action">
-                    @if(isset($modalFooter) && $modalFooter instanceof \Illuminate\View\ComponentSlot)
-                        {{ $modalFooter }}
-                    @else
-                        <button class="btn" data-daisy-kit-file-preview-close-preview type="button">{{ __('daisy-kit::file-preview.close') }}</button>
+                    @if($showModalFooter)
+                        @if(isset($modalFooter) && $modalFooter instanceof \Illuminate\View\ComponentSlot)
+                            {{ $modalFooter }}
+                        @else
+                            <button class="btn" data-daisy-kit-file-preview-close-preview type="button">{{ __('daisy-kit::file-preview.close') }}</button>
+                        @endif
+                    @endif
+
+                    @if($canDownload && $showDownloadAction)
+                        <a
+                            class="btn {{ $downloadActionClass }}"
+                            data-daisy-kit-file-preview-download
+                            data-daisy-kit-file-preview-modal-download
+                            href="{{ $resolvedDownloadUrl }}"
+                            download="{{ $resolvedName }}"
+                        >
+                            {{ __('daisy-kit::file-preview.download') }}
+                        </a>
                     @endif
                 </footer>
             @endif
