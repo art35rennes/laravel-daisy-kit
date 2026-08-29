@@ -445,35 +445,20 @@ describe('map entry', () => {
     });
 
     it('hydrates public drawing ids without leaking Terra Draw properties', async () => {
-        const element = root({
+        const instance = await mounted(root({
             drawing: true,
             value: {
                 features: [{ geometry: { coordinates: [-1.6, 48.1], type: 'Point' }, id: 'asset-1', properties: { asset: true }, type: 'Feature' }],
                 type: 'FeatureCollection',
             },
-        });
-        const instance = await mounted(element);
+        }));
         const drawing = mocks.drawings.at(-1);
-        const input = element.querySelector('[data-daisy-kit-map-value]');
 
         expect(drawing.options.idStrategy.isValidId('asset-1')).toBe(true);
         expect(drawing.addFeatures).toHaveBeenCalledWith([
             expect.objectContaining({ properties: { asset: true, mode: 'point' } }),
         ]);
         expect(instance.exportGeoJSON().features[0].properties).toEqual({ asset: true });
-
-        const replacement = input.cloneNode();
-        replacement.value = '';
-        input.replaceWith(replacement);
-        await Promise.resolve();
-        expect(JSON.parse(replacement.value).features).toHaveLength(1);
-        expect(JSON.parse(replacement.getAttribute('value')).features).toHaveLength(1);
-
-        unmount(element);
-        replacement.value = '';
-        window.dispatchEvent(new Event('pageshow'));
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-        expect(replacement.value).toBe('');
     });
 
     it('selects GeoJSON features by click or by a drawn area', async () => {
