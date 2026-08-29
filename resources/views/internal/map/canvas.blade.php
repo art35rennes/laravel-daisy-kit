@@ -18,7 +18,7 @@
     @if ($mapView['controls']['enabled'])
         <aside class="daisy-kit-map__map-controls" aria-label="{{ $mapView['labels']['mapSettings'] }}">
             @if ($mapView['controls']['layers'])
-                <details class="daisy-kit-map__layer-menu dropdown dropdown-end">
+                <details class="daisy-kit-map__layer-menu dropdown dropdown-end" data-daisy-kit-map-layer-menu hidden>
                     <summary class="btn btn-sm btn-square bg-base-100" title="{{ $mapView['labels']['layers'] }}" aria-label="{{ $mapView['labels']['layers'] }}">
                         <span aria-hidden="true">&#9776;</span>
                     </summary>
