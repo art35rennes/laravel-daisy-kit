@@ -43,8 +43,8 @@ and error retry. Resize invalidation only occurs for finite, positive canvas dim
 - Existing alpha Map props and events may break during the v5.1 prerelease correction.
 - Integrators can connect external filters and controls through the facade without taking
   ownership of internal state.
-- Remote tile and overlay providers remain host-configured. Automated tests use local,
-  deterministic sources; the optional OpenStreetMap demo requires an explicit user action.
+- OpenStreetMap is the default basemap (see ADR-007), while every provider remains
+  replaceable or explicitly disabled. Automated tests use local, deterministic sources.
 - `leaflet.markercluster` and `leaflet-gesture-handling` are runtime dependencies. Both are
   pinned by the lockfile to their MIT-licensed npm releases and loaded only for maps that
   request them.

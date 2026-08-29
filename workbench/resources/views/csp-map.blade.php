@@ -10,6 +10,7 @@
     <main>
         <h1>Daisy Kit CSP Map</h1>
         <x-daisy-kit::map
+            :provider="false"
             :drawing="true"
             :geojson="[
                 'type' => 'Feature',

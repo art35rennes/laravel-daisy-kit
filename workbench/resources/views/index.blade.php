@@ -313,6 +313,7 @@
                     <x-daisy-kit::map
                         id="map-cluster"
                         label="Operations sites"
+                        :provider="false"
                         :fit-bounds="false"
                         :zoom="12"
                         :cluster="['maxClusterRadius' => 72]"
@@ -335,6 +336,7 @@
                     <x-daisy-kit::map
                         id="map-layers"
                         label="Network layers"
+                        :provider="false"
                         :scale="true"
                         :basemaps="[
                             ['id' => 'light', 'label' => 'Light grid', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/light/{z}/{x}/{y}.png', 'selected' => true],
@@ -354,6 +356,7 @@
                     <x-daisy-kit::map
                         id="map-drawing"
                         label="Maintenance drawing"
+                        :provider="false"
                         name="maintenance_geometry"
                         :drawing="true"
                         :measure="true"
@@ -383,6 +386,7 @@
                     <x-daisy-kit::map
                         id="map-controlled"
                         label="Externally controlled map"
+                        :provider="false"
                         :fullscreen="true"
                         :gesture-handling="true"
                         :geolocation="['watch' => true, 'setView' => true]"

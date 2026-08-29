@@ -340,7 +340,7 @@ export async function createSources({ L, configuration, emit, map, root, signal 
     }
 
     const defaultTiles = configuration.provider
-        ? { ...configuration.provider, id: '__provider', label: 'Provider', selected: true, trustedAttribution: true, type: 'xyz' }
+        ? { ...configuration.provider, id: '__provider', label: configuration.provider.label ?? 'Provider', selected: true, trustedAttribution: true, type: 'xyz' }
         : configuration.tileUrl
             ? {
                 attribution: configuration.tileAttribution,

@@ -34,6 +34,9 @@
 @php
     $controlsSlot = $controls instanceof \Illuminate\View\ComponentSlot ? $controls : null;
     $controlsConfiguration = $controlsSlot ? true : $controls;
+    $resolvedProvider = $provider === false
+        ? false
+        : ($provider ?? ($tileUrl === null && $basemaps === [] ? 'osm' : null));
     $map = \Art35rennes\DaisyKit\Map\MapConfiguration::make([
         'center' => $center,
         'zoom' => $zoom,
@@ -46,7 +49,7 @@
         'markers' => $markers,
         'basemaps' => $basemaps,
         'layers' => $layers,
-        'provider' => $provider,
+        'provider' => $resolvedProvider,
         'tileUrl' => $tileUrl,
         'tileAttribution' => $tileAttribution,
         'tileOptions' => $tileOptions,

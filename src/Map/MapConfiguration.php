@@ -205,7 +205,7 @@ class MapConfiguration
 
     private static function provider(mixed $provider): ?string
     {
-        if ($provider === null || $provider === '') {
+        if ($provider === false || $provider === null || $provider === '') {
             return null;
         }
 

@@ -3,18 +3,22 @@ const defaultCenter = [48.1173, -1.6778];
 const providers = {
     'cartodb.darkmatter': {
         attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        label: 'CARTO Dark Matter',
         url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
     },
     'cartodb.positron': {
         attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        label: 'CARTO Positron',
         url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     },
     'cartodb.voyager': {
         attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        label: 'CARTO Voyager',
         url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
     },
     osm: {
-        attribution: '&copy; OpenStreetMap contributors',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+        label: 'OpenStreetMap',
         url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     },
 };

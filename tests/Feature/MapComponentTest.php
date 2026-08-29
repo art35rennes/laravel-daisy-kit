@@ -12,6 +12,19 @@ function mapConfiguration(string $html): array
     return JsonConfiguration::decode(html_entity_decode($matches[1] ?? ''));
 }
 
+it('uses OpenStreetMap by default and allows hosts to disable implicit tiles', function (): void {
+    $default = mapConfiguration(view('daisy-kit::components.map')->render());
+    $disabled = mapConfiguration(view('daisy-kit::components.map', ['provider' => false])->render());
+    $configured = mapConfiguration(view('daisy-kit::components.map', [
+        'tileUrl' => '/tiles/{z}/{x}/{y}.png',
+    ])->render());
+
+    expect($default['provider'])->toBe('osm')
+        ->and($disabled['provider'])->toBeNull()
+        ->and($configured['provider'])->toBeNull()
+        ->and($configured['tileUrl'])->toBe('/tiles/{z}/{x}/{y}.png');
+});
+
 it('renders the canonical map contract as CSP-safe configuration', function (): void {
     $html = view('daisy-kit::components.map', [
         'center' => [48.1173, -1.6778],
