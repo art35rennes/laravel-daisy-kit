@@ -16,7 +16,13 @@
                 </div>
             @endif
 
-            <div class="daisy-kit-file-preview__modal-content {{ $modalContentClass }}" data-daisy-kit-file-preview-modal-content></div>
+            <div
+                class="daisy-kit-file-preview__modal-content {{ $modalContentClass }}"
+                data-daisy-kit-file-preview-modal-content
+                tabindex="0"
+                role="region"
+                aria-label="{{ __('daisy-kit::file-preview.modal_title', ['name' => $resolvedName]) }}"
+            ></div>
 
             @if($showModalFooter)
                 <footer class="daisy-kit-file-preview__modal-footer modal-action">

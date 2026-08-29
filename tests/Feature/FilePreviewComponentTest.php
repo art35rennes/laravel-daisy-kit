@@ -16,6 +16,7 @@ test('the file preview emits the restored CSP-safe product contract', function (
         ->toContain('data-daisy-kit-file-preview-frame')
         ->toContain('data-daisy-kit-file-preview-modal-box')
         ->toContain('data-daisy-kit-file-preview-modal-content')
+        ->toContain('tabindex="0"')
         ->toContain('data-daisy-kit-file-preview-retry')
         ->toContain('class="skeleton')
         ->toContain('sandbox="allow-scripts"')

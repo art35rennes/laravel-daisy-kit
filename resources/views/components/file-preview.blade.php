@@ -146,7 +146,13 @@
                 @include('daisy-kit::internal.file-preview.summary')
 
                 @if($resolvedPreviewMode === 'inline' && $canPreview)
-                    <div class="daisy-kit-file-preview__inline" data-daisy-kit-file-preview-inline-content>
+                    <div
+                        class="daisy-kit-file-preview__inline"
+                        data-daisy-kit-file-preview-inline-content
+                        tabindex="0"
+                        role="region"
+                        aria-label="{{ __('daisy-kit::file-preview.modal_title', ['name' => $resolvedName]) }}"
+                    >
                         @include('daisy-kit::internal.file-preview.frame')
                     </div>
                 @else
