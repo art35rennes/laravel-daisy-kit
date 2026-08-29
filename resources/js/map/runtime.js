@@ -43,11 +43,11 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
     const state = {
         basemap: persisted?.basemap ?? null,
         center: persisted?.center ?? configuration.center,
-        drawingToolsVisible: persisted?.drawingToolsVisible ?? true,
         layerVisibility: persisted?.layerVisibility ?? {},
         measurement: null,
         mode: null,
         selection: [],
+        visibleDrawLayers: [],
         zoom: persisted?.zoom ?? configuration.zoom,
     };
 
@@ -63,7 +63,6 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
         persistence.save({
             basemap: sources?.activeBasemap() ?? state.basemap,
             center: state.center,
-            drawingToolsVisible: state.drawingToolsVisible,
             layerVisibility: sources?.layerVisibility() ?? state.layerVisibility,
             zoom: state.zoom,
         });
@@ -207,21 +206,6 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
         return document.exitFullscreen?.();
     }
 
-    function setDrawingToolsVisible(visible, notify = true) {
-        state.drawingToolsVisible = visible === true;
-        const region = root.querySelector('[data-daisy-kit-map-tools]')?.closest('.daisy-kit-map__tool-region');
-        const button = root.querySelector('[data-daisy-kit-map-toggle-tools]');
-        if (region) region.hidden = !state.drawingToolsVisible;
-        if (button) {
-            const label = state.drawingToolsVisible ? configuration.labels.hideDrawingTools : configuration.labels.showDrawingTools;
-            button.setAttribute('aria-expanded', String(state.drawingToolsVisible));
-            button.setAttribute('aria-label', label);
-            button.title = label;
-        }
-        saveState();
-        if (notify) emit('tools', { visible: state.drawingToolsVisible });
-    }
-
     function updateFullscreenControl() {
         const button = root.querySelector('[data-daisy-kit-map-fullscreen]');
         if (!button) return;
@@ -239,7 +223,6 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
         listen(root.querySelector('[data-daisy-kit-map-fit-bounds]'), 'click', () => fitBounds());
         listen(root.querySelector('[data-daisy-kit-map-geolocate]'), 'click', () => locate().catch(() => {}));
         listen(root.querySelector('[data-daisy-kit-map-fullscreen]'), 'click', fullscreen);
-        listen(root.querySelector('[data-daisy-kit-map-toggle-tools]'), 'click', () => setDrawingToolsVisible(!state.drawingToolsVisible));
         listen(document, 'fullscreenchange', updateFullscreenControl);
         listen(root.querySelector('[data-daisy-kit-map-history="undo"]'), 'click', () => facade.undo());
         listen(root.querySelector('[data-daisy-kit-map-history="redo"]'), 'click', () => facade.redo());
@@ -248,6 +231,15 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
         listen(root.querySelector('[data-daisy-kit-map-clear-selection]'), 'click', () => facade.clearSelection());
         listen(root.querySelector('[data-daisy-kit-map-object-type]'), 'change', (event) => drawing?.setObjectType(event.currentTarget.value));
         listen(root.querySelector('[data-daisy-kit-map-draw-layer]'), 'change', (event) => facade.setDrawLayer(event.currentTarget.value));
+        root.querySelectorAll('[data-daisy-kit-map-draw-layer-visibility]').forEach((control) => {
+            listen(control, 'change', () => {
+                const selected = [...root.querySelectorAll('[data-daisy-kit-map-draw-layer-visibility]:checked')]
+                    .map(({ value }) => value);
+                if (selected.length === 0 || !facade.setVisibleDrawLayers(selected)) {
+                    control.checked = true;
+                }
+            });
+        });
         listen(root, 'daisy-kit:map:measurement', (event) => { state.measurement = event.detail; });
         listen(root, 'daisy-kit:map:mode', (event) => { state.mode = event.detail.mode; });
         listen(root.querySelector('[data-daisy-kit-map-retry]'), 'click', async () => {
@@ -306,7 +298,6 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
         drawing = await createDrawing({ L, configuration, emit, map, root, signal: controller.signal, sources });
         if (controller.signal.aborted) return;
 
-        setDrawingToolsVisible(state.drawingToolsVisible, false);
         updateFullscreenControl();
         if (configuration.geolocation?.watch) startGeolocation();
         else if (configuration.geolocation?.auto) locate().catch(() => {});
@@ -346,11 +337,13 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
         getDrawLayer: () => drawing?.getDrawLayer() ?? null,
         getLeafletMap: () => map,
         getSelection: () => clone([...(drawing?.getSelection() ?? []), ...(sources?.getSelection() ?? [])]),
+        getVisibleDrawLayers: () => drawing?.getVisibleDrawLayers() ?? [],
         getState: () => clone({
             ...state,
             basemap: sources?.activeBasemap() ?? state.basemap,
             layerVisibility: sources?.layerVisibility() ?? state.layerVisibility,
             selection: [...(drawing?.getSelection() ?? []), ...(sources?.getSelection() ?? [])],
+            visibleDrawLayers: drawing?.getVisibleDrawLayers() ?? state.visibleDrawLayers,
         }),
         invalidateSize,
         locate,
@@ -388,6 +381,12 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
         setMode(mode, options) {
             const changed = drawing?.setMode(mode, options) ?? false;
             if (changed) state.mode = mode;
+
+            return changed;
+        },
+        setVisibleDrawLayers(ids) {
+            const changed = drawing?.setVisibleDrawLayers(ids) ?? false;
+            if (changed) state.visibleDrawLayers = drawing.getVisibleDrawLayers();
 
             return changed;
         },

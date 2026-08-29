@@ -67,6 +67,7 @@ class MapConfiguration
             ]),
             'objectTypes' => self::objectTypes($input['objectTypes'] ?? []),
             'drawLayers' => self::drawLayers($input['drawLayers'] ?? []),
+            'drawLayerSelection' => self::drawLayerSelection($input['drawLayerSelection'] ?? 'single'),
             'spatialSelection' => $spatialSelection,
             'value' => self::drawingValue($input['value'] ?? null),
             'persistState' => self::persistence($input['persistState'] ?? false, $input['stateKey'] ?? null),
@@ -78,6 +79,7 @@ class MapConfiguration
             'view' => [
                 'controls' => $controls,
                 'drawLayers' => $configuration['drawLayers'],
+                'drawLayerSelection' => $configuration['drawLayerSelection'],
                 'drawing' => $drawing,
                 'geolocation' => $geolocation,
                 'fullscreen' => $configuration['fullscreen'],
@@ -103,8 +105,8 @@ class MapConfiguration
             'draw_point', 'draw_line', 'draw_area', 'draw_rectangle', 'edit_drawing', 'select_drawing',
             'select_feature', 'delete_selected', 'undo', 'redo', 'export_drawing', 'active_mode',
             'selection_details', 'selected_features', 'clear_selection', 'measurements', 'locked_layer',
-            'object_type', 'drawing_layer', 'select_by_area',
-            'show_drawing_tools', 'hide_drawing_tools',
+            'object_type', 'drawing_layer', 'select_by_area', 'business_layers', 'drawing_layers',
+            'create_tools', 'selection_tools', 'history_tools', 'view_tools', 'custom_controls',
         ];
 
         return collect($keys)
@@ -112,9 +114,11 @@ class MapConfiguration
             ->all();
     }
 
-    /** @return array{enabled: bool, position: string, layers: bool, fitBounds: bool, drawing: bool, measurements: bool} */
+    /** @return array{enabled: bool, position: string, layers: bool, fitBounds: bool, drawing: bool, measurements: bool, sections: list<string>} */
     private static function controls(mixed $controls): array
     {
+        $defaultSections = ['basemaps', 'businessLayers', 'drawingLayers', 'create', 'selection', 'history', 'view', 'custom'];
+
         if ($controls === false) {
             return [
                 'enabled' => false,
@@ -123,6 +127,7 @@ class MapConfiguration
                 'fitBounds' => false,
                 'drawing' => false,
                 'measurements' => false,
+                'sections' => [],
             ];
         }
 
@@ -137,6 +142,24 @@ class MapConfiguration
             throw new InvalidArgumentException('Map control position is invalid.');
         }
 
+        $sections = $controls['sections'] ?? $defaultSections;
+
+        if (! is_array($sections) || ! array_is_list($sections)) {
+            throw new InvalidArgumentException('Map control sections must be a list.');
+        }
+
+        $normalizedSections = [];
+
+        foreach ($sections as $section) {
+            if (! is_string($section) || ! in_array($section, $defaultSections, true)) {
+                throw new InvalidArgumentException('Map control section is invalid.');
+            }
+
+            if (! in_array($section, $normalizedSections, true)) {
+                $normalizedSections[] = $section;
+            }
+        }
+
         return [
             'enabled' => true,
             'position' => $position,
@@ -144,6 +167,7 @@ class MapConfiguration
             'fitBounds' => ($controls['fitBounds'] ?? true) === true,
             'drawing' => ($controls['drawing'] ?? true) === true,
             'measurements' => ($controls['measurements'] ?? true) === true,
+            'sections' => $normalizedSections,
         ];
     }
 
@@ -209,7 +233,7 @@ class MapConfiguration
             return null;
         }
 
-        if (! is_string($provider) || ! in_array($provider, ['osm', 'cartodb.positron', 'cartodb.darkmatter', 'cartodb.voyager'], true)) {
+        if (! is_string($provider) || ! in_array($provider, ['osm.standard', 'osm.light', 'osm.dark', 'osm.voyager'], true)) {
             throw new InvalidArgumentException('Map provider is not supported.');
         }
 
@@ -267,6 +291,7 @@ class MapConfiguration
                 throw new InvalidArgumentException("Map layer [{$id}] has an invalid type.");
             }
 
+            $provider = $basemap ? self::provider($layer['provider'] ?? null) : null;
             $url = self::url($layer['url'] ?? null, "layer {$id} url", $type === 'xyz');
             $data = self::geojson($layer['data'] ?? $layer['geojson'] ?? null, "layer {$id} data");
 
@@ -274,7 +299,7 @@ class MapConfiguration
                 throw new InvalidArgumentException("GeoJSON layer [{$id}] requires data or a URL.");
             }
 
-            if ($type !== 'geojson' && $url === null) {
+            if ($type !== 'geojson' && $url === null && $provider === null) {
                 throw new InvalidArgumentException("Raster layer [{$id}] requires a URL.");
             }
 
@@ -284,6 +309,7 @@ class MapConfiguration
                 'id' => $id,
                 'label' => is_string($layer['label'] ?? null) && trim($layer['label']) !== '' ? $layer['label'] : $id,
                 'type' => $type,
+                'provider' => $provider,
                 'url' => $url,
                 'data' => $data,
                 'options' => self::array($layer['options'] ?? [], "layer {$id} options"),
@@ -486,10 +512,20 @@ class MapConfiguration
                 'id' => $id,
                 'label' => is_string($layer['label'] ?? null) ? $layer['label'] : $id,
                 'properties' => self::array($layer['properties'] ?? [], "drawing layer {$id} properties"),
+                'visible' => ($layer['visible'] ?? $index === 0) === true,
             ];
         }
 
         return $normalized;
+    }
+
+    private static function drawLayerSelection(mixed $selection): string
+    {
+        if (! is_string($selection) || ! in_array($selection, ['single', 'multiple'], true)) {
+            throw new InvalidArgumentException('Map drawing layer selection mode is invalid.');
+        }
+
+        return $selection;
     }
 
     /** @return array<string, mixed>|false */

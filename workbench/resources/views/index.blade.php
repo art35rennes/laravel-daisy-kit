@@ -328,7 +328,7 @@
                     <x-daisy-kit::map
                         id="map-cluster"
                         label="Operations sites"
-                        :provider="false"
+                        :provider="app()->environment('testing') ? false : 'osm.standard'"
                         :fit-bounds="false"
                         :zoom="12"
                         :cluster="['maxClusterRadius' => 72]"
@@ -346,21 +346,23 @@
                 </article>
 
                 <article>
-                    <h3>Basemaps and typed layers</h3>
-                    <p class="text-base-content/70">GeoJSON is fetched locally; XYZ and WMS overlays use deterministic local endpoints.</p>
+                    <h3>OSM styles and business layers</h3>
+                    <p class="text-base-content/70">The menu presents service districts, scheduled works and planning constraints before their transport formats.</p>
                     <x-daisy-kit::map
                         id="map-layers"
                         label="Network layers"
                         :provider="false"
                         :scale="true"
-                        :basemaps="[
-                            ['id' => 'light', 'label' => 'Light grid', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/light/{z}/{x}/{y}.png', 'selected' => true],
-                            ['id' => 'dark', 'label' => 'Dark grid', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/dark/{z}/{x}/{y}.png'],
+                        :basemaps="app()->environment('testing') ? [] : [
+                            ['id' => 'standard', 'label' => 'OSM standard', 'provider' => 'osm.standard', 'selected' => true],
+                            ['id' => 'light', 'label' => 'OSM light', 'provider' => 'osm.light'],
+                            ['id' => 'dark', 'label' => 'OSM dark', 'provider' => 'osm.dark'],
+                            ['id' => 'voyager', 'label' => 'OSM voyager', 'provider' => 'osm.voyager'],
                         ]"
                         :layers="[
                             ['id' => 'districts', 'label' => 'Service districts', 'type' => 'geojson', 'url' => '/_daisy-kit-test/map/districts.geojson', 'style' => ['color' => '#2563eb', 'weight' => 2]],
-                            ['id' => 'works', 'label' => 'Works tiles', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/works/{z}/{x}/{y}.png', 'visible' => false],
-                            ['id' => 'zoning', 'label' => 'Zoning WMS', 'type' => 'wms', 'url' => '/_daisy-kit-test/map/wms', 'options' => ['layers' => 'workbench:zoning', 'format' => 'image/png', 'transparent' => true], 'visible' => false],
+                            ['id' => 'works', 'label' => 'Scheduled road works', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/works/{z}/{x}/{y}.png', 'visible' => false],
+                            ['id' => 'zoning', 'label' => 'Planning constraints', 'type' => 'wms', 'url' => '/_daisy-kit-test/map/wms', 'options' => ['layers' => 'workbench:zoning', 'format' => 'image/png', 'transparent' => true], 'visible' => false],
                         ]"
                     />
                 </article>
@@ -371,16 +373,16 @@
                     <x-daisy-kit::map
                         id="map-drawing"
                         label="Maintenance drawing"
-                        :provider="false"
+                        :provider="app()->environment('testing') ? false : 'osm.standard'"
                         name="maintenance_geometry"
                         :drawing="true"
                         :measure="true"
                         :spatial-selection="['mode' => 'both']"
-                        :geojson="[
+                        :value="[
                             'type' => 'FeatureCollection',
                             'features' => [
-                                ['type' => 'Feature', 'id' => 'site-north', 'properties' => ['name' => 'North maintenance site'], 'geometry' => ['type' => 'Point', 'coordinates' => [-1.684, 48.124]]],
-                                ['type' => 'Feature', 'id' => 'site-south', 'properties' => ['name' => 'South maintenance site'], 'geometry' => ['type' => 'Point', 'coordinates' => [-1.671, 48.109]]],
+                                ['type' => 'Feature', 'id' => 'site-north', 'properties' => ['name' => 'North maintenance site', 'drawLayer' => 'water'], 'geometry' => ['type' => 'Point', 'coordinates' => [-1.684, 48.124]]],
+                                ['type' => 'Feature', 'id' => 'site-south', 'properties' => ['name' => 'South maintenance site', 'drawLayer' => 'electricity'], 'geometry' => ['type' => 'Point', 'coordinates' => [-1.671, 48.109]]],
                             ],
                         ]"
                         :object-types="[
@@ -389,9 +391,10 @@
                             ['id' => 'zone', 'label' => 'Intervention zone', 'geometry' => 'polygon'],
                         ]"
                         :draw-layers="[
-                            ['id' => 'water', 'label' => 'Water network'],
-                            ['id' => 'electricity', 'label' => 'Electricity network'],
+                            ['id' => 'water', 'label' => 'Water network', 'visible' => true],
+                            ['id' => 'electricity', 'label' => 'Electricity network', 'visible' => false],
                         ]"
+                        draw-layer-selection="multiple"
                     />
                 </article>
 
@@ -401,24 +404,20 @@
                     <x-daisy-kit::map
                         id="map-controlled"
                         label="Externally controlled map"
-                        :provider="false"
+                        :provider="app()->environment('testing') ? false : 'osm.standard'"
                         :fullscreen="true"
                         :gesture-handling="true"
                         :geolocation="['watch' => true, 'setView' => true]"
                         :persist-state="true"
                         state-key="workbench-controlled-map"
                         :markers="[['id' => 'center', 'label' => 'Initial center', 'position' => [48.1173, -1.6778]]]"
-                        :basemaps="[
-                            ['id' => 'offline', 'label' => 'Local test grid', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/light/{z}/{x}/{y}.png', 'selected' => true],
-                            ['id' => 'osm', 'label' => 'OpenStreetMap — activate network', 'type' => 'xyz', 'url' => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', 'attribution' => '<a href=&quot;https://www.openstreetmap.org/copyright&quot;>© OpenStreetMap contributors</a>', 'trustedAttribution' => true],
-                        ]"
                     >
                         <x-slot:controls>
                             <div class="flex flex-wrap gap-2" aria-label="Host map controls">
                                 <button class="btn btn-outline btn-sm" data-workbench-map-action="view" type="button">Focus the depot</button>
                                 <button class="btn btn-outline btn-sm" data-workbench-map-action="invalidate" type="button">Refresh layout</button>
                             </div>
-                            <p class="text-sm text-base-content/70">OpenStreetMap is only requested after selecting its basemap in the map layer menu.</p>
+                            <p class="text-sm text-base-content/70">These controls use the public facade and stay inside the integrator section of the map menu.</p>
                         </x-slot:controls>
                     </x-daisy-kit::map>
                 </article>

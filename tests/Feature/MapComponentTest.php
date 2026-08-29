@@ -12,14 +12,14 @@ function mapConfiguration(string $html): array
     return JsonConfiguration::decode(html_entity_decode($matches[1] ?? ''));
 }
 
-it('uses OpenStreetMap by default and allows hosts to disable implicit tiles', function (): void {
+it('uses the standard OpenStreetMap mode by default and allows hosts to disable implicit tiles', function (): void {
     $default = mapConfiguration(view('daisy-kit::components.map')->render());
     $disabled = mapConfiguration(view('daisy-kit::components.map', ['provider' => false])->render());
     $configured = mapConfiguration(view('daisy-kit::components.map', [
         'tileUrl' => '/tiles/{z}/{x}/{y}.png',
     ])->render());
 
-    expect($default['provider'])->toBe('osm')
+    expect($default['provider'])->toBe('osm.standard')
         ->and($disabled['provider'])->toBeNull()
         ->and($configured['provider'])->toBeNull()
         ->and($configured['tileUrl'])->toBe('/tiles/{z}/{x}/{y}.png');
@@ -33,7 +33,7 @@ it('renders the canonical map contract as CSP-safe configuration', function (): 
         'maxZoom' => 19,
         'fitBounds' => false,
         'preferCanvas' => true,
-        'provider' => 'osm',
+        'provider' => 'osm.standard',
         'tileOptions' => ['maxZoom' => 19],
         'basemaps' => [[
             'id' => 'local',
@@ -86,7 +86,7 @@ it('renders the canonical map contract as CSP-safe configuration', function (): 
             'maxZoom' => 19,
             'fitBounds' => false,
             'preferCanvas' => true,
-            'provider' => 'osm',
+            'provider' => 'osm.standard',
             'scale' => true,
             'fullscreen' => true,
             'gestureHandling' => true,
@@ -94,6 +94,40 @@ it('renders the canonical map contract as CSP-safe configuration', function (): 
         ])->and($configuration['layers'])->toHaveCount(2)
         ->and($configuration['layers'][1])->toMatchArray(['id' => 'zoning', 'type' => 'wms'])
         ->and($configuration['spatialSelection']['mode'])->toBe('area');
+});
+
+it('normalizes v5-only OSM modes, drawing-layer selection and menu sections', function (): void {
+    $html = view('daisy-kit::components.map', [
+        'provider' => 'osm.dark',
+        'basemaps' => [[
+            'id' => 'light',
+            'label' => 'OSM light',
+            'provider' => 'osm.light',
+        ]],
+        'drawLayers' => [
+            ['id' => 'water', 'label' => 'Water', 'visible' => true],
+            ['id' => 'electricity', 'label' => 'Electricity', 'visible' => false],
+        ],
+        'drawLayerSelection' => 'multiple',
+        'controls' => ['sections' => ['drawingLayers', 'create', 'custom', 'view']],
+    ])->render();
+    $configuration = mapConfiguration($html);
+
+    expect($configuration['provider'])->toBe('osm.dark')
+        ->and($configuration['basemaps'][0])->toMatchArray(['id' => 'light', 'provider' => 'osm.light'])
+        ->and($configuration['drawLayerSelection'])->toBe('multiple')
+        ->and($configuration['drawLayers'][0])->toMatchArray(['id' => 'water', 'visible' => true])
+        ->and($configuration['drawLayers'][1])->toMatchArray(['id' => 'electricity', 'visible' => false])
+        ->and($configuration['controls']['sections'])->toBe(['drawingLayers', 'create', 'custom', 'view']);
+
+    expect(fn (): array => MapConfiguration::make(['provider' => 'osm']))
+        ->toThrow(InvalidArgumentException::class, 'not supported');
+    expect(fn (): array => MapConfiguration::make(['provider' => 'cartodb.positron']))
+        ->toThrow(InvalidArgumentException::class, 'not supported');
+    expect(fn (): array => MapConfiguration::make(['drawLayerSelection' => 'legacy']))
+        ->toThrow(InvalidArgumentException::class, 'selection mode is invalid');
+    expect(fn (): array => MapConfiguration::make(['controls' => ['sections' => ['legacy']]]))
+        ->toThrow(InvalidArgumentException::class, 'section is invalid');
 });
 
 it('rejects unsafe map and marker asset urls', function (): void {
@@ -161,7 +195,7 @@ it('renders translated controls and private integration slots', function (): voi
 
     $html = (string) $this->blade(<<<'BLADE'
         <x-daisy-kit::map :drawing="true" :controls="true">
-            <x-slot:controls><button type="button" data-host-map-control>Filtre métier</button></x-slot:controls>
+            <x-slot:controls :sections="['custom', 'view']"><button type="button" data-host-map-control>Filtre métier</button></x-slot:controls>
             <x-slot:empty><p data-host-map-empty>Aucune agence</p></x-slot:empty>
             <x-slot:error><p data-host-map-error>Carte indisponible</p></x-slot:error>
         </x-daisy-kit::map>
@@ -175,6 +209,10 @@ it('renders translated controls and private integration slots', function (): voi
         ->toContain('data-host-map-control')
         ->toContain('data-host-map-empty')
         ->toContain('data-host-map-error');
+
+    expect(strpos($html, 'data-daisy-kit-map-canvas'))->toBeLessThan(strpos($html, 'data-daisy-kit-map-menu'))
+        ->and(strpos($html, 'data-daisy-kit-map-menu'))->toBeLessThan(strpos($html, 'data-host-map-control'))
+        ->and(mapConfiguration($html)['controls']['sections'])->toBe(['custom', 'view']);
 });
 
 it('synchronizes the initial GeoJSON value with a named form input', function (): void {
