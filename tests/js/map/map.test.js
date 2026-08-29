@@ -232,6 +232,15 @@ describe('map entry', () => {
         }));
     });
 
+    it('disables Leaflet zoom transitions that race responsive resizes', async () => {
+        await mounted(root({ provider: 'osm.standard' }));
+
+        expect(mocks.leafletMap).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+            trackResize: false,
+            zoomAnimation: false,
+        }));
+    });
+
     it('returns one stable facade per isolated root', async () => {
         const first = root({ geojson: { features: [], type: 'FeatureCollection' } }, 'first-map');
         const second = root({ drawing: true }, 'second-map');
@@ -271,6 +280,7 @@ describe('map entry', () => {
         resizeCallback();
 
         expect(map.invalidateSize).not.toHaveBeenCalled();
+        expect(instance.fitBounds()).toBe(false);
         expect(instance.setView([Number.NaN, Number.NaN], 8)).toBe(false);
         expect(map.setView).not.toHaveBeenCalledWith([Number.NaN, Number.NaN], 8, expect.anything());
 
@@ -279,7 +289,21 @@ describe('map entry', () => {
             clientWidth: { configurable: true, value: 320 },
         });
         resizeCallback();
-        expect(map.invalidateSize).toHaveBeenCalledWith({ animate: false, pan: false });
+        expect(map.invalidateSize).toHaveBeenCalledWith({ animate: false, debounceMoveend: true, pan: false });
+        expect(map.setView).toHaveBeenLastCalledWith([48.1, -1.6], 12, { animate: false, reset: true });
+        expect(instance.fitBounds()).toBe(true);
+        expect(map.fitBounds).toHaveBeenCalledWith(expect.anything(), {
+            animate: false,
+            padding: [24, 24],
+        });
+    });
+
+    it('ignores a transient Leaflet center read during resize events', async () => {
+        await mounted(root({ center: [48.1, -1.6], provider: 'osm.standard', zoom: 12 }));
+        const viewHandler = map.on.mock.calls.find(([events]) => events === 'moveend zoomend')[1];
+        map.getCenter.mockImplementationOnce(() => { throw new Error('transient layout'); });
+
+        expect(() => viewHandler()).not.toThrow();
     });
 
     it('controls GeoJSON, XYZ and WMS layers through the facade', async () => {

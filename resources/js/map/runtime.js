@@ -8,12 +8,12 @@ function finiteLatLng(latlng) {
     return latlng && Number.isFinite(Number(latlng.lat)) && Number.isFinite(Number(latlng.lng));
 }
 
-function visibleSize(canvas) {
+function visibleSize(canvas, minimum = 1) {
     const rect = canvas.getBoundingClientRect?.();
     const width = rect?.width || canvas.clientWidth;
     const height = rect?.height || canvas.clientHeight;
 
-    return Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0;
+    return Number.isFinite(width) && Number.isFinite(height) && width >= minimum && height >= minimum;
 }
 
 function clone(value) {
@@ -93,7 +93,8 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
 
     function invalidateSize() {
         if (!map || !canvas || !visibleSize(canvas)) return false;
-        map.invalidateSize({ animate: false, pan: false });
+        map.invalidateSize({ animate: false, debounceMoveend: true, pan: false });
+        map.setView(state.center, state.zoom, { animate: false, reset: true });
 
         return true;
     }
@@ -107,10 +108,10 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
     }
 
     function fitBounds(options = {}) {
-        if (!map || !sources) return false;
+        if (!map || !sources || !canvas || !visibleSize(canvas, 64)) return false;
         const bounds = sources.bounds();
         if (!bounds?.isValid?.()) return false;
-        map.fitBounds(bounds, { padding: [24, 24], ...options });
+        map.fitBounds(bounds, { animate: false, padding: [24, 24], ...options });
 
         return true;
     }
@@ -253,8 +254,14 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
 
     function bindMapEvents() {
         const onView = () => {
-            const center = map.getCenter?.();
-            const zoom = map.getZoom?.();
+            let center;
+            let zoom;
+            try {
+                center = map.getCenter?.();
+                zoom = map.getZoom?.();
+            } catch {
+                return;
+            }
             if (!finiteLatLng(center) || !Number.isFinite(Number(zoom))) return;
             state.center = [Number(center.lat), Number(center.lng)];
             state.zoom = Number(zoom);
@@ -280,6 +287,7 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
             minZoom: configuration.minZoom,
             preferCanvas: configuration.preferCanvas,
             trackResize: false,
+            zoomAnimation: false,
             zoomControl: true,
         });
         setView(state.center, state.zoom);
