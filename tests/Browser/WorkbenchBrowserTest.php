@@ -189,15 +189,17 @@ it('runs the four Map product scenarios without host-specific map logic', functi
         ->assertCount('#map-drawing [data-daisy-kit-map-draw-layer]', 1)
         ->assertCount('#map-drawing [data-daisy-kit-map-mode="spatial-select"]', 1)
         ->assertScript("Array.from(document.querySelectorAll('#map-controlled .leaflet-tile')).every((tile) => !tile.src.includes('tile.openstreetmap.org'))")
+        ->click('#map-drawing [data-daisy-kit-map-menu] summary')
         ->click('#map-drawing [data-daisy-kit-map-mode="point"]')
         ->assertScript("document.querySelector('#map-drawing [data-daisy-kit-map-mode=point]').getAttribute('aria-pressed') === 'true'")
+        ->click('#map-controlled [data-daisy-kit-map-menu] summary')
         ->click('#map-controlled [data-workbench-map-action="view"]')
         ->assertScript("document.querySelector('#map-controlled').dataset.workbenchFacade === 'view-updated'");
 
     foreach ([320, 390, 768, 1024, 1440] as $width) {
         $page->resize($width, 1000)
             ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
-            ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=map]')).every((root) => { const viewport = root.querySelector('.daisy-kit-map__viewport').getBoundingClientRect(); return Array.from(root.querySelectorAll('.leaflet-control-container, [data-daisy-kit-map-layer-menu], [data-daisy-kit-map-measurement], [data-daisy-kit-map-active-mode]')).every((control) => control.hidden || (control.getBoundingClientRect().left >= viewport.left && control.getBoundingClientRect().right <= viewport.right)); })")
+            ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=map]')).every((root) => { const viewport = root.querySelector('.daisy-kit-map__viewport').getBoundingClientRect(); return Array.from(root.querySelectorAll('.leaflet-control-container, [data-daisy-kit-map-menu], [data-daisy-kit-map-measurement], [data-daisy-kit-map-active-mode]')).every((control) => control.hidden || (control.getBoundingClientRect().left >= viewport.left && control.getBoundingClientRect().right <= viewport.right)); })")
             ->assertNoSmoke();
     }
 })->group('browser');

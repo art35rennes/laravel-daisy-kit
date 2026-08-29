@@ -30,6 +30,7 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
     const selectionSummary = root.querySelector('[data-daisy-kit-map-selection-summary]');
     const objectTypeSelect = root.querySelector('[data-daisy-kit-map-object-type]');
     const drawLayerSelect = root.querySelector('[data-daisy-kit-map-draw-layer]');
+    const drawLayerControls = [...root.querySelectorAll('[data-daisy-kit-map-draw-layer-visibility]')];
 
     if (!enabled) {
         return {
@@ -39,8 +40,10 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
             exportGeoJSON: () => emptyCollection(),
             getDrawLayer: () => null,
             getSelection: () => [],
+            getVisibleDrawLayers: () => [],
             redo: () => false,
             setDrawLayer: () => false,
+            setVisibleDrawLayers: () => false,
             setMode: () => false,
             setObjectType: () => false,
             undo: () => false,
@@ -53,13 +56,18 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
 
     const initialGeometryTypes = new Set(configuration.value.features.map((feature) => feature?.geometry?.type));
     const modes = [];
-    if (configuration.drawing?.point !== false && (configuration.drawing || initialGeometryTypes.has('Point'))) modes.push(new terra.TerraDrawPointMode());
-    if (configuration.drawing?.line !== false && (configuration.drawing || initialGeometryTypes.has('LineString'))) modes.push(new terra.TerraDrawLineStringMode());
-    if (configuration.drawing?.polygon !== false && (configuration.drawing || initialGeometryTypes.has('Polygon'))) modes.push(new terra.TerraDrawPolygonMode());
+    const availableModes = new Set();
+    const addMode = (name, mode) => {
+        availableModes.add(name);
+        modes.push(mode);
+    };
+    if (configuration.drawing?.point !== false && (configuration.drawing || initialGeometryTypes.has('Point'))) addMode('point', new terra.TerraDrawPointMode());
+    if (configuration.drawing?.line !== false && (configuration.drawing || initialGeometryTypes.has('LineString'))) addMode('linestring', new terra.TerraDrawLineStringMode());
+    if (configuration.drawing?.polygon !== false && (configuration.drawing || initialGeometryTypes.has('Polygon'))) addMode('polygon', new terra.TerraDrawPolygonMode());
     const needsRectangle = (configuration.drawing && configuration.drawing.rectangle !== false)
         || ['area', 'both'].includes(configuration.spatialSelection?.mode);
-    if (needsRectangle && terra.TerraDrawRectangleMode) modes.push(new terra.TerraDrawRectangleMode());
-    modes.push(new terra.TerraDrawSelectMode());
+    if (needsRectangle && terra.TerraDrawRectangleMode) addMode('rectangle', new terra.TerraDrawRectangleMode());
+    addMode('select', new terra.TerraDrawSelectMode());
 
     let generatedFeatureId = 0;
 
@@ -75,6 +83,14 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
     const selectedIds = new Set();
     let activeDrawLayer = configuration.drawLayers?.[0]?.id ?? null;
     let activeObjectType = configuration.objectTypes?.[0]?.id ?? null;
+    const configuredDrawLayerIds = new Set(configuration.drawLayers?.map(({ id }) => id) ?? []);
+    const initiallyVisible = configuration.drawLayers?.filter(({ visible }) => visible !== false).map(({ id }) => id) ?? [];
+    const visibleDrawLayers = new Set(
+        configuration.drawLayerSelection === 'multiple'
+            ? (initiallyVisible.length > 0 ? initiallyVisible : activeDrawLayer ? [activeDrawLayer] : [])
+            : [initiallyVisible[0] ?? activeDrawLayer].filter(Boolean),
+    );
+    activeDrawLayer = getVisibleDrawLayers()[0] ?? activeDrawLayer;
     let currentMode = null;
     let measurementTools = null;
 
@@ -95,6 +111,89 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
 
     function snapshot() {
         return collection(drawing.getSnapshot?.() ?? []);
+    }
+
+    function featureIsVisible(feature) {
+        const layer = feature?.properties?.drawLayer;
+
+        return !layer || !configuredDrawLayerIds.has(layer) || visibleDrawLayers.has(layer);
+    }
+
+    function visibility(feature) {
+        return featureIsVisible(feature) ? undefined : 0;
+    }
+
+    function applyLayerVisibility() {
+        const styles = {
+            linestring: {
+                closingPointOpacity: visibility,
+                closingPointOutlineOpacity: visibility,
+                coordinatePointOpacity: visibility,
+                coordinatePointOutlineOpacity: visibility,
+                lineStringOpacity: visibility,
+                snappingPointOpacity: visibility,
+                snappingPointOutlineOpacity: visibility,
+            },
+            point: { pointOpacity: visibility, pointOutlineOpacity: visibility },
+            polygon: {
+                closingPointOpacity: visibility,
+                closingPointOutlineOpacity: visibility,
+                coordinatePointOpacity: visibility,
+                coordinatePointOutlineOpacity: visibility,
+                fillOpacity: visibility,
+                outlineOpacity: visibility,
+                snappingPointOpacity: visibility,
+                snappingPointOutlineOpacity: visibility,
+            },
+            rectangle: { fillOpacity: visibility, outlineOpacity: visibility },
+            select: {
+                midPointOpacity: visibility,
+                midPointOutlineOpacity: visibility,
+                selectedLineStringOpacity: visibility,
+                selectedPointOpacity: visibility,
+                selectedPointOutlineOpacity: visibility,
+                selectedPolygonFillOpacity: visibility,
+                selectedPolygonOutlineOpacity: visibility,
+                selectionPointOpacity: visibility,
+                selectionPointOutlineOpacity: visibility,
+            },
+        };
+
+        Object.entries(styles)
+            .filter(([mode]) => availableModes.has(mode))
+            .forEach(([mode, modeStyles]) => drawing.setModeStyles?.(mode, modeStyles));
+    }
+
+    function getVisibleDrawLayers() {
+        return configuration.drawLayers?.map(({ id }) => id).filter((id) => visibleDrawLayers.has(id)) ?? [];
+    }
+
+    function setVisibleDrawLayers(ids, notify = true) {
+        if (!Array.isArray(ids) || ids.length === 0 || ids.some((id) => !configuredDrawLayerIds.has(id))) return false;
+        const nextIds = [...new Set(ids)];
+        if (configuration.drawLayerSelection !== 'multiple' && nextIds.length !== 1) return false;
+
+        visibleDrawLayers.clear();
+        nextIds.forEach((id) => visibleDrawLayers.add(id));
+        if (activeDrawLayer && !visibleDrawLayers.has(activeDrawLayer)) {
+            activeDrawLayer = nextIds[0];
+            if (drawLayerSelect) drawLayerSelect.value = activeDrawLayer;
+        }
+        drawLayerControls.forEach((control) => {
+            control.checked = visibleDrawLayers.has(control.value);
+        });
+        [...selectedIds].forEach((id) => {
+            const feature = drawing.getSnapshotFeature?.(id);
+            if (!featureIsVisible(feature)) {
+                drawing.deselectFeature?.(id);
+                selectedIds.delete(id);
+            }
+        });
+        updateSelection();
+        applyLayerVisibility();
+        if (notify) emit('draw-layers', { ids: getVisibleDrawLayers(), mode: configuration.drawLayerSelection });
+
+        return true;
     }
 
     function syncValue(change = true) {
@@ -230,6 +329,11 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
 
     function onSelect(id) {
         if (id === undefined || id === null) return;
+        if (!featureIsVisible(drawing.getSnapshotFeature?.(id))) {
+            drawing.deselectFeature?.(id);
+
+            return;
+        }
         selectedIds.add(id);
         updateSelection();
     }
@@ -257,6 +361,7 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
             properties: { ...feature.properties, mode: feature.properties?.mode ?? modeByGeometry[feature.geometry.type] },
         })));
     }
+    setVisibleDrawLayers(getVisibleDrawLayers(), false);
     syncValue(false);
 
     return {
@@ -273,11 +378,16 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
         exportGeoJSON,
         getDrawLayer: () => activeDrawLayer,
         getSelection: () => [...selectedIds].map((id) => drawing.getSnapshotFeature?.(id)).filter(Boolean).map(publicFeature),
+        getVisibleDrawLayers,
         redo,
         setDrawLayer(id) {
             if (!configuration.drawLayers?.some((layer) => layer.id === id)) return false;
             activeDrawLayer = id;
             if (drawLayerSelect) drawLayerSelect.value = id;
+            const nextVisible = configuration.drawLayerSelection === 'multiple'
+                ? [...new Set([...getVisibleDrawLayers(), id])]
+                : [id];
+            setVisibleDrawLayers(nextVisible);
 
             return true;
         },
@@ -291,6 +401,7 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
 
             return true;
         },
+        setVisibleDrawLayers,
         undo,
     };
 }

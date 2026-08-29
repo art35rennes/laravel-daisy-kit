@@ -17,45 +17,16 @@
 
     @if ($mapView['controls']['enabled'])
         <aside class="daisy-kit-map__map-controls" aria-label="{{ $mapView['labels']['mapSettings'] }}">
-            @if ($mapView['controls']['layers'])
-                <details class="daisy-kit-map__layer-menu dropdown dropdown-end" data-daisy-kit-map-layer-menu hidden>
-                    <summary class="btn btn-sm btn-square bg-base-100" title="{{ $mapView['labels']['layers'] }}" aria-label="{{ $mapView['labels']['layers'] }}">
-                        <span aria-hidden="true">&#9776;</span>
-                    </summary>
-                    <div class="daisy-kit-map__layer-panel dropdown-content rounded-box border border-base-300 bg-base-100 p-3 shadow-lg">
-                        <fieldset data-daisy-kit-map-basemaps hidden>
-                            <legend class="font-semibold">{{ $mapView['labels']['basemaps'] }}</legend>
-                        </fieldset>
-                        <fieldset data-daisy-kit-map-layers hidden>
-                            <legend class="font-semibold">{{ $mapView['labels']['overlays'] }}</legend>
-                        </fieldset>
-                    </div>
-                </details>
-            @endif
-
-            @if ($mapView['controls']['fitBounds'])
-                <button class="btn btn-sm btn-square bg-base-100" data-daisy-kit-map-fit-bounds type="button" title="{{ $mapView['labels']['fitBounds'] }}" aria-label="{{ $mapView['labels']['fitBounds'] }}">
-                    <span aria-hidden="true">&#8634;</span>
-                </button>
-            @endif
-
-            @if ($mapView['controls']['drawing'] && ($mapView['drawing'] || $mapView['spatialSelection']))
-                <button class="btn btn-sm btn-square bg-base-100" data-daisy-kit-map-toggle-tools type="button" title="{{ $mapView['labels']['hideDrawingTools'] }}" aria-label="{{ $mapView['labels']['hideDrawingTools'] }}" aria-expanded="true">
-                    <span aria-hidden="true">&#9998;</span>
-                </button>
-            @endif
-
-            @if ($mapView['geolocation'])
-                <button class="btn btn-sm btn-square bg-base-100" data-daisy-kit-map-geolocate type="button" title="{{ $mapView['labels']['useMyLocation'] }}" aria-label="{{ $mapView['labels']['useMyLocation'] }}">
-                    <span aria-hidden="true">&#9673;</span>
-                </button>
-            @endif
-
-            @if ($mapView['fullscreen'])
-                <button class="btn btn-sm btn-square bg-base-100" data-daisy-kit-map-fullscreen type="button" title="{{ $mapView['labels']['fullscreen'] }}" aria-label="{{ $mapView['labels']['fullscreen'] }}">
-                    <span aria-hidden="true">&#x26F6;</span>
-                </button>
-            @endif
+            <details class="daisy-kit-map__menu dropdown dropdown-end" data-daisy-kit-map-menu>
+                <summary class="btn btn-sm btn-square bg-base-100" title="{{ $mapView['labels']['mapSettings'] }}" aria-label="{{ $mapView['labels']['mapSettings'] }}">
+                    <span aria-hidden="true">&#9776;</span>
+                </summary>
+                <div class="daisy-kit-map__menu-panel dropdown-content rounded-box border border-base-300 bg-base-100 p-3 text-sm shadow-lg">
+                    @foreach ($mapView['controls']['sections'] as $section)
+                        @include('daisy-kit::internal.map.menu.'.$section, ['controlsSlot' => $controlsSlot, 'mapId' => $mapId, 'mapView' => $mapView])
+                    @endforeach
+                </div>
+            </details>
         </aside>
     @endif
 
