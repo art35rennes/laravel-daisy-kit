@@ -19,7 +19,6 @@ function collection(features) {
 
 export async function createDrawing({ L, configuration, emit, map, root, signal, sources }) {
     const enabled = configuration.drawing || configuration.spatialSelection || configuration.value.features.length > 0;
-    const valueInput = root.querySelector('[data-daisy-kit-map-value]');
     const measurementOutput = root.querySelector('[data-daisy-kit-map-measurement]');
     const modeOutput = root.querySelector('[data-daisy-kit-map-active-mode]');
     const undoButton = root.querySelector('[data-daisy-kit-map-history="undo"]');
@@ -198,6 +197,7 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
 
     function syncValue(change = true) {
         const geojson = snapshot();
+        const valueInput = root.querySelector('[data-daisy-kit-map-value]');
         if (valueInput instanceof HTMLInputElement) {
             valueInput.value = JSON.stringify(geojson);
             valueInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -364,12 +364,13 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
     setVisibleDrawLayers(getVisibleDrawLayers(), false);
     syncValue(false);
     const restoreValue = () => {
+        const valueInput = root.querySelector('[data-daisy-kit-map-value]');
         if (!(valueInput instanceof HTMLInputElement)) return;
         const serialized = JSON.stringify(snapshot());
         if (valueInput.value !== serialized) valueInput.value = serialized;
     };
-    const valueObserver = valueInput instanceof HTMLInputElement ? new MutationObserver(restoreValue) : null;
-    valueObserver?.observe(valueInput, { attributeFilter: ['value'], attributes: true });
+    const valueObserver = new MutationObserver(restoreValue);
+    valueObserver.observe(root, { attributeFilter: ['value'], attributes: true, childList: true, subtree: true });
     const onPageShow = () => queueMicrotask(restoreValue);
     window.addEventListener('pageshow', onPageShow);
 

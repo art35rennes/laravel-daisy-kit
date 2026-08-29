@@ -462,16 +462,17 @@ describe('map entry', () => {
         ]);
         expect(instance.exportGeoJSON().features[0].properties).toEqual({ asset: true });
 
-        input.value = '';
-        window.dispatchEvent(new Event('pageshow'));
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-        expect(JSON.parse(input.value).features).toHaveLength(1);
+        const replacement = input.cloneNode();
+        replacement.value = '';
+        input.replaceWith(replacement);
+        await Promise.resolve();
+        expect(JSON.parse(replacement.value).features).toHaveLength(1);
 
         unmount(element);
-        input.value = '';
+        replacement.value = '';
         window.dispatchEvent(new Event('pageshow'));
         await new Promise((resolve) => requestAnimationFrame(resolve));
-        expect(input.value).toBe('');
+        expect(replacement.value).toBe('');
     });
 
     it('selects GeoJSON features by click or by a drawn area', async () => {
