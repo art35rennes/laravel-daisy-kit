@@ -8,12 +8,12 @@ function finiteLatLng(latlng) {
     return latlng && Number.isFinite(Number(latlng.lat)) && Number.isFinite(Number(latlng.lng));
 }
 
-function visibleSize(canvas) {
+function visibleSize(canvas, minimum = 1) {
     const rect = canvas.getBoundingClientRect?.();
     const width = rect?.width || canvas.clientWidth;
     const height = rect?.height || canvas.clientHeight;
 
-    return Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0;
+    return Number.isFinite(width) && Number.isFinite(height) && width >= minimum && height >= minimum;
 }
 
 function clone(value) {
@@ -107,7 +107,7 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
     }
 
     function fitBounds(options = {}) {
-        if (!map || !sources) return false;
+        if (!map || !sources || !canvas || !visibleSize(canvas, 64)) return false;
         const bounds = sources.bounds();
         if (!bounds?.isValid?.()) return false;
         map.fitBounds(bounds, { padding: [24, 24], ...options });

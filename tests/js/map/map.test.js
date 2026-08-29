@@ -271,6 +271,7 @@ describe('map entry', () => {
         resizeCallback();
 
         expect(map.invalidateSize).not.toHaveBeenCalled();
+        expect(instance.fitBounds()).toBe(false);
         expect(instance.setView([Number.NaN, Number.NaN], 8)).toBe(false);
         expect(map.setView).not.toHaveBeenCalledWith([Number.NaN, Number.NaN], 8, expect.anything());
 
@@ -280,6 +281,8 @@ describe('map entry', () => {
         });
         resizeCallback();
         expect(map.invalidateSize).toHaveBeenCalledWith({ animate: false, pan: false });
+        expect(instance.fitBounds()).toBe(true);
+        expect(map.fitBounds).toHaveBeenCalled();
     });
 
     it('controls GeoJSON, XYZ and WMS layers through the facade', async () => {
