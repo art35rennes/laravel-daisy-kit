@@ -93,7 +93,7 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
 
     function invalidateSize() {
         if (!map || !canvas || !visibleSize(canvas)) return false;
-        map.invalidateSize({ animate: false, pan: false });
+        map.invalidateSize({ animate: false, debounceMoveend: true, pan: false });
 
         return true;
     }
@@ -110,7 +110,7 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
         if (!map || !sources || !canvas || !visibleSize(canvas, 64)) return false;
         const bounds = sources.bounds();
         if (!bounds?.isValid?.()) return false;
-        map.fitBounds(bounds, { padding: [24, 24], ...options });
+        map.fitBounds(bounds, { animate: false, padding: [24, 24], ...options });
 
         return true;
     }

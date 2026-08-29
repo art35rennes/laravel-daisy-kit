@@ -280,9 +280,12 @@ describe('map entry', () => {
             clientWidth: { configurable: true, value: 320 },
         });
         resizeCallback();
-        expect(map.invalidateSize).toHaveBeenCalledWith({ animate: false, pan: false });
+        expect(map.invalidateSize).toHaveBeenCalledWith({ animate: false, debounceMoveend: true, pan: false });
         expect(instance.fitBounds()).toBe(true);
-        expect(map.fitBounds).toHaveBeenCalled();
+        expect(map.fitBounds).toHaveBeenCalledWith(expect.anything(), {
+            animate: false,
+            padding: [24, 24],
+        });
     });
 
     it('controls GeoJSON, XYZ and WMS layers through the facade', async () => {
