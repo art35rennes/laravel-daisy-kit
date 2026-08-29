@@ -7,9 +7,9 @@ it('mounts the Workbench modules accessibly on desktop and mobile', function ():
 
     $desktop
         ->assertSee('Daisy Kit v5 Workbench')
-        // The Livewire Builder owns one real Viewer preview and File Preview owns
-        // seven independent product scenarios.
-        ->assertCount('[data-daisy-kit-module]', 17)
+        // The Livewire Builder owns one real Viewer preview, File Preview owns
+        // seven product scenarios, and Map owns four product scenarios.
+        ->assertCount('[data-daisy-kit-module]', 20)
         ->waitForEvent('networkidle')
         ->wait(1)
         ->assertNoSmoke()
@@ -22,7 +22,7 @@ it('mounts the Workbench modules accessibly on desktop and mobile', function ():
         ->assertScript("document.activeElement?.dataset.daisyKitTreeNode === 'getting-started'");
 
     $this->visit('/')->on()->mobile()
-        ->assertCount('[data-daisy-kit-module]', 17)
+        ->assertCount('[data-daisy-kit-module]', 20)
         ->assertScript('window.innerWidth <= 430');
 })->group('browser');
 
