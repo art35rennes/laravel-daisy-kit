@@ -445,20 +445,31 @@ describe('map entry', () => {
     });
 
     it('hydrates public drawing ids without leaking Terra Draw properties', async () => {
-        const instance = await mounted(root({
+        const element = root({
             drawing: true,
             value: {
                 features: [{ geometry: { coordinates: [-1.6, 48.1], type: 'Point' }, id: 'asset-1', properties: { asset: true }, type: 'Feature' }],
                 type: 'FeatureCollection',
             },
-        }));
+        });
+        const instance = await mounted(element);
         const drawing = mocks.drawings.at(-1);
+        const input = element.querySelector('[data-daisy-kit-map-value]');
 
         expect(drawing.options.idStrategy.isValidId('asset-1')).toBe(true);
         expect(drawing.addFeatures).toHaveBeenCalledWith([
             expect.objectContaining({ properties: { asset: true, mode: 'point' } }),
         ]);
         expect(instance.exportGeoJSON().features[0].properties).toEqual({ asset: true });
+
+        input.value = '';
+        window.dispatchEvent(new Event('pageshow'));
+        expect(JSON.parse(input.value).features).toHaveLength(1);
+
+        unmount(element);
+        input.value = '';
+        window.dispatchEvent(new Event('pageshow'));
+        expect(input.value).toBe('');
     });
 
     it('selects GeoJSON features by click or by a drawn area', async () => {

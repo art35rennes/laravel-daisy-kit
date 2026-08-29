@@ -363,11 +363,14 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
     }
     setVisibleDrawLayers(getVisibleDrawLayers(), false);
     syncValue(false);
+    const onPageShow = () => syncValue(false);
+    window.addEventListener('pageshow', onPageShow);
 
     return {
         clearSelection,
         deleteSelected,
         destroy() {
+            window.removeEventListener('pageshow', onPageShow);
             drawing.off('finish', onFinish);
             drawing.off('select', onSelect);
             drawing.off('deselect', onDeselect);
