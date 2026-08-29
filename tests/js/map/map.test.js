@@ -232,6 +232,15 @@ describe('map entry', () => {
         }));
     });
 
+    it('disables Leaflet zoom transitions that race responsive resizes', async () => {
+        await mounted(root({ provider: 'osm.standard' }));
+
+        expect(mocks.leafletMap).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+            trackResize: false,
+            zoomAnimation: false,
+        }));
+    });
+
     it('returns one stable facade per isolated root', async () => {
         const first = root({ geojson: { features: [], type: 'FeatureCollection' } }, 'first-map');
         const second = root({ drawing: true }, 'second-map');

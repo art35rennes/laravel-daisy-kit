@@ -280,6 +280,7 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
             minZoom: configuration.minZoom,
             preferCanvas: configuration.preferCanvas,
             trackResize: false,
+            zoomAnimation: false,
             zoomControl: true,
         });
         setView(state.center, state.zoom);
