@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Art35rennes\DaisyKit\Map\MapConfiguration;
 use Art35rennes\DaisyKit\Support\JsonConfiguration;
+
 function mapConfiguration(string $html): array
 {
     preg_match('/<script data-daisy-kit-config type="application\/json">(.*?)<\/script>/s', $html, $matches);
