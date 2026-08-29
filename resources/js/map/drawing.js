@@ -363,23 +363,22 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
     }
     setVisibleDrawLayers(getVisibleDrawLayers(), false);
     syncValue(false);
-    let valueSyncFrame = null;
-    const onPageShow = () => {
-        if (valueSyncFrame !== null) cancelAnimationFrame(valueSyncFrame);
-        valueSyncFrame = requestAnimationFrame(() => {
-            valueSyncFrame = null;
-            syncValue(false);
-        });
+    const restoreValue = () => {
+        if (!(valueInput instanceof HTMLInputElement)) return;
+        const serialized = JSON.stringify(snapshot());
+        if (valueInput.value !== serialized) valueInput.value = serialized;
     };
+    const valueObserver = valueInput instanceof HTMLInputElement ? new MutationObserver(restoreValue) : null;
+    valueObserver?.observe(valueInput, { attributeFilter: ['value'], attributes: true });
+    const onPageShow = () => queueMicrotask(restoreValue);
     window.addEventListener('pageshow', onPageShow);
-    onPageShow();
 
     return {
         clearSelection,
         deleteSelected,
         destroy() {
             window.removeEventListener('pageshow', onPageShow);
-            if (valueSyncFrame !== null) cancelAnimationFrame(valueSyncFrame);
+            valueObserver?.disconnect();
             drawing.off('finish', onFinish);
             drawing.off('select', onSelect);
             drawing.off('deselect', onDeselect);
