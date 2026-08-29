@@ -37,6 +37,7 @@ export function normalizeConfiguration(configuration) {
             error: configuration.labels?.error || 'The file could not be previewed.',
             frameNotReady: configuration.labels?.frameNotReady || 'The preview frame is unavailable.',
             invalidType: configuration.labels?.invalidType || 'The server returned an unexpected file type.',
+            truncated: configuration.labels?.truncated || 'Only the beginning of this file is shown.',
             tooLarge: configuration.labels?.tooLarge || 'This file is too large to preview.',
         },
         layout: ['card', 'compact-list', 'action-only'].includes(configuration.layout)

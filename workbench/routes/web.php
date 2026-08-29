@@ -159,6 +159,13 @@ Route::get('/_daisy-kit-test/files/preview-invalid.pdf', function () {
     return response('This is deliberately not a PDF.', 200, ['Content-Type' => 'text/plain']);
 })->name('workbench.file-preview.invalid');
 
+Route::get('/_daisy-kit-test/files/forecast.xlsx', function () {
+    return response('Local download-only spreadsheet fixture.', 200, [
+        'Content-Disposition' => 'attachment; filename="forecast.xlsx"',
+        'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ]);
+})->name('workbench.file-preview.spreadsheet');
+
 Route::get('/_daisy-kit-test/csp/file-preview', function () {
     return response()
         ->view('workbench::csp-file-preview')

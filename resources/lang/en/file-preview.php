@@ -19,5 +19,6 @@ return [
     'error' => 'The file could not be previewed.',
     'too_large' => 'This file is too large to preview.',
     'invalid_type' => 'The server returned an unexpected file type.',
+    'truncated' => 'Only the beginning of this file is shown.',
     'modal_title' => 'Preview of :name',
 ];

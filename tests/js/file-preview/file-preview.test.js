@@ -143,11 +143,15 @@ describe('file preview runtime', () => {
         frameMessage(element, { type: 'ready' });
 
         await vi.waitFor(() => expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
-            payload: expect.objectContaining({ data: 'Long', truncated: true }),
+            payload: expect.objectContaining({
+                data: 'Long',
+                truncated: true,
+                truncatedLabel: 'Only the beginning of this file is shown.',
+            }),
         }), '*', []));
     });
 
-    it('rejects MIME mismatches and oversized files with retry available', async () => {
+    it('rejects MIME mismatches with retry available', async () => {
         const fetch = vi.fn()
             .mockResolvedValueOnce(new Response('wrong', {
                 headers: { 'content-type': 'text/html' },
@@ -168,6 +172,48 @@ describe('file preview runtime', () => {
         element.querySelector('script').textContent = '';
         controller.retry();
         await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+    });
+
+    it('stops reading a response as soon as the transport limit is exceeded', async () => {
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('Oversized report', {
+            headers: { 'content-type': 'text/plain' },
+            status: 200,
+        }))));
+        const element = root({ maxPreviewBytes: 4 });
+        const controller = mount(element);
+
+        await vi.waitFor(() => expect(controller.getState().status).toBe('error'));
+        expect(element.querySelector('[data-daisy-kit-status-message]').textContent).toBe('Too large.');
+    });
+
+    it('does not let an aborted request overwrite a newer retry', async () => {
+        let resolveFirstRequest;
+        const firstRequest = new Promise((resolve) => {
+            resolveFirstRequest = resolve;
+        });
+        const fetch = vi.fn()
+            .mockReturnValueOnce(firstRequest)
+            .mockResolvedValueOnce(new Response('Current response', {
+                headers: { 'content-type': 'text/plain' },
+                status: 200,
+            }));
+        vi.stubGlobal('fetch', fetch);
+        const createObjectURL = vi.spyOn(URL, 'createObjectURL');
+        const element = root();
+        const controller = mount(element);
+
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+        controller.retry();
+        await vi.waitFor(() => expect(createObjectURL).toHaveBeenCalledOnce());
+
+        resolveFirstRequest(new Response('Stale response', {
+            headers: { 'content-type': 'text/plain' },
+            status: 200,
+        }));
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(createObjectURL).toHaveBeenCalledOnce();
     });
 
     it('keeps modal state and focus isolated between instances', () => {

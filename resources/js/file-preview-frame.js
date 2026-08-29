@@ -63,6 +63,14 @@ function renderText(payload) {
 
     text.textContent = payload.truncated ? `${payload.data}\n\n…` : payload.data;
     output.append(text);
+
+    if (payload.truncated) {
+        const notice = document.createElement('p');
+
+        notice.className = 'daisy-kit-file-preview-frame__notice';
+        notice.textContent = payload.truncatedLabel;
+        output.append(notice);
+    }
 }
 
 function renderImage(payload) {

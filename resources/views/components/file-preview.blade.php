@@ -55,7 +55,11 @@
     ], static fn (mixed $value): bool => $value !== null));
     $capabilities = FilePreview::capabilities($metadataValues);
     $resolvedType = $capabilities['type'];
-    $resolvedName = (string) ($metadataValues['name'] ?? __('daisy-kit::file-preview.preview'));
+    $metadataName = $metadataValues['name'] ?? null;
+    $resolvedName = is_string($metadataName) || $metadataName instanceof \Stringable
+        ? trim((string) $metadataName)
+        : __('daisy-kit::file-preview.preview');
+    $resolvedName = $resolvedName !== '' ? $resolvedName : __('daisy-kit::file-preview.preview');
     $resolvedMimeType = is_string($metadataValues['mimeType'] ?? null) ? $metadataValues['mimeType'] : null;
     $resolvedExtension = is_string($metadataValues['extension'] ?? null) ? ltrim($metadataValues['extension'], '.') : null;
     $resolvedFileSize = is_numeric($metadataValues['size'] ?? null) ? (int) $metadataValues['size'] : null;
@@ -71,10 +75,10 @@
         ? ($resolvedType === 'image' ? 'modal' : 'inline')
         : $resolvedPreviewMode;
     $canPreview = $canPreview && $resolvedPreviewMode !== 'download';
-    $resolvedActionOrder = array_values(array_intersect(
+    $resolvedActionOrder = array_values(array_unique(array_intersect(
         is_array($actionOrder) ? $actionOrder : [],
         ['preview', 'open', 'download'],
-    ));
+    )));
     $sizeClass = match ($size) {
         'sm' => 'daisy-kit-file-preview--sm',
         'lg' => 'daisy-kit-file-preview--lg',
@@ -92,7 +96,7 @@
         '7xl' => 'max-w-7xl',
         default => 'max-w-5xl',
     };
-    $modalTitleId = 'daisy-kit-file-preview-title-'.md5($resolvedName.$resolvedPreviewUrl);
+    $modalTitleId = 'daisy-kit-file-preview-title-'.\Illuminate\Support\Str::uuid();
     $configuration = JsonConfiguration::encode([
         'url' => $resolvedUrl,
         'previewUrl' => $resolvedPreviewUrl,
@@ -114,6 +118,7 @@
             'error' => __('daisy-kit::file-preview.error'),
             'frameNotReady' => __('daisy-kit::file-preview.error'),
             'invalidType' => __('daisy-kit::file-preview.invalid_type'),
+            'truncated' => __('daisy-kit::file-preview.truncated'),
             'tooLarge' => __('daisy-kit::file-preview.too_large'),
         ],
     ]);
@@ -130,6 +135,7 @@
     data-daisy-kit-module="file-preview"
     data-daisy-kit-file-preview-capability="{{ $canPreview ? 'previewable' : ($resolvedPreviewUrl === null && $resolvedUrl === null ? 'empty' : 'unsupported') }}"
     data-daisy-kit-layout="{{ $resolvedLayout }}"
+    data-daisy-kit-file-preview-type="{{ $resolvedType }}"
     aria-label="{{ $resolvedName }}"
 >
     @if($resolvedLayout !== 'action-only')

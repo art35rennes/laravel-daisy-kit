@@ -19,5 +19,6 @@ return [
     'error' => 'Le fichier n’a pas pu être prévisualisé.',
     'too_large' => 'Ce fichier est trop volumineux pour être prévisualisé.',
     'invalid_type' => 'Le serveur a renvoyé un type de fichier inattendu.',
+    'truncated' => 'Seul le début de ce fichier est affiché.',
     'modal_title' => 'Aperçu de :name',
 ];

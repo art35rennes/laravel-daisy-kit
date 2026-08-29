@@ -1,5 +1,38 @@
 import { validContentType } from './configuration.js';
 
+async function readBoundedBlob(response, mimeType, maximumBytes, tooLargeMessage) {
+    const reader = response.body?.getReader();
+
+    if (!reader) {
+        const blob = await response.blob();
+
+        if (blob.size > maximumBytes) throw new Error(tooLargeMessage);
+
+        return blob;
+    }
+
+    const chunks = [];
+    let receivedBytes = 0;
+
+    while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        receivedBytes += value.byteLength;
+
+        if (receivedBytes > maximumBytes) {
+            await reader.cancel();
+
+            throw new Error(tooLargeMessage);
+        }
+
+        chunks.push(value);
+    }
+
+    return new Blob(chunks, { type: mimeType });
+}
+
 export async function fetchPreview(configuration, signal) {
     const response = await fetch(configuration.source, {
         credentials: 'omit',
@@ -22,9 +55,12 @@ export async function fetchPreview(configuration, signal) {
         throw new Error(configuration.labels.tooLarge);
     }
 
-    const blob = await response.blob();
-
-    if (blob.size > configuration.maxPreviewBytes) throw new Error(configuration.labels.tooLarge);
+    const blob = await readBoundedBlob(
+        response,
+        mimeType,
+        configuration.maxPreviewBytes,
+        configuration.labels.tooLarge,
+    );
 
     return { blob, mimeType };
 }
@@ -39,6 +75,7 @@ export async function createFramePayload(configuration, preview) {
             mimeType: preview.mimeType,
             name: configuration.name,
             truncated,
+            truncatedLabel: configuration.labels.truncated,
             type: configuration.type,
         };
     }

@@ -85,6 +85,12 @@
     block-size: clamp(16rem, 45vh, 34rem);
 }
 
+[data-daisy-kit-file-preview-type='audio'] .daisy-kit-file-preview__inline,
+[data-daisy-kit-file-preview-type='audio'] .daisy-kit-file-preview__frame {
+    min-block-size: 7rem;
+    block-size: 7rem;
+}
+
 .daisy-kit-file-preview__staging {
     display: none;
 }

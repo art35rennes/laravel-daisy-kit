@@ -27,8 +27,17 @@ describe('file preview sandbox renderer', () => {
             }));
         }
 
-        render({ data: 'Hello', mimeType: 'text/plain', name: 'notes.txt', type: 'text' }, 1);
-        await vi.waitFor(() => expect(document.querySelector('pre')?.textContent).toBe('Hello'));
+        render({
+            data: 'Hello',
+            mimeType: 'text/plain',
+            name: 'notes.txt',
+            truncated: true,
+            truncatedLabel: 'Only the beginning is shown.',
+            type: 'text',
+        }, 1);
+        await vi.waitFor(() => expect(document.querySelector('pre')?.textContent).toBe('Hello\n\n…'));
+        expect(document.querySelector('.daisy-kit-file-preview-frame__notice')?.textContent)
+            .toBe('Only the beginning is shown.');
 
         render({ data: new ArrayBuffer(2), mimeType: 'image/svg+xml', name: 'plan.svg', type: 'image' }, 2);
         await vi.waitFor(() => expect(document.querySelector('img')?.src).toBe('blob:preview'));

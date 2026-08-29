@@ -131,6 +131,7 @@ function initialize(root, input) {
     function open(trigger = null) {
         if (!configuration.canPreview || !(dom.frame instanceof HTMLIFrameElement)) return;
         if (!(dom.modal instanceof HTMLDialogElement) || !(dom.modalContent instanceof HTMLElement)) return;
+        if (isOpen) return;
 
         returnFocus = trigger instanceof HTMLElement ? trigger : document.activeElement;
         isOpen = true;
@@ -215,7 +216,9 @@ function initialize(root, input) {
 
     async function load() {
         abortController?.abort();
-        abortController = new AbortController();
+        const request = new AbortController();
+
+        abortController = request;
         preview = null;
         clearError();
         updateStatus('loading');
@@ -225,9 +228,9 @@ function initialize(root, input) {
         emit('loading');
 
         try {
-            const result = await fetchPreview(configuration, abortController.signal);
+            const result = await fetchPreview(configuration, request.signal);
 
-            if (destroyed || abortController.signal.aborted) return;
+            if (destroyed || request.signal.aborted || abortController !== request) return;
 
             preview = result;
             exposeValidatedActions(result.blob);

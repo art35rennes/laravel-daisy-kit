@@ -17,6 +17,7 @@ test('the file preview emits the restored CSP-safe product contract', function (
         ->toContain('data-daisy-kit-file-preview-modal-box')
         ->toContain('data-daisy-kit-file-preview-modal-content')
         ->toContain('data-daisy-kit-file-preview-retry')
+        ->toContain('class="skeleton')
         ->toContain('sandbox="allow-scripts"')
         ->toContain('"url":"https:\/\/files.example.test\/report.docx"')
         ->toContain('"previewMode":"modal"')
@@ -74,6 +75,23 @@ test('the file preview translates its interface in French', function (): void {
         ->toContain('Prévisualiser')
         ->toContain('Télécharger')
         ->toContain('Réessayer');
+});
+
+test('the file preview de-duplicates action order and keeps audio compact', function (): void {
+    $html = view('daisy-kit::components.file-preview', [
+        'actionOrder' => ['preview', 'preview', 'download', 'download'],
+        'mimeType' => 'audio/mpeg',
+        'name' => 'brief.mp3',
+        'type' => 'audio',
+        'url' => '/files/brief.mp3',
+    ])->render();
+
+    expect(substr_count($html, 'data-daisy-kit-file-preview-open-preview'))
+        ->toBe(1)
+        ->and(substr_count($html, 'data-daisy-kit-file-preview-download'))
+        ->toBe(1)
+        ->and($html)
+        ->toContain('data-daisy-kit-file-preview-type="audio"');
 });
 
 test('the file preview remains the only public preview Blade entry', function (): void {

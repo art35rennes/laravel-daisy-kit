@@ -11,7 +11,7 @@ use Stringable;
 final class FilePreview
 {
     /** @var array<string, string> */
-    private const EXTENSION_TYPES = [
+    private const array EXTENSION_TYPES = [
         'jpg' => 'image', 'jpeg' => 'image', 'png' => 'image', 'gif' => 'image', 'webp' => 'image',
         'svg' => 'image', 'bmp' => 'image', 'avif' => 'image',
         'mp4' => 'video', 'webm' => 'video', 'ogv' => 'video', 'mov' => 'video', 'm4v' => 'video',
@@ -27,7 +27,7 @@ final class FilePreview
     ];
 
     /** @var array<string, string> */
-    private const MIME_TYPES = [
+    private const array MIME_TYPES = [
         'application/pdf' => 'pdf',
         'application/json' => 'text',
         'application/xml' => 'text',
@@ -49,7 +49,7 @@ final class FilePreview
     ];
 
     /** @var list<string> */
-    private const PREVIEWABLE_TYPES = ['image', 'video', 'audio', 'pdf', 'text', 'docx'];
+    private const array PREVIEWABLE_TYPES = ['image', 'video', 'audio', 'pdf', 'text', 'docx'];
 
     public static function type(mixed $file): string
     {
@@ -60,7 +60,7 @@ final class FilePreview
             return self::normalizeType($declaredType);
         }
 
-        $mimeType = strtolower((string) ($metadata['mimeType'] ?? ''));
+        $mimeType = strtolower(self::stringValue($metadata['mimeType'] ?? null));
 
         foreach (['image', 'video', 'audio', 'text'] as $family) {
             if (str_starts_with($mimeType, $family.'/')) {
@@ -72,7 +72,7 @@ final class FilePreview
             return self::MIME_TYPES[$mimeType];
         }
 
-        $extension = strtolower(ltrim((string) ($metadata['extension'] ?? ''), '.'));
+        $extension = strtolower(ltrim(self::stringValue($metadata['extension'] ?? null), '.'));
 
         return self::EXTENSION_TYPES[$extension] ?? 'other';
     }
@@ -196,7 +196,7 @@ final class FilePreview
     }
 
     /**
-     * @param  array<string, mixed>  $metadata
+     * @param  array<array-key, mixed>  $metadata
      * @return array<string, mixed>
      */
     private static function normalizeMetadata(array $metadata): array
@@ -223,6 +223,7 @@ final class FilePreview
     private static function metadataFromObject(object $file): array
     {
         $metadata = [];
+        $properties = get_object_vars($file);
         $mapping = [
             'url' => ['getUrl', 'url'],
             'previewUrl' => ['getPreviewUrl', 'previewUrl'],
@@ -237,13 +238,14 @@ final class FilePreview
 
         foreach ($mapping as $targetKey => $candidates) {
             foreach ($candidates as $candidate) {
-                if (method_exists($file, $candidate)) {
+                if (is_callable([$file, $candidate])
+                    && (new \ReflectionMethod($file, $candidate))->getNumberOfRequiredParameters() === 0) {
                     $metadata[$targetKey] = $file->{$candidate}();
                     break;
                 }
 
-                if (property_exists($file, $candidate) && isset($file->{$candidate})) {
-                    $metadata[$targetKey] = $file->{$candidate};
+                if (array_key_exists($candidate, $properties) && $properties[$candidate] !== null) {
+                    $metadata[$targetKey] = $properties[$candidate];
                     break;
                 }
             }
@@ -282,5 +284,10 @@ final class FilePreview
                 'presentation', 'archive', 'other',
             ], true) ? $type : 'other',
         };
+    }
+
+    private static function stringValue(mixed $value): string
+    {
+        return is_string($value) || $value instanceof Stringable ? (string) $value : '';
     }
 }
