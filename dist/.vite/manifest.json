@@ -1,15 +1,26 @@
 {
+  ".tmp/file-preview-frame/file-preview-frame.css": {
+    "file": "file-preview-frame.css",
+    "src": ".tmp/file-preview-frame/file-preview-frame.css"
+  },
   ".tmp/file-preview-frame/file-preview-frame.js": {
     "file": "file-preview-frame.js",
     "src": ".tmp/file-preview-frame/file-preview-frame.js"
+  },
+  "_configuration-wAxXfjkK.js": {
+    "file": "chunks/configuration-wAxXfjkK.js",
+    "name": "configuration"
   },
   "_identifiers-DZhNBAcR.js": {
     "file": "chunks/identifiers-DZhNBAcR.js",
     "name": "identifiers"
   },
-  "_mountable-CsBGCD67.js": {
-    "file": "chunks/mountable-CsBGCD67.js",
-    "name": "mountable"
+  "_mountable-CMq2mq9q.js": {
+    "file": "chunks/mountable-CMq2mq9q.js",
+    "name": "mountable",
+    "imports": [
+      "_configuration-wAxXfjkK.js"
+    ]
   },
   "_rolldown-runtime-W7wSyTde.js": {
     "file": "chunks/rolldown-runtime-W7wSyTde.js",
@@ -41,7 +52,7 @@
     "src": "resources/js/blueprint.js",
     "isEntry": true,
     "imports": [
-      "_mountable-CsBGCD67.js"
+      "_mountable-CMq2mq9q.js"
     ],
     "css": [
       "blueprint.css"
@@ -54,13 +65,14 @@
     "isEntry": true,
     "imports": [
       "_identifiers-DZhNBAcR.js",
-      "_mountable-CsBGCD67.js"
+      "_configuration-wAxXfjkK.js"
     ],
     "css": [
       "file-preview.css"
     ],
     "assets": [
-      "file-preview-frame.js"
+      "file-preview-frame.js",
+      "file-preview-frame.css"
     ]
   },
   "resources/js/forms/builder.js": {
@@ -69,7 +81,7 @@
     "src": "resources/js/forms/builder.js",
     "isEntry": true,
     "imports": [
-      "_mountable-CsBGCD67.js"
+      "_mountable-CMq2mq9q.js"
     ],
     "css": [
       "forms-builder.css"
@@ -83,7 +95,7 @@
     "imports": [
       "_rolldown-runtime-W7wSyTde.js",
       "_identifiers-DZhNBAcR.js",
-      "_mountable-CsBGCD67.js"
+      "_mountable-CMq2mq9q.js"
     ],
     "css": [
       "forms-viewer.css"
@@ -96,7 +108,7 @@
     "isEntry": true,
     "imports": [
       "_rolldown-runtime-W7wSyTde.js",
-      "_mountable-CsBGCD67.js"
+      "_mountable-CMq2mq9q.js"
     ],
     "css": [
       "map.css"
@@ -115,7 +127,7 @@
     "src": "resources/js/table.js",
     "isEntry": true,
     "imports": [
-      "_mountable-CsBGCD67.js"
+      "_mountable-CMq2mq9q.js"
     ],
     "css": [
       "table.css"
@@ -127,7 +139,7 @@
     "src": "resources/js/tree.js",
     "isEntry": true,
     "imports": [
-      "_mountable-CsBGCD67.js"
+      "_mountable-CMq2mq9q.js"
     ],
     "css": [
       "tree.css"

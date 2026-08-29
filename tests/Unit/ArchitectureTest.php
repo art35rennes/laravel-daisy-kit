@@ -149,10 +149,16 @@ it('documents the corrective development contract with copyable examples for eve
 
 it('keeps File Preview frame helpers relative to its Vite entry', function (): void {
     $entry = (string) file_get_contents(packagePath('resources/js/file-preview.js'));
+    $frameDocument = (string) file_get_contents(packagePath('resources/js/file-preview/frame-document.js'));
     $distribution = (string) file_get_contents(packagePath('dist/file-preview.js'));
 
     expect($entry)
-        ->toContain("new URL('../../.tmp/file-preview-frame/file-preview-frame.js', import.meta.url)")
+        ->toContain("'./file-preview/frame-document.js'")
+        ->not->toContain('file-preview-frame-bootstrap')
+        ->not->toContain("'/file-preview-frame.html'")
+        ->and($frameDocument)
+        ->toContain("new URL('../../../.tmp/file-preview-frame/file-preview-frame.js', import.meta.url)")
+        ->toContain("new URL('../../../.tmp/file-preview-frame/file-preview-frame.css', import.meta.url)")
         ->not->toContain('file-preview-frame-bootstrap')
         ->not->toContain("'/file-preview-frame.html'");
 

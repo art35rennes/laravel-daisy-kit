@@ -7,21 +7,22 @@ it('mounts the Workbench modules accessibly on desktop and mobile', function ():
 
     $desktop
         ->assertSee('Daisy Kit v5 Workbench')
-        // The Livewire Builder owns one real Viewer preview in addition to the ten
-        // Workbench mount roots. Both must participate in the normal mount contract.
-        ->assertCount('[data-daisy-kit-module]', 11)
+        // The Livewire Builder owns one real Viewer preview and File Preview owns
+        // seven independent product scenarios.
+        ->assertCount('[data-daisy-kit-module]', 17)
         ->waitForEvent('networkidle')
         ->wait(1)
         ->assertNoSmoke()
         ->assertCount('[data-daisy-kit-module="forms-viewer"]', 2)
         ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=forms-viewer]')).every((root) => ['empty', 'ready'].includes(root.dataset.daisyKitState))")
-        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module]')).every((root) => ['empty', 'ready'].includes(root.dataset.daisyKitState))")
+        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module]:not([data-daisy-kit-module=file-preview])')).every((root) => ['empty', 'ready'].includes(root.dataset.daisyKitState))")
+        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=file-preview]')).every((root) => ['error', 'ready', 'unsupported'].includes(root.dataset.daisyKitState))")
         ->click('[data-daisy-kit-tree-node="documentation"]')
         ->keys('[data-daisy-kit-tree-node="documentation"]', ['ArrowRight', 'ArrowRight'])
         ->assertScript("document.activeElement?.dataset.daisyKitTreeNode === 'getting-started'");
 
     $this->visit('/')->on()->mobile()
-        ->assertCount('[data-daisy-kit-module]', 11)
+        ->assertCount('[data-daisy-kit-module]', 17)
         ->assertScript('window.innerWidth <= 430');
 })->group('browser');
 
@@ -89,7 +90,11 @@ it('composes visible host DaisyUI primitives across themes and responsive widths
                     const failures = [];
 
                     roots.forEach((root) => {
-                        if (!root.classList.contains('card')) failures.push(`root:${root.dataset.daisyKitModule}:missing-card`);
+                        const actionOnlyPreview = root.dataset.daisyKitModule === 'file-preview'
+                            && root.dataset.daisyKitLayout === 'action-only';
+                        if (!actionOnlyPreview && !root.classList.contains('card')) {
+                            failures.push(`root:${root.dataset.daisyKitModule}:missing-card`);
+                        }
                     });
                     modules.forEach(([module, selector]) => {
                         const button = document.querySelector(selector);

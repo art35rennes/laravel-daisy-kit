@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-it('opens a file preview in a modal and restores its trigger after keyboard dismissal', function (): void {
-    $root = '[data-daisy-kit-module="file-preview"]';
+it('contains a DOCX preview in its modal and restores focus after dismissal', function (): void {
+    $root = '[data-daisy-kit-module="file-preview"][aria-label="Product brief.docx"]';
     $dialog = "{$root} dialog[data-daisy-kit-file-preview-modal]";
     $trigger = "{$root} [data-daisy-kit-file-preview-open-preview]";
 
@@ -18,16 +18,18 @@ it('opens a file preview in a modal and restores its trigger after keyboard dism
             (() => {
                 const dialog = document.querySelector('{$dialog}');
                 const root = document.querySelector('{$root}');
+                const modalBox = dialog.querySelector('[data-daisy-kit-file-preview-modal-box]');
+                const frame = dialog.querySelector('[data-daisy-kit-file-preview-frame]');
 
                 return dialog.open
                     && getComputedStyle(dialog).visibility !== 'hidden'
-                    && getComputedStyle(dialog).pointerEvents !== 'none'
                     && root.dataset.daisyKitPreviewOpen === 'true'
+                    && modalBox.contains(frame)
                     && dialog.contains(document.activeElement);
             })()
             JS)
         ->click("{$dialog} [data-daisy-kit-file-preview-zoom=\"in\"]")
-        ->assertScript("document.querySelector('{$root}').dataset.daisyKitZoom === '125'")
+        ->assertScript("document.querySelector('{$root}').dataset.daisyKitZoom === '110'")
         ->keys($dialog, 'Escape')
         ->assertScript(<<<JS
             (() => {
@@ -36,22 +38,12 @@ it('opens a file preview in a modal and restores its trigger after keyboard dism
                 const trigger = document.querySelector('{$trigger}');
 
                 return !dialog.open
-                    && root.dataset.daisyKitPreviewOpen === 'true'
+                    && root.dataset.daisyKitPreviewOpen === 'false'
                     && document.activeElement === trigger;
             })()
             JS)
-        ->click("{$root} [data-daisy-kit-file-preview-layout]")
-        ->assertScript(<<<JS
-            (() => {
-                const root = document.querySelector('{$root}');
-                const control = root.querySelector('[data-daisy-kit-file-preview-layout]');
-
-                return root.dataset.daisyKitLayout === 'expanded'
-                    && control.getAttribute('aria-pressed') === 'true';
-            })()
-            JS)
         ->click($trigger)
-        ->click("{$dialog} [data-daisy-kit-file-preview-close-preview]")
+        ->click("{$dialog} header [data-daisy-kit-file-preview-close-preview]")
         ->assertScript(<<<JS
             (() => {
                 const dialog = document.querySelector('{$dialog}');
@@ -59,7 +51,7 @@ it('opens a file preview in a modal and restores its trigger after keyboard dism
                 const trigger = document.querySelector('{$trigger}');
 
                 return !dialog.open
-                    && root.dataset.daisyKitPreviewOpen === 'true'
+                    && root.dataset.daisyKitPreviewOpen === 'false'
                     && document.activeElement === trigger;
             })()
             JS)

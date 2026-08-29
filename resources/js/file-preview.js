@@ -1,429 +1,385 @@
 import '../css/file-preview.css';
+import { readConfiguration, showConfigurationError } from './core/configuration.js';
 import { createInstanceIdentifier } from './core/identifiers.js';
-import { createMountable } from './core/mountable.js';
+import { normalizeConfiguration } from './file-preview/configuration.js';
+import { frameChannel, frameDocument, themeTokens } from './file-preview/frame-document.js';
+import { createFramePayload, fetchPreview } from './file-preview/transport.js';
 
-const defaultMaximumBytes = 5 * 1024 * 1024;
-const absoluteMaximumBytes = 10 * 1024 * 1024;
+const instances = new WeakMap();
 const frameReadyTimeout = 10_000;
-const frameChannel = 'daisy-kit:file-preview:frame';
-const supportedTypes = new Set(['docx', 'image', 'pdf', 'text', 'video']);
-const frameAssets = [
-    new URL('../../.tmp/file-preview-frame/file-preview-frame.js', import.meta.url),
-];
-
-function emit(root, name, detail = {}) {
-    root.dispatchEvent(new CustomEvent(`daisy-kit:file-preview:${name}`, { bubbles: true, detail }));
-}
-
-function previewType(configuration) {
-    if (typeof configuration.type === 'string' && configuration.type !== '') {
-        return supportedTypes.has(configuration.type) ? configuration.type : null;
-    }
-
-    const path = typeof configuration.src === 'string' ? configuration.src.toLowerCase() : '';
-
-    if (path.endsWith('.docx')) return 'docx';
-    if (path.endsWith('.pdf')) return 'pdf';
-    if (/\.(avif|gif|jpe?g|png|svg|webp)$/.test(path)) return 'image';
-    if (/\.(m4v|mov|mp4|webm)$/.test(path)) return 'video';
-
-    return 'text';
-}
-
-function safeSource(source) {
-    if (typeof source !== 'string' || source.length === 0) return null;
-
-    try {
-        const url = new URL(source, window.location.href);
-
-        return ['http:', 'https:'].includes(url.protocol) ? url.toString() : null;
-    } catch {
-        return null;
-    }
-}
-
-function maximumBytes(configuration) {
-    if (!Number.isSafeInteger(configuration.maxBytes) || configuration.maxBytes < 1) return defaultMaximumBytes;
-
-    return Math.min(configuration.maxBytes, absoluteMaximumBytes);
-}
-
-function validContentType(type, contentType) {
-    const mime = contentType.toLowerCase().split(';', 1)[0].trim();
-
-    if (type === 'docx') return mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    if (type === 'image') return mime.startsWith('image/');
-    if (type === 'pdf') return mime === 'application/pdf';
-    if (type === 'video') return mime.startsWith('video/');
-
-    return mime === 'text/plain';
-}
-
-function frameDocument(token) {
-    const scriptSources = [...new Set(frameAssets.map((asset) => asset.origin))].join(' ');
-    const [renderer] = frameAssets.map((asset) => asset.href);
-
-    return `<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; connect-src 'none'; form-action 'none'; frame-src blob:; img-src data: blob:; font-src data: blob:; media-src blob:; object-src 'none'; script-src-attr 'none'; script-src-elem ${scriptSources}; style-src 'unsafe-inline'">
-    <title>File preview</title>
-</head>
-<body>
-    <main data-daisy-kit-file-preview-output data-daisy-kit-file-preview-token="${token}"></main>
-    <script src="${renderer}"></script>
-</body>
-</html>`;
-}
 
 function setVisible(element, visible) {
     if (element) element.hidden = !visible;
 }
 
-function showError(root, message) {
-    root.dataset.daisyKitState = 'error';
-    const status = root.querySelector('[data-daisy-kit-status]');
-
-    if (status) {
-        status.hidden = false;
-        status.textContent = message;
-    }
-
-    emit(root, 'error', { message });
+function elements(root) {
+    return {
+        closeButtons: [...root.querySelectorAll('[data-daisy-kit-file-preview-close-preview]')],
+        download: root.querySelector('[data-daisy-kit-file-preview-download]'),
+        empty: root.querySelector('[data-daisy-kit-empty]'),
+        frame: root.querySelector('[data-daisy-kit-file-preview-frame]'),
+        inlineHost: root.querySelector('[data-daisy-kit-file-preview-inline-content]'),
+        loading: root.querySelector('[data-daisy-kit-loading]'),
+        modal: root.querySelector('[data-daisy-kit-file-preview-modal]'),
+        modalBox: root.querySelector('[data-daisy-kit-file-preview-modal-box]'),
+        modalContent: root.querySelector('[data-daisy-kit-file-preview-modal-content]'),
+        open: root.querySelector('[data-daisy-kit-file-preview-open]'),
+        openButtons: [
+            ...root.querySelectorAll('[data-daisy-kit-file-preview-open-preview]'),
+            ...root.querySelectorAll('[data-daisy-kit-file-preview-trigger-slot]'),
+        ],
+        retry: root.querySelector('[data-daisy-kit-file-preview-retry]'),
+        staging: root.querySelector('[data-daisy-kit-file-preview-frame-staging]'),
+        status: root.querySelector('[data-daisy-kit-status]'),
+        statusMessage: root.querySelector('[data-daisy-kit-status-message]'),
+        zoomControls: [...root.querySelectorAll('[data-daisy-kit-file-preview-zoom]')],
+        zoomOutput: root.querySelector('[data-daisy-kit-file-preview-zoom-output]'),
+    };
 }
 
-function showMetadata(root, blob, configuration, type) {
-    const metadata = root.querySelector('[data-daisy-kit-file-preview-metadata]');
-
-    if (!metadata) return;
-
-    const name = root.querySelector('[data-daisy-kit-file-preview-name]');
-    const size = root.querySelector('[data-daisy-kit-file-preview-size]');
-    const previewType = root.querySelector('[data-daisy-kit-file-preview-type]');
-    const filename = typeof configuration.name === 'string' && configuration.name.length > 0 ? configuration.name : 'File preview';
-
-    if (name) name.textContent = filename;
-    if (size) size.textContent = `${blob.size.toLocaleString()} bytes`;
-    if (previewType) previewType.textContent = type;
-    metadata.hidden = false;
-}
-
-function exposeActions(root, blob, configuration) {
-    const actions = root.querySelector('[data-daisy-kit-file-preview-actions]');
-    const download = root.querySelector('[data-daisy-kit-file-preview-download]');
-    const open = root.querySelector('[data-daisy-kit-file-preview-open]');
-
-    if (!actions || !download || !open) return null;
-
-    const url = URL.createObjectURL(blob);
-    const filename = typeof configuration.name === 'string' && configuration.name.length > 0 ? configuration.name : 'file-preview';
-
-    download.download = filename;
-    download.href = url;
-    download.hidden = false;
-    open.href = url;
-    open.hidden = false;
-    actions.hidden = false;
-
-    return url;
-}
-
-async function fetchBlob(source, type, limit, abortController) {
-    const response = await fetch(source, { credentials: 'omit', redirect: 'error', signal: abortController.signal });
-
-    if (!response.ok || !validContentType(type, response.headers.get('content-type') ?? '')) {
-        throw new Error('The selected file is not an allowed preview type.');
-    }
-
-    const contentLength = Number(response.headers.get('content-length') ?? '0');
-
-    if (Number.isSafeInteger(contentLength) && contentLength > limit) throw new Error('The selected file is too large to preview.');
-
-    const blob = await response.blob();
-
-    if (blob.size > limit) throw new Error('The selected file is too large to preview.');
-
-    return blob;
-}
-
-async function framePayload(type, blob, name) {
-    if (type === 'text') return { data: await blob.text(), name, type };
-
-    return { data: await blob.arrayBuffer(), name, type };
-}
-
-function initializeFilePreview(root, configuration) {
-    const source = safeSource(configuration.src);
-    const type = previewType(configuration);
-    const loading = root.querySelector('[data-daisy-kit-loading]');
-    const empty = root.querySelector('[data-daisy-kit-empty]');
-    const frame = root.querySelector('[data-daisy-kit-file-preview-frame]');
-    const layout = root.querySelector('[data-daisy-kit-file-preview-layout]');
-    const modal = root.querySelector('[data-daisy-kit-file-preview-modal]');
-    const content = root.querySelector('[data-daisy-kit-content]');
-    const notice = root.querySelector('[data-daisy-kit-file-preview-notice]');
-    const openPreview = root.querySelector('[data-daisy-kit-file-preview-open-preview]');
-    const closePreview = root.querySelector('[data-daisy-kit-file-preview-close-preview]');
-    const zoomControls = [...root.querySelectorAll('[data-daisy-kit-file-preview-zoom]')];
-
-    if (!source) {
-        setVisible(empty, true);
-        root.dataset.daisyKitState = 'empty';
-        emit(root, 'empty');
-
-        return () => {};
-    }
-
-    if (!type || !(frame instanceof HTMLIFrameElement)) {
-        showError(root, 'The selected file type is unsupported.');
-
-        return () => {};
-    }
-
-    const abortController = new AbortController();
-    const requestedLayout = typeof configuration.layout === 'string' ? configuration.layout : 'standard';
-    const previewLayout = ['action-only', 'card', 'modal'].includes(requestedLayout) ? requestedLayout : 'standard';
-    const frameToken = createInstanceIdentifier('daisy-kit-file-preview');
+function initialize(root, input) {
+    const configuration = normalizeConfiguration(input);
+    const dom = elements(root);
+    const token = createInstanceIdentifier('daisy-kit-file-preview');
+    let abortController = null;
+    let activeRenderId = null;
     let destroyed = false;
     let frameReady = false;
-    let payloadSent = false;
-    let rendered = false;
-    let payloadBlob = null;
-    let actionUrl = null;
-    let renderTimeout = null;
-    let handshakeId = 0;
-    let renderId = 0;
-    let activeRenderId = null;
-    let modalCloseHandled = false;
-    const rendersInline = previewLayout === 'standard' || previewLayout === 'card';
-    let modalOpen = false;
-    let previewOpen = rendersInline;
-    const readyTimeout = window.setTimeout(() => {
-        if (destroyed || frameReady) return;
+    let frameReadyTimer = null;
+    let isOpen = false;
+    let objectUrl = null;
+    let preview = null;
+    let renderSequence = 0;
+    let returnFocus = null;
+    let status = 'idle';
 
-        setVisible(loading, false);
-        setVisible(frame, false);
-        showError(root, 'The file preview frame did not become ready.');
-    }, frameReadyTimeout);
-    setVisible(loading, true);
-    setVisible(frame, rendersInline);
-    root.dataset.daisyKitState = 'loading';
-    emit(root, 'loading');
-
-    if (typeof configuration.notice === 'string' && configuration.notice.trim() !== '') {
-        notice.textContent = configuration.notice;
-        setVisible(notice, true);
+    function snapshot() {
+        return Object.freeze({
+            canDownload: configuration.canDownload,
+            canPreview: configuration.canPreview,
+            isOpen,
+            layout: configuration.layout,
+            mimeType: preview?.mimeType ?? configuration.mimeType,
+            name: configuration.name,
+            previewMode: configuration.previewMode,
+            status,
+            type: configuration.type,
+            zoom: configuration.zoom,
+        });
     }
-    const restoreInlinePreview = (restoreFocus = true) => {
-        modalOpen = false;
-        previewOpen = rendersInline;
-        root.dataset.daisyKitPreviewOpen = String(previewOpen);
 
-        if (rendersInline && modal instanceof HTMLDialogElement && modal.contains(frame) && content) {
-            content.append(frame);
+    function emit(name, detail = {}) {
+        root.dispatchEvent(new CustomEvent(`daisy-kit:file-preview:${name}`, {
+            bubbles: true,
+            detail: { ...snapshot(), ...detail },
+        }));
+    }
+
+    function updateStatus(nextStatus) {
+        status = nextStatus;
+        root.dataset.daisyKitState = nextStatus;
+        root.setAttribute('aria-busy', String(nextStatus === 'loading'));
+    }
+
+    function showError(message) {
+        updateStatus('error');
+        setVisible(dom.loading, false);
+        setVisible(dom.frame, false);
+        setVisible(dom.status, true);
+        setVisible(dom.retry, true);
+
+        if (dom.statusMessage) dom.statusMessage.textContent = message;
+        else if (dom.status) dom.status.textContent = message;
+
+        emit('error', { message });
+    }
+
+    function clearError() {
+        setVisible(dom.status, false);
+        setVisible(dom.retry, false);
+    }
+
+    function restoreFrame() {
+        if (!(dom.frame instanceof HTMLIFrameElement)) return;
+
+        const target = configuration.previewMode === 'inline' ? dom.inlineHost : dom.staging;
+
+        if (target instanceof HTMLElement && !target.contains(dom.frame)) target.append(dom.frame);
+        setVisible(dom.frame, configuration.previewMode === 'inline' && status === 'ready');
+    }
+
+    function close() {
+        if (!isOpen && !(dom.modal instanceof HTMLDialogElement && dom.modal.open)) return;
+
+        isOpen = false;
+        root.dataset.daisyKitPreviewOpen = 'false';
+
+        if (dom.modal instanceof HTMLDialogElement && dom.modal.open) {
+            if (typeof dom.modal.close === 'function') dom.modal.close();
+            else dom.modal.open = false;
         }
 
-        setVisible(frame, rendersInline);
+        restoreFrame();
 
-        if (restoreFocus && openPreview instanceof HTMLElement) {
-            openPreview.focus({ preventScroll: true });
-        }
-    };
-    const closePreviewModal = () => {
-        if (!(modal instanceof HTMLDialogElement)) {
-            restoreInlinePreview();
-            emit(root, 'preview', { open: false });
-
-            return;
+        if (returnFocus instanceof HTMLElement && returnFocus.isConnected) {
+            returnFocus.focus({ preventScroll: true });
         }
 
-        if (modal.open && typeof modal.close === 'function') {
-            modalCloseHandled = true;
-            restoreInlinePreview(false);
-            emit(root, 'preview', { open: false });
-            modal.close();
-            if (openPreview instanceof HTMLElement) openPreview.focus({ preventScroll: true });
+        emit('close');
+    }
 
-            return;
-        }
+    function open(trigger = null) {
+        if (!configuration.canPreview || !(dom.frame instanceof HTMLIFrameElement)) return;
+        if (!(dom.modal instanceof HTMLDialogElement) || !(dom.modalContent instanceof HTMLElement)) return;
 
-        modal.open = false;
-        restoreInlinePreview();
-        emit(root, 'preview', { open: false });
-    };
-    const openPreviewModal = () => {
-        modalCloseHandled = false;
-        modalOpen = true;
-        previewOpen = true;
+        returnFocus = trigger instanceof HTMLElement ? trigger : document.activeElement;
+        isOpen = true;
         root.dataset.daisyKitPreviewOpen = 'true';
-        setVisible(frame, true);
+        dom.modalContent.append(dom.frame);
+        setVisible(dom.frame, status !== 'error');
 
-        if (!(modal instanceof HTMLDialogElement)) return;
-
-        if (!modal.contains(frame)) modal.append(frame);
-
-        if (!modal.open) {
-            if (typeof modal.showModal === 'function') modal.showModal();
-            else modal.open = true;
+        if (!dom.modal.open) {
+            if (typeof dom.modal.showModal === 'function') dom.modal.showModal();
+            else dom.modal.open = true;
         }
 
-        (closePreview instanceof HTMLElement ? closePreview : modal).focus({ preventScroll: true });
-    };
-    const onModalClose = () => {
-        if (modalCloseHandled) return;
+        const focusTarget = dom.closeButtons.find((button) => button instanceof HTMLElement);
+        focusTarget?.focus({ preventScroll: true });
+        emit('open');
+    }
 
-        restoreInlinePreview();
-        emit(root, 'preview', { open: false });
-    };
-    const onPreviewClick = () => {
-        openPreviewModal();
-        emit(root, 'preview', { open: true });
-    };
-    const onClosePreview = () => {
-        closePreviewModal();
-    };
-    const onLayoutClick = () => {
-        const expanded = root.dataset.daisyKitLayout !== 'expanded';
+    function setZoom(value) {
+        const parsed = Number(value);
 
-        root.dataset.daisyKitLayout = expanded ? 'expanded' : 'standard';
-        layout?.setAttribute('aria-pressed', String(expanded));
-        emit(root, 'layout', { layout: root.dataset.daisyKitLayout });
-    };
-    const onZoomClick = (event) => {
-        const direction = event.currentTarget.dataset.daisyKitFilePreviewZoom;
-        const current = Number(root.dataset.daisyKitZoom ?? '100');
-        const zoom = Math.max(50, Math.min(200, current + (direction === 'in' ? 25 : -25)));
+        if (!Number.isFinite(parsed)) return configuration.zoom;
 
-        root.dataset.daisyKitZoom = String(zoom);
-        emit(root, 'zoom', { zoom });
-    };
-    root.dataset.daisyKitLayout = requestedLayout === 'expanded' ? 'expanded' : previewLayout;
-    root.dataset.daisyKitZoom = '100';
-    root.dataset.daisyKitPreviewOpen = String(previewOpen);
-    layout?.setAttribute('aria-pressed', String(root.dataset.daisyKitLayout === 'expanded'));
-    layout?.addEventListener('click', onLayoutClick);
-    openPreview?.addEventListener('click', onPreviewClick);
-    closePreview?.addEventListener('click', onClosePreview);
-    modal?.addEventListener('close', onModalClose);
-    zoomControls.forEach((control) => control.addEventListener('click', onZoomClick));
+        configuration.zoom = Math.max(25, Math.min(Math.round(parsed), 200));
+        root.dataset.daisyKitZoom = String(configuration.zoom);
+        if (dom.zoomOutput) dom.zoomOutput.textContent = `${configuration.zoom}%`;
 
-    function sendPayload() {
-        if (destroyed || !frameReady || !payloadBlob || !frame.contentWindow) return;
+        if (frameReady && dom.frame instanceof HTMLIFrameElement && dom.frame.contentWindow) {
+            dom.frame.contentWindow.postMessage({
+                channel: frameChannel,
+                renderId: activeRenderId,
+                token,
+                type: 'zoom',
+                zoom: configuration.zoom,
+            }, '*');
+        }
 
-        const currentHandshakeId = handshakeId;
-        const currentRenderId = ++renderId;
+        emit('zoom', { zoom: configuration.zoom });
 
-        void framePayload(type, payloadBlob, typeof configuration.name === 'string' ? configuration.name : 'File preview')
-            .then((payload) => {
-                if (destroyed || !frameReady || currentHandshakeId !== handshakeId || !frame.contentWindow) return;
+        return configuration.zoom;
+    }
 
-                payloadSent = true;
-                rendered = false;
-                activeRenderId = currentRenderId;
-                window.clearTimeout(renderTimeout);
-                renderTimeout = window.setTimeout(() => {
-                    if (destroyed || rendered || activeRenderId !== currentRenderId) return;
+    async function sendPayload() {
+        if (destroyed || !frameReady || !preview || !(dom.frame instanceof HTMLIFrameElement)) return;
+        if (!dom.frame.contentWindow) return;
 
-                    setVisible(loading, false);
-                    setVisible(frame, false);
-                    showError(root, 'The file preview frame did not render the file.');
-                }, frameReadyTimeout);
-                frame.contentWindow.postMessage({
-                    channel: frameChannel,
-                    payload,
-                    renderId: currentRenderId,
-                    token: frameToken,
-                    type: 'render',
-                }, '*', payload.data instanceof ArrayBuffer ? [payload.data] : []);
-            })
-            .catch(() => {
-                if (!destroyed && currentHandshakeId === handshakeId) {
-                    setVisible(loading, false);
-                    setVisible(frame, false);
-                    showError(root, 'The file preview could not be prepared.');
-                }
-            });
+        const renderId = ++renderSequence;
+        const payload = await createFramePayload(configuration, preview);
+
+        if (destroyed || !frameReady || renderId !== renderSequence || !dom.frame.contentWindow) return;
+
+        activeRenderId = renderId;
+        dom.frame.contentWindow.postMessage({
+            channel: frameChannel,
+            payload: {
+                ...payload,
+                docxView: configuration.docxView,
+                theme: themeTokens(root),
+                zoom: configuration.zoom,
+            },
+            renderId,
+            token,
+            type: 'render',
+        }, '*', payload.data instanceof ArrayBuffer ? [payload.data] : []);
+    }
+
+    function exposeValidatedActions(blob) {
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+
+        objectUrl = URL.createObjectURL(blob);
+
+        if (dom.open instanceof HTMLAnchorElement) {
+            dom.open.href = objectUrl;
+            dom.open.hidden = false;
+        }
+
+        if (dom.download instanceof HTMLAnchorElement && !configuration.downloadUrl) {
+            dom.download.href = objectUrl;
+            dom.download.download = configuration.name;
+            dom.download.hidden = false;
+        }
+    }
+
+    async function load() {
+        abortController?.abort();
+        abortController = new AbortController();
+        preview = null;
+        clearError();
+        updateStatus('loading');
+        setVisible(dom.empty, false);
+        setVisible(dom.loading, true);
+        setVisible(dom.frame, false);
+        emit('loading');
+
+        try {
+            const result = await fetchPreview(configuration, abortController.signal);
+
+            if (destroyed || abortController.signal.aborted) return;
+
+            preview = result;
+            exposeValidatedActions(result.blob);
+            await sendPayload();
+        } catch (error) {
+            if (destroyed || (error instanceof DOMException && error.name === 'AbortError')) return;
+
+            showError(error instanceof Error ? error.message : configuration.labels.error);
+        }
+    }
+
+    function retry() {
+        if (!configuration.canPreview || !configuration.source) return;
+
+        emit('retry');
+        void load();
     }
 
     function onMessage(event) {
-        if (destroyed || event.source !== frame.contentWindow || !event.data || event.data.channel !== frameChannel || event.data.token !== frameToken) return;
+        if (destroyed || !(dom.frame instanceof HTMLIFrameElement)) return;
+        if (event.source !== dom.frame.contentWindow || !event.data) return;
+        if (event.data.channel !== frameChannel || event.data.token !== token) return;
 
         if (event.data.type === 'ready') {
             frameReady = true;
-            handshakeId += 1;
-            payloadSent = false;
-            rendered = false;
-            activeRenderId = null;
-            window.clearTimeout(readyTimeout);
-            window.clearTimeout(renderTimeout);
-            sendPayload();
+            window.clearTimeout(frameReadyTimer);
+            void sendPayload();
+
+            return;
         }
 
-        if (event.data.type === 'rendered' && payloadSent && !rendered && event.data.renderId === activeRenderId) {
-            rendered = true;
-            window.clearTimeout(renderTimeout);
-            setVisible(loading, false);
-            if (!modalOpen) setVisible(frame, rendersInline);
-            root.dataset.daisyKitState = 'ready';
-            emit(root, 'ready', { type });
+        if (event.data.renderId !== activeRenderId) return;
+
+        if (event.data.type === 'rendered') {
+            updateStatus('ready');
+            setVisible(dom.loading, false);
+            setVisible(dom.frame, isOpen || configuration.previewMode === 'inline');
+            emit('ready', { mimeType: preview?.mimeType });
         }
 
-        if (event.data.type === 'error' && event.data.renderId === activeRenderId) {
-            window.clearTimeout(readyTimeout);
-            window.clearTimeout(renderTimeout);
-            setVisible(loading, false);
-            setVisible(frame, false);
-            showError(root, 'The file preview could not be rendered.');
-        }
+        if (event.data.type === 'error') showError(configuration.labels.error);
     }
 
-    window.addEventListener('message', onMessage);
-    frame.srcdoc = frameDocument(frameToken);
+    function onNativeClose() {
+        if (!isOpen) return;
 
-    void (async () => {
-        try {
-            const blob = await fetchBlob(source, type, maximumBytes(configuration), abortController);
+        isOpen = false;
+        root.dataset.daisyKitPreviewOpen = 'false';
+        restoreFrame();
+        if (returnFocus instanceof HTMLElement && returnFocus.isConnected) returnFocus.focus({ preventScroll: true });
+        emit('close');
+    }
 
-            if (destroyed) return;
-
-            showMetadata(root, blob, configuration, type);
-            actionUrl = exposeActions(root, blob, configuration);
-            payloadBlob = blob;
-            sendPayload();
-        } catch (error) {
-            if (!destroyed && !(error instanceof DOMException && error.name === 'AbortError')) {
-                window.clearTimeout(readyTimeout);
-                setVisible(loading, false);
-                setVisible(frame, false);
-                showError(root, error instanceof Error ? error.message : 'The file preview could not be loaded.');
-            }
-        }
-    })();
-
-    return () => {
+    function destroy() {
         destroyed = true;
-        abortController.abort();
-        window.clearTimeout(readyTimeout);
-        window.clearTimeout(renderTimeout);
+        abortController?.abort();
+        window.clearTimeout(frameReadyTimer);
         window.removeEventListener('message', onMessage);
-        layout?.removeEventListener('click', onLayoutClick);
-        openPreview?.removeEventListener('click', onPreviewClick);
-        closePreview?.removeEventListener('click', onClosePreview);
-        modal?.removeEventListener('close', onModalClose);
-        zoomControls.forEach((control) => control.removeEventListener('click', onZoomClick));
-        if (modal instanceof HTMLDialogElement && modal.contains(frame)) {
-            if (typeof modal.close === 'function') modal.close();
-            else modal.open = false;
-            content?.append(frame);
-        }
-        frame.removeAttribute('srcdoc');
-        setVisible(frame, false);
-        if (actionUrl) URL.revokeObjectURL(actionUrl);
-        payloadBlob = null;
-    };
+        dom.modal?.removeEventListener('close', onNativeClose);
+        dom.openButtons.forEach((button) => button.removeEventListener('click', onOpenClick));
+        dom.closeButtons.forEach((button) => button.removeEventListener('click', close));
+        dom.zoomControls.forEach((button) => button.removeEventListener('click', onZoomClick));
+        dom.retry?.removeEventListener('click', retry);
+
+        if (dom.modal instanceof HTMLDialogElement && dom.modal.open) dom.modal.close();
+        if (dom.frame instanceof HTMLIFrameElement) dom.frame.removeAttribute('srcdoc');
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        preview = null;
+    }
+
+    function onOpenClick(event) {
+        open(event.target instanceof HTMLElement ? event.target : event.currentTarget);
+    }
+
+    function onZoomClick(event) {
+        const amount = event.currentTarget.dataset.daisyKitFilePreviewZoom === 'in' ? 10 : -10;
+
+        setZoom(configuration.zoom + amount);
+    }
+
+    const facade = Object.freeze({
+        close,
+        destroy,
+        getState: snapshot,
+        open,
+        retry,
+        setZoom,
+        zoomIn: () => setZoom(configuration.zoom + 10),
+        zoomOut: () => setZoom(configuration.zoom - 10),
+    });
+
+    root.dataset.daisyKitPreviewOpen = 'false';
+    root.dataset.daisyKitZoom = String(configuration.zoom);
+    dom.openButtons.forEach((button) => button.addEventListener('click', onOpenClick));
+    dom.closeButtons.forEach((button) => button.addEventListener('click', close));
+    dom.zoomControls.forEach((button) => button.addEventListener('click', onZoomClick));
+    dom.retry?.addEventListener('click', retry);
+    dom.modal?.addEventListener('close', onNativeClose);
+    window.addEventListener('message', onMessage);
+
+    if (!configuration.source || !configuration.canPreview || !(dom.frame instanceof HTMLIFrameElement)) {
+        updateStatus(configuration.source ? 'unsupported' : 'empty');
+        setVisible(dom.empty, !configuration.source);
+        emit(configuration.source ? 'ready' : 'empty');
+
+        return facade;
+    }
+
+    dom.frame.srcdoc = frameDocument(token);
+    frameReadyTimer = window.setTimeout(() => {
+        if (!destroyed && !frameReady) showError(configuration.labels.frameNotReady);
+    }, frameReadyTimeout);
+    void load();
+
+    return facade;
 }
 
-const module = createMountable('file-preview', initializeFilePreview);
+export function mount(root) {
+    if (!(root instanceof Element)) throw new TypeError('Daisy Kit modules mount Element roots only.');
+    if (instances.has(root)) return instances.get(root);
 
-export const { mount, mountAll, unmount } = module;
+    const { error, value } = readConfiguration(root);
+
+    if (error) {
+        showConfigurationError(root);
+
+        return null;
+    }
+
+    const instance = initialize(root, value);
+
+    instances.set(root, instance);
+    root.dispatchEvent(new CustomEvent('daisy-kit:file-preview:mounted', { bubbles: true }));
+
+    return instance;
+}
+
+export function mountAll(scope = document) {
+    return [...scope.querySelectorAll('[data-daisy-kit-module="file-preview"]')].map(mount);
+}
+
+export function getInstance(root) {
+    return instances.get(root) ?? null;
+}
+
+export function unmount(root) {
+    const instance = instances.get(root);
+
+    if (!instance) return;
+
+    instance.destroy();
+    instances.delete(root);
+    delete root.dataset.daisyKitState;
+    root.dispatchEvent(new CustomEvent('daisy-kit:file-preview:unmounted', { bubbles: true }));
+}

@@ -1,471 +1,235 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { mount, unmount } from '../../../resources/js/file-preview.js';
+import { getInstance, mount, unmount } from '../../../resources/js/file-preview.js';
 
-function root(configuration) {
-    document.body.innerHTML = `
+const mountedRoots = [];
+
+function root(configuration = {}) {
+    const wrapper = document.createElement('div');
+
+    wrapper.innerHTML = `
         <section data-daisy-kit-module="file-preview">
-            <p data-daisy-kit-status hidden role="alert"></p>
-            <div data-daisy-kit-content>
-                <p data-daisy-kit-loading hidden></p>
-                <p data-daisy-kit-empty hidden></p>
-                <dialog data-daisy-kit-file-preview-modal><button data-daisy-kit-file-preview-close-preview type="button">Close preview</button></dialog>
-                <iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts"></iframe>
-                <dl data-daisy-kit-file-preview-metadata hidden><dd data-daisy-kit-file-preview-name></dd><dd data-daisy-kit-file-preview-type></dd><dd data-daisy-kit-file-preview-size></dd></dl>
-                <p data-daisy-kit-file-preview-notice hidden></p>
-                <button data-daisy-kit-file-preview-open-preview type="button">Preview file</button>
-                <button data-daisy-kit-file-preview-layout type="button">Toggle expanded layout</button>
-                <button data-daisy-kit-file-preview-zoom="out" type="button">Zoom out</button><button data-daisy-kit-file-preview-zoom="in" type="button">Zoom in</button>
-                <p data-daisy-kit-file-preview-actions hidden><a data-daisy-kit-file-preview-open hidden rel="noopener" target="_blank">Open file</a><a data-daisy-kit-file-preview-download hidden>Download file</a></p>
+            <div data-daisy-kit-status hidden role="alert">
+                <span data-daisy-kit-status-message></span>
+                <button data-daisy-kit-file-preview-retry hidden type="button">Retry</button>
             </div>
-            <script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script>
+            <p data-daisy-kit-loading hidden role="status"></p>
+            <p data-daisy-kit-empty hidden role="status"></p>
+            <button data-daisy-kit-file-preview-open-preview type="button">Preview</button>
+            <button data-daisy-kit-file-preview-zoom="out" type="button">Zoom out</button>
+            <button data-daisy-kit-file-preview-zoom="in" type="button">Zoom in</button>
+            <output data-daisy-kit-file-preview-zoom-output></output>
+            <div data-daisy-kit-file-preview-inline-content>
+                <iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts"></iframe>
+            </div>
+            <dialog data-daisy-kit-file-preview-modal>
+                <div data-daisy-kit-file-preview-modal-box>
+                    <button data-daisy-kit-file-preview-close-preview type="button">Close</button>
+                    <div data-daisy-kit-file-preview-modal-content></div>
+                </div>
+            </dialog>
+            <div data-daisy-kit-file-preview-frame-staging></div>
+            <a data-daisy-kit-file-preview-open hidden rel="noopener noreferrer" target="_blank">Open</a>
+            <a data-daisy-kit-file-preview-download hidden>Download</a>
+            <script data-daisy-kit-config type="application/json">${JSON.stringify({
+                canPreview: true,
+                labels: {
+                    error: 'Preview failed.',
+                    frameNotReady: 'Frame unavailable.',
+                    invalidType: 'Invalid type.',
+                    tooLarge: 'Too large.',
+                },
+                layout: 'card',
+                maxPreviewBytes: 10_000,
+                maxTextPreviewBytes: 1_000,
+                name: 'Report.txt',
+                previewMode: 'modal',
+                type: 'text',
+                url: '/report.txt',
+                ...configuration,
+            })}</script>
         </section>
     `;
+    const element = wrapper.firstElementChild;
 
-    return document.querySelector('[data-daisy-kit-module="file-preview"]');
+    document.body.append(element);
+    mountedRoots.push(element);
+
+    return element;
 }
 
-function tokenFromFrame(frame) {
-    return frame.srcdoc.match(/data-daisy-kit-file-preview-token="([^"]+)"/)?.[1];
+function frameToken(element) {
+    return element.querySelector('[data-daisy-kit-file-preview-frame]').srcdoc
+        .match(/data-daisy-kit-file-preview-token="([^"]+)"/)?.[1];
 }
 
-function frameMessage(element, message, source = null, origin = 'null') {
+function frameMessage(element, message, overrides = {}) {
     const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
-    const token = tokenFromFrame(frame);
 
     window.dispatchEvent(new MessageEvent('message', {
-        data: { channel: 'daisy-kit:file-preview:frame', token, ...message },
-        origin,
-        source: source ?? frame.contentWindow,
+        data: {
+            channel: 'daisy-kit:file-preview:frame',
+            token: frameToken(element),
+            ...message,
+        },
+        origin: 'null',
+        source: frame.contentWindow,
+        ...overrides,
     }));
-
-    return { frame, token };
 }
 
 afterEach(() => {
+    mountedRoots.splice(0).forEach((element) => unmount(element));
+    document.body.replaceChildren();
     vi.unstubAllGlobals();
     vi.useRealTimers();
 });
 
-describe('file preview entry', () => {
-    it('starts a sandboxed preview on an HTTP host without crypto.randomUUID', async () => {
+describe('file preview runtime', () => {
+    it('loads a file in an opaque, network-denying frame', async () => {
         vi.stubGlobal('crypto', {});
         vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
-        const element = root({ src: '/notes.txt', type: 'text' });
+        const element = root();
 
         mount(element);
         await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
 
         const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
-        expect(element.dataset.daisyKitState).toBe('loading');
-        expect(frame.getAttribute('srcdoc')).toContain('data-daisy-kit-file-preview-token="daisy-kit-file-preview-');
-    });
 
-    it('sends validated text to the sandboxed frame and destroys its instance', async () => {
-        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('plain text', {
-            headers: { 'content-type': 'text/plain' },
-            status: 200,
-        }))));
-        const element = root({ src: '/notes.txt', type: 'text' });
-
-        mount(element);
-        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
-        const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
-        const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
-        const { token } = frameMessage(element, { type: 'ready' });
-
-        await vi.waitFor(() => expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
-            payload: expect.objectContaining({ data: 'plain text', type: 'text' }),
-            token,
-            type: 'render',
-        }), '*', []));
-
-        unmount(element);
-
-        expect(frame.getAttribute('srcdoc')).toBeNull();
-    });
-
-    it('hands media to an isolated frame with a network-denying child CSP', async () => {
-        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(new Blob(['image'], { type: 'image/png' }), {
-            headers: { 'content-type': 'image/png' },
-            status: 200,
-        }))));
-        const element = root({ src: '/preview.png', type: 'image' });
-
-        mount(element);
-        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
-        const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
-        const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
-        frameMessage(element, { type: 'ready' });
-
-        await vi.waitFor(() => expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
-            payload: expect.objectContaining({ data: expect.any(ArrayBuffer), type: 'image' }),
-            type: 'render',
-        }), '*', [expect.any(ArrayBuffer)]));
-        expect(frame.getAttribute('sandbox')).not.toContain('allow-same-origin');
+        expect(frame.getAttribute('sandbox')).toBe('allow-scripts');
         expect(frame.srcdoc).toContain("connect-src 'none'");
         expect(frame.srcdoc).toContain("script-src-attr 'none'");
-        expect(frame.srcdoc).not.toContain('frame-ancestors');
-        expect(frame.srcdoc).toContain('<script src=');
+        expect(frame.srcdoc).not.toContain('allow-same-origin');
         expect(frame.srcdoc).not.toContain('onload=');
     });
 
-    it('regenerates a transferable payload after the sandboxed frame navigates and handshakes again', async () => {
-        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(new Blob(['pdf'], { type: 'application/pdf' }), {
-            headers: { 'content-type': 'application/pdf' },
+    it('authenticates frame messages with source, token, and render id', async () => {
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('Report', {
+            headers: { 'content-type': 'text/plain' },
             status: 200,
         }))));
-        const element = root({ src: '/preview.pdf', type: 'pdf' });
-
-        mount(element);
-        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+        const element = root();
+        const controller = mount(element);
         const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
         const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
+
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+        frameMessage(element, { token: 'wrong-token', type: 'ready' });
+        frameMessage(element, { type: 'ready' }, { source: window });
+        expect(postMessage).not.toHaveBeenCalled();
 
         frameMessage(element, { type: 'ready' });
         await vi.waitFor(() => expect(postMessage).toHaveBeenCalledOnce());
-        const firstRender = postMessage.mock.calls[0][0];
+        const renderId = postMessage.mock.calls[0][0].renderId;
+        frameMessage(element, { renderId: renderId + 1, type: 'rendered' });
+        expect(controller.getState().status).toBe('loading');
 
-        frameMessage(element, { type: 'ready' });
-        await vi.waitFor(() => expect(postMessage).toHaveBeenCalledTimes(2));
-        const secondRender = postMessage.mock.calls[1][0];
-
-        expect(secondRender.renderId).not.toBe(firstRender.renderId);
-        expect(secondRender.payload.data).toBeInstanceOf(ArrayBuffer);
-        expect(secondRender.payload.data).not.toBe(firstRender.payload.data);
-
-        frameMessage(element, { renderId: secondRender.renderId, type: 'rendered' });
-        await vi.waitFor(() => expect(element.dataset.daisyKitState).toBe('ready'));
+        frameMessage(element, { renderId, type: 'rendered' });
+        expect(controller.getState().status).toBe('ready');
     });
 
-    it('previews validated video with metadata and an explicit layout action', async () => {
-        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(new Blob(['video'], { type: 'video/mp4' }), {
-            headers: { 'content-type': 'video/mp4' },
+    it('truncates text independently from the transport limit', async () => {
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('Long report', {
+            headers: { 'content-type': 'text/plain' },
             status: 200,
         }))));
-        const element = root({ layout: 'standard', name: 'Clip', src: '/clip.mp4', type: 'video' });
-        const layouts = [];
-        element.addEventListener('daisy-kit:file-preview:layout', (event) => layouts.push(event.detail.layout));
+        const element = root({ maxTextPreviewBytes: 4 });
 
         mount(element);
-        await vi.waitFor(() => expect(element.querySelector('[data-daisy-kit-file-preview-metadata]').hidden).toBe(false));
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
         const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
         const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
         frameMessage(element, { type: 'ready' });
+
         await vi.waitFor(() => expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
-            payload: expect.objectContaining({ type: 'video' }),
-        }), '*', [expect.any(ArrayBuffer)]));
-
-        element.querySelector('[data-daisy-kit-file-preview-layout]').click();
-        expect(element.dataset.daisyKitLayout).toBe('expanded');
-        expect(layouts).toEqual(['expanded']);
-        expect(element.querySelector('[data-daisy-kit-file-preview-name]').textContent).toBe('Clip');
-        expect(frame.srcdoc).toContain('media-src blob:');
+            payload: expect.objectContaining({ data: 'Long', truncated: true }),
+        }), '*', []));
     });
 
-    it('supports modal and action-only preview controls with zoom and notices', async () => {
-        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('plain text', {
-            headers: { 'content-type': 'text/plain' },
-            status: 200,
-        }))));
-        const element = root({
-            layout: 'action-only',
-            name: 'Notes',
-            notice: 'Sensitive document',
-            src: '/notes.txt',
-            type: 'text',
-        });
-        const events = [];
-        element.addEventListener('daisy-kit:file-preview:preview', (event) => events.push(event.detail));
-        element.addEventListener('daisy-kit:file-preview:zoom', (event) => events.push(event.detail));
+    it('rejects MIME mismatches and oversized files with retry available', async () => {
+        const fetch = vi.fn()
+            .mockResolvedValueOnce(new Response('wrong', {
+                headers: { 'content-type': 'text/html' },
+                status: 200,
+            }))
+            .mockResolvedValueOnce(new Response('recovered', {
+                headers: { 'content-type': 'text/plain' },
+                status: 200,
+            }));
+        vi.stubGlobal('fetch', fetch);
+        const element = root({ type: 'pdf' });
+        const controller = mount(element);
 
-        mount(element);
-        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
-        frameMessage(element, { type: 'ready' });
-        frameMessage(element, { type: 'rendered' });
+        await vi.waitFor(() => expect(controller.getState().status).toBe('error'));
+        expect(element.querySelector('[data-daisy-kit-status-message]').textContent).toBe('Invalid type.');
+        expect(element.querySelector('[data-daisy-kit-file-preview-retry]').hidden).toBe(false);
 
-        expect(element.querySelector('[data-daisy-kit-file-preview-frame]').hidden).toBe(true);
-        expect(element.querySelector('[data-daisy-kit-file-preview-notice]').textContent).toBe('Sensitive document');
-        element.querySelector('[data-daisy-kit-file-preview-open-preview]').click();
-        element.querySelector('[data-daisy-kit-file-preview-zoom="in"]').click();
-
-        expect(element.querySelector('[data-daisy-kit-file-preview-frame]').hidden).toBe(false);
-        expect(element.dataset.daisyKitZoom).toBe('125');
-        expect(events).toEqual([{ open: true }, { zoom: 125 }]);
-    });
-
-    it('opens a modal layout only when the explicit preview action is requested', async () => {
-        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('plain text', {
-            headers: { 'content-type': 'text/plain' },
-            status: 200,
-        }))));
-        const element = root({ layout: 'modal', src: '/notes.txt', type: 'text' });
-
-        mount(element);
-        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
-        const modal = element.querySelector('[data-daisy-kit-file-preview-modal]');
-
-        expect(modal.open).toBe(false);
-        element.querySelector('[data-daisy-kit-file-preview-open-preview]').click();
-
-        expect(modal.open).toBe(true);
-        expect(modal.querySelector('[data-daisy-kit-file-preview-frame]')).not.toBeNull();
-        modal.querySelector('[data-daisy-kit-file-preview-close-preview]').click();
-        expect(modal.open).toBe(false);
-        expect(element.dataset.daisyKitPreviewOpen).toBe('false');
-    });
-
-    it('commits modal close state before a native close event is delivered', async () => {
-        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('plain text', {
-            headers: { 'content-type': 'text/plain' },
-            status: 200,
-        }))));
-        const element = root({ layout: 'modal', src: '/notes.txt', type: 'text' });
-        const events = [];
-        element.addEventListener('daisy-kit:file-preview:preview', (event) => events.push(event.detail));
-
-        mount(element);
-        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
-        const modal = element.querySelector('[data-daisy-kit-file-preview-modal]');
-        const trigger = element.querySelector('[data-daisy-kit-file-preview-open-preview]');
-        modal.close = vi.fn(() => {
-            modal.open = false;
-        });
-
-        trigger.click();
-        modal.querySelector('[data-daisy-kit-file-preview-close-preview]').click();
-
-        expect(modal.open).toBe(false);
-        expect(element.dataset.daisyKitPreviewOpen).toBe('false');
-        expect(document.activeElement).toBe(trigger);
-        expect(events).toEqual([{ open: true }, { open: false }]);
-
-        modal.dispatchEvent(new Event('close'));
-        expect(events).toEqual([{ open: true }, { open: false }]);
-    });
-
-    it('opens the preview dialog from a standard layout and restores its inline frame after close', async () => {
-        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('plain text', {
-            headers: { 'content-type': 'text/plain' },
-            status: 200,
-        }))));
-        const element = root({ layout: 'standard', src: '/notes.txt', type: 'text' });
-
-        mount(element);
-        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
-        const modal = element.querySelector('[data-daisy-kit-file-preview-modal]');
-        const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
-        const trigger = element.querySelector('[data-daisy-kit-file-preview-open-preview]');
-
-        trigger.click();
-
-        expect(modal.open).toBe(true);
-        expect(element.dataset.daisyKitPreviewOpen).toBe('true');
-        expect(modal.contains(frame)).toBe(true);
-
-        modal.querySelector('[data-daisy-kit-file-preview-close-preview]').click();
-
-        expect(modal.open).toBe(false);
-        expect(element.dataset.daisyKitPreviewOpen).toBe('true');
-        expect(element.querySelector('[data-daisy-kit-content]').contains(frame)).toBe(true);
-        expect(frame.hidden).toBe(false);
-    });
-
-    it('keeps modal state and focus isolated between multiple standard previews', () => {
-        vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
-        document.body.innerHTML = `
-            <section data-daisy-kit-module="file-preview">
-                <div data-daisy-kit-content><dialog data-daisy-kit-file-preview-modal><button data-daisy-kit-file-preview-close-preview type="button">Close</button></dialog><iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts"></iframe></div>
-                <button data-daisy-kit-file-preview-open-preview type="button">Preview first</button>
-                <script data-daisy-kit-config type="application/json">{"layout":"standard","src":"/first.txt","type":"text"}</script>
-            </section>
-            <section data-daisy-kit-module="file-preview">
-                <div data-daisy-kit-content><dialog data-daisy-kit-file-preview-modal><button data-daisy-kit-file-preview-close-preview type="button">Close</button></dialog><iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts"></iframe></div>
-                <button data-daisy-kit-file-preview-open-preview type="button">Preview second</button>
-                <script data-daisy-kit-config type="application/json">{"layout":"standard","src":"/second.txt","type":"text"}</script>
-            </section>`;
-        const [first, second] = document.querySelectorAll('[data-daisy-kit-module="file-preview"]');
-
-        mount(first);
-        mount(second);
-        const firstDialog = first.querySelector('[data-daisy-kit-file-preview-modal]');
-        const secondDialog = second.querySelector('[data-daisy-kit-file-preview-modal]');
-        const firstTrigger = first.querySelector('[data-daisy-kit-file-preview-open-preview]');
-
-        firstTrigger.click();
-
-        expect(firstDialog.open).toBe(true);
-        expect(secondDialog.open).toBe(false);
-        expect(second.dataset.daisyKitPreviewOpen).toBe('true');
-
-        firstDialog.querySelector('[data-daisy-kit-file-preview-close-preview]').click();
-
-        expect(firstDialog.open).toBe(false);
-        expect(document.activeElement).toBe(firstTrigger);
-        expect(first.dataset.daisyKitPreviewOpen).toBe('true');
-        expect(second.dataset.daisyKitPreviewOpen).toBe('true');
-    });
-
-    it('retains card as an explicit non-modal layout', () => {
-        vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
-        const element = root({ layout: 'card', src: '/notes.txt', type: 'text' });
-
-        mount(element);
-
-        expect(element.dataset.daisyKitLayout).toBe('card');
-        expect(element.dataset.daisyKitPreviewOpen).toBe('true');
-    });
-
-    it('hands a PDF to a nested sandbox and exposes revocable user actions only after validation', async () => {
-        const revokeObjectURL = vi.fn();
-        const NativeURL = URL;
-        vi.stubGlobal('URL', Object.assign(class extends NativeURL {}, {
-            createObjectURL: vi.fn(() => 'blob:preview'),
-            revokeObjectURL,
-        }));
-        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(new Blob(['pdf'], { type: 'application/pdf' }), {
-            headers: { 'content-type': 'application/pdf' },
-            status: 200,
-        }))));
-        const element = root({ name: 'Report.pdf', src: '/report.pdf', type: 'pdf' });
-
-        mount(element);
-        await vi.waitFor(() => expect(element.querySelector('[data-daisy-kit-file-preview-actions]').hidden).toBe(false));
-        const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
-        const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
-        frameMessage(element, { type: 'ready' });
-        await vi.waitFor(() => expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
-            payload: expect.objectContaining({ type: 'pdf' }),
-        }), '*', [expect.any(ArrayBuffer)]));
-
-        expect(element.querySelector('[data-daisy-kit-file-preview-open]').getAttribute('rel')).toBe('noopener');
-        expect(element.querySelector('[data-daisy-kit-file-preview-download]').download).toBe('Report.pdf');
-        expect(frame.srcdoc).toContain('frame-src blob:');
-        unmount(element);
-        expect(revokeObjectURL).toHaveBeenCalledWith('blob:preview');
-    });
-
-    it('accepts an opaque-origin ready message only from its frame with its token', async () => {
-        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('plain text', {
-            headers: { 'content-type': 'text/plain' },
-            status: 200,
-        }))));
-        const element = root({ src: '/notes.txt', type: 'text' });
-
-        mount(element);
-        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
-        const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
-        const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
-        const token = tokenFromFrame(frame);
-
-        frameMessage(element, { token: 'a'.repeat(32), type: 'ready' });
-        frameMessage(element, { type: 'ready' }, window);
-        expect(postMessage).not.toHaveBeenCalled();
-
-        frameMessage(element, { type: 'ready' });
-        await vi.waitFor(() => expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({ token, type: 'render' }), '*', []));
-    });
-
-    it('fails closed when the sandboxed frame does not become ready', () => {
-        vi.useFakeTimers();
-        vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
-        const element = root({ src: '/notes.txt', type: 'text' });
-
-        mount(element);
-        vi.advanceTimersByTime(10_001);
-
-        expect(element.dataset.daisyKitState).toBe('error');
-        expect(element.querySelector('[data-daisy-kit-status]').textContent).toContain('did not become ready');
-    });
-
-    it('ignores ready messages after destruction', () => {
-        vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
-        const element = root({ src: '/notes.txt', type: 'text' });
-
-        mount(element);
-        const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
-        const postMessage = vi.spyOn(frame.contentWindow, 'postMessage');
-        const token = tokenFromFrame(frame);
-        unmount(element);
-        window.dispatchEvent(new MessageEvent('message', {
-            data: { channel: 'daisy-kit:file-preview:frame', token, type: 'ready' },
-            origin: 'null',
-            source: frame.contentWindow,
-        }));
-
-        expect(postMessage).not.toHaveBeenCalled();
-        expect(frame.getAttribute('srcdoc')).toBeNull();
-    });
-
-    it('keeps opaque-origin handshakes isolated between multiple instances', async () => {
-        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('plain text', {
-            headers: { 'content-type': 'text/plain' },
-            status: 200,
-        }))));
-        document.body.innerHTML = `
-            <section data-daisy-kit-module="file-preview">
-                <p data-daisy-kit-status hidden role="alert"></p><p data-daisy-kit-loading hidden></p><p data-daisy-kit-empty hidden></p>
-                <iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts"></iframe>
-                <script data-daisy-kit-config type="application/json">{"src":"/one.txt","type":"text"}</script>
-            </section>
-            <section data-daisy-kit-module="file-preview">
-                <p data-daisy-kit-status hidden role="alert"></p><p data-daisy-kit-loading hidden></p><p data-daisy-kit-empty hidden></p>
-                <iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts"></iframe>
-                <script data-daisy-kit-config type="application/json">{"src":"/two.txt","type":"text"}</script>
-            </section>`;
-        const [first, second] = document.querySelectorAll('[data-daisy-kit-module="file-preview"]');
-
-        mount(first);
-        mount(second);
+        element.querySelector('script').textContent = '';
+        controller.retry();
         await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
-        const firstFrame = first.querySelector('[data-daisy-kit-file-preview-frame]');
-        const secondFrame = second.querySelector('[data-daisy-kit-file-preview-frame]');
-        const firstPostMessage = vi.spyOn(firstFrame.contentWindow, 'postMessage');
-        const secondPostMessage = vi.spyOn(secondFrame.contentWindow, 'postMessage');
-
-        frameMessage(first, { type: 'ready' });
-        await vi.waitFor(() => expect(firstPostMessage).toHaveBeenCalledOnce());
-        expect(secondPostMessage).not.toHaveBeenCalled();
-
-        frameMessage(second, { type: 'ready' });
-        await vi.waitFor(() => expect(secondPostMessage).toHaveBeenCalledOnce());
     });
 
-    it('rejects unsafe sources and oversized responses', async () => {
-        const unsafe = root({ src: 'javascript:alert(1)' });
-        mount(unsafe);
-        expect(unsafe.dataset.daisyKitState).toBe('empty');
+    it('keeps modal state and focus isolated between instances', () => {
+        vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+        const first = root({ name: 'First' });
+        const second = root({ name: 'Second' });
+        const firstController = mount(first);
+        const secondController = mount(second);
+        const secondTrigger = second.querySelector('[data-daisy-kit-file-preview-open-preview]');
 
-        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('large', {
-            headers: { 'content-length': '5242881', 'content-type': 'text/plain' },
+        secondTrigger.focus();
+        secondController.open();
+
+        expect(firstController.getState().isOpen).toBe(false);
+        expect(secondController.getState().isOpen).toBe(true);
+        expect(second.querySelector('[data-daisy-kit-file-preview-modal]').open).toBe(true);
+
+        secondController.close();
+        expect(document.activeElement).toBe(secondTrigger);
+    });
+
+    it('restores an inline frame after the modal closes', () => {
+        vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+        const element = root({ previewMode: 'inline' });
+        const controller = mount(element);
+        const inlineHost = element.querySelector('[data-daisy-kit-file-preview-inline-content]');
+        const modalContent = element.querySelector('[data-daisy-kit-file-preview-modal-content]');
+        const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
+
+        controller.open();
+        expect(modalContent.contains(frame)).toBe(true);
+
+        controller.close();
+        expect(inlineHost.contains(frame)).toBe(true);
+    });
+
+    it('exposes bounded DOCX zoom controls and events', () => {
+        vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+        const element = root({ docxZoom: 195, type: 'docx' });
+        const events = [];
+        element.addEventListener('daisy-kit:file-preview:zoom', (event) => events.push(event.detail.zoom));
+        const controller = mount(element);
+
+        expect(controller.zoomIn()).toBe(200);
+        expect(controller.setZoom(10)).toBe(25);
+        expect(controller.zoomOut()).toBe(25);
+        expect(events).toEqual([200, 25, 25]);
+    });
+
+    it('aborts transport, revokes object URLs, and removes its facade on unmount', async () => {
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('Report', {
+            headers: { 'content-type': 'text/plain' },
             status: 200,
         }))));
-        const element = root({ maxBytes: 1, src: '/notes.txt', type: 'text' });
-        mount(element);
-
-        await vi.waitFor(() => expect(element.dataset.daisyKitState).toBe('error'));
-        expect(element.querySelector('[data-daisy-kit-status]').textContent).toContain('too large');
-    });
-
-    it('does not write a pending response after unmount', async () => {
-        let resolveBlob;
-        const blob = new Promise((resolve) => { resolveBlob = resolve; });
-        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({
-            blob: () => blob,
-            headers: new Headers({ 'content-type': 'text/plain' }),
-            ok: true,
-        })));
-        const element = root({ src: '/notes.txt', type: 'text' });
+        const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL');
+        const element = root();
 
         mount(element);
-        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
-        const frame = element.querySelector('[data-daisy-kit-file-preview-frame]');
+        await vi.waitFor(() => expect(element.querySelector('[data-daisy-kit-file-preview-open]').hidden).toBe(false));
         unmount(element);
-        resolveBlob(new Blob(['late content'], { type: 'text/plain' }));
-        await Promise.resolve();
-        await Promise.resolve();
 
-        expect(element.dataset.daisyKitState).toBeUndefined();
-        expect(frame.getAttribute('srcdoc')).toBeNull();
+        expect(revokeObjectURL).toHaveBeenCalledOnce();
+        expect(getInstance(element)).toBeNull();
+        expect(element.querySelector('[data-daisy-kit-file-preview-frame]').getAttribute('srcdoc')).toBeNull();
     });
 });

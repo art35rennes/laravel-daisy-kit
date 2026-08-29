@@ -1,74 +1,104 @@
+import '../css/file-preview-frame.css';
 import { renderAsync } from 'docx-preview';
 
 const channel = 'daisy-kit:file-preview:frame';
 const output = document.querySelector('[data-daisy-kit-file-preview-output]');
 const token = output?.dataset.daisyKitFilePreviewToken;
-let ready = false;
+const allowedThemeTokens = new Set([
+    '--color-base-100',
+    '--color-base-200',
+    '--color-base-content',
+    '--radius-box',
+]);
+let activeRenderId = null;
+let objectUrl = null;
 
-function announceReady() {
-    if (ready) return;
-
-    ready = true;
-    document.documentElement.dataset.daisyKitFilePreviewFrame = 'ready';
-    window.parent.postMessage({ channel, token, type: 'ready' }, '*');
+function post(type, renderId = null) {
+    window.parent.postMessage({ channel, renderId, token, type }, '*');
 }
 
 function validMessage(event) {
     return event.source === window.parent
         && event.data
         && event.data.channel === channel
-        && event.data.token === token
-        && event.data.type === 'render';
+        && event.data.token === token;
 }
-let objectUrl = null;
 
-async function render(payload) {
-    if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-        objectUrl = null;
+function releaseObjectUrl() {
+    if (!objectUrl) return;
+
+    URL.revokeObjectURL(objectUrl);
+    objectUrl = null;
+}
+
+function applyTheme(theme) {
+    if (!theme || typeof theme !== 'object') return;
+
+    for (const [name, value] of Object.entries(theme)) {
+        if (!allowedThemeTokens.has(name) || typeof value !== 'string' || value.length > 128) continue;
+        if (/url\s*\(/i.test(value)) continue;
+
+        document.documentElement.style.setProperty(name, value);
     }
-    output.replaceChildren();
+}
 
-    if (payload.type === 'text') {
-        const text = document.createElement('pre');
-        text.textContent = payload.data;
-        output.append(text);
+function applyZoom(zoom) {
+    const value = Math.max(25, Math.min(Number(zoom) || 100, 200));
 
-        return;
-    }
+    output.style.setProperty('--daisy-kit-file-preview-zoom', String(value / 100));
+}
 
-    if (payload.type === 'image') {
-        const image = document.createElement('img');
-        image.alt = payload.name;
-        objectUrl = URL.createObjectURL(new Blob([payload.data]));
-        image.src = objectUrl;
-        output.append(image);
+function blobUrl(data, mimeType) {
+    releaseObjectUrl();
+    objectUrl = URL.createObjectURL(new Blob([data], { type: mimeType }));
 
-        return;
-    }
+    return objectUrl;
+}
 
-    if (payload.type === 'video') {
-        const video = document.createElement('video');
-        video.controls = true;
-        video.preload = 'metadata';
-        objectUrl = URL.createObjectURL(new Blob([payload.data]));
-        video.src = objectUrl;
-        output.append(video);
+function renderText(payload) {
+    const text = document.createElement('pre');
 
-        return;
-    }
+    text.textContent = payload.truncated ? `${payload.data}\n\n…` : payload.data;
+    output.append(text);
+}
 
-    if (payload.type === 'pdf') {
-        const pdf = document.createElement('iframe');
-        pdf.setAttribute('sandbox', '');
-        pdf.title = payload.name;
-        objectUrl = URL.createObjectURL(new Blob([payload.data], { type: 'application/pdf' }));
-        pdf.src = objectUrl;
-        output.append(pdf);
+function renderImage(payload) {
+    const image = document.createElement('img');
 
-        return;
-    }
+    image.alt = payload.name;
+    image.src = blobUrl(payload.data, payload.mimeType);
+    output.append(image);
+}
 
+function renderVideo(payload) {
+    const video = document.createElement('video');
+
+    video.controls = true;
+    video.preload = 'metadata';
+    video.src = blobUrl(payload.data, payload.mimeType);
+    output.append(video);
+}
+
+function renderAudio(payload) {
+    const audio = document.createElement('audio');
+
+    audio.controls = true;
+    audio.preload = 'metadata';
+    audio.src = blobUrl(payload.data, payload.mimeType);
+    output.append(audio);
+}
+
+function renderPdf(payload) {
+    const pdf = document.createElement('iframe');
+
+    pdf.setAttribute('sandbox', '');
+    pdf.title = payload.name;
+    pdf.src = blobUrl(payload.data, payload.mimeType);
+    output.append(pdf);
+}
+
+async function renderDocx(payload) {
+    output.dataset.daisyKitDocxView = payload.docxView === 'width' ? 'width' : 'page';
     await renderAsync(payload.data, output, document.head, {
         renderAltChunks: false,
         renderComments: false,
@@ -76,22 +106,47 @@ async function render(payload) {
     });
 }
 
-window.addEventListener('message', (event) => {
+async function render(payload) {
+    releaseObjectUrl();
+    output.replaceChildren();
+    output.dataset.daisyKitFilePreviewType = payload.type;
+    applyTheme(payload.theme);
+    applyZoom(payload.zoom);
+
+    if (payload.type === 'text') return renderText(payload);
+    if (payload.type === 'image') return renderImage(payload);
+    if (payload.type === 'video') return renderVideo(payload);
+    if (payload.type === 'audio') return renderAudio(payload);
+    if (payload.type === 'pdf') return renderPdf(payload);
+    if (payload.type === 'docx') return renderDocx(payload);
+
+    throw new Error('Unsupported preview type.');
+}
+
+window.addEventListener('message', async (event) => {
     if (!validMessage(event)) return;
 
-    document.dispatchEvent(new CustomEvent('daisy-kit:file-preview:render', { detail: event.data }));
-});
+    if (event.data.type === 'zoom' && event.data.renderId === activeRenderId) {
+        applyZoom(event.data.zoom);
 
-document.addEventListener('daisy-kit:file-preview:render', async (event) => {
-    const message = event.detail;
+        return;
+    }
+
+    if (event.data.type !== 'render' || !Number.isSafeInteger(event.data.renderId)) return;
+
+    activeRenderId = event.data.renderId;
 
     try {
-        await render(message.payload);
-        window.parent.postMessage({ channel, renderId: message.renderId, token: message.token, type: 'rendered' }, '*');
+        await render(event.data.payload);
+        post('rendered', activeRenderId);
     } catch {
         output.replaceChildren();
-        window.parent.postMessage({ channel, renderId: message.renderId, token: message.token, type: 'error' }, '*');
+        post('error', activeRenderId);
     }
 });
 
-queueMicrotask(announceReady);
+window.addEventListener('pagehide', releaseObjectUrl);
+queueMicrotask(() => {
+    document.documentElement.dataset.daisyKitFilePreviewFrame = 'ready';
+    post('ready');
+});

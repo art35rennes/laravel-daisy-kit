@@ -91,6 +91,74 @@ Route::get('/_daisy-kit-test/files/preview.txt', function () {
     return response('Sandboxed file preview', 200, ['Content-Type' => 'text/plain']);
 })->name('workbench.file-preview');
 
+Route::get('/_daisy-kit-test/files/preview.svg', function () {
+    $svg = <<<'SVG'
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-labelledby="title description">
+            <title id="title">Daisy Kit media preview</title>
+            <desc id="description">A violet document card on a neutral background.</desc>
+            <rect width="800" height="450" rx="32" fill="#ede9fe"/>
+            <rect x="238" y="70" width="324" height="310" rx="24" fill="#7c3aed"/>
+            <path d="M302 154h196M302 216h196M302 278h122" stroke="#fff" stroke-width="20" stroke-linecap="round"/>
+        </svg>
+        SVG;
+
+    return response($svg, 200, ['Content-Type' => 'image/svg+xml']);
+})->name('workbench.file-preview.image');
+
+Route::get('/_daisy-kit-test/files/preview.wav', function () {
+    $sampleRate = 8000;
+    $samples = str_repeat(pack('v', 0), $sampleRate);
+    $header = 'RIFF'.pack('V', 36 + strlen($samples)).'WAVEfmt '.pack('VvvVVvv', 16, 1, 1, $sampleRate, $sampleRate * 2, 2, 16);
+
+    return response($header.'data'.pack('V', strlen($samples)).$samples, 200, ['Content-Type' => 'audio/wav']);
+})->name('workbench.file-preview.audio');
+
+Route::get('/_daisy-kit-test/files/preview.docx', function () {
+    abort_unless(class_exists(ZipArchive::class), 501);
+
+    $path = tempnam(sys_get_temp_dir(), 'daisy-kit-docx-');
+    abort_if($path === false, 500);
+
+    $archive = new ZipArchive;
+    abort_unless($archive->open($path, ZipArchive::OVERWRITE) === true, 500);
+    $archive->addFromString('[Content_Types].xml', <<<'XML'
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+            <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+            <Default Extension="xml" ContentType="application/xml"/>
+            <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+        </Types>
+        XML);
+    $archive->addFromString('_rels/.rels', <<<'XML'
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+            <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+        </Relationships>
+        XML);
+    $archive->addFromString('word/document.xml', <<<'XML'
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+            <w:body>
+                <w:p><w:r><w:t>Daisy Kit product brief</w:t></w:r></w:p>
+                <w:p><w:r><w:t>DOCX rendering stays inside its opaque sandbox.</w:t></w:r></w:p>
+                <w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>
+            </w:body>
+        </w:document>
+        XML);
+    $archive->close();
+    $document = file_get_contents($path);
+    unlink($path);
+
+    return response($document, 200, [
+        'Content-Disposition' => 'inline; filename="product-brief.docx"',
+        'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ]);
+})->name('workbench.file-preview.docx');
+
+Route::get('/_daisy-kit-test/files/preview-invalid.pdf', function () {
+    return response('This is deliberately not a PDF.', 200, ['Content-Type' => 'text/plain']);
+})->name('workbench.file-preview.invalid');
+
 Route::get('/_daisy-kit-test/csp/file-preview', function () {
     return response()
         ->view('workbench::csp-file-preview')

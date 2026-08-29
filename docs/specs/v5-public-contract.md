@@ -62,6 +62,21 @@ visible rows, refresh, filters, pagination, sorting, visibility and selection co
 the underlying TanStack instance or creating global state. `filterMode="manual"` stages column filters
 until the translated Apply filters action or facade `applyFilters()` method is invoked.
 
+### File Preview configuration
+
+`x-daisy-kit::file-preview` accepts a `file` metadata value or a safe `url`, optional
+preview/download URLs, MIME and display metadata. `layout` selects `card`, `compact-list`
+or `action-only`; `previewMode` independently selects `auto`, `inline`, `modal` or
+`download`. Image, video, audio, PDF, text and DOCX are previewable. Other recognized file
+families render an explicit metadata/download state instead of a broken preview.
+
+Private Blade views own the default trigger, metadata, actions, notice and modal footer;
+named slots may replace those regions without adding another public component. The runtime
+keeps its opaque sandbox and emits `daisy-kit:file-preview:*` events. `mount(root)` returns
+the stable File Preview facade and `getInstance(root)` retrieves the same facade after
+automatic mounting. The facade exposes snapshots, open/close, retry and zoom controls but
+does not expose the iframe or renderer internals.
+
 ## Corrective development line
 
 The corrective development contract deliberately has no compatibility layer for v5.0.0 or its

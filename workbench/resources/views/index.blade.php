@@ -214,14 +214,93 @@
             />
         </section>
 
-        <section class="min-w-0" aria-labelledby="file-preview-heading">
-            <h2 id="file-preview-heading">File Preview</h2>
-            <x-daisy-kit::file-preview
-                src="/_daisy-kit-test/files/preview.txt"
-                type="text"
-                name="Workbench note"
-                notice="Rendered in an isolated sandbox."
-            />
+        <section class="min-w-0 space-y-6" aria-labelledby="file-preview-heading">
+            <div>
+                <h2 id="file-preview-heading">File Preview</h2>
+                <p class="text-base-content/70">Media, documents, custom actions and failures use the same isolated runtime.</p>
+            </div>
+
+            <div class="space-y-3" data-file-preview-scenario="media">
+                <h3>Media</h3>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.svg"
+                        type="image"
+                        mime-type="image/svg+xml"
+                        name="Product illustration.svg"
+                        :file-size="1840"
+                        preview-mode="modal"
+                    />
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.wav"
+                        type="audio"
+                        mime-type="audio/wav"
+                        name="Interview excerpt.wav"
+                        :file-size="16044"
+                        layout="compact-list"
+                        preview-mode="inline"
+                    />
+                </div>
+            </div>
+
+            <div class="space-y-3" data-file-preview-scenario="documents">
+                <h3>Documents</h3>
+                <div class="grid gap-4 lg:grid-cols-2">
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.txt"
+                        type="text"
+                        name="Release notes.txt"
+                        preview-mode="inline"
+                        notice="Rendered in an isolated sandbox."
+                    />
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.docx"
+                        type="docx"
+                        mime-type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        name="Product brief.docx"
+                        preview-mode="modal"
+                        docx-view="width"
+                        :docx-zoom="100"
+                    />
+                </div>
+            </div>
+
+            <div class="space-y-3" data-file-preview-scenario="custom">
+                <h3>Custom list action</h3>
+                <x-daisy-kit::file-preview
+                    url="/_daisy-kit-test/files/preview.txt"
+                    type="text"
+                    name="Customer hand-off.txt"
+                    layout="action-only"
+                    preview-mode="modal"
+                >
+                    <x-slot:trigger>
+                        <button class="btn btn-secondary" type="button">Inspect customer hand-off</button>
+                    </x-slot:trigger>
+                    <x-slot:modalFooter>
+                        <p class="text-sm text-base-content/70">Custom footer supplied by the integrator.</p>
+                    </x-slot:modalFooter>
+                </x-daisy-kit::file-preview>
+            </div>
+
+            <div class="space-y-3" data-file-preview-scenario="errors">
+                <h3>Errors and limits</h3>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview-invalid.pdf"
+                        type="pdf"
+                        mime-type="application/pdf"
+                        name="Invalid contract.pdf"
+                        preview-mode="modal"
+                    />
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/forecast.xlsx"
+                        name="Forecast.xlsx"
+                        extension="xlsx"
+                        preview-mode="download"
+                    />
+                </div>
+            </div>
         </section>
 
         <section class="min-w-0" aria-labelledby="map-heading">
