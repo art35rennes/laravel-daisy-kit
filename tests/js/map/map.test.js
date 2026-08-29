@@ -353,13 +353,18 @@ describe('map entry', () => {
         expect(instance.setMode('rectangle')).toBe(true);
         await drawing.handlers.finish('shape-1');
         drawing.handlers.select('shape-1');
-        drawing.handlers.history({ redoStackSize: 0, undoStackSize: 1 });
+        drawing.handlers.history({ cause: 'push', redoSize: 0, stack: 'session', undoSize: 1 });
 
         expect(element.querySelector('[data-daisy-kit-map-measurement]').hidden).toBe(false);
         expect(element.querySelector('[data-daisy-kit-map-measurement]').textContent).toContain('m²');
+        expect(element.querySelector('[data-daisy-kit-map-history="undo"]').disabled).toBe(false);
+        expect(element.querySelector('[data-daisy-kit-map-history="redo"]').disabled).toBe(true);
         expect(instance.getSelection()).toHaveLength(1);
         expect(instance.getDrawLayer()).toBe('water');
         expect(instance.undo()).toBe(true);
+        drawing.handlers.history({ cause: 'undo', redoSize: 1, stack: 'session', undoSize: 0 });
+        expect(element.querySelector('[data-daisy-kit-map-history="undo"]').disabled).toBe(true);
+        expect(element.querySelector('[data-daisy-kit-map-history="redo"]').disabled).toBe(false);
         expect(instance.redo()).toBe(true);
         expect(instance.exportGeoJSON()).toMatchObject({
             features: [expect.objectContaining({ properties: expect.objectContaining({ drawLayer: 'water', objectType: 'hydrant' }) })],

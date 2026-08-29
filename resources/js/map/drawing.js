@@ -240,9 +240,9 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
         updateSelection();
     }
 
-    function onHistory({ redoStackSize = 0, undoStackSize = 0 } = {}) {
-        undoButton?.toggleAttribute('disabled', undoStackSize === 0);
-        redoButton?.toggleAttribute('disabled', redoStackSize === 0);
+    function onHistory({ redoSize = 0, undoSize = 0 } = {}) {
+        undoButton?.toggleAttribute('disabled', undoSize === 0);
+        redoButton?.toggleAttribute('disabled', redoSize === 0);
     }
 
     drawing.on('finish', onFinish);
