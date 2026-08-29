@@ -35,6 +35,12 @@ an instance token and a render identifier. Source URLs, response MIME types and 
 sizes are validated before rendering; pending requests and object URLs are released on
 retry and unmount.
 
+Modal previews repeat the validated download action in their footer so the original remains
+reachable while inspecting it. DOCX zoom transforms the complete rendered document, not only
+the control state, and the isolated frame keeps its own stylesheet while `docx-preview` writes
+generated document styles to a dedicated container. Multipage DOCX content scrolls vertically
+inside the bounded frame; multipage PDF navigation remains owned by the browser PDF viewer.
+
 ## Consequences
 
 - The package restores the v4 user outcomes without restoring v4 aliases, global assets,
@@ -43,6 +49,8 @@ retry and unmount.
   remains private and replaceable.
 - The host CSP stays strict. Only the opaque child permits the renderer's required styles,
   data/blob media and Vite-emitted internal assets.
+- Browser fixtures are genuine text, SVG, WAV, MP4, PDF and DOCX files; the PDF and DOCX fixtures
+  contain three pages so scrolling and paging are outcome-tested rather than inferred.
 - Existing v5 alpha File Preview markup is intentionally incompatible with the corrective
   prerelease and must migrate from `src` to `url` and from modal layouts to `previewMode`.
 

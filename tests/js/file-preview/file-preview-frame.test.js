@@ -1,6 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 
-const renderAsync = vi.fn(() => Promise.resolve());
+const renderAsync = vi.fn((_data, output) => {
+    const wrapper = document.createElement('div');
+    const page = document.createElement('section');
+
+    wrapper.className = 'docx-wrapper';
+    page.className = 'docx';
+    wrapper.append(page);
+    output.append(wrapper);
+
+    return Promise.resolve();
+});
 
 vi.mock('docx-preview', () => ({ renderAsync }));
 
@@ -63,7 +73,8 @@ describe('file preview sandbox renderer', () => {
         }, 6);
         await vi.waitFor(() => expect(renderAsync).toHaveBeenCalledOnce());
         expect(document.querySelector('main').dataset.daisyKitDocxView).toBe('width');
-        expect(document.querySelector('main').classList).toContain('daisy-kit-file-preview-zoom-125');
+        expect(document.querySelector('[data-daisy-kit-file-preview-docx-styles]')).not.toBeNull();
+        expect(document.querySelector('.docx-wrapper').classList).toContain('daisy-kit-file-preview-zoom-125');
 
         window.dispatchEvent(new MessageEvent('message', {
             data: {
@@ -75,7 +86,7 @@ describe('file preview sandbox renderer', () => {
             },
             source: window.parent,
         }));
-        expect(document.querySelector('main').classList).toContain('daisy-kit-file-preview-zoom-150');
+        expect(document.querySelector('.docx-wrapper').classList).toContain('daisy-kit-file-preview-zoom-150');
 
         const callsBeforeRejectedMessage = renderAsync.mock.calls.length;
         window.dispatchEvent(new MessageEvent('message', {

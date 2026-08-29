@@ -286,7 +286,9 @@ spreadsheets, presentations and archives receive an explicit download-only state
 `layout` controls the surrounding UI (`card`, `compact-list`, `action-only`) while `preview-mode`
 controls the interaction (`auto`, `inline`, `modal`, `download`). These concerns are deliberately
 separate. Named `trigger`, `metadata`, `actions`, `notice` and `modalFooter` slots customize regions
-without exposing another public Blade component.
+without exposing another public Blade component. When download is enabled, the modal footer also
+contains the validated download action. Multipage DOCX previews scroll inside the isolated frame;
+PDF paging and vertical scrolling use the browser's native PDF viewer.
 
 ```blade
 <x-daisy-kit::file-preview

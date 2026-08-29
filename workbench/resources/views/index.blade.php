@@ -222,7 +222,7 @@
 
             <div class="space-y-3" data-file-preview-scenario="media">
                 <h3>Media</h3>
-                <div class="grid gap-4 md:grid-cols-2">
+                <div class="grid items-start gap-4 lg:grid-cols-3">
                     <x-daisy-kit::file-preview
                         url="/_daisy-kit-test/files/preview.svg"
                         type="image"
@@ -240,18 +240,33 @@
                         layout="compact-list"
                         preview-mode="inline"
                     />
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.mp4"
+                        type="video"
+                        mime-type="video/mp4"
+                        name="Preview walkthrough.mp4"
+                        layout="compact-list"
+                        preview-mode="inline"
+                    />
                 </div>
             </div>
 
             <div class="space-y-3" data-file-preview-scenario="documents">
                 <h3>Documents</h3>
-                <div class="grid gap-4 lg:grid-cols-2">
+                <div class="grid items-start gap-4 lg:grid-cols-3">
                     <x-daisy-kit::file-preview
                         url="/_daisy-kit-test/files/preview.txt"
                         type="text"
                         name="Release notes.txt"
                         preview-mode="inline"
                         notice="Rendered in an isolated sandbox."
+                    />
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.pdf"
+                        type="pdf"
+                        mime-type="application/pdf"
+                        name="Release overview.pdf"
+                        preview-mode="modal"
                     />
                     <x-daisy-kit::file-preview
                         url="/_daisy-kit-test/files/preview.docx"

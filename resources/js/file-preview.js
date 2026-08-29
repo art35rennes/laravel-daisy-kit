@@ -15,7 +15,7 @@ function setVisible(element, visible) {
 function elements(root) {
     return {
         closeButtons: [...root.querySelectorAll('[data-daisy-kit-file-preview-close-preview]')],
-        download: root.querySelector('[data-daisy-kit-file-preview-download]'),
+        downloads: [...root.querySelectorAll('[data-daisy-kit-file-preview-download]')],
         empty: root.querySelector('[data-daisy-kit-empty]'),
         frame: root.querySelector('[data-daisy-kit-file-preview-frame]'),
         inlineHost: root.querySelector('[data-daisy-kit-file-preview-inline-content]'),
@@ -207,11 +207,13 @@ function initialize(root, input) {
             dom.open.hidden = false;
         }
 
-        if (dom.download instanceof HTMLAnchorElement && !configuration.downloadUrl) {
-            dom.download.href = objectUrl;
-            dom.download.download = configuration.name;
-            dom.download.hidden = false;
-        }
+        dom.downloads.forEach((download) => {
+            if (!(download instanceof HTMLAnchorElement) || configuration.downloadUrl) return;
+
+            download.href = objectUrl;
+            download.download = configuration.name;
+            download.hidden = false;
+        });
     }
 
     async function load() {
