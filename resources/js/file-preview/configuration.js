@@ -56,7 +56,7 @@ export function normalizeConfiguration(configuration) {
         source: safeSource(configuration.previewUrl ?? configuration.url),
         type,
         url: safeSource(configuration.url),
-        zoom: Math.max(25, Math.min(Number(configuration.docxZoom) || 100, 200)),
+        zoom: Math.max(25, Math.min(Math.round(Number(configuration.docxZoom) || 100), 200)),
     };
 }
 

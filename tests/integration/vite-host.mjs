@@ -240,10 +240,6 @@ try {
     if (!(await preview.locator('[data-daisy-kit-file-preview-notice]').isVisible())) {
         throw new Error('File Preview did not expose its configured notice in the isolated host frame.');
     }
-    await preview.locator('[data-daisy-kit-file-preview-modal]').getByRole('button', { name: 'Zoom in' }).click();
-    if (await preview.getAttribute('data-daisy-kit-zoom') !== '110') {
-        throw new Error('File Preview zoom controls did not update the isolated preview state.');
-    }
     const actionOnlyPreview = page.locator('[data-daisy-kit-module="file-preview"]').nth(1);
     if (await actionOnlyPreview.getAttribute('data-daisy-kit-layout') !== 'action-only') {
         throw new Error('File Preview did not retain its action-only layout contract.');

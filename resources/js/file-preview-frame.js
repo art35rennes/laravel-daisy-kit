@@ -43,9 +43,12 @@ function applyTheme(theme) {
 }
 
 function applyZoom(zoom) {
-    const value = Math.max(25, Math.min(Number(zoom) || 100, 200));
+    const value = Math.max(25, Math.min(Math.round(Number(zoom) || 100), 200));
 
-    output.style.setProperty('--daisy-kit-file-preview-zoom', String(value / 100));
+    [...output.classList]
+        .filter((className) => className.startsWith('daisy-kit-file-preview-zoom-'))
+        .forEach((className) => output.classList.remove(className));
+    output.classList.add(`daisy-kit-file-preview-zoom-${value}`);
 }
 
 function blobUrl(data, mimeType) {
