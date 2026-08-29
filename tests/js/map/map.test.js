@@ -1,65 +1,112 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { leafletMap, mergeIconOptions } = vi.hoisted(() => ({ leafletMap: vi.fn(), mergeIconOptions: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+    clusterGroups: [],
+    drawings: [],
+    layers: [],
+    leafletMap: vi.fn(),
+    markers: [],
+    mergeIconOptions: vi.fn(),
+    scales: [],
+    tiles: [],
+    wms: [],
+}));
 
 const map = {
     fitBounds: vi.fn(),
+    getCenter: vi.fn(() => ({ lat: 48.1, lng: -1.6 })),
+    getZoom: vi.fn(() => 12),
     invalidateSize: vi.fn(),
-    on: vi.fn(),
     off: vi.fn(),
+    on: vi.fn(),
     remove: vi.fn(),
     setView: vi.fn(() => map),
 };
-const createdLayers = [];
-const drawings = [];
-const tileLayers = [];
-const wmsLayers = [];
-const markers = [];
 
-function createLayer() {
-    const layer = { addTo: vi.fn(() => layer), getBounds: vi.fn(() => ({ isValid: () => true })), remove: vi.fn() };
-    createdLayers.push(layer);
+function layer() {
+    const value = {
+        addTo: vi.fn(() => value),
+        bindPopup: vi.fn(() => value),
+        getBounds: vi.fn(() => ({ isValid: () => true })),
+        off: vi.fn(),
+        on: vi.fn(),
+        remove: vi.fn(),
+    };
+    mocks.layers.push(value);
 
-    return layer;
+    return value;
 }
 
 vi.mock('leaflet', () => ({
     default: {
-        Icon: { Default: { mergeOptions: mergeIconOptions } },
-        geoJSON: vi.fn(() => createLayer()),
-        map: leafletMap,
-        marker: vi.fn(() => {
-            const marker = { addTo: vi.fn(() => marker), off: vi.fn(), on: vi.fn(), remove: vi.fn() };
-            markers.push(marker);
+        Icon: { Default: { mergeOptions: mocks.mergeIconOptions } },
+        control: {
+            scale: vi.fn(() => {
+                const control = { addTo: vi.fn(() => control) };
+                mocks.scales.push(control);
 
-            return marker;
+                return control;
+            }),
+        },
+        divIcon: vi.fn((options) => options),
+        featureGroup: vi.fn(() => ({ getBounds: () => ({ isValid: () => true }) })),
+        geoJSON: vi.fn(() => layer()),
+        icon: vi.fn((options) => options),
+        map: mocks.leafletMap,
+        marker: vi.fn(() => {
+            const value = layer();
+            mocks.markers.push(value);
+
+            return value;
+        }),
+        markerClusterGroup: vi.fn(() => {
+            const value = {
+                addLayer: vi.fn(),
+                addTo: vi.fn(() => value),
+                remove: vi.fn(),
+                removeLayer: vi.fn(),
+            };
+            mocks.clusterGroups.push(value);
+
+            return value;
         }),
         tileLayer: Object.assign(vi.fn(() => {
-            const layer = { addTo: vi.fn(() => layer), remove: vi.fn() };
-            tileLayers.push(layer);
+            const value = layer();
+            mocks.tiles.push(value);
 
-            return layer;
+            return value;
         }), {
             wms: vi.fn(() => {
-                const layer = { addTo: vi.fn(() => layer), remove: vi.fn() };
-                wmsLayers.push(layer);
+                const value = layer();
+                mocks.wms.push(value);
 
-                return layer;
+                return value;
             }),
         }),
     },
 }));
+
+vi.mock('leaflet.markercluster', () => ({}));
+vi.mock('leaflet-gesture-handling', () => ({}));
+
 vi.mock('terra-draw', () => ({
     TerraDraw: class {
         handlers = {};
-        constructor() { drawings.push(this); }
-        getSnapshotFeature = vi.fn(() => ({
+        snapshot = [];
+
+        constructor() { mocks.drawings.push(this); }
+        addFeatures = vi.fn((features) => { this.snapshot.push(...features); });
+        getSnapshot = vi.fn(() => this.snapshot);
+        getSnapshotFeature = vi.fn((id) => this.snapshot.find((feature) => feature.id === id) ?? {
             geometry: { coordinates: [[[-1.7, 48.1], [-1.6, 48.1], [-1.6, 48.2], [-1.7, 48.1]]], type: 'Polygon' },
+            id,
+            properties: {},
             type: 'Feature',
-        }));
+        });
         off = vi.fn();
         on = vi.fn((event, handler) => { this.handlers[event] = handler; });
         redo = vi.fn(() => true);
+        removeFeatures = vi.fn((ids) => { this.snapshot = this.snapshot.filter((feature) => !ids.includes(feature.id)); });
         setMode = vi.fn();
         start = vi.fn();
         stop = vi.fn();
@@ -68,202 +115,237 @@ vi.mock('terra-draw', () => ({
     TerraDrawLineStringMode: class {},
     TerraDrawPointMode: class {},
     TerraDrawPolygonMode: class {},
+    TerraDrawRectangleMode: class {},
     TerraDrawSelectMode: class {},
     TerraDrawSessionUndoRedo: class {},
 }));
 vi.mock('terra-draw-leaflet-adapter', () => ({ TerraDrawLeafletAdapter: class {} }));
 
-import { mount, unmount } from '../../../resources/js/map.js';
+import { getInstance, mount, mountAll, unmount } from '../../../resources/js/map.js';
 
-function root(configuration) {
-    document.body.innerHTML = `
-        <section data-daisy-kit-module="map">
-            <p data-daisy-kit-status hidden role="alert"></p>
+function root(configuration, id = '') {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = `
+        <section data-daisy-kit-module="map" ${id ? `id="${id}"` : ''} aria-busy="true">
+            <p data-daisy-kit-status hidden></p>
             <div data-daisy-kit-content>
                 <div data-daisy-kit-map-canvas></div>
-                <p data-daisy-kit-empty hidden></p>
-                <output data-daisy-kit-map-measurement></output>
+                <div data-daisy-kit-map-loading></div>
+                <div data-daisy-kit-map-empty hidden></div>
+                <div data-daisy-kit-map-error hidden><p data-daisy-kit-map-error-message></p><button data-daisy-kit-map-retry></button></div>
+                <output data-daisy-kit-map-measurement hidden></output>
+                <output data-daisy-kit-map-active-mode hidden></output>
                 <input data-daisy-kit-map-value type="hidden">
-                <button data-daisy-kit-map-geolocate type="button">Use my location</button>
+                <button data-daisy-kit-map-geolocate type="button"></button>
+                <button data-daisy-kit-map-fit-bounds type="button"></button>
+                <button data-daisy-kit-map-fullscreen type="button"></button>
                 <fieldset data-daisy-kit-map-layers hidden><legend>Layers</legend></fieldset>
                 <fieldset data-daisy-kit-map-basemaps hidden><legend>Basemaps</legend></fieldset>
-                <fieldset data-daisy-kit-map-tools><button data-daisy-kit-map-mode="point" type="button">Draw point</button><button data-daisy-kit-map-mode="linestring" type="button">Draw line</button><button data-daisy-kit-map-mode="polygon" type="button">Draw area</button><button data-daisy-kit-map-mode="edit" type="button">Edit drawing</button><button data-daisy-kit-map-mode="select" type="button">Select drawing</button><button data-daisy-kit-map-mode="spatial-select" type="button">Select geographic feature</button><button data-daisy-kit-map-history="undo" disabled type="button">Undo</button><button data-daisy-kit-map-history="redo" disabled type="button">Redo</button></fieldset>
-                <button data-daisy-kit-map-export disabled type="button">Export drawing</button>
+                <fieldset data-daisy-kit-map-tools>
+                    <button data-daisy-kit-map-mode="point" type="button"></button>
+                    <button data-daisy-kit-map-mode="linestring" type="button"></button>
+                    <button data-daisy-kit-map-mode="polygon" type="button"></button>
+                    <button data-daisy-kit-map-mode="rectangle" type="button"></button>
+                    <button data-daisy-kit-map-mode="edit" type="button"></button>
+                    <button data-daisy-kit-map-history="undo" disabled type="button"></button>
+                    <button data-daisy-kit-map-history="redo" disabled type="button"></button>
+                    <button data-daisy-kit-map-delete-selected disabled type="button"></button>
+                    <button data-daisy-kit-map-export disabled type="button"></button>
+                </fieldset>
+                <aside data-daisy-kit-map-selection hidden><p data-daisy-kit-map-selection-summary></p><button data-daisy-kit-map-clear-selection></button></aside>
             </div>
             <script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script>
         </section>
     `;
+    document.body.append(wrapper.firstElementChild);
 
-    return document.querySelector('[data-daisy-kit-module="map"]');
+    return document.body.lastElementChild;
+}
+
+async function mounted(element) {
+    const event = new Promise((resolve) => element.addEventListener('daisy-kit:map:mounted', resolve, { once: true }));
+    const instance = mount(element);
+    await event;
+
+    return instance;
 }
 
 describe('map entry', () => {
     beforeEach(() => {
-        createdLayers.splice(0);
-        drawings.splice(0);
-        tileLayers.splice(0);
-        wmsLayers.splice(0);
-        markers.splice(0);
-        map.fitBounds.mockClear();
-        map.invalidateSize.mockClear();
-        map.remove.mockClear();
-        map.setView.mockClear();
-        map.on.mockClear();
-        map.off.mockClear();
-        leafletMap.mockClear();
-        leafletMap.mockImplementation(() => map);
+        document.body.replaceChildren();
+        localStorage.clear();
+        Object.values(mocks).filter(Array.isArray).forEach((values) => values.splice(0));
+        Object.values(map).filter((value) => typeof value?.mockClear === 'function').forEach((mock) => mock.mockClear());
+        mocks.leafletMap.mockReset();
+        mocks.leafletMap.mockImplementation(() => map);
+        vi.stubGlobal('ResizeObserver', class {
+            disconnect = vi.fn();
+            observe = vi.fn();
+        });
+        vi.stubGlobal('requestAnimationFrame', (callback) => { callback(); return 1; });
+        vi.stubGlobal('cancelAnimationFrame', vi.fn());
     });
 
-    it('configures Leaflet marker assets through statically imported Vite URLs', () => {
-        expect(mergeIconOptions).toHaveBeenCalledWith(expect.objectContaining({
+    it('configures Leaflet marker assets through Vite URLs', () => {
+        expect(mocks.mergeIconOptions).toHaveBeenCalledWith(expect.objectContaining({
             iconRetinaUrl: expect.any(String),
             iconUrl: expect.any(String),
             shadowUrl: expect.any(String),
         }));
     });
 
-    it('mounts GeoJSON data and removes its Leaflet instance', () => {
-        const element = root({
-            geojson: { type: 'FeatureCollection', features: [] },
-            center: [48.1, -1.6],
-            zoom: 12,
-        });
+    it('returns one stable facade per isolated root', async () => {
+        const first = root({ geojson: { features: [], type: 'FeatureCollection' } }, 'first-map');
+        const second = root({ drawing: true }, 'second-map');
+        const [firstInstance, secondInstance] = mountAll(document);
 
-        mount(element);
+        expect(firstInstance).toBe(getInstance(first));
+        expect(mount(first)).toBe(firstInstance);
+        expect(secondInstance).not.toBe(firstInstance);
+        expect(Object.keys(firstInstance).sort()).toEqual([
+            'clearSelection', 'deleteSelected', 'destroy', 'exportGeoJSON', 'fitBounds',
+            'getDrawLayer', 'getLeafletMap', 'getSelection', 'getState', 'invalidateSize',
+            'locate', 'redo', 'refreshLayer', 'setBasemap', 'setDrawLayer', 'setGeoJSON',
+            'setLayerData', 'setLayerVisibility', 'setMarkers', 'setMode', 'setView',
+            'startGeolocation', 'stopGeolocation', 'undo',
+        ]);
+        await vi.waitFor(() => expect(first.dataset.daisyKitState).toBe('ready'));
 
-        expect(element.dataset.daisyKitState).toBe('ready');
-        expect(map.setView).toHaveBeenCalledWith([48.1, -1.6], 12);
-
-        unmount(element);
-
-        expect(map.remove).toHaveBeenCalledOnce();
+        firstInstance.destroy();
+        expect(getInstance(first)).toBeNull();
+        expect(getInstance(second)).toBe(secondInstance);
     });
 
-    it('uses a positive-size observer instead of Leaflet resize animation', () => {
+    it('guards resize invalidation and non-finite external views', async () => {
         let resizeCallback;
-        const observe = vi.fn();
-        const disconnect = vi.fn();
         vi.stubGlobal('ResizeObserver', class {
             constructor(callback) { resizeCallback = callback; }
-            disconnect = disconnect;
-            observe = observe;
+            disconnect = vi.fn();
+            observe = vi.fn();
         });
-        const element = root({ geojson: { type: 'FeatureCollection', features: [] } });
+        const element = root({ center: [48.1, -1.6], geojson: { features: [], type: 'FeatureCollection' }, zoom: 12 });
         const canvas = element.querySelector('[data-daisy-kit-map-canvas]');
+        const instance = await mounted(element);
+        Object.defineProperties(canvas, {
+            clientHeight: { configurable: true, value: 0 },
+            clientWidth: { configurable: true, value: 0 },
+        });
+        resizeCallback();
+
+        expect(map.invalidateSize).not.toHaveBeenCalled();
+        expect(instance.setView([Number.NaN, Number.NaN], 8)).toBe(false);
+        expect(map.setView).not.toHaveBeenCalledWith([Number.NaN, Number.NaN], 8, expect.anything());
+
         Object.defineProperties(canvas, {
             clientHeight: { configurable: true, value: 240 },
             clientWidth: { configurable: true, value: 320 },
         });
-
-        mount(element);
         resizeCallback();
-
         expect(map.invalidateSize).toHaveBeenCalledWith({ animate: false, pan: false });
-        expect(vi.mocked(map.setView)).toHaveBeenCalled();
-        expect(leafletMap.mock.calls.at(-1)?.[1]).toMatchObject({ trackResize: false });
-
-        unmount(element);
-
-        expect(disconnect).toHaveBeenCalledOnce();
     });
 
-    it('shows an empty state without data or drawing', () => {
-        const element = root({ geojson: null, drawing: false });
-
-        mount(element);
-
-        expect(element.dataset.daisyKitState).toBe('empty');
-        expect(element.querySelector('[data-daisy-kit-empty]').hidden).toBe(false);
-    });
-
-    it('controls named GeoJSON layers and exposes drawing measurements', () => {
+    it('controls GeoJSON, XYZ and WMS layers through the facade', async () => {
         const element = root({
-            drawing: true,
-            layers: [{
-                geojson: { features: [], type: 'FeatureCollection' },
-                id: 'districts',
-                label: 'Districts',
-            }],
-            tileUrl: 'https://tiles.example.test/{z}/{x}/{y}.png',
             basemaps: [
-                { id: 'light', label: 'Light', selected: true, url: 'https://tiles.example.test/light/{z}/{x}/{y}.png' },
-                { id: 'dark', label: 'Dark', url: 'https://tiles.example.test/dark/{z}/{x}/{y}.png' },
+                { id: 'light', label: 'Light', selected: true, type: 'xyz', url: '/light/{z}/{x}/{y}.png' },
+                { id: 'dark', label: 'Dark', type: 'xyz', url: '/dark/{z}/{x}/{y}.png' },
             ],
-            wms: [{ id: 'zoning', label: 'Zoning', layers: 'city:zoning', url: 'https://maps.example.test/wms' }],
+            layers: [
+                { data: { features: [], type: 'FeatureCollection' }, id: 'districts', label: 'Districts', type: 'geojson', visible: true },
+                { id: 'zoning', label: 'Zoning', options: { layers: 'city:zoning' }, type: 'wms', url: 'https://maps.example.test/wms', visible: false },
+            ],
         });
-        const layerEvents = [];
-        const selectionEvents = [];
-        element.addEventListener('daisy-kit:map:layer', (event) => layerEvents.push(event.detail));
-        element.addEventListener('daisy-kit:map:select', (event) => selectionEvents.push(event.detail));
+        const events = [];
+        element.addEventListener('daisy-kit:map:layer', (event) => events.push(event.detail));
+        const instance = await mounted(element);
 
-        mount(element);
-        const layer = element.querySelector('[data-daisy-kit-map-layer="districts"]');
-        expect(layer.classList.contains('checkbox-primary')).toBe(true);
-        expect(element.querySelector('[data-daisy-kit-map-basemap="light"]').classList.contains('radio-primary')).toBe(true);
-        layer.checked = false;
-        layer.dispatchEvent(new Event('change', { bubbles: true }));
-        element.querySelector('[data-daisy-kit-map-mode="polygon"]').click();
-        drawings[0].handlers.finish('shape');
-        drawings[0].handlers.history({ redoStackSize: 0, undoStackSize: 1 });
-        element.querySelector('[data-daisy-kit-map-history="undo"]').click();
-        drawings[0].handlers.select('shape');
-        element.querySelector('[data-daisy-kit-map-export]').click();
-        const dark = element.querySelector('[data-daisy-kit-map-basemap="dark"]');
-        dark.checked = true;
-        dark.dispatchEvent(new Event('change', { bubbles: true }));
-        const zoning = element.querySelector('[data-daisy-kit-map-wms="zoning"]');
-        zoning.checked = false;
-        zoning.dispatchEvent(new Event('change', { bubbles: true }));
-
-        expect(layerEvents).toEqual([{ id: 'districts', visible: false }]);
-        expect(createdLayers[0].remove).toHaveBeenCalledOnce();
-        expect(element.querySelector('[data-daisy-kit-map-measurement]').textContent).toContain('m²');
-        expect(selectionEvents).toMatchObject([{ id: 'shape', measurement: expect.stringContaining('m²') }]);
-        expect(element.querySelector('[data-daisy-kit-map-mode="polygon"]').getAttribute('aria-pressed')).toBe('true');
-        expect(drawings[0].undo).toHaveBeenCalledOnce();
-        expect(element.querySelector('[data-daisy-kit-map-history="undo"]').disabled).toBe(false);
-        expect(tileLayers).toHaveLength(2);
-        expect(wmsLayers).toHaveLength(1);
-        expect(wmsLayers[0].remove).toHaveBeenCalledOnce();
-        expect(dark.checked).toBe(true);
-        expect(JSON.parse(element.querySelector('[data-daisy-kit-map-value]').value).features).toHaveLength(1);
+        expect(element.querySelector('[data-daisy-kit-map-layer="districts"]').classList).toContain('checkbox-primary');
+        expect(mocks.wms).toHaveLength(1);
+        expect(instance.setLayerVisibility('districts', false)).toBe(true);
+        expect(instance.setBasemap('dark')).toBe(true);
+        expect(await instance.setLayerData('districts', { features: [{ geometry: null, type: 'Feature' }], type: 'FeatureCollection' })).toBe(true);
+        expect(events).toEqual([{ id: 'districts', visible: false }]);
+        expect(instance.getState()).toMatchObject({ basemap: 'dark', layerVisibility: { districts: false, zoning: false } });
     });
 
-    it('renders markers and supports optional geolocation, point/edit modes and spatial selection', () => {
-        const originalGeolocation = navigator.geolocation;
-        const getCurrentPosition = vi.fn((success) => success({ coords: { latitude: 48.11, longitude: -1.67 } }));
-        Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition } });
+    it('loads remote GeoJSON with retry and reports local layer errors', async () => {
+        const fetch = vi.fn()
+            .mockResolvedValueOnce({ ok: false, status: 503 })
+            .mockResolvedValueOnce({ json: async () => ({ features: [], type: 'FeatureCollection' }), ok: true });
+        vi.stubGlobal('fetch', fetch);
+        const element = root({ layers: [{ id: 'remote', label: 'Remote', type: 'geojson', url: '/api/map/remote' }] });
+        const errors = [];
+        element.addEventListener('daisy-kit:map:layer-error', (event) => errors.push(event.detail));
+        const instance = await mounted(element);
+
+        expect(errors[0]).toMatchObject({ id: 'remote', message: expect.stringContaining('503') });
+        expect(await instance.refreshLayer('remote')).toBe(true);
+        expect(fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('clusters markers and preserves explicit popup renderers', async () => {
         const element = root({
-            drawing: true,
-            geolocation: true,
-            geojson: {
-                features: [{ geometry: { coordinates: [[[-1.7, 48.1], [-1.6, 48.1], [-1.6, 48.2], [-1.7, 48.1]]], type: 'Polygon' }, id: 'district', type: 'Feature' }],
-                type: 'FeatureCollection',
-            },
-            markers: [{ id: 'city-hall', label: 'City hall', position: [48.11, -1.67] }],
-            spatialSelection: true,
+            cluster: { enabled: true, maxClusterRadius: 60 },
+            markers: [{
+                id: 'office',
+                label: 'Office',
+                popup: { content: '<strong>Office</strong>', renderer: 'trusted-html' },
+                position: [48.1, -1.6],
+            }],
         });
-        const selections = [];
-        element.addEventListener('daisy-kit:map:spatial-select', (event) => selections.push(event.detail));
+        await mounted(element);
 
-        mount(element);
-        element.querySelector('[data-daisy-kit-map-geolocate]').click();
-        element.querySelector('[data-daisy-kit-map-mode="point"]').click();
-        element.querySelector('[data-daisy-kit-map-mode="edit"]').click();
-        element.querySelector('[data-daisy-kit-map-mode="spatial-select"]').click();
-        const clickHandler = map.on.mock.calls.find(([event]) => event === 'click')?.[1];
-        clickHandler({ latlng: { lat: 48.15, lng: -1.65 } });
+        expect(mocks.clusterGroups).toHaveLength(1);
+        expect(mocks.clusterGroups[0].addLayer).toHaveBeenCalledOnce();
+        expect(mocks.markers[0].bindPopup).toHaveBeenCalledWith('<strong>Office</strong>');
+    });
 
+    it('synchronizes drawing, selection, measurement, history and export', async () => {
+        const element = root({
+            drawLayers: [{ id: 'water', label: 'Water' }],
+            drawing: { enabled: true, rectangle: true },
+            labels: { activeMode: 'Active: :mode', selectedFeatures: ':count selected' },
+            measure: { enabled: true },
+            objectTypes: [{ geometry: 'point', id: 'hydrant', label: 'Hydrant' }],
+            value: { features: [], type: 'FeatureCollection' },
+        });
+        const input = element.querySelector('[data-daisy-kit-map-value]');
+        const nativeEvents = [];
+        input.addEventListener('input', () => nativeEvents.push('input'));
+        input.addEventListener('change', () => nativeEvents.push('change'));
+        const instance = await mounted(element);
+        const drawing = mocks.drawings[0];
+
+        expect(instance.setMode('rectangle')).toBe(true);
+        await drawing.handlers.finish('shape-1');
+        drawing.handlers.select('shape-1');
+        drawing.handlers.history({ redoStackSize: 0, undoStackSize: 1 });
+
+        expect(element.querySelector('[data-daisy-kit-map-measurement]').hidden).toBe(false);
+        expect(element.querySelector('[data-daisy-kit-map-measurement]').textContent).toContain('m²');
+        expect(instance.getSelection()).toHaveLength(1);
+        expect(instance.getDrawLayer()).toBe('water');
+        expect(instance.undo()).toBe(true);
+        expect(instance.redo()).toBe(true);
+        expect(instance.exportGeoJSON()).toMatchObject({ type: 'FeatureCollection' });
+        expect(nativeEvents).toContain('change');
+        expect(JSON.parse(input.value)).toMatchObject({ type: 'FeatureCollection' });
+        expect(instance.deleteSelected()).toBe(true);
+    });
+
+    it('supports one-shot and watched geolocation', async () => {
+        const getCurrentPosition = vi.fn((success) => success({ coords: { accuracy: 5, latitude: 48.11, longitude: -1.67 } }));
+        const watchPosition = vi.fn((success) => { success({ coords: { accuracy: 4, latitude: 48.12, longitude: -1.68 } }); return 42; });
+        const clearWatch = vi.fn();
+        Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { clearWatch, getCurrentPosition, watchPosition } });
+        const instance = await mounted(root({ geolocation: { enabled: true, setView: true } }));
+
+        await instance.locate();
+        expect(instance.startGeolocation()).toBe(true);
+        expect(instance.stopGeolocation()).toBe(true);
         expect(getCurrentPosition).toHaveBeenCalledOnce();
-        expect(markers).toHaveLength(1);
-        expect(map.setView).toHaveBeenCalledWith([48.11, -1.67], 12);
-        expect(drawings[0].setMode).toHaveBeenNthCalledWith(1, 'point');
-        expect(drawings[0].setMode).toHaveBeenNthCalledWith(2, 'select');
-        expect(selections).toEqual([expect.objectContaining({ feature: expect.objectContaining({ id: 'district' }) })]);
-        expect(element.dataset.daisyKitSpatialSelection).toBe('district');
-        unmount(element);
-        expect(markers[0].remove).toHaveBeenCalledOnce();
-        expect(map.off).toHaveBeenCalledWith('click', expect.any(Function));
-        Object.defineProperty(navigator, 'geolocation', { configurable: true, value: originalGeolocation });
+        expect(watchPosition).toHaveBeenCalledOnce();
+        expect(clearWatch).toHaveBeenCalledWith(42);
+        expect(map.setView).toHaveBeenCalledWith([48.12, -1.68], 12, {});
     });
 });

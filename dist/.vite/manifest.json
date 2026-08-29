@@ -1,8 +1,4 @@
 {
-  ".tmp/file-preview-frame/file-preview-frame.css": {
-    "file": "file-preview-frame.css",
-    "src": ".tmp/file-preview-frame/file-preview-frame.css"
-  },
   ".tmp/file-preview-frame/file-preview-frame.js": {
     "file": "file-preview-frame.js",
     "src": ".tmp/file-preview-frame/file-preview-frame.js"
@@ -10,6 +6,10 @@
   "_configuration-wAxXfjkK.js": {
     "file": "chunks/configuration-wAxXfjkK.js",
     "name": "configuration"
+  },
+  "_esm-DhRuCMou.js": {
+    "file": "chunks/esm-DhRuCMou.js",
+    "name": "esm"
   },
   "_identifiers-DZhNBAcR.js": {
     "file": "chunks/identifiers-DZhNBAcR.js",
@@ -25,6 +25,42 @@
   "_rolldown-runtime-W7wSyTde.js": {
     "file": "chunks/rolldown-runtime-W7wSyTde.js",
     "name": "rolldown-runtime"
+  },
+  "node_modules/@turf/area/dist/esm/index.js": {
+    "file": "chunks/esm-B-zEYjLh.js",
+    "name": "esm",
+    "src": "node_modules/@turf/area/dist/esm/index.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_esm-DhRuCMou.js"
+    ]
+  },
+  "node_modules/@turf/length/dist/esm/index.js": {
+    "file": "chunks/esm-DB41TdCg.js",
+    "name": "esm",
+    "src": "node_modules/@turf/length/dist/esm/index.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_esm-DhRuCMou.js"
+    ]
+  },
+  "node_modules/leaflet-gesture-handling/dist/leaflet-gesture-handling.min.js": {
+    "file": "chunks/leaflet-gesture-handling.min-DnZXfEXV.js",
+    "name": "leaflet-gesture-handling.min",
+    "src": "node_modules/leaflet-gesture-handling/dist/leaflet-gesture-handling.min.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-W7wSyTde.js"
+    ]
+  },
+  "node_modules/leaflet.markercluster/dist/leaflet.markercluster-src.js": {
+    "file": "chunks/leaflet.markercluster-src-N6tGu3N8.js",
+    "name": "leaflet.markercluster-src",
+    "src": "node_modules/leaflet.markercluster/dist/leaflet.markercluster-src.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-W7wSyTde.js"
+    ]
   },
   "node_modules/leaflet/dist/images/layers-2x.png": {
     "file": "layers-2x.png",
@@ -46,6 +82,23 @@
     "file": "marker-shadow.png",
     "src": "node_modules/leaflet/dist/images/marker-shadow.png"
   },
+  "node_modules/terra-draw-leaflet-adapter/dist/terra-draw-leaflet-adapter.modern.js": {
+    "file": "chunks/terra-draw-leaflet-adapter.modern-CzleL5EH.js",
+    "name": "terra-draw-leaflet-adapter.modern",
+    "src": "node_modules/terra-draw-leaflet-adapter/dist/terra-draw-leaflet-adapter.modern.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-W7wSyTde.js",
+      "resources/js/map.js",
+      "node_modules/terra-draw/dist/terra-draw.modern.js"
+    ]
+  },
+  "node_modules/terra-draw/dist/terra-draw.modern.js": {
+    "file": "chunks/terra-draw.modern-gYRTyE62.js",
+    "name": "terra-draw.modern",
+    "src": "node_modules/terra-draw/dist/terra-draw.modern.js",
+    "isDynamicEntry": true
+  },
   "resources/js/blueprint.js": {
     "file": "blueprint.js",
     "name": "blueprint",
@@ -65,14 +118,13 @@
     "isEntry": true,
     "imports": [
       "_identifiers-DZhNBAcR.js",
-      "_configuration-wAxXfjkK.js"
+      "_mountable-CMq2mq9q.js"
     ],
     "css": [
       "file-preview.css"
     ],
     "assets": [
-      "file-preview-frame.js",
-      "file-preview-frame.css"
+      "file-preview-frame.js"
     ]
   },
   "resources/js/forms/builder.js": {
@@ -108,7 +160,15 @@
     "isEntry": true,
     "imports": [
       "_rolldown-runtime-W7wSyTde.js",
-      "_mountable-CMq2mq9q.js"
+      "_configuration-wAxXfjkK.js"
+    ],
+    "dynamicImports": [
+      "node_modules/terra-draw/dist/terra-draw.modern.js",
+      "node_modules/terra-draw-leaflet-adapter/dist/terra-draw-leaflet-adapter.modern.js",
+      "node_modules/@turf/area/dist/esm/index.js",
+      "node_modules/@turf/length/dist/esm/index.js",
+      "node_modules/leaflet.markercluster/dist/leaflet.markercluster-src.js",
+      "node_modules/leaflet-gesture-handling/dist/leaflet-gesture-handling.min.js"
     ],
     "css": [
       "map.css"
