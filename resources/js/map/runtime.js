@@ -94,6 +94,7 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
     function invalidateSize() {
         if (!map || !canvas || !visibleSize(canvas)) return false;
         map.invalidateSize({ animate: false, debounceMoveend: true, pan: false });
+        map.setView(state.center, state.zoom, { animate: false, reset: true });
 
         return true;
     }
@@ -253,8 +254,14 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
 
     function bindMapEvents() {
         const onView = () => {
-            const center = map.getCenter?.();
-            const zoom = map.getZoom?.();
+            let center;
+            let zoom;
+            try {
+                center = map.getCenter?.();
+                zoom = map.getZoom?.();
+            } catch {
+                return;
+            }
             if (!finiteLatLng(center) || !Number.isFinite(Number(zoom))) return;
             state.center = [Number(center.lat), Number(center.lng)];
             state.zoom = Number(zoom);
