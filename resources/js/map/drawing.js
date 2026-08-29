@@ -112,6 +112,12 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
         return collection(drawing.getSnapshot?.() ?? []);
     }
 
+    function writeValue(valueInput, serialized) {
+        if (!(valueInput instanceof HTMLInputElement)) return;
+        if (valueInput.getAttribute('value') !== serialized) valueInput.setAttribute('value', serialized);
+        if (valueInput.value !== serialized) valueInput.value = serialized;
+    }
+
     function featureIsVisible(feature) {
         const layer = feature?.properties?.drawLayer;
 
@@ -199,7 +205,7 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
         const geojson = snapshot();
         const valueInput = root.querySelector('[data-daisy-kit-map-value]');
         if (valueInput instanceof HTMLInputElement) {
-            valueInput.value = JSON.stringify(geojson);
+            writeValue(valueInput, JSON.stringify(geojson));
             valueInput.dispatchEvent(new Event('input', { bubbles: true }));
             if (change) valueInput.dispatchEvent(new Event('change', { bubbles: true }));
         }
@@ -367,7 +373,7 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
         const valueInput = root.querySelector('[data-daisy-kit-map-value]');
         if (!(valueInput instanceof HTMLInputElement)) return;
         const serialized = JSON.stringify(snapshot());
-        if (valueInput.value !== serialized) valueInput.value = serialized;
+        writeValue(valueInput, serialized);
     };
     const valueObserver = new MutationObserver(restoreValue);
     valueObserver.observe(root, { attributeFilter: ['value'], attributes: true, childList: true, subtree: true });

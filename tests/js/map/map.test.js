@@ -467,6 +467,7 @@ describe('map entry', () => {
         input.replaceWith(replacement);
         await Promise.resolve();
         expect(JSON.parse(replacement.value).features).toHaveLength(1);
+        expect(JSON.parse(replacement.getAttribute('value')).features).toHaveLength(1);
 
         unmount(element);
         replacement.value = '';
