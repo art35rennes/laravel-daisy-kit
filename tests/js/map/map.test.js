@@ -77,8 +77,10 @@ vi.mock('leaflet', () => ({
 
             return value;
         }),
-        tileLayer: Object.assign(vi.fn(() => {
+        tileLayer: Object.assign(vi.fn((url, options) => {
             const value = layer();
+            value.options = options;
+            value.url = url;
             mocks.tiles.push(value);
 
             return value;
@@ -134,6 +136,7 @@ vi.mock('terra-draw', () => ({
         redo = vi.fn(() => true);
         removeFeatures = vi.fn((ids) => { this.snapshot = this.snapshot.filter((feature) => !ids.includes(feature.id)); });
         setMode = vi.fn();
+        setModeStyles = vi.fn();
         start = vi.fn();
         stop = vi.fn();
         undo = vi.fn(() => true);
@@ -172,6 +175,11 @@ function root(configuration, id = '') {
                 <fieldset data-daisy-kit-map-layers hidden><legend>Layers</legend></fieldset>
                 <fieldset data-daisy-kit-map-basemaps hidden><legend>Basemaps</legend></fieldset>
                 <fieldset data-daisy-kit-map-tools>
+                    <select data-daisy-kit-map-draw-layer><option value="water">Water</option><option value="electricity">Electricity</option></select>
+                    <fieldset data-daisy-kit-map-drawing-layers>
+                        <input data-daisy-kit-map-draw-layer-visibility value="water" type="checkbox">
+                        <input data-daisy-kit-map-draw-layer-visibility value="electricity" type="checkbox">
+                    </fieldset>
                     <button data-daisy-kit-map-mode="point" type="button"></button>
                     <button data-daisy-kit-map-mode="linestring" type="button"></button>
                     <button data-daisy-kit-map-mode="polygon" type="button"></button>
@@ -224,6 +232,15 @@ describe('map entry', () => {
         }));
     });
 
+    it('disables Leaflet zoom transitions that race responsive resizes', async () => {
+        await mounted(root({ provider: 'osm.standard' }));
+
+        expect(mocks.leafletMap).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+            trackResize: false,
+            zoomAnimation: false,
+        }));
+    });
+
     it('returns one stable facade per isolated root', async () => {
         const first = root({ geojson: { features: [], type: 'FeatureCollection' } }, 'first-map');
         const second = root({ drawing: true }, 'second-map');
@@ -234,9 +251,9 @@ describe('map entry', () => {
         expect(secondInstance).not.toBe(firstInstance);
         expect(Object.keys(firstInstance).sort()).toEqual([
             'clearSelection', 'deleteSelected', 'destroy', 'exportGeoJSON', 'fitBounds',
-            'getDrawLayer', 'getLeafletMap', 'getSelection', 'getState', 'invalidateSize',
+            'getDrawLayer', 'getLeafletMap', 'getSelection', 'getState', 'getVisibleDrawLayers', 'invalidateSize',
             'locate', 'redo', 'refreshLayer', 'setBasemap', 'setDrawLayer', 'setGeoJSON',
-            'setLayerData', 'setLayerVisibility', 'setMarkers', 'setMode', 'setView',
+            'setLayerData', 'setLayerVisibility', 'setMarkers', 'setMode', 'setView', 'setVisibleDrawLayers',
             'startGeolocation', 'stopGeolocation', 'undo',
         ]);
         await vi.waitFor(() => expect(first.dataset.daisyKitState).toBe('ready'));
@@ -263,6 +280,7 @@ describe('map entry', () => {
         resizeCallback();
 
         expect(map.invalidateSize).not.toHaveBeenCalled();
+        expect(instance.fitBounds()).toBe(false);
         expect(instance.setView([Number.NaN, Number.NaN], 8)).toBe(false);
         expect(map.setView).not.toHaveBeenCalledWith([Number.NaN, Number.NaN], 8, expect.anything());
 
@@ -271,7 +289,21 @@ describe('map entry', () => {
             clientWidth: { configurable: true, value: 320 },
         });
         resizeCallback();
-        expect(map.invalidateSize).toHaveBeenCalledWith({ animate: false, pan: false });
+        expect(map.invalidateSize).toHaveBeenCalledWith({ animate: false, debounceMoveend: true, pan: false });
+        expect(map.setView).toHaveBeenLastCalledWith([48.1, -1.6], 12, { animate: false, reset: true });
+        expect(instance.fitBounds()).toBe(true);
+        expect(map.fitBounds).toHaveBeenCalledWith(expect.anything(), {
+            animate: false,
+            padding: [24, 24],
+        });
+    });
+
+    it('ignores a transient Leaflet center read during resize events', async () => {
+        await mounted(root({ center: [48.1, -1.6], provider: 'osm.standard', zoom: 12 }));
+        const viewHandler = map.on.mock.calls.find(([events]) => events === 'moveend zoomend')[1];
+        map.getCenter.mockImplementationOnce(() => { throw new Error('transient layout'); });
+
+        expect(() => viewHandler()).not.toThrow();
     });
 
     it('controls GeoJSON, XYZ and WMS layers through the facade', async () => {
@@ -296,6 +328,21 @@ describe('map entry', () => {
         expect(await instance.setLayerData('districts', { features: [{ geometry: null, type: 'Feature' }], type: 'FeatureCollection' })).toBe(true);
         expect(events).toEqual([{ id: 'districts', visible: false }]);
         expect(instance.getState()).toMatchObject({ basemap: 'dark', layerVisibility: { districts: false, zoning: false } });
+    });
+
+    it('resolves only the canonical OSM basemap modes', async () => {
+        const instance = await mounted(root({
+            basemaps: [{ id: 'dark', label: 'Night operations', provider: 'osm.dark', selected: false }],
+            provider: 'osm.standard',
+        }));
+
+        expect(mocks.tiles[0]).toBeDefined();
+        expect(mocks.tiles).toHaveLength(2);
+        expect(mocks.tiles[0].url).toBe('https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+        expect(mocks.tiles[1].url).toContain('basemaps.cartocdn.com/dark_all');
+        expect(mocks.tiles[0].addTo).toHaveBeenCalled();
+        expect(instance.setBasemap('dark')).toBe(true);
+        expect(instance.getState().basemap).toBe('dark');
     });
 
     it('loads remote GeoJSON with retry and reports local layer errors', async () => {
@@ -353,13 +400,18 @@ describe('map entry', () => {
         expect(instance.setMode('rectangle')).toBe(true);
         await drawing.handlers.finish('shape-1');
         drawing.handlers.select('shape-1');
-        drawing.handlers.history({ redoStackSize: 0, undoStackSize: 1 });
+        drawing.handlers.history({ cause: 'push', redoSize: 0, stack: 'session', undoSize: 1 });
 
         expect(element.querySelector('[data-daisy-kit-map-measurement]').hidden).toBe(false);
         expect(element.querySelector('[data-daisy-kit-map-measurement]').textContent).toContain('m²');
+        expect(element.querySelector('[data-daisy-kit-map-history="undo"]').disabled).toBe(false);
+        expect(element.querySelector('[data-daisy-kit-map-history="redo"]').disabled).toBe(true);
         expect(instance.getSelection()).toHaveLength(1);
         expect(instance.getDrawLayer()).toBe('water');
         expect(instance.undo()).toBe(true);
+        drawing.handlers.history({ cause: 'undo', redoSize: 1, stack: 'session', undoSize: 0 });
+        expect(element.querySelector('[data-daisy-kit-map-history="undo"]').disabled).toBe(true);
+        expect(element.querySelector('[data-daisy-kit-map-history="redo"]').disabled).toBe(false);
         expect(instance.redo()).toBe(true);
         expect(instance.exportGeoJSON()).toMatchObject({
             features: [expect.objectContaining({ properties: expect.objectContaining({ drawLayer: 'water', objectType: 'hydrant' }) })],
@@ -369,6 +421,51 @@ describe('map entry', () => {
         expect(nativeEvents).toContain('change');
         expect(JSON.parse(input.value)).toMatchObject({ type: 'FeatureCollection' });
         expect(instance.deleteSelected()).toBe(true);
+    });
+
+    it('filters drawing layers in exclusive or cumulative mode without dropping exported features', async () => {
+        const features = [
+            { geometry: { coordinates: [-1.6, 48.1], type: 'Point' }, id: 'water-1', properties: { drawLayer: 'water' }, type: 'Feature' },
+            { geometry: { coordinates: [-1.61, 48.11], type: 'Point' }, id: 'electricity-1', properties: { drawLayer: 'electricity' }, type: 'Feature' },
+        ];
+        const cumulativeRoot = root({
+            drawLayers: [
+                { id: 'water', label: 'Water', visible: true },
+                { id: 'electricity', label: 'Electricity', visible: false },
+            ],
+            drawLayerSelection: 'multiple',
+            drawing: true,
+            value: { features, type: 'FeatureCollection' },
+        });
+        const layerEvents = [];
+        cumulativeRoot.addEventListener('daisy-kit:map:draw-layers', (event) => layerEvents.push(event.detail));
+        const cumulative = await mounted(cumulativeRoot);
+        const cumulativeDrawing = mocks.drawings.at(-1);
+
+        expect(cumulative.getVisibleDrawLayers()).toEqual(['water']);
+        expect(cumulative.exportGeoJSON().features).toHaveLength(2);
+        expect(cumulative.setVisibleDrawLayers(['water', 'electricity'])).toBe(true);
+        expect(cumulative.getVisibleDrawLayers()).toEqual(['water', 'electricity']);
+        expect(cumulative.setVisibleDrawLayers(['electricity'])).toBe(true);
+        expect(cumulative.getDrawLayer()).toBe('electricity');
+        expect(cumulativeDrawing.setModeStyles).toHaveBeenCalled();
+        expect(layerEvents.at(-1)).toEqual({ ids: ['electricity'], mode: 'multiple' });
+        expect(cumulative.setVisibleDrawLayers(['unknown'])).toBe(false);
+
+        const exclusive = await mounted(root({
+            drawLayers: [
+                { id: 'water', label: 'Water', visible: true },
+                { id: 'electricity', label: 'Electricity', visible: false },
+            ],
+            drawLayerSelection: 'single',
+            drawing: true,
+            value: { features, type: 'FeatureCollection' },
+        }));
+
+        expect(exclusive.setVisibleDrawLayers(['water', 'electricity'])).toBe(false);
+        expect(exclusive.setDrawLayer('electricity')).toBe(true);
+        expect(exclusive.getVisibleDrawLayers()).toEqual(['electricity']);
+        expect(exclusive.exportGeoJSON().features).toHaveLength(2);
     });
 
     it('hydrates public drawing ids without leaking Terra Draw properties', async () => {

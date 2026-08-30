@@ -24,6 +24,7 @@
     'measure' => false,
     'objectTypes' => [],
     'drawLayers' => [],
+    'drawLayerSelection' => 'single',
     'spatialSelection' => false,
     'name' => null,
     'value' => null,
@@ -33,7 +34,13 @@
 
 @php
     $controlsSlot = $controls instanceof \Illuminate\View\ComponentSlot ? $controls : null;
-    $controlsConfiguration = $controlsSlot ? true : $controls;
+    $slotSections = $controlsSlot?->attributes->get('sections');
+    $controlsConfiguration = $controlsSlot && is_array($slotSections)
+        ? ['sections' => $slotSections]
+        : ($controlsSlot ? true : $controls);
+    $resolvedProvider = $provider === false
+        ? false
+        : ($provider ?? ($tileUrl === null && $basemaps === [] ? 'osm.standard' : null));
     $map = \Art35rennes\DaisyKit\Map\MapConfiguration::make([
         'center' => $center,
         'zoom' => $zoom,
@@ -46,7 +53,7 @@
         'markers' => $markers,
         'basemaps' => $basemaps,
         'layers' => $layers,
-        'provider' => $provider,
+        'provider' => $resolvedProvider,
         'tileUrl' => $tileUrl,
         'tileAttribution' => $tileAttribution,
         'tileOptions' => $tileOptions,
@@ -60,6 +67,7 @@
         'measure' => $measure,
         'objectTypes' => $objectTypes,
         'drawLayers' => $drawLayers,
+        'drawLayerSelection' => $drawLayerSelection,
         'spatialSelection' => $spatialSelection,
         'name' => $name,
         'value' => $value,
@@ -82,15 +90,7 @@
     <p class="daisy-kit-map__status alert alert-info" data-daisy-kit-status hidden role="status" aria-live="polite"></p>
 
     <div class="daisy-kit-map__content" data-daisy-kit-content>
-        @include('daisy-kit::internal.map.canvas', ['mapId' => $mapId, 'mapView' => $mapView])
-
-        @if ($controlsSlot)
-            <div class="daisy-kit-map__host-controls" data-daisy-kit-map-host-controls>
-                {{ $controlsSlot }}
-            </div>
-        @endif
-
-        @include('daisy-kit::internal.map.drawing', ['mapView' => $mapView])
+        @include('daisy-kit::internal.map.canvas', ['controlsSlot' => $controlsSlot, 'mapId' => $mapId, 'mapView' => $mapView])
         @include('daisy-kit::internal.map.states', ['mapView' => $mapView])
 
         <input

@@ -114,9 +114,13 @@ Listen on the component root so multiple maps remain isolated.
 
 ## Network and CSP
 
-No remote provider is required. Automated fixtures use deterministic local tiles and GeoJSON.
-When a host offers OpenStreetMap, it should make network activation deliberate, keep attribution
-visible, configure the URL, and follow the [OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
+OpenStreetMap is the default basemap when no provider, `tileUrl` or basemap is configured.
+Disable implicit network tiles with `:provider="false"`, or select a provider suited to the
+host's availability, privacy and volume requirements.
+The default keeps the required attribution visible and follows the
+[OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/); it must
+not be used for prefetch, bulk download or offline maps. Automated fixtures explicitly disable
+the provider and use deterministic local tiles and GeoJSON.
 
 The module supports `script-src 'self'`, `script-src-attr 'none'`, `style-src 'self'`, and
 `style-src-attr 'none'`; Leaflet's CSSOM updates do not require executable inline markup. Add tile

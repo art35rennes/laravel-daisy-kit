@@ -497,26 +497,65 @@ remains identical when a structural update internally remounts the renderer.
 
 ## File Preview
 
-File Preview accepts an application-controlled URL, validates type/size and offers metadata,
-thumbnail-capable media/document rendering, preview/open/download actions,
-modal/card/action-only layouts, zoom and notices. DOCX rendering remains inside a sandboxed iframe
-with no same-origin permission; use a direct or signed URL that can be fetched without a redirect
-instead of assuming a public route.
+File Preview accepts application metadata or a safe URL, validates MIME and size, and renders
+images, audio, video, PDF, text and DOCX. The shell uses DaisyUI theme tokens; the document itself
+remains in an opaque iframe without same-origin permission. Office formats other than DOCX,
+spreadsheets, presentations and archives receive an explicit download-only state.
 
 ```blade
 <x-daisy-kit::file-preview
-    :src="route('documents.show', $document)"
+    :file="$document"
+    :url="route('documents.show', $document)"
+    :download-url="route('documents.download', $document)"
     type="pdf"
     :name="$document->original_name"
-    :max-bytes="10 * 1024 * 1024"
-    layout="modal"
+    :file-size="$document->size"
+    :max-preview-bytes="10 * 1024 * 1024"
+    layout="card"
+    preview-mode="modal"
     notice="Preview is isolated; download for the original file."
 />
 ```
 
-Set `type` to `text`, `image`, `pdf`, `video`, or `docx`; when it is omitted, a recognized file
-extension selects the mode. The module validates the fetched MIME type and emits loading, empty
-and error states instead of exposing untrusted content to the host page.
+`layout` controls the surrounding UI (`card`, `compact-list`, `action-only`) while `preview-mode`
+controls the interaction (`auto`, `inline`, `modal`, `download`). These concerns are deliberately
+separate. Named `trigger`, `metadata`, `actions`, `notice` and `modalFooter` slots customize regions
+without exposing another public Blade component. When download is enabled, the modal footer also
+contains the validated download action. Multipage DOCX previews scroll inside the isolated frame;
+PDF pages are rendered internally and scroll vertically without depending on the browser's PDF plugin.
+
+```blade
+<x-daisy-kit::file-preview
+    :url="$document->temporaryUrl()"
+    type="docx"
+    layout="action-only"
+    preview-mode="modal"
+    docx-view="width"
+    :docx-zoom="90"
+>
+    <x-slot:trigger>
+        <button class="btn btn-secondary" type="button">Inspect the brief</button>
+    </x-slot:trigger>
+</x-daisy-kit::file-preview>
+```
+
+For external controls, import `getInstance` from `@daisy-kit/file-preview.js`. The stable facade
+exposes `getState()`, `open()`, `close()`, `setExpanded(boolean)`, `reload()`, `retry()`, `setZoom()`,
+`zoomIn()`, `zoomOut()` and `fit()`. Commands return booleans; `reload()` returns
+`Promise<boolean>` indicating whether reinitialization was accepted. Transport completion is
+announced through `ready` or `error`. Reload rereads the root JSON without replacing the facade.
+`setZoom()` rounds and clamps finite numbers to 25–200; read the effective zoom from `getState()`.
+`fit()` requests an asynchronous fit-to-width operation whose measured zoom arrives in `zoom`.
+
+The frozen state snapshot is `{ canDownload, canPreview, expanded, isOpen, layout, mimeType,
+name, open, previewMode, status, type, zoom }`. `expanded`, `isOpen` and `open` all reflect modal
+visibility; expanding never changes the configured Blade layout. Business events include this
+snapshot plus the following specific fields: `loading`, `empty`, `open`, `close` and `retry` have
+no extra fields; `ready` adds `{ mimeType, deferred? }`, `error` adds `{ code, message }`, and
+`zoom` adds `{ zoom, mode? }` (`fit` or `manual`). `setExpanded()` also emits
+`preview { open }` and `layout { layout, expanded }`. Listen under the
+`daisy-kit:file-preview:` prefix. Lifecycle `mounted` and `unmounted` details are `{}`;
+configuration failures use the shared structured error contract.
 
 ```js
 import { getInstance } from '@daisy-kit/file-preview.js';

@@ -137,13 +137,24 @@ same graph shape, `select { id, node }`, `search { query }`, `arrange { viewBox 
 
 ### File Preview configuration
 
-File Preview's facade exposes `getState()`, `open()`, `close()`, `setExpanded(expanded)`,
-`setZoom(percent)`, and asynchronous `reload()`. `getState()` returns a detached
-`{ status, type, layout, expanded, zoom, open }` snapshot. Synchronous commands return booleans and
-`reload()` returns `Promise<boolean>`. Events are `loading {}`, `ready { type }`, `empty {}`,
-`preview { open }`, `layout { layout, expanded }`, `zoom { zoom }`, and
-`error { code, message }`. The facade never exposes the iframe, its channel/token, fetched Blob, or
-renderer instances.
+`x-daisy-kit::file-preview` accepts a `file` metadata value or a safe `url`, optional
+preview/download URLs, MIME and display metadata. `layout` selects `card`, `compact-list`
+or `action-only`; `previewMode` independently selects `auto`, `inline`, `modal` or
+`download`. Image, video, audio, PDF, text and DOCX are previewable. Other recognized file
+families render an explicit metadata/download state instead of a broken preview.
+
+Private Blade views own the default trigger, metadata, actions, notice and modal footer;
+named slots may replace those regions without adding another public component. The runtime
+keeps its opaque sandbox and emits `daisy-kit:file-preview:*` events. `mount(root)` returns
+the stable File Preview facade and `getInstance(root)` retrieves the same facade after
+automatic mounting. The facade exposes snapshots, open/close, retry and zoom controls but
+does not expose the iframe or renderer internals. Its zoom controls include `fit()` for an
+explicit fit-to-width operation. A validated download remains available from the modal footer;
+multipage DOCX and internally rendered PDF pages scroll within the bounded isolated frame.
+
+File Preview also exposes `setExpanded(expanded)`, `setZoom(percent)` (25–200), and
+asynchronous `reload()`. Commands return booleans (or `Promise<boolean>` for reload).
+State and event payloads are documented in the integrator guide; no renderer internals are exposed.
 
 ### Map configuration
 

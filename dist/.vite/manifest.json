@@ -1,4 +1,8 @@
 {
+  ".tmp/file-preview-frame/file-preview-frame.css": {
+    "file": "file-preview-frame.css",
+    "src": ".tmp/file-preview-frame/file-preview-frame.css"
+  },
   ".tmp/file-preview-frame/file-preview-frame.js": {
     "file": "file-preview-frame.js",
     "src": ".tmp/file-preview-frame/file-preview-frame.js"
@@ -164,6 +168,7 @@
     "src": "resources/js/file-preview.js",
     "isEntry": true,
     "imports": [
+      "_configuration-wAxXfjkK.js",
       "_mountable-sTObMtyP.js",
       "_identifiers-DZhNBAcR.js"
     ],
@@ -171,7 +176,8 @@
       "file-preview.css"
     ],
     "assets": [
-      "file-preview-frame.js"
+      "file-preview-frame.js",
+      "file-preview-frame.css"
     ]
   },
   "resources/js/map.js": {

@@ -54,4 +54,5 @@ modules.forEach(async ([, loadModule]) => {
     const module = await loadModule();
 
     module.mountAll();
+
 });

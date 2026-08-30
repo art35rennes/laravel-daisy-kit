@@ -211,9 +211,52 @@ Route::get('/_daisy-kit-test/csp/map', function () {
         ->header('Content-Security-Policy', "default-src 'none'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'none'; img-src 'self' data: blob:; connect-src 'none'; worker-src 'self' blob:; frame-src 'self'; form-action 'none'");
 })->name('workbench.csp.map');
 
-Route::get('/_daisy-kit-test/files/preview.txt', function () {
-    return response('Sandboxed file preview', 200, ['Content-Type' => 'text/plain']);
+$serveFilePreviewFixture = static function (string $filename, string $contentType) {
+    $path = dirname(__DIR__, 2).'/workbench/resources/fixtures/file-preview/'.$filename;
+    $contents = file_get_contents($path);
+
+    abort_unless($contents !== false, 404);
+
+    return response($contents, 200, [
+        'Content-Length' => (string) filesize($path),
+        'Content-Type' => $contentType,
+    ]);
+};
+
+Route::get('/_daisy-kit-test/files/preview.txt', function () use ($serveFilePreviewFixture) {
+    return $serveFilePreviewFixture('preview.txt', 'text/plain; charset=UTF-8');
 })->name('workbench.file-preview');
+
+Route::get('/_daisy-kit-test/files/preview.svg', function () use ($serveFilePreviewFixture) {
+    return $serveFilePreviewFixture('preview.svg', 'image/svg+xml');
+})->name('workbench.file-preview.image');
+
+Route::get('/_daisy-kit-test/files/preview.wav', function () use ($serveFilePreviewFixture) {
+    return $serveFilePreviewFixture('preview.wav', 'audio/wav');
+})->name('workbench.file-preview.audio');
+
+Route::get('/_daisy-kit-test/files/preview.mp4', function () use ($serveFilePreviewFixture) {
+    return $serveFilePreviewFixture('preview.mp4', 'video/mp4');
+})->name('workbench.file-preview.video');
+
+Route::get('/_daisy-kit-test/files/preview.pdf', function () use ($serveFilePreviewFixture) {
+    return $serveFilePreviewFixture('preview.pdf', 'application/pdf');
+})->name('workbench.file-preview.pdf');
+
+Route::get('/_daisy-kit-test/files/preview.docx', function () use ($serveFilePreviewFixture) {
+    return $serveFilePreviewFixture('preview.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+})->name('workbench.file-preview.docx');
+
+Route::get('/_daisy-kit-test/files/preview-invalid.pdf', function () {
+    return response('This is deliberately not a PDF.', 200, ['Content-Type' => 'text/plain']);
+})->name('workbench.file-preview.invalid');
+
+Route::get('/_daisy-kit-test/files/forecast.xlsx', function () {
+    return response('Local download-only spreadsheet fixture.', 200, [
+        'Content-Disposition' => 'attachment; filename="forecast.xlsx"',
+        'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ]);
+})->name('workbench.file-preview.spreadsheet');
 
 Route::get('/_daisy-kit-test/csp/file-preview', function () {
     return response()

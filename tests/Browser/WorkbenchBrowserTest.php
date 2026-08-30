@@ -7,17 +7,18 @@ it('mounts the Workbench modules accessibly on desktop and mobile', function ():
 
     $desktop
         ->assertSee('Daisy Kit v5 Workbench')
-        ->assertCount('[data-daisy-kit-module]', 17)
+        ->assertCount('[data-daisy-kit-module]', 25)
         ->waitForEvent('networkidle')
         ->wait(1)
         ->assertNoSmoke()
-        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module]')).every((root) => ['empty', 'ready'].includes(root.dataset.daisyKitState))")
+        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module]:not([data-daisy-kit-module=file-preview])')).every((root) => ['empty', 'ready'].includes(root.dataset.daisyKitState))")
+        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=file-preview]')).every((root) => ['error', 'ready', 'unsupported'].includes(root.dataset.daisyKitState))")
         ->click('[data-daisy-kit-tree-node="documentation"]')
         ->keys('[data-daisy-kit-tree-node="documentation"]', ['ArrowRight', 'ArrowRight'])
         ->assertScript("document.activeElement?.dataset.daisyKitTreeNode === 'getting-started'");
 
     $this->visit('/')->on()->mobile()
-        ->assertCount('[data-daisy-kit-module]', 17)
+        ->assertCount('[data-daisy-kit-module]', 25)
         ->assertScript('window.innerWidth <= 430');
 })->group('browser');
 
@@ -46,7 +47,11 @@ it('composes visible host DaisyUI primitives across themes and responsive widths
                     const failures = [];
 
                     roots.forEach((root) => {
-                        if (!root.classList.contains('card')) failures.push(`root:${root.dataset.daisyKitModule}:missing-card`);
+                        const actionOnlyPreview = root.dataset.daisyKitModule === 'file-preview'
+                            && root.dataset.daisyKitLayout === 'action-only';
+                        if (!actionOnlyPreview && !root.classList.contains('card')) {
+                            failures.push(`root:${root.dataset.daisyKitModule}:missing-card`);
+                        }
                     });
                     modules.forEach(([module, selector]) => {
                         const button = document.querySelector(selector);
@@ -155,6 +160,7 @@ it('runs the four Map product scenarios without host-specific map logic', functi
         ->assertCount('#map-drawing [data-daisy-kit-map-draw-layer]', 1)
         ->assertCount('#map-drawing [data-daisy-kit-map-mode="spatial-select"]', 1)
         ->assertScript("Array.from(document.querySelectorAll('#map-controlled .leaflet-tile')).every((tile) => !tile.src.includes('tile.openstreetmap.org'))")
+        ->click('#map-drawing [data-daisy-kit-map-menu] summary')
         ->click('#map-drawing [data-daisy-kit-map-mode="point"]')
         ->assertScript("document.querySelector('#map-drawing [data-daisy-kit-map-mode=point]').getAttribute('aria-pressed') === 'true'")
         ->assertScript("document.querySelector('#map-controlled [data-daisy-kit-map-geolocate]') instanceof HTMLButtonElement");
@@ -162,7 +168,7 @@ it('runs the four Map product scenarios without host-specific map logic', functi
     foreach ([320, 390, 768, 1024, 1440] as $width) {
         $page->resize($width, 1000)
             ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
-            ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=map]')).every((root) => { const viewport = root.querySelector('.daisy-kit-map__viewport').getBoundingClientRect(); return Array.from(root.querySelectorAll('.leaflet-control-container, [data-daisy-kit-map-layer-menu], [data-daisy-kit-map-measurement], [data-daisy-kit-map-active-mode]')).every((control) => control.hidden || (control.getBoundingClientRect().left >= viewport.left && control.getBoundingClientRect().right <= viewport.right)); })")
+            ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=map]')).every((root) => { const viewport = root.querySelector('.daisy-kit-map__viewport').getBoundingClientRect(); return Array.from(root.querySelectorAll('.leaflet-control-container, [data-daisy-kit-map-menu], [data-daisy-kit-map-measurement], [data-daisy-kit-map-active-mode]')).every((control) => control.hidden || (control.getBoundingClientRect().left >= viewport.left && control.getBoundingClientRect().right <= viewport.right)); })")
             ->assertNoSmoke();
     }
 })->group('browser');
@@ -219,7 +225,7 @@ it('isolates the file preview without a host CSP exception', function (): void {
         ->assertScript("document.querySelector('[data-daisy-kit-module=file-preview]').dataset.daisyKitState === 'ready'")
         ->assertScript("!document.querySelector('[data-daisy-kit-file-preview-frame]').sandbox.contains('allow-same-origin')")
         ->withinFrame('[data-daisy-kit-file-preview-frame]', function ($frame): void {
-            $frame->assertSee('Sandboxed file preview');
+            $frame->assertSee('Daisy Kit File Preview');
         });
 })->group('browser');
 

@@ -1,21 +1,25 @@
 const defaultCenter = [48.1173, -1.6778];
 
 const providers = {
-    'cartodb.darkmatter': {
+    'osm.dark': {
         attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        label: 'OSM dark',
         url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
     },
-    'cartodb.positron': {
+    'osm.light': {
         attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        label: 'OSM light',
         url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     },
-    'cartodb.voyager': {
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-        url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    },
-    osm: {
-        attribution: '&copy; OpenStreetMap contributors',
+    'osm.standard': {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+        label: 'OpenStreetMap',
         url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    },
+    'osm.voyager': {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        label: 'OSM voyager',
+        url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
     },
 };
 
@@ -45,15 +49,33 @@ function featureConfiguration(value) {
     return value === true ? { enabled: true } : { ...value, enabled: value.enabled !== false };
 }
 
+function providerConfiguration(id) {
+    if (typeof id !== 'string' || !providers[id]) return null;
+
+    return { ...providers[id], provider: id, trustedAttribution: true, type: 'xyz' };
+}
+
+function basemaps(value) {
+    if (!Array.isArray(value)) return [];
+
+    return value.map((basemap) => {
+        const provider = providerConfiguration(basemap?.provider);
+
+        return provider
+            ? { ...basemap, ...provider, label: basemap.label ?? provider.label }
+            : basemap;
+    });
+}
+
 export function normalizeConfiguration(value = {}) {
-    const provider = typeof value.provider === 'string' ? providers[value.provider] ?? null : null;
+    const provider = providerConfiguration(value.provider);
     const controls = value.controls === false
         ? { enabled: false }
         : { enabled: true, ...(value.controls && typeof value.controls === 'object' ? value.controls : {}) };
 
     return {
         ...value,
-        basemaps: Array.isArray(value.basemaps) ? value.basemaps : [],
+        basemaps: basemaps(value.basemaps),
         center: center(value.center),
         cluster: featureConfiguration(value.cluster),
         controls,

@@ -45,7 +45,6 @@ function createLayerControl(container, layer, type, onChange) {
 export async function createSources({ L, configuration, emit, map, root, signal }) {
     const layerControls = root.querySelector('[data-daisy-kit-map-layers]');
     const basemapControls = root.querySelector('[data-daisy-kit-map-basemaps]');
-    const layerMenu = root.querySelector('[data-daisy-kit-map-layer-menu]');
     const records = new Map();
     const basemaps = new Map();
     const aborters = new Map();
@@ -350,7 +349,7 @@ export async function createSources({ L, configuration, emit, map, root, signal 
     }
 
     const defaultTiles = configuration.provider
-        ? { ...configuration.provider, id: '__provider', label: 'Provider', selected: true, trustedAttribution: true, type: 'xyz' }
+        ? { ...configuration.provider, id: '__provider', label: configuration.provider.label ?? 'Provider', selected: true, trustedAttribution: true, type: 'xyz' }
         : configuration.tileUrl
             ? {
                 attribution: configuration.tileAttribution,
@@ -393,7 +392,6 @@ export async function createSources({ L, configuration, emit, map, root, signal 
 
     if (basemapControls) basemapControls.hidden = basemaps.size === 0;
     if (layerControls) layerControls.hidden = records.size === 0;
-    if (layerMenu) layerMenu.hidden = basemaps.size + records.size === 0;
 
     function bounds() {
         const layers = [primaryGeoJSON, ...[...records.values()].filter((record) => record.visible).map((record) => record.leafletLayer), ...markerRecords.map(({ layer }) => layer)].filter(Boolean);

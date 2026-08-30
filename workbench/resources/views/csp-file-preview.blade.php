@@ -9,7 +9,7 @@
 <body>
     <main>
         <h1>Daisy Kit CSP File Preview</h1>
-        <x-daisy-kit::file-preview src="/_daisy-kit-test/files/preview.txt" type="text" />
+        <x-daisy-kit::file-preview url="/_daisy-kit-test/files/preview.txt" type="text" preview-mode="inline" />
     </main>
 </body>
 </html>

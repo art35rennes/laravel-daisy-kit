@@ -39,40 +39,44 @@
             <script data-daisy-kit-config type="application/json">{"nodes":[{"id":"source","label":"Source"},{"id":"destination","label":"Destination"}],"edges":[{"source":"source","target":"destination"}],"value":{"nodes":[{"id":"source","label":"Source"},{"id":"destination","label":"Destination"}],"edges":[]},"label":"Fixture blueprint","editable":true,"name":"fixture-blueprint"}</script>
         </section>
 
-        <section aria-labelledby="preview-heading" data-daisy-kit-module="file-preview">
+        <section aria-labelledby="preview-heading" data-daisy-kit-layout="card" data-daisy-kit-module="file-preview">
             <h2 id="preview-heading">File Preview</h2>
-            <p data-daisy-kit-status hidden role="alert"></p>
-            <div data-daisy-kit-content>
-                <p data-daisy-kit-loading hidden role="status">Loading preview…</p><p data-daisy-kit-empty hidden>No file preview is available.</p><dialog data-daisy-kit-file-preview-modal aria-label="Fixture file preview"><p><button data-daisy-kit-file-preview-zoom="out" type="button">Zoom out</button><button data-daisy-kit-file-preview-zoom="in" type="button">Zoom in</button><button data-daisy-kit-file-preview-close-preview type="button">Close preview</button></p></dialog><iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts" title="Fixture file preview"></iframe>
-                <dl data-daisy-kit-file-preview-metadata hidden><dt>Name</dt><dd data-daisy-kit-file-preview-name></dd><dt>Type</dt><dd data-daisy-kit-file-preview-type></dd><dt>Size</dt><dd data-daisy-kit-file-preview-size></dd></dl>
-                <p data-daisy-kit-file-preview-notice hidden role="status"></p>
-                <p data-daisy-kit-file-preview-controls><button data-daisy-kit-file-preview-open-preview type="button">Preview file</button><button data-daisy-kit-file-preview-layout type="button">Toggle expanded layout</button><button data-daisy-kit-file-preview-zoom="out" type="button">Zoom out</button><button data-daisy-kit-file-preview-zoom="in" type="button">Zoom in</button></p>
-                <p data-daisy-kit-file-preview-actions hidden><a data-daisy-kit-file-preview-open hidden rel="noopener" target="_blank">Open file</a><a data-daisy-kit-file-preview-download hidden>Download file</a></p>
-            </div>
-            <script data-daisy-kit-config type="application/json">{"src":"/preview.txt","type":"text","name":"Fixture file preview","layout":"modal","notice":"A sandboxed local preview."}</script>
+            <div data-daisy-kit-status hidden role="alert"><span data-daisy-kit-status-message></span><button data-daisy-kit-file-preview-retry hidden type="button">Retry</button></div>
+            <p data-daisy-kit-loading hidden role="status">Loading preview…</p>
+            <p data-daisy-kit-empty hidden role="status">No file is selected.</p>
+            <p data-daisy-kit-file-preview-notice>A sandboxed local preview.</p>
+            <button data-daisy-kit-file-preview-open-preview type="button">Preview</button>
+            <a data-daisy-kit-file-preview-open hidden rel="noopener noreferrer" target="_blank">Open</a>
+            <a data-daisy-kit-file-preview-download href="/preview.txt" download="preview.txt">Download</a>
+            <div data-daisy-kit-file-preview-inline-content></div>
+            <dialog data-daisy-kit-file-preview-modal>
+                <div data-daisy-kit-file-preview-modal-box>
+                    <div data-daisy-kit-file-preview-modal-content><iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts" title="Fixture file preview"></iframe></div>
+                    <button data-daisy-kit-file-preview-close-preview type="button">Close</button>
+                </div>
+            </dialog>
+            <script data-daisy-kit-config type="application/json">{"url":"/preview.txt","type":"text","name":"Fixture file preview","layout":"card","previewMode":"modal","canPreview":true,"canDownload":true,"maxPreviewBytes":10000,"maxTextPreviewBytes":1000,"docxZoom":100,"labels":{"error":"Preview failed.","frameNotReady":"Frame unavailable.","invalidType":"Invalid type.","tooLarge":"Too large."}}</script>
         </section>
 
-        <section aria-labelledby="preview-action-heading" data-daisy-kit-module="file-preview">
+        <section aria-labelledby="preview-action-heading" data-daisy-kit-layout="action-only" data-daisy-kit-module="file-preview">
             <h2 id="preview-action-heading">Action-only File Preview</h2>
-            <p data-daisy-kit-status hidden role="alert"></p>
-            <div data-daisy-kit-content>
-                <p data-daisy-kit-loading hidden role="status">Loading preview…</p><p data-daisy-kit-empty hidden>No file preview is available.</p><dialog data-daisy-kit-file-preview-modal aria-label="Action-only file preview"><p><button data-daisy-kit-file-preview-zoom="out" type="button">Zoom out</button><button data-daisy-kit-file-preview-zoom="in" type="button">Zoom in</button><button data-daisy-kit-file-preview-close-preview type="button">Close preview</button></p></dialog><iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts" title="Action-only file preview"></iframe>
-                <dl data-daisy-kit-file-preview-metadata hidden><dt>Name</dt><dd data-daisy-kit-file-preview-name></dd><dt>Type</dt><dd data-daisy-kit-file-preview-type></dd><dt>Size</dt><dd data-daisy-kit-file-preview-size></dd></dl><p data-daisy-kit-file-preview-notice hidden role="status"></p>
-                <p data-daisy-kit-file-preview-controls><button data-daisy-kit-file-preview-open-preview type="button">Preview file</button><button data-daisy-kit-file-preview-layout type="button">Toggle expanded layout</button><button data-daisy-kit-file-preview-zoom="out" type="button">Zoom out</button><button data-daisy-kit-file-preview-zoom="in" type="button">Zoom in</button></p>
-                <p data-daisy-kit-file-preview-actions hidden><a data-daisy-kit-file-preview-open hidden rel="noopener" target="_blank">Open file</a><a data-daisy-kit-file-preview-download hidden>Download file</a></p>
-            </div>
-            <script data-daisy-kit-config type="application/json">{"src":"/preview.txt","type":"text","name":"Action-only fixture preview","layout":"action-only"}</script>
+            <div data-daisy-kit-status hidden role="alert"><span data-daisy-kit-status-message></span><button data-daisy-kit-file-preview-retry hidden type="button">Retry</button></div>
+            <p data-daisy-kit-loading hidden role="status">Loading preview…</p><p data-daisy-kit-empty hidden role="status">No file is selected.</p>
+            <button data-daisy-kit-file-preview-open-preview type="button">Inspect</button>
+            <div data-daisy-kit-file-preview-inline-content></div>
+            <dialog data-daisy-kit-file-preview-modal><div data-daisy-kit-file-preview-modal-box><div data-daisy-kit-file-preview-modal-content><iframe data-daisy-kit-file-preview-frame hidden sandbox="allow-scripts" title="Action-only file preview"></iframe></div><button data-daisy-kit-file-preview-close-preview type="button">Close</button></div></dialog>
+            <script data-daisy-kit-config type="application/json">{"url":"/preview.txt","type":"text","name":"Action-only fixture preview","layout":"action-only","previewMode":"modal","canPreview":true,"maxPreviewBytes":10000,"maxTextPreviewBytes":1000,"labels":{"error":"Preview failed.","frameNotReady":"Frame unavailable.","invalidType":"Invalid type.","tooLarge":"Too large."}}</script>
         </section>
 
         <section aria-labelledby="map-heading" data-daisy-kit-module="map">
             <h2 id="map-heading">Map</h2>
             <p data-daisy-kit-status hidden role="alert"></p>
             <div data-daisy-kit-content>
-                <div aria-label="Fixture map" data-daisy-kit-map-canvas role="application" tabindex="0"></div><p data-daisy-kit-empty hidden>No geographic data is available.</p><output aria-live="polite" data-daisy-kit-map-measurement></output><input data-daisy-kit-map-value type="hidden"><button data-daisy-kit-map-geolocate type="button">Use my location</button>
+                <div aria-label="Fixture map" data-daisy-kit-map-canvas tabindex="0"></div><p data-daisy-kit-empty hidden>No geographic data is available.</p><output aria-live="polite" data-daisy-kit-map-measurement hidden></output><input data-daisy-kit-map-value type="hidden"><button data-daisy-kit-map-geolocate type="button">Use my location</button>
                 <fieldset data-daisy-kit-map-layers hidden><legend>Layers</legend></fieldset><fieldset data-daisy-kit-map-basemaps hidden><legend>Basemaps</legend></fieldset>
-                <fieldset data-daisy-kit-map-tools><legend>Drawing tools</legend><button data-daisy-kit-map-mode="point" type="button">Draw point</button><button data-daisy-kit-map-mode="linestring" type="button">Draw line</button><button data-daisy-kit-map-mode="polygon" type="button">Draw area</button><button data-daisy-kit-map-mode="edit" type="button">Edit drawing</button><button data-daisy-kit-map-mode="select" type="button">Select drawing</button><button data-daisy-kit-map-mode="spatial-select" type="button">Select geographic feature</button><button data-daisy-kit-map-history="undo" disabled type="button">Undo</button><button data-daisy-kit-map-history="redo" disabled type="button">Redo</button><button data-daisy-kit-map-export disabled type="button">Export drawing</button></fieldset>
+                <fieldset data-daisy-kit-map-tools><legend>Drawing tools</legend><button data-daisy-kit-map-mode="point" type="button">Draw point</button><button data-daisy-kit-map-mode="linestring" type="button">Draw line</button><button data-daisy-kit-map-mode="polygon" type="button">Draw area</button><button data-daisy-kit-map-mode="edit" type="button">Edit drawing</button><button data-daisy-kit-map-mode="select" type="button">Select drawing</button><button data-daisy-kit-map-mode="feature-select" type="button">Select geographic feature</button><button data-daisy-kit-map-history="undo" disabled type="button">Undo</button><button data-daisy-kit-map-history="redo" disabled type="button">Redo</button><button data-daisy-kit-map-export disabled type="button">Export drawing</button></fieldset>
             </div>
-            <script data-daisy-kit-config type="application/json">{"center":[48.1173,-1.6778],"zoom":12,"drawing":true,"geolocation":true,"spatialSelection":true,"markers":[{"id":"city-hall","label":"City hall","position":[48.1173,-1.6778]}],"geojson":{"type":"FeatureCollection","features":[{"id":"fixture-district","type":"Feature","properties":{"name":"Fixture district"},"geometry":{"type":"Polygon","coordinates":[[[-1.69,48.11],[-1.66,48.11],[-1.66,48.13],[-1.69,48.11]]]}}]},"layers":[{"id":"fixture-layer","label":"Fixture layer","visible":true,"geojson":{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[-1.677,48.118]}}]}}],"label":"Fixture map"}</script>
+            <script data-daisy-kit-config type="application/json">{"center":[48.1173,-1.6778],"zoom":12,"drawing":true,"geolocation":true,"spatialSelection":true,"markers":[{"id":"city-hall","label":"City hall","position":[48.1173,-1.6778]}],"geojson":{"type":"FeatureCollection","features":[{"id":"fixture-district","type":"Feature","properties":{"name":"Fixture district"},"geometry":{"type":"Polygon","coordinates":[[[-1.69,48.11],[-1.66,48.11],[-1.66,48.13],[-1.69,48.11]]]}}]},"layers":[{"id":"fixture-layer","label":"Fixture layer","type":"geojson","visible":true,"data":{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[-1.677,48.118]}}]}}],"label":"Fixture map"}</script>
         </section>
         <section data-daisy-kit-module="copyable">
             <p data-daisy-kit-status hidden role="status" aria-live="polite"></p>

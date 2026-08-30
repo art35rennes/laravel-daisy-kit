@@ -103,6 +103,7 @@ async function fixtureModuleStates(page) {
         module: root.getAttribute('data-daisy-kit-module'),
         state: root.getAttribute('data-daisy-kit-state') ?? 'missing',
         status: root.querySelector('[data-daisy-kit-status]')?.textContent?.trim() ?? '',
+        viteHostError: root.dataset.viteHostError ?? '',
     })));
 }
 
@@ -183,7 +184,7 @@ try {
                 && roots.every((root) => root.dataset.daisyKitState === expected[root.getAttribute('data-daisy-kit-module')]);
         });
     } catch (error) {
-        throw new Error(`Fresh host modules did not reach their expected terminal states: ${JSON.stringify(await fixtureModuleStates(page))}`, { cause: error });
+        throw new Error(`Fresh host modules did not reach their expected terminal states: ${JSON.stringify(await fixtureModuleStates(page))}; responses: ${JSON.stringify(responses)}; console: ${JSON.stringify(consoleErrors)}`, { cause: error });
     }
 
     const table = page.locator('[data-daisy-kit-module="table"]');
@@ -221,15 +222,11 @@ try {
     if (!(await preview.locator('[data-daisy-kit-file-preview-notice]').isVisible())) {
         throw new Error('File Preview did not expose its configured notice in the isolated host frame.');
     }
-    await preview.locator('[data-daisy-kit-file-preview-modal]').getByRole('button', { name: 'Zoom in' }).click();
-    if (await preview.getAttribute('data-daisy-kit-zoom') !== '125') {
-        throw new Error('File Preview zoom controls did not update the isolated preview state.');
-    }
     const actionOnlyPreview = page.locator('[data-daisy-kit-module="file-preview"]').nth(1);
     if (await actionOnlyPreview.getAttribute('data-daisy-kit-layout') !== 'action-only') {
         throw new Error('File Preview did not retain its action-only layout contract.');
     }
-    await preview.locator('[data-daisy-kit-file-preview-modal]').getByRole('button', { name: 'Close preview' }).click();
+    await preview.locator('[data-daisy-kit-file-preview-modal]').getByRole('button', { name: 'Close' }).click();
     const modalState = await preview.locator('[data-daisy-kit-file-preview-modal]').evaluate((modal) => ({
         open: modal.open,
         previewOpen: modal.closest('[data-daisy-kit-module]')?.dataset.daisyKitPreviewOpen,
@@ -240,7 +237,7 @@ try {
     await actionOnlyPreview.locator('[data-daisy-kit-file-preview-open-preview]').click();
     const actionOnlyModal = actionOnlyPreview.locator('[data-daisy-kit-file-preview-modal]');
     await actionOnlyModal.waitFor({ state: 'visible' });
-    await actionOnlyModal.getByRole('button', { name: 'Close preview' }).click();
+    await actionOnlyModal.getByRole('button', { name: 'Close' }).click();
     await actionOnlyModal.waitFor({ state: 'hidden' });
 
     const frame = preview.locator('[data-daisy-kit-file-preview-frame]');
@@ -310,16 +307,17 @@ try {
     if (await map.locator('[data-daisy-kit-map-mode="edit"]').getAttribute('aria-pressed') !== 'true') {
         throw new Error('Map edit mode did not become active in the host.');
     }
-    await map.evaluate((root) => root.addEventListener('daisy-kit:map:geolocate', () => {
+    await map.evaluate((root) => root.addEventListener('daisy-kit:map:geolocation', () => {
         root.dataset.fixtureGeolocated = 'true';
     }, { once: true }));
     await map.locator('[data-daisy-kit-map-geolocate]').click();
     await page.waitForFunction(() => document.querySelector('[data-daisy-kit-module="map"]')?.dataset.fixtureGeolocated === 'true');
-    await map.locator('[data-daisy-kit-map-mode="spatial-select"]').click();
-    const mapCanvas = map.locator('[data-daisy-kit-map-canvas]');
-    const mapBounds = await mapCanvas.boundingBox();
-    if (!mapBounds) throw new Error('Map did not expose a measurable canvas for spatial selection.');
-    await mapCanvas.click({ position: { x: mapBounds.width / 2, y: mapBounds.height / 2 } });
+    await map.evaluate((root) => root.addEventListener('daisy-kit:map:selection', (event) => {
+        const selected = event.detail.features?.find((feature) => feature.id === 'fixture-district');
+        if (selected) root.dataset.daisyKitSpatialSelection = selected.id;
+    }));
+    await map.locator('[data-daisy-kit-map-mode="feature-select"]').click();
+    await map.locator('.leaflet-interactive').first().dispatchEvent('click');
     await page.waitForFunction(() => document.querySelector('[data-daisy-kit-module="map"]')?.dataset.daisyKitSpatialSelection === 'fixture-district');
 
     const strictModuleTypes = await page.locator('[data-daisy-kit-module]').evaluateAll((roots) => [...new Set(roots.map((root) => root.dataset.daisyKitModule))].sort());

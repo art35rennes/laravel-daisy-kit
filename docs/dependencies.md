@@ -31,6 +31,7 @@ Runtime requires only `illuminate/support` and `illuminate/view` 13.x.
 | sortablejs | 1.15.7 | MIT | Optional Transfer List drag-and-drop ordering |
 | @dagrejs/dagre | 3.1.1 | MIT | Blueprint |
 | docx-preview | 0.4.0 | MIT | File Preview |
+| pdfjs-dist | 6.3.289 | Apache-2.0 | Sandboxed PDF rendering for File Preview |
 | leaflet | 1.9.4 | BSD-2-Clause | Map runtime |
 | terra-draw / leaflet adapter | 1.32.3 / 1.3.0 | MIT | Map drawing |
 | @turf/area / @turf/length / @turf/boolean-intersects | 7.4.0 | MIT | Map measurements and spatial selection |

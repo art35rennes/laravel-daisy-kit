@@ -194,14 +194,108 @@
             />
         </section>
 
-        <section class="min-w-0" aria-labelledby="file-preview-heading">
-            <h2 id="file-preview-heading">File Preview</h2>
-            <x-daisy-kit::file-preview
-                src="/_daisy-kit-test/files/preview.txt"
-                type="text"
-                name="Workbench note"
-                notice="Rendered in an isolated sandbox."
-            />
+        <section class="min-w-0 space-y-6" aria-labelledby="file-preview-heading">
+            <div>
+                <h2 id="file-preview-heading">File Preview</h2>
+                <p class="text-base-content/70">Media, documents, custom actions and failures use the same isolated runtime.</p>
+            </div>
+
+            <div class="space-y-3" data-file-preview-scenario="media">
+                <h3>Media</h3>
+                <div class="grid items-start gap-4 lg:grid-cols-3">
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.svg"
+                        type="image"
+                        mime-type="image/svg+xml"
+                        name="Product illustration.svg"
+                        :file-size="1840"
+                        preview-mode="modal"
+                    />
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.wav"
+                        type="audio"
+                        mime-type="audio/wav"
+                        name="Interview excerpt.wav"
+                        :file-size="16044"
+                        layout="compact-list"
+                        preview-mode="inline"
+                    />
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.mp4"
+                        type="video"
+                        mime-type="video/mp4"
+                        name="Preview walkthrough.mp4"
+                        layout="compact-list"
+                        preview-mode="inline"
+                    />
+                </div>
+            </div>
+
+            <div class="space-y-3" data-file-preview-scenario="documents">
+                <h3>Documents</h3>
+                <div class="grid items-start gap-4 lg:grid-cols-3">
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.txt"
+                        type="text"
+                        name="Release notes.txt"
+                        preview-mode="inline"
+                        notice="Rendered in an isolated sandbox."
+                    />
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.pdf"
+                        type="pdf"
+                        mime-type="application/pdf"
+                        name="Release overview.pdf"
+                        preview-mode="modal"
+                    />
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.docx"
+                        type="docx"
+                        mime-type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        name="Product brief.docx"
+                        preview-mode="modal"
+                        docx-view="width"
+                        :docx-zoom="100"
+                    />
+                </div>
+            </div>
+
+            <div class="space-y-3" data-file-preview-scenario="custom">
+                <h3>Custom list action</h3>
+                <x-daisy-kit::file-preview
+                    url="/_daisy-kit-test/files/preview.txt"
+                    type="text"
+                    name="Customer hand-off.txt"
+                    layout="action-only"
+                    preview-mode="modal"
+                >
+                    <x-slot:trigger>
+                        <button class="btn btn-secondary" type="button">Inspect customer hand-off</button>
+                    </x-slot:trigger>
+                    <x-slot:modalFooter>
+                        <p class="text-sm text-base-content/70">Custom footer supplied by the integrator.</p>
+                    </x-slot:modalFooter>
+                </x-daisy-kit::file-preview>
+            </div>
+
+            <div class="space-y-3" data-file-preview-scenario="errors">
+                <h3>Errors and limits</h3>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview-invalid.pdf"
+                        type="pdf"
+                        mime-type="application/pdf"
+                        name="Invalid contract.pdf"
+                        preview-mode="modal"
+                    />
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/forecast.xlsx"
+                        name="Forecast.xlsx"
+                        extension="xlsx"
+                        preview-mode="download"
+                    />
+                </div>
+            </div>
         </section>
 
         <section class="card min-w-0 space-y-6 bg-base-100 p-6" aria-labelledby="focused-components-heading">
@@ -261,6 +355,7 @@
                     <x-daisy-kit::map
                         id="map-cluster"
                         label="Operations sites"
+                        :provider="app()->environment('testing') ? false : 'osm.standard'"
                         :fit-bounds="false"
                         :zoom="12"
                         :cluster="['maxClusterRadius' => 72]"
@@ -278,20 +373,23 @@
                 </article>
 
                 <article>
-                    <h3>Basemaps and typed layers</h3>
-                    <p class="text-base-content/70">GeoJSON is fetched locally; XYZ and WMS overlays use deterministic local endpoints.</p>
+                    <h3>OSM styles and business layers</h3>
+                    <p class="text-base-content/70">The menu presents service districts, scheduled works and planning constraints before their transport formats.</p>
                     <x-daisy-kit::map
                         id="map-layers"
                         label="Network layers"
+                        :provider="false"
                         :scale="true"
-                        :basemaps="[
-                            ['id' => 'light', 'label' => 'Light grid', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/light/{z}/{x}/{y}.png', 'selected' => true],
-                            ['id' => 'dark', 'label' => 'Dark grid', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/dark/{z}/{x}/{y}.png'],
+                        :basemaps="app()->environment('testing') ? [] : [
+                            ['id' => 'standard', 'label' => 'OSM standard', 'provider' => 'osm.standard', 'selected' => true],
+                            ['id' => 'light', 'label' => 'OSM light', 'provider' => 'osm.light'],
+                            ['id' => 'dark', 'label' => 'OSM dark', 'provider' => 'osm.dark'],
+                            ['id' => 'voyager', 'label' => 'OSM voyager', 'provider' => 'osm.voyager'],
                         ]"
                         :layers="[
                             ['id' => 'districts', 'label' => 'Service districts', 'type' => 'geojson', 'url' => '/_daisy-kit-test/map/districts.geojson', 'style' => ['color' => '#2563eb', 'weight' => 2]],
-                            ['id' => 'works', 'label' => 'Works tiles', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/works/{z}/{x}/{y}.png', 'visible' => false],
-                            ['id' => 'zoning', 'label' => 'Zoning WMS', 'type' => 'wms', 'url' => '/_daisy-kit-test/map/wms', 'options' => ['layers' => 'workbench:zoning', 'format' => 'image/png', 'transparent' => true], 'visible' => false],
+                            ['id' => 'works', 'label' => 'Scheduled road works', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/works/{z}/{x}/{y}.png', 'visible' => false],
+                            ['id' => 'zoning', 'label' => 'Planning constraints', 'type' => 'wms', 'url' => '/_daisy-kit-test/map/wms', 'options' => ['layers' => 'workbench:zoning', 'format' => 'image/png', 'transparent' => true], 'visible' => false],
                         ]"
                     />
                 </article>
@@ -302,15 +400,16 @@
                     <x-daisy-kit::map
                         id="map-drawing"
                         label="Maintenance drawing"
+                        :provider="app()->environment('testing') ? false : 'osm.standard'"
                         name="maintenance_geometry"
                         :drawing="true"
                         :measure="true"
                         :spatial-selection="['mode' => 'both']"
-                        :geojson="[
+                        :value="[
                             'type' => 'FeatureCollection',
                             'features' => [
-                                ['type' => 'Feature', 'id' => 'site-north', 'properties' => ['name' => 'North maintenance site'], 'geometry' => ['type' => 'Point', 'coordinates' => [-1.684, 48.124]]],
-                                ['type' => 'Feature', 'id' => 'site-south', 'properties' => ['name' => 'South maintenance site'], 'geometry' => ['type' => 'Point', 'coordinates' => [-1.671, 48.109]]],
+                                ['type' => 'Feature', 'id' => 'site-north', 'properties' => ['name' => 'North maintenance site', 'drawLayer' => 'water'], 'geometry' => ['type' => 'Point', 'coordinates' => [-1.684, 48.124]]],
+                                ['type' => 'Feature', 'id' => 'site-south', 'properties' => ['name' => 'South maintenance site', 'drawLayer' => 'electricity'], 'geometry' => ['type' => 'Point', 'coordinates' => [-1.671, 48.109]]],
                             ],
                         ]"
                         :object-types="[
@@ -319,9 +418,10 @@
                             ['id' => 'zone', 'label' => 'Intervention zone', 'geometry' => 'polygon'],
                         ]"
                         :draw-layers="[
-                            ['id' => 'water', 'label' => 'Water network'],
-                            ['id' => 'electricity', 'label' => 'Electricity network'],
+                            ['id' => 'water', 'label' => 'Water network', 'visible' => true],
+                            ['id' => 'electricity', 'label' => 'Electricity network', 'visible' => false],
                         ]"
+                        draw-layer-selection="multiple"
                     />
                 </article>
 
@@ -331,16 +431,13 @@
                     <x-daisy-kit::map
                         id="map-controlled"
                         label="Externally controlled map"
+                        :provider="app()->environment('testing') ? false : 'osm.standard'"
                         :fullscreen="true"
                         :gesture-handling="true"
                         :geolocation="['watch' => true, 'setView' => true]"
                         :persist-state="true"
                         state-key="workbench-controlled-map"
                         :markers="[['id' => 'center', 'label' => 'Initial center', 'position' => [48.1173, -1.6778]]]"
-                        :basemaps="[
-                            ['id' => 'offline', 'label' => 'Local test grid', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/light/{z}/{x}/{y}.png', 'selected' => true],
-                            ['id' => 'osm', 'label' => 'OpenStreetMap — activate network', 'type' => 'xyz', 'url' => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', 'attribution' => '<a href=&quot;https://www.openstreetmap.org/copyright&quot;>© OpenStreetMap contributors</a>', 'trustedAttribution' => true],
-                        ]"
                     />
                 </article>
             </div>
