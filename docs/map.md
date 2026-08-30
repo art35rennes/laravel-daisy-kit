@@ -122,6 +122,11 @@ The default keeps the required attribution visible and follows the
 not be used for prefetch, bulk download or offline maps. Automated fixtures explicitly disable
 the provider and use deterministic local tiles and GeoJSON.
 
+The interactive Workbench enables OSM by default, including when Testbench runs in the
+`testing` environment. Set `WORKBENCH_MAP_EXTERNAL_TILES=false` to work without external
+tiles; `phpunit.xml` forces this setting for automated tests. This is a Workbench-only
+setting, not a package configuration option.
+
 The module supports `script-src 'self'`, `script-src-attr 'none'`, `style-src 'self'`, and
 `style-src-attr 'none'`; Leaflet's CSSOM updates do not require executable inline markup. Add tile
 origins to `img-src` and remote GeoJSON origins to `connect-src`. Local marker images also require

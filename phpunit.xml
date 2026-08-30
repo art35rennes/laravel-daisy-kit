@@ -21,6 +21,7 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="WORKBENCH_MAP_EXTERNAL_TILES" value="false" force="true"/>
         <env name="CACHE_STORE" value="array"/>
     </php>
 </phpunit>

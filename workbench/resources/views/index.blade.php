@@ -338,7 +338,7 @@
                     <x-daisy-kit::map
                         id="map-cluster"
                         label="Operations sites"
-                        :provider="app()->environment('testing') ? false : 'osm.standard'"
+                        :provider="config('workbench-map.external_tiles', true) ? 'osm.standard' : false"
                         :fit-bounds="false"
                         :zoom="12"
                         :cluster="['maxClusterRadius' => 72]"
@@ -363,7 +363,7 @@
                         label="Network layers"
                         :provider="false"
                         :scale="true"
-                        :basemaps="app()->environment('testing') ? [] : [
+                        :basemaps="! config('workbench-map.external_tiles', true) ? [] : [
                             ['id' => 'standard', 'label' => 'OSM standard', 'provider' => 'osm.standard', 'selected' => true],
                             ['id' => 'light', 'label' => 'OSM light', 'provider' => 'osm.light'],
                             ['id' => 'dark', 'label' => 'OSM dark', 'provider' => 'osm.dark'],
@@ -383,7 +383,7 @@
                     <x-daisy-kit::map
                         id="map-drawing"
                         label="Maintenance drawing"
-                        :provider="app()->environment('testing') ? false : 'osm.standard'"
+                        :provider="config('workbench-map.external_tiles', true) ? 'osm.standard' : false"
                         name="maintenance_geometry"
                         :drawing="true"
                         :measure="true"
@@ -414,7 +414,7 @@
                     <x-daisy-kit::map
                         id="map-controlled"
                         label="Externally controlled map"
-                        :provider="app()->environment('testing') ? false : 'osm.standard'"
+                        :provider="config('workbench-map.external_tiles', true) ? 'osm.standard' : false"
                         :fullscreen="true"
                         :gesture-handling="true"
                         :geolocation="['watch' => true, 'setView' => true]"
