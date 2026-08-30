@@ -28,7 +28,7 @@ it('normalizes the restored client table vocabulary', function (): void {
             'pageSize' => 25,
             'pageSizeOptions' => [10, 25, 50],
             'search' => ['enabled' => true, 'debounce' => 400, 'mode' => 'includes'],
-            'selection' => ['mode' => 'multiple', 'rowKey' => 'uuid', 'selectFiltered' => true],
+            'selection' => ['mode' => 'multiple', 'rowKey' => 'uuid', 'selectFiltered' => true, 'summaryVisibility' => 'always'],
             'persistState' => ['mode' => 'local', 'key' => 'people'],
             'filterMode' => 'instant',
         ]);
@@ -42,6 +42,26 @@ it('normalizes manual filter application', function (): void {
 
     expect($table['configuration']['filterMode'])->toBe('manual')
         ->and($table['view']['filterMode'])->toBe('manual');
+});
+
+it('includes an initial page size absent from the available choices', function (): void {
+    $table = TableConfiguration::make(['pageSize' => 2]);
+
+    expect($table['view']['pageSizeOptions'])->toBe([2, 10, 25, 50, 100]);
+});
+
+it('normalizes deferred selection feedback', function (): void {
+    $table = TableConfiguration::make([
+        'selection' => ['mode' => 'multiple', 'summaryVisibility' => 'after-first-selection'],
+    ]);
+
+    expect($table['configuration']['selection']['summaryVisibility'])->toBe('after-first-selection');
+});
+
+it('rejects unknown selection feedback modes', function (): void {
+    expect(fn (): array => TableConfiguration::make([
+        'selection' => ['mode' => 'multiple', 'summaryVisibility' => 'sometimes'],
+    ]))->toThrow(InvalidArgumentException::class, 'Invalid table selection.summaryVisibility value.');
 });
 
 it('rejects an unknown filter application mode', function (): void {

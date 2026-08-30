@@ -12,7 +12,7 @@ function tableMarkup(configuration) {
                 <fieldset data-daisy-kit-table-column-controls></fieldset>
                 <button data-daisy-kit-table-apply-filters type="button">Apply filters</button>
                 <aside data-daisy-kit-table-selection>
-                    <strong data-daisy-kit-table-selection-count>0</strong>
+                    <div data-daisy-kit-table-selection-summary><strong data-daisy-kit-table-selection-count>0</strong></div>
                     <span data-daisy-kit-table-selection-breakdown hidden>
                         <strong data-daisy-kit-table-selection-page-count>0</strong>
                         <strong data-daisy-kit-table-selection-off-page-count>0</strong>
@@ -112,6 +112,106 @@ describe('table module', () => {
 
         expect(root.querySelectorAll('tbody tr')).toHaveLength(2);
         expect(root.querySelector('[data-daisy-kit-table-results]').textContent).toBe('1–2 of 2 results');
+    });
+
+    it('shows custom page sizes from configuration and the API and can change back', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [{ key: 'name', label: 'Name' }],
+            pageSize: 2,
+            rows: Array.from({ length: 12 }, (_, index) => ({ id: String(index), name: `Person ${index}` })),
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+        const instance = mount(root);
+        const control = root.querySelector('[data-daisy-kit-table-page-size]');
+
+        expect(control.value).toBe('2');
+        expect(root.querySelectorAll('tbody tr')).toHaveLength(2);
+        instance.setPageSize(5);
+        expect(control.value).toBe('5');
+        expect(root.querySelectorAll('tbody tr')).toHaveLength(5);
+        control.value = '10';
+        control.dispatchEvent(new Event('change'));
+        expect(root.querySelectorAll('tbody tr')).toHaveLength(10);
+        control.value = '2';
+        control.dispatchEvent(new Event('change'));
+        expect(root.querySelectorAll('tbody tr')).toHaveLength(2);
+    });
+
+    it('reveals deferred feedback once selected but keeps selection controls available initially', () => {
+        const configuration = {
+            columns: [{ key: 'name', label: 'Name' }],
+            rows: [{ id: 'ada', name: 'Ada' }, { id: 'grace', name: 'Grace' }],
+            selection: { mode: 'multiple', summaryVisibility: 'after-first-selection', selectFiltered: true },
+        };
+        document.body.innerHTML = tableMarkup(configuration) + tableMarkup(configuration);
+        const [root, other] = document.querySelectorAll('[data-daisy-kit-module="table"]');
+        mountAll();
+        const summary = root.querySelector('[data-daisy-kit-table-selection-summary]');
+
+        expect(summary.hidden).toBe(true);
+        expect(root.querySelector('[data-daisy-kit-table-selection]').hidden).toBe(false);
+        root.querySelector('[data-daisy-kit-table-select-page]').click();
+        expect(summary.hidden).toBe(false);
+        expect(root.querySelector('[data-daisy-kit-table-selection-count]').textContent).toBe('2');
+        root.querySelector('[data-daisy-kit-table-clear-selection]').click();
+        expect(summary.hidden).toBe(false);
+        expect(root.querySelector('[data-daisy-kit-table-selection-count]').textContent).toBe('0');
+        expect(other.querySelector('[data-daisy-kit-table-selection-summary]').hidden).toBe(true);
+        unmount(root);
+        mount(root);
+        expect(root.querySelector('[data-daisy-kit-table-selection-summary]').hidden).toBe(true);
+    });
+
+    it.each(['single', 'multiple'])('reveals deferred feedback through the %s selection API', (mode) => {
+        document.body.innerHTML = tableMarkup({
+            columns: [{ key: 'name', label: 'Name' }],
+            rows: [{ id: 'ada', name: 'Ada' }],
+            selection: { mode, summaryVisibility: 'after-first-selection' },
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+        const instance = mount(root);
+        const summary = root.querySelector('[data-daisy-kit-table-selection-summary]');
+
+        expect(summary.hidden).toBe(true);
+        instance.selectRow('ada');
+        expect(summary.hidden).toBe(false);
+        expect(root.querySelector('[data-daisy-kit-table-selection]').hidden).toBe(false);
+        instance.clearSelection();
+        expect(summary.hidden).toBe(false);
+        expect(root.querySelector('[data-daisy-kit-table-selection]').hidden).toBe(false);
+        expect(root.querySelector('[data-daisy-kit-table-selection-count]').textContent).toBe('0');
+    });
+
+    it('restores a page size absent from the rendered options', () => {
+        const state = { pagination: { pageSize: 3, pageIndex: 1 } };
+        window.history.replaceState({}, '', `/?daisy-kit-table[people]=${encodeURIComponent(JSON.stringify(state))}`);
+        document.body.innerHTML = tableMarkup({
+            columns: [{ key: 'name', label: 'Name' }],
+            rows: Array.from({ length: 12 }, (_, index) => ({ id: String(index), name: `Person ${index}` })),
+            persistState: { mode: 'url', key: 'people' },
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+        mount(root);
+
+        expect(root.querySelector('[data-daisy-kit-table-page-size]').value).toBe('3');
+        expect(root.querySelector('[data-daisy-kit-table-results]').textContent).toBe('4–6 of 12 results');
+    });
+
+    it('reveals deferred feedback for initial and programmatic selections', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [{ key: 'name', label: 'Name' }],
+            rows: [{ id: 'ada', name: 'Ada' }],
+            initialState: { selection: { selectedIds: ['ada'] } },
+            selection: { mode: 'multiple', summaryVisibility: 'after-first-selection' },
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+        const instance = mount(root);
+
+        expect(root.querySelector('[data-daisy-kit-table-selection-summary]').hidden).toBe(false);
+        instance.clearSelection();
+        expect(root.querySelector('[data-daisy-kit-table-selection-count]').textContent).toBe('0');
+        instance.selectRow('ada', true);
+        expect(root.querySelector('[data-daisy-kit-table-selection-count]').textContent).toBe('1');
     });
 
     it('reports page and off-page selection and can select every filtered result', () => {

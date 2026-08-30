@@ -428,6 +428,7 @@ function initialize(root, configuration) {
     const pageSizeControl = root.querySelector('[data-daisy-kit-table-page-size]');
     const results = root.querySelector('[data-daisy-kit-table-results]');
     const selectionSummary = root.querySelector('[data-daisy-kit-table-selection]');
+    const selectionFeedback = root.querySelector('[data-daisy-kit-table-selection-summary]');
     const selectionCount = root.querySelector('[data-daisy-kit-table-selection-count]');
     const selectionPageCount = root.querySelector('[data-daisy-kit-table-selection-page-count]');
     const selectionOffPageCount = root.querySelector('[data-daisy-kit-table-selection-off-page-count]');
@@ -464,6 +465,8 @@ function initialize(root, configuration) {
         ? selection.mode
         : 'none';
     const selectable = selectionMode !== 'none';
+    const deferredSelectionFeedback = selection.summaryVisibility === 'after-first-selection';
+    let hasSelectedRows = false;
     const rowKey = typeof selection.rowKey === 'string' && selection.rowKey !== '' ? selection.rowKey : 'id';
     const bulkActions = Array.isArray(configuration.bulkActions) ? configuration.bulkActions.filter((action) => action && typeof action.id === 'string' && typeof action.label === 'string') : [];
     const rowActions = normalizeRowActions(configuration.rowActions);
@@ -1190,7 +1193,19 @@ function initialize(root, configuration) {
         previousButton.disabled = !table.getCanPreviousPage();
         nextButton.disabled = !table.getCanNextPage();
         page.textContent = formatLabel(labels.page, { current: state.pagination.pageIndex + 1, total: pageCount });
-        if (pageSizeControl) pageSizeControl.value = String(state.pagination.pageSize);
+        if (pageSizeControl) {
+            const pageSize = String(state.pagination.pageSize);
+
+            if (![...pageSizeControl.options].some((option) => option.value === pageSize)) {
+                const option = document.createElement('option');
+                option.value = pageSize;
+                option.textContent = pageSize;
+                const nextOption = [...pageSizeControl.options].find((option) => Number(option.value) > state.pagination.pageSize);
+                pageSizeControl.insertBefore(option, nextOption ?? null);
+            }
+
+            pageSizeControl.value = pageSize;
+        }
 
         const resultTotal = source ? total : filteredRows.length;
         const resultStart = resultTotal === 0 ? 0 : (state.pagination.pageIndex * state.pagination.pageSize) + 1;
@@ -1202,7 +1217,12 @@ function initialize(root, configuration) {
         }
 
         const selectionSummaryState = selectionDetails(visibleRows);
-        if (selectionSummary) selectionSummary.hidden = selectionMode === 'single' && selectionSummaryState.selectedTotal === 0;
+        hasSelectedRows ||= selectionSummaryState.selectedTotal > 0;
+        if (selectionFeedback) selectionFeedback.hidden = deferredSelectionFeedback && !hasSelectedRows;
+        if (selectionSummary) {
+            selectionSummary.hidden = selectionMode === 'single'
+                && (deferredSelectionFeedback ? !hasSelectedRows : selectionSummaryState.selectedTotal === 0);
+        }
         if (selectionCount) selectionCount.textContent = String(selectionSummaryState.selectedTotal);
         if (selectionPageCount) selectionPageCount.textContent = String(selectionSummaryState.visibleSelectedCount);
         if (selectionOffPageCount) selectionOffPageCount.textContent = String(selectionSummaryState.offPageCount);

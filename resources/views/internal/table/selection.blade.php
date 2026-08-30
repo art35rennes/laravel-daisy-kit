@@ -5,7 +5,7 @@
         @if($tableView['selection']['mode'] === 'single') hidden @endif
         aria-live="polite"
     >
-        <div class="daisy-kit-table__selection-summary">
+        <div class="daisy-kit-table__selection-summary" data-daisy-kit-table-selection-summary @if($tableView['selection']['summaryVisibility'] === 'after-first-selection') hidden @endif>
             <p><strong data-daisy-kit-table-selection-count>0</strong> {{ $tableView['labels']['rowsSelected'] }}</p>
             <p class="daisy-kit-table__selection-breakdown" data-daisy-kit-table-selection-breakdown hidden>
                 <strong data-daisy-kit-table-selection-page-count>0</strong> {{ $tableView['labels']['onThisPage'] }}

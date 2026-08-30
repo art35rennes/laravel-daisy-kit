@@ -348,6 +348,21 @@ For server data, pass `mode="server" endpoint="/projects/table"`; the default tr
 `filter`, `page`, `pageSize`, `sort`, `direction`, `columnFilters`, `columnPinning`, and
 `columnVisibility` query parameters and returns `{ "rows": [/* rows */], "total": 42 }`.
 
+To hide the initial “0 rows selected” summary without hiding selection controls:
+
+```blade
+<x-daisy-kit::table
+    :columns="$columns"
+    :rows="$projects"
+    :selection="['mode' => 'multiple', 'summaryVisibility' => 'after-first-selection']"
+/>
+```
+
+After the first non-empty selection (including initial or API selections), the summary stays
+visible even after clearing. It resets on remount. Omit `summaryVisibility` to retain the default.
+`pageSizeOptions` supplies the choices; the current page size is added automatically if absent.
+Server endpoints must accept every advertised size and return the total filtered result count.
+
 The Spatie Query Builder adapter emits its native `filter[...]`, signed `sort`, `page[number]`, and
 `page[size]` vocabulary and accepts Laravel paginator resources with `data` plus pagination `meta`:
 

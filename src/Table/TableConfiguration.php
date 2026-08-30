@@ -21,6 +21,7 @@ final class TableConfiguration
         $filterMode = self::enum($input['filterMode'] ?? 'instant', ['instant', 'manual'], 'filterMode');
         $pageSizeOptions = self::pageSizeOptions($input['pageSizeOptions'] ?? [10, 25, 50, 100]);
         $pageSize = self::pageSize($input, $pageSizeOptions);
+        $pageSizeOptions = self::pageSizeOptions([...$pageSizeOptions, $pageSize]);
         $search = self::search($input);
         $selection = self::selection($input);
         $persistence = self::persistence($input);
@@ -283,7 +284,7 @@ final class TableConfiguration
 
     /**
      * @param  array<string, mixed>  $input
-     * @return array{mode: string, rowKey: string, selectFiltered: bool}
+     * @return array{mode: string, rowKey: string, selectFiltered: bool, summaryVisibility: string}
      */
     private static function selection(array $input): array
     {
@@ -300,6 +301,7 @@ final class TableConfiguration
             'mode' => $mode,
             'rowKey' => $rowKey,
             'selectFiltered' => ($options['selectFiltered'] ?? true) === true,
+            'summaryVisibility' => self::enum($options['summaryVisibility'] ?? 'always', ['always', 'after-first-selection'], 'selection.summaryVisibility'),
         ];
     }
 
