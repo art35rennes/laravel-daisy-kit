@@ -4,6 +4,9 @@
 
 ### Added
 
+- Restored Tree hierarchical selector with initial values, cascade and selected-root modes,
+  visible/hidden counters, manual or fuzzy search, lazy retry, custom inert Blade nodes,
+  English/French labels, expanded integration API and four realistic Workbench scenarios.
 - Independent Copyable, Combobox, Signature, Truncate, Scrollspy, and Transfer List Blade/ESM/CSS modules.
 - Stable module facades with `getInstance`, ranked selection search, signature export, and accessible non-drag interactions.
 - Integrator facades for Tree, Blueprint, and File Preview, with stable identity across internal remounts.

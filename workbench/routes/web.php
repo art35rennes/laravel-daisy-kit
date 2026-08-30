@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'workbench::index')->name('workbench.index');
 
+require __DIR__.'/tree.php';
+
 Route::get('/_daisy-kit-test/table/rows', function (Request $request) {
     $rows = collect([
         ['id' => 'case-1042', 'reference' => 'CASE-1042', 'customer' => 'Atelier 35', 'priority' => 'High', 'status' => 'Open'],

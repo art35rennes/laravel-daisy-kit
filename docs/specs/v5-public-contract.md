@@ -113,6 +113,15 @@ serializable snapshots: `filtered { query?, filters? }`, `filters-applied { filt
 
 ### Tree configuration
 
+The complete selector contract and examples are specified in [Tree](../tree.md).
+Tree additionally supports initial values, disabled subtrees, `valueMode="leaves|selected-roots"`,
+initial expansion paths, manual/automatic and includes/fuzzy search, translated labels and inert
+Blade node presentation. Its additional facade methods are `getState`, `setSearch`, `applySearch`,
+`clearSearch`, `expandPath`, `expandAll`, `collapseAll`, `selectVisible`, and `reloadBranch`.
+`applySearch`, `expandPath`, and `reloadBranch` are asynchronous. Bulk actions only affect loaded
+items; selected-root values can explicitly represent unloaded subtrees. Search merges remote paths
+without dropping hidden selections. The selection footer counts submitted ids, including hidden ids.
+
 Tree retains the selection, expansion, lazy loading, search and persistence configuration described
 by the product matrix. Its facade exposes `getValue()`, `setValue(value)`, `clear()`, `expand(id)`,
 `collapse(id)`, and `focus(id)`. `getValue()` returns one selected id or `null` in single mode and an

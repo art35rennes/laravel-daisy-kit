@@ -432,7 +432,8 @@ persistence.
 ```
 
 Remote endpoints should tolerate cancellation; an unmounted Tree ignores late results. The hidden
-`areas` input stays synchronized with the selected roots.
+`areas` input stays synchronized with selected loaded leaves by default. Set
+`value-mode="selected-roots"` to submit whole branches instead.
 
 ```js
 import { getInstance } from '@daisy-kit/tree.js';
@@ -452,6 +453,10 @@ In both modes Laravel receives one `areas` field containing an ordered JSON arra
 validation/casting boundary. The facade remains mode-sensitive: `getValue()` returns an id or
 `null` in single mode and an array in multiple mode. Tree reports lazy/search failures as
 `{ code, message, id?, query? }`.
+
+Use `search-mode="manual"` to expose a Search button, `:value` for initial selection,
+and `node-view` for inert custom Blade presentation. The [Tree contract](tree.md) describes
+bulk selection, visible/hidden counters, translations, lazy paths and the complete integrator API.
 
 ## Blueprint
 

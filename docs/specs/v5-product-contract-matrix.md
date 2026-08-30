@@ -44,6 +44,8 @@ automated outcome test before it is considered delivered.
 | Users expand paths, search locally or remotely with debounce, and lazily load branches. | v4 tree endpoint/search contract. | Fetch fixture and focus-preserving browser test. |
 | Selection/expansion persistence is configurable and instance-local. | v4 tree persisted state. | Vitest storage/multiple-root/unmount tests. |
 | Host code reads and changes selection or expansion through a stable facade without private DOM access. | v5 integrator-facade contract. | Vitest `getValue`/`setValue`/`clear`/`expand`/`collapse`/`focus` and canonical `change` payload tests. |
+| Visible disclosure and selection controls, disabled subtrees, loaded-scope bulk actions and hidden-selection counts support real classification and permissions workflows. | v4 controls and corrective v5 product plan, ADR-0009. | Tree product tests and four responsive Workbench scenarios. |
+| Manual/fuzzy search, branch-local retry, cached empty loads and canonical remote merging preserve context and selection. | v4 search/lazy outcomes and ADR-0009. | Transport-race, retry, search reset and lazy-persistence outcome tests. |
 
 ## Blueprint
 

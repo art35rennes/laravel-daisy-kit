@@ -153,24 +153,7 @@
             />
         </section>
 
-        <section class="min-w-0" aria-labelledby="tree-heading">
-            <h2 id="tree-heading">Tree</h2>
-            <x-daisy-kit::tree
-                :searchable="true"
-                :search-source="route('workbench.tree.search')"
-                :items="[
-                    [
-                        'id' => 'documentation',
-                        'label' => 'Documentation',
-                        'expanded' => true,
-                        'children' => [
-                            ['id' => 'getting-started', 'label' => 'Getting started'],
-                            ['id' => 'api-reference', 'label' => 'API reference'],
-                        ],
-                    ],
-                ]"
-            />
-        </section>
+        @include('workbench::tree-scenarios')
 
         <section class="min-w-0" aria-labelledby="blueprint-heading">
             <h2 id="blueprint-heading">Blueprint</h2>

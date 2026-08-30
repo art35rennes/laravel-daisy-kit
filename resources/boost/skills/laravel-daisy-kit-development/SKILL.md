@@ -69,7 +69,9 @@ operational failures return `false` plus `daisy-kit:{module}:error` with `{ code
 Do not create globals or implicit imports between modules. Public events use only
 `daisy-kit:{module}:*`.
 
-Tree exposes `getValue`, `setValue`, `clear`, `expand`, `collapse`, and `focus`; Blueprint exposes
+Tree exposes `getValue`, `getState`, `setValue`, `clear`, `expand`, `collapse`, `focus`,
+`setSearch`, `applySearch`, `clearSearch`, `expandPath`, `expandAll`, `collapseAll`,
+`selectVisible`, and `reloadBranch`; see `docs/tree.md` for selection scope and lazy contracts. Blueprint exposes
 `getValue`, `setValue`, `getSelected`, `select`, `undo`, `redo`, `arrange`, and `fit`; File Preview
 exposes `getState`, `open`, `close`, `setExpanded`, `setZoom`, and `reload`. Do not expose private
 TanStack, Dagre, iframe, SignaturePad, or SortableJS instances. `Map.getLeafletMap()` remains the sole

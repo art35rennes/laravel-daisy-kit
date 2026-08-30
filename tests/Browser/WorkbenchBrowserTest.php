@@ -7,18 +7,18 @@ it('mounts the Workbench modules accessibly on desktop and mobile', function ():
 
     $desktop
         ->assertSee('Daisy Kit v5 Workbench')
-        ->assertCount('[data-daisy-kit-module]', 25)
+        ->assertCount('[data-daisy-kit-module]', 28)
         ->waitForEvent('networkidle')
         ->wait(1)
         ->assertNoSmoke()
         ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module]:not([data-daisy-kit-module=file-preview])')).every((root) => ['empty', 'ready'].includes(root.dataset.daisyKitState))")
         ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=file-preview]')).every((root) => ['error', 'ready', 'unsupported'].includes(root.dataset.daisyKitState))")
-        ->click('[data-daisy-kit-tree-node="documentation"]')
+        ->click('[data-daisy-kit-tree-node="documentation"] > .daisy-kit-tree__row')
         ->keys('[data-daisy-kit-tree-node="documentation"]', ['ArrowRight', 'ArrowRight'])
         ->assertScript("document.activeElement?.dataset.daisyKitTreeNode === 'getting-started'");
 
     $this->visit('/')->on()->mobile()
-        ->assertCount('[data-daisy-kit-module]', 25)
+        ->assertCount('[data-daisy-kit-module]', 28)
         ->assertScript('window.innerWidth <= 430');
 })->group('browser');
 
@@ -36,7 +36,7 @@ it('composes visible host DaisyUI primitives across themes and responsive widths
                     const roots = [...document.querySelectorAll('[data-daisy-kit-module]')];
                     const modules = [
                         ['table', '[data-daisy-kit-module="table"] button'],
-                        ['tree', '[data-daisy-kit-tree-node]'],
+                        ['tree', '[data-daisy-kit-module="tree"] [data-tree-command="expandAll"]'],
                         ['blueprint', '[data-daisy-kit-blueprint-node-control]'],
                         ['file-preview', '[data-daisy-kit-file-preview-open-preview]'],
                         ['map', '[data-daisy-kit-map-mode]'],
