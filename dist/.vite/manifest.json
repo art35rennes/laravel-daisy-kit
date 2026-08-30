@@ -143,8 +143,8 @@
     "isEntry": true,
     "imports": [
       "_mountable-sTObMtyP.js",
-      "_identifiers-DZhNBAcR.js",
-      "_lib-DRewlMn0.js"
+      "_lib-DRewlMn0.js",
+      "_identifiers-DZhNBAcR.js"
     ],
     "css": [
       "combobox.css"
@@ -264,7 +264,8 @@
     "src": "resources/js/tree.js",
     "isEntry": true,
     "imports": [
-      "_mountable-sTObMtyP.js"
+      "_mountable-sTObMtyP.js",
+      "_lib-DRewlMn0.js"
     ],
     "css": [
       "tree.css"
