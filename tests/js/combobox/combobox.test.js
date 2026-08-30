@@ -8,6 +8,23 @@ function markup(configuration) {
 describe('combobox', () => {
     afterEach(() => vi.unstubAllGlobals());
 
+    it('keeps the popup closed after Escape, Tab and a keyboard selection', () => {
+        document.body.innerHTML = markup({ options: [{ value: 'ada', label: 'Ada' }] });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const instance = mount(root);
+        const input = root.querySelector('input');
+        for (const key of ['Escape', 'Tab']) {
+            instance.open();
+            input.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+            expect(input.getAttribute('aria-expanded')).toBe('false');
+        }
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        expect(instance.getValue()).toBe('ada');
+        expect(input.getAttribute('aria-expanded')).toBe('false');
+        unmount(root);
+    });
+
     it('filters locally, emits changes, and serializes repeated Laravel fields', () => {
         document.body.innerHTML = markup({ name: 'users', multiple: true, allowCustom: true, options: [{ value: 'ada', label: 'Ada Lovelace' }, { value: 'grace', label: 'Grace Hopper' }] });
         const root = document.querySelector('[data-daisy-kit-module]');

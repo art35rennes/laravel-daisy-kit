@@ -266,12 +266,18 @@ function initialize(root, configuration) {
         const matches = filtered();
         if (event.key === 'ArrowDown') { event.preventDefault(); activeIndex = Math.min(activeIndex + 1, matches.length - 1); open(); }
         if (event.key === 'ArrowUp') { event.preventDefault(); activeIndex = Math.max(activeIndex - 1, 0); open(); }
-        if (event.key === 'Escape') close();
+        if (event.key === 'Escape' || event.key === 'Tab') {
+            close();
+
+            return;
+        }
         if (event.key === 'Enter') {
             event.preventDefault();
             const match = matches[activeIndex];
             if (match) select(match.value);
             else if (allowCustom && query !== '') select(query);
+
+            return;
         }
         if (allowCustom && multiple && separators.some((separator) => input.value.endsWith(separator))) {
             const token = input.value.slice(0, -1).trim();

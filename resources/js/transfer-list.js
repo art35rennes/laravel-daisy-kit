@@ -237,6 +237,34 @@ function initialize(root, configuration) {
         reorder(target.map((value) => visible.has(value) ? ordered[index++] : value));
     }
 
+    function shiftTarget(direction, values = [...selected.target]) {
+        if (configuration.disabled === true || values.length === 0) return false;
+
+        const moving = new Set(values);
+        const order = filtered('target').map((item) => item.value);
+        const visible = new Set(order);
+        const step = direction === 'up' ? -1 : 1;
+        const indexes = order.map((_, index) => index);
+        if (step === 1) indexes.reverse();
+
+        for (const index of indexes) {
+            const neighbor = index + step;
+            if (moving.has(order[index]) && order[neighbor] !== undefined && !moving.has(order[neighbor])) {
+                [order[index], order[neighbor]] = [order[neighbor], order[index]];
+            }
+        }
+
+        let index = 0;
+        const next = target.map((value) => visible.has(value) ? order[index++] : value);
+        if (next.every((value, position) => value === target[position])) return false;
+        if (!reorder(next)) return false;
+
+        values.forEach((value) => selected.target.add(value));
+        renderList('target');
+
+        return true;
+    }
+
     function onListClick(side, event) {
         const button = event.target.closest('[role="option"]');
         if (!(button instanceof HTMLElement) || button.getAttribute('aria-disabled') === 'true') return;
@@ -248,6 +276,14 @@ function initialize(root, configuration) {
     function onListKeydown(side, event) {
         const button = event.target.closest('[role="option"]');
         if (!(button instanceof HTMLElement) || button.getAttribute('aria-disabled') === 'true') return;
+        if (side === 'target' && event.altKey && ['ArrowUp', 'ArrowDown'].includes(event.key)) {
+            event.preventDefault();
+            const value = button.dataset.value;
+            shiftTarget(event.key === 'ArrowUp' ? 'up' : 'down', [value]);
+            [...targetList.children].find((item) => item.dataset.value === value)?.focus();
+
+            return;
+        }
         const buttons = [...(side === 'target' ? targetList : sourceList).querySelectorAll('[role="option"]')];
         const position = buttons.indexOf(button);
         if (event.key === 'ArrowDown' && buttons[position + 1]) { event.preventDefault(); buttons[position + 1].focus(); }
@@ -261,6 +297,8 @@ function initialize(root, configuration) {
     const sourceKeydown = (event) => onListKeydown('source', event);
     const targetKeydown = (event) => onListKeydown('target', event);
     const onActions = (event) => {
+        const orderButton = event.target.closest('[data-daisy-kit-transfer-reorder]');
+        if (orderButton instanceof HTMLElement) shiftTarget(orderButton.dataset.daisyKitTransferReorder);
         const button = event.target.closest('[data-daisy-kit-transfer-move]');
         if (button instanceof HTMLElement) move(button.dataset.daisyKitTransferMove);
     };
