@@ -29,6 +29,10 @@
             <label class="label"><span class="label-text">{{ $targetLabel }}</span></label>
             @if ($searchable)<input class="input input-bordered w-full" data-daisy-kit-transfer-search="target" type="search" placeholder="Search {{ $targetLabel }}">@endif
             <ul class="menu rounded-box border border-base-300 bg-base-100" aria-label="{{ $targetLabel }}" data-daisy-kit-transfer-target role="listbox" aria-multiselectable="true"></ul>
+            <div class="mt-2 flex flex-wrap gap-2" role="group" aria-label="Reorder {{ $targetLabel }}">
+                <button class="btn btn-sm" data-daisy-kit-transfer-reorder="up" type="button" @disabled($disabled)>Move up</button>
+                <button class="btn btn-sm" data-daisy-kit-transfer-reorder="down" type="button" @disabled($disabled)>Move down</button>
+            </div>
         </div>
     </div>
     <div data-daisy-kit-transfer-values></div>

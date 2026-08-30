@@ -21,6 +21,39 @@ function markup(configuration) {
 describe('transfer list', () => {
     beforeEach(() => { sortableOptions.length = 0; });
 
+    it('reorders through buttons and Alt arrows without dragging and keeps keyboard focus', () => {
+        document.body.innerHTML = markup({ name: 'permissions', sortable: false, items: [{ value: 'read', label: 'Read' }, { value: 'write', label: 'Write' }], value: ['read', 'write'] });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        root.insertAdjacentHTML('beforeend', '<button data-daisy-kit-transfer-reorder="up">Move up</button><button data-daisy-kit-transfer-reorder="down">Move down</button>');
+        const instance = mount(root);
+        root.querySelector('[data-daisy-kit-transfer-target] [data-value="write"]').click();
+        root.querySelector('[data-daisy-kit-transfer-reorder="up"]').click();
+        expect(instance.getTargetValues()).toEqual(['write', 'read']);
+        root.querySelector('[data-daisy-kit-transfer-target] [data-value="write"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', altKey: true, bubbles: true }));
+        expect(instance.getTargetValues()).toEqual(['read', 'write']);
+        expect(document.activeElement.dataset.value).toBe('write');
+        expect([...root.querySelectorAll('[name="permissions[]"]')].map((input) => input.value)).toEqual(['read', 'write']);
+        unmount(root);
+        root.querySelector('[data-daisy-kit-transfer-reorder="up"]').click();
+        expect(root.querySelector('[data-daisy-kit-transfer-target]').children).toHaveLength(0);
+    });
+
+    it('keeps hidden target positions while reordering filtered values and refuses disabled crossings', () => {
+        document.body.innerHTML = markup({ sortable: false, items: [{ value: 'a', label: 'Match A' }, { value: 'locked', label: 'Hidden', disabled: true }, { value: 'b', label: 'Match B' }], value: ['a', 'locked', 'b'] });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const instance = mount(root);
+        const search = root.querySelector('[data-daisy-kit-transfer-search="target"]');
+        search.value = 'Match';
+        search.dispatchEvent(new Event('input', { bubbles: true }));
+        root.querySelector('[data-daisy-kit-transfer-target] [data-value="b"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', altKey: true, bubbles: true }));
+        expect(instance.getTargetValues()).toEqual(['b', 'locked', 'a']);
+        search.value = '';
+        search.dispatchEvent(new Event('input', { bubbles: true }));
+        root.querySelector('[data-daisy-kit-transfer-target] [data-value="a"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', altKey: true, bubbles: true }));
+        expect(instance.getTargetValues()).toEqual(['b', 'locked', 'a']);
+        unmount(root);
+    });
+
     it('moves keyboard-selected values and preserves submitted order', () => {
         document.body.innerHTML = markup({ name: 'permissions', sortable: false, items: [{ value: 'read', label: 'Read' }, { value: 'write', label: 'Write' }] });
         const root = document.querySelector('[data-daisy-kit-module]'); const instance = mount(root);

@@ -206,6 +206,10 @@ CSP exception. An unknown section is a rejected target returning `false`, not an
 
 ### Transfer List
 
+Select target items and use Move up / Move down, or press Alt+ArrowUp / Alt+ArrowDown on a
+target option to reorder without dragging. A filtered list keeps hidden values in their original
+slots, and disabled items cannot be displaced. These controls remain available with `sortable=false`.
+
 ```blade
 <x-daisy-kit::transfer-list
     name="assignees"
