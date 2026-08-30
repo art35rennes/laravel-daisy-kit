@@ -112,8 +112,12 @@ export async function createSources({ L, configuration, emit, map, root, signal 
     }
 
     function clearSelection(notify = true) {
+        const hadSelection = selectedFeatures.size > 0;
+
         for (const key of selectedFeatures.keys()) setFeatureSelected(key, false);
         if (notify) updateSelection();
+
+        return hadSelection;
     }
 
     function removePrimaryGeoJSON() {
@@ -192,9 +196,13 @@ export async function createSources({ L, configuration, emit, map, root, signal 
     }
 
     function setMarkers(markers) {
+        if (!Array.isArray(markers)) {
+            return false;
+        }
+
         clearMarkers();
 
-        for (const marker of Array.isArray(markers) ? markers : []) {
+        for (const marker of markers) {
             const latitude = Number(marker?.position?.[0]);
             const longitude = Number(marker?.position?.[1]);
             if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) continue;
@@ -215,6 +223,8 @@ export async function createSources({ L, configuration, emit, map, root, signal 
             markerTarget.addLayer ? markerTarget.addLayer(layer) : layer.addTo(map);
             markerRecords.push({ layer, marker, onClick });
         }
+
+        return true;
     }
 
     function tileLayer(layer) {
@@ -310,7 +320,7 @@ export async function createSources({ L, configuration, emit, map, root, signal 
         } catch (error) {
             if (error.name !== 'AbortError') {
                 failedLayers.add(id);
-                emit('layer-error', { id, message: error.message });
+                emit('layer-error', { code: 'layer-source-unavailable', id, message: error.message });
             }
 
             return false;
@@ -376,7 +386,7 @@ export async function createSources({ L, configuration, emit, map, root, signal 
                     setLayerVisibility(layerConfig.id, event.currentTarget.checked);
                 });
                 records.set(layerConfig.id, record);
-                emit('layer-error', { id: layerConfig.id, message: error.message });
+                emit('layer-error', { code: 'layer-initialization-failed', id: layerConfig.id, message: error.message });
             }
         }
     }));

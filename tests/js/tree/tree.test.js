@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mount, mountAll, unmount } from '../../../resources/js/tree.js';
+import { getInstance, mount, mountAll, unmount } from '../../../resources/js/tree.js';
 
 function treeMarkup(configuration) {
     return `
@@ -124,8 +124,77 @@ describe('tree module', () => {
         expect(root.querySelector('[data-daisy-kit-tree-value]').value).toBe('["read","write"]');
     });
 
+    it('exposes a stable facade for selection, expansion, and focus', async () => {
+        document.body.innerHTML = treeMarkup({
+            multiple: true,
+            name: 'permissions',
+            items: [{
+                id: 'content',
+                label: 'Content',
+                children: [{ id: 'read', label: 'Read' }, { id: 'write', label: 'Write' }],
+            }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="tree"]');
+        const changes = [];
+        root.addEventListener('daisy-kit:tree:change', (event) => changes.push(event.detail));
+
+        const tree = mount(root);
+
+        expect(tree).toBe(getInstance(root));
+        expect(mount(root)).toBe(tree);
+        expect(Object.keys(tree).sort()).toEqual(['clear', 'collapse', 'expand', 'focus', 'getValue', 'setValue']);
+        expect(await tree.expand('content')).toBe(true);
+        expect(tree.focus('read')).toBe(true);
+        expect(document.activeElement).toBe(root.querySelector('[data-daisy-kit-tree-node="read"]'));
+        expect(tree.setValue(['read'])).toBe(true);
+        expect(tree.getValue()).toEqual(['read']);
+        expect(changes.at(-1)).toEqual({ value: ['read'], values: ['read'] });
+        expect(tree.collapse('content')).toBe(true);
+        expect(tree.clear()).toBe(true);
+        expect(tree.setValue(['missing'])).toBe(false);
+
+        unmount(root);
+
+        expect(getInstance(root)).toBeNull();
+    });
+
+    it('submits one JSON array field in single mode while keeping the scalar facade value', () => {
+        document.body.innerHTML = treeMarkup({
+            name: 'area',
+            items: [{ id: 'docs', label: 'Documentation' }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="tree"]');
+        const tree = mount(root);
+
+        expect(tree.setValue('docs')).toBe(true);
+        expect(tree.getValue()).toBe('docs');
+        expect(root.querySelector('[data-daisy-kit-tree-value]').name).toBe('area');
+        expect(root.querySelector('[data-daisy-kit-tree-value]').value).toBe('["docs"]');
+    });
+
+    it('rejects incomplete markup without registering a facade', () => {
+        document.body.innerHTML = `
+            <section data-daisy-kit-module="tree">
+                <p data-daisy-kit-status hidden role="status"></p>
+                <script data-daisy-kit-config type="application/json">{"items":[]}</script>
+            </section>
+        `;
+        const root = document.querySelector('[data-daisy-kit-module="tree"]');
+        const errors = [];
+        root.addEventListener('daisy-kit:tree:error', (event) => errors.push(event.detail));
+
+        expect(mount(root)).toBeNull();
+        expect(getInstance(root)).toBeNull();
+        expect(unmount(root)).toBe(false);
+        expect(errors).toEqual([{
+            code: 'missing-content',
+            message: 'This tree is missing its required markup.',
+        }]);
+    });
+
     it('searches local branches, expands matching paths, and persists the selected result', () => {
         document.body.innerHTML = treeMarkup({
+            name: 'area',
             persistenceKey: 'tree-search-fixture',
             searchable: true,
             items: [{ id: 'docs', label: 'Documentation', children: [{ id: 'api', label: 'API reference' }] }],
@@ -142,6 +211,7 @@ describe('tree module', () => {
         unmount(root);
 
         document.body.innerHTML = treeMarkup({
+            name: 'area',
             persistenceKey: 'tree-search-fixture',
             searchable: true,
             items: [{ id: 'docs', label: 'Documentation', children: [{ id: 'api', label: 'API reference' }] }],
@@ -153,6 +223,7 @@ describe('tree module', () => {
         expect(api.hidden).toBe(false);
         expect(restored.querySelector('[data-daisy-kit-tree-node="docs"]').getAttribute('aria-expanded')).toBe('true');
         expect(restored.querySelector('[data-daisy-kit-tree-node="api"]').getAttribute('aria-selected')).toBe('true');
+        expect(restored.querySelector('[data-daisy-kit-tree-value]').value).toBe('["api"]');
     });
 
     it('expands, selects, and supports arrow-key focus navigation', () => {
@@ -161,7 +232,7 @@ describe('tree module', () => {
         });
         const root = document.querySelector('[data-daisy-kit-module="tree"]');
         const selected = [];
-        root.addEventListener('daisy-kit:tree:selected', (event) => selected.push(event.detail));
+        root.addEventListener('daisy-kit:tree:change', (event) => selected.push(event.detail));
 
         mount(root);
         const rootButton = root.querySelector('[data-daisy-kit-tree-node="root"]');
@@ -172,7 +243,7 @@ describe('tree module', () => {
 
         expect(root.querySelector('[data-daisy-kit-tree-node="child"]').hidden).toBe(false);
         expect(document.activeElement).toBe(root.querySelector('[data-daisy-kit-tree-node="child"]'));
-        expect(selected).toEqual([{ id: 'child', label: 'Child' }]);
+        expect(selected).toEqual([{ value: 'child', values: ['child'] }]);
     });
 
     it('renders an accessible empty state and tears down every root', () => {

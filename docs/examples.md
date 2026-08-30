@@ -26,90 +26,283 @@ export default defineConfig({
 ```
 
 ```js
-import '@daisy-kit/forms-viewer.css';
-import '@daisy-kit/forms-builder.css';
 import '@daisy-kit/table.css';
 import '@daisy-kit/tree.css';
 import '@daisy-kit/blueprint.css';
 import '@daisy-kit/file-preview.css';
 import '@daisy-kit/map.css';
+import '@daisy-kit/copyable.css';
+import '@daisy-kit/combobox.css';
+import '@daisy-kit/signature.css';
+import '@daisy-kit/truncate.css';
+import '@daisy-kit/scrollspy.css';
+import '@daisy-kit/transfer-list.css';
 
-import { mountAll as mountFormsViewer } from '@daisy-kit/forms-viewer.js';
-import { mountAll as mountFormsBuilder } from '@daisy-kit/forms-builder.js';
 import { mountAll as mountTable } from '@daisy-kit/table.js';
 import { mountAll as mountTree } from '@daisy-kit/tree.js';
 import { mountAll as mountBlueprint } from '@daisy-kit/blueprint.js';
 import { mountAll as mountFilePreview } from '@daisy-kit/file-preview.js';
 import { mountAll as mountMap } from '@daisy-kit/map.js';
+import { mountAll as mountCopyable } from '@daisy-kit/copyable.js';
+import { mountAll as mountCombobox } from '@daisy-kit/combobox.js';
+import { mountAll as mountSignature } from '@daisy-kit/signature.js';
+import { mountAll as mountTruncate } from '@daisy-kit/truncate.js';
+import { mountAll as mountScrollspy } from '@daisy-kit/scrollspy.js';
+import { mountAll as mountTransferList } from '@daisy-kit/transfer-list.js';
 
-mountFormsViewer();
-mountFormsBuilder();
 mountTable();
 mountTree();
 mountBlueprint();
 mountFilePreview();
 mountMap();
+mountCopyable();
+mountCombobox();
+mountSignature();
+mountTruncate();
+mountScrollspy();
+mountTransferList();
 ```
 
-Every entry also offers `mount(root)` and `unmount(root)`. Mounting is idempotent; call
-`unmount` before removing an explicitly managed root. The host compiles Tailwind CSS and DaisyUI;
-the package's CSS adds only module-specific layout and behavior.
+Every entry also offers `mount(root)`, `getInstance(root)`, and `unmount(root)`. `mount` is
+idempotent and returns the same root-local facade later returned by `getInstance`; `mountAll`
+returns facades in DOM order. Call `unmount` before removing an explicitly managed root. It returns
+whether an instance was destroyed. Getters return detached snapshots, synchronous commands return
+booleans, and asynchronous commands return `Promise<boolean>`.
 
-## Forms Viewer
+Expected operational failures return `false` and emit a structured event instead of throwing.
+A command may also return `false` for a documented no-op or rejected target (for example opening an
+already open popover or focusing an unknown Tree item); those cases do not represent a runtime
+failure and do not emit `error`:
 
-Use a schema for recursive sections or steps, field attributes/options/rules, Laravel values and
-errors. JSONata conditions use only the non-executable descriptor shown below. `submitMode` may be
-`event`, `html`, `fetch`, or `none`; use `event` when the host owns submission handling.
+```js
+root.addEventListener('daisy-kit:combobox:error', ({ detail }) => {
+    console.error(detail.code, detail.message);
+});
+```
+
+The host compiles Tailwind CSS and DaisyUI; the package's CSS adds only module-specific layout and
+behavior. The complete method returns and `CustomEvent.detail` shapes are normative in
+[`specs/v5-public-contract.md`](specs/v5-public-contract.md).
+
+## Focused interaction modules
+
+### Copyable
 
 ```blade
-<x-daisy-kit::forms.viewer
-    :schema="[
-        'fields' => [[
-            'type' => 'section',
-            'label' => 'Profile',
-            'fields' => [
-                ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'rules' => ['required']],
-                ['name' => 'role', 'label' => 'Role', 'type' => 'select', 'options' => ['Author', 'Reviewer']],
-                ['name' => 'summary', 'label' => 'Summary', 'type' => 'textarea',
-                    'visibleWhen' => ['type' => 'jsonata', 'expression' => 'role = \"Author\"']],
-            ],
-        ]],
-        'submit' => ['label' => 'Save profile'],
-    ]"
-    :value="old() + ['name' => $profile->name, 'role' => $profile->role]"
-    :errors="$errors"
-    submit-mode="event"
-    validate-on="input"
+<x-daisy-kit::copyable value="{{ $apiToken }}">API token</x-daisy-kit::copyable>
+```
+
+```js
+import '@daisy-kit/copyable.css';
+import { mount } from '@daisy-kit/copyable.js';
+
+const root = document.querySelector('[data-daisy-kit-module="copyable"]');
+const copyable = mount(root);
+
+root.addEventListener('daisy-kit:copyable:copied', ({ detail }) => console.log(detail.value));
+root.addEventListener('daisy-kit:copyable:error', ({ detail }) => console.error(detail.code, detail.message));
+await copyable.copy();
+```
+
+`getValue()` returns the resolved plain text and `copy(value?)` returns `Promise<boolean>`.
+Copyable submits no field. It needs no CSP exception. Clipboard refusal, an insecure context,
+disabled state, or empty text emit the structured errors listed in the public contract.
+
+### Combobox
+
+```blade
+<x-daisy-kit::combobox
+    name="reviewers"
+    :options="$reviewers"
+    :source="route('reviewers.index')"
+    multiple
+    allow-custom
 />
 ```
 
-Set `readonly` for a non-editable view. For an HTML or fetch submission, also supply `action` and
-`method`; file fields use the same schema and automatically select multipart behavior.
+```js
+import '@daisy-kit/combobox.css';
+import { getInstance, mount } from '@daisy-kit/combobox.js';
 
-## Forms Builder (optional Livewire 4)
+const root = document.querySelector('[data-daisy-kit-module="combobox"]');
+const combobox = mount(root) ?? getInstance(root);
 
-Builder is a Livewire 4 authoring enhancement for exactly the Viewer schema. It supports field
-catalogue add/remove/reorder, attribute/options/rules/JSONata editing, sections/steps, preview,
-JSON import/export and undo/redo. It is intentionally unavailable rather than reduced when the
-host has not installed Livewire 4.
+root.addEventListener('daisy-kit:combobox:change', ({ detail }) => console.log(detail.value, detail.values));
+root.addEventListener('daisy-kit:combobox:loading', ({ detail }) => console.log(detail.loading, detail.query));
+await combobox.refresh();
+```
+
+`getValue`, `setValue`, `clear`, `open`, and `close` are synchronous; `refresh()` returns
+`Promise<boolean>`. Events are `change { value, values }`, `query { query }`,
+`loading { loading, query }`, and `error { code, message, query? }`. Laravel receives repeated,
+ordered `reviewers[]` fields in multiple mode (or one `reviewers` field in single mode). No CSP
+exception is needed. Invalid remote responses and unavailable sources emit structured errors.
+
+### Signature
 
 ```blade
-<x-daisy-kit::forms.builder
-    :schema="[
-        'fields' => [
-            ['name' => 'email', 'label' => 'Email', 'type' => 'email', 'rules' => ['required', 'email']],
-        ],
-    ]"
-    name="registration_schema"
-    :value="$registrationSchema"
-    :errors="$errors"
-    :preview="true"
-    :json-editor="true"
+<x-daisy-kit::signature name="approval_signature" required />
+```
+
+```js
+import '@daisy-kit/signature.css';
+import { mount } from '@daisy-kit/signature.js';
+
+const root = document.querySelector('[data-daisy-kit-module="signature"]');
+const signature = mount(root);
+
+root.addEventListener('daisy-kit:signature:change', ({ detail }) => console.log(detail.empty, detail.value));
+await signature.setValue(previousSignature);
+```
+
+`clear`, `undo`, `redo`, and `isEmpty` are synchronous; `setValue()` returns
+`Promise<boolean>`. `toDataURL`, `toSVG`, and `toData` return detached exports. Events are
+`change { empty, value }`, `stroke-ended { value }`, `clear { empty, value }`, and
+`error { code, message }`. Laravel receives a PNG Data URL under `approval_signature`. Pages using
+Signature must allow `style-src-attr 'unsafe-inline'`; invalid initial or assigned values emit
+`invalid-value`.
+
+### Truncate
+
+```blade
+<x-daisy-kit::truncate :text="$releaseNotes" :lines="2" />
+```
+
+```js
+import '@daisy-kit/truncate.css';
+import { mount } from '@daisy-kit/truncate.js';
+
+const root = document.querySelector('[data-daisy-kit-module="truncate"]');
+const truncate = mount(root);
+
+root.addEventListener('daisy-kit:truncate:opened', ({ detail }) => console.log(detail.text));
+truncate.refresh();
+```
+
+`refresh`, `open`, and `close` return booleans; `isTruncated()` reports measured overflow. Events
+are `opened { text }` and `closed { text }`. Truncate submits no field, requires no CSP exception,
+and treats an already-open/already-closed action as a no-op returning `false`.
+
+### Scrollspy
+
+```blade
+<x-daisy-kit::scrollspy target="#release-notes" :items="$sections" />
+```
+
+```js
+import '@daisy-kit/scrollspy.css';
+import { mount } from '@daisy-kit/scrollspy.js';
+
+const root = document.querySelector('[data-daisy-kit-module="scrollspy"]');
+const scrollspy = mount(root);
+
+root.addEventListener('daisy-kit:scrollspy:change', ({ detail }) => console.log(detail.id));
+scrollspy.scrollTo('security');
+```
+
+`refresh()` and `scrollTo(id)` return booleans; `getActive()` returns the active id or `null`.
+`change { id }` is emitted when the active section changes. Scrollspy submits no value and needs no
+CSP exception. An unknown section is a rejected target returning `false`, not an operational error.
+
+### Transfer List
+
+```blade
+<x-daisy-kit::transfer-list
+    name="assignees"
+    :items="$availableUsers"
+    :value="$assignedUserIds"
+    searchable
 />
 ```
 
-The submitted hidden value and preview use the same canonical schema. JSONata is always
-`{ "type": "jsonata", "expression": "…" }`; do not send a string dialect.
+```js
+import '@daisy-kit/transfer-list.css';
+import { mount } from '@daisy-kit/transfer-list.js';
+
+const root = document.querySelector('[data-daisy-kit-module="transfer-list"]');
+const transfer = mount(root);
+
+root.addEventListener('daisy-kit:transfer-list:change', ({ detail }) => console.log(detail.values));
+transfer.move('to-target', ['reviewer-42']);
+```
+
+`getTargetValues()` returns an ordered snapshot; `setTargetValues`, `move`, `reorder`, and
+`clearSelection` return booleans. Events are `change { values }`, `reorder { values }`, and
+`error { code, message, values, ...context }`. Laravel receives ordered repeated `assignees[]`
+fields. Pages using Transfer List must allow `style-src-attr 'unsafe-inline'`; invalid directions,
+values, limits, disabled commands, and invalid reorder permutations emit structured errors.
+
+### Combined Laravel form
+
+```blade
+<form method="POST" action="{{ route('reviews.store') }}">
+    @csrf
+    <x-daisy-kit::copyable value="{{ $apiToken }}" />
+    <x-daisy-kit::combobox name="reviewers" :options="$reviewers" multiple allow-custom />
+    <x-daisy-kit::signature name="approval_signature" required />
+    <x-daisy-kit::transfer-list
+        name="assignees"
+        :items="$availableUsers"
+        :value="$assignedUserIds"
+        searchable
+    />
+    <button type="submit" class="btn btn-primary">Save review</button>
+</form>
+
+<x-daisy-kit::truncate :text="$releaseNotes" :lines="2" />
+<x-daisy-kit::scrollspy target="#release-notes" :items="$sections" />
+```
+
+These modules are independent interaction entries. Copyable reports clipboard success or failure;
+Combobox preserves native form values; Signature synchronizes its captured value; Truncate and
+Scrollspy remain keyboard accessible; and Transfer list supports search, selection and optional
+ordering.
+
+Pages mounting Signature or Transfer List must allow `style-src-attr 'unsafe-inline'`, because
+SignaturePad and SortableJS write runtime DOM styles. Keep those controls on the smallest practical
+page surface. Copyable, Combobox, Truncate and Scrollspy need no such exception.
+
+The form submits ordered `reviewers[]` and `assignees[]` fields and a PNG Data URL under
+`approval_signature`. The component props remain `name="reviewers"` and `name="assignees"`; Daisy
+Kit adds `[]` only to generated multiple-value inputs.
+
+The same APIs can be combined without shared state:
+
+```js
+import { getInstance as getCombobox, mount as mountCombobox } from '@daisy-kit/combobox.js';
+import { getInstance as getCopyable } from '@daisy-kit/copyable.js';
+import { getInstance as getSignature } from '@daisy-kit/signature.js';
+import { getInstance as getTruncate } from '@daisy-kit/truncate.js';
+import { getInstance as getScrollspy } from '@daisy-kit/scrollspy.js';
+import { getInstance as getTransferList } from '@daisy-kit/transfer-list.js';
+
+const comboboxRoot = document.querySelector('[data-daisy-kit-module="combobox"]');
+const combobox = mountCombobox(comboboxRoot) ?? getCombobox(comboboxRoot);
+
+comboboxRoot.addEventListener('daisy-kit:combobox:change', ({ detail }) => {
+    console.log(detail.value, detail.values);
+});
+
+await combobox.refresh();
+getCopyable(document.querySelector('[data-daisy-kit-module="copyable"]')).copy();
+getSignature(document.querySelector('[data-daisy-kit-module="signature"]')).undo();
+getTruncate(document.querySelector('[data-daisy-kit-module="truncate"]')).open();
+getScrollspy(document.querySelector('[data-daisy-kit-module="scrollspy"]')).scrollTo('security');
+getTransferList(document.querySelector('[data-daisy-kit-module="transfer-list"]'))
+    .move('to-target', ['reviewer-42']);
+```
+
+A remote Combobox performs `GET {source}?{queryParam}=...` and expects plain JSON. Previous requests
+are aborted and late responses are ignored:
+
+```json
+{
+    "items": [
+        { "value": "reviewer-42", "label": "Ada Lovelace", "description": "Maintainer" }
+    ],
+    "nextCursor": null
+}
+```
 
 ## Table
 
@@ -183,6 +376,10 @@ const table = mount(root) ?? getInstance(root);
 
 externalSearch.addEventListener('input', (event) => table.setGlobalFilter(event.currentTarget.value));
 teamFilter.addEventListener('change', (event) => table.setColumnFilter('team', event.currentTarget.value));
+
+root.addEventListener('daisy-kit:table:selection-changed', ({ detail }) => {
+    console.log(detail.ids);
+});
 ```
 
 The facade provides `getState()`, `getVisibleRows()`, `refresh()`, `clearFilters()`,
@@ -234,8 +431,27 @@ persistence.
 />
 ```
 
-Remote endpoints should tolerate cancellation; a destroyed Tree ignores late results. The hidden
+Remote endpoints should tolerate cancellation; an unmounted Tree ignores late results. The hidden
 `areas` input stays synchronized with the selected roots.
+
+```js
+import { getInstance } from '@daisy-kit/tree.js';
+
+const root = document.querySelector('[data-daisy-kit-module="tree"]');
+const tree = getInstance(root);
+
+await tree.expand('docs');
+tree.setValue(['intro']);
+root.addEventListener('daisy-kit:tree:change', ({ detail }) => {
+    console.log(detail.value, detail.values);
+});
+```
+
+In both modes Laravel receives one `areas` field containing an ordered JSON array. It contains
+`["intro"]` for the selection above and `[]` when empty; decode it with Laravel's normal JSON
+validation/casting boundary. The facade remains mode-sensitive: `getValue()` returns an id or
+`null` in single mode and an array in multiple mode. Tree reports lazy/search failures as
+`{ code, message, id?, query? }`.
 
 ## Blueprint
 
@@ -261,6 +477,24 @@ The visual SVG is non-interactive; semantic controls own focus, keyboard editing
 `daisy-kit:blueprint:*` events. The `workflow_blueprint` hidden field is the synchronized JSON
 value.
 
+```js
+import { getInstance } from '@daisy-kit/blueprint.js';
+
+const root = document.querySelector('[data-daisy-kit-module="blueprint"]');
+const blueprint = getInstance(root);
+
+blueprint.select('review');
+blueprint.fit();
+const graph = blueprint.getValue(); // Detached { nodes, edges } snapshot.
+
+root.addEventListener('daisy-kit:blueprint:change', ({ detail }) => {
+    console.log(detail.value.nodes, detail.value.edges);
+});
+```
+
+Laravel receives the same graph serialized as JSON under `workflow_blueprint`. The facade object
+remains identical when a structural update internally remounts the renderer.
+
 ## File Preview
 
 File Preview accepts an application-controlled URL, validates type/size and offers metadata,
@@ -283,6 +517,24 @@ instead of assuming a public route.
 Set `type` to `text`, `image`, `pdf`, `video`, or `docx`; when it is omitted, a recognized file
 extension selects the mode. The module validates the fetched MIME type and emits loading, empty
 and error states instead of exposing untrusted content to the host page.
+
+```js
+import { getInstance } from '@daisy-kit/file-preview.js';
+
+const root = document.querySelector('[data-daisy-kit-module="file-preview"]');
+const preview = getInstance(root);
+
+preview.open();
+preview.setZoom(125);
+await preview.reload();
+
+root.addEventListener('daisy-kit:file-preview:error', ({ detail }) => {
+    console.error(detail.code, detail.message);
+});
+```
+
+The facade exposes serializable state only; the sandboxed iframe, frame authentication token,
+fetched Blob, and document renderer are intentionally private.
 
 ## Map
 

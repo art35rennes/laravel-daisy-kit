@@ -164,17 +164,22 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
     }
 
     function locate(options = {}) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             if (!navigator.geolocation) {
-                const error = geolocationError();
-                reject(error);
+                geolocationError();
+                resolve(false);
 
                 return;
             }
 
             navigator.geolocation.getCurrentPosition(
-                (position) => resolve(applyLocation(position)),
-                (error) => reject(geolocationError(error)),
+                (position) => {
+                    resolve(Boolean(applyLocation(position)));
+                },
+                (error) => {
+                    geolocationError(error);
+                    resolve(false);
+                },
                 locationOptions(options),
             );
         });
@@ -336,8 +341,10 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
 
     const facade = {
         clearSelection() {
-            drawing?.clearSelection();
-            sources?.clearSelection();
+            const drawingChanged = drawing?.clearSelection() ?? false;
+            const sourcesChanged = sources?.clearSelection() ?? false;
+
+            return drawingChanged || sourcesChanged;
         },
         deleteSelected: () => drawing?.deleteSelected() ?? false,
         destroy: onDestroy,
@@ -382,8 +389,15 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
             return changed;
         },
         setMarkers(markers) {
-            sources?.setMarkers(markers);
+            const changed = sources?.setMarkers(markers) ?? false;
+
+            if (!changed) {
+                return false;
+            }
+
             emit('markers', { markers });
+
+            return true;
         },
         setMode(mode, options) {
             const changed = drawing?.setMode(mode, options) ?? false;

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Daisy Kit dependency style host fixture</title>
+    <script type="module" src="/resources/js/relaxed.js"></script>
+</head>
+<body>
+    <main>
+        <h1>Daisy Kit dependency style host fixture</h1>
+
+        <fieldset data-daisy-kit-module="signature">
+            <legend>Approval signature</legend>
+            <p data-daisy-kit-status hidden role="alert"></p>
+            <div><canvas aria-label="Approval signature" data-daisy-kit-signature-canvas height="160" width="480"></canvas></div>
+            <input aria-label="Approval signature value" data-daisy-kit-signature-value name="approval_signature" tabindex="-1" type="text">
+            <div data-daisy-kit-signature-actions>
+                <button data-daisy-kit-signature-undo type="button">Undo</button>
+                <button data-daisy-kit-signature-redo type="button">Redo</button>
+                <button data-daisy-kit-signature-clear type="button">Clear</button>
+            </div>
+            <script data-daisy-kit-config type="application/json">{"width":480,"height":160,"penColor":"black","backgroundColor":"rgba(0,0,0,0)","minWidth":0.5,"maxWidth":2.5,"velocityFilterWeight":0.7,"throttle":16,"minDistance":5,"required":false,"disabled":false}</script>
+        </fieldset>
+
+        <section data-daisy-kit-module="transfer-list">
+            <p data-daisy-kit-status hidden role="alert"></p>
+            <p>Release assignees</p>
+            <div data-daisy-kit-transfer-content>
+                <div>
+                    <label>Available <input data-daisy-kit-transfer-search="source" type="search"></label>
+                    <ul aria-label="Available" data-daisy-kit-transfer-source role="listbox" aria-multiselectable="true"></ul>
+                </div>
+                <div aria-label="Transfer controls">
+                    <button data-daisy-kit-transfer-move="to-target" type="button">Add</button>
+                    <button data-daisy-kit-transfer-move="to-source" type="button">Remove</button>
+                </div>
+                <div>
+                    <label>Selected <input data-daisy-kit-transfer-search="target" type="search"></label>
+                    <ul aria-label="Selected" data-daisy-kit-transfer-target role="listbox" aria-multiselectable="true"></ul>
+                </div>
+            </div>
+            <div data-daisy-kit-transfer-values></div>
+            <script data-daisy-kit-config type="application/json">{"name":"assignees","items":[{"value":"ada","label":"Ada Lovelace"},{"value":"grace","label":"Grace Hopper"}],"value":["ada"],"searchable":true,"disabled":false,"required":false,"sortable":true}</script>
+        </section>
+    </main>
+</body>
+</html>

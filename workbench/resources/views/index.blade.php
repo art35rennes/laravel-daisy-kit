@@ -16,29 +16,6 @@
             </div>
         </header>
 
-        <section class="min-w-0" aria-labelledby="forms-viewer-heading">
-            <h2 id="forms-viewer-heading">Forms Viewer</h2>
-            <x-daisy-kit::forms.viewer
-                :schema="[
-                    'fields' => [
-                        ['name' => 'name', 'label' => 'Display name', 'type' => 'text', 'rules' => ['required']],
-                        ['name' => 'role', 'label' => 'Role', 'type' => 'select', 'options' => ['Maintainer', 'Reviewer']],
-                        ['name' => 'updates', 'label' => 'Receive updates', 'type' => 'toggle'],
-                    ],
-                    'submit' => ['label' => 'Save profile'],
-                ]"
-                :value="['name' => 'Ada Lovelace', 'role' => 'Maintainer', 'updates' => true]"
-            />
-        </section>
-
-        <section class="min-w-0" aria-labelledby="forms-builder-heading">
-            <h2 id="forms-builder-heading">Forms Builder</h2>
-            <x-daisy-kit::forms.builder
-                :schema="['fields' => [['name' => 'email', 'label' => 'Email address', 'type' => 'email', 'rules' => ['required', 'email']]]]"
-                name="workbench_schema"
-            />
-        </section>
-
         <section class="min-w-0 space-y-6" aria-labelledby="table-heading">
             <h2 id="table-heading">Table</h2>
 
@@ -179,6 +156,8 @@
         <section class="min-w-0" aria-labelledby="tree-heading">
             <h2 id="tree-heading">Tree</h2>
             <x-daisy-kit::tree
+                :searchable="true"
+                :search-source="route('workbench.tree.search')"
                 :items="[
                     [
                         'id' => 'documentation',
@@ -186,6 +165,7 @@
                         'expanded' => true,
                         'children' => [
                             ['id' => 'getting-started', 'label' => 'Getting started'],
+                            ['id' => 'api-reference', 'label' => 'API reference'],
                         ],
                     ],
                 ]"
@@ -221,6 +201,53 @@
                 type="text"
                 name="Workbench note"
                 notice="Rendered in an isolated sandbox."
+            />
+        </section>
+
+        <section class="card min-w-0 space-y-6 bg-base-100 p-6" aria-labelledby="focused-components-heading">
+            <h2 id="focused-components-heading">Focused interaction components</h2>
+            <x-daisy-kit::copyable class="card" value="release-2026-08-29">Copy release identifier</x-daisy-kit::copyable>
+
+            @if(session()->has('workbench.review.saved'))
+                <p class="alert alert-success" role="status">The review assignment was saved.</p>
+            @endif
+
+            <form class="space-y-6" method="POST" action="{{ route('workbench.reviews.store') }}">
+                @csrf
+                <x-daisy-kit::combobox
+                    class="card"
+                    name="reviewers"
+                    label="Reviewers"
+                    :multiple="true"
+                    :allow-custom="true"
+                    :source="route('workbench.combobox.reviewers')"
+                    :min-chars="1"
+                    :options="[['value' => 'ada', 'label' => 'Ada Lovelace', 'description' => 'Platform']]"
+                    :value="['ada']"
+                />
+                <x-daisy-kit::signature class="card" name="approval_signature" label="Approval signature" />
+                <x-daisy-kit::transfer-list
+                    class="card"
+                    name="assignees"
+                    :items="[
+                        ['value' => 'ada', 'label' => 'Ada Lovelace'],
+                        ['value' => 'grace', 'label' => 'Grace Hopper'],
+                        ['value' => 'margaret', 'label' => 'Margaret Hamilton'],
+                    ]"
+                    :value="['ada']"
+                />
+                <button class="btn btn-primary" type="submit">Save review assignment</button>
+            </form>
+
+            <x-daisy-kit::truncate class="card" :text="str_repeat('Selectable release notes remain available in full. ', 12)" :lines="2" />
+            <div id="workbench-scrollspy-content" class="max-h-48 overflow-auto" tabindex="0">
+                <h3 id="workbench-overview">Overview</h3><p>{{ str_repeat('Overview content. ', 20) }}</p>
+                <h3 id="workbench-details">Details</h3><p>{{ str_repeat('Detailed content. ', 20) }}</p>
+            </div>
+            <x-daisy-kit::scrollspy
+                class="card"
+                target="#workbench-scrollspy-content"
+                :items="[['id' => 'workbench-overview', 'label' => 'Overview'], ['id' => 'workbench-details', 'label' => 'Details']]"
             />
         </section>
 
@@ -299,8 +326,8 @@
                 </article>
 
                 <article>
-                    <h3>Persistence, geolocation and external controls</h3>
-                    <p class="text-base-content/70">The host drives the documented facade without accessing private state.</p>
+                    <h3>Persistence and geolocation</h3>
+                    <p class="text-base-content/70">The map restores its host-scoped view and offers its configured location controls.</p>
                     <x-daisy-kit::map
                         id="map-controlled"
                         label="Externally controlled map"
@@ -314,15 +341,7 @@
                             ['id' => 'offline', 'label' => 'Local test grid', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/light/{z}/{x}/{y}.png', 'selected' => true],
                             ['id' => 'osm', 'label' => 'OpenStreetMap — activate network', 'type' => 'xyz', 'url' => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', 'attribution' => '<a href=&quot;https://www.openstreetmap.org/copyright&quot;>© OpenStreetMap contributors</a>', 'trustedAttribution' => true],
                         ]"
-                    >
-                        <x-slot:controls>
-                            <div class="flex flex-wrap gap-2" aria-label="Host map controls">
-                                <button class="btn btn-outline btn-sm" data-workbench-map-action="view" type="button">Focus the depot</button>
-                                <button class="btn btn-outline btn-sm" data-workbench-map-action="invalidate" type="button">Refresh layout</button>
-                            </div>
-                            <p class="text-sm text-base-content/70">OpenStreetMap is only requested after selecting its basemap in the map layer menu.</p>
-                        </x-slot:controls>
-                    </x-daisy-kit::map>
+                    />
                 </article>
             </div>
         </section>

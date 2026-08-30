@@ -5,6 +5,11 @@ function emit(root, name, detail) {
     root.dispatchEvent(new CustomEvent(`daisy-kit:tree:${name}`, { bubbles: true, detail }));
 }
 
+function reportError(root, code, message) {
+    updateStatus(root, message);
+    emit(root, 'error', { code, message });
+}
+
 function normalizeItems(items, usedIds = new Set(), trail = []) {
     if (!Array.isArray(items)) {
         return [];
@@ -62,9 +67,8 @@ function initialize(root, configuration) {
     const searchInput = root.querySelector('[data-daisy-kit-tree-search]');
 
     if (!treeRoot) {
-        updateStatus(root, 'This tree is missing its required markup.');
+        reportError(root, 'missing-content', 'This tree is missing its required markup.');
         root.dataset.daisyKitState = 'error';
-        emit(root, 'error', { reason: 'missing-content' });
 
         return;
     }
@@ -282,8 +286,24 @@ function initialize(root, configuration) {
 
     function syncValue() {
         if (valueInput instanceof HTMLInputElement) {
-            valueInput.value = JSON.stringify([...selectedIds]);
+            valueInput.value = JSON.stringify(multiple ? [...selectedIds] : (selectedId === null ? [] : [selectedId]));
         }
+    }
+
+    function getValue() {
+        return multiple ? [...selectedIds] : selectedId;
+    }
+
+    function publishChange() {
+        const value = getValue();
+        const values = multiple ? [...value] : (value === null ? [] : [value]);
+
+        syncValue();
+        applyVisibility(items);
+        persist();
+        emit(root, 'change', { value, values });
+        valueInput?.dispatchEvent(new Event('input', { bubbles: true }));
+        valueInput?.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
     function setSelected(id) {
@@ -304,25 +324,22 @@ function initialize(root, configuration) {
                     selectedIds.delete(candidate);
                 }
             });
-            syncValue();
-            applyVisibility(items);
-            persist();
-            emit(root, 'selection-changed', { ids: [...selectedIds] });
+            publishChange();
 
-            return;
+            return true;
         }
 
         selectedId = id;
-        applyVisibility(items);
-        persist();
-        emit(root, 'selected', { id: item.id, label: item.label });
+        publishChange();
+
+        return true;
     }
 
     function setExpanded(id, expanded) {
         const item = itemsById.get(id);
 
         if (!item || (item.children.length === 0 && item.source === null) || expandedIds.has(id) === expanded) {
-            return;
+            return false;
         }
 
         if (expanded) {
@@ -334,12 +351,14 @@ function initialize(root, configuration) {
         applyVisibility(items);
         persist();
         emit(root, expanded ? 'expanded' : 'collapsed', { id: item.id, label: item.label });
+
+        return true;
     }
 
     async function loadChildren(id) {
         const item = itemsById.get(id);
 
-        if (!item?.source || loadingIds.has(id) || item.children.length > 0) return;
+        if (!item?.source || loadingIds.has(id) || item.children.length > 0) return false;
 
         const abortController = new AbortController();
         loadingIds.add(id);
@@ -357,10 +376,13 @@ function initialize(root, configuration) {
             treeRoot.replaceChildren(renderItems(items));
             applyVisibility(items);
             persist();
+
+            return true;
         } catch (error) {
-            if (!active || lazyAbortControllers.get(id) !== abortController || (error instanceof DOMException && error.name === 'AbortError')) return;
-            updateStatus(root, 'The tree branch could not be loaded.');
-            emit(root, 'error', { reason: 'lazy-source-unavailable' });
+            if (!active || lazyAbortControllers.get(id) !== abortController || (error instanceof DOMException && error.name === 'AbortError')) return false;
+            reportError(root, 'lazy-source-unavailable', 'The tree branch could not be loaded.');
+
+            return false;
         } finally {
             if (lazyAbortControllers.get(id) !== abortController) return;
             lazyAbortControllers.delete(id);
@@ -462,6 +484,7 @@ function initialize(root, configuration) {
             if (typeof id === 'string' && itemsById.has(id)) selectedIds.add(id);
         });
     }
+    syncValue();
     treeRoot.replaceChildren(renderItems(items));
     applyVisibility(items);
 
@@ -507,8 +530,7 @@ function initialize(root, configuration) {
                 rebuild();
             } catch (error) {
                 if (!(error instanceof DOMException && error.name === 'AbortError')) {
-                    updateStatus(root, 'The tree search could not be loaded.');
-                    emit(root, 'error', { reason: 'search-source-unavailable' });
+                    reportError(root, 'search-source-unavailable', 'The tree search could not be loaded.');
                 }
             } finally {
                 root.setAttribute('aria-busy', 'false');
@@ -517,24 +539,89 @@ function initialize(root, configuration) {
     };
     searchInput?.addEventListener('input', onSearch);
 
-    return () => {
-        active = false;
-        treeRoot.removeEventListener('click', onClick);
-        treeRoot.removeEventListener('keydown', onKeyDown);
-        searchInput?.removeEventListener('input', onSearch);
-        if (searchTimer !== null) clearTimeout(searchTimer);
-        searchAbortController?.abort();
-        lazyAbortControllers.forEach((abortController) => abortController.abort());
-        lazyAbortControllers.clear();
-        if (initialAriaBusy === null) {
-            root.removeAttribute('aria-busy');
-        } else {
-            root.setAttribute('aria-busy', initialAriaBusy);
+    function setValue(value) {
+        const values = multiple ? value : (value === null ? [] : [value]);
+
+        if (!Array.isArray(values) || values.some((id) => typeof id !== 'string' || !itemsById.has(id))) {
+            return false;
         }
-        treeRoot.innerHTML = initialMarkup;
+
+        if (multiple) {
+            selectedIds.clear();
+            values.forEach((id) => selectedIds.add(id));
+        } else {
+            selectedId = values[0] ?? null;
+        }
+
+        publishChange();
+
+        return true;
+    }
+
+    function clear() {
+        if ((multiple && selectedIds.size === 0) || (!multiple && selectedId === null)) {
+            return false;
+        }
+
+        return setValue(multiple ? [] : null);
+    }
+
+    async function expand(id) {
+        const item = itemsById.get(id);
+
+        if (!item || (item.children.length === 0 && item.source === null)) {
+            return false;
+        }
+
+        if (item.children.length === 0 && !(await loadChildren(id))) {
+            return false;
+        }
+
+        return expandedIds.has(id) || setExpanded(id, true);
+    }
+
+    function collapse(id) {
+        return setExpanded(id, false);
+    }
+
+    function focus(id) {
+        const button = buttonsById.get(id);
+
+        if (!(button instanceof HTMLButtonElement) || button.hidden) {
+            return false;
+        }
+
+        focusButton(button);
+
+        return true;
+    }
+
+    return {
+        clear,
+        collapse,
+        destroy() {
+            active = false;
+            treeRoot.removeEventListener('click', onClick);
+            treeRoot.removeEventListener('keydown', onKeyDown);
+            searchInput?.removeEventListener('input', onSearch);
+            if (searchTimer !== null) clearTimeout(searchTimer);
+            searchAbortController?.abort();
+            lazyAbortControllers.forEach((abortController) => abortController.abort());
+            lazyAbortControllers.clear();
+            if (initialAriaBusy === null) {
+                root.removeAttribute('aria-busy');
+            } else {
+                root.setAttribute('aria-busy', initialAriaBusy);
+            }
+            treeRoot.innerHTML = initialMarkup;
+        },
+        expand,
+        focus,
+        getValue,
+        setValue,
     };
 }
 
 const module = createMountable('tree', initialize);
 
-export const { mount, mountAll, unmount } = module;
+export const { getInstance, mount, mountAll, unmount } = module;

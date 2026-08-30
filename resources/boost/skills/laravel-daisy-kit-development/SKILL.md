@@ -15,17 +15,21 @@ when it is available through Laravel Boost; it owns generic Laravel guidance.
 
 Only these Blade components are supported:
 
-- `x-daisy-kit::forms.viewer`
-- `x-daisy-kit::forms.builder`
 - `x-daisy-kit::table`
 - `x-daisy-kit::tree`
 - `x-daisy-kit::blueprint`
 - `x-daisy-kit::file-preview`
 - `x-daisy-kit::map`
+- `x-daisy-kit::copyable`
+- `x-daisy-kit::combobox`
+- `x-daisy-kit::signature`
+- `x-daisy-kit::truncate`
+- `x-daisy-kit::scrollspy`
+- `x-daisy-kit::transfer-list`
 
-Do not introduce aliases, primitive DaisyUI wrappers, host templates, routes, controllers,
-facades, migrations, asset publication, or a compatibility layer. Livewire enhancement belongs
-only to Forms Builder and is optional when Livewire 4 is installed.
+Do not introduce aliases, additional primitive DaisyUI wrappers, host templates, routes,
+controllers, facades, migrations, asset publication, Forms or Livewire integration, or a
+compatibility layer.
 
 ## Assets and lifecycle
 
@@ -51,28 +55,35 @@ import { mountAll } from '@daisy-kit/table.js';
 mountAll();
 ```
 
-The entry stems are `forms-viewer`, `forms-builder`, `table`, `tree`, `blueprint`,
-`file-preview`, and `map`; use `@daisy-kit/{stem}.js` and `@daisy-kit/{stem}.css` only for
-modules rendered on the page.
+The entry stems are `table`, `tree`, `blueprint`, `file-preview`, `map`, `copyable`, `combobox`,
+`signature`, `truncate`, `scrollspy`, and `transfer-list`; use `@daisy-kit/{stem}.js` and
+`@daisy-kit/{stem}.css` only for modules rendered on the page.
 
-Each entry independently exposes `mount(root)`, `mountAll(scope = document)`, and
-`unmount(root)`. Keep mounting idempotent, support multiple roots, and destroy listeners,
-observers, and third-party instances on unmount. Do not create globals or implicit imports
-between modules. Public events use only `daisy-kit:{module}:*`.
+Each entry independently exposes `mount(root)`, `mountAll(scope = document)`, `unmount(root)`,
+and `getInstance(root)`. `mount` returns a stable facade or `null`; `mountAll` returns facade-or-null
+results in DOM order; `getInstance` returns the exact mounted facade; and `unmount` reports whether
+it removed an instance. Keep mounting idempotent, support multiple roots, and destroy listeners,
+observers, requests, and third-party instances on unmount. Facade getters return detached snapshots.
+Synchronous commands return booleans, asynchronous commands return `Promise<boolean>`, and expected
+operational failures return `false` plus `daisy-kit:{module}:error` with `{ code, message, ...context }`.
+Do not create globals or implicit imports between modules. Public events use only
+`daisy-kit:{module}:*`.
+
+Tree exposes `getValue`, `setValue`, `clear`, `expand`, `collapse`, and `focus`; Blueprint exposes
+`getValue`, `setValue`, `getSelected`, `select`, `undo`, `redo`, `arrange`, and `fit`; File Preview
+exposes `getState`, `open`, `close`, `setExpanded`, `setZoom`, and `reload`. Do not expose private
+TanStack, Dagre, iframe, SignaturePad, or SortableJS instances. `Map.getLeafletMap()` remains the sole
+documented third-party escape hatch.
 
 ## Product outcomes
 
 Treat `docs/specs/v5-product-contract-matrix.md` as the package's single business-contract
 oracle. A module is not complete merely because it reaches `ready`: test the user outcome.
-Forms share one recursive schema between Viewer and the optional Livewire 4 Builder; Table and
-Tree preserve data-selection workflows; Blueprint preserves an accessible editor and synchronized
-JSON; File Preview preserves isolated media/document actions; Map preserves editable layers and
-spatial tools. Keep generic DaisyUI primitives in the host rather than reintroducing wrappers.
-
-When Livewire 4 is present, its Builder component is the sole authoring DOM owner; the Builder ESM
-entry only supplies the standard mount lifecycle. Without Livewire, expose the documented
-unavailable state rather than a reduced second editor. Builder exports JSONata as
-`{ type: 'jsonata', expression: '…' }`; Viewer accepts that single descriptor contract.
+Table and Tree preserve data-selection workflows; Blueprint preserves an accessible editor and
+synchronized JSON; File Preview preserves isolated media/document actions; Map preserves editable
+layers and spatial tools. Copyable, Combobox, Signature, Truncate, Scrollspy and Transfer list
+retain their independently mounted interaction outcomes. Keep generic DaisyUI primitives in the
+host rather than reintroducing wrappers.
 
 ## Configuration and CSP
 
@@ -92,6 +103,12 @@ asset publication. Keep document scripts, forms, navigation, and unnecessary net
 disabled. Validate file type and size, and release frames, listeners, requests, and renderer
 resources on destruction.
 
+SignaturePad and SortableJS write runtime DOM styles. A page mounting Signature or Transfer List
+must allow the page-wide `style-src-attr 'unsafe-inline'` exception and should keep that page
+surface narrow. All other parent-page entries retain `style-src-attr 'none'`. Do not add TanStack
+Virtual; v5 deliberately avoids its inline-style cost and does not promise large remote transfer
+datasets.
+
 ## Verification
 
 For package development, run the narrow relevant test first, then the repository quality gates:
@@ -106,6 +123,11 @@ composer test:tia:fresh
 Pest 5 Test Impact Analysis speeds iteration but never replaces `composer test:full`, the
 cache-independent release suite. Browser tests must cover actual CSP violations, lifecycle,
 keyboard/focus behavior, multiple instances, and responsive states where they apply.
+
+The Testbench Workbench is an internal Laravel host, not product documentation. It may render
+representative Blade, native forms, explicit Vite entries, and deterministic local endpoints. Do
+not add a facade console, event logger, inspector, or visible control that exists only for a test;
+exercise facades in Vitest or through browser-test scripts instead.
 
 Before changing the public boundary, record the decision in `docs/decisions/` and update
 `docs/specs/v5-public-contract.md`. Keep `dist/` reproducible and tracked; do not track

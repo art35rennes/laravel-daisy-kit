@@ -16,9 +16,12 @@ Host modules are verified in a real browser with `script-src 'self'`, `style-src
 assignments, while blocking `setAttribute('style', ...)` and `style.cssText`; tests assess the
 browser's violations rather than inspecting a final DOM snapshot.
 
-`forms.viewer`, `forms.builder`, `table`, `tree`, and `blueprint` require no exception. `map`
-is first verified under that same policy; a real violation requires replacing the map engine with
-the documented MapLibre + Terra Draw integration and its narrow worker/image directives.
+`table`, `tree`, `blueprint`, `file-preview`, `map`, `copyable`, `combobox`, `truncate`, and
+`scrollspy` are verified under that strict parent-page policy. `signature_pad` and SortableJS both
+write DOM style properties at runtime. A page mounting Signature or Transfer List therefore adds
+`style-src-attr 'unsafe-inline'`; this exception applies to the whole page, so integrators should
+isolate those controls on the smallest practical surface. TanStack Virtual is excluded because it
+would impose the same exception without being needed by the v5 data-size contract.
 
 Untrusted document previews are rendered only in a `srcdoc` iframe with `sandbox` without
 `allow-same-origin`. The static `import.meta.url` references in the File Preview entry make Vite

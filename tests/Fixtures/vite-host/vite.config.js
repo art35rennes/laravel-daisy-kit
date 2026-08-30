@@ -9,7 +9,10 @@ export default defineConfig({
         manifest: true,
         outDir: 'build',
         rollupOptions: {
-            input: resolve(__dirname, 'index.html'),
+            input: [
+                resolve(__dirname, 'index.html'),
+                resolve(__dirname, 'relaxed.html'),
+            ],
         },
     },
     resolve: {

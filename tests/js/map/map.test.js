@@ -403,7 +403,8 @@ describe('map entry', () => {
         geojsonLayer.handlers.click();
         expect(instance.getSelection()).toHaveLength(1);
 
-        instance.clearSelection();
+        expect(instance.clearSelection()).toBe(true);
+        expect(instance.clearSelection()).toBe(false);
         expect(instance.getSelection()).toEqual([]);
         expect(instance.setMode('spatial-select')).toBe(true);
         await mocks.drawings.at(-1).handlers.finish('selection-area', {});
@@ -417,12 +418,25 @@ describe('map entry', () => {
         Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { clearWatch, getCurrentPosition, watchPosition } });
         const instance = await mounted(root({ geolocation: { enabled: true, setView: true } }));
 
-        await instance.locate();
+        expect(await instance.locate()).toBe(true);
+        expect(instance.setMarkers([])).toBe(true);
         expect(instance.startGeolocation()).toBe(true);
         expect(instance.stopGeolocation()).toBe(true);
         expect(getCurrentPosition).toHaveBeenCalledOnce();
         expect(watchPosition).toHaveBeenCalledOnce();
         expect(clearWatch).toHaveBeenCalledWith(42);
         expect(map.setView).toHaveBeenCalledWith([48.12, -1.68], 12, {});
+    });
+
+    it('reports one-shot geolocation failures without rejecting', async () => {
+        const getCurrentPosition = vi.fn((success, error) => error({ code: 1, message: 'Permission denied' }));
+        Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition } });
+        const element = root({ geolocation: { enabled: true } });
+        const errors = [];
+        element.addEventListener('daisy-kit:map:geolocation-error', (event) => errors.push(event.detail));
+        const instance = await mounted(element);
+
+        expect(await instance.locate()).toBe(false);
+        expect(errors).toEqual([{ code: 1, message: 'Permission denied' }]);
     });
 });

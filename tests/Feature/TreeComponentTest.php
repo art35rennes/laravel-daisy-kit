@@ -48,3 +48,16 @@ it('provides an accessible empty tree shell', function (): void {
         ->toContain('role="status"')
         ->toContain('aria-live="polite"');
 });
+
+it('renders one JSON-backed Laravel field in single and multiple modes', function (bool $multiple): void {
+    $html = view('daisy-kit::components.tree', [
+        'items' => [['id' => 'docs', 'label' => 'Documentation']],
+        'multiple' => $multiple,
+        'name' => 'areas',
+    ])->render();
+
+    expect($html)->toContain('name="areas"')
+        ->not->toContain('name="areas[]"')
+        ->toContain('data-daisy-kit-tree-value')
+        ->toContain('value="[]"');
+})->with([false, true]);

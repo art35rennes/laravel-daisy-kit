@@ -49,6 +49,26 @@ describe('table module', () => {
         window.history.replaceState({}, '', '/');
     });
 
+    it('rejects incomplete markup without registering a facade', () => {
+        document.body.innerHTML = `
+            <section data-daisy-kit-module="table">
+                <p data-daisy-kit-status hidden role="status"></p>
+                <script data-daisy-kit-config type="application/json">{"columns":[],"rows":[]}</script>
+            </section>
+        `;
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+        const errors = [];
+        root.addEventListener('daisy-kit:table:error', (event) => errors.push(event.detail));
+
+        expect(mount(root)).toBeNull();
+        expect(getInstance(root)).toBeNull();
+        expect(unmount(root)).toBe(false);
+        expect(errors).toEqual([{
+            code: 'missing-content',
+            message: 'This table is missing its required markup.',
+        }]);
+    });
+
     it('composes native DaisyUI controls instead of relying on unstyled browser defaults', () => {
         document.body.innerHTML = tableMarkup({
             columns: [{ id: 'name', label: 'Name', filter: { type: 'text' } }],
@@ -719,7 +739,7 @@ describe('table module', () => {
         expect(root.getAttribute('aria-busy')).toBe('false');
     });
 
-    it('exposes an instance-local facade for host filters and wrapped controls', () => {
+    it('exposes an instance-local facade with boolean mutation results', async () => {
         document.body.innerHTML = tableMarkup({
             columns: [{ key: 'name', label: 'Name' }, { key: 'status', label: 'Status' }],
             filters: [{ id: 'status', label: 'Status', type: 'select' }],
@@ -737,8 +757,13 @@ describe('table module', () => {
 
         expect(instance).toBe(getInstance(root));
         expect(mount(root)).toBe(instance);
-        instance.setColumnFilter('status', 'ready');
-        instance.setGlobalFilter('Margaret');
+        expect(Object.keys(instance).sort()).toEqual([
+            'applyFilters', 'clearFilters', 'clearSelection', 'getState', 'getVisibleRows', 'refresh',
+            'selectAllResults', 'selectPage', 'selectRow', 'setColumnFilter', 'setColumnVisibility',
+            'setGlobalFilter', 'setPage', 'setPageSize', 'setSorting',
+        ]);
+        expect(instance.setColumnFilter('status', 'ready')).toBe(true);
+        expect(instance.setGlobalFilter('Margaret')).toBe(true);
         expect(root.querySelector('tbody').textContent).toContain('Margaret');
         expect(instance.getState()).toMatchObject({
             columnFilters: [{ id: 'status', value: 'ready' }],
@@ -746,15 +771,20 @@ describe('table module', () => {
             total: 1,
         });
 
-        instance.clearFilters();
-        instance.setPage(2);
+        expect(instance.clearFilters()).toBe(true);
+        expect(instance.setPage(0)).toBe(false);
+        expect(instance.setPage(2)).toBe(true);
         expect(root.querySelector('tbody').textContent).toContain('Grace');
-        instance.selectPage();
+        expect(instance.selectPage()).toBe(true);
         expect(instance.getState().selection).toMatchObject({ selectedIds: ['grace'], selectedTotal: 1 });
 
-        instance.setPageSize(3);
+        expect(instance.setPageSize(0)).toBe(false);
+        expect(instance.setPageSize(3)).toBe(true);
         expect(root.querySelectorAll('tbody tr')).toHaveLength(3);
         expect(instance.getVisibleRows()).toHaveLength(3);
+        expect(instance.clearSelection()).toBe(true);
+        expect(instance.clearSelection()).toBe(false);
+        expect(await instance.refresh()).toBe(false);
 
         unmount(root);
         expect(getInstance(root)).toBeNull();

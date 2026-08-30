@@ -152,9 +152,13 @@ export async function createDrawing({ L, configuration, emit, map, root, signal,
     }
 
     function clearSelection() {
+        const hadSelection = selectedIds.size > 0;
+
         [...selectedIds].forEach((id) => drawing.deselectFeature?.(id));
         selectedIds.clear();
         updateSelection();
+
+        return hadSelection;
     }
 
     function deleteSelected() {

@@ -5,6 +5,7 @@ import { createMountable } from './core/mountable.js';
 
 const svgNamespace = 'http://www.w3.org/2000/svg';
 const structuralHistory = new WeakMap();
+const publicFacades = new WeakMap();
 
 function createSvgElement(name, attributes = {}) {
     const element = document.createElementNS(svgNamespace, name);
@@ -86,7 +87,10 @@ function renderBlueprint(root, configuration) {
     if (nodes.length === 0) {
         empty.hidden = false;
         root.dataset.daisyKitState = 'empty';
-        root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:empty', { bubbles: true }));
+        root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:empty', {
+            bubbles: true,
+            detail: {},
+        }));
 
         return () => {};
     }
@@ -194,6 +198,8 @@ function renderBlueprint(root, configuration) {
         }
     };
 
+    const currentGraphSnapshot = () => JSON.parse(JSON.stringify({ edges, nodes }));
+
     const notifyValueChange = () => {
         if (!(value instanceof HTMLInputElement)) return;
 
@@ -246,7 +252,7 @@ function renderBlueprint(root, configuration) {
             notifyValueChange();
             root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:change', {
                 bubbles: true,
-                detail: { value: value instanceof HTMLInputElement ? value.value : JSON.stringify({ edges, nodes }) },
+                detail: { value: currentGraphSnapshot() },
             }));
         }
 
@@ -291,7 +297,10 @@ function renderBlueprint(root, configuration) {
         }
         root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:select', {
             bubbles: true,
-            detail: { id: nodeId },
+            detail: {
+                id: nodeId,
+                node: JSON.parse(JSON.stringify(nodes.find((node) => node.id === nodeId))),
+            },
         }));
     };
     const onClick = (event) => {
@@ -393,7 +402,7 @@ function renderBlueprint(root, configuration) {
         configurationNode.textContent = JSON.stringify(configurationWithGraph(configuration, nodes, edges));
         root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:change', {
             bubbles: true,
-            detail: { value: configurationNode.textContent },
+            detail: { value: currentGraphSnapshot() },
         }));
         structuralHistory.set(root, { entries: history, index: historyIndex });
         module.unmount(root);
@@ -560,4 +569,135 @@ function renderBlueprint(root, configuration) {
 
 const module = createMountable('blueprint', renderBlueprint);
 
-export const { mount, mountAll, unmount } = module;
+function configuration(root) {
+    const node = root.querySelector('[data-daisy-kit-config]');
+
+    if (!(node instanceof HTMLScriptElement)) {
+        return null;
+    }
+
+    try {
+        const value = JSON.parse(node.textContent ?? '');
+
+        return value && typeof value === 'object' && !Array.isArray(value) ? value : null;
+    } catch {
+        return null;
+    }
+}
+
+function graphSnapshot(root) {
+    const value = root.querySelector('[data-daisy-kit-blueprint-value]');
+
+    try {
+        const graph = JSON.parse(value instanceof HTMLInputElement ? value.value : '');
+
+        return {
+            edges: graph.edges.map((edge) => ({ ...edge })),
+            nodes: graph.nodes.map((node) => ({ ...node })),
+        };
+    } catch {
+        return { edges: [], nodes: [] };
+    }
+}
+
+function normalizedGraph(graph) {
+    if (!graph || typeof graph !== 'object' || Array.isArray(graph) || !Array.isArray(graph.nodes) || !Array.isArray(graph.edges)) {
+        return null;
+    }
+
+    const nodes = validNodes(graph.nodes).map((node) => ({ ...node }));
+    const nodeIds = new Set(nodes.map((node) => node.id));
+    const edges = validEdges(graph.edges, nodeIds).map((edge) => ({ ...edge }));
+
+    if (nodes.length !== graph.nodes.length || nodeIds.size !== nodes.length || edges.length !== graph.edges.length) {
+        return null;
+    }
+
+    return { edges, nodes };
+}
+
+function createFacade(root) {
+    function click(selector) {
+        const control = root.querySelector(selector);
+
+        if (!(control instanceof HTMLButtonElement) || control.disabled) {
+            return false;
+        }
+
+        control.click();
+
+        return true;
+    }
+
+    return {
+        arrange: () => click('[data-daisy-kit-blueprint-view="arrange"]'),
+        fit: () => click('[data-daisy-kit-blueprint-view="fit"]'),
+        getSelected() {
+            const id = root.querySelector('[data-daisy-kit-blueprint-node-control][aria-pressed="true"]')?.dataset.nodeId;
+
+            return graphSnapshot(root).nodes.find((node) => node.id === id) ?? null;
+        },
+        getValue: () => graphSnapshot(root),
+        redo: () => click('[data-daisy-kit-blueprint-history="redo"]'),
+        select(id) {
+            if (typeof id !== 'string') {
+                return false;
+            }
+
+            return click(`[data-daisy-kit-blueprint-node-control][data-node-id="${CSS.escape(id)}"]`);
+        },
+        setValue(graph) {
+            const nextGraph = normalizedGraph(graph);
+            const currentConfiguration = configuration(root);
+            const configurationNode = root.querySelector('[data-daisy-kit-config]');
+
+            if (!nextGraph || !currentConfiguration || !(configurationNode instanceof HTMLScriptElement)) {
+                return false;
+            }
+
+            const nextConfiguration = configurationWithGraph(currentConfiguration, nextGraph.nodes, nextGraph.edges);
+            configurationNode.textContent = JSON.stringify(nextConfiguration);
+            structuralHistory.delete(root);
+            module.unmount(root);
+
+            if (!module.mount(root)) {
+                return false;
+            }
+
+            root.dispatchEvent(new CustomEvent('daisy-kit:blueprint:change', {
+                bubbles: true,
+                detail: { value: graphSnapshot(root) },
+            }));
+
+            return true;
+        },
+        undo: () => click('[data-daisy-kit-blueprint-history="undo"]'),
+    };
+}
+
+export function mount(root) {
+    if (!module.mount(root)) {
+        return null;
+    }
+
+    if (!publicFacades.has(root)) {
+        publicFacades.set(root, createFacade(root));
+    }
+
+    return publicFacades.get(root);
+}
+
+export function mountAll(scope = document) {
+    return [...scope.querySelectorAll('[data-daisy-kit-module="blueprint"]')].map(mount);
+}
+
+export function unmount(root) {
+    const unmounted = module.unmount(root);
+    publicFacades.delete(root);
+
+    return unmounted;
+}
+
+export function getInstance(root) {
+    return module.getInstance(root) ? (publicFacades.get(root) ?? null) : null;
+}

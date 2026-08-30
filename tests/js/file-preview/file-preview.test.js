@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { mount, unmount } from '../../../resources/js/file-preview.js';
+import { getInstance, mount, unmount } from '../../../resources/js/file-preview.js';
 
 function root(configuration) {
     document.body.innerHTML = `
@@ -48,6 +48,35 @@ afterEach(() => {
 });
 
 describe('file preview entry', () => {
+    it('exposes a stable facade for preview state and reloads', async () => {
+        vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('plain text', {
+            headers: { 'content-type': 'text/plain' },
+            status: 200,
+        }))));
+        const element = root({ layout: 'modal', src: '/notes.txt', type: 'text' });
+
+        const preview = mount(element);
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+
+        expect(preview).toBe(getInstance(element));
+        expect(Object.keys(preview).sort()).toEqual(['close', 'getState', 'open', 'reload', 'setExpanded', 'setZoom']);
+        expect(preview.getState()).toMatchObject({ layout: 'modal', open: false, status: 'loading', type: 'text', zoom: 100 });
+        expect(preview.open()).toBe(true);
+        expect(preview.getState().open).toBe(true);
+        expect(preview.setZoom(175)).toBe(true);
+        expect(preview.getState().zoom).toBe(175);
+        expect(preview.setExpanded(true)).toBe(true);
+        expect(preview.getState().expanded).toBe(true);
+        expect(preview.close()).toBe(true);
+        expect(await preview.reload()).toBe(true);
+        expect(getInstance(element)).toBe(preview);
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+
+        unmount(element);
+
+        expect(getInstance(element)).toBeNull();
+    });
+
     it('starts a sandboxed preview on an HTTP host without crypto.randomUUID', async () => {
         vi.stubGlobal('crypto', {});
         vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));

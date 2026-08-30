@@ -440,7 +440,7 @@ function initialize(root, configuration) {
     if (!content || !tableElement || !filter || !previousButton || !nextButton || !page) {
         updateStatus(root, labels.missingContent);
         root.dataset.daisyKitState = 'error';
-        emit(root, 'error', { reason: 'missing-content' });
+        emit(root, 'error', { code: 'missing-content', message: labels.missingContent });
 
         return;
     }
@@ -618,7 +618,7 @@ function initialize(root, configuration) {
     }
 
     function applyPendingFilters() {
-        if (!manualFilters || !filtersArePending()) return;
+        if (!manualFilters || !filtersArePending()) return false;
 
         state.columnFilters = pendingColumnFilters.map((columnFilter) => ({ ...columnFilter }));
         state.pagination.pageIndex = 0;
@@ -628,6 +628,8 @@ function initialize(root, configuration) {
         emit(root, 'filtered', { filters: state.columnFilters.map((columnFilter) => ({ ...columnFilter })) });
         emit(root, 'filters-applied', { filters: state.columnFilters.map((columnFilter) => ({ ...columnFilter })) });
         requestRows();
+
+        return true;
     }
 
     function updateRow(rowId, nextRow) {
@@ -711,7 +713,7 @@ function initialize(root, configuration) {
     }
 
     function selectPage() {
-        if (selectionMode !== 'multiple') return;
+        if (selectionMode !== 'multiple') return false;
 
         table.getRowModel().rows.forEach((row) => {
             if (selectionState.allFilteredSelected) selectionState.excludedIds.delete(row.id);
@@ -719,6 +721,8 @@ function initialize(root, configuration) {
         });
         emitSelectionChanged();
         render();
+
+        return true;
     }
 
     function clearPage() {
@@ -733,11 +737,13 @@ function initialize(root, configuration) {
     }
 
     function selectFiltered() {
-        if (selectionMode !== 'multiple' || selection.selectFiltered !== true) return;
+        if (selectionMode !== 'multiple' || selection.selectFiltered !== true) return false;
 
         selectionState = { allFilteredSelected: true, excludedIds: new Set(), selectedIds: new Set() };
         emitSelectionChanged();
         render();
+
+        return true;
     }
 
     function clearSelection(shouldRender = true) {
@@ -746,6 +752,8 @@ function initialize(root, configuration) {
         selectionState = { allFilteredSelected: false, excludedIds: new Set(), selectedIds: new Set() };
         if (hadSelection) emitSelectionChanged();
         if (shouldRender) render();
+
+        return hadSelection;
     }
 
     async function saveEdit(row, column, value) {
@@ -804,8 +812,9 @@ function initialize(root, configuration) {
             emit(root, 'edited', { column: column.id, row: nextRow, rowId: row.id, value });
         } catch (error) {
             if (!active || (error instanceof DOMException && error.name === 'AbortError')) return;
-            updateStatus(root, error instanceof Error ? error.message : labels.editError);
-            emit(root, 'error', { column: column.id, reason: 'edit-failed', rowId: row.id });
+            const message = error instanceof Error ? error.message : labels.editError;
+            updateStatus(root, message);
+            emit(root, 'error', { code: 'edit-failed', column: column.id, message, rowId: row.id });
         } finally {
             if (editAbortController) {
                 editAbortControllers.delete(editAbortController);
@@ -1211,7 +1220,7 @@ function initialize(root, configuration) {
 
     async function requestRows() {
         if (!source) {
-            return;
+            return false;
         }
 
         abortController?.abort();
@@ -1264,7 +1273,7 @@ function initialize(root, configuration) {
             if (!response.ok) throw new Error(labels.sourceError);
 
             const payload = await response.json();
-            if (requestSerialAtStart !== requestSerial) return;
+            if (requestSerialAtStart !== requestSerial) return false;
 
             const normalizedPayload = normalizeServerPayload(payload, serverAdapter);
 
@@ -1283,14 +1292,18 @@ function initialize(root, configuration) {
                 state: { ...state },
             }));
             render();
+
+            return true;
         } catch (error) {
-            if (requestSerialAtStart !== requestSerial || (error instanceof DOMException && error.name === 'AbortError')) return;
+            if (requestSerialAtStart !== requestSerial || (error instanceof DOMException && error.name === 'AbortError')) return false;
 
             updateStatus(root, labels.loadingError);
             root.dataset.daisyKitState = 'error';
             root.setAttribute('aria-busy', 'false');
             tableElement.setAttribute('aria-busy', 'false');
-            emit(root, 'error', { reason: 'source-unavailable' });
+            emit(root, 'error', { code: 'source-unavailable', message: labels.loadingError });
+
+            return false;
         }
     }
 
@@ -1344,6 +1357,8 @@ function initialize(root, configuration) {
             render();
             emit(root, 'filtered', { filters: [], query: '' });
             requestRows();
+
+            return true;
         },
         clearSelection,
         getState() {
@@ -1408,20 +1423,26 @@ function initialize(root, configuration) {
         },
         setGlobalFilter(value) {
             table.setGlobalFilter(value === null || value === undefined ? '' : String(value));
+
+            return true;
         },
         setPage(pageNumber) {
             if (!Number.isInteger(pageNumber) || pageNumber < 1) {
-                throw new RangeError('Table page numbers must be positive integers.');
+                return false;
             }
 
             table.setPageIndex(pageNumber - 1);
+
+            return true;
         },
         setPageSize(pageSize) {
             if (!Number.isInteger(pageSize) || pageSize < 1) {
-                throw new RangeError('Table page sizes must be positive integers.');
+                return false;
             }
 
             table.setPageSize(pageSize);
+
+            return true;
         },
         setSorting(columnId, direction = 'asc') {
             const column = typeof columnId === 'string' ? table.getColumn(columnId) : null;
@@ -1494,5 +1515,5 @@ export function mountAll(scope = document) {
 }
 
 export function unmount(root) {
-    module.unmount(root);
+    return module.unmount(root);
 }

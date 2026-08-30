@@ -23,9 +23,11 @@ Install it from GitHub/VCS rather than Packagist:
 
 ## Public components
 
-`x-daisy-kit::forms.viewer`, `x-daisy-kit::forms.builder`, `x-daisy-kit::table`,
-`x-daisy-kit::tree`, `x-daisy-kit::blueprint`, `x-daisy-kit::file-preview`, and
-`x-daisy-kit::map` are the complete public surface. Their contracts are documented in
+`x-daisy-kit::table`, `x-daisy-kit::tree`, `x-daisy-kit::blueprint`,
+`x-daisy-kit::file-preview`, `x-daisy-kit::map`, `x-daisy-kit::copyable`,
+`x-daisy-kit::combobox`, `x-daisy-kit::signature`, `x-daisy-kit::truncate`,
+`x-daisy-kit::scrollspy`, and `x-daisy-kit::transfer-list` are the complete public surface.
+Their contracts are documented in
 [`docs/specs/v5-public-contract.md`](docs/specs/v5-public-contract.md).
 
 ## Explicit assets
@@ -58,17 +60,26 @@ import { mountAll } from '@daisy-kit/table.js';
 mountAll();
 ```
 
-The available pairs are `forms-viewer`, `forms-builder`, `table`, `tree`, `blueprint`,
-`file-preview`, and `map` — for example `@daisy-kit/forms-viewer.js` and
-`@daisy-kit/forms-viewer.css`. Do not import this Composer package by its package name in a Vite
-source file.
+The available pairs are `table`, `tree`, `blueprint`, `file-preview`, `map`, `copyable`,
+`combobox`, `signature`, `truncate`, `scrollspy`, and `transfer-list`. Do not import this
+Composer package by its package name in a Vite source file.
 
 [`docs/examples.md`](docs/examples.md) contains copyable Blade and Vite examples for every
 module, including their common options and stateful use cases.
 
-Each ESM entry exports `mount(root)`, `mountAll(scope = document)`, and `unmount(root)`.
-There is no global bootstrap or `vendor:publish` step. Configuration is rendered as encoded
-JSON, so a host can keep a strict CSP without inline script, handler, or style exceptions.
+Each ESM entry exports `mount(root)`, `mountAll(scope = document)`, `unmount(root)`, and
+`getInstance(root)`. `mount` returns a stable module facade, repeated mounts and `getInstance`
+return the same object, and `mountAll` returns facades in DOM order. Getters return detached
+snapshots; synchronous commands return booleans and asynchronous commands return
+`Promise<boolean>`. Operational failures return `false` and emit a structured
+`daisy-kit:{module}:error` event. Lifecycle teardown is available only through `unmount(root)`;
+the internal `destroy` hook is not part of any facade. The complete facade and event payload contract is in the
+[public contract](docs/specs/v5-public-contract.md).
+
+There is no global bootstrap or `vendor:publish` step. Configuration is
+rendered as encoded JSON, with no inline script or handler. Signature and Transfer List require
+`style-src-attr 'unsafe-inline'` on pages that mount them because their pinned third-party
+dependencies write DOM style properties; the other entries retain the stricter policy.
 `@daisy-kit/file-preview.js` also causes Vite to emit File Preview's sandboxed-frame chunks;
 do not add a route, proxy, copy step, or manual asset import for them.
 
@@ -86,6 +97,11 @@ npm run build
 `composer build:workbench` prepares the Testbench Workbench. The tracked `dist/` directory
 is the reproducible runtime distribution; dependencies, coverage, and Workbench build output
 are not tracked.
+
+The Workbench is deliberately a representative internal Laravel host: it renders normal Blade,
+uses explicit Vite entries, local routes and native forms, and supports browser outcome tests. It
+is not an API explorer or interactive documentation surface; facade examples belong in
+[`docs/examples.md`](docs/examples.md).
 
 `composer test:full` always runs the complete Pest suite, including the Workbench browser check,
 with TIA disabled. `composer test:tia`

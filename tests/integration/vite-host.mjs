@@ -8,7 +8,7 @@ import { chromium } from 'playwright';
 const repositoryRoot = resolve(import.meta.dirname, '../..');
 const fixtureRoot = resolve(repositoryRoot, 'tests/fixtures/vite-host');
 const hostRoot = mkdtempSync(resolve(tmpdir(), 'daisy-kit-vite-host-'));
-const entryStems = ['forms-viewer', 'forms-builder', 'table', 'tree', 'blueprint', 'file-preview', 'map'];
+const entryStems = ['table', 'tree', 'blueprint', 'file-preview', 'map', 'copyable', 'combobox', 'signature', 'truncate', 'scrollspy', 'transfer-list'];
 const contentTypes = {
     '.css': 'text/css; charset=utf-8',
     '.html': 'text/html; charset=utf-8',
@@ -80,8 +80,10 @@ function startHost(buildRoot) {
                 return;
             }
 
+            const styleAttributePolicy = path === '/relaxed.html' ? "'unsafe-inline'" : "'none'";
+
             response.writeHead(200, {
-                'Content-Security-Policy': "default-src 'none'; base-uri 'none'; connect-src 'self'; form-action 'none'; frame-src 'self'; img-src 'self' data: blob:; object-src 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'",
+                'Content-Security-Policy': `default-src 'none'; base-uri 'none'; connect-src 'self'; form-action 'none'; frame-src 'self'; img-src 'self' data: blob:; object-src 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self'; style-src-attr ${styleAttributePolicy}`,
                 'Content-Type': contentTypes[extname(file)] ?? 'application/octet-stream',
             });
             response.end(readFileSync(file));
@@ -142,6 +144,10 @@ try {
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
     await page.addInitScript(() => {
+        window.__daisyKitCspViolations = [];
+        document.addEventListener('securitypolicyviolation', (event) => {
+            window.__daisyKitCspViolations.push(`${event.effectiveDirective}:${event.blockedURI}`);
+        });
         Object.defineProperty(window, 'crypto', { configurable: true, value: {} });
         Object.defineProperty(navigator, 'geolocation', {
             configurable: true,
@@ -163,45 +169,21 @@ try {
             const expected = {
                 blueprint: 'ready',
                 'file-preview': 'ready',
-                'forms-builder': 'empty',
-                'forms-viewer': 'ready',
                 map: 'ready',
+                copyable: 'ready',
+                combobox: 'ready',
+                truncate: 'ready',
+                scrollspy: 'ready',
                 table: 'ready',
                 tree: 'ready',
             };
             const roots = [...document.querySelectorAll('[data-daisy-kit-module]')];
 
-            return roots.length === 9
+            return roots.length === 10
                 && roots.every((root) => root.dataset.daisyKitState === expected[root.getAttribute('data-daisy-kit-module')]);
         });
     } catch (error) {
         throw new Error(`Fresh host modules did not reach their expected terminal states: ${JSON.stringify(await fixtureModuleStates(page))}`, { cause: error });
-    }
-
-    const viewer = page.locator('[data-daisy-kit-module="forms-viewer"]').first();
-    const title = viewer.locator('input[name="title"]');
-
-    if (await title.inputValue() !== 'HTTP fixture') {
-        throw new Error('Forms Viewer did not expose its configured value in the fresh Vite host.');
-    }
-
-    await title.fill('');
-    if (await viewer.locator('form').evaluate((form) => form.checkValidity())) {
-        throw new Error('Forms Viewer did not retain required-field validation in the fresh Vite host.');
-    }
-    await title.fill('Verified host value');
-    if (!(await viewer.locator('form').evaluate((form) => form.checkValidity()))) {
-        throw new Error('Forms Viewer did not restore validity after a user value was entered.');
-    }
-
-    const secondaryViewer = page.locator('[data-daisy-kit-module="forms-viewer"]').nth(1);
-    if (await secondaryViewer.locator('textarea[name="summary"]').inputValue() !== 'A distinct second instance') {
-        throw new Error('A second Forms Viewer instance did not mount independently.');
-    }
-
-    const builder = page.locator('[data-daisy-kit-module="forms-builder"]');
-    if (!(await builder.locator('[data-daisy-kit-forms-builder-unavailable]').isVisible())) {
-        throw new Error('Forms Builder did not clearly report that its optional Livewire authoring runtime is unavailable.');
     }
 
     const table = page.locator('[data-daisy-kit-module="table"]');
@@ -328,18 +310,55 @@ try {
     if (await map.locator('[data-daisy-kit-map-mode="edit"]').getAttribute('aria-pressed') !== 'true') {
         throw new Error('Map edit mode did not become active in the host.');
     }
-    await map.evaluate((root) => root.addEventListener('daisy-kit:map:geolocation', () => {
+    await map.evaluate((root) => root.addEventListener('daisy-kit:map:geolocate', () => {
         root.dataset.fixtureGeolocated = 'true';
     }, { once: true }));
     await map.locator('[data-daisy-kit-map-geolocate]').click();
     await page.waitForFunction(() => document.querySelector('[data-daisy-kit-module="map"]')?.dataset.fixtureGeolocated === 'true');
-    await map.evaluate((root) => root.addEventListener('daisy-kit:map:selection', (event) => {
-        const selected = event.detail.features?.find((feature) => feature.id === 'fixture-district');
-        if (selected) root.dataset.daisyKitSpatialSelection = selected.id;
-    }));
-    await map.locator('[data-daisy-kit-map-mode="feature-select"]').click();
-    await map.locator('.leaflet-interactive').first().dispatchEvent('click');
+    await map.locator('[data-daisy-kit-map-mode="spatial-select"]').click();
+    const mapCanvas = map.locator('[data-daisy-kit-map-canvas]');
+    const mapBounds = await mapCanvas.boundingBox();
+    if (!mapBounds) throw new Error('Map did not expose a measurable canvas for spatial selection.');
+    await mapCanvas.click({ position: { x: mapBounds.width / 2, y: mapBounds.height / 2 } });
     await page.waitForFunction(() => document.querySelector('[data-daisy-kit-module="map"]')?.dataset.daisyKitSpatialSelection === 'fixture-district');
+
+    const strictModuleTypes = await page.locator('[data-daisy-kit-module]').evaluateAll((roots) => [...new Set(roots.map((root) => root.dataset.daisyKitModule))].sort());
+    if (JSON.stringify(strictModuleTypes) !== JSON.stringify(['blueprint', 'combobox', 'copyable', 'file-preview', 'map', 'scrollspy', 'table', 'tree', 'truncate'])) {
+        throw new Error(`The strict host did not mount the nine expected module types: ${JSON.stringify(strictModuleTypes)}.`);
+    }
+
+    const strictCspViolations = await page.evaluate(() => window.__daisyKitCspViolations);
+    if (strictCspViolations.length > 0) {
+        throw new Error(`The strict host reported CSP violations:\n${strictCspViolations.join('\n')}`);
+    }
+
+    await page.goto(new URL('/relaxed.html', url).href, { waitUntil: 'networkidle' });
+    try {
+        await page.waitForFunction(() => {
+            const roots = [...document.querySelectorAll('[data-daisy-kit-module]')];
+
+            return roots.length === 2 && roots.every((root) => root.dataset.daisyKitState === 'ready');
+        });
+    } catch (error) {
+        throw new Error(`Dependency-style host modules did not become ready: ${JSON.stringify(await fixtureModuleStates(page))}`, { cause: error });
+    }
+
+    const relaxedModuleTypes = await page.locator('[data-daisy-kit-module]').evaluateAll((roots) => roots.map((root) => root.dataset.daisyKitModule).sort());
+    if (JSON.stringify(relaxedModuleTypes) !== JSON.stringify(['signature', 'transfer-list'])) {
+        throw new Error(`The dependency-style host did not mount Signature and Transfer List: ${JSON.stringify(relaxedModuleTypes)}.`);
+    }
+
+    const transfer = page.locator('[data-daisy-kit-module="transfer-list"]');
+    await transfer.locator('[data-daisy-kit-transfer-source] [role="option"]').first().click();
+    await transfer.locator('[data-daisy-kit-transfer-move="to-target"]').click();
+    if (await transfer.locator('input[name="assignees[]"]').count() !== 2) {
+        throw new Error('Transfer List did not synchronize its repeated native host inputs.');
+    }
+
+    const relaxedCspViolations = await page.evaluate(() => window.__daisyKitCspViolations);
+    if (relaxedCspViolations.length > 0) {
+        throw new Error(`The dependency-style host reported CSP violations:\n${relaxedCspViolations.join('\n')}`);
+    }
 
     if (responses.length > 0) {
         throw new Error(`The served host requested missing assets:\n${responses.join('\n')}`);

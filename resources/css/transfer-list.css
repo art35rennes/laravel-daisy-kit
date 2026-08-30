@@ -1,0 +1,4 @@
+.daisy-kit-transfer-list__columns { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+.daisy-kit-transfer-list__actions { align-items: center; display: flex; flex-direction: column; gap: .5rem; justify-content: center; }
+.daisy-kit-transfer-list [role='option'][aria-selected='true'] { background-color: color-mix(in oklab, var(--color-primary) 16%, transparent); }
+@media (max-width: 640px) { .daisy-kit-transfer-list__columns { grid-template-columns: 1fr; } .daisy-kit-transfer-list__actions { flex-direction: row; } }

@@ -10,27 +10,6 @@
     <main>
         <h1>Daisy Kit Vite host fixture</h1>
 
-        <section aria-labelledby="viewer-heading" data-daisy-kit-module="forms-viewer">
-            <h2 id="viewer-heading">Forms Viewer</h2>
-            <p data-daisy-kit-status hidden role="status"></p>
-            <form data-daisy-kit-forms-content></form>
-            <script data-daisy-kit-config type="application/json">{"schema":{"submit":{"label":"Save profile","mode":"event"},"fields":[{"name":"title","label":"Title","type":"text","rules":["required"]},{"name":"role","label":"Role","type":"select","options":[{"label":"Member","value":"member"},{"label":"Administrator","value":"admin"}]}]},"value":{"title":"HTTP fixture","role":"member"}}</script>
-        </section>
-
-        <section aria-labelledby="viewer-secondary-heading" data-daisy-kit-module="forms-viewer">
-            <h2 id="viewer-secondary-heading">Second Forms Viewer</h2>
-            <p data-daisy-kit-status hidden role="status"></p>
-            <form data-daisy-kit-forms-content></form>
-            <script data-daisy-kit-config type="application/json">{"schema":{"fields":[{"name":"summary","label":"Summary","type":"textarea","rules":["required"]}]},"value":{"summary":"A distinct second instance"}}</script>
-        </section>
-
-        <section aria-labelledby="builder-heading" data-daisy-kit-module="forms-builder">
-            <h2 id="builder-heading">Forms Builder</h2>
-            <p data-daisy-kit-status hidden role="status">Forms Builder authoring requires optional Livewire 4.</p>
-            <p data-daisy-kit-forms-builder-unavailable>The authoring enhancement is not installed.</p>
-            <script data-daisy-kit-config type="application/json">{"livewireAvailable":false,"schema":{"fields":[{"name":"title","label":"Title","type":"text"}]}}</script>
-        </section>
-
         <section aria-labelledby="table-heading" data-daisy-kit-module="table">
             <h2 id="table-heading">Table</h2>
             <p data-daisy-kit-status hidden role="status" aria-live="polite"></p>
@@ -89,12 +68,38 @@
             <h2 id="map-heading">Map</h2>
             <p data-daisy-kit-status hidden role="alert"></p>
             <div data-daisy-kit-content>
-                <div aria-label="Fixture map" data-daisy-kit-map-canvas tabindex="0"></div><p data-daisy-kit-empty hidden>No geographic data is available.</p><output aria-live="polite" data-daisy-kit-map-measurement hidden></output><input data-daisy-kit-map-value type="hidden"><button data-daisy-kit-map-geolocate type="button">Use my location</button>
+                <div aria-label="Fixture map" data-daisy-kit-map-canvas role="application" tabindex="0"></div><p data-daisy-kit-empty hidden>No geographic data is available.</p><output aria-live="polite" data-daisy-kit-map-measurement></output><input data-daisy-kit-map-value type="hidden"><button data-daisy-kit-map-geolocate type="button">Use my location</button>
                 <fieldset data-daisy-kit-map-layers hidden><legend>Layers</legend></fieldset><fieldset data-daisy-kit-map-basemaps hidden><legend>Basemaps</legend></fieldset>
-                <fieldset data-daisy-kit-map-tools><legend>Drawing tools</legend><button data-daisy-kit-map-mode="point" type="button">Draw point</button><button data-daisy-kit-map-mode="linestring" type="button">Draw line</button><button data-daisy-kit-map-mode="polygon" type="button">Draw area</button><button data-daisy-kit-map-mode="edit" type="button">Edit drawing</button><button data-daisy-kit-map-mode="select" type="button">Select drawing</button><button data-daisy-kit-map-mode="feature-select" type="button">Select geographic feature</button><button data-daisy-kit-map-history="undo" disabled type="button">Undo</button><button data-daisy-kit-map-history="redo" disabled type="button">Redo</button><button data-daisy-kit-map-export disabled type="button">Export drawing</button></fieldset>
+                <fieldset data-daisy-kit-map-tools><legend>Drawing tools</legend><button data-daisy-kit-map-mode="point" type="button">Draw point</button><button data-daisy-kit-map-mode="linestring" type="button">Draw line</button><button data-daisy-kit-map-mode="polygon" type="button">Draw area</button><button data-daisy-kit-map-mode="edit" type="button">Edit drawing</button><button data-daisy-kit-map-mode="select" type="button">Select drawing</button><button data-daisy-kit-map-mode="spatial-select" type="button">Select geographic feature</button><button data-daisy-kit-map-history="undo" disabled type="button">Undo</button><button data-daisy-kit-map-history="redo" disabled type="button">Redo</button><button data-daisy-kit-map-export disabled type="button">Export drawing</button></fieldset>
             </div>
-            <script data-daisy-kit-config type="application/json">{"center":[48.1173,-1.6778],"zoom":12,"drawing":true,"geolocation":true,"spatialSelection":true,"markers":[{"id":"city-hall","label":"City hall","position":[48.1173,-1.6778]}],"geojson":{"type":"FeatureCollection","features":[{"id":"fixture-district","type":"Feature","properties":{"name":"Fixture district"},"geometry":{"type":"Polygon","coordinates":[[[-1.69,48.11],[-1.66,48.11],[-1.66,48.13],[-1.69,48.11]]]}}]},"layers":[{"id":"fixture-layer","label":"Fixture layer","type":"geojson","visible":true,"data":{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[-1.677,48.118]}}]}}],"label":"Fixture map"}</script>
+            <script data-daisy-kit-config type="application/json">{"center":[48.1173,-1.6778],"zoom":12,"drawing":true,"geolocation":true,"spatialSelection":true,"markers":[{"id":"city-hall","label":"City hall","position":[48.1173,-1.6778]}],"geojson":{"type":"FeatureCollection","features":[{"id":"fixture-district","type":"Feature","properties":{"name":"Fixture district"},"geometry":{"type":"Polygon","coordinates":[[[-1.69,48.11],[-1.66,48.11],[-1.66,48.13],[-1.69,48.11]]]}}]},"layers":[{"id":"fixture-layer","label":"Fixture layer","visible":true,"geojson":{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[-1.677,48.118]}}]}}],"label":"Fixture map"}</script>
         </section>
+        <section data-daisy-kit-module="copyable">
+            <p data-daisy-kit-status hidden role="status" aria-live="polite"></p>
+            <button data-daisy-kit-copyable-button type="button">fixture-value</button>
+            <script data-daisy-kit-config type="application/json">{"value":"fixture-value"}</script>
+        </section>
+
+        <section data-daisy-kit-module="combobox">
+            <p data-daisy-kit-status hidden role="alert"></p>
+            <input aria-controls="fixture-combobox-list" aria-expanded="false" data-daisy-kit-combobox-input role="combobox" type="text">
+            <ul data-daisy-kit-combobox-listbox hidden id="fixture-combobox-list" role="listbox"></ul>
+            <div data-daisy-kit-combobox-tokens></div><div data-daisy-kit-combobox-values></div>
+            <script data-daisy-kit-config type="application/json">{"name":"fixture-choice","options":[{"value":"ada","label":"Ada"}],"value":"ada"}</script>
+        </section>
+
+        <section data-daisy-kit-module="truncate">
+            <p data-daisy-kit-status hidden role="status"></p><p data-daisy-kit-truncate-text></p>
+            <button data-daisy-kit-truncate-reveal hidden type="button"></button>
+            <div data-daisy-kit-truncate-popover popover="manual"><h2 data-daisy-kit-truncate-title hidden></h2><p data-daisy-kit-truncate-full-text></p><button data-daisy-kit-truncate-close type="button">Close</button></div>
+            <script data-daisy-kit-config type="application/json">{"text":"A complete selectable fixture value","lines":1}</script>
+        </section>
+
+        <article id="fixture-sections"><h2 id="fixture-overview">Overview</h2><p>Overview text.</p><h3 id="fixture-details">Details</h3><p>Details text.</p></article>
+        <nav data-daisy-kit-module="scrollspy" aria-label="Section navigation">
+            <p data-daisy-kit-status hidden role="status"></p><ul data-daisy-kit-scrollspy-list></ul>
+            <script data-daisy-kit-config type="application/json">{"target":"#fixture-sections","items":[{"id":"fixture-overview","label":"Overview"},{"id":"fixture-details","label":"Details"}]}</script>
+        </nav>
     </main>
 </body>
 </html>

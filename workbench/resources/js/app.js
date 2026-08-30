@@ -1,14 +1,4 @@
 const modules = [
-    ['forms-viewer', async () => {
-        await import('@daisy-kit/forms-viewer.css');
-
-        return import('@daisy-kit/forms-viewer.js');
-    }],
-    ['forms-builder', async () => {
-        await import('@daisy-kit/forms-builder.css');
-
-        return import('@daisy-kit/forms-builder.js');
-    }],
     ['table', async () => {
         await import('@daisy-kit/table.css');
 
@@ -34,34 +24,34 @@ const modules = [
 
         return import('@daisy-kit/map.js');
     }],
+    ['copyable', async () => {
+        await import('@daisy-kit/copyable.css');
+        return import('@daisy-kit/copyable.js');
+    }],
+    ['combobox', async () => {
+        await import('@daisy-kit/combobox.css');
+        return import('@daisy-kit/combobox.js');
+    }],
+    ['signature', async () => {
+        await import('@daisy-kit/signature.css');
+        return import('@daisy-kit/signature.js');
+    }],
+    ['truncate', async () => {
+        await import('@daisy-kit/truncate.css');
+        return import('@daisy-kit/truncate.js');
+    }],
+    ['scrollspy', async () => {
+        await import('@daisy-kit/scrollspy.css');
+        return import('@daisy-kit/scrollspy.js');
+    }],
+    ['transfer-list', async () => {
+        await import('@daisy-kit/transfer-list.css');
+        return import('@daisy-kit/transfer-list.js');
+    }],
 ];
 
-modules.forEach(async ([moduleName, loadModule]) => {
+modules.forEach(async ([, loadModule]) => {
     const module = await loadModule();
 
-    // A Livewire Builder preview contains a second Viewer root. Each independent
-    // entry must discover every root it owns, rather than only the first root's
-    // section wrapper.
     module.mountAll();
-
-    if (moduleName === 'map') {
-        document.querySelectorAll('[data-workbench-map-action]').forEach((button) => {
-            button.addEventListener('click', () => {
-                const root = button.closest('[data-daisy-kit-module="map"]');
-                const instance = module.getInstance(root);
-
-                if (!instance) return;
-
-                if (button.dataset.workbenchMapAction === 'view') {
-                    instance.setView([48.1512, -1.6842], 14);
-                    root.dataset.workbenchFacade = 'view-updated';
-                }
-
-                if (button.dataset.workbenchMapAction === 'invalidate') {
-                    instance.invalidateSize();
-                    root.dataset.workbenchFacade = 'layout-updated';
-                }
-            });
-        });
-    }
 });

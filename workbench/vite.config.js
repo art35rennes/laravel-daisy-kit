@@ -10,6 +10,8 @@ export default defineConfig({
             input: {
                 'resources/css/app.css': 'resources/css/app.css',
                 'resources/js/app.js': 'resources/js/app.js',
+                'resources/js/csp-strict.js': 'resources/js/csp-strict.js',
+                'resources/js/csp-dependency-styles.js': 'resources/js/csp-dependency-styles.js',
             },
             refresh: true,
         }),

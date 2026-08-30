@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { mount, mountAll, unmount } from '../../../resources/js/blueprint.js';
+import { getInstance, mount, mountAll, unmount } from '../../../resources/js/blueprint.js';
 
 function root(configuration) {
     document.body.innerHTML = `
@@ -19,6 +19,40 @@ function root(configuration) {
 }
 
 describe('blueprint entry', () => {
+    it('exposes a stable facade across structural remounts', () => {
+        const element = root({
+            editable: true,
+            edges: [],
+            nodes: [{ id: 'first', label: 'First' }, { id: 'second', label: 'Second' }],
+        });
+
+        const blueprint = mount(element);
+
+        expect(blueprint).toBe(getInstance(element));
+        expect(Object.keys(blueprint).sort()).toEqual(['arrange', 'fit', 'getSelected', 'getValue', 'redo', 'select', 'setValue', 'undo']);
+        expect(blueprint.select('first')).toBe(true);
+        expect(blueprint.getSelected()).toEqual({ id: 'first', label: 'First' });
+        expect(blueprint.arrange()).toBe(true);
+        expect(blueprint.fit()).toBe(true);
+        expect(blueprint.setValue({
+            edges: [{ source: 'first', target: 'third' }],
+            nodes: [{ id: 'first', label: 'First' }, { id: 'third', label: 'Third' }],
+        })).toBe(true);
+        expect(getInstance(element)).toBe(blueprint);
+        expect(blueprint.getValue()).toEqual({
+            edges: [{ source: 'first', target: 'third' }],
+            nodes: [{ id: 'first', label: 'First' }, { id: 'third', label: 'Third' }],
+        });
+        expect(blueprint.select('third')).toBe(true);
+        expect(blueprint.undo()).toBe(false);
+        expect(blueprint.redo()).toBe(false);
+        expect(blueprint.setValue(null)).toBe(false);
+
+        unmount(element);
+
+        expect(getInstance(element)).toBeNull();
+    });
+
     it('lays out multiple nodes once and supports keyboard selection', () => {
         const element = root({
             nodes: [{ id: 'first', label: 'First' }, { id: 'second', label: 'Second' }],

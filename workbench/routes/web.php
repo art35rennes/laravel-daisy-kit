@@ -81,6 +81,89 @@ Route::patch('/_daisy-kit-test/table/rows/{rowId}', function (Request $request, 
     return response()->json(['row' => $row]);
 })->where('rowId', '[A-Za-z0-9-]+')->name('workbench.table.update');
 
+Route::get('/_daisy-kit-test/combobox/reviewers', function (Request $request) {
+    $query = mb_strtolower($request->string('query')->trim()->toString());
+    $reviewers = collect([
+        ['value' => 'ada', 'label' => 'Ada Lovelace', 'description' => 'Platform'],
+        ['value' => 'grace', 'label' => 'Grace Hopper', 'description' => 'Infrastructure'],
+        ['value' => 'margaret', 'label' => 'Margaret Hamilton', 'description' => 'Flight software'],
+        ['value' => 'katherine', 'label' => 'Katherine Johnson', 'description' => 'Research'],
+    ]);
+
+    if ($query !== '') {
+        $reviewers = $reviewers->filter(fn (array $reviewer): bool => str_contains(
+            mb_strtolower("{$reviewer['label']} {$reviewer['description']}"),
+            $query,
+        ));
+    }
+
+    return response()->json([
+        'items' => $reviewers->values(),
+        'nextCursor' => null,
+    ]);
+})->name('workbench.combobox.reviewers');
+
+Route::get('/_daisy-kit-test/tree/search', function (Request $request) {
+    $query = mb_strtolower($request->string('query')->trim()->toString());
+    $items = [[
+        'id' => 'documentation',
+        'label' => 'Documentation',
+        'expanded' => true,
+        'children' => [
+            ['id' => 'getting-started', 'label' => 'Getting started'],
+            ['id' => 'api-reference', 'label' => 'API reference'],
+        ],
+    ], [
+        'id' => 'packages',
+        'label' => 'Packages',
+        'children' => [
+            ['id' => 'daisy-kit', 'label' => 'Laravel Daisy Kit'],
+            ['id' => 'demo', 'label' => 'Demo application'],
+        ],
+    ]];
+
+    if ($query === '') {
+        return response()->json(['items' => $items]);
+    }
+
+    $filterItems = function (array $branches) use (&$filterItems, $query): array {
+        return collect($branches)
+            ->map(function (array $branch) use (&$filterItems, $query): ?array {
+                $children = $filterItems($branch['children'] ?? []);
+
+                if ($children === [] && ! str_contains(mb_strtolower($branch['label']), $query)) {
+                    return null;
+                }
+
+                if ($children !== []) {
+                    $branch['children'] = $children;
+                    $branch['expanded'] = true;
+                }
+
+                return $branch;
+            })
+            ->filter()
+            ->values()
+            ->all();
+    };
+
+    return response()->json(['items' => $filterItems($items)]);
+})->name('workbench.tree.search');
+
+Route::post('/_daisy-kit-test/reviews', function (Request $request) {
+    $review = $request->validate([
+        'reviewers' => ['array'],
+        'reviewers.*' => ['string', 'max:100'],
+        'assignees' => ['array'],
+        'assignees.*' => ['string', 'max:100'],
+        'approval_signature' => ['nullable', 'string', 'starts_with:data:image/png;base64,'],
+    ]);
+
+    return redirect()
+        ->route('workbench.index')
+        ->with('workbench.review.saved', $review);
+})->name('workbench.reviews.store');
+
 Route::get('/_daisy-kit-test/map/districts.geojson', function () {
     return response()->json([
         'type' => 'FeatureCollection',
@@ -137,3 +220,15 @@ Route::get('/_daisy-kit-test/csp/file-preview', function () {
         ->view('workbench::csp-file-preview')
         ->header('Content-Security-Policy', "default-src 'none'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'none'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; frame-src 'self'; form-action 'none'");
 })->name('workbench.csp.file-preview');
+
+Route::get('/_daisy-kit-test/csp/strict', function () {
+    return response()
+        ->view('workbench::csp-strict')
+        ->header('Content-Security-Policy', "default-src 'none'; base-uri 'none'; object-src 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; frame-src 'self'; form-action 'none'");
+})->name('workbench.csp.strict');
+
+Route::get('/_daisy-kit-test/csp/dependency-styles', function () {
+    return response()
+        ->view('workbench::csp-dependency-styles')
+        ->header('Content-Security-Policy', "default-src 'none'; base-uri 'none'; object-src 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; frame-src 'self'; form-action 'none'");
+})->name('workbench.csp.dependencyStyles');

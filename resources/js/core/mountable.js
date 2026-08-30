@@ -9,21 +9,28 @@ export function createMountable(moduleName, initialize) {
         }
 
         if (instances.has(root)) {
-            return instances.get(root);
+            return instances.get(root).facade;
         }
 
         const { error, value } = readConfiguration(root);
 
         if (error) {
             showConfigurationError(root);
+            root.dispatchEvent(new CustomEvent(`daisy-kit:${moduleName}:error`, {
+                bubbles: true,
+                detail: {
+                    code: error,
+                    message: 'This module configuration is invalid.',
+                },
+            }));
 
             return null;
         }
 
-        let destroy;
+        let initialized;
 
         try {
-            destroy = initialize(root, value) ?? (() => {});
+            initialized = initialize(root, value);
         } catch (error) {
             showError(root, 'This module could not be initialized.');
             root.dispatchEvent(new CustomEvent(`daisy-kit:${moduleName}:error`, {
@@ -38,15 +45,26 @@ export function createMountable(moduleName, initialize) {
 
             return null;
         }
-        const instance = { destroy };
+        if (initialized === null || initialized === undefined) {
+            return null;
+        }
+
+        const initializedInstance = typeof initialized === 'function'
+            ? { destroy: initialized }
+            : { ...initialized };
+        const destroy = typeof initializedInstance.destroy === 'function'
+            ? initializedInstance.destroy
+            : () => {};
+        delete initializedInstance.destroy;
+        const instance = { destroy, facade: initializedInstance };
 
         instances.set(root, instance);
         if (!root.dataset.daisyKitState) {
             root.dataset.daisyKitState = 'ready';
         }
-        root.dispatchEvent(new CustomEvent(`daisy-kit:${moduleName}:mounted`, { bubbles: true }));
+        root.dispatchEvent(new CustomEvent(`daisy-kit:${moduleName}:mounted`, { bubbles: true, detail: {} }));
 
-        return instance;
+        return instance.facade;
     }
 
     function mountAll(scope = document) {
@@ -57,35 +75,20 @@ export function createMountable(moduleName, initialize) {
         const instance = instances.get(root);
 
         if (!instance) {
-            return;
+            return false;
         }
 
         instance.destroy();
         instances.delete(root);
         delete root.dataset.daisyKitState;
-        root.dispatchEvent(new CustomEvent(`daisy-kit:${moduleName}:unmounted`, { bubbles: true }));
+        root.dispatchEvent(new CustomEvent(`daisy-kit:${moduleName}:unmounted`, { bubbles: true, detail: {} }));
+
+        return true;
     }
 
-    return { mount, mountAll, unmount };
-}
-
-export function installLivewireAdapter(moduleName, mountAll, unmount) {
-    function rootsInDocument() {
-        return new Set(document.querySelectorAll(`[data-daisy-kit-module="${moduleName}"]`));
+    function getInstance(root) {
+        return instances.get(root)?.facade ?? null;
     }
 
-    let mountedRoots = rootsInDocument();
-
-    const handler = () => {
-        mountedRoots.forEach(unmount);
-        mountAll(document);
-        mountedRoots = rootsInDocument();
-    };
-
-    document.addEventListener('livewire:navigated', handler);
-
-    return () => {
-        document.removeEventListener('livewire:navigated', handler);
-        mountedRoots.clear();
-    };
+    return { getInstance, mount, mountAll, unmount };
 }

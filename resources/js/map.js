@@ -29,6 +29,10 @@ export function mount(root) {
     const { error, value } = readConfiguration(root);
     if (error) {
         showConfigurationError(root);
+        emit(root, 'error', {
+            code: error,
+            message: 'This module configuration is invalid.',
+        });
 
         return null;
     }
@@ -76,10 +80,12 @@ export function mountAll(scope = document) {
 
 export function unmount(root) {
     const runtime = instances.get(root);
-    if (!runtime) return;
+    if (!runtime) return false;
 
     runtime.internalDestroy();
     instances.delete(root);
     delete root.dataset.daisyKitState;
     emit(root, 'unmounted', {});
+
+    return true;
 }

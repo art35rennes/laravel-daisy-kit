@@ -2,7 +2,7 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "art35rennes/laravel-daisy-kit",
     "description": "Focused, explicitly mounted Laravel UI modules for DaisyUI host applications.",
-    "keywords": ["laravel", "blade", "daisyui", "tailwindcss", "forms", "table", "map"],
+    "keywords": ["laravel", "blade", "daisyui", "tailwindcss", "table", "map"],
     "homepage": "https://github.com/art35rennes/laravel-daisy-kit",
     "license": "MIT",
     "support": {
@@ -19,16 +19,12 @@
         "laravel/boost": "^2.6",
         "laravel/framework": "^13.0",
         "laravel/pint": "^1.29",
-        "livewire/livewire": "^4.0",
         "orchestra/testbench": "^11.0",
         "pestphp/pest": "^5.0",
         "pestphp/pest-plugin-browser": "^5.0",
         "pestphp/pest-plugin-laravel": "^5.0",
         "pestphp/pest-plugin-type-coverage": "^5.0",
         "phpstan/extension-installer": "^1.4"
-    },
-    "suggest": {
-        "livewire/livewire": "Required only to enhance x-daisy-kit::forms.builder with Livewire 4."
     },
     "autoload": {
         "psr-4": {

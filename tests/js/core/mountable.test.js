@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createMountable, installLivewireAdapter } from '../../../resources/js/core/mountable.js';
+import { createMountable } from '../../../resources/js/core/mountable.js';
 
 describe('mountable module contract', () => {
     it('mounts once, supports multiple roots, and destroys each instance', () => {
@@ -10,15 +10,50 @@ describe('mountable module contract', () => {
         const destroyed = [];
         const module = createMountable('example', (root) => () => destroyed.push(root));
         const roots = [...document.querySelectorAll('[data-daisy-kit-module]')];
+        const unmountedDetails = [];
+        roots.forEach((root) => root.addEventListener('daisy-kit:example:unmounted', (event) => unmountedDetails.push(event.detail)));
 
         module.mountAll();
         module.mount(roots[0]);
 
         expect(roots.map((root) => root.dataset.daisyKitState)).toEqual(['ready', 'ready']);
 
-        roots.forEach((root) => module.unmount(root));
+        expect(roots.map((root) => module.unmount(root))).toEqual([true, true]);
+        expect(module.unmount(roots[0])).toBe(false);
 
         expect(destroyed).toHaveLength(2);
+        expect(unmountedDetails).toEqual([{}, {}]);
+    });
+
+    it('keeps a stable public facade and exposes it through getInstance', () => {
+        document.body.innerHTML = '<section data-daisy-kit-module="example"><script data-daisy-kit-config type="application/json">{}</script></section>';
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const destroy = vi.fn();
+        const module = createMountable('example', () => ({ destroy, refresh: vi.fn(() => true) }));
+
+        const instance = module.mount(root);
+
+        expect(instance).toBe(module.mount(root));
+        expect(instance).toBe(module.getInstance(root));
+        expect(Object.keys(instance)).toEqual(['refresh']);
+        expect(instance.destroy).toBeUndefined();
+        expect(instance.refresh()).toBe(true);
+
+        expect(module.unmount(root)).toBe(true);
+
+        expect(destroy).toHaveBeenCalledOnce();
+        expect(module.getInstance(root)).toBeNull();
+    });
+
+    it('does not register an instance when initialization returns no facade', () => {
+        document.body.innerHTML = '<section data-daisy-kit-module="example"><script data-daisy-kit-config type="application/json">{}</script></section>';
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const module = createMountable('example', () => undefined);
+
+        expect(module.mount(root)).toBeNull();
+        expect(module.getInstance(root)).toBeNull();
+        expect(module.unmount(root)).toBe(false);
+        expect(root.dataset.daisyKitState).toBeUndefined();
     });
 
     it('shows an accessible error state for invalid JSON', () => {
@@ -61,34 +96,4 @@ describe('mountable module contract', () => {
         }]);
     });
 
-    it('destroys orphaned Livewire roots for every module before mounting each replacement once', () => {
-        document.body.innerHTML = `
-            <section data-daisy-kit-module="first"><script data-daisy-kit-config type="application/json">{}</script></section>
-            <section data-daisy-kit-module="second"><script data-daisy-kit-config type="application/json">{}</script></section>
-        `;
-        const [firstRoot, secondRoot] = [...document.querySelectorAll('[data-daisy-kit-module]')];
-        const firstUnmount = vi.fn();
-        const secondUnmount = vi.fn();
-        const firstMountAll = vi.fn();
-        const secondMountAll = vi.fn();
-        const detachFirst = installLivewireAdapter('first', firstMountAll, firstUnmount);
-        const detachSecond = installLivewireAdapter('second', secondMountAll, secondUnmount);
-
-        document.body.innerHTML = `
-            <section data-daisy-kit-module="first"><script data-daisy-kit-config type="application/json">{}</script></section>
-            <section data-daisy-kit-module="second"><script data-daisy-kit-config type="application/json">{}</script></section>
-        `;
-        expect(document.querySelector('[data-daisy-kit-module="first"]')).not.toBe(firstRoot);
-        expect(document.querySelector('[data-daisy-kit-module="second"]')).not.toBe(secondRoot);
-        document.dispatchEvent(new Event('livewire:navigated'));
-        detachFirst();
-        detachSecond();
-
-        expect(firstUnmount).toHaveBeenCalledTimes(1);
-        expect(secondUnmount).toHaveBeenCalledTimes(1);
-        expect(firstUnmount.mock.calls[0][0]).toBe(firstRoot);
-        expect(secondUnmount.mock.calls[0][0]).toBe(secondRoot);
-        expect(firstMountAll).toHaveBeenCalledExactlyOnceWith(document);
-        expect(secondMountAll).toHaveBeenCalledExactlyOnceWith(document);
-    });
 });

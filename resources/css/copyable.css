@@ -1,0 +1,7 @@
+.daisy-kit-copyable {
+    display: inline-flex;
+}
+
+.daisy-kit-copyable-button:disabled {
+    cursor: not-allowed;
+}

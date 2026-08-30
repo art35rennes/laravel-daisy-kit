@@ -7,58 +7,18 @@ it('mounts the Workbench modules accessibly on desktop and mobile', function ():
 
     $desktop
         ->assertSee('Daisy Kit v5 Workbench')
-        // The Livewire Builder owns one real Viewer preview in addition to the thirteen
-        // Workbench mount roots. Both must participate in the normal mount contract.
-        ->assertCount('[data-daisy-kit-module]', 14)
+        ->assertCount('[data-daisy-kit-module]', 17)
         ->waitForEvent('networkidle')
         ->wait(1)
         ->assertNoSmoke()
-        ->assertCount('[data-daisy-kit-module="forms-viewer"]', 2)
-        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=forms-viewer]')).every((root) => ['empty', 'ready'].includes(root.dataset.daisyKitState))")
         ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module]')).every((root) => ['empty', 'ready'].includes(root.dataset.daisyKitState))")
         ->click('[data-daisy-kit-tree-node="documentation"]')
         ->keys('[data-daisy-kit-tree-node="documentation"]', ['ArrowRight', 'ArrowRight'])
         ->assertScript("document.activeElement?.dataset.daisyKitTreeNode === 'getting-started'");
 
     $this->visit('/')->on()->mobile()
-        ->assertCount('[data-daisy-kit-module]', 14)
+        ->assertCount('[data-daisy-kit-module]', 17)
         ->assertScript('window.innerWidth <= 430');
-})->group('browser');
-
-it('authors, histories, edits, reorders, removes, imports, and previews a Builder schema through Livewire', function (): void {
-    $page = $this->visit('/')->on()->desktop()
-        ->waitForEvent('networkidle')
-        ->wait(2)
-        ->assertNoSmoke();
-
-    $builder = '[data-daisy-kit-module="forms-builder"]';
-
-    $page
-        ->assertCount("{$builder} [data-daisy-kit-builder-field]", 1)
-        ->click("{$builder} .daisy-kit-forms-builder-livewire__catalogue button:first-child")
-        ->wait(2)
-        ->assertCount("{$builder} [data-daisy-kit-builder-field]", 2)
-        ->assertScript("document.querySelector('{$builder} [data-daisy-kit-builder-export]').textContent.includes('text_2')")
-        ->assertScript("!Array.from(document.querySelectorAll('{$builder} button')).find((button) => button.textContent.trim() === 'Undo').disabled")
-        ->click("{$builder} .daisy-kit-forms-builder-livewire__history button:nth-of-type(3)")
-        ->assertCount("{$builder} [data-daisy-kit-builder-field]", 1)
-        ->click("{$builder} .daisy-kit-forms-builder-livewire__history button:nth-of-type(4)")
-        ->assertCount("{$builder} [data-daisy-kit-builder-field]", 2)
-        ->click("{$builder} [data-daisy-kit-builder-authoring] article:nth-of-type(2) .card-actions button:first-child")
-        ->keys("{$builder} [data-daisy-kit-builder-inspector] label:first-of-type input", 'Meta+A')
-        ->typeSlowly("{$builder} [data-daisy-kit-builder-inspector] label:first-of-type input", 'p', 5)
-        ->wait(1)
-        ->assertScript("document.querySelector('{$builder} [data-daisy-kit-builder-export]').textContent.includes('\"name\":\"p\"')")
-        ->click("{$builder} [data-daisy-kit-builder-authoring] article:nth-of-type(2) .card-actions button:nth-of-type(2)")
-        ->wait(1)
-        ->assertScript("document.querySelector('{$builder} [data-daisy-kit-builder-export]').textContent.includes('\"fields\":[{\"name\":\"p\"')")
-        ->click("{$builder} [data-daisy-kit-builder-authoring] article:first-of-type .card-actions button:nth-of-type(4)")
-        ->assertCount("{$builder} [data-daisy-kit-builder-field]", 1)
-        ->fill("{$builder} [data-daisy-kit-builder-json] textarea", '{"layout":{"type":"one-page"},"fields":[{"name":"bio","label":"Biography","type":"textarea"}]}')
-        ->click("{$builder} [data-daisy-kit-builder-json] button")
-        ->wait(1)
-        ->assertScript("document.querySelector('{$builder} [data-daisy-kit-builder-export]').textContent.includes('Biography')")
-        ->assertCount("{$builder} [data-daisy-kit-builder-preview] [data-daisy-kit-module=\"forms-viewer\"]", 1);
 })->group('browser');
 
 it('composes visible host DaisyUI primitives across themes and responsive widths', function (): void {
@@ -74,8 +34,6 @@ it('composes visible host DaisyUI primitives across themes and responsive widths
                 (() => {
                     const roots = [...document.querySelectorAll('[data-daisy-kit-module]')];
                     const modules = [
-                        ['forms-viewer', '[data-daisy-kit-module="forms-viewer"] button[type="submit"]'],
-                        ['forms-builder', '[data-daisy-kit-module="forms-builder"] button'],
                         ['table', '[data-daisy-kit-module="table"] button'],
                         ['tree', '[data-daisy-kit-tree-node]'],
                         ['blueprint', '[data-daisy-kit-blueprint-node-control]'],
@@ -83,7 +41,6 @@ it('composes visible host DaisyUI primitives across themes and responsive widths
                         ['map', '[data-daisy-kit-map-mode]'],
                     ];
                     const controls = [
-                        document.querySelector('[data-daisy-kit-module="forms-viewer"] input'),
                         document.querySelector('[data-daisy-kit-table-filter]'),
                     ];
                     const failures = [];
@@ -124,16 +81,13 @@ it('composes visible host DaisyUI primitives across themes and responsive widths
 
         $page->assertScript(<<<'JS'
                 (() => {
-                    const primary = document.querySelector('[data-daisy-kit-forms-actions] button[type="submit"]');
                     const warning = document.querySelector('[data-daisy-kit-file-preview-notice]');
                     const table = document.querySelector('[data-daisy-kit-module="table"]');
                     const tablePage = table.querySelector('[data-daisy-kit-table-page-status]');
                     const tableResults = table.querySelector('[data-daisy-kit-table-results]');
                     const tableApply = document.querySelector('[data-daisy-kit-table-apply-filters]');
 
-                    return primary.classList.contains('btn-primary')
-                        && getComputedStyle(primary).paddingInlineStart !== '0px'
-                        && warning.classList.contains('alert-warning')
+                    return warning.classList.contains('alert-warning')
                         && table.classList.contains('bg-base-100')
                         && table.classList.contains('border-base-300')
                         && tablePage.classList.contains('text-base-content/70')
@@ -158,6 +112,23 @@ it('applies the Workbench server filters only on request', function (): void {
         ->wait(1)
         ->assertCount("{$table} tbody tr", 1)
         ->assertSee('CASE-1044')
+        ->assertNoSmoke();
+})->group('browser');
+
+it('uses the remote Combobox in a native Laravel review form', function (): void {
+    $combobox = '[data-daisy-kit-module="combobox"]';
+
+    $this->visit('/')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->wait(1)
+        ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'Grace')
+        ->wait(1)
+        ->assertSee('Grace Hopper')
+        ->click("{$combobox} [role=option]")
+        ->assertScript("document.querySelector('{$combobox} input[name=\"reviewers[]\"][value=grace]') !== null")
+        ->click('button[type=submit]')
+        ->waitForEvent('networkidle')
+        ->assertSee('The review assignment was saved.')
         ->assertNoSmoke();
 })->group('browser');
 
@@ -186,8 +157,7 @@ it('runs the four Map product scenarios without host-specific map logic', functi
         ->assertScript("Array.from(document.querySelectorAll('#map-controlled .leaflet-tile')).every((tile) => !tile.src.includes('tile.openstreetmap.org'))")
         ->click('#map-drawing [data-daisy-kit-map-mode="point"]')
         ->assertScript("document.querySelector('#map-drawing [data-daisy-kit-map-mode=point]').getAttribute('aria-pressed') === 'true'")
-        ->click('#map-controlled [data-workbench-map-action="view"]')
-        ->assertScript("document.querySelector('#map-controlled').dataset.workbenchFacade === 'view-updated'");
+        ->assertScript("document.querySelector('#map-controlled [data-daisy-kit-map-geolocate]') instanceof HTMLButtonElement");
 
     foreach ([320, 390, 768, 1024, 1440] as $width) {
         $page->resize($width, 1000)
@@ -251,4 +221,24 @@ it('isolates the file preview without a host CSP exception', function (): void {
         ->withinFrame('[data-daisy-kit-file-preview-frame]', function ($frame): void {
             $frame->assertSee('Sandboxed file preview');
         });
+})->group('browser');
+
+it('mounts the nine strict modules without a CSP violation', function (): void {
+    $this->visit('/_daisy-kit-test/csp/strict')
+        ->assertSee('Daisy Kit strict CSP fixture')
+        ->waitForEvent('networkidle')
+        ->wait(1)
+        ->assertCount('[data-daisy-kit-module]', 9)
+        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module]')).every((root) => ['empty', 'ready'].includes(root.dataset.daisyKitState))")
+        ->assertNoSmoke();
+})->group('browser');
+
+it('mounts Signature and Transfer List under their documented CSP policy', function (): void {
+    $this->visit('/_daisy-kit-test/csp/dependency-styles')
+        ->assertSee('Daisy Kit dependency style CSP fixture')
+        ->waitForEvent('networkidle')
+        ->wait(1)
+        ->assertCount('[data-daisy-kit-module]', 2)
+        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module]')).every((root) => root.dataset.daisyKitState === 'ready')")
+        ->assertNoSmoke();
 })->group('browser');

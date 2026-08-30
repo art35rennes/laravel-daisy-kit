@@ -7,6 +7,7 @@ const absoluteMaximumBytes = 10 * 1024 * 1024;
 const frameReadyTimeout = 10_000;
 const frameChannel = 'daisy-kit:file-preview:frame';
 const supportedTypes = new Set(['docx', 'image', 'pdf', 'text', 'video']);
+const publicFacades = new WeakMap();
 const frameAssets = [
     new URL('../../.tmp/file-preview-frame/file-preview-frame.js', import.meta.url),
 ];
@@ -90,7 +91,7 @@ function showError(root, message) {
         status.textContent = message;
     }
 
-    emit(root, 'error', { message });
+    emit(root, 'error', { code: 'preview-failed', message });
 }
 
 function showMetadata(root, blob, configuration, type) {
@@ -288,7 +289,7 @@ function initializeFilePreview(root, configuration) {
 
         root.dataset.daisyKitLayout = expanded ? 'expanded' : 'standard';
         layout?.setAttribute('aria-pressed', String(expanded));
-        emit(root, 'layout', { layout: root.dataset.daisyKitLayout });
+        emit(root, 'layout', { expanded, layout: root.dataset.daisyKitLayout });
     };
     const onZoomClick = (event) => {
         const direction = event.currentTarget.dataset.daisyKitFilePreviewZoom;
@@ -426,4 +427,115 @@ function initializeFilePreview(root, configuration) {
 
 const module = createMountable('file-preview', initializeFilePreview);
 
-export const { mount, mountAll, unmount } = module;
+function configuration(root) {
+    const node = root.querySelector('[data-daisy-kit-config]');
+
+    if (!(node instanceof HTMLScriptElement)) {
+        return {};
+    }
+
+    try {
+        const value = JSON.parse(node.textContent ?? '');
+
+        return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    } catch {
+        return {};
+    }
+}
+
+function createFacade(root) {
+    return {
+        close() {
+            const modal = root.querySelector('[data-daisy-kit-file-preview-modal]');
+            const control = root.querySelector('[data-daisy-kit-file-preview-close-preview]');
+
+            if (!(modal instanceof HTMLDialogElement) || !modal.open || !(control instanceof HTMLButtonElement)) {
+                return false;
+            }
+
+            control.click();
+
+            return true;
+        },
+        getState() {
+            const currentConfiguration = configuration(root);
+
+            return {
+                expanded: root.dataset.daisyKitLayout === 'expanded',
+                layout: root.dataset.daisyKitLayout ?? null,
+                open: root.dataset.daisyKitPreviewOpen === 'true',
+                status: root.dataset.daisyKitState ?? null,
+                type: previewType(currentConfiguration),
+                zoom: Number(root.dataset.daisyKitZoom ?? '100'),
+            };
+        },
+        open() {
+            const control = root.querySelector('[data-daisy-kit-file-preview-open-preview]');
+
+            if (!(control instanceof HTMLButtonElement)) {
+                return false;
+            }
+
+            control.click();
+
+            return true;
+        },
+        async reload() {
+            module.unmount(root);
+
+            return Boolean(module.mount(root));
+        },
+        setExpanded(expanded) {
+            if (typeof expanded !== 'boolean' || (root.dataset.daisyKitLayout === 'expanded') === expanded) {
+                return false;
+            }
+
+            const control = root.querySelector('[data-daisy-kit-file-preview-layout]');
+
+            if (!(control instanceof HTMLButtonElement)) {
+                return false;
+            }
+
+            control.click();
+
+            return (root.dataset.daisyKitLayout === 'expanded') === expanded;
+        },
+        setZoom(zoom) {
+            if (!Number.isFinite(zoom) || zoom < 50 || zoom > 200) {
+                return false;
+            }
+
+            root.dataset.daisyKitZoom = String(zoom);
+            emit(root, 'zoom', { zoom });
+
+            return true;
+        },
+    };
+}
+
+export function mount(root) {
+    if (!module.mount(root)) {
+        return null;
+    }
+
+    if (!publicFacades.has(root)) {
+        publicFacades.set(root, createFacade(root));
+    }
+
+    return publicFacades.get(root);
+}
+
+export function mountAll(scope = document) {
+    return [...scope.querySelectorAll('[data-daisy-kit-module="file-preview"]')].map(mount);
+}
+
+export function unmount(root) {
+    const unmounted = module.unmount(root);
+    publicFacades.delete(root);
+
+    return unmounted;
+}
+
+export function getInstance(root) {
+    return module.getInstance(root) ? (publicFacades.get(root) ?? null) : null;
+}

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Art35rennes\DaisyKit\Tests;
 
 use Art35rennes\DaisyKit\DaisyKitServiceProvider;
-use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\Concerns\WithWorkbench;
 use Orchestra\Testbench\TestCase as Orchestra;
 
@@ -16,6 +15,6 @@ class TestCase extends Orchestra
     /** @return array<int, class-string> */
     protected function getPackageProviders($app): array
     {
-        return [LivewireServiceProvider::class, DaisyKitServiceProvider::class];
+        return [DaisyKitServiceProvider::class];
     }
 }

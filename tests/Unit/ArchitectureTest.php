@@ -22,12 +22,16 @@ it('exposes only the v5 Blade component allowlist', function (): void {
 
     expect($components)->toBe([
         'blueprint',
+        'combobox',
+        'copyable',
         'file-preview',
-        'forms/builder',
-        'forms/viewer',
         'map',
+        'scrollspy',
+        'signature',
         'table',
+        'transfer-list',
         'tree',
+        'truncate',
     ]);
 });
 
@@ -45,12 +49,12 @@ it('does not retain legacy runtime systems', function (): void {
     expect($contents)->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|codemirror|trix|gridstack|vendor:publish/i');
 });
 
-it('requires PHP 8.4 and keeps Livewire optional', function (): void {
+it('requires PHP 8.4 without a Forms or Livewire integration', function (): void {
     $composer = json_decode((string) file_get_contents(packagePath('composer.json')), true, 512, JSON_THROW_ON_ERROR);
 
     expect($composer['require']['php'])->toBe('^8.4')
         ->and($composer['require'])->not->toHaveKey('livewire/livewire')
-        ->and($composer['suggest'])->toHaveKey('livewire/livewire');
+        ->and($composer)->not->toHaveKey('suggest');
 });
 
 it('ships concise Laravel Boost resources for package consumers', function (): void {
@@ -61,8 +65,8 @@ it('ships concise Laravel Boost resources for package consumers', function (): v
         ->toContain('Laravel Daisy Kit')
         ->toContain('PHP 8.4')
         ->toContain('Laravel 13')
-        ->toContain('x-daisy-kit::forms.viewer')
-        ->toContain('`mount(root)`, `mountAll(scope = document)`, and `unmount(root)`')
+        ->toContain('x-daisy-kit::copyable')
+        ->toContain('`mount(root)`, `mountAll(scope = document)`, `unmount(root)`, and `getInstance(root)`')
         ->toContain('daisy-kit:{module}:*')
         ->toContain('CSP')
         ->toContain('v5-product-contract-matrix.md');
@@ -100,12 +104,12 @@ it('documents the Vite alias for Composer-installed module entries', function ()
         ->toContain("from '@daisy-kit/table.js'");
 
     expect($documentation->implode("\n"))
-        ->toContain('@daisy-kit/forms-viewer.js')
-        ->toContain('@daisy-kit/forms-builder.css')
         ->toContain('@daisy-kit/tree.js')
         ->toContain('@daisy-kit/blueprint.css')
         ->toContain('@daisy-kit/file-preview.js')
         ->toContain('@daisy-kit/map.css')
+        ->toContain('@daisy-kit/copyable.js')
+        ->toContain('@daisy-kit/transfer-list.css')
         ->not->toMatch($fakeNpmImport);
 });
 
@@ -125,13 +129,17 @@ it('documents the corrective development contract with copyable examples for eve
 
     expect($examples)
         ->toContain("'@daisy-kit': resolve(__dirname, 'vendor/art35rennes/laravel-daisy-kit/dist'),")
-        ->toContain('x-daisy-kit::forms.viewer')
-        ->toContain('x-daisy-kit::forms.builder')
         ->toContain('x-daisy-kit::table')
         ->toContain('x-daisy-kit::tree')
         ->toContain('x-daisy-kit::blueprint')
         ->toContain('x-daisy-kit::file-preview')
         ->toContain('x-daisy-kit::map')
+        ->toContain('x-daisy-kit::copyable')
+        ->toContain('x-daisy-kit::combobox')
+        ->toContain('x-daisy-kit::signature')
+        ->toContain('x-daisy-kit::truncate')
+        ->toContain('x-daisy-kit::scrollspy')
+        ->toContain('x-daisy-kit::transfer-list')
         ->not->toMatch('/x-daisy::|daisy::/');
 
     $fakeNpmImport = '/(?:from\\s+|import\\s*(?:\\(\\s*)?)[\'\"]art35rennes\\/laravel-daisy-kit\\/dist/';
