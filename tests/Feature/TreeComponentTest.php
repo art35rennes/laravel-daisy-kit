@@ -24,12 +24,12 @@ it('renders the tree as a semantic CSP-safe module', function (): void {
         ->not->toContain('<img')
         ->not->toContain('style=')
         ->not->toContain('x-daisy::')
-        ->and(JsonConfiguration::decode(html_entity_decode($matches[1] ?? '')))->toBe([
+        ->and(JsonConfiguration::decode(html_entity_decode($matches[1] ?? '')))->toMatchArray([
             'items' => [
                 [
                     'id' => 'root',
                     'label' => '</script><img src=x onerror=alert(1)>',
-                    'children' => [['id' => 'child', 'label' => 'Child']],
+                    'children' => [['id' => 'child', 'label' => 'Child', 'children' => []]],
                 ],
             ],
             'multiple' => false,

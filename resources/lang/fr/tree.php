@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'label' => 'Arborescence',
+    'search' => 'Rechercher dans l’arborescence',
+    'searchPlaceholder' => 'Trouver un élément',
+    'applySearch' => 'Rechercher',
+    'clearSearch' => 'Effacer la recherche',
+    'expandAll' => 'Développer les branches chargées',
+    'collapseAll' => 'Tout replier',
+    'selectVisible' => 'Sélectionner les résultats chargés',
+    'clear' => 'Effacer la sélection',
+    'expand' => 'Développer :label',
+    'collapse' => 'Replier :label',
+    'select' => 'Sélectionner :label',
+    'loading' => 'Chargement…',
+    'retry' => 'Réessayer',
+    'loadError' => 'Impossible de charger cette branche.',
+    'searchError' => 'Impossible de charger la recherche.',
+    'empty' => 'Aucun élément disponible.',
+    'noResults' => 'Aucun élément correspondant.',
+    'summary' => ':total sélectionné(s) · :visible visible(s) · :hidden masqué(s)',
+    'results' => ':count élément(s) visible(s)',
+    'loadBeforeSelect' => 'Développez cette branche pour charger ses éléments avant de les sélectionner.',
+    'incomplete' => 'Seuls les descendants chargés sont sélectionnés.',
+    'missingContent' => 'Le balisage requis pour cette arborescence est absent.',
+];

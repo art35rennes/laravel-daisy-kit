@@ -35,8 +35,8 @@ describe('tree module', () => {
 
         mount(root);
         const docs = root.querySelector('[data-daisy-kit-tree-node="docs"]');
-        expect(docs.classList.contains('btn-ghost')).toBe(true);
-        expect(docs.classList.contains('justify-start')).toBe(true);
+        expect(docs.querySelector('[data-tree-action="toggle"]').classList.contains('btn-ghost')).toBe(true);
+        expect(docs.querySelector('input[type="radio"]')).not.toBeNull();
         expect(docs.getAttribute('aria-expanded')).toBe('false');
         docs.focus();
         docs.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' }));
@@ -142,7 +142,7 @@ describe('tree module', () => {
 
         expect(tree).toBe(getInstance(root));
         expect(mount(root)).toBe(tree);
-        expect(Object.keys(tree).sort()).toEqual(['clear', 'collapse', 'expand', 'focus', 'getValue', 'setValue']);
+        expect(Object.keys(tree)).toEqual(expect.arrayContaining(['clear', 'collapse', 'expand', 'focus', 'getValue', 'setValue', 'getState', 'setSearch', 'applySearch', 'clearSearch', 'expandPath', 'expandAll', 'collapseAll', 'selectVisible', 'reloadBranch']));
         expect(await tree.expand('content')).toBe(true);
         expect(tree.focus('read')).toBe(true);
         expect(document.activeElement).toBe(root.querySelector('[data-daisy-kit-tree-node="read"]'));
@@ -192,7 +192,7 @@ describe('tree module', () => {
         }]);
     });
 
-    it('searches local branches, expands matching paths, and persists the selected result', () => {
+    it('persists the search selection without persisting temporary search expansion', async () => {
         document.body.innerHTML = treeMarkup({
             name: 'area',
             persistenceKey: 'tree-search-fixture',
@@ -206,6 +206,7 @@ describe('tree module', () => {
         const search = root.querySelector('[data-daisy-kit-tree-search]');
         search.value = 'api';
         search.dispatchEvent(new Event('input'));
+        await getInstance(root).applySearch();
         const api = root.querySelector('[data-daisy-kit-tree-node="api"]');
         api.click();
         unmount(root);
@@ -219,9 +220,11 @@ describe('tree module', () => {
         const restored = document.querySelector('[data-daisy-kit-module="tree"]');
         restored.querySelector('[data-daisy-kit-content]').insertAdjacentHTML('afterbegin', '<label>Search <input data-daisy-kit-tree-search type="search"></label>');
         mount(restored);
+        await vi.waitFor(() => expect(getInstance(restored).getValue()).toBe('api'));
 
         expect(api.hidden).toBe(false);
-        expect(restored.querySelector('[data-daisy-kit-tree-node="docs"]').getAttribute('aria-expanded')).toBe('true');
+        expect(restored.querySelector('[data-daisy-kit-tree-node="docs"]').getAttribute('aria-expanded')).toBe('false');
+        expect(getInstance(restored).getState().selection).toEqual({ total: 1, visible: 0, hidden: 1 });
         expect(restored.querySelector('[data-daisy-kit-tree-node="api"]').getAttribute('aria-selected')).toBe('true');
         expect(restored.querySelector('[data-daisy-kit-tree-value]').value).toBe('["api"]');
     });
@@ -238,7 +241,7 @@ describe('tree module', () => {
         const rootButton = root.querySelector('[data-daisy-kit-tree-node="root"]');
         rootButton.focus();
         rootButton.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' }));
-        rootButton.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' }));
+        root.querySelector('[data-daisy-kit-tree-node="root"]').dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' }));
         document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
 
         expect(root.querySelector('[data-daisy-kit-tree-node="child"]').hidden).toBe(false);

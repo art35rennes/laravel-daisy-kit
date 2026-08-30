@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'label' => 'Tree',
+    'search' => 'Search tree',
+    'searchPlaceholder' => 'Find an item',
+    'applySearch' => 'Search',
+    'clearSearch' => 'Clear search',
+    'expandAll' => 'Expand loaded branches',
+    'collapseAll' => 'Collapse all',
+    'selectVisible' => 'Select loaded results',
+    'clear' => 'Clear selection',
+    'expand' => 'Expand :label',
+    'collapse' => 'Collapse :label',
+    'select' => 'Select :label',
+    'loading' => 'Loading…',
+    'retry' => 'Retry',
+    'loadError' => 'This branch could not be loaded.',
+    'searchError' => 'The search could not be loaded.',
+    'empty' => 'No tree items are available.',
+    'noResults' => 'No matching items.',
+    'summary' => ':total selected · :visible visible · :hidden hidden',
+    'results' => ':count visible items',
+    'loadBeforeSelect' => 'Expand this branch to load its items before selecting them.',
+    'incomplete' => 'Only loaded descendants are selected.',
+    'missingContent' => 'This tree is missing its required markup.',
+];
