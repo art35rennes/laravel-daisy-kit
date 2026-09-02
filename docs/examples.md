@@ -89,7 +89,13 @@ behavior. The complete method returns and `CustomEvent.detail` shapes are normat
 ### Copyable
 
 ```blade
-<x-daisy-kit::copyable value="{{ $apiToken }}">API token</x-daisy-kit::copyable>
+<x-daisy-kit::copyable
+    value="{{ $apiToken }}"
+    show-icon
+    success-label="API token copied."
+>
+    API token
+</x-daisy-kit::copyable>
 ```
 
 ```js
@@ -105,8 +111,11 @@ await copyable.copy();
 ```
 
 `getValue()` returns the resolved plain text and `copy(value?)` returns `Promise<boolean>`.
-Copyable submits no field. It needs no CSP exception. Clipboard refusal, an insecure context,
-disabled state, or empty text emit the structured errors listed in the public contract.
+`showIcon=false` controls the decorative copy glyph. The transient visual status is enabled by
+default, reuses `successLabel` / `errorLabel`, and hides after `feedbackDuration`; pass
+`:show-feedback="false"` to keep the live announcement without displaying the tooltip. Copyable
+submits no field and needs no CSP exception. Clipboard refusal, an insecure context, disabled
+state, or empty text emit the structured errors listed in the public contract.
 
 ### Combobox
 

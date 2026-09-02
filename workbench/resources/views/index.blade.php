@@ -5,6 +5,48 @@
     if (! array_key_exists('modules', get_defined_vars())) {
         $modules = ['map' => 'Map'];
     }
+    if ($module === 'map') {
+        $drawingMapControls = \Art35rennes\DaisyKit\Map\MapControls::make([
+            \Art35rennes\DaisyKit\Map\MapControl::menu('layers', 'Layers', [
+                \Art35rennes\DaisyKit\Map\MapControl::basemaps(),
+                \Art35rennes\DaisyKit\Map\MapControl::drawingLayers(),
+            ], icon: 'layers'),
+            \Art35rennes\DaisyKit\Map\MapControl::menu('drawing', 'Drawing', [
+                \Art35rennes\DaisyKit\Map\MapControl::objectTypeSelector(),
+                \Art35rennes\DaisyKit\Map\MapControl::drawLayerSelector(),
+                \Art35rennes\DaisyKit\Map\MapControl::menu('geometry', 'Geometry', [
+                    \Art35rennes\DaisyKit\Map\MapControl::drawPoint(),
+                    \Art35rennes\DaisyKit\Map\MapControl::drawLine(),
+                    \Art35rennes\DaisyKit\Map\MapControl::drawPolygon(),
+                    \Art35rennes\DaisyKit\Map\MapControl::drawRectangle(),
+                ]),
+            ], icon: 'drawing'),
+            \Art35rennes\DaisyKit\Map\MapControl::menu('selection', 'Selection', [
+                \Art35rennes\DaisyKit\Map\MapControl::edit(),
+                \Art35rennes\DaisyKit\Map\MapControl::select(),
+                \Art35rennes\DaisyKit\Map\MapControl::selectFeature(),
+                \Art35rennes\DaisyKit\Map\MapControl::selectByArea(),
+                \Art35rennes\DaisyKit\Map\MapControl::deleteSelected(),
+                \Art35rennes\DaisyKit\Map\MapControl::clearSelection(),
+            ], icon: 'selection'),
+            \Art35rennes\DaisyKit\Map\MapControl::menu('history', 'History', [
+                \Art35rennes\DaisyKit\Map\MapControl::undo(),
+                \Art35rennes\DaisyKit\Map\MapControl::redo(),
+                \Art35rennes\DaisyKit\Map\MapControl::export(),
+            ], icon: 'history'),
+            \Art35rennes\DaisyKit\Map\MapControl::fitBounds(),
+            \Art35rennes\DaisyKit\Map\MapControl::fullscreen(),
+        ]);
+        $controlledMapControls = \Art35rennes\DaisyKit\Map\MapControls::make([
+            \Art35rennes\DaisyKit\Map\MapControl::menu('host', 'Host controls', [
+                \Art35rennes\DaisyKit\Map\MapControl::slot('filters'),
+            ]),
+            \Art35rennes\DaisyKit\Map\MapControl::customAction('focus-depot', 'Focus the depot', 'location'),
+            \Art35rennes\DaisyKit\Map\MapControl::fitBounds(),
+            \Art35rennes\DaisyKit\Map\MapControl::geolocate(),
+            \Art35rennes\DaisyKit\Map\MapControl::fullscreen(),
+        ]);
+    }
 @endphp
 <!doctype html>
 <html lang="en">
@@ -311,7 +353,15 @@
         <section class="card min-w-0 space-y-6 bg-base-100 p-6" aria-labelledby="focused-components-heading">
             <h2 id="focused-components-heading">{{ $modules[$module] }}</h2>
             @if($module === 'copyable')
-            <x-daisy-kit::copyable class="card" value="release-2026-08-29">Copy release identifier</x-daisy-kit::copyable>
+            <x-daisy-kit::copyable
+                class="card"
+                value="release-2026-08-29"
+                show-icon
+                :feedback-duration="5000"
+                success-label="Release identifier copied."
+            >
+                Copy release identifier
+            </x-daisy-kit::copyable>
             @endif
 
             @if(in_array($module, ['combobox', 'signature', 'transfer-list'], true))
@@ -437,6 +487,8 @@
                         :provider="config('workbench-map.external_tiles', true) ? 'osm.standard' : false"
                         name="maintenance_geometry"
                         :drawing="true"
+                        :controls="$drawingMapControls"
+                        :fullscreen="true"
                         :measure="true"
                         :spatial-selection="['mode' => 'both']"
                         :value="[
@@ -470,9 +522,14 @@
                         :gesture-handling="true"
                         :geolocation="['watch' => true, 'setView' => true]"
                         :persist-state="true"
+                        :controls="$controlledMapControls"
                         state-key="workbench-controlled-map"
                         :markers="[['id' => 'center', 'label' => 'Initial center', 'position' => [48.1173, -1.6778]]]"
-                    />
+                    >
+                        <x-slot:mapFilters>
+                            <p class="text-xs text-base-content/70">This named slot can host product-specific filters without exposing Map internals.</p>
+                        </x-slot:mapFilters>
+                    </x-daisy-kit::map>
                 </article>
             </div>
         </section>

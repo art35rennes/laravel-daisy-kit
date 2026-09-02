@@ -4,6 +4,7 @@
 
 ### Added
 
+- Optional Copyable icon and transient visual success/error feedback backed by the existing accessible live status.
 - Restored Tree hierarchical selector with initial values, cascade and selected-root modes,
   visible/hidden counters, manual or fuzzy search, lazy retry, custom inert Blade nodes,
   English/French labels, expanded integration API and four realistic Workbench scenarios.

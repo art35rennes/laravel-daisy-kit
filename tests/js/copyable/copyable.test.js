@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getInstance, mount, unmount } from '../../../resources/js/copyable.js';
 
-function root(configuration, text = 'Visible value') {
+function root(configuration, text = 'Visible value', visualFeedback = true) {
     document.body.innerHTML = `
         <section data-daisy-kit-module="copyable">
-            <p data-daisy-kit-status hidden role="status" aria-live="polite"></p>
+            <p class="${visualFeedback ? 'badge badge-success daisy-kit-copyable-feedback' : 'sr-only'}" data-daisy-kit-status ${visualFeedback ? 'data-daisy-kit-copyable-feedback' : ''} hidden role="status" aria-live="polite"></p>
             <button data-daisy-kit-copyable-button type="button">${text}</button>
             <script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script>
         </section>
@@ -33,7 +33,26 @@ describe('copyable entry', () => {
         expect(Object.keys(instance).sort()).toEqual(['copy', 'getValue']);
         expect(writeText).toHaveBeenCalledWith('secret');
         expect(element.querySelector('[data-daisy-kit-status]').textContent).toBe('Done');
+        expect(element.querySelector('[data-daisy-kit-status]').hidden).toBe(false);
+        expect(element.querySelector('[data-daisy-kit-status]').classList).toContain('badge-success');
         expect(copied).toEqual([{ value: 'secret' }]);
+    });
+
+    it('automatically hides visual success feedback after the configured duration', async () => {
+        vi.useFakeTimers();
+        vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn(() => Promise.resolve()) } });
+        const element = root({ value: 'secret', copyLabel: 'Copy', successLabel: 'Done', errorLabel: 'Failed', feedbackDuration: 1200, disabled: false });
+        const status = element.querySelector('[data-daisy-kit-status]');
+
+        await mount(element).copy();
+        expect(status.hidden).toBe(false);
+
+        vi.advanceTimersByTime(1199);
+        expect(status.hidden).toBe(false);
+
+        vi.advanceTimersByTime(1);
+        expect(status.hidden).toBe(true);
+        expect(status.textContent).toBe('');
     });
 
     it('copies visible text when no explicit value is supplied and restores the original DOM on unmount', async () => {
@@ -61,6 +80,7 @@ describe('copyable entry', () => {
         await expect(mount(element).copy()).resolves.toBe(false);
 
         expect(element.querySelector('[data-daisy-kit-status]').textContent).toBe('Failed');
+        expect(element.querySelector('[data-daisy-kit-status]').classList).toContain('badge-error');
         expect(errors).toEqual([{
             code: 'clipboard-rejected',
             message: 'The clipboard rejected the copy request.',
@@ -81,5 +101,16 @@ describe('copyable entry', () => {
         await expect(mount(element).copy()).resolves.toBe(false);
 
         expect(errors).toEqual([{ code, message, value: overrides.value }]);
+    });
+
+    it('keeps feedback accessible without applying visual state when the tooltip is disabled', async () => {
+        vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn(() => Promise.resolve()) } });
+        const element = root({ value: 'secret', copyLabel: 'Copy', successLabel: 'Done', errorLabel: 'Failed', feedbackDuration: 1000, disabled: false }, 'Visible value', false);
+        const status = element.querySelector('[data-daisy-kit-status]');
+
+        await mount(element).copy();
+
+        expect(status.textContent).toBe('Done');
+        expect(status.className).toBe('sr-only');
     });
 });

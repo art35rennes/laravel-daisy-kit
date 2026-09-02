@@ -20,6 +20,21 @@ it('presents the Workbench module directory accessibly on desktop and mobile', f
         ->assertScript('window.innerWidth <= 430');
 })->group('browser');
 
+it('shows the Copyable affordance and transient visual feedback', function (): void {
+    $copyable = '[data-daisy-kit-module="copyable"]';
+
+    $this->visit('/copyable')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->assertCount("{$copyable} [data-daisy-kit-copyable-icon]", 1)
+        ->assertScript("(() => { const icon = document.querySelector('{$copyable} [data-daisy-kit-copyable-icon]'); const size = icon.getBoundingClientRect(); return size.width === 16 && size.height === 16; })()")
+        ->click("{$copyable} [data-daisy-kit-copyable-button]")
+        ->assertScript("(() => { const status = document.querySelector('{$copyable} [data-daisy-kit-status]'); return !status.hidden && ((status.classList.contains('badge-success') && status.textContent === 'Release identifier copied.') || (status.classList.contains('badge-error') && status.textContent === 'Copying failed.')); })()")
+        ->wait(6)
+        ->assertScript("document.querySelector('{$copyable} [data-daisy-kit-status]').hidden")
+        ->assertNoSmoke()
+        ->assertNoAccessibilityIssues(1);
+})->group('browser');
+
 it('composes the Table page with host DaisyUI primitives across themes and responsive widths', function (): void {
     $page = $this->visit('/table')->on()->desktop()
         ->waitForEvent('networkidle')
@@ -166,15 +181,23 @@ it('runs the four Map product scenarios without host-specific map logic', functi
         ->assertCount('#map-drawing [data-daisy-kit-map-draw-layer]', 1)
         ->assertCount('#map-drawing [data-daisy-kit-map-mode="spatial-select"]', 1)
         ->assertScript("Array.from(document.querySelectorAll('#map-controlled .leaflet-tile')).every((tile) => !tile.src.includes('tile.openstreetmap.org'))")
-        ->click('#map-drawing [data-daisy-kit-map-menu] summary')
+        ->click('#map-drawing [data-daisy-kit-map-menu="drawing"] > summary')
+        ->click('#map-drawing [data-daisy-kit-map-menu="geometry"] > summary')
         ->click('#map-drawing [data-daisy-kit-map-mode="point"]')
         ->assertScript("document.querySelector('#map-drawing [data-daisy-kit-map-mode=point]').getAttribute('aria-pressed') === 'true'")
-        ->assertScript("document.querySelector('#map-controlled [data-daisy-kit-map-geolocate]') instanceof HTMLButtonElement");
+        ->assertScript("document.querySelector('#map-controlled [data-daisy-kit-map-geolocate]') instanceof HTMLButtonElement")
+        ->click('#map-drawing .daisy-kit-map__direct-view-action[data-daisy-kit-map-fullscreen]')
+        ->wait(1)
+        ->assertScript("document.fullscreenElement?.id === 'map-drawing'")
+        ->assertScript("(() => { const root = document.querySelector('#map-drawing'); const content = root.querySelector('.daisy-kit-map__content'); const viewport = root.querySelector('.daisy-kit-map__viewport'); const attribution = root.querySelector('.leaflet-control-attribution'); const rootRect = root.getBoundingClientRect(); const viewportRect = viewport.getBoundingClientRect(); const attributionRect = attribution.getBoundingClientRect(); const bottomPadding = parseFloat(getComputedStyle(content).paddingBottom); return viewportRect.height > 0 && rootRect.bottom - viewportRect.bottom >= bottomPadding - 1 && attributionRect.bottom <= viewportRect.bottom && attributionRect.top >= viewportRect.top; })()")
+        ->click('#map-drawing .daisy-kit-map__direct-view-action[data-daisy-kit-map-fullscreen]')
+        ->wait(1)
+        ->assertScript('document.fullscreenElement === null');
 
     foreach ([320, 390, 768, 1024, 1440] as $width) {
         $page->resize($width, 1000)
             ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
-            ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=map]')).every((root) => { const viewport = root.querySelector('.daisy-kit-map__viewport').getBoundingClientRect(); return Array.from(root.querySelectorAll('.leaflet-control-container, [data-daisy-kit-map-menu], [data-daisy-kit-map-measurement], [data-daisy-kit-map-active-mode]')).every((control) => control.hidden || (control.getBoundingClientRect().left >= viewport.left && control.getBoundingClientRect().right <= viewport.right)); })")
+            ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=map]')).every((root) => { const viewport = root.querySelector('.daisy-kit-map__viewport').getBoundingClientRect(); return Array.from(root.querySelectorAll('.leaflet-control, [data-daisy-kit-map-menu], [data-daisy-kit-map-measurement], [data-daisy-kit-map-active-mode]')).every((control) => control.hidden || control.parentElement?.closest('details:not([open])') || control.getClientRects().length === 0 || (control.getBoundingClientRect().left >= viewport.left && control.getBoundingClientRect().right <= viewport.right)); })")
             ->assertNoSmoke();
     }
 })->group('browser');

@@ -21,7 +21,7 @@ automated outcome test before it is considered delivered.
 
 | User outcome | V4 evidence | Corrective v5 proof |
 | --- | --- | --- |
-| A technical identifier can be copied with pointer or keyboard input and receives an accessible success or failure state. | `resources/views/components/ui/utilities/copyable.blade.php`; `resources/js/modules/copyable.js` at `v4.0.0`. | Clipboard-success/failure, keyboard and unmount Vitest tests. |
+| A technical identifier can be copied with pointer or keyboard input, can expose a familiar copy icon, and receives transient visual plus accessible success or failure feedback. | `resources/views/components/ui/utilities/copyable.blade.php`; `resources/js/modules/copyable.js` at `v4.0.0`. | Icon rendering, timed Clipboard-success/failure feedback, keyboard and unmount tests. |
 | Users discover suggestions on focus, scan rich person/e-mail choices, filter and select local or remote choices, and keep the native form value synchronized. | `resources/views/components/ui/inputs/multi-select.blade.php`; `resources/js/modules/multi-select.js` at `v4.0.0`; current WAI-ARIA/MUI/Ant Design combobox patterns. | Open-on-focus, rich/default/custom rendering, bounded results, keyboard, form-data and cancellation tests. |
 | A user can draw, clear and export a signature while the submitted form value stays synchronized. | `resources/views/components/ui/inputs/sign.blade.php`; `resources/js/modules/sign.js` at `v4.0.0`. | Pointer, resize, reset, form-data and CSP tests. |
 | Long text has an accessible expanded state without mutating the original value. | `resources/views/components/ui/utilities/truncate-text.blade.php` at `v4.0.0`. | Overflow, keyboard disclosure and multiple-root tests. |
@@ -72,6 +72,7 @@ automated outcome test before it is considered delivered.
 | --- | --- | --- |
 | A host configures tiles/providers, markers and GeoJSON, basemaps and XYZ/WMS/GeoJSON overlays. | v4 Leaflet Blade/runtime and README GIS API. | Served-host fixture with local tiles/layers. |
 | Controls cover layers, optional geolocation, drawing/editing, object types, spatial selection and Turf measurements. | v4 `resources/js/leaflet/*`. | Browser interaction fixture and event assertions. |
+| Hosts compose independent direct actions, menus, groups, nested menus and named control slots without executable configuration. | v4 toolbar extensibility and v5 CSP boundary. | PHP tree validation plus keyboard and responsive browser tests. |
 | Users undo/redo and export GeoJSON; loading/error behaviour is clear. | v4 Leaflet API. | Vitest and browser state tests. |
 | Leaflet/Terra Draw CSP exception is minimal and documented; host remains strict otherwise. | ADR-002. | CSP violation/console test with configured directives. |
 

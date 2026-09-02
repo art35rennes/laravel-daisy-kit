@@ -30,6 +30,7 @@ function initialize(root, configuration) {
         disabled: button.disabled,
         statusHidden: status?.hidden,
         statusText: status?.textContent ?? '',
+        statusClass: status?.getAttribute('class'),
     };
     const copyLabel = label(configuration, 'copyLabel', 'Copy');
     const successLabel = label(configuration, 'successLabel', 'Copied.');
@@ -45,12 +46,18 @@ function initialize(root, configuration) {
         return configuredValue ?? button.textContent?.trim() ?? '';
     }
 
-    function announce(message) {
+    function announce(message, variant) {
         if (!status) {
             return;
         }
 
         window.clearTimeout(feedbackTimer);
+
+        if (status.hasAttribute('data-daisy-kit-copyable-feedback')) {
+            status.classList.remove('badge-success', 'badge-error');
+            status.classList.add(variant === 'error' ? 'badge-error' : 'badge-success');
+        }
+
         status.hidden = false;
         status.textContent = message;
         feedbackTimer = window.setTimeout(() => {
@@ -63,21 +70,21 @@ function initialize(root, configuration) {
         const text = typeof value === 'string' ? value : getValue();
 
         if (button.disabled) {
-            announce(errorLabel);
+            announce(errorLabel, 'error');
             emit(root, 'error', { code: 'disabled', message: 'Copying is disabled.', value: text });
 
             return false;
         }
 
         if (text === '') {
-            announce(errorLabel);
+            announce(errorLabel, 'error');
             emit(root, 'error', { code: 'empty-value', message: 'There is no text to copy.', value: text });
 
             return false;
         }
 
         if (typeof navigator.clipboard?.writeText !== 'function') {
-            announce(errorLabel);
+            announce(errorLabel, 'error');
             emit(root, 'error', {
                 code: 'clipboard-unavailable',
                 message: 'The Clipboard API is unavailable.',
@@ -89,12 +96,12 @@ function initialize(root, configuration) {
 
         try {
             await navigator.clipboard.writeText(text);
-            announce(successLabel);
+            announce(successLabel, 'success');
             emit(root, 'copied', { value: text });
 
             return true;
         } catch {
-            announce(errorLabel);
+            announce(errorLabel, 'error');
             emit(root, 'error', {
                 code: 'clipboard-rejected',
                 message: 'The clipboard rejected the copy request.',
@@ -128,6 +135,12 @@ function initialize(root, configuration) {
             if (status) {
                 status.hidden = original.statusHidden ?? true;
                 status.textContent = original.statusText;
+
+                if (original.statusClass === null) {
+                    status.removeAttribute('class');
+                } else {
+                    status.setAttribute('class', original.statusClass);
+                }
             }
         },
     };
