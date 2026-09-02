@@ -101,6 +101,13 @@ visible rows, refresh, filters, pagination, sorting, visibility and selection co
 the underlying TanStack instance or creating global state. `filterMode="manual"` stages column filters
 until the translated Apply filters action or facade `applyFilters()` method is invoked.
 
+`selection.summaryVisibility` accepts `always` (default) or `after-first-selection`.
+The latter hides only the initial zero-selection summary, leaving multiple-selection
+controls available. Initial, user and API selections reveal it; clearing keeps it visible
+until unmount. This visibility state is instance-local and is not persisted.
+The page-size control always includes the effective size, even when restored or set through
+the API to a value absent from `pageSizeOptions`.
+
 The facade getters are `getState()` and `getVisibleRows()`. Its commands are `refresh()`,
 `clearFilters()`, `setGlobalFilter(value)`, `setColumnFilter(columnId, value)`, `setPage(page)`,
 `setPageSize(size)`, `setSorting(columnId, direction)`, `setColumnVisibility(columnId, visible)`,

@@ -62,6 +62,21 @@ it('renders a semantic table shell for an empty dataset', function (): void {
         ->toContain('aria-live="polite"');
 });
 
+it('renders custom page sizes and hides only deferred selection feedback before mounting', function (): void {
+    $html = view('daisy-kit::components.table', [
+        'pageSize' => 2,
+        'selection' => ['mode' => 'multiple', 'summaryVisibility' => 'after-first-selection'],
+    ])->render();
+    $document = new DOMDocument;
+    @$document->loadHTML($html);
+    $xpath = new DOMXPath($document);
+
+    expect($xpath->query('//select[@data-daisy-kit-table-page-size]/option[@value="2" and @selected]'))->toHaveCount(1)
+        ->and($xpath->query('//*[@data-daisy-kit-table-selection-summary and @hidden]'))->toHaveCount(1)
+        ->and($xpath->query('//*[@data-daisy-kit-table-selection and @hidden]'))->toHaveCount(0)
+        ->and($xpath->query('//button[@data-daisy-kit-table-select-page]'))->toHaveCount(1);
+});
+
 it('renders compact muted pagination with a readable page status', function (): void {
     $html = view('daisy-kit::components.table')->render();
 
@@ -179,7 +194,7 @@ it('renders the restored product table contract with private structured controls
                 'mode' => 'includes',
             ],
             'columnVisibility' => true,
-            'selection' => ['mode' => 'multiple', 'rowKey' => 'id', 'selectFiltered' => true],
+            'selection' => ['mode' => 'multiple', 'rowKey' => 'id', 'selectFiltered' => true, 'summaryVisibility' => 'always'],
             'persistState' => ['mode' => 'url', 'key' => 'people-table'],
         ]);
 });
