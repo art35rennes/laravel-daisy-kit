@@ -52,3 +52,14 @@ it('demonstrates Transfer List as a realistic paginated Laravel assignment form'
         ->assertSee('"pageSize":5', false)
         ->assertSee('External auditor');
 });
+
+it('demonstrates Truncate with dense table values instead of an API fixture', function (): void {
+    $this->get('/truncate')
+        ->assertOk()
+        ->assertSee('Delivery addresses')
+        ->assertSee('Grace Hopper')
+        ->assertSee('1701 North Beauregard Street')
+        ->assertSee('data-daisy-kit-module="truncate"', false)
+        ->assertDontSee('event log', false)
+        ->assertDontSee('facade inspector', false);
+});

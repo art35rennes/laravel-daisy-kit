@@ -266,10 +266,13 @@ point groups and uses the device-pixel ratio.
 
 ### Truncate configuration
 
-`x-daisy-kit::truncate` accepts `text`, `lines=1`, `revealLabel`, and `title`. It measures actual
-overflow and omits the reveal control when the text fits. The native popover contains the complete
-plain text as selectable content. The facade exposes `refresh`, `isTruncated`, `open`, and `close`;
-events are `opened` and `closed`.
+`x-daisy-kit::truncate` accepts `text`, `lines=1`, `revealLabel`, `title`, `hover=true`,
+`hoverDelay=250`, and `backdrop=false`. It measures actual overflow and omits the compact ellipsis
+button when the text fits. Hover or focus opens a temporary preview anchored to the ellipsis; click,
+keyboard activation, or `open()` pins it so the complete plain text remains selectable. Pinned
+previews support native outside-click and Escape dismissal. The optional backdrop applies only to
+that pinned state. The facade exposes `refresh`, `isTruncated`, `open`, and `close`; events are
+`opened` and `closed`.
 `refresh()`, `open()`, and `close()` return booleans; `isTruncated()` returns a boolean. Event details
 are `opened { text }` and `closed { text }`.
 

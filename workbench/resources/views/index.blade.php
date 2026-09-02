@@ -435,7 +435,32 @@
             @endif
 
             @if($module === 'truncate')
-            <x-daisy-kit::truncate class="card" :text="str_repeat('Selectable release notes remain available in full. ', 12)" :lines="2" />
+            <div class="overflow-x-auto">
+                <table class="table table-fixed table-sm w-full">
+                    <caption class="mb-3 text-left text-base font-semibold">Delivery addresses</caption>
+                    <colgroup><col><col class="w-80"><col></colgroup>
+                    <thead>
+                        <tr><th scope="col">Customer</th><th scope="col">Address</th><th scope="col">Status</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Ada Lovelace</th>
+                            <td class="max-w-64"><x-daisy-kit::truncate text="12 St James's Square, London SW1Y 4LB, United Kingdom" reveal-label="Show Ada Lovelace's full address" /></td>
+                            <td><span class="badge badge-success">Ready</span></td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Grace Hopper</th>
+                            <td class="max-w-64"><x-daisy-kit::truncate text="1701 North Beauregard Street, Alexandria, Virginia 22311, United States" reveal-label="Show Grace Hopper's full address" :backdrop="true" /></td>
+                            <td><span class="badge badge-warning">Review</span></td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Margaret Hamilton</th>
+                            <td class="max-w-64"><x-daisy-kit::truncate text="55 Fruit Street, Boston, Massachusetts 02114, United States" reveal-label="Show Margaret Hamilton's full address" /></td>
+                            <td><span class="badge badge-success">Ready</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             @endif
             @if($module === 'scrollspy')
             <div id="workbench-scrollspy-content" class="max-h-48 overflow-auto" tabindex="0">

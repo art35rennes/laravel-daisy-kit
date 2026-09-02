@@ -158,6 +158,40 @@ it('uses the remote Combobox in a native Laravel review form', function (): void
         ->assertNoAccessibilityIssues(1);
 })->group('browser');
 
+it('anchors Truncate disclosure to its ellipsis and supports pinned light dismiss', function (): void {
+    $trigger = '[data-daisy-kit-truncate-reveal][aria-label^="Show Grace"]';
+    $popover = '[data-daisy-kit-module="truncate"]:has([aria-label^="Show Grace"]) [data-daisy-kit-truncate-popover]';
+    $page = $this->visit('/truncate')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->wait(1)
+        ->assertNoSmoke()
+        ->assertNoAccessibilityIssues(1)
+        ->assertScript("document.querySelector('{$trigger}').hidden === false");
+
+    $page->script("document.querySelector('{$trigger}').dispatchEvent(new PointerEvent('pointerenter'))");
+    $page->wait(1)
+        ->assertScript("document.querySelector('{$popover}').matches(':popover-open')")
+        ->assertScript(<<<'JS'
+            (() => {
+                const trigger = document.querySelector('[data-daisy-kit-truncate-reveal][aria-label^="Show Grace"]').getBoundingClientRect();
+                const popover = document.querySelector('[data-daisy-kit-module="truncate"]:has([aria-label^="Show Grace"]) [data-daisy-kit-truncate-popover]').getBoundingClientRect();
+                const horizontalGap = Math.min(Math.abs(trigger.left - popover.left), Math.abs(trigger.right - popover.right));
+                const verticalGap = Math.min(Math.abs(trigger.bottom - popover.top), Math.abs(trigger.top - popover.bottom));
+
+                return horizontalGap < 32
+                    && verticalGap < 32
+                    && popover.top > 0
+                    && popover.left > 0;
+            })()
+            JS)
+        ->click($trigger)
+        ->assertScript("document.querySelector('{$popover}').dataset.daisyKitTruncatePinned === 'true'")
+        ->assertScript("document.querySelector('{$popover}').dataset.daisyKitTruncateBackdrop === 'true'")
+        ->keys($trigger, 'Escape')
+        ->assertScript("!document.querySelector('{$popover}').matches(':popover-open')")
+        ->assertNoSmoke();
+})->group('browser');
+
 it('mounts the map without a browser CSP violation', function (): void {
     $this->visit('/_daisy-kit-test/csp/map')
         ->assertSee('Daisy Kit CSP Map')
