@@ -35,9 +35,30 @@ it('renders every component module on its own route', function (string $module):
 it('demonstrates Copyable with its optional icon and visual feedback', function (): void {
     $this->get('/copyable')
         ->assertOk()
+        ->assertSee('data-copyable-scenario="explicit-value"', false)
+        ->assertSee('data-copyable-scenario="visible-text"', false)
+        ->assertSee('data-copyable-scenario="structured-text"', false)
+        ->assertSee('data-copyable-scenario="disabled"', false)
+        ->assertSee('php artisan boost:update --discover')
+        ->assertSee('Copy JSON payload')
+        ->assertSee('Copy protected value')
+        ->assertSee('disabled', false)
         ->assertSee('data-daisy-kit-copyable-icon', false)
         ->assertSee('data-daisy-kit-copyable-feedback', false)
         ->assertSee('Release identifier copied.');
+});
+
+it('demonstrates local and server-backed Combobox workflows without an API console', function (): void {
+    $this->get('/combobox')
+        ->assertOk()
+        ->assertSee('Remote people directory')
+        ->assertSee('Local release vocabulary')
+        ->assertSee('remote-reviewers-combobox', false)
+        ->assertSee('local-release-tags-combobox', false)
+        ->assertSee('analytical-engine.org')
+        ->assertSee('"searchFields":["label","description","meta"]', false)
+        ->assertDontSee('event log', false)
+        ->assertDontSee('facade inspector', false);
 });
 
 it('demonstrates Transfer List as a realistic paginated Laravel assignment form', function (): void {

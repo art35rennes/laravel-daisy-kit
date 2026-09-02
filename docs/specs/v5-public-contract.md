@@ -227,28 +227,36 @@ It emits `copied { value }` on success or `error { code, message, value }` with 
 
 `x-daisy-kit::combobox` accepts `name`, `label`, `options`, `value`, `multiple`, `allowCustom`,
 `tokenSeparators`, `maxItems`, `source`, `queryParam='query'`, `debounce=200`, `minChars`,
-`maxSuggestions=50`, `size='md'`, `required`, `disabled`, `readonly`, and `placeholder`. `size`
+`maxSuggestions=50`, `searchFields=['label', 'description', 'meta', 'value']`, `size='md'`,
+`required`, `disabled`, `readonly`, and `placeholder`. `size`
 accepts `sm`, `md`, or `lg`. Options have the
 plain-data shape `{ value, label, description?, disabled?, avatar?, initials?, meta? }`; no field
 accepts HTML. Local results are ranked with TanStack Match Sorter and the rendered result list is
 bounded by `maxSuggestions`.
 A remote source receives GET queries and returns `{ items, nextCursor? }`; superseded requests are
-aborted. With `minChars=0`, the first focus or pointer activation loads and opens initial remote
+aborted. The endpoint owns server-side matching and may search the query across any of its fields.
+`searchFields` selects which canonical fields participate in local or facade-fed matching. With
+`minChars=0`, the first focus or pointer activation loads and opens initial remote
 suggestions. Loading and empty results are visible in the popup. Single values submit under `name`,
 multiple values as ordered repeated `name[]` fields.
 Custom tokens, paste and separators are enabled only by `allowCustom`. The facade exposes
-`getValue`, `setValue`, `clear`, `open`, `close`, `refresh`, `setOptionRenderer`, and
-`clearOptionRenderer`; events are `change`, `query`, `loading`, and `error` in the module namespace.
+`getValue`, `setValue`, `getOptions`, `setOptions`, `clear`, `open`, `close`, `refresh`,
+`setOptionRenderer`, and `clearOptionRenderer`; events are `change`, `query`, `loading`, and `error`
+in the module namespace. Suggestions open as a viewport-aware overlay and never alter the host
+container's layout height. Selected values retain their last known option label and metadata when a
+remote response omits them.
 `getValue()` returns a string or `null` in single mode and an ordered string array in multiple mode.
-`setValue(value)`, `clear()`, `open()`, `close()`, `setOptionRenderer(renderer)`, and
+`getOptions()` returns detached option snapshots. `setOptions(options)`, `setValue(value)`,
+`clear()`, `open()`, `close()`, `setOptionRenderer(renderer)`, and
 `clearOptionRenderer()` return booleans; `refresh()` returns `Promise<boolean>`.
 The option renderer receives a frozen detached option snapshot and frozen
 `{ active, query, selected }` context, and returns a DOM `Node`, plain text, or `null`; the module
 retains ownership of the outer option and its ARIA attributes. Event details are
 `change { value, values }`, `query { query }`,
 `loading { loading, query }`, and `error { code, message, query? }`. Native `change` continues to
-bubble after the submitted value changes. Renderer exceptions emit `error` with code
-`option-render-failed` and use the default safe option renderer.
+bubble after the submitted value changes. Invalid client options emit `error` with code
+`invalid-options`. Renderer exceptions emit `error` with code `option-render-failed` and use the
+default safe option renderer.
 
 ### Signature configuration
 
@@ -270,8 +278,10 @@ point groups and uses the device-pixel ratio.
 `hoverDelay=250`, and `backdrop=false`. It measures actual overflow and omits the compact ellipsis
 button when the text fits. Hover or focus opens a temporary preview anchored to the ellipsis; click,
 keyboard activation, or `open()` pins it so the complete plain text remains selectable. Pinned
-previews support native outside-click and Escape dismissal. The optional backdrop applies only to
-that pinned state. The facade exposes `refresh`, `isTruncated`, `open`, and `close`; events are
+previews use the standard HTML Popover API for top-layer placement, outside-click and Escape
+dismissal. The responsive DaisyUI card is presentational rather than a custom popup runtime. The
+ellipsis immediately follows the visible clipped text. The optional backdrop applies only to that
+pinned state. The facade exposes `refresh`, `isTruncated`, `open`, and `close`; events are
 `opened` and `closed`.
 `refresh()`, `open()`, and `close()` return booleans; `isTruncated()` returns a boolean. Event details
 are `opened { text }` and `closed { text }`.
@@ -292,9 +302,12 @@ The event detail is `change { id }`.
 `targetLabel`, `searchable`, `maxItems`, `disabled`, `required`, `sortable=true`, `oneWay=false`,
 `showSelectAll=true`, `pagination=false`, `pageSize=10`, and `selectAllScope='page'`. Items use
 `{ value, label, description?, meta?, avatar?, initials?, disabled? }`; every display field is plain
-data and `value` is the ordered target key list. Ranked local search uses TanStack Match Sorter.
+data and `value` is the ordered target key list. Ranked local search uses TanStack Match Sorter with
+a case-insensitive substring threshold, avoiding loose out-of-order character matches.
 Each side exposes its selected and total counts, explicit empty/no-results states and independent
-local pagination when enabled. Buttons and keyboard remain complete alternatives to optional
+local pagination when enabled. While filtering, the count distinguishes matching rows from complete
+side membership. Multi-selection uses a square checked affordance consistent with Tree while the
+listbox option remains the only interactive selection target. Buttons and keyboard remain complete alternatives to optional
 SortableJS drag-and-drop. Ordered target values submit as repeated `name[]` fields.
 
 The facade exposes `getTargetValues`, `setTargetValues`, `getSelection`, `setSelection`, `selectAll`,

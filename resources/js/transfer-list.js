@@ -1,5 +1,5 @@
 import '../css/transfer-list.css';
-import { compareItems, rankItem } from '@tanstack/match-sorter-utils';
+import { compareItems, rankItem, rankings } from '@tanstack/match-sorter-utils';
 import Sortable from 'sortablejs';
 import { createMountable } from './core/mountable.js';
 
@@ -125,7 +125,9 @@ function initialize(root, configuration) {
         return available
             .map((item) => ({
                 item,
-                rank: rankItem(`${item.label} ${item.description} ${item.meta} ${item.value}`, search),
+                rank: rankItem(`${item.label} ${item.description} ${item.meta} ${item.value}`, search, {
+                    threshold: rankings.CONTAINS,
+                }),
             }))
             .filter(({ rank }) => rank.passed)
             .sort((left, right) => compareItems(left.rank, right.rank))
@@ -232,7 +234,9 @@ function initialize(root, configuration) {
 
         const count = root.querySelector(`[data-daisy-kit-transfer-count="${side}"]`);
         if (count instanceof HTMLElement) {
-            count.textContent = `${selected[side].size} selected · ${state.total} total`;
+            count.textContent = searches[side] === ''
+                ? `${selected[side].size} selected · ${state.total} total`
+                : `${selected[side].size} selected · ${state.filtered.length} matching · ${state.total} total`;
         }
 
         const empty = root.querySelector(`[data-daisy-kit-transfer-empty="${side}"]`);

@@ -31,6 +31,13 @@ function normalizeOptions(options) {
     });
 }
 
+function validOptionInput(options) {
+    return Array.isArray(options) && options.every(option => option
+        && typeof option === 'object'
+        && !Array.isArray(option)
+        && typeof option.value === 'string');
+}
+
 function asValues(value, multiple) {
     const values = Array.isArray(value) ? value : (value === null || value === undefined || value === '' ? [] : [value]);
     const normalized = values.filter((item) => typeof item === 'string');
@@ -135,6 +142,7 @@ function initialize(root, configuration) {
         listboxMarkup: listbox.innerHTML,
         listboxMultiselectable: listbox.getAttribute('aria-multiselectable'),
         popupHidden: popup.hidden,
+        popupPlacement: popup.getAttribute('data-placement'),
         popupStatusHidden: popupStatus instanceof HTMLElement ? popupStatus.hidden : null,
         popupStatusText: popupStatus instanceof HTMLElement ? popupStatus.textContent : null,
         requiredValue: requiredInput instanceof HTMLInputElement ? requiredInput.value : null,
@@ -166,6 +174,11 @@ function initialize(root, configuration) {
         ? configuration.tokenSeparators.filter((separator) => typeof separator === 'string' && separator !== '')
         : [','];
     const source = typeof configuration.source === 'string' && configuration.source !== '' ? configuration.source : null;
+    const allowedSearchFields = ['label', 'description', 'meta', 'value'];
+    const configuredSearchFields = Array.isArray(configuration.searchFields)
+        ? [...new Set(configuration.searchFields.filter(field => allowedSearchFields.includes(field)))]
+        : [];
+    const searchFields = configuredSearchFields.length > 0 ? configuredSearchFields : allowedSearchFields;
     const labels = {
         loading: configuration.labels?.loading || 'Loading suggestions…',
         noResults: configuration.labels?.noResults || 'No matching suggestions.',
@@ -178,6 +191,7 @@ function initialize(root, configuration) {
     toggle?.setAttribute('aria-controls', listboxId);
 
     let options = normalizeOptions(configuration.options);
+    const knownOptions = new Map(options.map(option => [option.value, option]));
     let values = asValues(configuration.value, multiple);
     let activeIndex = -1;
     let controller = null;
@@ -190,7 +204,8 @@ function initialize(root, configuration) {
     let optionRenderer = null;
     let rendererFailures = new Set();
 
-    const optionFor = (value) => options.find((option) => option.value === value) ?? {
+    const rememberOptions = nextOptions => nextOptions.forEach(option => knownOptions.set(option.value, option));
+    const optionFor = (value) => knownOptions.get(value) ?? {
         avatar: '',
         description: '',
         disabled: false,
@@ -207,7 +222,7 @@ function initialize(root, configuration) {
         return options
             .map((option) => ({
                 option,
-                rank: rankItem(`${option.label} ${option.description} ${option.meta} ${option.value}`, query),
+                rank: rankItem(searchFields.map(field => option[field]).join(' '), query),
             }))
             .filter(({ rank }) => rank.passed)
             .sort((left, right) => compareItems(left.rank, right.rank))
@@ -295,6 +310,7 @@ function initialize(root, configuration) {
 
                 const tokenLabel = document.createElement('span');
                 tokenLabel.className = 'daisy-kit-combobox__token-label';
+                tokenLabel.dataset.daisyKitComboboxTokenLabel = '';
                 tokenLabel.textContent = option.label;
                 const remove = document.createElement('span');
                 remove.setAttribute('aria-hidden', 'true');
@@ -315,6 +331,18 @@ function initialize(root, configuration) {
         if (requiredInput instanceof HTMLInputElement) requiredInput.value = values.join(',');
     }
 
+    function updatePlacement() {
+        if (!opened) return;
+
+        const shell = root.querySelector('[data-daisy-kit-combobox-shell]');
+        if (!(shell instanceof HTMLElement)) return;
+
+        const bounds = shell.getBoundingClientRect();
+        const below = window.innerHeight - bounds.bottom;
+        const above = bounds.top;
+        popup.dataset.placement = below < Math.min(popup.scrollHeight || 288, 288) && above > below ? 'top' : 'bottom';
+    }
+
     function render() {
         renderOptions();
         renderTokens();
@@ -322,6 +350,7 @@ function initialize(root, configuration) {
         input.setAttribute('aria-expanded', String(opened));
         toggle?.setAttribute('aria-expanded', String(opened));
         input.value = multiple ? query : (query !== '' ? query : (values[0] ? optionFor(values[0]).label : ''));
+        updatePlacement();
     }
 
     function setValues(next, notify = true) {
@@ -392,6 +421,7 @@ function initialize(root, configuration) {
             }
 
             options = normalizeOptions(payload.items);
+            rememberOptions(options);
             activeIndex = -1;
             loadedQuery = requestedQuery;
 
@@ -572,6 +602,7 @@ function initialize(root, configuration) {
         if (shouldOpen) open(); else close();
     };
     const onFocus = () => open();
+    const onViewportChange = () => updatePlacement();
 
     input.addEventListener('input', onInput);
     input.addEventListener('focus', onFocus);
@@ -584,6 +615,8 @@ function initialize(root, configuration) {
     toggle?.addEventListener('pointerdown', onTogglePointerDown);
     toggle?.addEventListener('click', onToggleClick);
     document.addEventListener('pointerdown', onDocumentPointerDown);
+    window.addEventListener('resize', onViewportChange);
+    window.addEventListener('scroll', onViewportChange, true);
     render();
 
     facades.set(root, {
@@ -596,6 +629,7 @@ function initialize(root, configuration) {
             return true;
         },
         close,
+        getOptions: () => options.map(option => ({ ...option })),
         getValue: () => multiple ? [...values] : (values[0] ?? null),
         open,
         refresh,
@@ -604,6 +638,24 @@ function initialize(root, configuration) {
 
             optionRenderer = renderer;
             rendererFailures = new Set();
+            render();
+
+            return true;
+        },
+        setOptions(nextOptions) {
+            if (!validOptionInput(nextOptions)) {
+                emit(root, 'error', {
+                    code: 'invalid-options',
+                    message: 'Combobox options must be an array of canonical option objects.',
+                });
+
+                return false;
+            }
+
+            options = normalizeOptions(nextOptions);
+            rememberOptions(options);
+            activeIndex = -1;
+            loadedQuery = source ? null : loadedQuery;
             render();
 
             return true;
@@ -618,6 +670,8 @@ function initialize(root, configuration) {
         activeController?.abort();
         window.clearTimeout(timer);
         document.removeEventListener('pointerdown', onDocumentPointerDown);
+        window.removeEventListener('resize', onViewportChange);
+        window.removeEventListener('scroll', onViewportChange, true);
         input.removeEventListener('input', onInput);
         input.removeEventListener('focus', onFocus);
         input.removeEventListener('keydown', onKeydown);
@@ -632,6 +686,8 @@ function initialize(root, configuration) {
         listbox.innerHTML = initialDom.listboxMarkup;
         listbox.hidden = initialDom.listboxHidden;
         popup.hidden = initialDom.popupHidden;
+        if (initialDom.popupPlacement === null) delete popup.dataset.placement;
+        else popup.dataset.placement = initialDom.popupPlacement;
         tokens.innerHTML = initialDom.tokensMarkup;
         valuesNode.innerHTML = initialDom.valuesMarkup;
         if (popupStatus instanceof HTMLElement && initialDom.popupStatusHidden !== null) {

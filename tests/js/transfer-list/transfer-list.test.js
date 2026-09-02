@@ -313,6 +313,7 @@ describe('transfer list', () => {
 
         const ada = root.querySelector('[data-value="ada"]');
         expect(ada.querySelector('.daisy-kit-transfer-list__item-check').getAttribute('aria-hidden')).toBe('true');
+        expect(ada.querySelector('.daisy-kit-transfer-list__item-check').tagName).toBe('SPAN');
         expect(ada.querySelector('img').getAttribute('src')).toBe('/avatars/ada.webp');
         expect(ada.textContent).toContain('ada@example.test');
         expect(ada.textContent).toContain('Platform');
@@ -406,6 +407,27 @@ describe('transfer list', () => {
         expect(root.querySelector('[data-daisy-kit-transfer-empty="source"]').textContent).toBe('No matching items');
         expect(root.querySelector('[data-daisy-kit-transfer-empty="source"]').hidden).toBe(false);
         expect(root.querySelector('[data-daisy-kit-transfer-page-status="source"]').textContent).toBe('Page 1 of 1');
+    });
+
+    it('ranks understandable multi-field results and reports filtered membership', () => {
+        document.body.innerHTML = markup({
+            sortable: false,
+            items: [
+                { value: 'margaret', label: 'Margaret Hamilton', description: 'margaret@nasa.gov', meta: 'Flight software' },
+                { value: 'grace', label: 'Grace Hopper', description: 'grace@navy.mil', meta: 'Infrastructure' },
+                { value: 'ada', label: 'Ada Lovelace', description: 'ada@analytical-engine.org', meta: 'Platform' },
+            ],
+            value: ['margaret', 'grace'],
+        });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const search = root.querySelector('[data-daisy-kit-transfer-search="target"]');
+        mount(root);
+
+        search.value = 'arg';
+        search.dispatchEvent(new Event('input', { bubbles: true }));
+
+        expect([...root.querySelectorAll('[data-daisy-kit-transfer-target] [data-value]')].map(item => item.dataset.value)).toEqual(['margaret']);
+        expect(root.querySelector('[data-daisy-kit-transfer-count="target"]').textContent).toBe('0 selected · 1 matching · 2 total');
     });
 
     it('enforces one-way mode in the visible actions and facade', () => {

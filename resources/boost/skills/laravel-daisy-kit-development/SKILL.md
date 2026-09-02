@@ -82,7 +82,10 @@ Combobox opens available suggestions when its input or control is activated. Set
 load a remote first page on open, and keep `maxSuggestions` bounded. Its safe option shape supports
 `description`, `meta`, `initials`, and `avatar` for person/e-mail pickers. For richer host markup,
 use `setOptionRenderer(renderer)`; return a DOM node or plain text and leave the outer option role,
-selection state, and keyboard handling to Daisy Kit. Never serialize HTML in option data.
+selection state, and keyboard handling to Daisy Kit. Use `searchFields` for local canonical-field
+matching, `setOptions()` for a changing client-owned catalogue, and `source` for a Laravel endpoint
+that owns its server-side search columns. Remote result pages preserve the metadata of selected
+tokens. Never serialize HTML in option data.
 
 ## Product outcomes
 

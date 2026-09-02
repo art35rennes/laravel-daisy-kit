@@ -36,8 +36,8 @@
             type="button"
         >&hellip;</button>
     </span>
-    <div class="daisy-kit-truncate-popover" data-daisy-kit-truncate-popover id="{{ $popoverId }}" popover="auto">
-        <article>
+    <div class="card card-border bg-base-100 shadow-xl daisy-kit-truncate-popover" data-daisy-kit-truncate-popover id="{{ $popoverId }}" popover="auto">
+        <article class="card-body gap-2 p-3">
             <header>
                 <h2 data-daisy-kit-truncate-title hidden></h2>
                 <button class="btn btn-circle btn-ghost btn-xs" aria-label="Close" data-daisy-kit-truncate-close type="button">&times;</button>

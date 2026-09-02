@@ -126,6 +126,7 @@ state, or empty text emit the structured errors listed in the public contract.
     :source="route('reviewers.index')"
     :min-chars="0"
     :max-suggestions="20"
+    :search-fields="['label', 'description', 'meta']"
     size="lg"
     multiple
 />
@@ -163,18 +164,26 @@ combobox.setOptionRenderer((option, { selected }) => {
 
     return content;
 });
+
+// Replace a client-owned catalogue after mount. Remote `source` remains available independently.
+combobox.setOptions(nextReviewers);
+const currentSuggestions = combobox.getOptions();
 ```
 
 Focus or pointer activation opens local suggestions. A remote source is loaded on first open when
-`minChars=0`; use a positive threshold for search-only endpoints. `maxSuggestions` bounds the DOM
-without imposing virtualization. `getValue`, `setValue`, `clear`, `open`, `close`,
+`minChars=0`; use a positive threshold for search-only endpoints. `searchFields` chooses the
+canonical fields used by local and `setOptions()` matching; the Laravel endpoint decides which
+server-side columns its query searches. `maxSuggestions` bounds the DOM without imposing
+virtualization. `getValue`, `setValue`, `getOptions`, `setOptions`, `clear`, `open`, `close`,
 `setOptionRenderer`, and `clearOptionRenderer` are synchronous; `refresh()` returns
 `Promise<boolean>`. A custom renderer receives frozen plain data and may return a DOM node or plain
-text; Daisy Kit retains the semantic option wrapper. Events are `change { value, values }`, `query { query }`,
+text; Daisy Kit retains the semantic option wrapper. The suggestion surface overlays surrounding
+content and flips above the field when the viewport has more room there. Remote result pages never
+erase the last known label of a selected token. Events are `change { value, values }`, `query { query }`,
 `loading { loading, query }`, and `error { code, message, query? }`. Laravel receives repeated,
 ordered `reviewers[]` fields in multiple mode (or one `reviewers` field in single mode). No CSP
 exception is needed unless remote avatar URLs require a broader `img-src`. Invalid remote
-responses, unavailable sources, and renderer exceptions emit structured errors.
+responses, invalid client options, unavailable sources, and renderer exceptions emit structured errors.
 
 ### Signature
 
@@ -227,7 +236,9 @@ truncate.refresh();
 `refresh`, `open`, and `close` return booleans; `isTruncated()` reports measured overflow. Events
 are `opened { text }` and `closed { text }`. Truncate submits no field, requires no CSP exception,
 and treats an already-open/already-closed action as a no-op returning `false`. The ellipsis appears
-only when the value overflows. Hover or focus opens a temporary anchored preview; clicking or
+only when the value overflows and remains directly adjacent to the clipped text. The disclosure is
+the standard HTML Popover API in the browser top layer, presented as a responsive DaisyUI card; it
+is not a custom modal runtime. Hover or focus opens a temporary anchored preview; clicking or
 keyboard-activating it pins the selectable text. `hover=false` disables transient pointer/focus
 opening, `hoverDelay` accepts 0–2000 milliseconds, and `backdrop=true` adds a backdrop only while
 the preview is pinned. Outside interaction and Escape close a pinned preview natively.
@@ -257,6 +268,9 @@ CSP exception. An unknown section is a rejected target returning `false`, not an
 
 Transfer List presents two bounded assignment panels with selected/total counts, explicit empty
 states and a select-all checkbox. Selection can apply to the current page or every filtered result.
+Every multi-select option uses a square checked affordance; filtered counts distinguish matching
+rows from complete side membership. Search uses ranked, case-insensitive substring matches across
+the canonical label, description, metadata and value.
 Select target items and use the arrow controls, or press ArrowRight / ArrowLeft on an option to
 transfer it directly. Use the reorder buttons or Alt+ArrowUp / Alt+ArrowDown on a target option to
 change submission order without dragging. Disabled items cannot be selected or displaced.

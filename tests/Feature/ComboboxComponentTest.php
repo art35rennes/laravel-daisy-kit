@@ -8,6 +8,7 @@ it('renders a CSP-safe combobox configuration and Laravel field shell', function
     $html = view('daisy-kit::components.combobox', [
         'name' => 'assignees', 'multiple' => true, 'allowCustom' => true,
         'size' => 'lg', 'maxSuggestions' => 12,
+        'searchFields' => ['label', 'description'],
         'options' => [['value' => 'ada', 'label' => '</script><img src=x>', 'avatar' => '/ada.jpg']],
     ])->render();
     preg_match('/<script data-daisy-kit-config type="application\/json">(.*?)<\/script>/s', $html, $matches);
@@ -23,6 +24,7 @@ it('renders a CSP-safe combobox configuration and Laravel field shell', function
         ->and(JsonConfiguration::decode(html_entity_decode($matches[1] ?? '')))->toMatchArray([
             'name' => 'assignees',
             'maxSuggestions' => 12,
+            'searchFields' => ['label', 'description'],
         ]);
 
     expect($html)->toMatch('/data-daisy-kit-combobox-control[^>]*>.*data-daisy-kit-combobox-tokens.*data-daisy-kit-combobox-input/s');

@@ -9,7 +9,7 @@ it('serves ranked remote combobox options using the public response shape', func
             'items' => [[
                 'value' => 'grace',
                 'label' => 'Grace Hopper',
-                'description' => 'grace.hopper@example.test',
+                'description' => 'grace@navy.mil',
                 'initials' => 'GH',
                 'meta' => 'Infrastructure',
             ]],
@@ -20,10 +20,19 @@ it('serves ranked remote combobox options using the public response shape', func
 it('serves initial rich Combobox suggestions without a search term', function (): void {
     $this->getJson('/_daisy-kit-test/combobox/reviewers?query=')
         ->assertOk()
-        ->assertJsonCount(4, 'items')
-        ->assertJsonPath('items.0.description', 'ada.lovelace@example.test')
+        ->assertJsonCount(6, 'items')
+        ->assertJsonPath('items.0.description', 'ada@analytical-engine.org')
         ->assertJsonPath('items.0.initials', 'AL')
         ->assertJsonPath('items.0.meta', 'Platform');
+});
+
+it('searches remote Combobox suggestions across e-mail domains', function (): void {
+    $this->getJson('/_daisy-kit-test/combobox/reviewers?query=nasa.gov')
+        ->assertOk()
+        ->assertJsonCount(3, 'items')
+        ->assertJsonPath('items.0.value', 'margaret')
+        ->assertJsonPath('items.1.value', 'katherine')
+        ->assertJsonPath('items.2.value', 'annie');
 });
 
 it('serves nested Tree search results from a local Laravel endpoint', function (): void {
@@ -45,6 +54,7 @@ it('serves nested Tree search results from a local Laravel endpoint', function (
 it('accepts the native Workbench review form submission', function (): void {
     $this->post('/_daisy-kit-test/reviews', [
         'reviewers' => ['ada', 'grace'],
+        'release_tags' => ['security', 'release-urgent'],
         'assignees' => ['margaret', 'ada'],
         'approval_signature' => 'data:image/png;base64,fixture',
     ])

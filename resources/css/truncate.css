@@ -3,17 +3,19 @@
 }
 
 .daisy-kit-truncate-preview {
-    display: flex;
+    display: inline-flex;
+    max-inline-size: 100%;
     min-inline-size: 0;
     align-items: baseline;
     gap: 0.125rem;
+    vertical-align: bottom;
 }
 
 .daisy-kit-truncate [data-daisy-kit-truncate-text] {
     display: block;
     min-inline-size: 0;
     overflow: hidden;
-    flex: 1 1 auto;
+    flex: 0 1 auto;
 }
 
 .daisy-kit-truncate [data-daisy-kit-truncate-text][data-daisy-kit-truncate-lines='1'] {
@@ -55,18 +57,8 @@
     max-inline-size: min(28rem, calc(100vw - 1rem));
     max-block-size: min(16rem, calc(100vh - 1rem));
     overflow: auto;
-    border: 1px solid color-mix(in oklab, var(--color-base-content) 20%, transparent);
-    border-radius: var(--radius-field);
-    background: var(--color-base-100);
     color: var(--color-base-content);
-    padding: 0.5rem 0.625rem;
-    box-shadow: 0 0.375rem 1rem color-mix(in oklab, var(--color-base-content) 16%, transparent);
     transform: translate(-50%, -50%);
-}
-
-.daisy-kit-truncate-popover article {
-    display: grid;
-    gap: 0.25rem;
 }
 
 .daisy-kit-truncate-popover header {
@@ -103,6 +95,20 @@
         position-area: block-end span-inline-end;
         position-try-fallbacks: flip-block, flip-inline;
         position-try-order: most-height;
+        transform: none;
+    }
+}
+
+@media (max-width: 30rem) {
+    .daisy-kit-truncate-popover {
+        position: fixed;
+        position-area: unset;
+        position-try-fallbacks: none;
+        inset: auto 0.375rem 0.375rem;
+        inline-size: auto;
+        max-inline-size: none;
+        max-block-size: calc(100dvh - 0.75rem);
+        margin: 0;
         transform: none;
     }
 }

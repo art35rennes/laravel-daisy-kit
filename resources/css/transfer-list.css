@@ -82,7 +82,7 @@
 .daisy-kit-transfer-list__item-check {
     align-items: center;
     border: 1px solid color-mix(in oklab, var(--color-base-content) 32%, transparent);
-    border-radius: var(--radius-selector, .25rem);
+    border-radius: .25rem;
     display: flex;
     height: 1rem;
     justify-content: center;

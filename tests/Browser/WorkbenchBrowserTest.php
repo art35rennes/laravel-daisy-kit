@@ -22,15 +22,20 @@ it('presents the Workbench module directory accessibly on desktop and mobile', f
 
 it('shows the Copyable affordance and transient visual feedback', function (): void {
     $copyable = '[data-daisy-kit-module="copyable"]';
+    $explicit = '[data-copyable-scenario="explicit-value"] [data-daisy-kit-module="copyable"]';
 
     $this->visit('/copyable')->on()->desktop()
         ->waitForEvent('networkidle')
-        ->assertCount("{$copyable} [data-daisy-kit-copyable-icon]", 1)
-        ->assertScript("(() => { const icon = document.querySelector('{$copyable} [data-daisy-kit-copyable-icon]'); const size = icon.getBoundingClientRect(); return size.width === 16 && size.height === 16; })()")
-        ->click("{$copyable} [data-daisy-kit-copyable-button]")
-        ->assertScript("(() => { const status = document.querySelector('{$copyable} [data-daisy-kit-status]'); return !status.hidden && ((status.classList.contains('badge-success') && status.textContent === 'Release identifier copied.') || (status.classList.contains('badge-error') && status.textContent === 'Copying failed.')); })()")
+        ->assertCount($copyable, 4)
+        ->assertCount("{$copyable} [data-daisy-kit-copyable-icon]", 4)
+        ->assertCount('[data-copyable-scenario="disabled"] button:disabled', 1)
+        ->assertSee('Deployment command')
+        ->assertSee('Webhook payload')
+        ->assertScript("(() => { const icon = document.querySelector('{$explicit} [data-daisy-kit-copyable-icon]'); const size = icon.getBoundingClientRect(); return size.width === 16 && size.height === 16; })()")
+        ->click("{$explicit} [data-daisy-kit-copyable-button]")
+        ->assertScript("(() => { const status = document.querySelector('{$explicit} [data-daisy-kit-status]'); return !status.hidden && ((status.classList.contains('badge-success') && status.textContent === 'Release identifier copied.') || (status.classList.contains('badge-error') && status.textContent === 'Copying failed.')); })()")
         ->wait(6)
-        ->assertScript("document.querySelector('{$copyable} [data-daisy-kit-status]').hidden")
+        ->assertScript("document.querySelector('{$explicit} [data-daisy-kit-status]').hidden")
         ->assertNoSmoke()
         ->assertNoAccessibilityIssues(1);
 })->group('browser');
@@ -126,25 +131,41 @@ it('applies the Workbench server filters only on request', function (): void {
 })->group('browser');
 
 it('uses the remote Combobox in a native Laravel review form', function (): void {
-    $combobox = '[data-daisy-kit-module="combobox"]';
+    $combobox = '#remote-reviewers-combobox';
+    $local = '#local-release-tags-combobox';
 
     $page = $this->visit('/combobox')->on()->desktop();
 
     $page
         ->waitForEvent('networkidle')
         ->wait(1)
-        ->click("{$combobox} [data-daisy-kit-combobox-input]")
+        ->assertCount('[data-daisy-kit-module="combobox"]', 2);
+    $page->click("{$combobox} [data-daisy-kit-combobox-input]")
         ->wait(1)
-        ->assertCount("{$combobox} [role=option]", 4)
-        ->assertSee('ada.lovelace@example.test')
+        ->assertCount("{$combobox} [role=option]", 6)
+        ->assertSee('ada@analytical-engine.org')
         ->assertSee('Platform')
+        ->assertScript("getComputedStyle(document.querySelector('{$combobox} [data-daisy-kit-combobox-popup]')).position === 'absolute'")
+        ->assertScript("(() => { const shell = document.querySelector('{$combobox} [data-daisy-kit-combobox-shell]').getBoundingClientRect(); const control = document.querySelector('{$combobox} [data-daisy-kit-combobox-control]').getBoundingClientRect(); const popup = document.querySelector('{$combobox} [data-daisy-kit-combobox-popup]').getBoundingClientRect(); return shell.height < control.height + 8 && shell.height < popup.height / 2; })()")
         ->assertNoAccessibilityIssues(1)
-        ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'Grace')
+        ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'missing-reviewer')
         ->wait(1)
-        ->assertSee('Grace Hopper')
-        ->click("{$combobox} [role=option]")
-        ->assertScript("document.querySelector('{$combobox} input[name=\"reviewers[]\"][value=grace]') !== null")
+        ->assertSee('No matching suggestions.')
+        ->assertScript("document.querySelector('{$combobox} [data-daisy-kit-combobox-token-label]').textContent === 'Ada Lovelace'")
+        ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'nasa.gov')
+        ->wait(1)
+        ->assertCount("{$combobox} [role=option]", 3)
+        ->assertSee('Margaret Hamilton')
+        ->click("{$combobox} [role=option][data-value=margaret]")
+        ->assertScript("document.querySelector('{$combobox} input[name=\"reviewers[]\"][value=margaret]') !== null")
         ->keys("{$combobox} [data-daisy-kit-combobox-input]", 'Escape')
+        ->click("{$local} [data-daisy-kit-combobox-input]")
+        ->assertCount("{$local} [role=option]", 4)
+        ->fill("{$local} [data-daisy-kit-combobox-input]", 'assistive technology')
+        ->assertCount("{$local} [role=option]", 1)
+        ->click("{$local} [role=option]")
+        ->assertScript("document.querySelector('{$local} input[name=\"release_tags[]\"][value=accessibility]') !== null")
+        ->keys("{$local} [data-daisy-kit-combobox-input]", 'Escape')
         ->click('button[type=submit]')
         ->waitForEvent('networkidle')
         ->assertSee('The review assignment was saved.')
@@ -154,7 +175,7 @@ it('uses the remote Combobox in a native Laravel review form', function (): void
         ->click("{$combobox} [data-daisy-kit-combobox-input]")
         ->wait(1)
         ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
-        ->assertCount("{$combobox} [role=option]", 4)
+        ->assertCount("{$combobox} [role=option]", 6)
         ->assertNoAccessibilityIssues(1);
 })->group('browser');
 
@@ -166,7 +187,18 @@ it('anchors Truncate disclosure to its ellipsis and supports pinned light dismis
         ->wait(1)
         ->assertNoSmoke()
         ->assertNoAccessibilityIssues(1)
-        ->assertScript("document.querySelector('{$trigger}').hidden === false");
+        ->assertScript("document.querySelector('{$trigger}').hidden === false")
+        ->assertScript(<<<'JS'
+            (() => {
+                const trigger = document.querySelector('[data-daisy-kit-truncate-reveal][aria-label^="Show Grace"]').getBoundingClientRect();
+                const text = document.querySelector('[data-daisy-kit-module="truncate"]:has([aria-label^="Show Grace"]) [data-daisy-kit-truncate-text]').getBoundingClientRect();
+                const popover = document.querySelector('[data-daisy-kit-module="truncate"]:has([aria-label^="Show Grace"]) [data-daisy-kit-truncate-popover]');
+
+                return Math.abs(trigger.left - text.right) <= 8
+                    && popover.getAttribute('popover') === 'auto'
+                    && popover.classList.contains('card');
+            })()
+            JS);
 
     $page->script("document.querySelector('{$trigger}').dispatchEvent(new PointerEvent('pointerenter'))");
     $page->wait(1)
@@ -190,6 +222,16 @@ it('anchors Truncate disclosure to its ellipsis and supports pinned light dismis
         ->keys($trigger, 'Escape')
         ->assertScript("!document.querySelector('{$popover}').matches(':popover-open')")
         ->assertNoSmoke();
+
+    $page->resize(390, 844)
+        ->click($trigger)
+        ->assertScript(<<<'JS'
+            (() => {
+                const rect = document.querySelector('[data-daisy-kit-module="truncate"]:has([aria-label^="Show Grace"]) [data-daisy-kit-truncate-popover]').getBoundingClientRect();
+                return rect.left >= 0 && rect.right <= window.innerWidth && rect.top >= 0 && rect.bottom <= window.innerHeight;
+            })()
+            JS)
+        ->keys($trigger, 'Escape');
 })->group('browser');
 
 it('mounts the map without a browser CSP violation', function (): void {
@@ -326,6 +368,12 @@ it('uses Transfer List as a responsive paginated assignment control', function (
         ->assertNoAccessibilityIssues(1);
 
     $page
+        ->assertScript("(() => { const mark = document.querySelector('{$transfer} [data-daisy-kit-transfer-target] .daisy-kit-transfer-list__item-check'); const rect = mark.getBoundingClientRect(); return Number.parseFloat(getComputedStyle(mark).borderTopLeftRadius) < rect.height / 2; })()")
+        ->fill("{$transfer} [data-daisy-kit-transfer-search=target]", 'arg')
+        ->assertCount("{$transfer} [data-daisy-kit-transfer-target] [role=option]", 1)
+        ->assertSee('0 selected · 1 matching · 3 total')
+        ->assertSee('Margaret Hamilton')
+        ->fill("{$transfer} [data-daisy-kit-transfer-search=target]", '')
         ->click("{$transfer} [data-daisy-kit-transfer-select-all=source]")
         ->assertSee('5 selected · 13 total')
         ->click("{$transfer} [data-daisy-kit-transfer-move=to-target]")

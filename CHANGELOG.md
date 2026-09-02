@@ -14,6 +14,8 @@
   pagination, one-way operation, selection counts and explicit empty/search states.
 - Combobox open-on-focus suggestions, integrated tokens, bounded rich person/e-mail options, and a
   CSP-safe host option renderer.
+- Combobox client option replacement, configurable canonical search fields, viewport-aware overlay
+  placement, and selected-label preservation across partial or empty remote results.
 - Transfer List target ordering with Move up/down buttons and Alt+ArrowUp/ArrowDown, preserving focus and hidden/disabled item positions.
 - Independent Copyable, Combobox, Signature, Truncate, Scrollspy, and Transfer List Blade/ESM/CSS modules.
 - Stable module facades with `getInstance`, ranked selection search, signature export, and accessible non-drag interactions.
@@ -25,6 +27,12 @@
 - Lifecycle commands, facade returns, structured errors, and public event payloads are now consistent and documented across all eleven modules.
 - The Testbench Workbench is explicitly limited to a representative Laravel host; API documentation and facade diagnostics remain outside its visible UI.
 - Truncate now uses an anchored compact ellipsis preview, temporary hover/focus disclosure, pinned selectable text, native light dismiss, and an optional pinned-state backdrop.
+- Truncate keeps its ellipsis adjacent to clipped text and presents its native popover as a
+  responsive DaisyUI card, including a viewport-contained mobile panel.
+- Transfer List uses an unambiguous square multi-selection affordance, substring-ranked search and
+  filtered-versus-total result counts.
+- The Workbench demonstrates explicit, visible-text, structured-text and disabled Copyable cases,
+  plus local and server-backed Combobox forms with multi-field e-mail-domain search.
 
 ### Removed
 

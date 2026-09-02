@@ -110,10 +110,12 @@ Route::patch('/_daisy-kit-test/table/rows/{rowId}', function (Request $request, 
 Route::get('/_daisy-kit-test/combobox/reviewers', function (Request $request) {
     $query = mb_strtolower($request->string('query')->trim()->toString());
     $reviewers = collect([
-        ['value' => 'ada', 'label' => 'Ada Lovelace', 'description' => 'ada.lovelace@example.test', 'initials' => 'AL', 'meta' => 'Platform'],
-        ['value' => 'grace', 'label' => 'Grace Hopper', 'description' => 'grace.hopper@example.test', 'initials' => 'GH', 'meta' => 'Infrastructure'],
-        ['value' => 'margaret', 'label' => 'Margaret Hamilton', 'description' => 'margaret.hamilton@example.test', 'initials' => 'MH', 'meta' => 'Flight software'],
-        ['value' => 'katherine', 'label' => 'Katherine Johnson', 'description' => 'katherine.johnson@example.test', 'initials' => 'KJ', 'meta' => 'Research'],
+        ['value' => 'ada', 'label' => 'Ada Lovelace', 'description' => 'ada@analytical-engine.org', 'initials' => 'AL', 'meta' => 'Platform'],
+        ['value' => 'grace', 'label' => 'Grace Hopper', 'description' => 'grace@navy.mil', 'initials' => 'GH', 'meta' => 'Infrastructure'],
+        ['value' => 'margaret', 'label' => 'Margaret Hamilton', 'description' => 'margaret@nasa.gov', 'initials' => 'MH', 'meta' => 'Flight software'],
+        ['value' => 'katherine', 'label' => 'Katherine Johnson', 'description' => 'katherine@nasa.gov', 'initials' => 'KJ', 'meta' => 'Research'],
+        ['value' => 'dorothy', 'label' => 'Dorothy Vaughan', 'description' => 'dorothy@naca.gov', 'initials' => 'DV', 'meta' => 'Operations'],
+        ['value' => 'annie', 'label' => 'Annie Easley', 'description' => 'annie@nasa.gov', 'initials' => 'AE', 'meta' => 'Energy systems'],
     ]);
 
     if ($query !== '') {
@@ -186,6 +188,8 @@ Route::post('/_daisy-kit-test/reviews', function (Request $request) {
     $review = $request->validate([
         'reviewers' => ['array'],
         'reviewers.*' => ['string', 'max:100'],
+        'release_tags' => ['array'],
+        'release_tags.*' => ['string', 'max:100'],
         'assignees' => ['array'],
         'assignees.*' => ['string', 'max:100'],
         'approval_signature' => ['nullable', 'string', 'starts_with:data:image/png;base64,'],

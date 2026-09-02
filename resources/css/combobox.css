@@ -63,6 +63,7 @@
 
 .daisy-kit-combobox__popup {
     display: block;
+    position: absolute;
     z-index: 30;
     inset-inline: 0;
     top: calc(100% + 0.25rem);
@@ -77,6 +78,11 @@
     transform: none;
     transition: none;
     visibility: visible;
+}
+
+.daisy-kit-combobox__popup[data-placement='top'] {
+    top: auto;
+    bottom: calc(100% + 0.25rem);
 }
 
 .daisy-kit-combobox__popup[hidden],

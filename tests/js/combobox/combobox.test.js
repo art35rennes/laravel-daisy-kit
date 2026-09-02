@@ -112,10 +112,12 @@ describe('combobox', () => {
             'clear',
             'clearOptionRenderer',
             'close',
+            'getOptions',
             'getValue',
             'open',
             'refresh',
             'setOptionRenderer',
+            'setOptions',
             'setValue',
         ]);
         expect(instance.setValue('ada')).toBe(true);
@@ -229,6 +231,76 @@ describe('combobox', () => {
         expect(root.querySelector('[data-daisy-kit-combobox-popup]').hidden).toBe(false);
         expect(root.querySelector('[data-daisy-kit-combobox-popup-status]').textContent).toBe('No matching reviewers.');
         expect(root.querySelector('[data-daisy-kit-combobox-popup-status]').hidden).toBe(false);
+    });
+
+    it('keeps a selected rich label when a remote query returns no suggestions', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ items: [] }) }));
+        document.body.innerHTML = markup({
+            multiple: true,
+            options: [{ value: 'ada', label: 'Ada Lovelace', description: 'ada@analytical-engine.org' }],
+            source: '/reviewers',
+            debounce: 100000,
+            value: ['ada'],
+        });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const input = root.querySelector('[data-daisy-kit-combobox-input]');
+        const instance = mount(root);
+        input.value = 'nobody';
+        input.dispatchEvent(new Event('input'));
+
+        await expect(instance.refresh()).resolves.toBe(true);
+
+        expect(root.querySelector('[data-daisy-kit-combobox-token-label]').textContent).toBe('Ada Lovelace');
+        expect(instance.getValue()).toEqual(['ada']);
+        unmount(root);
+    });
+
+    it('accepts client-fed options and searches only configured canonical fields', () => {
+        document.body.innerHTML = markup({ searchFields: ['description'], options: [] });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const input = root.querySelector('[data-daisy-kit-combobox-input]');
+        const errors = [];
+        root.addEventListener('daisy-kit:combobox:error', event => errors.push(event.detail));
+        const instance = mount(root);
+
+        expect(instance.setOptions([
+            { value: 'ada', label: 'Ada Lovelace', description: 'ada@analytical-engine.org' },
+            { value: 'grace', label: 'Grace Hopper', description: 'grace@navy.mil' },
+        ])).toBe(true);
+        const snapshot = instance.getOptions();
+        snapshot[0].label = 'Mutated';
+
+        input.value = 'navy.mil';
+        input.dispatchEvent(new Event('input'));
+        expect([...root.querySelectorAll('[role=option]')].map(option => option.dataset.value)).toEqual(['grace']);
+        expect(instance.getOptions()[0].label).toBe('Ada Lovelace');
+
+        input.value = 'Lovelace';
+        input.dispatchEvent(new Event('input'));
+        expect(root.querySelectorAll('[role=option]')).toHaveLength(0);
+        expect(instance.setOptions('unsafe')).toBe(false);
+        expect(errors).toEqual([{
+            code: 'invalid-options',
+            message: 'Combobox options must be an array of canonical option objects.',
+        }]);
+    });
+
+    it('places its suggestion overlay above when the viewport has more room there', () => {
+        document.body.innerHTML = markup({ options: [{ value: 'ada', label: 'Ada' }] });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const shell = root.querySelector('[data-daisy-kit-combobox-shell]');
+        const initialHeight = window.innerHeight;
+        Object.defineProperty(window, 'innerHeight', { configurable: true, value: 600 });
+        shell.getBoundingClientRect = () => ({ bottom: 580, height: 40, left: 0, right: 300, top: 540, width: 300 });
+
+        const instance = mount(root);
+        expect(instance.open()).toBe(true);
+
+        const popup = root.querySelector('[data-daisy-kit-combobox-popup]');
+        expect(popup.dataset.placement).toBe('top');
+        expect(unmount(root)).toBe(true);
+        expect(popup.hasAttribute('data-placement')).toBe(false);
+        Object.defineProperty(window, 'innerHeight', { configurable: true, value: initialHeight });
     });
 
     it('emits loading start and finish and returns true for a valid remote refresh', async () => {

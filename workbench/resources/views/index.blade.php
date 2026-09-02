@@ -353,15 +353,45 @@
         <section class="card min-w-0 space-y-6 bg-base-100 p-6" aria-labelledby="focused-components-heading">
             <h2 id="focused-components-heading">{{ $modules[$module] }}</h2>
             @if($module === 'copyable')
-            <x-daisy-kit::copyable
-                class="card"
-                value="release-2026-08-29"
-                show-icon
-                :feedback-duration="5000"
-                success-label="Release identifier copied."
-            >
-                Copy release identifier
-            </x-daisy-kit::copyable>
+            <div class="grid gap-4 md:grid-cols-2">
+                <article class="card card-border bg-base-100" data-copyable-scenario="explicit-value">
+                    <div class="card-body gap-3">
+                        <h3 class="card-title text-base">Release identifier</h3>
+                        <p class="text-sm text-base-content/70">The visible action and copied technical value can differ.</p>
+                        <x-daisy-kit::copyable
+                            value="release-2026-08-29"
+                            show-icon
+                            :feedback-duration="5000"
+                            success-label="Release identifier copied."
+                        >Copy release identifier</x-daisy-kit::copyable>
+                    </div>
+                </article>
+                <article class="card card-border bg-base-100" data-copyable-scenario="visible-text">
+                    <div class="card-body gap-3">
+                        <h3 class="card-title text-base">Deployment command</h3>
+                        <p class="text-sm text-base-content/70">Without an explicit value, the displayed text is copied.</p>
+                        <x-daisy-kit::copyable show-icon success-label="Command copied."><code>php artisan boost:update --discover</code></x-daisy-kit::copyable>
+                    </div>
+                </article>
+                <article class="card card-border bg-base-100" data-copyable-scenario="structured-text">
+                    <div class="card-body gap-3">
+                        <h3 class="card-title text-base">Webhook payload</h3>
+                        <p class="text-sm text-base-content/70">Structured data remains inert plain text on the clipboard.</p>
+                        <x-daisy-kit::copyable
+                            value='{"release":"2026.08","channel":"stable"}'
+                            show-icon
+                            success-label="JSON payload copied."
+                        >Copy JSON payload</x-daisy-kit::copyable>
+                    </div>
+                </article>
+                <article class="card card-border bg-base-100" data-copyable-scenario="disabled">
+                    <div class="card-body gap-3">
+                        <h3 class="card-title text-base">Protected secret</h3>
+                        <p class="text-sm text-base-content/70">Unavailable values expose a native disabled action.</p>
+                        <x-daisy-kit::copyable value="not-available" show-icon disabled>Copy protected value</x-daisy-kit::copyable>
+                    </div>
+                </article>
+            </div>
             @endif
 
             @if(in_array($module, ['combobox', 'signature', 'transfer-list'], true))
@@ -373,25 +403,48 @@
                 @csrf
                 <input name="return_to" type="hidden" value="{{ $module }}">
                 @if($module === 'combobox')
-                <x-daisy-kit::combobox
-                    class="card"
-                    name="reviewers"
-                    label="Reviewers"
-                    :multiple="true"
-                    :allow-custom="true"
-                    :source="route('workbench.combobox.reviewers')"
-                    :min-chars="0"
-                    :max-suggestions="8"
-                    :options="[[
-                        'value' => 'ada',
-                        'label' => 'Ada Lovelace',
-                        'description' => 'ada.lovelace@example.test',
-                        'initials' => 'AL',
-                        'meta' => 'Platform',
-                    ]]"
-                    :value="['ada']"
-                    placeholder="Add a reviewer…"
-                />
+                <div class="space-y-2">
+                    <h3>Remote people directory</h3>
+                    <p class="text-sm text-base-content/70">Search people by name, team or complete e-mail domain. Suggestions come from a Laravel JSON endpoint.</p>
+                    <x-daisy-kit::combobox
+                        id="remote-reviewers-combobox"
+                        name="reviewers"
+                        label="Reviewers"
+                        :multiple="true"
+                        :source="route('workbench.combobox.reviewers')"
+                        :min-chars="0"
+                        :max-items="4"
+                        :max-suggestions="8"
+                        :options="[[
+                            'value' => 'ada',
+                            'label' => 'Ada Lovelace',
+                            'description' => 'ada@analytical-engine.org',
+                            'initials' => 'AL',
+                            'meta' => 'Platform',
+                        ]]"
+                        :value="['ada']"
+                        placeholder="Name, team or e-mail domain…"
+                    />
+                </div>
+                <div class="space-y-2">
+                    <h3>Local release vocabulary</h3>
+                    <p class="text-sm text-base-content/70">These suggestions are embedded in Blade and custom tags remain available for project-specific terms.</p>
+                    <x-daisy-kit::combobox
+                        id="local-release-tags-combobox"
+                        name="release_tags"
+                        label="Release tags"
+                        :multiple="true"
+                        :allow-custom="true"
+                        :options="[
+                            ['value' => 'security', 'label' => 'Security review', 'description' => 'Threat model and dependency audit', 'meta' => 'Quality gate'],
+                            ['value' => 'accessibility', 'label' => 'Accessibility', 'description' => 'Keyboard and assistive technology', 'meta' => 'Quality gate'],
+                            ['value' => 'performance', 'label' => 'Performance', 'description' => 'Rendering and transport budget', 'meta' => 'Engineering'],
+                            ['value' => 'documentation', 'label' => 'Documentation', 'description' => 'Integrator guidance and examples', 'meta' => 'Release'],
+                        ]"
+                        :search-fields="['label', 'description', 'meta']"
+                        placeholder="Choose or create a tag…"
+                    />
+                </div>
                 @endif
                 @if($module === 'signature')
                 <x-daisy-kit::signature class="card" name="approval_signature" label="Approval signature" />

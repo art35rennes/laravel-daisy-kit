@@ -24,6 +24,7 @@ test('the truncate component emits a native-popover shell without executable mar
         ->toContain('popovertarget="daisy-kit-truncate-')
         ->toContain('popovertargetaction="show"')
         ->toContain('data-daisy-kit-truncate-preview')
+        ->toContain('card card-border bg-base-100 shadow-xl daisy-kit-truncate-popover')
         ->not->toContain('<img')
         ->not->toContain('onclick=')
         ->not->toContain('style=')
