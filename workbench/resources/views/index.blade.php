@@ -353,7 +353,15 @@
         <section class="card min-w-0 space-y-6 bg-base-100 p-6" aria-labelledby="focused-components-heading">
             <h2 id="focused-components-heading">{{ $modules[$module] }}</h2>
             @if($module === 'copyable')
-            <x-daisy-kit::copyable class="card" value="release-2026-08-29">Copy release identifier</x-daisy-kit::copyable>
+            <x-daisy-kit::copyable
+                class="card"
+                value="release-2026-08-29"
+                show-icon
+                :feedback-duration="5000"
+                success-label="Release identifier copied."
+            >
+                Copy release identifier
+            </x-daisy-kit::copyable>
             @endif
 
             @if(in_array($module, ['combobox', 'signature', 'transfer-list'], true))

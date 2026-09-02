@@ -25,7 +25,7 @@ class TreeConfiguration
                 throw new InvalidArgumentException("Tree {$key} must be a non-negative integer.");
             }
         }
-        foreach (['multiple', 'disabled', 'searchable', 'hasInitialValue'] as $key) {
+        foreach (['multiple', 'disabled', 'searchable', 'hasInitialValue', 'highlightMatches'] as $key) {
             if (! is_bool($options[$key])) {
                 throw new InvalidArgumentException("Tree {$key} must be boolean.");
             }

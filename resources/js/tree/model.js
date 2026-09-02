@@ -28,7 +28,7 @@ export function createModel(configuration = {}) {
     }
 
     // Validate an entire payload before mutating the canonical tree.
-    function merge(items, parentId = null, complete = false) {
+    function merge(items, parentId = null, complete = false, replace = complete) {
         if (!Array.isArray(items)) throw new TypeError('Tree items must be an array.');
         const staged = new Map();
         function visit(values, parent, inheritedDisabled, depth = 0) {
@@ -51,7 +51,7 @@ export function createModel(configuration = {}) {
                     description: typeof item.description === 'string' ? item.description : old?.description ?? '',
                     badge: typeof item.badge === 'string' ? item.badge : old?.badge ?? '',
                     disabled: inheritedDisabled || item.disabled === true || old?.disabled === true,
-                    source, loaded: old?.loaded ?? source === null,
+                    source, loaded: old?.loaded ?? source === null, nextCursor: old?.nextCursor ?? null,
                     children: [...(old?.children ?? [])],
                 };
                 staged.set(id, node);
@@ -63,7 +63,7 @@ export function createModel(configuration = {}) {
         const ids = visit(items, parentId, nodes.get(parentId)?.disabled === true);
         staged.forEach((node, id) => nodes.set(id, node));
         const siblings = parentId === null ? roots : nodes.get(parentId).children;
-        if (complete && parentId !== null) {
+        if (replace && parentId !== null) {
             function remove(id) {
                 nodes.get(id)?.children.forEach(remove);
                 nodes.delete(id);
@@ -74,7 +74,7 @@ export function createModel(configuration = {}) {
             siblings.splice(0, siblings.length, ...ids);
         }
         siblings.push(...ids.filter((id) => !siblings.includes(id)));
-        if (complete && parentId !== null) nodes.get(parentId).loaded = true;
+        if (parentId !== null) nodes.get(parentId).loaded = complete;
         return ids;
     }
 

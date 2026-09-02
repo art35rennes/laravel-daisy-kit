@@ -122,10 +122,12 @@ serializable snapshots: `filtered { query?, filters? }`, `filters-applied { filt
 
 The complete selector contract and examples are specified in [Tree](../tree.md).
 Tree additionally supports initial values, disabled subtrees, `valueMode="leaves|selected-roots"`,
-initial expansion paths, manual/automatic and includes/fuzzy search, translated labels and inert
-Blade node presentation. Its additional facade methods are `getState`, `setSearch`, `applySearch`,
-`clearSearch`, `expandPath`, `expandAll`, `collapseAll`, `selectVisible`, and `reloadBranch`.
-`applySearch`, `expandPath`, and `reloadBranch` are asynchronous. Bulk actions only affect loaded
+initial expansion paths, manual/automatic and includes/fuzzy search, opt-in match highlighting,
+translated labels and inert Blade node presentation. Its additional facade methods are `getState`,
+`setSearch`, `applySearch`, `clearSearch`, `setFilter`, `clearFilter`, `expandPath`, `expandAll`,
+`collapseAll`, `selectVisible`, `loadMore`, and `reloadBranch`. `applySearch`, `expandPath`,
+`loadMore`, and `reloadBranch` are asynchronous. Lazy branches accept paginated `{ items,
+nextCursor? }` responses and fetch each continuation explicitly. Bulk actions only affect loaded
 items; selected-root values can explicitly represent unloaded subtrees. Search merges remote paths
 without dropping hidden selections. The selection footer counts submitted ids, including hidden ids.
 
@@ -211,7 +213,10 @@ private third-party instance.
 ### Copyable configuration
 
 `x-daisy-kit::copyable` accepts `value`, `copyLabel`, `successLabel`, `errorLabel`,
-`feedbackDuration=1000`, and `disabled=false`. Without `value`, it copies the displayed
+`feedbackDuration=1000`, `disabled=false`, `showIcon=false`, and `showFeedback=true`. The optional
+decorative icon supplements, but never replaces, the visible content. Feedback uses the existing
+live status as a transient visual tooltip; disabling visual feedback keeps the accessible
+announcement. Without `value`, it copies the displayed
 `textContent`; an explicit value is always copied as plain text. It uses only
 `navigator.clipboard.writeText()` after user action. Its facade exposes `copy(value?)` and
 `getValue()`. `copy(value?)` returns `Promise<boolean>` and `getValue()` returns resolved plain text.

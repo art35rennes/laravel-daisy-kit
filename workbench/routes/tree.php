@@ -8,19 +8,19 @@ use Workbench\App\TreeExamples;
 
 Route::get('/tree', function (Request $request) {
     app()->setLocale($request->query('lang') === 'fr' ? 'fr' : 'en');
-    $request->session()->forget('workbench.tree.westRetried');
 
     return response()->view('workbench::tree')->header('Content-Security-Policy', "default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; img-src 'self' data:; connect-src 'self'; form-action 'self'");
 })->name('workbench.tree');
 
 Route::get('/_daisy-kit-test/tree/catalogue/{region}', function (Request $request, string $region) {
-    if ($region === 'west' && ! $request->session()->get('workbench.tree.westRetried')) {
-        $request->session()->put('workbench.tree.westRetried', true);
+    $cursor = max(0, $request->integer('cursor'));
+    $centres = TreeExamples::centres($region);
+    $items = array_slice($centres, $cursor, 2);
+    $nextCursor = $cursor + count($items) < count($centres)
+        ? (string) ($cursor + count($items))
+        : null;
 
-        return response()->json(['message' => 'Regional service temporarily unavailable.'], 503);
-    }
-
-    return response()->json(['items' => TreeExamples::centres($region)]);
+    return response()->json(['items' => $items, 'nextCursor' => $nextCursor]);
 })->whereIn('region', ['west', 'north', 'south', 'east'])->name('workbench.tree.catalogue');
 
 Route::get('/_daisy-kit-test/tree/catalogue-search', function (Request $request) {

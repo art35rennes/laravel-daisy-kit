@@ -5,6 +5,50 @@ function element(tag, className, text) {
     return node;
 }
 
+function highlightedText(text, query, mode) {
+    const fragment = document.createDocumentFragment();
+    if (!query) {
+        fragment.append(document.createTextNode(text));
+        return fragment;
+    }
+    const normalizedText = text.toLocaleLowerCase();
+    const normalizedQuery = query.toLocaleLowerCase();
+    const indexes = [];
+    if (mode === 'includes') {
+        const start = normalizedText.indexOf(normalizedQuery);
+        if (start >= 0) indexes.push(...Array.from({ length: normalizedQuery.length }, (_, index) => start + index));
+    } else {
+        let cursor = 0;
+        for (const character of normalizedQuery) {
+            const index = normalizedText.indexOf(character, cursor);
+            if (index < 0) break;
+            indexes.push(index);
+            cursor = index + 1;
+        }
+        if (indexes.length !== [...normalizedQuery].length) indexes.splice(0);
+    }
+    const matched = new Set(indexes);
+    let buffer = '';
+    let marked = false;
+    function flush() {
+        if (!buffer) return;
+        if (marked) {
+            const mark = document.createElement('mark');
+            mark.textContent = buffer;
+            fragment.append(mark);
+        } else fragment.append(document.createTextNode(buffer));
+        buffer = '';
+    }
+    [...text].forEach((character, index) => {
+        const nextMarked = matched.has(index);
+        if (buffer && marked !== nextMarked) flush();
+        marked = nextMarked;
+        buffer += character;
+    });
+    flush();
+    return fragment;
+}
+
 export function createRenderer(root, model, translate) {
     const tree = root.querySelector('[data-daisy-kit-tree-root]');
     const templates = new Map([...root.querySelectorAll('template[data-daisy-kit-tree-template]')]
@@ -23,7 +67,7 @@ export function createRenderer(root, model, translate) {
         return true;
     }
 
-    function render({ visibleIds, loadingIds, errors }) {
+    function render({ visibleIds, loadingIds, errors, highlight }) {
         const active = document.activeElement;
         const hadFocus = tree.contains(active);
         const activeId = active?.closest('[data-daisy-kit-tree-node]')?.dataset.daisyKitTreeNode;
@@ -77,8 +121,14 @@ export function createRenderer(root, model, translate) {
                 const content = element('span', 'daisy-kit-tree__label');
                 if (templates.has(id)) content.append(templates.get(id).content.cloneNode(true));
                 else {
-                    content.append(element('span', 'daisy-kit-tree__title', item.label));
-                    if (item.description) content.append(element('span', 'daisy-kit-tree__description', item.description));
+                    const title = element('span', 'daisy-kit-tree__title');
+                    title.append(highlightedText(item.label, highlight?.query, highlight?.mode));
+                    content.append(title);
+                    if (item.description) {
+                        const description = element('span', 'daisy-kit-tree__description');
+                        description.append(highlightedText(item.description, highlight?.query, highlight?.mode));
+                        content.append(description);
+                    }
                 }
                 row.append(check, content);
                 if (item.badge && !templates.has(id)) row.append(element('span', 'badge badge-ghost badge-sm', item.badge));
@@ -102,6 +152,13 @@ export function createRenderer(root, model, translate) {
                     group.hidden = !opened;
                     group.append(branch(item.children, level + 1));
                     listItem.append(group);
+                }
+                if (opened && item.nextCursor !== null) {
+                    const more = element('button', 'btn btn-ghost btn-sm daisy-kit-tree__load-more', translate('loadMore'));
+                    more.type = 'button';
+                    more.dataset.treeAction = 'load-more';
+                    more.disabled = loadingIds.has(id);
+                    listItem.append(more);
                 }
                 fragment.append(listItem);
             });

@@ -21,7 +21,7 @@ automated outcome test before it is considered delivered.
 
 | User outcome | V4 evidence | Corrective v5 proof |
 | --- | --- | --- |
-| A technical identifier can be copied with pointer or keyboard input and receives an accessible success or failure state. | `resources/views/components/ui/utilities/copyable.blade.php`; `resources/js/modules/copyable.js` at `v4.0.0`. | Clipboard-success/failure, keyboard and unmount Vitest tests. |
+| A technical identifier can be copied with pointer or keyboard input, can expose a familiar copy icon, and receives transient visual plus accessible success or failure feedback. | `resources/views/components/ui/utilities/copyable.blade.php`; `resources/js/modules/copyable.js` at `v4.0.0`. | Icon rendering, timed Clipboard-success/failure feedback, keyboard and unmount tests. |
 | Users can filter and select local or remote choices while the native form value remains synchronized. | `resources/views/components/ui/inputs/multi-select.blade.php`; `resources/js/modules/multi-select.js` at `v4.0.0`. | Local/remote filtering, focus, form-data and cancellation tests. |
 | A user can draw, clear and export a signature while the submitted form value stays synchronized. | `resources/views/components/ui/inputs/sign.blade.php`; `resources/js/modules/sign.js` at `v4.0.0`. | Pointer, resize, reset, form-data and CSP tests. |
 | Long text has an accessible expanded state without mutating the original value. | `resources/views/components/ui/utilities/truncate-text.blade.php` at `v4.0.0`. | Overflow, keyboard disclosure and multiple-root tests. |
@@ -42,6 +42,7 @@ automated outcome test before it is considered delivered.
 | --- | --- | --- |
 | Single and multiple selection support propagation, indeterminate parents, selected leaves/roots and one JSON-array hidden field under the exact configured `name`. | `resources/views/components/ui/advanced/tree-view.blade.php`; `resources/js/treeview.js` at `v4.0.0`. | Blade and Vitest assertions cover `[]`, single-id and ordered multiple-id submissions without adding `[]` to the field name. |
 | Users expand paths, search locally or remotely with debounce, and lazily load branches. | v4 tree endpoint/search contract. | Fetch fixture and focus-preserving browser test. |
+| Integrators compose a loaded-node predicate with search, optionally highlight matching characters, and page very large lazy branches without eagerly loading siblings or continuations. | Table filter integration pattern and ADR-0011. | Facade/filter, semantic highlight, cursor transport and branch-isolation tests. |
 | Selection/expansion persistence is configurable and instance-local. | v4 tree persisted state. | Vitest storage/multiple-root/unmount tests. |
 | Host code reads and changes selection or expansion through a stable facade without private DOM access. | v5 integrator-facade contract. | Vitest `getValue`/`setValue`/`clear`/`expand`/`collapse`/`focus` and canonical `change` payload tests. |
 | Visible disclosure and selection controls, disabled subtrees, loaded-scope bulk actions and hidden-selection counts support real classification and permissions workflows. | v4 controls and corrective v5 product plan, ADR-0009. | Tree product tests and four responsive Workbench scenarios. |

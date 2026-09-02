@@ -25,21 +25,39 @@ it('uses hierarchical selection, manual search and keyboard navigation', functio
     $page->assertNoAccessibilityIssues(1)->assertNoSmoke();
 })->group('browser');
 
-it('recovers a failed lazy branch without losing selected roots', function (): void {
+it('loads and selects a paginated regional branch without touching its siblings', function (): void {
     $this->visit('/tree')->on()->desktop()
         ->waitForEvent('networkidle')
-        ->click('#catalogue-tree [data-daisy-kit-tree-node=west] > .daisy-kit-tree__row')
         ->click('#catalogue-tree [data-daisy-kit-tree-node=west] > .daisy-kit-tree__row [data-tree-action=toggle]')
-        ->assertSee('This branch could not be loaded.')
-        ->click('#catalogue-tree [data-tree-action=retry]')
         ->waitForEvent('networkidle')
         ->assertScript("document.querySelector('#catalogue-tree [data-daisy-kit-tree-node=west]').getAttribute('aria-expanded') === 'true'")
-        ->assertScript("document.querySelector('#catalogue-tree [data-daisy-kit-tree-value]').value === '[\"west\"]'")
-        ->fill('#catalogue-tree [data-daisy-kit-tree-search]', 'North')
-        ->click('#catalogue-tree [data-tree-command=applySearch]')
+        ->assertScript("document.querySelectorAll('#catalogue-tree [data-daisy-kit-tree-node^=west-]').length === 10")
+        ->assertScript("document.querySelector('#catalogue-tree [data-daisy-kit-tree-node^=north-]') === null")
+        ->click('#catalogue-tree [data-tree-command=selectVisible]')
+        ->assertScript("document.querySelector('#catalogue-tree [data-daisy-kit-tree-value]').value === '[\"west-1\",\"west-2\"]'")
+        ->click('#catalogue-tree [data-tree-action=load-more]')
         ->waitForEvent('networkidle')
-        ->assertScript("document.querySelector('#catalogue-tree [data-daisy-kit-tree-value]').value === '[\"west\"]'")
-        ->assertSee('1 selected · 0 visible · 1 hidden');
+        ->assertScript("document.querySelectorAll('#catalogue-tree > [data-daisy-kit-content] [data-daisy-kit-tree-node^=west-]').length === 20")
+        ->assertDontSee('This branch could not be loaded.')
+        ->assertNoSmoke();
+})->group('browser');
+
+it('aligns search controls and highlights standard search matches', function (): void {
+    $this->visit('/tree')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->assertScript(<<<'JS'
+            (() => {
+                const toolbar = document.querySelector('#permissions-tree .daisy-kit-tree__toolbar');
+                const input = toolbar.querySelector('input');
+                const buttons = [...toolbar.querySelectorAll(':scope > button')];
+                return buttons.every((button) => Math.abs(button.getBoundingClientRect().bottom - input.getBoundingClientRect().bottom) <= 1);
+            })()
+            JS)
+        ->fill('#classification-tree [data-daisy-kit-tree-search]', 'Plat')
+        ->wait(1)
+        ->assertScript("document.querySelector('#classification-tree [data-daisy-kit-tree-node=team-0] .daisy-kit-tree__title mark')?.textContent.toLowerCase() === 'plat'")
+        ->assertNoAccessibilityIssues(1)
+        ->assertNoSmoke();
 })->group('browser');
 
 it('keeps controls accessible inside the viewport in both themes', function (string $theme): void {

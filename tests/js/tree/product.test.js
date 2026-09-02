@@ -19,7 +19,11 @@ const items = [{ id: 'docs', label: 'Documentation', children: [
     { id: 'read', label: 'Read articles' }, { id: 'write', label: 'Write articles' },
     { id: 'admin', label: 'Administration', disabled: true },
 ] }, { id: 'billing', label: 'Billing' }];
-function response(items) { return new Response(JSON.stringify({ items }), { headers: { 'content-type': 'application/json' } }); }
+function response(items, nextCursor = undefined) {
+    return new Response(JSON.stringify({ items, ...(nextCursor === undefined ? {} : { nextCursor }) }), {
+        headers: { 'content-type': 'application/json' },
+    });
+}
 function deferred() { let resolve; const promise = new Promise((done) => { resolve = done; }); return { promise, resolve }; }
 
 afterEach(() => {
@@ -73,6 +77,42 @@ describe('tree product outcomes', () => {
         expect(instance.getState().visibleIds).toEqual(['docs', 'billing']);
     });
 
+    it('composes a host filter with search and optionally highlights matched characters', async () => {
+        const filtered = [];
+        const { root, instance } = fixture({ items, highlightMatches: true, searchMode: 'manual' });
+        root.addEventListener('daisy-kit:tree:filtered', (event) => filtered.push(event.detail));
+
+        expect(instance.setFilter((item) => item.label.includes('articles'))).toBe(true);
+        expect(instance.getState().visibleIds).toEqual(['docs', 'read', 'write']);
+        expect(Object.isFrozen(instance.getState().filter)).toBe(true);
+        expect(instance.getState().filter.active).toBe(true);
+
+        instance.setSearch('art');
+        await instance.applySearch();
+
+        expect(instance.getState().visibleIds).toEqual(['docs', 'read', 'write']);
+        expect([...root.querySelectorAll('mark')].map((mark) => mark.textContent).join('')).toContain('art');
+        expect(filtered.at(-1)).toEqual({ active: true, visibleIds: ['docs', 'read', 'write'] });
+
+        instance.setSearch('Billing');
+        await instance.applySearch();
+        expect(instance.getState().visibleIds).toEqual([]);
+
+        expect(instance.clearFilter()).toBe(true);
+        expect(instance.clearFilter()).toBe(false);
+    });
+
+    it('rejects invalid host filters without changing the visible tree', () => {
+        const errors = [];
+        const { root, instance } = fixture({ items });
+        root.addEventListener('daisy-kit:tree:error', (event) => errors.push(event.detail));
+
+        expect(instance.setFilter('articles')).toBe(false);
+        expect(instance.setFilter(() => { throw new Error('host failure'); })).toBe(false);
+        expect(errors).toEqual([{ code: 'filter-failed', message: 'The custom tree filter failed.' }]);
+        expect(instance.getState().visibleIds).toEqual(['docs', 'billing']);
+    });
+
     it('deduplicates lazy requests and opens only the requested ancestor path', async () => {
         const pending = deferred();
         vi.stubGlobal('fetch', vi.fn().mockReturnValue(pending.promise));
@@ -86,6 +126,33 @@ describe('tree product outcomes', () => {
         expect(await path).toBe(true);
         expect(await again).toBe(true);
         expect(instance.getState().expandedIds).toEqual(['remote']);
+    });
+
+    it('loads a large branch page by page without fetching sibling branches', async () => {
+        vi.stubGlobal('fetch', vi.fn()
+            .mockResolvedValueOnce(response([{ id: 'west-1', label: 'West 1' }], 'page-2'))
+            .mockResolvedValueOnce(response([{ id: 'west-2', label: 'West 2' }], null)));
+        const { root, instance } = fixture({ items: [
+            { id: 'west', label: 'West', source: '/regions/west' },
+            { id: 'north', label: 'North', source: '/regions/north' },
+        ] });
+
+        expect(await instance.expand('west')).toBe(true);
+        expect(instance.getState().pagination).toEqual({ west: { hasMore: true, nextCursor: 'page-2' } });
+        const more = root.querySelector('[data-tree-action="load-more"]');
+        expect(more.textContent).toBe('Load more');
+        expect(fetch).toHaveBeenCalledOnce();
+
+        more.focus();
+        more.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        expect(instance.getValue()).toBeNull();
+        more.click();
+        await vi.waitFor(() => expect(instance.getState().pagination).toEqual({}));
+
+        expect(instance.getState().visibleIds).toEqual(['west', 'west-1', 'west-2', 'north']);
+        expect(new URL(fetch.mock.calls[1][0]).searchParams.get('cursor')).toBe('page-2');
+        expect(fetch.mock.calls.every(([url]) => String(url).includes('/regions/west'))).toBe(true);
+        expect(document.activeElement).toBe(root.querySelector('[data-daisy-kit-tree-node="west"]'));
     });
 
     it('discloses branches without selecting them, and submits loaded leaves only', async () => {
@@ -129,6 +196,20 @@ describe('tree product outcomes', () => {
         instance.expandAll();
         instance.selectVisible();
         expect(instance.getValue()).toEqual(['billing', 'read', 'write']);
+    });
+
+    it('selects visible complete branches in selected-roots mode', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response([{
+            id: 'west-1', label: 'West centre', children: [{ id: 'west-storage', label: 'Storage' }],
+        }])));
+        const { instance } = fixture({
+            items: [{ id: 'west', label: 'West', source: '/west' }], multiple: true, valueMode: 'selected-roots',
+        });
+
+        await instance.expand('west');
+
+        expect(instance.selectVisible()).toBe(true);
+        expect(instance.getValue()).toEqual(['west']);
     });
 
     it('merges server results without losing off-result values or accepting remote HTML', async () => {

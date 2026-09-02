@@ -58,7 +58,7 @@ class TreeExamples
     {
         return array_map(fn (string $region): array => [
             'id' => $region, 'label' => ucfirst($region).' region',
-            'description' => $region === 'west' ? 'The regional service fails once; retry to reconnect.' : 'Load distribution centres on demand.',
+            'description' => 'Load distribution centres on demand, one page at a time.',
             'source' => route('workbench.tree.catalogue', ['region' => $region]),
         ], ['west', 'north', 'south', 'east']);
     }

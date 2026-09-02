@@ -20,8 +20,16 @@ export function createTransport(notify) {
             if (!response.ok) throw new Error('Invalid tree response.');
             const data = await response.json();
             if (!active || controller.signal.aborted || requests.get(key) !== controller) return null;
-            if (!data || !Array.isArray(data.items)) throw new Error('Invalid tree response.');
-            return data.items;
+            if (!data || !Array.isArray(data.items)
+                || (data.nextCursor !== undefined && data.nextCursor !== null
+                    && (!['string', 'number'].includes(typeof data.nextCursor)
+                        || String(data.nextCursor).length === 0))) {
+                throw new Error('Invalid tree response.');
+            }
+            return {
+                items: data.items,
+                nextCursor: data.nextCursor === undefined || data.nextCursor === null ? null : String(data.nextCursor),
+            };
         } catch (error) {
             if (!active || controller.signal.aborted || requests.get(key) !== controller) return null;
             throw error;
