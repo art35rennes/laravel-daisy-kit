@@ -45,15 +45,34 @@
 }
 
 .daisy-kit-map__map-controls {
-    align-items: flex-end;
+    align-items: flex-start;
     display: flex;
-    flex-direction: column;
     gap: 0.5rem;
     inset-block-start: 0.75rem;
     inset-inline-end: 0.75rem;
+    justify-content: flex-end;
+    max-inline-size: calc(100% - 5rem);
     pointer-events: none;
     position: absolute;
     z-index: 600;
+}
+
+.daisy-kit-map__map-controls--topleft {
+    inset-inline-end: auto;
+    inset-inline-start: 4rem;
+    justify-content: flex-start;
+}
+
+.daisy-kit-map__map-controls--bottomleft,
+.daisy-kit-map__map-controls--bottomright {
+    inset-block-end: 2.75rem;
+    inset-block-start: auto;
+}
+
+.daisy-kit-map__map-controls--bottomleft {
+    inset-inline-end: auto;
+    inset-inline-start: 0.75rem;
+    justify-content: flex-start;
 }
 
 .daisy-kit-map__map-controls > * {
@@ -70,6 +89,18 @@
     position: relative;
 }
 
+.daisy-kit-map__menu--root {
+    position: static;
+}
+
+.daisy-kit-map__menu > summary {
+    list-style: none;
+}
+
+.daisy-kit-map__menu > summary::-webkit-details-marker {
+    display: none;
+}
+
 .daisy-kit-map__menu-panel {
     display: grid;
     gap: 0;
@@ -79,6 +110,35 @@
     overflow: auto;
     position: absolute;
     z-index: 610;
+}
+
+.daisy-kit-map__menu--align-start > .daisy-kit-map__menu-panel {
+    inset-inline-end: auto;
+    inset-inline-start: 0;
+}
+
+.daisy-kit-map__submenu {
+    border-block-start: 1px solid var(--color-base-300);
+}
+
+.daisy-kit-map__submenu-trigger {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    inline-size: 100%;
+    justify-items: start;
+    text-align: start;
+}
+
+.daisy-kit-map__submenu-panel {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    display: grid;
+    inline-size: auto;
+    margin-inline-start: 0.75rem;
+    max-block-size: none;
+    padding-block: 0.25rem 0.5rem;
+    position: static;
 }
 
 .daisy-kit-map__menu-section {
@@ -141,6 +201,17 @@
     text-align: start;
 }
 
+.daisy-kit-map__menu-action {
+    inline-size: 100%;
+    justify-content: flex-start;
+    min-block-size: 2.75rem;
+    text-align: start;
+}
+
+.daisy-kit-map__mobile-view {
+    display: none;
+}
+
 .daisy-kit-map__menu-actions [aria-pressed='true'] {
     background-color: var(--color-primary);
     border-color: var(--color-primary);
@@ -187,7 +258,12 @@
     display: grid;
     gap: 0.25rem;
     margin-block-start: 0.375rem;
+    max-inline-size: calc(100% - 2rem);
     padding: 0.5rem;
+    position: absolute;
+    inset-block-end: 3.5rem;
+    inset-inline-start: 1rem;
+    z-index: 500;
 }
 
 .daisy-kit-map [hidden] {
@@ -250,12 +326,31 @@
     background-color: var(--color-base-100);
     border: 0;
     border-radius: 0;
-    padding: 1rem;
+    block-size: 100dvh;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    inline-size: 100vw;
+    padding: 0;
 }
 
-.daisy-kit-map:fullscreen .daisy-kit-map__viewport,
+.daisy-kit-map:fullscreen .daisy-kit-map__content {
+    block-size: 100%;
+    box-sizing: border-box;
+    grid-template-rows: minmax(0, 1fr);
+    min-block-size: 0;
+    padding-block: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-bottom));
+    padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+}
+
+.daisy-kit-map:fullscreen .daisy-kit-map__viewport {
+    block-size: 100%;
+    min-block-size: 0;
+}
+
 .daisy-kit-map:fullscreen .daisy-kit-map__canvas {
-    block-size: calc(100dvh - 2rem);
+    block-size: 100%;
+    min-block-size: 0;
 }
 
 @container (max-width: 34rem) {
@@ -266,6 +361,25 @@
     .daisy-kit-map__measurement,
     .daisy-kit-map__mode {
         inset-block-end: 2rem;
+    }
+
+    .daisy-kit-map__direct-view-action {
+        display: none;
+    }
+
+    .daisy-kit-map__mobile-view {
+        display: block;
+    }
+
+    .daisy-kit-map__map-controls {
+        flex-wrap: wrap;
+        inline-size: min(9.25rem, calc(100% - 4.5rem));
+        max-inline-size: calc(100% - 4.5rem);
+    }
+
+    .daisy-kit-map:fullscreen .daisy-kit-map__content {
+        padding-block: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-bottom));
+        padding-inline: max(0.75rem, env(safe-area-inset-left)) max(0.75rem, env(safe-area-inset-right));
     }
 }
 

@@ -71,6 +71,7 @@ automated outcome test before it is considered delivered.
 | --- | --- | --- |
 | A host configures tiles/providers, markers and GeoJSON, basemaps and XYZ/WMS/GeoJSON overlays. | v4 Leaflet Blade/runtime and README GIS API. | Served-host fixture with local tiles/layers. |
 | Controls cover layers, optional geolocation, drawing/editing, object types, spatial selection and Turf measurements. | v4 `resources/js/leaflet/*`. | Browser interaction fixture and event assertions. |
+| Hosts compose independent direct actions, menus, groups, nested menus and named control slots without executable configuration. | v4 toolbar extensibility and v5 CSP boundary. | PHP tree validation plus keyboard and responsive browser tests. |
 | Users undo/redo and export GeoJSON; loading/error behaviour is clear. | v4 Leaflet API. | Vitest and browser state tests. |
 | Leaflet/Terra Draw CSP exception is minimal and documented; host remains strict otherwise. | ADR-002. | CSP violation/console test with configured directives. |
 

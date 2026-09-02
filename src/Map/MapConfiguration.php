@@ -16,7 +16,6 @@ class MapConfiguration
     public static function make(array $input): array
     {
         $labels = self::labels();
-        $controls = self::controls($input['controls'] ?? true);
         $drawing = self::featureConfiguration($input['drawing'] ?? false, [
             'point' => true,
             'line' => true,
@@ -37,6 +36,13 @@ class MapConfiguration
             'showAccuracy' => true,
         ]);
         $spatialSelection = self::spatialSelection($input['spatialSelection'] ?? false);
+        $provider = self::provider($input['provider'] ?? null);
+        $tileUrl = self::url($input['tileUrl'] ?? null, 'tileUrl', true);
+        $basemaps = self::layers($input['basemaps'] ?? [], true);
+        $layers = self::layers($input['layers'] ?? [], false);
+        $objectTypes = self::objectTypes($input['objectTypes'] ?? []);
+        $drawLayers = self::drawLayers($input['drawLayers'] ?? []);
+        $fullscreen = ($input['fullscreen'] ?? false) === true;
 
         $configuration = [
             'center' => self::center($input['center'] ?? [48.1173, -1.6778]),
@@ -47,15 +53,14 @@ class MapConfiguration
             'preferCanvas' => ($input['preferCanvas'] ?? false) === true,
             'geojson' => self::geojson($input['geojson'] ?? null, 'geojson'),
             'markers' => self::markers($input['markers'] ?? []),
-            'provider' => self::provider($input['provider'] ?? null),
-            'tileUrl' => self::url($input['tileUrl'] ?? null, 'tileUrl', true),
+            'provider' => $provider,
+            'tileUrl' => $tileUrl,
             'tileAttribution' => is_string($input['tileAttribution'] ?? null) ? $input['tileAttribution'] : '',
             'tileOptions' => self::array($input['tileOptions'] ?? [], 'tileOptions'),
-            'basemaps' => self::layers($input['basemaps'] ?? [], true),
-            'layers' => self::layers($input['layers'] ?? [], false),
-            'controls' => $controls,
+            'basemaps' => $basemaps,
+            'layers' => $layers,
             'scale' => ($input['scale'] ?? false) === true,
-            'fullscreen' => ($input['fullscreen'] ?? false) === true,
+            'fullscreen' => $fullscreen,
             'gestureHandling' => ($input['gestureHandling'] ?? false) === true,
             'geolocation' => $geolocation,
             'cluster' => self::featureConfiguration($input['cluster'] ?? false, ['maxClusterRadius' => 80]),
@@ -65,14 +70,28 @@ class MapConfiguration
                 'showTooltip' => true,
                 'maxLabels' => 16,
             ]),
-            'objectTypes' => self::objectTypes($input['objectTypes'] ?? []),
-            'drawLayers' => self::drawLayers($input['drawLayers'] ?? []),
+            'objectTypes' => $objectTypes,
+            'drawLayers' => $drawLayers,
             'drawLayerSelection' => self::drawLayerSelection($input['drawLayerSelection'] ?? 'single'),
             'spatialSelection' => $spatialSelection,
             'value' => self::drawingValue($input['value'] ?? null),
             'persistState' => self::persistence($input['persistState'] ?? false, $input['stateKey'] ?? null),
             'labels' => $labels,
         ];
+        $capabilities = self::controlCapabilities(
+            $provider,
+            $tileUrl,
+            $basemaps,
+            $layers,
+            $drawing,
+            $objectTypes,
+            $drawLayers,
+            $spatialSelection,
+            $geolocation,
+            $fullscreen,
+        );
+        $configuration['controls'] = self::controls($input['controls'] ?? true, $labels, $capabilities);
+        $controls = $configuration['controls'];
 
         return [
             'configuration' => $configuration,
@@ -114,61 +133,268 @@ class MapConfiguration
             ->all();
     }
 
-    /** @return array{enabled: bool, position: string, layers: bool, fitBounds: bool, drawing: bool, measurements: bool, sections: list<string>} */
-    private static function controls(mixed $controls): array
+    /**
+     * @param  array<string, string>  $labels
+     * @param  array<string, bool>  $capabilities
+     * @return array{enabled: bool, position: string, items: list<array<string, mixed>>}
+     */
+    private static function controls(mixed $controls, array $labels, array $capabilities): array
     {
-        $defaultSections = ['basemaps', 'businessLayers', 'drawingLayers', 'create', 'selection', 'history', 'view', 'custom'];
-
         if ($controls === false) {
             return [
                 'enabled' => false,
                 'position' => 'topright',
-                'layers' => false,
-                'fitBounds' => false,
-                'drawing' => false,
-                'measurements' => false,
-                'sections' => [],
+                'items' => [],
             ];
         }
 
-        if ($controls !== true && ! is_array($controls)) {
-            throw new InvalidArgumentException('Map controls must be a boolean or array.');
+        if ($controls !== true && ! $controls instanceof MapControls) {
+            throw new InvalidArgumentException('Map controls must be a boolean or MapControls instance.');
         }
 
-        $controls = $controls === true ? [] : $controls;
-        $position = $controls['position'] ?? 'topright';
+        $preset = $controls === true;
+        $tree = $preset ? self::defaultControls($labels, $capabilities) : $controls;
+        $normalized = $tree->toArray();
+        $normalized['items'] = self::normalizeControlItems($normalized['items'], $labels, $capabilities, $preset);
 
-        if (! in_array($position, ['topleft', 'topright', 'bottomleft', 'bottomright'], true)) {
-            throw new InvalidArgumentException('Map control position is invalid.');
-        }
+        return $normalized;
+    }
 
-        $sections = $controls['sections'] ?? $defaultSections;
+    /**
+     * @param  array<string, string>  $labels
+     * @param  array<string, bool>  $capabilities
+     */
+    private static function defaultControls(array $labels, array $capabilities): MapControls
+    {
+        $items = [
+            MapControl::menu('layers', $labels['layers'], [
+                MapControl::basemaps(),
+                MapControl::businessLayers(),
+                MapControl::drawingLayers(),
+            ], icon: 'layers'),
+        ];
 
-        if (! is_array($sections) || ! array_is_list($sections)) {
-            throw new InvalidArgumentException('Map control sections must be a list.');
-        }
+        if ($capabilities['drawing']) {
+            $geometry = [];
 
-        $normalizedSections = [];
+            foreach (['Point', 'Line', 'Polygon', 'Rectangle'] as $geometryType) {
+                $capability = 'draw'.$geometryType;
 
-        foreach ($sections as $section) {
-            if (! is_string($section) || ! in_array($section, $defaultSections, true)) {
-                throw new InvalidArgumentException('Map control section is invalid.');
+                if ($capabilities[$capability]) {
+                    $geometry[] = MapControl::{"draw{$geometryType}"}();
+                }
             }
 
-            if (! in_array($section, $normalizedSections, true)) {
-                $normalizedSections[] = $section;
+            $drawingItems = [MapControl::objectTypeSelector(), MapControl::drawLayerSelector()];
+
+            if ($geometry !== []) {
+                $drawingItems[] = MapControl::menu('geometry', $labels['createTools'], $geometry);
+            }
+
+            $items[] = MapControl::menu('drawing', $labels['drawingTools'], $drawingItems, icon: 'drawing');
+            $items[] = MapControl::menu('selection', $labels['selectionTools'], [
+                MapControl::edit(),
+                MapControl::select(),
+                MapControl::selectFeature(),
+                MapControl::selectByArea(),
+                MapControl::deleteSelected(),
+                MapControl::clearSelection(),
+            ], icon: 'selection');
+            $items[] = MapControl::menu('history', $labels['historyTools'], [
+                MapControl::undo(),
+                MapControl::redo(),
+                MapControl::export(),
+            ], icon: 'history');
+        }
+
+        $items[] = MapControl::fitBounds();
+
+        if ($capabilities['geolocate']) {
+            $items[] = MapControl::geolocate();
+        }
+
+        if ($capabilities['fullscreen']) {
+            $items[] = MapControl::fullscreen();
+        }
+
+        return MapControls::make($items);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $items
+     * @param  array<string, string>  $labels
+     * @param  array<string, bool>  $capabilities
+     * @return list<array<string, mixed>>
+     */
+    private static function normalizeControlItems(
+        array $items,
+        array $labels,
+        array $capabilities,
+        bool $pruneUnavailable,
+    ): array {
+        $normalized = [];
+
+        foreach ($items as $item) {
+            $action = is_string($item['action'] ?? null) ? $item['action'] : null;
+            $type = is_string($item['type'] ?? null) ? $item['type'] : 'action';
+            $enabled = ($item['enabled'] ?? false) === true;
+            $visible = ($item['visible'] ?? false) === true;
+            $children = self::controlNodeItems($item['items'] ?? null);
+            $available = $action === null ? true : ($capabilities[$action] ?? true);
+
+            if ($pruneUnavailable && ! $available) {
+                continue;
+            }
+
+            $item['enabled'] = $enabled && $available;
+            $item['visible'] = $visible;
+
+            if (! $available && in_array($type, ['collection', 'selector'], true)) {
+                $item['visible'] = false;
+            }
+
+            $item['label'] ??= self::controlLabel($action, $labels);
+            $item['icon'] ??= self::controlIcon($action);
+            $item['items'] = self::normalizeControlItems($children, $labels, $capabilities, $pruneUnavailable);
+
+            if (in_array($type, ['menu', 'group'], true) && ! self::hasVisibleControl($item['items'])) {
+                $item['visible'] = false;
+            }
+
+            $normalized[] = $item;
+        }
+
+        return $normalized;
+    }
+
+    /** @return list<array<string, mixed>> */
+    private static function controlNodeItems(mixed $items): array
+    {
+        if (! is_array($items) || ! array_is_list($items)) {
+            return [];
+        }
+
+        $controls = [];
+
+        foreach ($items as $item) {
+            if (is_array($item)) {
+                $control = [];
+
+                foreach ($item as $key => $value) {
+                    if (is_string($key)) {
+                        $control[$key] = $value;
+                    }
+                }
+
+                $controls[] = $control;
             }
         }
+
+        return $controls;
+    }
+
+    /** @param list<array<string, mixed>> $items */
+    private static function hasVisibleControl(array $items): bool
+    {
+        foreach ($items as $item) {
+            if (($item['visible'] ?? false) === true) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $basemaps
+     * @param  list<array<string, mixed>>  $layers
+     * @param  array<string, mixed>|false  $drawing
+     * @param  list<array<string, mixed>>  $objectTypes
+     * @param  list<array<string, mixed>>  $drawLayers
+     * @param  array<string, mixed>|false  $spatialSelection
+     * @param  array<string, mixed>|false  $geolocation
+     * @return array<string, bool>
+     */
+    private static function controlCapabilities(
+        ?string $provider,
+        ?string $tileUrl,
+        array $basemaps,
+        array $layers,
+        array|false $drawing,
+        array $objectTypes,
+        array $drawLayers,
+        array|false $spatialSelection,
+        array|false $geolocation,
+        bool $fullscreen,
+    ): array {
+        $drawingEnabled = $drawing !== false;
+        $spatialSelectionEnabled = $spatialSelection !== false;
+        $drawingConfiguration = $drawing === false ? [] : $drawing;
+        $spatialSelectionConfiguration = $spatialSelection === false ? [] : $spatialSelection;
 
         return [
-            'enabled' => true,
-            'position' => $position,
-            'layers' => ($controls['layers'] ?? true) === true,
-            'fitBounds' => ($controls['fitBounds'] ?? true) === true,
-            'drawing' => ($controls['drawing'] ?? true) === true,
-            'measurements' => ($controls['measurements'] ?? true) === true,
-            'sections' => $normalizedSections,
+            'basemaps' => $provider !== null || $tileUrl !== null || $basemaps !== [],
+            'businessLayers' => $layers !== [],
+            'drawingLayers' => $drawingEnabled && $drawLayers !== [],
+            'drawLayerSelector' => $drawingEnabled && $drawLayers !== [],
+            'objectTypeSelector' => $drawingEnabled && $objectTypes !== [],
+            'drawing' => $drawingEnabled,
+            'drawPoint' => ($drawingConfiguration['point'] ?? false) === true,
+            'drawLine' => ($drawingConfiguration['line'] ?? false) === true,
+            'drawPolygon' => ($drawingConfiguration['polygon'] ?? false) === true,
+            'drawRectangle' => ($drawingConfiguration['rectangle'] ?? false) === true,
+            'edit' => ($drawingConfiguration['edit'] ?? false) === true,
+            'select' => ($drawingConfiguration['select'] ?? false) === true,
+            'deleteSelected' => ($drawingConfiguration['delete'] ?? false) === true,
+            'clearSelection' => $drawingEnabled,
+            'undo' => $drawingEnabled,
+            'redo' => $drawingEnabled,
+            'export' => $drawingEnabled,
+            'selectFeature' => $spatialSelectionEnabled,
+            'selectByArea' => $spatialSelectionEnabled
+                && in_array($spatialSelectionConfiguration['mode'] ?? null, ['area', 'both'], true),
+            'geolocate' => $geolocation !== false,
+            'fullscreen' => $fullscreen,
         ];
+    }
+
+    /** @param array<string, string> $labels */
+    private static function controlLabel(?string $action, array $labels): string
+    {
+        return match ($action) {
+            'basemaps' => $labels['basemaps'],
+            'businessLayers' => $labels['businessLayers'],
+            'drawingLayers' => $labels['drawingLayers'],
+            'objectTypeSelector' => $labels['objectType'],
+            'drawLayerSelector' => $labels['drawingLayer'],
+            'drawPoint' => $labels['drawPoint'],
+            'drawLine' => $labels['drawLine'],
+            'drawPolygon' => $labels['drawArea'],
+            'drawRectangle' => $labels['drawRectangle'],
+            'edit' => $labels['editDrawing'],
+            'select' => $labels['selectDrawing'],
+            'selectFeature' => $labels['selectFeature'],
+            'selectByArea' => $labels['selectByArea'],
+            'deleteSelected' => $labels['deleteSelected'],
+            'clearSelection' => $labels['clearSelection'],
+            'undo' => $labels['undo'],
+            'redo' => $labels['redo'],
+            'export' => $labels['exportDrawing'],
+            'fitBounds' => $labels['fitBounds'],
+            'geolocate' => $labels['useMyLocation'],
+            'fullscreen' => $labels['fullscreen'],
+            default => '',
+        };
+    }
+
+    private static function controlIcon(?string $action): ?string
+    {
+        return match ($action) {
+            'fitBounds' => 'fit',
+            'geolocate' => 'location',
+            'fullscreen' => 'fullscreen',
+            default => null,
+        };
     }
 
     /**

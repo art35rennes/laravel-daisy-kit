@@ -57,4 +57,14 @@ if (loadModule) {
     const module = await loadModule();
 
     module.mountAll();
+
+    if (moduleName === 'map') {
+        const controlledMap = document.querySelector('#map-controlled');
+
+        controlledMap?.addEventListener('daisy-kit:map:action', (event) => {
+            if (event.detail.id !== 'focus-depot') return;
+
+            module.getInstance(controlledMap)?.setView([48.1181, -1.6769], 14);
+        });
+    }
 }

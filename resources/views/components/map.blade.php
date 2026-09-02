@@ -33,11 +33,11 @@
 ])
 
 @php
-    $controlsSlot = $controls instanceof \Illuminate\View\ComponentSlot ? $controls : null;
-    $slotSections = $controlsSlot?->attributes->get('sections');
-    $controlsConfiguration = $controlsSlot && is_array($slotSections)
-        ? ['sections' => $slotSections]
-        : ($controlsSlot ? true : $controls);
+    if ($controls instanceof \Illuminate\View\ComponentSlot) {
+        throw new \InvalidArgumentException('The Map controls slot was removed; pass a MapControls instance and named map slots instead.');
+    }
+
+    $controlSlots = $__laravel_slots ?? [];
     $resolvedProvider = $provider === false
         ? false
         : ($provider ?? ($tileUrl === null && $basemaps === [] ? 'osm.standard' : null));
@@ -57,7 +57,7 @@
         'tileUrl' => $tileUrl,
         'tileAttribution' => $tileAttribution,
         'tileOptions' => $tileOptions,
-        'controls' => $controlsConfiguration,
+        'controls' => $controls,
         'scale' => $scale,
         'fullscreen' => $fullscreen,
         'gestureHandling' => $gestureHandling,
@@ -90,7 +90,7 @@
     <p class="daisy-kit-map__status alert alert-info" data-daisy-kit-status hidden role="status" aria-live="polite"></p>
 
     <div class="daisy-kit-map__content" data-daisy-kit-content>
-        @include('daisy-kit::internal.map.canvas', ['controlsSlot' => $controlsSlot, 'mapId' => $mapId, 'mapView' => $mapView])
+        @include('daisy-kit::internal.map.canvas', ['controlSlots' => $controlSlots, 'mapId' => $mapId, 'mapView' => $mapView])
         @include('daisy-kit::internal.map.states', ['mapView' => $mapView])
 
         <input

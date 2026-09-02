@@ -150,15 +150,23 @@ it('runs the four Map product scenarios without host-specific map logic', functi
         ->assertCount('#map-drawing [data-daisy-kit-map-draw-layer]', 1)
         ->assertCount('#map-drawing [data-daisy-kit-map-mode="spatial-select"]', 1)
         ->assertScript("Array.from(document.querySelectorAll('#map-controlled .leaflet-tile')).every((tile) => !tile.src.includes('tile.openstreetmap.org'))")
-        ->click('#map-drawing [data-daisy-kit-map-menu] summary')
+        ->click('#map-drawing [data-daisy-kit-map-menu="drawing"] > summary')
+        ->click('#map-drawing [data-daisy-kit-map-menu="geometry"] > summary')
         ->click('#map-drawing [data-daisy-kit-map-mode="point"]')
         ->assertScript("document.querySelector('#map-drawing [data-daisy-kit-map-mode=point]').getAttribute('aria-pressed') === 'true'")
-        ->assertScript("document.querySelector('#map-controlled [data-daisy-kit-map-geolocate]') instanceof HTMLButtonElement");
+        ->assertScript("document.querySelector('#map-controlled [data-daisy-kit-map-geolocate]') instanceof HTMLButtonElement")
+        ->click('#map-drawing .daisy-kit-map__direct-view-action[data-daisy-kit-map-fullscreen]')
+        ->wait(1)
+        ->assertScript("document.fullscreenElement?.id === 'map-drawing'")
+        ->assertScript("(() => { const root = document.querySelector('#map-drawing'); const content = root.querySelector('.daisy-kit-map__content'); const viewport = root.querySelector('.daisy-kit-map__viewport'); const attribution = root.querySelector('.leaflet-control-attribution'); const rootRect = root.getBoundingClientRect(); const viewportRect = viewport.getBoundingClientRect(); const attributionRect = attribution.getBoundingClientRect(); const bottomPadding = parseFloat(getComputedStyle(content).paddingBottom); return viewportRect.height > 0 && rootRect.bottom - viewportRect.bottom >= bottomPadding - 1 && attributionRect.bottom <= viewportRect.bottom && attributionRect.top >= viewportRect.top; })()")
+        ->click('#map-drawing .daisy-kit-map__direct-view-action[data-daisy-kit-map-fullscreen]')
+        ->wait(1)
+        ->assertScript('document.fullscreenElement === null');
 
     foreach ([320, 390, 768, 1024, 1440] as $width) {
         $page->resize($width, 1000)
             ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
-            ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=map]')).every((root) => { const viewport = root.querySelector('.daisy-kit-map__viewport').getBoundingClientRect(); return Array.from(root.querySelectorAll('.leaflet-control-container, [data-daisy-kit-map-menu], [data-daisy-kit-map-measurement], [data-daisy-kit-map-active-mode]')).every((control) => control.hidden || (control.getBoundingClientRect().left >= viewport.left && control.getBoundingClientRect().right <= viewport.right)); })")
+            ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=map]')).every((root) => { const viewport = root.querySelector('.daisy-kit-map__viewport').getBoundingClientRect(); return Array.from(root.querySelectorAll('.leaflet-control, [data-daisy-kit-map-menu], [data-daisy-kit-map-measurement], [data-daisy-kit-map-active-mode]')).every((control) => control.hidden || control.parentElement?.closest('details:not([open])') || control.getClientRects().length === 0 || (control.getBoundingClientRect().left >= viewport.left && control.getBoundingClientRect().right <= viewport.right)); })")
             ->assertNoSmoke();
     }
 })->group('browser');

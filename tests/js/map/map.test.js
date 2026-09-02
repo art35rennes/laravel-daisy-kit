@@ -162,7 +162,7 @@ function root(configuration, id = '') {
         <section data-daisy-kit-module="map" ${id ? `id="${id}"` : ''} aria-busy="true">
             <p data-daisy-kit-status hidden></p>
             <div data-daisy-kit-content>
-                <div data-daisy-kit-map-canvas></div>
+                <div data-daisy-kit-map-canvas tabindex="0"></div>
                 <div data-daisy-kit-map-loading></div>
                 <div data-daisy-kit-map-empty hidden></div>
                 <div data-daisy-kit-map-error hidden><p data-daisy-kit-map-error-message></p><button data-daisy-kit-map-retry></button></div>
@@ -216,6 +216,7 @@ describe('map entry', () => {
         Object.values(map).filter((value) => typeof value?.mockClear === 'function').forEach((mock) => mock.mockClear());
         mocks.leafletMap.mockReset();
         mocks.leafletMap.mockImplementation(() => map);
+        Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: null });
         vi.stubGlobal('ResizeObserver', class {
             disconnect = vi.fn();
             observe = vi.fn();
@@ -230,6 +231,80 @@ describe('map entry', () => {
             iconUrl: expect.any(String),
             shadowUrl: expect.any(String),
         }));
+    });
+
+    it('binds composable menus, duplicate responsive actions and host action events', async () => {
+        const element = root({ center: [48.1, -1.6], drawing: { enabled: true, point: true }, labels: { exitFullscreen: 'Exit', fullscreen: 'Fullscreen' }, zoom: 12 });
+        const content = element.querySelector('[data-daisy-kit-content]');
+        content.insertAdjacentHTML('afterbegin', `
+            <aside data-daisy-kit-map-control-tree>
+                <details data-daisy-kit-map-menu="drawing" open>
+                    <summary>Drawing</summary>
+                    <details data-daisy-kit-map-menu="geometry">
+                        <summary aria-expanded="false">Geometry</summary>
+                    </details>
+                    <button data-daisy-kit-map-mode="point" type="button">Point</button>
+                </details>
+                <details data-daisy-kit-map-menu="view">
+                    <summary>View</summary>
+                    <button data-daisy-kit-map-action="inspect" type="button">Inspect</button>
+                    <button data-daisy-kit-map-fullscreen type="button">Fullscreen duplicate</button>
+                </details>
+                <details data-daisy-kit-map-menu="disabled" data-daisy-kit-map-control-disabled>
+                    <summary aria-expanded="false">Disabled</summary>
+                </details>
+            </aside>
+        `);
+        const actionEvents = [];
+        element.addEventListener('daisy-kit:map:action', (event) => actionEvents.push(event.detail));
+        const instance = await mounted(element);
+        const drawingMenu = element.querySelector('[data-daisy-kit-map-menu="drawing"]');
+        const viewMenu = element.querySelector('[data-daisy-kit-map-menu="view"]');
+
+        viewMenu.open = true;
+        viewMenu.dispatchEvent(new Event('toggle'));
+        expect(drawingMenu.open).toBe(false);
+
+        const nestedMenu = element.querySelector('[data-daisy-kit-map-menu="geometry"]');
+        nestedMenu.open = true;
+        nestedMenu.dispatchEvent(new Event('toggle'));
+        expect(nestedMenu.querySelector('summary').getAttribute('aria-expanded')).toBe('true');
+
+        const disabledMenu = element.querySelector('[data-daisy-kit-map-menu="disabled"]');
+        disabledMenu.open = true;
+        disabledMenu.dispatchEvent(new Event('toggle'));
+        expect(disabledMenu.open).toBe(false);
+
+        const action = element.querySelector('[data-daisy-kit-map-action="inspect"]');
+        action.click();
+        expect(actionEvents).toEqual([{ id: 'inspect', state: instance.getState() }]);
+
+        viewMenu.open = true;
+        action.focus();
+        action.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Escape' }));
+        expect(viewMenu.open).toBe(false);
+        expect(document.activeElement).toBe(viewMenu.querySelector('summary'));
+
+        drawingMenu.open = true;
+        drawingMenu.querySelector('[data-daisy-kit-map-mode]').click();
+        expect(drawingMenu.open).toBe(false);
+        expect(document.activeElement).toBe(element.querySelector('[data-daisy-kit-map-canvas]'));
+        expect(mocks.drawings.at(-1).setMode).toHaveBeenCalledWith('point');
+    });
+
+    it('updates every fullscreen control and invalidates Leaflet after layout settles', async () => {
+        const element = root({ center: [48.1, -1.6], labels: { exitFullscreen: 'Exit', fullscreen: 'Fullscreen' }, zoom: 12 });
+        element.querySelector('[data-daisy-kit-content]').insertAdjacentHTML('afterbegin', '<button data-daisy-kit-map-fullscreen type="button"></button>');
+        await mounted(element);
+        Object.defineProperties(element.querySelector('[data-daisy-kit-map-canvas]'), {
+            clientHeight: { configurable: true, value: 320 },
+            clientWidth: { configurable: true, value: 480 },
+        });
+        Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: element });
+        document.dispatchEvent(new Event('fullscreenchange'));
+
+        expect([...element.querySelectorAll('[data-daisy-kit-map-fullscreen]')].every((button) => button.getAttribute('aria-pressed') === 'true')).toBe(true);
+        expect(map.invalidateSize).toHaveBeenCalled();
     });
 
     it('disables Leaflet zoom transitions that race responsive resizes', async () => {

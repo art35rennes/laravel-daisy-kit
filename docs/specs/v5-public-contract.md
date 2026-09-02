@@ -181,6 +181,12 @@ the alpha `wms` prop and every legacy global are removed. `mount(root)` returns 
 third-party escape hatch; all normal integration uses serializable configuration and
 `daisy-kit:map:*` events.
 
+`controls` accepts `true`, `false`, or an immutable `MapControls` tree composed with
+`MapControl` factories. Root actions are direct controls; menus, nested menus, groups and
+named Blade slots follow the tree. An explicit tree is exhaustive, and every standard node
+can be independently omitted, disabled or hidden without enabling a globally disabled Map
+capability. The alpha `controls.sections` shape and single `controls` slot are removed.
+
 The Map facade is documented in [`../map.md`](../map.md). Its getters return detached state,
 GeoJSON, draw-layer, and selection snapshots through `getState()`, `getDrawLayer()`,
 `getSelection()`, `exportGeoJSON()`, and `getLeafletMap()`. Its commands are `setView()`,
@@ -197,6 +203,7 @@ events expose these serializable details: `mounted|ready|empty { state }`, `unmo
 `geometry { geojson }`, `geometry-finish { id, feature, measurement }`,
 `selection { ids, features, source? }`, `spatial-selection { area, features }`,
 `measurement { id, value }`, `history { action }`, `export { geojson }`,
+`action { id, state }`,
 `geolocation { accuracy, center, tracked }`, `geolocation-start|geolocation-stop {}`, and
 `geolocation-error { code, message }`. `getLeafletMap()` is the only getter allowed to return a
 private third-party instance.

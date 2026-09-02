@@ -16,20 +16,72 @@
     </div>
 
     @if ($mapView['controls']['enabled'])
-        <aside class="daisy-kit-map__map-controls" aria-label="{{ $mapView['labels']['mapSettings'] }}">
-            <details class="daisy-kit-map__menu dropdown dropdown-end" data-daisy-kit-map-menu>
-                <summary class="btn btn-sm btn-square bg-base-100" title="{{ $mapView['labels']['mapSettings'] }}" aria-label="{{ $mapView['labels']['mapSettings'] }}">
-                    <span aria-hidden="true">&#9776;</span>
-                </summary>
-                <div class="daisy-kit-map__menu-panel dropdown-content rounded-box border border-base-300 bg-base-100 p-3 text-sm shadow-lg">
-                    @foreach ($mapView['controls']['sections'] as $section)
-                        @include('daisy-kit::internal.map.menu.'.$section, ['controlsSlot' => $controlsSlot, 'mapId' => $mapId, 'mapView' => $mapView])
-                    @endforeach
-                </div>
-            </details>
+        @php
+            $isRenderableControl = function (array $control) use (&$isRenderableControl, $controlSlots): bool {
+                if (! $control['visible']) {
+                    return false;
+                }
+
+                if ($control['type'] === 'slot') {
+                    return isset($controlSlots[\Illuminate\Support\Str::camel('map-'.$control['slot'])]);
+                }
+
+                if (in_array($control['type'], ['menu', 'group'], true)) {
+                    return collect($control['items'])->contains($isRenderableControl);
+                }
+
+                return true;
+            };
+            $directViewControls = collect($mapView['controls']['items'])
+                ->filter(fn (array $control): bool => $control['type'] === 'action'
+                    && $control['visible']
+                    && in_array($control['action'], ['fitBounds', 'geolocate', 'fullscreen'], true))
+                ->values()
+                ->all();
+        @endphp
+        <aside
+            class="daisy-kit-map__map-controls daisy-kit-map__map-controls--{{ $mapView['controls']['position'] }}"
+            aria-label="{{ $mapView['labels']['mapSettings'] }}"
+        >
+            @foreach ($mapView['controls']['items'] as $control)
+                @include('daisy-kit::internal.map.control', [
+                    'control' => $control,
+                    'controlSlots' => $controlSlots,
+                    'depth' => 0,
+                    'mapId' => $mapId,
+                    'mapView' => $mapView,
+                    'rootLevel' => true,
+                ])
+            @endforeach
+
+            @if ($directViewControls !== [])
+                @include('daisy-kit::internal.map.control', [
+                    'control' => [
+                        'id' => '__responsive-view',
+                        'type' => 'menu',
+                        'label' => $mapView['labels']['viewTools'],
+                        'action' => null,
+                        'customId' => null,
+                        'slot' => null,
+                        'icon' => 'view',
+                        'enabled' => true,
+                        'visible' => true,
+                        'items' => $directViewControls,
+                    ],
+                    'controlSlots' => $controlSlots,
+                    'depth' => 0,
+                    'mapId' => $mapId,
+                    'mapView' => $mapView,
+                    'rootLevel' => true,
+                    'responsiveView' => true,
+                ])
+            @endif
         </aside>
     @endif
 
     <output class="daisy-kit-map__measurement badge badge-neutral" aria-live="polite" data-daisy-kit-map-measurement hidden></output>
     <output class="daisy-kit-map__mode badge badge-primary" aria-live="polite" data-daisy-kit-map-active-mode hidden></output>
+    <aside class="daisy-kit-map__selection bg-primary/10" data-daisy-kit-map-selection hidden aria-live="polite">
+        <p data-daisy-kit-map-selection-summary></p>
+    </aside>
 </div>

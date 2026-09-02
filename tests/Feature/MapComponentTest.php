@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Art35rennes\DaisyKit\Map\MapConfiguration;
+use Art35rennes\DaisyKit\Map\MapControl;
+use Art35rennes\DaisyKit\Map\MapControls;
 use Art35rennes\DaisyKit\Support\JsonConfiguration;
 
 function mapConfiguration(string $html): array
@@ -55,7 +57,11 @@ it('renders the canonical map contract as CSP-safe configuration', function (): 
             'url' => 'https://maps.example.test/wms',
             'options' => ['layers' => 'city:zoning'],
         ]],
-        'controls' => ['layers' => true, 'fitBounds' => true, 'position' => 'topright'],
+        'controls' => MapControls::make([
+            MapControl::menu('layers', 'Layers', [MapControl::basemaps(), MapControl::businessLayers()]),
+            MapControl::fitBounds(),
+            MapControl::fullscreen(),
+        ]),
         'scale' => true,
         'fullscreen' => true,
         'gestureHandling' => true,
@@ -96,7 +102,22 @@ it('renders the canonical map contract as CSP-safe configuration', function (): 
         ->and($configuration['spatialSelection']['mode'])->toBe('area');
 });
 
-it('normalizes v5-only OSM modes, drawing-layer selection and menu sections', function (): void {
+it('normalizes v5-only OSM modes, drawing-layer selection and composable controls', function (): void {
+    $controls = MapControls::make([
+        MapControl::menu('layers', 'Layers', [
+            MapControl::basemaps(),
+            MapControl::drawingLayers(),
+        ]),
+        MapControl::menu('drawing', 'Drawing', [
+            MapControl::objectTypeSelector(),
+            MapControl::menu('geometry', 'Geometry', [
+                MapControl::drawPoint(),
+                MapControl::drawPolygon(),
+            ]),
+        ]),
+        MapControl::fitBounds(),
+        MapControl::customAction('inspect', 'Inspect asset'),
+    ]);
     $html = view('daisy-kit::components.map', [
         'provider' => 'osm.dark',
         'basemaps' => [[
@@ -109,7 +130,8 @@ it('normalizes v5-only OSM modes, drawing-layer selection and menu sections', fu
             ['id' => 'electricity', 'label' => 'Electricity', 'visible' => false],
         ],
         'drawLayerSelection' => 'multiple',
-        'controls' => ['sections' => ['drawingLayers', 'create', 'custom', 'view']],
+        'controls' => $controls,
+        'drawing' => ['point' => true, 'polygon' => true],
     ])->render();
     $configuration = mapConfiguration($html);
 
@@ -118,7 +140,10 @@ it('normalizes v5-only OSM modes, drawing-layer selection and menu sections', fu
         ->and($configuration['drawLayerSelection'])->toBe('multiple')
         ->and($configuration['drawLayers'][0])->toMatchArray(['id' => 'water', 'visible' => true])
         ->and($configuration['drawLayers'][1])->toMatchArray(['id' => 'electricity', 'visible' => false])
-        ->and($configuration['controls']['sections'])->toBe(['drawingLayers', 'create', 'custom', 'view']);
+        ->and($configuration['controls']['items'])->toHaveCount(4)
+        ->and($configuration['controls']['items'][0])->toMatchArray(['id' => 'layers', 'type' => 'menu'])
+        ->and($configuration['controls']['items'][1]['items'][1])->toMatchArray(['id' => 'geometry', 'type' => 'menu'])
+        ->and($configuration['controls']['items'][3])->toMatchArray(['action' => 'custom', 'customId' => 'inspect']);
 
     expect(fn (): array => MapConfiguration::make(['provider' => 'osm']))
         ->toThrow(InvalidArgumentException::class, 'not supported');
@@ -127,7 +152,102 @@ it('normalizes v5-only OSM modes, drawing-layer selection and menu sections', fu
     expect(fn (): array => MapConfiguration::make(['drawLayerSelection' => 'legacy']))
         ->toThrow(InvalidArgumentException::class, 'selection mode is invalid');
     expect(fn (): array => MapConfiguration::make(['controls' => ['sections' => ['legacy']]]))
-        ->toThrow(InvalidArgumentException::class, 'section is invalid');
+        ->toThrow(InvalidArgumentException::class, 'boolean or MapControls');
+});
+
+it('validates immutable map control trees', function (): void {
+    expect(fn (): MapControls => MapControls::make([
+        MapControl::fitBounds(),
+        MapControl::fitBounds(),
+    ]))->toThrow(InvalidArgumentException::class, 'unique id');
+
+    expect(fn (): MapControl => MapControl::menu('empty', 'Empty', []))
+        ->toThrow(InvalidArgumentException::class, 'at least one item');
+
+    $tooManyControls = [];
+
+    foreach (range(1, 101) as $index) {
+        $tooManyControls[] = MapControl::customAction("action-{$index}", "Action {$index}");
+    }
+
+    expect(fn (): MapControls => MapControls::make($tooManyControls))
+        ->toThrow(InvalidArgumentException::class, 'more than 100 nodes');
+
+    expect(fn (): MapControls => MapControls::make([
+        MapControl::menu('one', 'One', [
+            MapControl::menu('two', 'Two', [
+                MapControl::menu('three', 'Three', [
+                    MapControl::menu('four', 'Four', [MapControl::fitBounds()]),
+                ]),
+            ]),
+        ]),
+    ]))->toThrow(InvalidArgumentException::class, 'three levels');
+});
+
+it('omits all controls or disables explicit controls whose capability is unavailable', function (): void {
+    $withoutControls = MapConfiguration::make(['controls' => false]);
+    $withoutGeolocation = MapConfiguration::make([
+        'controls' => MapControls::make([MapControl::geolocate()]),
+        'geolocation' => false,
+    ]);
+
+    expect($withoutControls['view']['controls'])->toMatchArray(['enabled' => false, 'items' => []])
+        ->and($withoutGeolocation['view']['controls']['items'][0])->toMatchArray([
+            'action' => 'geolocate',
+            'enabled' => false,
+            'visible' => true,
+        ]);
+});
+
+it('does not render empty slot menus and makes disabled menus inert', function (): void {
+    $controls = MapControls::make([
+        MapControl::menu('missing-slot', 'Missing slot', [MapControl::slot('missing')]),
+        MapControl::menu('disabled-menu', 'Disabled menu', [MapControl::fitBounds()], enabled: false),
+    ], position: 'bottomleft');
+
+    $html = view('daisy-kit::components.map', ['controls' => $controls])->render();
+
+    expect($html)
+        ->not->toContain('data-daisy-kit-map-menu="missing-slot"')
+        ->toContain('data-daisy-kit-map-menu="disabled-menu"')
+        ->toContain('data-daisy-kit-map-control-disabled')
+        ->toContain('dropdown-top')
+        ->toContain('daisy-kit-map__menu--align-start')
+        ->toContain('aria-disabled="true"');
+});
+
+it('renders direct actions, nested menus and multiple named control slots', function (): void {
+    $controls = MapControls::make([
+        MapControl::menu('layers', 'Map layers', [MapControl::basemaps()]),
+        MapControl::menu('drawing', 'Drawing', [
+            MapControl::group('create', 'Create', [
+                MapControl::drawPoint(),
+                MapControl::drawLine(enabled: false),
+            ]),
+        ]),
+        MapControl::slot('filters'),
+        MapControl::slot('actions'),
+        MapControl::fitBounds(),
+        MapControl::fullscreen(visible: false),
+    ]);
+
+    $html = (string) $this->blade(<<<'BLADE'
+        <x-daisy-kit::map :controls="$controls" :drawing="true" :fullscreen="true">
+            <x-slot:mapFilters><button type="button" data-host-filter>Filter</button></x-slot:mapFilters>
+            <x-slot:mapActions><button type="button" data-host-action>Action</button></x-slot:mapActions>
+        </x-daisy-kit::map>
+        BLADE, ['controls' => $controls]);
+
+    expect($html)
+        ->toContain('data-daisy-kit-map-menu="layers"')
+        ->toContain('data-daisy-kit-map-menu="drawing"')
+        ->toContain('data-daisy-kit-map-group="create"')
+        ->toContain('data-daisy-kit-map-mode="point"')
+        ->toMatch('/data-daisy-kit-map-mode="linestring"[^>]*disabled/')
+        ->toContain('data-host-filter')
+        ->toContain('data-host-action')
+        ->toContain('data-daisy-kit-map-fit-bounds')
+        ->not->toContain('data-daisy-kit-map-fullscreen');
 });
 
 it('rejects unsafe map and marker asset urls', function (): void {
@@ -193,13 +313,20 @@ it('renders Blade marker popups and requires explicit trusted html', function ()
 it('renders translated controls and private integration slots', function (): void {
     app()->setLocale('fr');
 
+    $controls = MapControls::make([
+        MapControl::menu('layers', 'Couches', [MapControl::basemaps()]),
+        MapControl::menu('drawing', 'Outils de dessin', [MapControl::drawPoint()]),
+        MapControl::slot('filters'),
+        MapControl::fitBounds(),
+    ]);
+
     $html = (string) $this->blade(<<<'BLADE'
-        <x-daisy-kit::map :drawing="true" :controls="true">
-            <x-slot:controls :sections="['custom', 'view']"><button type="button" data-host-map-control>Filtre métier</button></x-slot:controls>
+        <x-daisy-kit::map :drawing="true" :controls="$controls">
+            <x-slot:mapFilters><button type="button" data-host-map-control>Filtre métier</button></x-slot:mapFilters>
             <x-slot:empty><p data-host-map-empty>Aucune agence</p></x-slot:empty>
             <x-slot:error><p data-host-map-error>Carte indisponible</p></x-slot:error>
         </x-daisy-kit::map>
-        BLADE);
+        BLADE, ['controls' => $controls]);
 
     expect($html)
         ->toContain('Outils de dessin')
@@ -212,7 +339,7 @@ it('renders translated controls and private integration slots', function (): voi
 
     expect(strpos($html, 'data-daisy-kit-map-canvas'))->toBeLessThan(strpos($html, 'data-daisy-kit-map-menu'))
         ->and(strpos($html, 'data-daisy-kit-map-menu'))->toBeLessThan(strpos($html, 'data-host-map-control'))
-        ->and(mapConfiguration($html)['controls']['sections'])->toBe(['custom', 'view']);
+        ->and(mapConfiguration($html)['controls']['items'])->toHaveCount(4);
 });
 
 it('synchronizes the initial GeoJSON value with a named form input', function (): void {

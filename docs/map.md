@@ -13,7 +13,7 @@ The canonical props are grouped by outcome:
 - sources: `geojson`, `markers`, `basemaps`, `layers`;
 - tiles: `provider`, `tileUrl`, `tileAttribution`, `tileOptions`;
 - controls: `controls`, `scale`, `fullscreen`, `gestureHandling`, `geolocation`, `cluster`;
-- editing: `drawing`, `measure`, `objectTypes`, `drawLayers`, `spatialSelection`, `name`, `value`;
+- editing: `drawing`, `measure`, `objectTypes`, `drawLayers`, `drawLayerSelection`, `spatialSelection`, `name`, `value`;
 - state: `persistState`, `stateKey`.
 
 Overlays use one `layers` shape. `type` is `geojson`, `xyz`, or `wms`; every layer has a
@@ -58,8 +58,69 @@ unique `id` and accepts `label`, `data|url`, `options`, `style`, `visible`, `con
 
 `spatialSelection.mode` is `click`, `area`, or `both`. Drawing changes keep the hidden
 `name` input synchronized as a GeoJSON FeatureCollection and dispatch native `input` and
-`change` events. The `controls`, `empty`, and `error` slots let a host compose its own controls
-and local states without exposing additional Blade components.
+`change` events. The `empty` and `error` slots customize local states without exposing
+additional Blade components.
+
+## Composable controls
+
+Pass `true` for the capability-aware preset, `false` for no package controls, or an immutable
+`MapControls` tree for an exhaustive layout. A root action is a direct map button; a root
+menu is a dropdown; nested menus are submenus; groups are titled sections. Any standard
+node can be omitted, hidden with `visible: false`, or rendered unavailable with
+`enabled: false`. Capability props such as `drawing`, `geolocation`, and `fullscreen` remain
+authoritative.
+
+```php
+use Art35rennes\DaisyKit\Map\MapControl;
+use Art35rennes\DaisyKit\Map\MapControls;
+
+$controls = MapControls::make([
+    MapControl::menu('layers', __('map.layers'), [
+        MapControl::basemaps(),
+        MapControl::businessLayers(),
+        MapControl::drawingLayers(),
+    ]),
+    MapControl::menu('drawing', __('map.drawing'), [
+        MapControl::objectTypeSelector(),
+        MapControl::drawLayerSelector(),
+        MapControl::menu('geometry', __('map.geometry'), [
+            MapControl::drawPoint(),
+            MapControl::drawLine(),
+            MapControl::drawPolygon(),
+            MapControl::drawRectangle(),
+        ]),
+    ]),
+    MapControl::menu('selection', __('map.selection'), [
+        MapControl::edit(),
+        MapControl::selectFeature(),
+        MapControl::selectByArea(),
+        MapControl::deleteSelected(),
+        MapControl::clearSelection(),
+    ]),
+    MapControl::menu('history', __('map.history'), [
+        MapControl::undo(),
+        MapControl::redo(),
+        MapControl::export(),
+    ]),
+    MapControl::menu('product', __('map.product'), [
+        MapControl::slot('filters'),
+    ]),
+    MapControl::customAction('inspect', __('map.inspect')),
+    MapControl::fitBounds(),
+    MapControl::geolocate(),
+    MapControl::fullscreen(),
+]);
+```
+
+`MapControl::slot('filters')` renders `<x-slot:mapFilters>`. Custom actions emit
+`daisy-kit:map:action` with `{ id, state }`; they never serialize or execute a PHP closure.
+The structure factories are `menu`, `group`, and `slot`. Collection and selector factories
+are `basemaps`, `businessLayers`, `drawingLayers`, `objectTypeSelector`, and
+`drawLayerSelector`. Commands are `drawPoint`, `drawLine`, `drawPolygon`, `drawRectangle`,
+`edit`, `select`, `selectFeature`, `selectByArea`, `deleteSelected`, `clearSelection`, `undo`,
+`redo`, `export`, `fitBounds`, `geolocate`, and `fullscreen`. Every node accepts independent
+`enabled` and `visible` arguments. Identifiers must be unique; a tree is limited to 100 nodes
+and three menu levels.
 
 ## Popup and URL safety
 
@@ -105,7 +166,7 @@ document.querySelector('#focus-assets').addEventListener('click', () => {
 Events are `CustomEvent`s named `daisy-kit:map:*`. Payloads contain serializable snapshots,
 not private runtime objects. Supported suffixes are:
 
-- lifecycle/state: `mounted`, `unmounted`, `ready`, `empty`, `error`, `view`, `tools`;
+- lifecycle/state: `mounted`, `unmounted`, `ready`, `empty`, `error`, `view`, `tools`, `action`;
 - sources: `marker`, `markers`, `data`, `layer`, `layer-data`, `layer-refresh`, `layer-error`, `basemap`;
 - editing: `mode`, `geometry`, `geometry-finish`, `selection`, `spatial-selection`, `measurement`, `history`, `export`;
 - geolocation: `geolocation`, `geolocation-start`, `geolocation-stop`, `geolocation-error`.
@@ -141,5 +202,7 @@ origins to `img-src` and remote GeoJSON origins to `connect-src`. Local marker i
   the documented `getLeafletMap()` escape hatch.
 - Replace executable callbacks in Blade data with serializable configuration and root event
   listeners. Trusted popup HTML must now be explicit.
+- Replace alpha `controls.sections` and the `controls` slot with `MapControls`, `MapControl`
+  factories and named slots referenced by `MapControl::slot()`.
 - Do not expect heatmaps, mini-maps, geocoding, or routing: they were not dependable v4 outcomes
   and are intentionally outside the v5 contract.

@@ -213,30 +213,99 @@ export function createMapRuntime({ L, onDestroy, rawConfiguration, root }) {
     }
 
     function updateFullscreenControl() {
-        const button = root.querySelector('[data-daisy-kit-map-fullscreen]');
-        if (!button) return;
         const expanded = document.fullscreenElement === root;
         const label = expanded ? configuration.labels.exitFullscreen : configuration.labels.fullscreen;
-        button.setAttribute('aria-pressed', String(expanded));
-        button.setAttribute('aria-label', label);
-        button.title = label;
+        root.querySelectorAll('[data-daisy-kit-map-fullscreen]').forEach((button) => {
+            button.setAttribute('aria-pressed', String(expanded));
+            button.setAttribute('aria-label', label);
+            button.title = label;
+        });
+        scheduleResize();
+    }
+
+    function closeControlMenus(control, restoreFocus = false) {
+        const menus = [];
+        let menu = control?.closest?.('[data-daisy-kit-map-menu]');
+
+        while (menu) {
+            menus.push(menu);
+            menu = menu.parentElement?.closest?.('[data-daisy-kit-map-menu]');
+        }
+
+        menus.forEach((item) => { item.open = false; });
+
+        if (restoreFocus && menus[0]) {
+            menus[0].querySelector(':scope > summary')?.focus();
+        }
+    }
+
+    function bindControlMenus() {
+        const menus = [...root.querySelectorAll('[data-daisy-kit-map-menu]')];
+        const rootMenus = menus.filter((menu) => !menu.parentElement?.closest?.('[data-daisy-kit-map-menu]'));
+
+        menus.forEach((menu) => {
+            listen(menu, 'toggle', () => {
+                const summary = menu.querySelector(':scope > summary');
+
+                if (menu.hasAttribute('data-daisy-kit-map-control-disabled')) {
+                    menu.open = false;
+                }
+
+                summary?.setAttribute('aria-expanded', String(menu.open));
+            });
+        });
+
+        rootMenus.forEach((menu) => {
+            listen(menu, 'toggle', () => {
+                if (!menu.open) return;
+                rootMenus.forEach((candidate) => {
+                    if (candidate !== menu) candidate.open = false;
+                });
+            });
+        });
+
+        menus.forEach((menu) => {
+            if (!menu.hasAttribute('data-daisy-kit-map-control-disabled')) return;
+            listen(menu.querySelector(':scope > summary'), 'click', (event) => event.preventDefault());
+        });
+
+        listen(root, 'keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            const menu = event.target?.closest?.('[data-daisy-kit-map-menu][open]');
+            if (!menu) return;
+            event.preventDefault();
+            closeControlMenus(event.target, true);
+        });
     }
 
     function bindControls() {
+        bindControlMenus();
         root.querySelectorAll('[data-daisy-kit-map-mode]').forEach((button) => {
-            listen(button, 'click', () => facade.setMode(button.dataset.daisyKitMapMode));
+            listen(button, 'click', () => {
+                if (!facade.setMode(button.dataset.daisyKitMapMode)) return;
+                closeControlMenus(button);
+                canvas?.focus();
+            });
         });
-        listen(root.querySelector('[data-daisy-kit-map-fit-bounds]'), 'click', () => fitBounds());
-        listen(root.querySelector('[data-daisy-kit-map-geolocate]'), 'click', () => locate().catch(() => {}));
-        listen(root.querySelector('[data-daisy-kit-map-fullscreen]'), 'click', fullscreen);
+        root.querySelectorAll('[data-daisy-kit-map-fit-bounds]').forEach((button) => listen(button, 'click', () => fitBounds()));
+        root.querySelectorAll('[data-daisy-kit-map-geolocate]').forEach((button) => listen(button, 'click', () => locate().catch(() => {})));
+        root.querySelectorAll('[data-daisy-kit-map-fullscreen]').forEach((button) => {
+            listen(button, 'click', () => Promise.resolve(fullscreen()).catch(() => {}));
+        });
+        root.querySelectorAll('[data-daisy-kit-map-action]').forEach((button) => {
+            listen(button, 'click', () => {
+                emit('action', { id: button.dataset.daisyKitMapAction, state: facade.getState() });
+                closeControlMenus(button);
+            });
+        });
         listen(document, 'fullscreenchange', updateFullscreenControl);
-        listen(root.querySelector('[data-daisy-kit-map-history="undo"]'), 'click', () => facade.undo());
-        listen(root.querySelector('[data-daisy-kit-map-history="redo"]'), 'click', () => facade.redo());
-        listen(root.querySelector('[data-daisy-kit-map-export]'), 'click', () => facade.exportGeoJSON());
-        listen(root.querySelector('[data-daisy-kit-map-delete-selected]'), 'click', () => facade.deleteSelected());
-        listen(root.querySelector('[data-daisy-kit-map-clear-selection]'), 'click', () => facade.clearSelection());
-        listen(root.querySelector('[data-daisy-kit-map-object-type]'), 'change', (event) => drawing?.setObjectType(event.currentTarget.value));
-        listen(root.querySelector('[data-daisy-kit-map-draw-layer]'), 'change', (event) => facade.setDrawLayer(event.currentTarget.value));
+        root.querySelectorAll('[data-daisy-kit-map-history="undo"]').forEach((button) => listen(button, 'click', () => facade.undo()));
+        root.querySelectorAll('[data-daisy-kit-map-history="redo"]').forEach((button) => listen(button, 'click', () => facade.redo()));
+        root.querySelectorAll('[data-daisy-kit-map-export]').forEach((button) => listen(button, 'click', () => facade.exportGeoJSON()));
+        root.querySelectorAll('[data-daisy-kit-map-delete-selected]').forEach((button) => listen(button, 'click', () => facade.deleteSelected()));
+        root.querySelectorAll('[data-daisy-kit-map-clear-selection]').forEach((button) => listen(button, 'click', () => facade.clearSelection()));
+        root.querySelectorAll('[data-daisy-kit-map-object-type]').forEach((control) => listen(control, 'change', (event) => drawing?.setObjectType(event.currentTarget.value)));
+        root.querySelectorAll('[data-daisy-kit-map-draw-layer]').forEach((control) => listen(control, 'change', (event) => facade.setDrawLayer(event.currentTarget.value)));
         root.querySelectorAll('[data-daisy-kit-map-draw-layer-visibility]').forEach((control) => {
             listen(control, 'change', () => {
                 const selected = [...root.querySelectorAll('[data-daisy-kit-map-draw-layer-visibility]:checked')]
