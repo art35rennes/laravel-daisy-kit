@@ -1,1 +1,1 @@
-.daisy-kit-copyable{display:inline-flex}.daisy-kit-copyable-button:disabled{cursor:not-allowed}
+.daisy-kit-copyable{display:inline-flex;position:relative}.daisy-kit-copyable-button:disabled{cursor:not-allowed}.daisy-kit-copyable-icon{flex:none;block-size:1rem;inline-size:1rem}.daisy-kit-copyable-feedback{pointer-events:none;white-space:nowrap;z-index:10;position:absolute;inset-block-end:calc(100% + .5rem);inset-inline-start:50%;transform:translate(-50%)}.daisy-kit-copyable-feedback[hidden]{display:none}

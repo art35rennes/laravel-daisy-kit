@@ -21,7 +21,7 @@ automated outcome test before it is considered delivered.
 
 | User outcome | V4 evidence | Corrective v5 proof |
 | --- | --- | --- |
-| A technical identifier can be copied with pointer or keyboard input and receives an accessible success or failure state. | `resources/views/components/ui/utilities/copyable.blade.php`; `resources/js/modules/copyable.js` at `v4.0.0`. | Clipboard-success/failure, keyboard and unmount Vitest tests. |
+| A technical identifier can be copied with pointer or keyboard input, can expose a familiar copy icon, and receives transient visual plus accessible success or failure feedback. | `resources/views/components/ui/utilities/copyable.blade.php`; `resources/js/modules/copyable.js` at `v4.0.0`. | Icon rendering, timed Clipboard-success/failure feedback, keyboard and unmount tests. |
 | Users can filter and select local or remote choices while the native form value remains synchronized. | `resources/views/components/ui/inputs/multi-select.blade.php`; `resources/js/modules/multi-select.js` at `v4.0.0`. | Local/remote filtering, focus, form-data and cancellation tests. |
 | A user can draw, clear and export a signature while the submitted form value stays synchronized. | `resources/views/components/ui/inputs/sign.blade.php`; `resources/js/modules/sign.js` at `v4.0.0`. | Pointer, resize, reset, form-data and CSP tests. |
 | Long text has an accessible expanded state without mutating the original value. | `resources/views/components/ui/utilities/truncate-text.blade.php` at `v4.0.0`. | Overflow, keyboard disclosure and multiple-root tests. |

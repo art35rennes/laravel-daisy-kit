@@ -20,6 +20,21 @@ it('presents the Workbench module directory accessibly on desktop and mobile', f
         ->assertScript('window.innerWidth <= 430');
 })->group('browser');
 
+it('shows the Copyable affordance and transient visual feedback', function (): void {
+    $copyable = '[data-daisy-kit-module="copyable"]';
+
+    $this->visit('/copyable')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->assertCount("{$copyable} [data-daisy-kit-copyable-icon]", 1)
+        ->assertScript("(() => { const icon = document.querySelector('{$copyable} [data-daisy-kit-copyable-icon]'); const size = icon.getBoundingClientRect(); return size.width === 16 && size.height === 16; })()")
+        ->click("{$copyable} [data-daisy-kit-copyable-button]")
+        ->assertScript("(() => { const status = document.querySelector('{$copyable} [data-daisy-kit-status]'); return !status.hidden && ((status.classList.contains('badge-success') && status.textContent === 'Release identifier copied.') || (status.classList.contains('badge-error') && status.textContent === 'Copying failed.')); })()")
+        ->wait(6)
+        ->assertScript("document.querySelector('{$copyable} [data-daisy-kit-status]').hidden")
+        ->assertNoSmoke()
+        ->assertNoAccessibilityIssues(1);
+})->group('browser');
+
 it('composes the Table page with host DaisyUI primitives across themes and responsive widths', function (): void {
     $page = $this->visit('/table')->on()->desktop()
         ->waitForEvent('networkidle')

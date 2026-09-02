@@ -31,3 +31,11 @@ it('renders every component module on its own route', function (string $module):
     'table', 'tree', 'blueprint', 'file-preview', 'map', 'copyable',
     'combobox', 'signature', 'truncate', 'scrollspy', 'transfer-list',
 ]);
+
+it('demonstrates Copyable with its optional icon and visual feedback', function (): void {
+    $this->get('/copyable')
+        ->assertOk()
+        ->assertSee('data-daisy-kit-copyable-icon', false)
+        ->assertSee('data-daisy-kit-copyable-feedback', false)
+        ->assertSee('Release identifier copied.');
+});

@@ -206,7 +206,10 @@ private third-party instance.
 ### Copyable configuration
 
 `x-daisy-kit::copyable` accepts `value`, `copyLabel`, `successLabel`, `errorLabel`,
-`feedbackDuration=1000`, and `disabled=false`. Without `value`, it copies the displayed
+`feedbackDuration=1000`, `disabled=false`, `showIcon=false`, and `showFeedback=true`. The optional
+decorative icon supplements, but never replaces, the visible content. Feedback uses the existing
+live status as a transient visual tooltip; disabling visual feedback keeps the accessible
+announcement. Without `value`, it copies the displayed
 `textContent`; an explicit value is always copied as plain text. It uses only
 `navigator.clipboard.writeText()` after user action. Its facade exposes `copy(value?)` and
 `getValue()`. `copy(value?)` returns `Promise<boolean>` and `getValue()` returns resolved plain text.

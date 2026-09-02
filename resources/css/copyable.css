@@ -1,7 +1,28 @@
 .daisy-kit-copyable {
     display: inline-flex;
+    position: relative;
 }
 
 .daisy-kit-copyable-button:disabled {
     cursor: not-allowed;
+}
+
+.daisy-kit-copyable-icon {
+    block-size: 1rem;
+    flex: none;
+    inline-size: 1rem;
+}
+
+.daisy-kit-copyable-feedback {
+    inset-block-end: calc(100% + 0.5rem);
+    inset-inline-start: 50%;
+    pointer-events: none;
+    position: absolute;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 10;
+}
+
+.daisy-kit-copyable-feedback[hidden] {
+    display: none;
 }
