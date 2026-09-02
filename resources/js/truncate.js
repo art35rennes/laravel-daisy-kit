@@ -13,6 +13,14 @@ function lineCount(configuration) {
     return Math.min(Math.max(configuration.lines, 1), 6);
 }
 
+function hoverDelay(configuration) {
+    if (!Number.isSafeInteger(configuration.hoverDelay)) {
+        return 250;
+    }
+
+    return Math.min(Math.max(configuration.hoverDelay, 0), 2000);
+}
+
 function initialize(root, configuration) {
     const text = root.querySelector('[data-daisy-kit-truncate-text]');
     const reveal = root.querySelector('[data-daisy-kit-truncate-reveal]');
@@ -33,16 +41,24 @@ function initialize(root, configuration) {
     const configuredTitle = typeof configuration.title === 'string' && configuration.title !== ''
         ? configuration.title
         : null;
+    const hoverEnabled = configuration.hover !== false;
+    const configuredHoverDelay = hoverDelay(configuration);
+    const backdropEnabled = configuration.backdrop === true;
     let truncated = false;
     let open = false;
+    let pinned = false;
     let resizeObserver = null;
+    let hoverTimer = null;
 
     text.textContent = value;
     text.dataset.daisyKitTruncateLines = String(lineCount(configuration));
     fullText.textContent = value;
-    reveal.textContent = revealLabel;
+    reveal.textContent = '…';
+    reveal.setAttribute('aria-label', revealLabel);
     reveal.setAttribute('aria-expanded', 'false');
     reveal.hidden = true;
+    popover.dataset.daisyKitTruncateBackdrop = 'false';
+    popover.dataset.daisyKitTruncatePinned = 'false';
 
     if (title) {
         title.hidden = configuredTitle === null;
@@ -66,7 +82,7 @@ function initialize(root, configuration) {
 
     function showNativePopover() {
         if (typeof popover.showPopover === 'function') {
-            popover.showPopover();
+            popover.showPopover({ source: reveal });
         }
     }
 
@@ -76,40 +92,96 @@ function initialize(root, configuration) {
         }
     }
 
-    function openPopover() {
-        if (!truncated || open) {
+    function clearHoverTimer() {
+        if (hoverTimer !== null) {
+            window.clearTimeout(hoverTimer);
+            hoverTimer = null;
+        }
+    }
+
+    function synchronizeOpenState(nextOpen, nextPinned = false) {
+        open = nextOpen;
+        pinned = nextOpen && nextPinned;
+        reveal.setAttribute('aria-expanded', String(nextOpen));
+        popover.dataset.daisyKitTruncatePinned = String(pinned);
+        popover.dataset.daisyKitTruncateBackdrop = String(pinned && backdropEnabled);
+    }
+
+    function openPopover(nextPinned = true) {
+        if (!truncated) {
+            return false;
+        }
+
+        clearHoverTimer();
+
+        if (open) {
+            if (!pinned && nextPinned) {
+                synchronizeOpenState(true, true);
+
+                return true;
+            }
+
             return false;
         }
 
         showNativePopover();
-        open = true;
-        reveal.setAttribute('aria-expanded', 'true');
+        synchronizeOpenState(true, nextPinned);
         emit(root, 'opened', { text: value });
 
         return true;
     }
 
-    function close() {
+    function close(emitEvent = true) {
+        clearHoverTimer();
+
         if (!open) {
             return false;
         }
 
         hideNativePopover();
-        open = false;
-        reveal.setAttribute('aria-expanded', 'false');
-        emit(root, 'closed', { text: value });
+        synchronizeOpenState(false);
+
+        if (emitEvent) {
+            emit(root, 'closed', { text: value });
+        }
 
         return true;
     }
 
-    function toggle() {
-        if (open) {
+    function scheduleTemporaryOpen() {
+        if (!hoverEnabled || pinned || !truncated) {
+            return;
+        }
+
+        clearHoverTimer();
+        hoverTimer = window.setTimeout(() => {
+            hoverTimer = null;
+            openPopover(false);
+        }, configuredHoverDelay);
+    }
+
+    function scheduleTemporaryClose() {
+        if (pinned) {
+            return;
+        }
+
+        clearHoverTimer();
+        hoverTimer = window.setTimeout(() => {
+            hoverTimer = null;
+            close();
+        }, configuredHoverDelay);
+    }
+
+    function toggle(event) {
+        event.preventDefault();
+
+        if (open && pinned) {
             close();
 
             return;
         }
 
-        openPopover();
+        openPopover(true);
     }
 
     function handleClose() {
@@ -122,9 +194,43 @@ function initialize(root, configuration) {
         }
     }
 
+    function handleRevealBlur(event) {
+        if (event.relatedTarget instanceof Node && popover.contains(event.relatedTarget)) {
+            return;
+        }
+
+        scheduleTemporaryClose();
+    }
+
+    function handlePopoverBlur(event) {
+        if (event.relatedTarget instanceof Node && reveal.contains(event.relatedTarget)) {
+            return;
+        }
+
+        scheduleTemporaryClose();
+    }
+
+    function handleNativeToggle(event) {
+        if (event.newState !== 'closed' || !open) {
+            return;
+        }
+
+        clearHoverTimer();
+        synchronizeOpenState(false);
+        emit(root, 'closed', { text: value });
+    }
+
     reveal.addEventListener('click', toggle);
+    reveal.addEventListener('focus', scheduleTemporaryOpen);
+    reveal.addEventListener('blur', handleRevealBlur);
+    reveal.addEventListener('pointerenter', scheduleTemporaryOpen);
+    reveal.addEventListener('pointerleave', scheduleTemporaryClose);
     closeButton?.addEventListener('click', handleClose);
+    popover.addEventListener('blur', handlePopoverBlur, true);
     popover.addEventListener('keydown', handleKeydown);
+    popover.addEventListener('pointerenter', clearHoverTimer);
+    popover.addEventListener('pointerleave', scheduleTemporaryClose);
+    popover.addEventListener('toggle', handleNativeToggle);
 
     if ('ResizeObserver' in window) {
         resizeObserver = new ResizeObserver(refresh);
@@ -141,11 +247,21 @@ function initialize(root, configuration) {
         open: openPopover,
         refresh,
         destroy() {
+            clearHoverTimer();
+            close(false);
             resizeObserver?.disconnect();
             window.removeEventListener('resize', refresh);
             reveal.removeEventListener('click', toggle);
+            reveal.removeEventListener('focus', scheduleTemporaryOpen);
+            reveal.removeEventListener('blur', handleRevealBlur);
+            reveal.removeEventListener('pointerenter', scheduleTemporaryOpen);
+            reveal.removeEventListener('pointerleave', scheduleTemporaryClose);
             closeButton?.removeEventListener('click', handleClose);
+            popover.removeEventListener('blur', handlePopoverBlur, true);
             popover.removeEventListener('keydown', handleKeydown);
+            popover.removeEventListener('pointerenter', clearHoverTimer);
+            popover.removeEventListener('pointerleave', scheduleTemporaryClose);
+            popover.removeEventListener('toggle', handleNativeToggle);
             root.innerHTML = initialMarkup;
         },
     };

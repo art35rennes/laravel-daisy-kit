@@ -9,6 +9,9 @@ test('the truncate component emits a native-popover shell without executable mar
         'text' => '</script><img src=x onerror=alert(1)>',
         'lines' => 2,
         'revealLabel' => 'Read full text',
+        'hover' => true,
+        'hoverDelay' => 150,
+        'backdrop' => true,
     ])->render();
 
     preg_match('/<script data-daisy-kit-config type="application\/json">(.*?)<\/script>/s', $html, $matches);
@@ -17,7 +20,10 @@ test('the truncate component emits a native-popover shell without executable mar
         ->toContain('data-daisy-kit-module="truncate"')
         ->toContain('data-daisy-kit-truncate-text')
         ->toContain('data-daisy-kit-truncate-reveal')
-        ->toContain('popover="manual"')
+        ->toContain('popover="auto"')
+        ->toContain('popovertarget="daisy-kit-truncate-')
+        ->toContain('popovertargetaction="show"')
+        ->toContain('data-daisy-kit-truncate-preview')
         ->not->toContain('<img')
         ->not->toContain('onclick=')
         ->not->toContain('style=')
@@ -25,6 +31,9 @@ test('the truncate component emits a native-popover shell without executable mar
             'text' => '</script><img src=x onerror=alert(1)>',
             'lines' => 2,
             'revealLabel' => 'Read full text',
+            'hover' => true,
+            'hoverDelay' => 150,
+            'backdrop' => true,
             'title' => null,
         ]);
 });

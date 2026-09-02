@@ -165,7 +165,14 @@ Signature must allow `style-src-attr 'unsafe-inline'`; invalid initial or assign
 ### Truncate
 
 ```blade
-<x-daisy-kit::truncate :text="$releaseNotes" :lines="2" />
+<td class="max-w-64">
+    <x-daisy-kit::truncate
+        :text="$customer->address"
+        reveal-label="Show full address"
+        :hover-delay="250"
+        :backdrop="false"
+    />
+</td>
 ```
 
 ```js
@@ -181,7 +188,11 @@ truncate.refresh();
 
 `refresh`, `open`, and `close` return booleans; `isTruncated()` reports measured overflow. Events
 are `opened { text }` and `closed { text }`. Truncate submits no field, requires no CSP exception,
-and treats an already-open/already-closed action as a no-op returning `false`.
+and treats an already-open/already-closed action as a no-op returning `false`. The ellipsis appears
+only when the value overflows. Hover or focus opens a temporary anchored preview; clicking or
+keyboard-activating it pins the selectable text. `hover=false` disables transient pointer/focus
+opening, `hoverDelay` accepts 0–2000 milliseconds, and `backdrop=true` adds a backdrop only while
+the preview is pinned. Outside interaction and Escape close a pinned preview natively.
 
 ### Scrollspy
 

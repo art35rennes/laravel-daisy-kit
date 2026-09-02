@@ -17,6 +17,7 @@
 - The v5 public allowlist now contains exactly eleven modules and the reference host uses DaisyUI `^5.7.22`.
 - Lifecycle commands, facade returns, structured errors, and public event payloads are now consistent and documented across all eleven modules.
 - The Testbench Workbench is explicitly limited to a representative Laravel host; API documentation and facade diagnostics remain outside its visible UI.
+- Truncate now uses an anchored compact ellipsis preview, temporary hover/focus disclosure, pinned selectable text, native light dismiss, and an optional pinned-state backdrop.
 
 ### Removed
 
