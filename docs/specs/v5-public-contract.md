@@ -217,18 +217,28 @@ It emits `copied { value }` on success or `error { code, message, value }` with 
 
 `x-daisy-kit::combobox` accepts `name`, `label`, `options`, `value`, `multiple`, `allowCustom`,
 `tokenSeparators`, `maxItems`, `source`, `queryParam='query'`, `debounce=200`, `minChars`,
-`required`, `disabled`, `readonly`, and `placeholder`. Options have the plain-data shape
-`{ value, label, description?, disabled? }`. Local results are ranked with TanStack Match Sorter.
+`maxSuggestions=50`, `size='md'`, `required`, `disabled`, `readonly`, and `placeholder`. `size`
+accepts `sm`, `md`, or `lg`. Options have the
+plain-data shape `{ value, label, description?, disabled?, avatar?, initials?, meta? }`; no field
+accepts HTML. Local results are ranked with TanStack Match Sorter and the rendered result list is
+bounded by `maxSuggestions`.
 A remote source receives GET queries and returns `{ items, nextCursor? }`; superseded requests are
-aborted. Single values submit under `name`, multiple values as ordered repeated `name[]` fields.
+aborted. With `minChars=0`, the first focus or pointer activation loads and opens initial remote
+suggestions. Loading and empty results are visible in the popup. Single values submit under `name`,
+multiple values as ordered repeated `name[]` fields.
 Custom tokens, paste and separators are enabled only by `allowCustom`. The facade exposes
-`getValue`, `setValue`, `clear`, `open`, `close`, and `refresh`; events are `change`, `query`,
-`loading`, and `error` in the module namespace.
+`getValue`, `setValue`, `clear`, `open`, `close`, `refresh`, `setOptionRenderer`, and
+`clearOptionRenderer`; events are `change`, `query`, `loading`, and `error` in the module namespace.
 `getValue()` returns a string or `null` in single mode and an ordered string array in multiple mode.
-`setValue(value)`, `clear()`, `open()`, and `close()` return booleans; `refresh()` returns
-`Promise<boolean>`. Event details are `change { value, values }`, `query { query }`,
+`setValue(value)`, `clear()`, `open()`, `close()`, `setOptionRenderer(renderer)`, and
+`clearOptionRenderer()` return booleans; `refresh()` returns `Promise<boolean>`.
+The option renderer receives a frozen detached option snapshot and frozen
+`{ active, query, selected }` context, and returns a DOM `Node`, plain text, or `null`; the module
+retains ownership of the outer option and its ARIA attributes. Event details are
+`change { value, values }`, `query { query }`,
 `loading { loading, query }`, and `error { code, message, query? }`. Native `change` continues to
-bubble after the submitted value changes.
+bubble after the submitted value changes. Renderer exceptions emit `error` with code
+`option-render-failed` and use the default safe option renderer.
 
 ### Signature configuration
 

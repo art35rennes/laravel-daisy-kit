@@ -13,13 +13,20 @@ function normalizeOptions(options) {
     if (!Array.isArray(options)) return [];
 
     return options.flatMap((option) => {
-        if (!option || typeof option !== 'object' || Array.isArray(option) || typeof option.value !== 'string') return [];
+        if (!option || typeof option !== 'object' || Array.isArray(option) || typeof option.value !== 'string') {
+            return [];
+        }
+
+        const label = typeof option.label === 'string' && option.label !== '' ? option.label : option.value;
 
         return [{
-            value: option.value,
-            label: typeof option.label === 'string' && option.label !== '' ? option.label : option.value,
+            avatar: typeof option.avatar === 'string' && option.avatar !== '' ? option.avatar : '',
             description: typeof option.description === 'string' ? option.description : '',
             disabled: option.disabled === true,
+            initials: typeof option.initials === 'string' ? option.initials : '',
+            label,
+            meta: typeof option.meta === 'string' ? option.meta : '',
+            value: option.value,
         }];
     });
 }
@@ -31,14 +38,90 @@ function asValues(value, multiple) {
     return multiple ? [...new Set(normalized)] : normalized.slice(0, 1);
 }
 
+function initialsFor(option) {
+    if (option.initials !== '') return option.initials.slice(0, 3).toLocaleUpperCase();
+
+    return option.label
+        .split(/\s+/u)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part.charAt(0))
+        .join('')
+        .toLocaleUpperCase();
+}
+
+function appendText(parent, className, text) {
+    if (text === '') return;
+
+    const element = document.createElement('span');
+    element.className = className;
+    element.textContent = text;
+    parent.append(element);
+}
+
+function createDefaultOptionContent(option, selected) {
+    const content = document.createElement('span');
+    content.className = 'daisy-kit-combobox__option';
+    content.classList.toggle('daisy-kit-combobox__option--plain', option.avatar === '' && option.initials === '');
+
+    if (option.avatar !== '' || option.initials !== '') {
+        const avatar = document.createElement('span');
+        avatar.className = 'daisy-kit-combobox__avatar';
+        avatar.setAttribute('aria-hidden', 'true');
+        const fallback = document.createElement('span');
+        fallback.dataset.daisyKitComboboxAvatarFallback = '';
+        fallback.textContent = initialsFor(option);
+
+        if (option.avatar !== '') {
+            const image = document.createElement('img');
+            image.alt = '';
+            image.src = option.avatar;
+            fallback.hidden = true;
+            image.addEventListener('error', () => {
+                image.hidden = true;
+                fallback.hidden = false;
+            }, { once: true });
+            avatar.append(image, fallback);
+        } else {
+            avatar.append(fallback);
+        }
+
+        content.append(avatar);
+    }
+
+    const body = document.createElement('span');
+    body.className = 'daisy-kit-combobox__option-body';
+    appendText(body, 'daisy-kit-combobox__option-label', option.label);
+    appendText(body, 'daisy-kit-combobox__option-description', option.description);
+    appendText(body, 'daisy-kit-combobox__option-meta', option.meta);
+    content.append(body);
+
+    const check = document.createElement('span');
+    check.className = 'daisy-kit-combobox__option-check';
+    check.hidden = !selected;
+    check.setAttribute('aria-hidden', 'true');
+    check.textContent = '✓';
+    content.append(check);
+
+    return content;
+}
+
 function initialize(root, configuration) {
     const input = root.querySelector('[data-daisy-kit-combobox-input]');
     const listbox = root.querySelector('[data-daisy-kit-combobox-listbox]');
     const tokens = root.querySelector('[data-daisy-kit-combobox-tokens]');
     const valuesNode = root.querySelector('[data-daisy-kit-combobox-values]');
+    const popup = root.querySelector('[data-daisy-kit-combobox-popup]') ?? listbox;
+    const popupStatus = root.querySelector('[data-daisy-kit-combobox-popup-status]');
+    const control = root.querySelector('[data-daisy-kit-combobox-control]');
+    const toggle = root.querySelector('[data-daisy-kit-combobox-toggle]');
     const requiredInput = root.querySelector('[data-daisy-kit-combobox-required]');
 
-    if (!(input instanceof HTMLInputElement) || !(listbox instanceof HTMLElement) || !(tokens instanceof HTMLElement) || !(valuesNode instanceof HTMLElement)) {
+    if (!(input instanceof HTMLInputElement)
+        || !(listbox instanceof HTMLElement)
+        || !(tokens instanceof HTMLElement)
+        || !(valuesNode instanceof HTMLElement)
+        || !(popup instanceof HTMLElement)) {
         throw new Error('Combobox markup is incomplete.');
     }
 
@@ -50,23 +133,50 @@ function initialize(root, configuration) {
         listboxHidden: listbox.hidden,
         listboxId: listbox.getAttribute('id'),
         listboxMarkup: listbox.innerHTML,
+        listboxMultiselectable: listbox.getAttribute('aria-multiselectable'),
+        popupHidden: popup.hidden,
+        popupStatusHidden: popupStatus instanceof HTMLElement ? popupStatus.hidden : null,
+        popupStatusText: popupStatus instanceof HTMLElement ? popupStatus.textContent : null,
         requiredValue: requiredInput instanceof HTMLInputElement ? requiredInput.value : null,
+        toggleControls: toggle?.getAttribute('aria-controls') ?? null,
+        toggleExpanded: toggle?.getAttribute('aria-expanded') ?? null,
         tokensMarkup: tokens.innerHTML,
         valuesMarkup: valuesNode.innerHTML,
     };
 
     const multiple = configuration.multiple === true;
     const allowCustom = configuration.allowCustom === true;
-    const maxItems = Number.isInteger(configuration.maxItems) && configuration.maxItems > 0 ? configuration.maxItems : null;
-    const minChars = Number.isInteger(configuration.minChars) && configuration.minChars > 0 ? configuration.minChars : 0;
-    const debounce = Number.isInteger(configuration.debounce) && configuration.debounce >= 0 ? configuration.debounce : 200;
-    const queryParam = typeof configuration.queryParam === 'string' && configuration.queryParam !== '' ? configuration.queryParam : 'query';
+    const maxItems = Number.isInteger(configuration.maxItems) && configuration.maxItems > 0
+        ? configuration.maxItems
+        : null;
+    const maxSuggestions = Number.isInteger(configuration.maxSuggestions) && configuration.maxSuggestions > 0
+        ? configuration.maxSuggestions
+        : 50;
+    const minChars = Number.isInteger(configuration.minChars) && configuration.minChars > 0
+        ? configuration.minChars
+        : 0;
+    const debounce = Number.isInteger(configuration.debounce) && configuration.debounce >= 0
+        ? configuration.debounce
+        : 200;
+    const queryParam = typeof configuration.queryParam === 'string' && configuration.queryParam !== ''
+        ? configuration.queryParam
+        : 'query';
     const name = typeof configuration.name === 'string' && configuration.name !== '' ? configuration.name : null;
-    const separators = Array.isArray(configuration.tokenSeparators) ? configuration.tokenSeparators.filter((separator) => typeof separator === 'string' && separator !== '') : [','];
+    const separators = Array.isArray(configuration.tokenSeparators)
+        ? configuration.tokenSeparators.filter((separator) => typeof separator === 'string' && separator !== '')
+        : [','];
     const source = typeof configuration.source === 'string' && configuration.source !== '' ? configuration.source : null;
+    const labels = {
+        loading: configuration.labels?.loading || 'Loading suggestions…',
+        noResults: configuration.labels?.noResults || 'No matching suggestions.',
+        remove: configuration.labels?.remove || 'Remove :label',
+    };
     const listboxId = listbox.id || createInstanceIdentifier('daisy-kit-combobox-listbox');
     listbox.id = listboxId;
+    listbox.setAttribute('aria-multiselectable', String(multiple));
     input.setAttribute('aria-controls', listboxId);
+    toggle?.setAttribute('aria-controls', listboxId);
+
     let options = normalizeOptions(configuration.options);
     let values = asValues(configuration.value, multiple);
     let activeIndex = -1;
@@ -74,53 +184,125 @@ function initialize(root, configuration) {
     let timer = null;
     let destroyed = false;
     let query = '';
+    let opened = false;
+    let loading = false;
+    let loadedQuery = null;
+    let optionRenderer = null;
+    let rendererFailures = new Set();
 
-    const optionFor = (value) => options.find((option) => option.value === value) ?? { value, label: value, description: '', disabled: false };
+    const optionFor = (value) => options.find((option) => option.value === value) ?? {
+        avatar: '',
+        description: '',
+        disabled: false,
+        initials: '',
+        label: value,
+        meta: '',
+        value,
+    };
     const canAdd = (value) => value !== '' && !values.includes(value) && (!maxItems || values.length < maxItems);
     const filtered = () => {
-        if (query.length < minChars) return [];
-        if (query === '') return options;
+        if (query !== '' && query.length < minChars) return [];
+        if (query === '') return options.slice(0, maxSuggestions);
 
         return options
-            .map((option) => ({ option, rank: rankItem(`${option.label} ${option.description} ${option.value}`, query) }))
+            .map((option) => ({
+                option,
+                rank: rankItem(`${option.label} ${option.description} ${option.meta} ${option.value}`, query),
+            }))
             .filter(({ rank }) => rank.passed)
             .sort((left, right) => compareItems(left.rank, right.rank))
+            .slice(0, maxSuggestions)
             .map(({ option }) => option);
     };
 
-    function render() {
+    function renderOptionContent(option, selected, active) {
+        if (optionRenderer) {
+            try {
+                const snapshot = Object.freeze({ ...option });
+                const context = Object.freeze({ active, query, selected });
+                const rendered = optionRenderer(snapshot, context);
+
+                if (rendered instanceof Node) return rendered;
+                if (typeof rendered === 'string') return document.createTextNode(rendered);
+            } catch (error) {
+                const message = error instanceof Error && error.message !== ''
+                    ? error.message
+                    : 'The option renderer failed.';
+                const failureKey = `${option.value}:${message}`;
+                if (!rendererFailures.has(failureKey)) {
+                    rendererFailures.add(failureKey);
+                    emit(root, 'error', {
+                        code: 'option-render-failed',
+                        message,
+                        value: option.value,
+                    });
+                }
+            }
+        }
+
+        return createDefaultOptionContent(option, selected);
+    }
+
+    function renderOptions() {
         const matches = filtered();
         listbox.replaceChildren();
         activeIndex = matches.length === 0 ? -1 : Math.min(activeIndex, matches.length - 1);
+
         matches.forEach((option, index) => {
+            const selected = values.includes(option.value);
+            const active = index === activeIndex;
             const item = document.createElement('li');
             item.role = 'option';
             item.id = `${listboxId}-option-${index}`;
             item.dataset.value = option.value;
             item.setAttribute('aria-disabled', String(option.disabled));
-            item.setAttribute('aria-selected', String(values.includes(option.value)));
-            item.classList.toggle('active', index === activeIndex);
-            item.textContent = option.description === '' ? option.label : `${option.label} — ${option.description}`;
+            item.setAttribute('aria-selected', String(selected));
+            item.classList.toggle('active', active);
+            item.append(renderOptionContent(option, selected, active));
             listbox.append(item);
         });
-        listbox.hidden = matches.length === 0;
-        input.setAttribute('aria-expanded', String(!listbox.hidden));
+
         const activeOption = matches[activeIndex];
-        if (activeOption && !activeOption.disabled) input.setAttribute('aria-activedescendant', `${listboxId}-option-${activeIndex}`);
-        else input.removeAttribute('aria-activedescendant');
+        if (activeOption && !activeOption.disabled) {
+            input.setAttribute('aria-activedescendant', `${listboxId}-option-${activeIndex}`);
+        } else {
+            input.removeAttribute('aria-activedescendant');
+        }
+
+        listbox.hidden = loading || matches.length === 0;
+        if (popupStatus instanceof HTMLElement) {
+            popupStatus.textContent = loading ? labels.loading : labels.noResults;
+            popupStatus.hidden = !loading && matches.length > 0;
+        }
+
+        return matches;
+    }
+
+    function renderTokens() {
         tokens.replaceChildren();
         valuesNode.replaceChildren();
+
         values.forEach((value) => {
             const option = optionFor(value);
             if (multiple) {
                 const token = document.createElement('button');
-                token.className = 'badge badge-outline gap-1';
+                token.className = 'badge badge-soft badge-primary gap-1 daisy-kit-combobox__token';
+                token.dataset.daisyKitComboboxToken = '';
                 token.dataset.value = value;
                 token.disabled = configuration.disabled === true || configuration.readonly === true;
                 token.type = 'button';
-                token.textContent = `${option.label} ×`;
+                token.setAttribute('aria-label', labels.remove.replace(':label', option.label));
+
+                const tokenLabel = document.createElement('span');
+                tokenLabel.className = 'daisy-kit-combobox__token-label';
+                tokenLabel.textContent = option.label;
+                const remove = document.createElement('span');
+                remove.setAttribute('aria-hidden', 'true');
+                remove.textContent = '×';
+                token.append(tokenLabel, remove);
                 tokens.append(token);
             }
+
             if (name) {
                 const hidden = document.createElement('input');
                 hidden.name = multiple ? `${name}[]` : name;
@@ -129,8 +311,17 @@ function initialize(root, configuration) {
                 valuesNode.append(hidden);
             }
         });
-        input.value = multiple ? query : (values[0] ? optionFor(values[0]).label : query);
+
         if (requiredInput instanceof HTMLInputElement) requiredInput.value = values.join(',');
+    }
+
+    function render() {
+        renderOptions();
+        renderTokens();
+        popup.hidden = !opened;
+        input.setAttribute('aria-expanded', String(opened));
+        toggle?.setAttribute('aria-expanded', String(opened));
+        input.value = multiple ? query : (query !== '' ? query : (values[0] ? optionFor(values[0]).label : ''));
     }
 
     function setValues(next, notify = true) {
@@ -159,50 +350,24 @@ function initialize(root, configuration) {
         return true;
     }
 
-    function select(value) {
-        if (optionFor(value).disabled || !canAdd(value)) return false;
-        setValues(multiple ? [...values, value] : [value]);
-        query = '';
-        render();
-        close();
-
-        return true;
-    }
-
-    function close() {
-        const wasOpen = input.getAttribute('aria-expanded') === 'true';
-        activeIndex = -1;
-        listbox.hidden = true;
-        input.setAttribute('aria-expanded', 'false');
-        input.removeAttribute('aria-activedescendant');
-
-        return wasOpen;
-    }
-
-    function open() {
-        if (input.disabled || input.readOnly) {
-            return false;
-        }
-
-        render();
-        if (!listbox.hidden) input.setAttribute('aria-expanded', 'true');
-
-        return true;
-    }
-
     async function refresh() {
         if (!source || query.length < minChars) return false;
+
         controller?.abort();
         controller = new AbortController();
         const request = controller;
         const requestedQuery = query;
+        loading = true;
         emit(root, 'loading', { loading: true, query: requestedQuery });
         root.setAttribute('aria-busy', 'true');
+        render();
+
         try {
             const url = new URL(source, window.location.href);
             url.searchParams.set(queryParam, requestedQuery);
             const response = await fetch(url, { credentials: 'same-origin', signal: request.signal });
             if (destroyed || controller !== request) return false;
+
             if (!response.ok) {
                 emit(root, 'error', {
                     code: 'source-unavailable',
@@ -213,6 +378,7 @@ function initialize(root, configuration) {
 
                 return false;
             }
+
             const payload = await response.json();
             if (destroyed || controller !== request) return false;
             if (!payload || !Array.isArray(payload.items)) {
@@ -224,9 +390,10 @@ function initialize(root, configuration) {
 
                 return false;
             }
+
             options = normalizeOptions(payload.items);
             activeIndex = -1;
-            render();
+            loadedQuery = requestedQuery;
 
             return true;
         } catch (error) {
@@ -246,14 +413,73 @@ function initialize(root, configuration) {
         } finally {
             if (controller === request) {
                 controller = null;
+                loading = false;
                 emit(root, 'loading', { loading: false, query: requestedQuery });
                 root.removeAttribute('aria-busy');
+                if (!destroyed) render();
             }
         }
     }
 
+    function open() {
+        if (input.disabled || input.readOnly) return false;
+
+        opened = true;
+        render();
+        if (source && query.length >= minChars && loadedQuery !== query && controller === null) void refresh();
+
+        return true;
+    }
+
+    function close() {
+        const wasOpen = opened;
+        opened = false;
+        activeIndex = -1;
+        render();
+
+        return wasOpen;
+    }
+
+    function select(value) {
+        if (optionFor(value).disabled || !canAdd(value)) return false;
+
+        query = '';
+        activeIndex = -1;
+        const changed = setValues(multiple ? [...values, value] : [value]);
+        if (!changed) return false;
+
+        if (multiple) {
+            opened = true;
+            render();
+            input.focus();
+            if (source && minChars === 0 && loadedQuery !== '') void refresh();
+        } else {
+            close();
+        }
+
+        return true;
+    }
+
+    function moveActive(direction) {
+        const matches = filtered();
+        if (matches.length === 0) return;
+
+        let candidate = activeIndex;
+        for (let attempts = 0; attempts < matches.length; attempts += 1) {
+            candidate = Math.max(0, Math.min(matches.length - 1, candidate + direction));
+            if (!matches[candidate].disabled) break;
+            if ((direction > 0 && candidate === matches.length - 1) || (direction < 0 && candidate === 0)) break;
+        }
+        activeIndex = candidate;
+        opened = true;
+        render();
+        const active = document.getElementById(`${listboxId}-option-${activeIndex}`);
+        if (typeof active?.scrollIntoView === 'function') active.scrollIntoView({ block: 'nearest' });
+    }
+
     const onInput = () => {
         query = input.value;
+        opened = true;
         emit(root, 'query', { query });
         if (source) {
             window.clearTimeout(timer);
@@ -264,8 +490,21 @@ function initialize(root, configuration) {
     };
     const onKeydown = (event) => {
         const matches = filtered();
-        if (event.key === 'ArrowDown') { event.preventDefault(); activeIndex = Math.min(activeIndex + 1, matches.length - 1); open(); }
-        if (event.key === 'ArrowUp') { event.preventDefault(); activeIndex = Math.max(activeIndex - 1, 0); open(); }
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            if (!opened) open();
+            moveActive(1);
+
+            return;
+        }
+        if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            if (!opened) open();
+            if (activeIndex === -1) activeIndex = matches.length;
+            moveActive(-1);
+
+            return;
+        }
         if (event.key === 'Escape' || event.key === 'Tab') {
             close();
 
@@ -279,72 +518,147 @@ function initialize(root, configuration) {
 
             return;
         }
+        if (event.key === 'Backspace' && multiple && input.value === '' && values.length > 0) {
+            event.preventDefault();
+            setValues(values.slice(0, -1));
+
+            return;
+        }
         if (allowCustom && multiple && separators.some((separator) => input.value.endsWith(separator))) {
             const token = input.value.slice(0, -1).trim();
             if (token) select(token);
         }
-        render();
     };
     const onListClick = (event) => {
-        const target = event.target.closest('[data-value]');
-        if (target instanceof HTMLElement && target.getAttribute('aria-disabled') !== 'true') select(target.dataset.value ?? '');
+        const target = event.target.closest('[role="option"][data-value]');
+        if (target instanceof HTMLElement && target.getAttribute('aria-disabled') !== 'true') {
+            select(target.dataset.value ?? '');
+        }
     };
+    const onListPointerDown = (event) => event.preventDefault();
     const onTokenClick = (event) => {
-        const target = event.target.closest('[data-value]');
+        const target = event.target.closest('[data-daisy-kit-combobox-token]');
         if (target instanceof HTMLElement) setValues(values.filter((value) => value !== target.dataset.value));
     };
     const onPaste = (event) => {
         if (!allowCustom || !multiple) return;
+
         const pasted = event.clipboardData?.getData('text') ?? '';
         const pattern = separators.length > 0
             ? new RegExp(separators.map((separator) => separator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'))
             : null;
-        const candidates = (pattern ? pasted.split(pattern) : [pasted]).map((value) => value.trim()).filter(Boolean);
+        const candidates = (pattern ? pasted.split(pattern) : [pasted])
+            .map((value) => value.trim())
+            .filter(Boolean);
         if (candidates.length === 0) return;
+
         event.preventDefault();
-        setValues([...values, ...candidates]);
         query = '';
-        render();
+        setValues([...values, ...candidates]);
     };
-    const onDocumentPointerDown = (event) => { if (!root.contains(event.target)) close(); };
+    const onDocumentPointerDown = (event) => {
+        if (event.target instanceof Node && !root.contains(event.target)) close();
+    };
+    const onControlPointerDown = (event) => {
+        if (event.target instanceof Element && event.target.closest('button')) return;
+        if (event.target !== input) event.preventDefault();
+        input.focus();
+        open();
+    };
+    const onTogglePointerDown = (event) => event.preventDefault();
+    const onToggleClick = () => {
+        const shouldOpen = !opened;
+        input.focus();
+        if (shouldOpen) open(); else close();
+    };
+    const onFocus = () => open();
+
     input.addEventListener('input', onInput);
-    input.addEventListener('focus', open);
+    input.addEventListener('focus', onFocus);
     input.addEventListener('keydown', onKeydown);
     input.addEventListener('paste', onPaste);
     listbox.addEventListener('click', onListClick);
+    listbox.addEventListener('pointerdown', onListPointerDown);
     tokens.addEventListener('click', onTokenClick);
+    control?.addEventListener('pointerdown', onControlPointerDown);
+    toggle?.addEventListener('pointerdown', onTogglePointerDown);
+    toggle?.addEventListener('click', onToggleClick);
     document.addEventListener('pointerdown', onDocumentPointerDown);
     render();
 
     facades.set(root, {
-        getValue: () => multiple ? [...values] : (values[0] ?? null),
-        setValue: (value) => setValues(value),
         clear: () => setValues([]),
-        open,
+        clearOptionRenderer() {
+            optionRenderer = null;
+            rendererFailures = new Set();
+            render();
+
+            return true;
+        },
         close,
+        getValue: () => multiple ? [...values] : (values[0] ?? null),
+        open,
         refresh,
+        setOptionRenderer(renderer) {
+            if (typeof renderer !== 'function') return false;
+
+            optionRenderer = renderer;
+            rendererFailures = new Set();
+            render();
+
+            return true;
+        },
+        setValue: (value) => setValues(value),
     });
+
     return () => {
         destroyed = true;
-        controller?.abort();
+        const activeController = controller;
+        controller = null;
+        activeController?.abort();
         window.clearTimeout(timer);
         document.removeEventListener('pointerdown', onDocumentPointerDown);
         input.removeEventListener('input', onInput);
-        input.removeEventListener('focus', open);
+        input.removeEventListener('focus', onFocus);
         input.removeEventListener('keydown', onKeydown);
         input.removeEventListener('paste', onPaste);
         listbox.removeEventListener('click', onListClick);
+        listbox.removeEventListener('pointerdown', onListPointerDown);
         tokens.removeEventListener('click', onTokenClick);
+        control?.removeEventListener('pointerdown', onControlPointerDown);
+        toggle?.removeEventListener('pointerdown', onTogglePointerDown);
+        toggle?.removeEventListener('click', onToggleClick);
         input.value = initialDom.inputValue;
         listbox.innerHTML = initialDom.listboxMarkup;
         listbox.hidden = initialDom.listboxHidden;
+        popup.hidden = initialDom.popupHidden;
         tokens.innerHTML = initialDom.tokensMarkup;
         valuesNode.innerHTML = initialDom.valuesMarkup;
-        if (requiredInput instanceof HTMLInputElement && initialDom.requiredValue !== null) requiredInput.value = initialDom.requiredValue;
-        for (const [attribute, value] of [['aria-activedescendant', initialDom.activeDescendant], ['aria-controls', initialDom.controls], ['aria-expanded', initialDom.expanded], ['id', initialDom.listboxId]]) {
+        if (popupStatus instanceof HTMLElement && initialDom.popupStatusHidden !== null) {
+            popupStatus.hidden = initialDom.popupStatusHidden;
+            popupStatus.textContent = initialDom.popupStatusText;
+        }
+        if (requiredInput instanceof HTMLInputElement && initialDom.requiredValue !== null) {
+            requiredInput.value = initialDom.requiredValue;
+        }
+        root.removeAttribute('aria-busy');
+        for (const [attribute, value] of [
+            ['aria-activedescendant', initialDom.activeDescendant],
+            ['aria-controls', initialDom.controls],
+            ['aria-expanded', initialDom.expanded],
+            ['id', initialDom.listboxId],
+        ]) {
             const element = attribute === 'id' ? listbox : input;
             if (value === null) element.removeAttribute(attribute); else element.setAttribute(attribute, value);
         }
+        if (toggle instanceof HTMLElement) {
+            if (initialDom.toggleControls === null) toggle.removeAttribute('aria-controls');
+            else toggle.setAttribute('aria-controls', initialDom.toggleControls);
+            if (initialDom.toggleExpanded === null) toggle.removeAttribute('aria-expanded');
+            else toggle.setAttribute('aria-expanded', initialDom.toggleExpanded);
+        }
+        if (initialDom.listboxMultiselectable === null) listbox.removeAttribute('aria-multiselectable');
+        else listbox.setAttribute('aria-multiselectable', initialDom.listboxMultiselectable);
         facades.delete(root);
     };
 }
@@ -352,5 +666,7 @@ function initialize(root, configuration) {
 const module = createMountable('combobox', initialize);
 export function getInstance(root) { return facades.get(root) ?? null; }
 export function mount(root) { module.mount(root); return getInstance(root); }
-export function mountAll(scope = document) { return [...scope.querySelectorAll('[data-daisy-kit-module="combobox"]')].map(mount); }
+export function mountAll(scope = document) {
+    return [...scope.querySelectorAll('[data-daisy-kit-module="combobox"]')].map(mount);
+}
 export function unmount(root) { return module.unmount(root); }

@@ -110,15 +110,15 @@ Route::patch('/_daisy-kit-test/table/rows/{rowId}', function (Request $request, 
 Route::get('/_daisy-kit-test/combobox/reviewers', function (Request $request) {
     $query = mb_strtolower($request->string('query')->trim()->toString());
     $reviewers = collect([
-        ['value' => 'ada', 'label' => 'Ada Lovelace', 'description' => 'Platform'],
-        ['value' => 'grace', 'label' => 'Grace Hopper', 'description' => 'Infrastructure'],
-        ['value' => 'margaret', 'label' => 'Margaret Hamilton', 'description' => 'Flight software'],
-        ['value' => 'katherine', 'label' => 'Katherine Johnson', 'description' => 'Research'],
+        ['value' => 'ada', 'label' => 'Ada Lovelace', 'description' => 'ada.lovelace@example.test', 'initials' => 'AL', 'meta' => 'Platform'],
+        ['value' => 'grace', 'label' => 'Grace Hopper', 'description' => 'grace.hopper@example.test', 'initials' => 'GH', 'meta' => 'Infrastructure'],
+        ['value' => 'margaret', 'label' => 'Margaret Hamilton', 'description' => 'margaret.hamilton@example.test', 'initials' => 'MH', 'meta' => 'Flight software'],
+        ['value' => 'katherine', 'label' => 'Katherine Johnson', 'description' => 'katherine.johnson@example.test', 'initials' => 'KJ', 'meta' => 'Research'],
     ]);
 
     if ($query !== '') {
         $reviewers = $reviewers->filter(fn (array $reviewer): bool => str_contains(
-            mb_strtolower("{$reviewer['label']} {$reviewer['description']}"),
+            mb_strtolower("{$reviewer['label']} {$reviewer['description']} {$reviewer['meta']}"),
             $query,
         ));
     }

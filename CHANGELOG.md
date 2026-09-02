@@ -9,6 +9,8 @@
   English/French labels, expanded integration API and four realistic Workbench scenarios.
 - Tree host filters, optional match highlighting and cursor-paginated lazy branches, with a
   successful-by-default Workbench catalogue and corrected visible-result selection.
+- Combobox open-on-focus suggestions, integrated tokens, bounded rich person/e-mail options, and a
+  CSP-safe host option renderer.
 - Transfer List target ordering with Move up/down buttons and Alt+ArrowUp/ArrowDown, preserving focus and hidden/disabled item positions.
 - Independent Copyable, Combobox, Signature, Truncate, Scrollspy, and Transfer List Blade/ESM/CSS modules.
 - Stable module facades with `getInstance`, ranked selection search, signature export, and accessible non-drag interactions.

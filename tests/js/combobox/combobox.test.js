@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getInstance, mount, mountAll, unmount } from '../../../resources/js/combobox.js';
 
 function markup(configuration) {
-    return `<section data-daisy-kit-module="combobox"><p data-daisy-kit-status hidden role="alert"></p><input data-daisy-kit-combobox-input role="combobox"><ul data-daisy-kit-combobox-listbox role="listbox" hidden></ul><div data-daisy-kit-combobox-tokens></div><div data-daisy-kit-combobox-values></div>${configuration.required ? '<input data-daisy-kit-combobox-required required>' : ''}<script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script></section>`;
+    return `<section data-daisy-kit-module="combobox"><p data-daisy-kit-status hidden role="alert"></p><div data-daisy-kit-combobox-shell><div data-daisy-kit-combobox-control><div data-daisy-kit-combobox-tokens></div><input data-daisy-kit-combobox-input role="combobox"><button data-daisy-kit-combobox-toggle type="button"></button></div><div data-daisy-kit-combobox-popup hidden><p data-daisy-kit-combobox-popup-status role="status" hidden></p><ul data-daisy-kit-combobox-listbox role="listbox"></ul></div></div><div data-daisy-kit-combobox-values></div>${configuration.required ? '<input data-daisy-kit-combobox-required required>' : ''}<script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script></section>`;
 }
 
 describe('combobox', () => {
@@ -34,6 +34,7 @@ describe('combobox', () => {
         root.querySelector('[data-value="ada"]').click();
 
         expect(instance.getValue()).toEqual(['ada']);
+        expect(root.querySelector('[data-daisy-kit-combobox-token]').getAttribute('aria-label')).toBe('Remove Ada Lovelace');
         expect(root.querySelector('[name="users[]"]').value).toBe('ada');
         expect(changes).toHaveBeenCalledOnce();
         expect(changes.mock.calls[0][0].detail).toEqual({ value: ['ada'], values: ['ada'] });
@@ -48,6 +49,35 @@ describe('combobox', () => {
         input.value = 'ad'; input.dispatchEvent(new Event('input')); await new Promise((resolve) => setTimeout(resolve));
         expect(fetch.mock.calls[0][1].signal.aborted).toBe(true);
         unmount(root); vi.unstubAllGlobals();
+    });
+
+    it('restores its ARIA shell without rerendering after an in-flight unmount', async () => {
+        let rejectRequest;
+        vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise((resolve, reject) => {
+            rejectRequest = reject;
+        })));
+        document.body.innerHTML = markup({ source: '/users', minChars: 0, debounce: 0 });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const input = root.querySelector('[data-daisy-kit-combobox-input]');
+        const listbox = root.querySelector('[data-daisy-kit-combobox-listbox]');
+        const popup = root.querySelector('[data-daisy-kit-combobox-popup]');
+        const toggle = root.querySelector('[data-daisy-kit-combobox-toggle]');
+        const instance = mount(root);
+        const refresh = instance.refresh();
+
+        expect(root.getAttribute('aria-busy')).toBe('true');
+        expect(unmount(root)).toBe(true);
+        expect(input.hasAttribute('aria-controls')).toBe(false);
+        expect(listbox.hasAttribute('aria-multiselectable')).toBe(false);
+        expect(toggle.hasAttribute('aria-controls')).toBe(false);
+        expect(popup.hidden).toBe(true);
+
+        rejectRequest(new DOMException('Aborted', 'AbortError'));
+        await expect(refresh).resolves.toBe(false);
+
+        expect(root.hasAttribute('aria-busy')).toBe(false);
+        expect(input.hasAttribute('aria-expanded')).toBe(false);
+        expect(popup.hidden).toBe(true);
     });
 
     it('announces the active option, validates selection, and accepts pasted custom tokens', () => {
@@ -78,11 +108,127 @@ describe('combobox', () => {
 
         expect(mount(root)).toBe(instance);
         expect(mountAll(document)).toEqual([instance]);
-        expect(Object.keys(instance).sort()).toEqual(['clear', 'close', 'getValue', 'open', 'refresh', 'setValue']);
+        expect(Object.keys(instance).sort()).toEqual([
+            'clear',
+            'clearOptionRenderer',
+            'close',
+            'getValue',
+            'open',
+            'refresh',
+            'setOptionRenderer',
+            'setValue',
+        ]);
         expect(instance.setValue('ada')).toBe(true);
         expect(instance.clear()).toBe(true);
         expect(instance.open()).toBe(true);
         expect(instance.close()).toBe(true);
+    });
+
+    it('loads and opens remote suggestions on first focus when an empty query is allowed', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ items: [{ value: 'ada', label: 'Ada Lovelace' }] }),
+        }));
+        document.body.innerHTML = markup({ source: '/reviewers', minChars: 0, debounce: 0 });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const input = root.querySelector('[data-daisy-kit-combobox-input]');
+        mount(root);
+
+        input.dispatchEvent(new FocusEvent('focus'));
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+        await vi.waitFor(() => expect(root.querySelector('[role=option]')?.textContent).toContain('Ada Lovelace'));
+        input.dispatchEvent(new FocusEvent('focus'));
+
+        expect(fetch.mock.calls[0][0].toString()).toContain('query=');
+        expect(fetch).toHaveBeenCalledOnce();
+        expect(input.getAttribute('aria-expanded')).toBe('true');
+        expect(root.querySelector('[data-daisy-kit-combobox-popup]').hidden).toBe(false);
+    });
+
+    it('renders rich person suggestions as safe structured content and bounds the result list', () => {
+        document.body.innerHTML = markup({
+            maxSuggestions: 2,
+            options: [
+                { value: 'ada', label: 'Ada Lovelace', description: 'ada@example.test', meta: 'Platform', initials: 'AL', avatar: '/ada.jpg' },
+                { value: 'grace', label: 'Grace Hopper', description: 'grace@example.test', initials: 'GH' },
+                { value: 'margaret', label: 'Margaret Hamilton' },
+            ],
+        });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        mount(root).open();
+
+        expect(root.querySelectorAll('[role=option]')).toHaveLength(2);
+        expect(root.querySelector('[role=option] img')?.getAttribute('src')).toBe('/ada.jpg');
+        expect(root.querySelector('[role=option]')?.textContent).toContain('ada@example.test');
+        expect(root.querySelector('[role=option]')?.textContent).toContain('Platform');
+        expect(root.querySelectorAll('[data-daisy-kit-combobox-avatar-fallback]')).toHaveLength(2);
+    });
+
+    it('supports a host option renderer while retaining the semantic option wrapper', () => {
+        document.body.innerHTML = markup({ options: [{ value: 'ada', label: 'Ada Lovelace', description: 'ada@example.test' }] });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const instance = mount(root);
+        const renderer = vi.fn((option, context) => {
+            expect(Object.isFrozen(option)).toBe(true);
+            expect(Object.isFrozen(context)).toBe(true);
+            const content = document.createElement('strong');
+            content.textContent = `${option.label} (${context.selected ? 'selected' : 'available'})`;
+
+            return content;
+        });
+
+        expect(instance.setOptionRenderer(renderer)).toBe(true);
+        expect(root.querySelector('[role=option] strong')?.textContent).toBe('Ada Lovelace (available)');
+        expect(root.querySelector('[role=option]')?.getAttribute('aria-selected')).toBe('false');
+        expect(instance.clearOptionRenderer()).toBe(true);
+        expect(root.querySelector('[role=option] strong')).toBeNull();
+        expect(instance.setOptionRenderer('unsafe')).toBe(false);
+    });
+
+    it('falls back safely and reports a structured error when a host renderer throws', () => {
+        document.body.innerHTML = markup({ options: [{ value: 'ada', label: 'Ada Lovelace' }] });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const errors = [];
+        root.addEventListener('daisy-kit:combobox:error', (event) => errors.push(event.detail));
+        const instance = mount(root);
+
+        expect(instance.setOptionRenderer(() => { throw new Error('Host renderer failed.'); })).toBe(true);
+
+        expect(root.querySelector('[role=option]')?.textContent).toContain('Ada Lovelace');
+        instance.open();
+        expect(errors).toEqual([{
+            code: 'option-render-failed',
+            message: 'Host renderer failed.',
+            value: 'ada',
+        }]);
+    });
+
+    it('keeps multiple suggestions open and removes the last token with empty-input Backspace', () => {
+        document.body.innerHTML = markup({ multiple: true, options: [{ value: 'ada', label: 'Ada' }, { value: 'grace', label: 'Grace' }] });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const input = root.querySelector('[data-daisy-kit-combobox-input]');
+        const instance = mount(root);
+        instance.open();
+        root.querySelector('[data-value=ada]').click();
+
+        expect(input.getAttribute('aria-expanded')).toBe('true');
+        expect(document.activeElement).toBe(input);
+
+        input.value = '';
+        input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Backspace' }));
+        expect(instance.getValue()).toEqual([]);
+    });
+
+    it('keeps an empty state visible instead of silently closing the popup', () => {
+        document.body.innerHTML = markup({ labels: { noResults: 'No matching reviewers.' }, options: [] });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const instance = mount(root);
+
+        expect(instance.open()).toBe(true);
+
+        expect(root.querySelector('[data-daisy-kit-combobox-popup]').hidden).toBe(false);
+        expect(root.querySelector('[data-daisy-kit-combobox-popup-status]').textContent).toBe('No matching reviewers.');
+        expect(root.querySelector('[data-daisy-kit-combobox-popup-status]').hidden).toBe(false);
     });
 
     it('emits loading start and finish and returns true for a valid remote refresh', async () => {

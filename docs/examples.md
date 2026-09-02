@@ -115,9 +115,25 @@ disabled state, or empty text emit the structured errors listed in the public co
     name="reviewers"
     :options="$reviewers"
     :source="route('reviewers.index')"
+    :min-chars="0"
+    :max-suggestions="20"
+    size="lg"
     multiple
-    allow-custom
 />
+```
+
+Each reviewer may use the safe plain-data shape below. `description` is suited to an e-mail address;
+`meta` carries a team or role. `avatar` is optional and falls back to `initials` when unavailable.
+
+```php
+[
+    'value' => 'reviewer-42',
+    'label' => 'Ada Lovelace',
+    'description' => 'ada@example.test',
+    'meta' => 'Platform · Maintainer',
+    'initials' => 'AL',
+    'avatar' => asset('people/ada.jpg'),
+]
 ```
 
 ```js
@@ -129,14 +145,27 @@ const combobox = mount(root) ?? getInstance(root);
 
 root.addEventListener('daisy-kit:combobox:change', ({ detail }) => console.log(detail.value, detail.values));
 root.addEventListener('daisy-kit:combobox:loading', ({ detail }) => console.log(detail.loading, detail.query));
-await combobox.refresh();
+
+combobox.setOptionRenderer((option, { selected }) => {
+    const content = document.createElement('span');
+    content.className = 'flex items-center justify-between gap-3';
+    content.textContent = `${option.label} · ${option.description}`;
+    if (selected) content.dataset.selected = 'true';
+
+    return content;
+});
 ```
 
-`getValue`, `setValue`, `clear`, `open`, and `close` are synchronous; `refresh()` returns
-`Promise<boolean>`. Events are `change { value, values }`, `query { query }`,
+Focus or pointer activation opens local suggestions. A remote source is loaded on first open when
+`minChars=0`; use a positive threshold for search-only endpoints. `maxSuggestions` bounds the DOM
+without imposing virtualization. `getValue`, `setValue`, `clear`, `open`, `close`,
+`setOptionRenderer`, and `clearOptionRenderer` are synchronous; `refresh()` returns
+`Promise<boolean>`. A custom renderer receives frozen plain data and may return a DOM node or plain
+text; Daisy Kit retains the semantic option wrapper. Events are `change { value, values }`, `query { query }`,
 `loading { loading, query }`, and `error { code, message, query? }`. Laravel receives repeated,
 ordered `reviewers[]` fields in multiple mode (or one `reviewers` field in single mode). No CSP
-exception is needed. Invalid remote responses and unavailable sources emit structured errors.
+exception is needed unless remote avatar URLs require a broader `img-src`. Invalid remote
+responses, unavailable sources, and renderer exceptions emit structured errors.
 
 ### Signature
 
