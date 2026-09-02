@@ -4,8 +4,9 @@ import { getInstance, mount, unmount } from '../../../resources/js/scrollspy.js'
 class IntersectionObserverStub {
     static instances = [];
 
-    constructor(callback) {
+    constructor(callback, options) {
         this.callback = callback;
+        this.options = options;
         this.targets = [];
         IntersectionObserverStub.instances.push(this);
     }
@@ -75,6 +76,7 @@ describe('scrollspy entry', () => {
         expect(instance.refresh()).toBe(true);
 
         expect(element.querySelector('a[href="#deploy"]').textContent).toBe('Deploy');
+        expect(element.querySelector('a[href="#install"]').getAttribute('aria-current')).toBe('location');
         expect(IntersectionObserverStub.instances.at(-1).targets).toContain(heading);
         expect(instance.scrollTo('deploy')).toBe(true);
     });
@@ -109,6 +111,64 @@ describe('scrollspy entry', () => {
         const remounted = mount(containerElement);
         expect(remounted.scrollTo('install')).toBe(true);
         expect(container.scrollTo).toHaveBeenCalledWith({ behavior: 'auto', top: 96 });
+    });
+
+    it('uses the target itself as the observer root and scroll container', () => {
+        vi.stubGlobal('IntersectionObserver', IntersectionObserverStub);
+        const element = root({ target: '#guide', items: [], selector: 'h2[id]', smooth: false, offset: 24, rootMargin: '0px' });
+        const guide = document.getElementById('guide');
+        Object.defineProperties(guide, {
+            clientHeight: { configurable: true, value: 100 },
+            scrollHeight: { configurable: true, value: 500 },
+            scrollTop: { configurable: true, value: 40, writable: true },
+        });
+        guide.style.overflowY = 'auto';
+        guide.scrollTo = vi.fn();
+        vi.spyOn(guide, 'getBoundingClientRect').mockReturnValue({ top: 20 });
+        vi.spyOn(document.getElementById('install'), 'getBoundingClientRect').mockReturnValue({ top: 100 });
+
+        const instance = mount(element);
+
+        expect(IntersectionObserverStub.instances.at(-1).options.root).toBe(guide);
+        expect(instance.scrollTo('install')).toBe(true);
+        expect(guide.scrollTo).toHaveBeenCalledWith({ behavior: 'auto', top: 96 });
+    });
+
+    it('recalculates the scroll container when dynamic content changes overflow', () => {
+        vi.stubGlobal('IntersectionObserver', IntersectionObserverStub);
+        const element = root({ target: '#guide', items: [], selector: 'h2[id]', smooth: false, offset: 0, rootMargin: '0px' });
+        const instance = mount(element);
+        const guide = document.getElementById('guide');
+
+        expect(IntersectionObserverStub.instances.at(-1).options.root).toBeNull();
+
+        Object.defineProperties(guide, {
+            clientHeight: { configurable: true, value: 100 },
+            scrollHeight: { configurable: true, value: 500 },
+        });
+        guide.style.overflowY = 'auto';
+
+        expect(instance.refresh()).toBe(true);
+        expect(IntersectionObserverStub.instances.at(-1).options.root).toBe(guide);
+    });
+
+    it('activates the first heading immediately and tracks all intersecting headings', () => {
+        vi.stubGlobal('IntersectionObserver', IntersectionObserverStub);
+        const element = root({ target: '#guide', items: [], selector: 'h2[id],h3[id]', smooth: false, offset: 0, rootMargin: '0px' });
+        const instance = mount(element);
+        const observer = IntersectionObserverStub.instances.at(-1);
+        const install = document.getElementById('install');
+        const configure = document.getElementById('configure');
+
+        expect(instance.getActive()).toBe('install');
+        expect(element.querySelector('[data-daisy-kit-scrollspy-id="install"]').getAttribute('aria-current')).toBe('location');
+
+        observer.callback([{ target: install, isIntersecting: true, boundingClientRect: { top: 10 } }]);
+        observer.callback([{ target: configure, isIntersecting: true, boundingClientRect: { top: 100 } }]);
+        expect(instance.getActive()).toBe('install');
+
+        observer.callback([{ target: install, isIntersecting: false, boundingClientRect: { top: -20 } }]);
+        expect(instance.getActive()).toBe('configure');
     });
 
     it('marks every ancestor link in deeply nested navigation and keeps aria-current exclusive', () => {

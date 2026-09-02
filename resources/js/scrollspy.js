@@ -20,7 +20,7 @@ function validItems(items) {
 }
 
 function scrollableContainer(target) {
-    let element = target.parentElement;
+    let element = target;
 
     while (element) {
         const style = window.getComputedStyle(element);
@@ -64,7 +64,7 @@ function initialize(root, configuration) {
     const rootMargin = typeof configuration.rootMargin === 'string' && configuration.rootMargin !== ''
         ? configuration.rootMargin
         : '0px 0px -60% 0px';
-    const container = scrollableContainer(target);
+    let container = null;
     const configuredItems = validItems(configuration.items);
 
     function discoverItems() {
@@ -87,6 +87,7 @@ function initialize(root, configuration) {
 
     let items = [];
     let targets = new Map();
+    let visibleTargets = new Map();
     let observer = null;
     let activeId = null;
 
@@ -121,7 +122,7 @@ function initialize(root, configuration) {
         });
     }
 
-    function setActive(id) {
+    function setActive(id, notify = true) {
         if (!targets.has(id) || activeId === id) {
             return;
         }
@@ -147,34 +148,60 @@ function initialize(root, configuration) {
             parentItem = parentItem.parentElement?.closest('li');
         }
 
-        emit(root, 'change', { id });
+        if (notify) {
+            emit(root, 'change', { id });
+        }
     }
 
     function refresh() {
         observer?.disconnect();
+        container = scrollableContainer(target);
+        visibleTargets = new Map();
         items = discoverItems();
         targets = new Map(items.flatMap((item) => {
-            const heading = document.getElementById(item.id);
+            const heading = [...target.querySelectorAll('[id]')].find((candidate) => candidate.id === item.id);
 
             return heading instanceof HTMLElement ? [[item.id, heading]] : [];
         }));
-        if (activeId !== null && !targets.has(activeId)) {
-            activeId = null;
-        }
+        const preferredActiveId = activeId !== null && targets.has(activeId)
+            ? activeId
+            : targets.keys().next().value ?? null;
+        activeId = null;
         render();
+
+        if (preferredActiveId !== null) {
+            setActive(preferredActiveId, false);
+        }
 
         if (!('IntersectionObserver' in window)) {
             return false;
         }
 
         observer = new IntersectionObserver((entries) => {
-            const visible = entries.filter((entry) => entry.isIntersecting);
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    visibleTargets.set(entry.target.id, entry);
+                } else {
+                    visibleTargets.delete(entry.target.id);
+                }
+            });
+
+            const visible = [...visibleTargets.values()];
 
             if (visible.length === 0) {
                 return;
             }
 
-            visible.sort((first, second) => first.boundingClientRect.top - second.boundingClientRect.top);
+            visible.sort((first, second) => {
+                const topDifference = first.boundingClientRect.top - second.boundingClientRect.top;
+
+                if (topDifference !== 0) {
+                    return topDifference;
+                }
+
+                return items.findIndex((item) => item.id === first.target.id)
+                    - items.findIndex((item) => item.id === second.target.id);
+            });
             setActive(visible[0].target.id);
         }, { root: container, rootMargin, threshold: [0, 0.1, 1] });
         targets.forEach((heading) => observer.observe(heading));
