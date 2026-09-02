@@ -78,6 +78,12 @@ exposes `getState`, `open`, `close`, `setExpanded`, `setZoom`, and `reload`. Do 
 TanStack, Dagre, iframe, SignaturePad, or SortableJS instances. `Map.getLeafletMap()` remains the sole
 documented third-party escape hatch.
 
+Combobox opens available suggestions when its input or control is activated. Set `minChars=0` to
+load a remote first page on open, and keep `maxSuggestions` bounded. Its safe option shape supports
+`description`, `meta`, `initials`, and `avatar` for person/e-mail pickers. For richer host markup,
+use `setOptionRenderer(renderer)`; return a DOM node or plain text and leave the outer option role,
+selection state, and keyboard handling to Daisy Kit. Never serialize HTML in option data.
+
 ## Product outcomes
 
 Treat `docs/specs/v5-product-contract-matrix.md` as the package's single business-contract

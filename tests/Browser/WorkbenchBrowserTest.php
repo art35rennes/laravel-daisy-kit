@@ -128,18 +128,34 @@ it('applies the Workbench server filters only on request', function (): void {
 it('uses the remote Combobox in a native Laravel review form', function (): void {
     $combobox = '[data-daisy-kit-module="combobox"]';
 
-    $this->visit('/combobox')->on()->desktop()
+    $page = $this->visit('/combobox')->on()->desktop();
+
+    $page
         ->waitForEvent('networkidle')
         ->wait(1)
+        ->click("{$combobox} [data-daisy-kit-combobox-input]")
+        ->wait(1)
+        ->assertCount("{$combobox} [role=option]", 4)
+        ->assertSee('ada.lovelace@example.test')
+        ->assertSee('Platform')
+        ->assertNoAccessibilityIssues(1)
         ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'Grace')
         ->wait(1)
         ->assertSee('Grace Hopper')
         ->click("{$combobox} [role=option]")
         ->assertScript("document.querySelector('{$combobox} input[name=\"reviewers[]\"][value=grace]') !== null")
+        ->keys("{$combobox} [data-daisy-kit-combobox-input]", 'Escape')
         ->click('button[type=submit]')
         ->waitForEvent('networkidle')
         ->assertSee('The review assignment was saved.')
         ->assertNoSmoke();
+
+    $page->resize(390, 844)
+        ->click("{$combobox} [data-daisy-kit-combobox-input]")
+        ->wait(1)
+        ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
+        ->assertCount("{$combobox} [role=option]", 4)
+        ->assertNoAccessibilityIssues(1);
 })->group('browser');
 
 it('mounts the map without a browser CSP violation', function (): void {

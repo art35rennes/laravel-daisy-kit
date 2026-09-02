@@ -9,10 +9,21 @@ it('serves ranked remote combobox options using the public response shape', func
             'items' => [[
                 'value' => 'grace',
                 'label' => 'Grace Hopper',
-                'description' => 'Infrastructure',
+                'description' => 'grace.hopper@example.test',
+                'initials' => 'GH',
+                'meta' => 'Infrastructure',
             ]],
             'nextCursor' => null,
         ]);
+});
+
+it('serves initial rich Combobox suggestions without a search term', function (): void {
+    $this->getJson('/_daisy-kit-test/combobox/reviewers?query=')
+        ->assertOk()
+        ->assertJsonCount(4, 'items')
+        ->assertJsonPath('items.0.description', 'ada.lovelace@example.test')
+        ->assertJsonPath('items.0.initials', 'AL')
+        ->assertJsonPath('items.0.meta', 'Platform');
 });
 
 it('serves nested Tree search results from a local Laravel endpoint', function (): void {

@@ -380,9 +380,17 @@
                     :multiple="true"
                     :allow-custom="true"
                     :source="route('workbench.combobox.reviewers')"
-                    :min-chars="1"
-                    :options="[['value' => 'ada', 'label' => 'Ada Lovelace', 'description' => 'Platform']]"
+                    :min-chars="0"
+                    :max-suggestions="8"
+                    :options="[[
+                        'value' => 'ada',
+                        'label' => 'Ada Lovelace',
+                        'description' => 'ada.lovelace@example.test',
+                        'initials' => 'AL',
+                        'meta' => 'Platform',
+                    ]]"
                     :value="['ada']"
+                    placeholder="Add a reviewer…"
                 />
                 @endif
                 @if($module === 'signature')
