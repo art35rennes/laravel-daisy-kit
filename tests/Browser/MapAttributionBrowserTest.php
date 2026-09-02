@@ -6,7 +6,7 @@ it('keeps the legally required Leaflet attribution readable in the host theme', 
     $map = '[data-daisy-kit-module="map"]';
     $attribution = "{$map} .leaflet-control-attribution";
 
-    $page = $this->visit('/')->on()->desktop()
+    $page = $this->visit('/map')->on()->desktop()
         ->waitForEvent('networkidle')
         ->wait(1)
         ->assertNoSmoke()

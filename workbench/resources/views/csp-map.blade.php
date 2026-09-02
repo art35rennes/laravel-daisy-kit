@@ -6,7 +6,7 @@
     <title>Daisy Kit CSP Map</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body>
+<body data-workbench-module="map">
     <main>
         <h1>Daisy Kit CSP Map</h1>
         <x-daisy-kit::map

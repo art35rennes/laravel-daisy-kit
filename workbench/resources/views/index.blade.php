@@ -1,21 +1,44 @@
+@php
+    if (! array_key_exists('module', get_defined_vars())) {
+        $module = 'map';
+    }
+    if (! array_key_exists('modules', get_defined_vars())) {
+        $modules = ['map' => 'Map'];
+    }
+@endphp
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Daisy Kit v5 Workbench</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <title>{{ $module === null ? 'Daisy Kit v5 Workbench' : $modules[$module].' · Daisy Kit Workbench' }}</title>
+    @vite($module === null ? ['resources/css/app.css'] : ['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-base-200 text-base-content">
+<body class="bg-base-200 text-base-content" data-workbench-module="{{ $module }}">
     <main class="mx-auto max-w-6xl space-y-8 p-4 sm:p-8">
         <header class="hero rounded-box bg-base-100 shadow-sm">
-            <div class="hero-content text-center">
-            <h1>Daisy Kit v5 Workbench</h1>
-            <p>Each section is an independently mounted package module.</p>
+            <div class="hero-content flex-col text-center">
+            <h1>{{ $module === null ? 'Daisy Kit v5 Workbench' : $modules[$module] }}</h1>
+            <p>{{ $module === null ? 'Choose a component module to open its dedicated Workbench.' : 'Dedicated component module preview.' }}</p>
+            @if($module !== null)
+                <a class="link text-base-content" href="{{ route('workbench.index') }}">Back to component modules</a>
+            @endif
             </div>
         </header>
 
+        @if($module === null)
+            <nav aria-labelledby="module-directory-heading">
+                <h2 id="module-directory-heading">Component modules</h2>
+                <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach($modules as $modulePath => $label)
+                        <li><a class="btn btn-outline w-full justify-between" href="/{{ $modulePath }}"><span>{{ $label }}</span><span aria-hidden="true">→</span></a></li>
+                    @endforeach
+                </ul>
+            </nav>
+        @endif
+
+        @if($module === 'table')
         <section class="min-w-0 space-y-6" aria-labelledby="table-heading">
             <h2 id="table-heading">Table</h2>
 
@@ -152,9 +175,9 @@
                 caption="Project planning"
             />
         </section>
+        @endif
 
-        @include('workbench::tree-scenarios')
-
+        @if($module === 'blueprint')
         <section class="min-w-0" aria-labelledby="blueprint-heading">
             <h2 id="blueprint-heading">Blueprint</h2>
             <x-daisy-kit::blueprint
@@ -176,7 +199,9 @@
                 name="workbench_blueprint"
             />
         </section>
+        @endif
 
+        @if($module === 'file-preview')
         <section class="min-w-0 space-y-6" aria-labelledby="file-preview-heading">
             <div>
                 <h2 id="file-preview-heading">File Preview</h2>
@@ -280,17 +305,23 @@
                 </div>
             </div>
         </section>
+        @endif
 
+        @if(in_array($module, ['copyable', 'combobox', 'signature', 'transfer-list', 'truncate', 'scrollspy'], true))
         <section class="card min-w-0 space-y-6 bg-base-100 p-6" aria-labelledby="focused-components-heading">
-            <h2 id="focused-components-heading">Focused interaction components</h2>
+            <h2 id="focused-components-heading">{{ $modules[$module] }}</h2>
+            @if($module === 'copyable')
             <x-daisy-kit::copyable class="card" value="release-2026-08-29">Copy release identifier</x-daisy-kit::copyable>
+            @endif
 
+            @if(in_array($module, ['combobox', 'signature', 'transfer-list'], true))
             @if(session()->has('workbench.review.saved'))
                 <p class="alert alert-success" role="status">The review assignment was saved.</p>
             @endif
 
             <form class="space-y-6" method="POST" action="{{ route('workbench.reviews.store') }}">
                 @csrf
+                @if($module === 'combobox')
                 <x-daisy-kit::combobox
                     class="card"
                     name="reviewers"
@@ -302,7 +333,11 @@
                     :options="[['value' => 'ada', 'label' => 'Ada Lovelace', 'description' => 'Platform']]"
                     :value="['ada']"
                 />
+                @endif
+                @if($module === 'signature')
                 <x-daisy-kit::signature class="card" name="approval_signature" label="Approval signature" />
+                @endif
+                @if($module === 'transfer-list')
                 <x-daisy-kit::transfer-list
                     class="card"
                     name="assignees"
@@ -313,10 +348,15 @@
                     ]"
                     :value="['ada']"
                 />
+                @endif
                 <button class="btn btn-primary" type="submit">Save review assignment</button>
             </form>
+            @endif
 
+            @if($module === 'truncate')
             <x-daisy-kit::truncate class="card" :text="str_repeat('Selectable release notes remain available in full. ', 12)" :lines="2" />
+            @endif
+            @if($module === 'scrollspy')
             <div id="workbench-scrollspy-content" class="max-h-48 overflow-auto" tabindex="0">
                 <h3 id="workbench-overview">Overview</h3><p>{{ str_repeat('Overview content. ', 20) }}</p>
                 <h3 id="workbench-details">Details</h3><p>{{ str_repeat('Detailed content. ', 20) }}</p>
@@ -326,8 +366,11 @@
                 target="#workbench-scrollspy-content"
                 :items="[['id' => 'workbench-overview', 'label' => 'Overview'], ['id' => 'workbench-details', 'label' => 'Details']]"
             />
+            @endif
         </section>
+        @endif
 
+        @if($module === 'map')
         <section class="min-w-0" aria-labelledby="map-heading">
             <h2 id="map-heading">Map</h2>
 
@@ -425,6 +468,7 @@
                 </article>
             </div>
         </section>
+        @endif
     </main>
 </body>
 </html>

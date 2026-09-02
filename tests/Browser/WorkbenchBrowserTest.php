@@ -2,28 +2,26 @@
 
 declare(strict_types=1);
 
-it('mounts the Workbench modules accessibly on desktop and mobile', function (): void {
+it('presents the Workbench module directory accessibly on desktop and mobile', function (): void {
     $desktop = $this->visit('/')->on()->desktop();
 
     $desktop
         ->assertSee('Daisy Kit v5 Workbench')
-        ->assertCount('[data-daisy-kit-module]', 28)
-        ->waitForEvent('networkidle')
-        ->wait(1)
+        ->assertSee('Component modules')
+        ->assertCount('nav a.btn', 11)
+        ->assertCount('[data-daisy-kit-module]', 0)
         ->assertNoSmoke()
-        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module]:not([data-daisy-kit-module=file-preview])')).every((root) => ['empty', 'ready'].includes(root.dataset.daisyKitState))")
-        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=file-preview]')).every((root) => ['error', 'ready', 'unsupported'].includes(root.dataset.daisyKitState))")
-        ->click('[data-daisy-kit-tree-node="documentation"] > .daisy-kit-tree__row')
-        ->keys('[data-daisy-kit-tree-node="documentation"]', ['ArrowRight', 'ArrowRight'])
-        ->assertScript("document.activeElement?.dataset.daisyKitTreeNode === 'getting-started'");
+        ->assertNoAccessibilityIssues(1);
 
     $this->visit('/')->on()->mobile()
-        ->assertCount('[data-daisy-kit-module]', 28)
+        ->assertCount('nav a.btn', 11)
+        ->assertCount('[data-daisy-kit-module]', 0)
+        ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
         ->assertScript('window.innerWidth <= 430');
 })->group('browser');
 
-it('composes visible host DaisyUI primitives across themes and responsive widths', function (): void {
-    $page = $this->visit('/')->on()->desktop()
+it('composes the Table page with host DaisyUI primitives across themes and responsive widths', function (): void {
+    $page = $this->visit('/table')->on()->desktop()
         ->waitForEvent('networkidle')
         ->wait(1)
         ->assertNoSmoke();
@@ -34,13 +32,7 @@ it('composes visible host DaisyUI primitives across themes and responsive widths
         $diagnostics = $page->script(<<<'JS'
                 (() => {
                     const roots = [...document.querySelectorAll('[data-daisy-kit-module]')];
-                    const modules = [
-                        ['table', '[data-daisy-kit-module="table"] button'],
-                        ['tree', '[data-daisy-kit-module="tree"] [data-tree-command="expandAll"]'],
-                        ['blueprint', '[data-daisy-kit-blueprint-node-control]'],
-                        ['file-preview', '[data-daisy-kit-file-preview-open-preview]'],
-                        ['map', '[data-daisy-kit-map-mode]'],
-                    ];
+                    const modules = [['table', '[data-daisy-kit-module="table"] button']];
                     const controls = [
                         document.querySelector('[data-daisy-kit-table-filter]'),
                     ];
@@ -86,14 +78,12 @@ it('composes visible host DaisyUI primitives across themes and responsive widths
 
         $page->assertScript(<<<'JS'
                 (() => {
-                    const warning = document.querySelector('[data-daisy-kit-file-preview-notice]');
                     const table = document.querySelector('[data-daisy-kit-module="table"]');
                     const tablePage = table.querySelector('[data-daisy-kit-table-page-status]');
                     const tableResults = table.querySelector('[data-daisy-kit-table-results]');
                     const tableApply = document.querySelector('[data-daisy-kit-table-apply-filters]');
 
-                    return warning.classList.contains('alert-warning')
-                        && table.classList.contains('bg-base-100')
+                    return table.classList.contains('bg-base-100')
                         && table.classList.contains('border-base-300')
                         && tablePage.classList.contains('text-base-content/70')
                         && tableResults.classList.contains('text-base-content/70')
@@ -107,7 +97,7 @@ it('composes visible host DaisyUI primitives across themes and responsive widths
 it('applies the Workbench server filters only on request', function (): void {
     $table = '#server-queue-table';
 
-    $this->visit('/')->on()->desktop()
+    $this->visit('/table')->on()->desktop()
         ->waitForEvent('networkidle')
         ->wait(1)
         ->fill("{$table} [data-daisy-kit-table-filter=customer]", 'Maison')
@@ -123,7 +113,7 @@ it('applies the Workbench server filters only on request', function (): void {
 it('uses the remote Combobox in a native Laravel review form', function (): void {
     $combobox = '[data-daisy-kit-module="combobox"]';
 
-    $this->visit('/')->on()->desktop()
+    $this->visit('/combobox')->on()->desktop()
         ->waitForEvent('networkidle')
         ->wait(1)
         ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'Grace')
@@ -147,7 +137,7 @@ it('mounts the map without a browser CSP violation', function (): void {
 })->group('browser');
 
 it('runs the four Map product scenarios without host-specific map logic', function (): void {
-    $page = $this->visit('/')->on()->desktop()
+    $page = $this->visit('/map')->on()->desktop()
         ->waitForEvent('networkidle')
         ->wait(2)
         ->assertNoSmoke()
@@ -174,7 +164,7 @@ it('runs the four Map product scenarios without host-specific map logic', functi
 })->group('browser');
 
 it('keeps Blueprint controls outside its inert SVG and supports keyboard selection', function (): void {
-    $this->visit('/')->on()->desktop()
+    $this->visit('/blueprint')->on()->desktop()
         ->waitForEvent('networkidle')
         ->wait(1)
         ->assertNoSmoke()
@@ -190,7 +180,7 @@ it('persists value-backed Blueprint structure through history and remounts', fun
     $blueprint = '[data-daisy-kit-module="blueprint"]';
     $hiddenGraph = "JSON.parse(document.querySelector('{$blueprint} [data-daisy-kit-blueprint-value]').value)";
 
-    $this->visit('/')->on()->desktop()
+    $this->visit('/blueprint')->on()->desktop()
         ->waitForEvent('networkidle')
         ->wait(1)
         ->assertNoSmoke()

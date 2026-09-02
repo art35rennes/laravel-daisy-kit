@@ -5,9 +5,33 @@ declare(strict_types=1);
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'workbench::index')->name('workbench.index');
+$workbenchModules = [
+    'table' => 'Table',
+    'tree' => 'Tree',
+    'blueprint' => 'Blueprint',
+    'file-preview' => 'File Preview',
+    'map' => 'Map',
+    'copyable' => 'Copyable',
+    'combobox' => 'Combobox',
+    'signature' => 'Signature',
+    'truncate' => 'Truncate',
+    'scrollspy' => 'Scrollspy',
+    'transfer-list' => 'Transfer List',
+];
+
+Route::view('/', 'workbench::index', [
+    'module' => null,
+    'modules' => $workbenchModules,
+])->name('workbench.index');
 
 require __DIR__.'/tree.php';
+
+foreach (array_keys(array_diff_key($workbenchModules, ['tree' => true])) as $module) {
+    Route::view($module, 'workbench::index', [
+        'module' => $module,
+        'modules' => $workbenchModules,
+    ])->name('workbench.'.lcfirst(str_replace('-', '', ucwords($module, '-'))));
+}
 
 Route::get('/_daisy-kit-test/table/rows', function (Request $request) {
     $rows = collect([
@@ -162,7 +186,7 @@ Route::post('/_daisy-kit-test/reviews', function (Request $request) {
     ]);
 
     return redirect()
-        ->route('workbench.index')
+        ->route('workbench.combobox')
         ->with('workbench.review.saved', $review);
 })->name('workbench.reviews.store');
 

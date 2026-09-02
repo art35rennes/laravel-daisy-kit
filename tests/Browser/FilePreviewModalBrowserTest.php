@@ -9,7 +9,7 @@ it('contains a DOCX preview in its modal and restores focus after dismissal', fu
     $dialog = "{$root} dialog[data-daisy-kit-file-preview-modal]";
     $trigger = "{$root} [data-daisy-kit-file-preview-open-preview]";
 
-    $page = $this->visit('/')->on()->desktop()
+    $page = $this->visit('/file-preview')->on()->desktop()
         ->waitForEvent('networkidle')
         ->assertNoSmoke();
 
@@ -137,7 +137,7 @@ it('keeps media cards and their modal inside every supported viewport', function
     $dialog = "{$root} [data-daisy-kit-file-preview-modal]";
     $video = '[data-daisy-kit-module="file-preview"][aria-label="Preview walkthrough.mp4"]';
 
-    $page = $this->visit('/')->on()->desktop()
+    $page = $this->visit('/file-preview')->on()->desktop()
         ->waitForEvent('networkidle')
         ->assertNoSmoke();
 
