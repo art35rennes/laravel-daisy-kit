@@ -14,8 +14,9 @@ Route::get('/tree', function (Request $request) {
 
 Route::get('/_daisy-kit-test/tree/catalogue/{region}', function (Request $request, string $region) {
     $cursor = max(0, $request->integer('cursor'));
-    $items = array_slice(TreeExamples::centres($region), $cursor, 2);
-    $nextCursor = $cursor + count($items) < count(TreeExamples::centres($region))
+    $centres = TreeExamples::centres($region);
+    $items = array_slice($centres, $cursor, 2);
+    $nextCursor = $cursor + count($items) < count($centres)
         ? (string) ($cursor + count($items))
         : null;
 

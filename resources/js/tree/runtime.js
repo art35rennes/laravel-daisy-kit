@@ -185,6 +185,7 @@ export function initialize(root, configuration) {
                 if (!active || result === null || !model.nodes.has(id)) return false;
                 model.merge(result.items, id, result.nextCursor === null, !append);
                 model.nodes.get(id).nextCursor = result.nextCursor;
+                if (!model.branch(id)) model.expanded.delete(id);
                 errors.delete(id);
                 render();
                 if (before !== JSON.stringify(model.getValue())) publish();

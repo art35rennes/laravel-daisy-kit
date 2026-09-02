@@ -98,7 +98,8 @@ tree.setValue(['report-read']);
 ```
 
 Getters return detached values: `getValue()` and `getState()` (`value`, `values`, `expandedIds`,
-`visibleIds`, `query`, `searchDraft`, `loadingIds`, `searching`, `selection { total, visible, hidden }`).
+`visibleIds`, `query`, `searchDraft`, `loadingIds`, `searching`, `filter { active }`, `pagination`,
+`selection { total, visible, hidden }`). `pagination` maps branch ids to `{ hasMore, nextCursor }`.
 Synchronous commands return boolean: `setValue`, `clear`, `collapse`, `focus`, `setSearch`,
 `clearSearch`, `setFilter`, `clearFilter`, `expandAll`, `collapseAll`, `selectVisible`. Asynchronous
 commands return `Promise<boolean>`: `expand`, `expandPath`, `applySearch`, `loadMore`, `reloadBranch`.
@@ -112,7 +113,7 @@ Events bubble from the instance under `daisy-kit:tree:`:
 - `search { query }` for applied/cleared searches;
 - `filtered { active, visibleIds }` when a custom predicate is installed or cleared;
 - `loading { loading, id?, query? }`;
-- `error { code, message, id?, query? }` for operational failures.
+- `error { code, message, id?, query? }` for transport and custom-filter failures.
 
 Focus and selection are separate. Arrow keys navigate and expand/collapse; Home/End move within
 visible nodes; Enter/Space select; character typing jumps by label. Pointer disclosure never
