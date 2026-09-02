@@ -37,7 +37,7 @@ it('accepts the native Workbench review form submission', function (): void {
         'assignees' => ['margaret', 'ada'],
         'approval_signature' => 'data:image/png;base64,fixture',
     ])
-        ->assertRedirect('/')
+        ->assertRedirect('/combobox')
         ->assertSessionHas('workbench.review.saved');
 });
 
@@ -56,4 +56,9 @@ it('serves dedicated strict and dependency-compatible CSP pages', function (): v
 
     expect($relaxed->headers->get('Content-Security-Policy'))
         ->toContain("style-src-attr 'unsafe-inline'");
+
+    $this->get('/_daisy-kit-test/csp/map')
+        ->assertSee('data-workbench-module="map"', false);
+    $this->get('/_daisy-kit-test/csp/file-preview')
+        ->assertSee('data-workbench-module="file-preview"', false);
 });

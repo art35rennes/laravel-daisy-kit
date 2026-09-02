@@ -6,7 +6,7 @@
     <title>Tree · Daisy Kit Workbench</title>
     @vite(['resources/css/app.css', 'resources/js/tree.js'])
 </head>
-<body class="bg-base-200 text-base-content">
+<body class="bg-base-200 text-base-content" data-workbench-module="tree">
     <main class="space-y-8">
         <header class="flex flex-wrap items-center justify-between gap-4">
             <div><h1 class="text-2xl font-semibold">Tree · Daisy Kit Workbench</h1><p class="text-sm text-base-content/70">Classification, permissions and remote catalogues.</p></div>
@@ -16,6 +16,7 @@
                 <button class="btn btn-sm" type="submit">Apply</button>
             </form>
         </header>
+        <a class="link text-base-content" href="{{ route('workbench.index') }}">Back to component modules</a>
         @include('workbench::tree-scenarios')
     </main>
 </body>

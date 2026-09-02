@@ -50,9 +50,11 @@ const modules = [
     }],
 ];
 
-modules.forEach(async ([, loadModule]) => {
+const moduleName = document.body.dataset.workbenchModule;
+const loadModule = modules.find(([name]) => name === moduleName)?.[1];
+
+if (loadModule) {
     const module = await loadModule();
 
     module.mountAll();
-
-});
+}

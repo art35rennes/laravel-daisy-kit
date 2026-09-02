@@ -6,7 +6,7 @@
     <title>Daisy Kit CSP File Preview</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body>
+<body data-workbench-module="file-preview">
     <main>
         <h1>Daisy Kit CSP File Preview</h1>
         <x-daisy-kit::file-preview url="/_daisy-kit-test/files/preview.txt" type="text" preview-mode="inline" />
