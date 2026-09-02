@@ -1,4 +1,231 @@
-.daisy-kit-transfer-list__columns { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
-.daisy-kit-transfer-list__actions { align-items: center; display: flex; flex-direction: column; gap: .5rem; justify-content: center; }
-.daisy-kit-transfer-list [role='option'][aria-selected='true'] { background-color: color-mix(in oklab, var(--color-primary) 16%, transparent); }
-@media (max-width: 640px) { .daisy-kit-transfer-list__columns { grid-template-columns: 1fr; } .daisy-kit-transfer-list__actions { flex-direction: row; } }
+.daisy-kit-transfer-list__columns {
+    align-items: stretch;
+    display: grid;
+    gap: .75rem;
+    grid-template-columns: minmax(0, 1fr) 3rem minmax(0, 1fr);
+}
+
+.daisy-kit-transfer-list [data-daisy-kit-transfer-panel] {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.daisy-kit-transfer-list__header {
+    align-items: center;
+    border-bottom: 1px solid color-mix(in oklab, var(--color-base-content) 12%, transparent);
+    display: flex;
+    gap: .75rem;
+    justify-content: space-between;
+    min-height: 4rem;
+    padding: .75rem 1rem;
+}
+
+.daisy-kit-transfer-list__select-all {
+    flex: none;
+    padding: 0;
+}
+
+.daisy-kit-transfer-list__search {
+    margin: .75rem 1rem;
+    width: calc(100% - 2rem);
+}
+
+.daisy-kit-transfer-list__search svg {
+    height: 1rem;
+    opacity: .55;
+    width: 1rem;
+}
+
+.daisy-kit-transfer-list__viewport {
+    min-height: 18rem;
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+.daisy-kit-transfer-list__viewport > ul {
+    display: grid;
+    gap: .25rem;
+    list-style: none;
+    margin: 0;
+    padding: .25rem;
+}
+
+.daisy-kit-transfer-list__item {
+    align-items: center;
+    border-radius: var(--radius-field, .5rem);
+    cursor: pointer;
+    display: grid;
+    gap: .75rem;
+    grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+    min-height: 3.5rem;
+    padding: .5rem .75rem;
+}
+
+.daisy-kit-transfer-list__item:hover:not([aria-disabled='true']) {
+    background: color-mix(in oklab, var(--color-base-content) 7%, transparent);
+}
+
+.daisy-kit-transfer-list__item:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+}
+
+.daisy-kit-transfer-list__item[aria-selected='true'] {
+    background: color-mix(in oklab, var(--color-primary) 14%, transparent);
+}
+
+.daisy-kit-transfer-list__item[aria-disabled='true'] {
+    cursor: not-allowed;
+    opacity: .45;
+}
+
+.daisy-kit-transfer-list__item-check {
+    align-items: center;
+    border: 1px solid color-mix(in oklab, var(--color-base-content) 32%, transparent);
+    border-radius: var(--radius-selector, .25rem);
+    display: flex;
+    height: 1rem;
+    justify-content: center;
+    width: 1rem;
+}
+
+.daisy-kit-transfer-list__item[aria-selected='true'] .daisy-kit-transfer-list__item-check {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-primary-content);
+}
+
+.daisy-kit-transfer-list__item[aria-selected='true'] .daisy-kit-transfer-list__item-check::after {
+    content: '✓';
+    font-size: .6875rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.daisy-kit-transfer-list__avatar > span {
+    align-items: center;
+    background: var(--color-base-200);
+    border-radius: 9999px;
+    color: color-mix(in oklab, var(--color-base-content) 72%, transparent);
+    display: flex;
+    font-size: .6875rem;
+    font-weight: 600;
+    height: 2rem;
+    justify-content: center;
+    overflow: hidden;
+    width: 2rem;
+}
+
+.daisy-kit-transfer-list__avatar img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.daisy-kit-transfer-list__item-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.daisy-kit-transfer-list__item-label,
+.daisy-kit-transfer-list__item-description {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.daisy-kit-transfer-list__item-label {
+    font-size: .875rem;
+    font-weight: 500;
+}
+
+.daisy-kit-transfer-list__item-description {
+    color: color-mix(in oklab, var(--color-base-content) 62%, transparent);
+    font-size: .75rem;
+}
+
+.daisy-kit-transfer-list__item-meta {
+    max-width: 8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.daisy-kit-transfer-list__drag-handle {
+    color: color-mix(in oklab, var(--color-base-content) 45%, transparent);
+    cursor: grab;
+    font-size: 1rem;
+    letter-spacing: -.3rem;
+    padding-inline-end: .3rem;
+    touch-action: none;
+    user-select: none;
+}
+
+.daisy-kit-transfer-list__empty {
+    align-items: center;
+    color: color-mix(in oklab, var(--color-base-content) 58%, transparent);
+    display: flex;
+    font-size: .875rem;
+    justify-content: center;
+    min-height: 18rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+.daisy-kit-transfer-list__empty[hidden] {
+    display: none;
+}
+
+.daisy-kit-transfer-list__footer {
+    align-items: center;
+    border-top: 1px solid color-mix(in oklab, var(--color-base-content) 12%, transparent);
+    display: flex;
+    justify-content: space-between;
+    min-height: 3.5rem;
+    padding: .5rem .75rem;
+}
+
+.daisy-kit-transfer-list__footer[hidden],
+.daisy-kit-transfer-list__footer > [hidden] {
+    display: none;
+}
+
+.daisy-kit-transfer-list__actions {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    justify-content: center;
+}
+
+@media (max-width: 48rem) {
+    .daisy-kit-transfer-list__columns {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .daisy-kit-transfer-list__actions {
+        flex-direction: row;
+        min-height: 3rem;
+    }
+
+    .daisy-kit-transfer-list__actions [data-daisy-kit-transfer-move] span {
+        display: inline-block;
+        transform: rotate(90deg);
+    }
+
+    .daisy-kit-transfer-list__viewport,
+    .daisy-kit-transfer-list__empty {
+        min-height: 14rem;
+    }
+}
+
+@media (max-width: 30rem) {
+    .daisy-kit-transfer-list__item {
+        grid-template-columns: auto auto minmax(0, 1fr) auto;
+    }
+
+    .daisy-kit-transfer-list__item-meta {
+        display: none;
+    }
+}

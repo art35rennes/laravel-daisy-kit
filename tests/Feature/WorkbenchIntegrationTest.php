@@ -41,6 +41,17 @@ it('accepts the native Workbench review form submission', function (): void {
         ->assertSessionHas('workbench.review.saved');
 });
 
+it('returns a native review submission to its originating Workbench module', function (): void {
+    $this->post('/_daisy-kit-test/reviews', [
+        'assignees' => ['ada', 'grace'],
+        'return_to' => 'transfer-list',
+    ])
+        ->assertRedirect('/transfer-list')
+        ->assertSessionHas('workbench.review.saved', [
+            'assignees' => ['ada', 'grace'],
+        ]);
+});
+
 it('serves dedicated strict and dependency-compatible CSP pages', function (): void {
     $strict = $this->get('/_daisy-kit-test/csp/strict')
         ->assertOk()

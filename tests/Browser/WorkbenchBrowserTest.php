@@ -261,3 +261,31 @@ it('mounts Signature and Transfer List under their documented CSP policy', funct
         ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module]')).every((root) => root.dataset.daisyKitState === 'ready')")
         ->assertNoSmoke();
 })->group('browser');
+
+it('uses Transfer List as a responsive paginated assignment control', function (): void {
+    $transfer = '[data-daisy-kit-module="transfer-list"]';
+
+    $page = $this->visit('/transfer-list')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->assertSee('Assign the release review team')
+        ->assertSee('0 selected · 13 total')
+        ->assertSee('0 selected · 3 total')
+        ->assertCount("{$transfer} [data-daisy-kit-transfer-source] [role=option]", 5)
+        ->assertCount("{$transfer} [data-daisy-kit-transfer-target] [role=option]", 3)
+        ->assertNoSmoke()
+        ->assertNoAccessibilityIssues(1);
+
+    $page
+        ->click("{$transfer} [data-daisy-kit-transfer-select-all=source]")
+        ->assertSee('5 selected · 13 total')
+        ->click("{$transfer} [data-daisy-kit-transfer-move=to-target]")
+        ->assertSee('0 selected · 8 total')
+        ->assertCount("{$transfer} [name='assignees[]']", 8)
+        ->fill("{$transfer} [data-daisy-kit-transfer-search=source]", 'not-a-person')
+        ->assertSee('No matching items');
+
+    $page->resize(390, 844)
+        ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
+        ->assertScript("getComputedStyle(document.querySelector('{$transfer} [data-daisy-kit-transfer-content]')).gridTemplateColumns.split(' ').length === 1")
+        ->assertNoSmoke();
+})->group('browser');

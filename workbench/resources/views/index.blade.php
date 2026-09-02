@@ -371,6 +371,7 @@
 
             <form class="space-y-6" method="POST" action="{{ route('workbench.reviews.store') }}">
                 @csrf
+                <input name="return_to" type="hidden" value="{{ $module }}">
                 @if($module === 'combobox')
                 <x-daisy-kit::combobox
                     class="card"
@@ -388,15 +389,37 @@
                 <x-daisy-kit::signature class="card" name="approval_signature" label="Approval signature" />
                 @endif
                 @if($module === 'transfer-list')
+                <div>
+                    <h3>Assign the release review team</h3>
+                    <p class="text-sm text-base-content/70">Search the directory, select several people and preserve the review order submitted to Laravel.</p>
+                </div>
                 <x-daisy-kit::transfer-list
-                    class="card"
                     name="assignees"
+                    label="Review team"
+                    source-label="Company directory"
+                    target-label="Assigned reviewers"
                     :items="[
-                        ['value' => 'ada', 'label' => 'Ada Lovelace'],
-                        ['value' => 'grace', 'label' => 'Grace Hopper'],
-                        ['value' => 'margaret', 'label' => 'Margaret Hamilton'],
+                        ['value' => 'ada', 'label' => 'Ada Lovelace', 'description' => 'ada@example.test', 'meta' => 'Platform', 'initials' => 'AL'],
+                        ['value' => 'grace', 'label' => 'Grace Hopper', 'description' => 'grace@example.test', 'meta' => 'Infrastructure', 'initials' => 'GH'],
+                        ['value' => 'margaret', 'label' => 'Margaret Hamilton', 'description' => 'margaret@example.test', 'meta' => 'Flight software', 'initials' => 'MH'],
+                        ['value' => 'katherine', 'label' => 'Katherine Johnson', 'description' => 'katherine@example.test', 'meta' => 'Research', 'initials' => 'KJ'],
+                        ['value' => 'dorothy', 'label' => 'Dorothy Vaughan', 'description' => 'dorothy@example.test', 'meta' => 'Research', 'initials' => 'DV'],
+                        ['value' => 'mary', 'label' => 'Mary Jackson', 'description' => 'mary@example.test', 'meta' => 'Platform', 'initials' => 'MJ'],
+                        ['value' => 'annie', 'label' => 'Annie Easley', 'description' => 'annie@example.test', 'meta' => 'Infrastructure', 'initials' => 'AE'],
+                        ['value' => 'joan', 'label' => 'Joan Clarke', 'description' => 'joan@example.test', 'meta' => 'Security', 'initials' => 'JC'],
+                        ['value' => 'hedy', 'label' => 'Hedy Lamarr', 'description' => 'hedy@example.test', 'meta' => 'Wireless', 'initials' => 'HL'],
+                        ['value' => 'radia', 'label' => 'Radia Perlman', 'description' => 'radia@example.test', 'meta' => 'Networks', 'initials' => 'RP'],
+                        ['value' => 'evelyn', 'label' => 'Evelyn Boyd Granville', 'description' => 'evelyn@example.test', 'meta' => 'Data', 'initials' => 'EG'],
+                        ['value' => 'susan', 'label' => 'Susan Kare', 'description' => 'susan@example.test', 'meta' => 'Design', 'initials' => 'SK'],
+                        ['value' => 'barbara', 'label' => 'Barbara Liskov', 'description' => 'barbara@example.test', 'meta' => 'Architecture', 'initials' => 'BL'],
+                        ['value' => 'frances', 'label' => 'Frances Allen', 'description' => 'frances@example.test', 'meta' => 'Compilers', 'initials' => 'FA'],
+                        ['value' => 'karen', 'label' => 'Karen Spärck Jones', 'description' => 'karen@example.test', 'meta' => 'Search', 'initials' => 'KJ'],
+                        ['value' => 'restricted', 'label' => 'External auditor', 'description' => 'Pending security clearance', 'meta' => 'Restricted', 'initials' => 'EA', 'disabled' => true],
                     ]"
-                    :value="['ada']"
+                    :value="['ada', 'grace', 'margaret']"
+                    pagination
+                    :page-size="5"
+                    required
                 />
                 @endif
                 <button class="btn btn-primary" type="submit">Save review assignment</button>

@@ -26,7 +26,9 @@ automated outcome test before it is considered delivered.
 | A user can draw, clear and export a signature while the submitted form value stays synchronized. | `resources/views/components/ui/inputs/sign.blade.php`; `resources/js/modules/sign.js` at `v4.0.0`. | Pointer, resize, reset, form-data and CSP tests. |
 | Long text has an accessible expanded state without mutating the original value. | `resources/views/components/ui/utilities/truncate-text.blade.php` at `v4.0.0`. | Overflow, keyboard disclosure and multiple-root tests. |
 | In-page navigation updates the active section while preserving accessible links and keyboard use. | `resources/views/components/ui/advanced/scrollspy.blade.php`; `resources/js/scrollspy.js` at `v4.0.0`. | Intersection, keyboard, teardown and multiple-root tests. |
-| Users can search, select and move assignments between two lists, with optional ordering. | `resources/views/components/ui/advanced/transfer.blade.php`; `resources/js/transfer.js` at `v4.0.0`. | Move, search, selection, ordering, form-data and teardown tests. |
+| Users can search, select and move assignments between two legible panels, with optional ordering. | `resources/views/components/ui/advanced/transfer.blade.php`; `resources/js/transfer.js` at `v4.0.0`. | Move, search, selection, ordering, form-data and teardown tests. |
+| Users understand the scope of bulk selection, the number selected and the result of an empty search. | MDBootstrap Transfer interaction baseline; ADR-0013. | Select-all scope, counts, disabled items and empty/no-results outcome tests. |
+| Local assignment sets remain usable on narrow screens and with dozens of rich people or catalogue rows. | ADR-0013 corrective product decision. | Independent panel pagination, rich safe rows, keyboard and responsive Workbench browser tests. |
 
 ## Table
 

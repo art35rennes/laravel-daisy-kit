@@ -276,19 +276,33 @@ The event detail is `change { id }`.
 ### Transfer List configuration
 
 `x-daisy-kit::transfer-list` accepts `name`, `label`, `items`, `value`, `sourceLabel`,
-`targetLabel`, `searchable`, `maxItems`, `disabled`, `required`, and `sortable=true`. Items use
-`{ value, label, description?, disabled? }`; `value` is the ordered target key list. Ranked local
-search uses TanStack Match Sorter. Buttons and keyboard remain complete alternatives to optional
-SortableJS drag-and-drop. Ordered target values submit as repeated `name[]` fields. The facade
-exposes `getTargetValues`, `setTargetValues`, `move`, `reorder`, and `clearSelection`; events are
-`change`, `reorder`, and `error`. Pagination and virtualization are deliberately out of scope.
-`getTargetValues()` returns an ordered string array. `setTargetValues(values)`,
-`move(direction, values?)`, `reorder(values)`, and `clearSelection()` return booleans; direction is
-`to-target` or `to-source`. Event details are `change { values }`, `reorder { values }`, and
-`error { code, message, maxItems?, values }`. `reorder(values)` accepts only a complete permutation
-of the current target values. Disabled items cannot be selected, transferred, or repositioned by
-buttons, keyboard, façade, or drag-and-drop. Native `change` continues to bubble when the ordered
-submitted value changes.
+`targetLabel`, `searchable`, `maxItems`, `disabled`, `required`, `sortable=true`, `oneWay=false`,
+`showSelectAll=true`, `pagination=false`, `pageSize=10`, and `selectAllScope='page'`. Items use
+`{ value, label, description?, meta?, avatar?, initials?, disabled? }`; every display field is plain
+data and `value` is the ordered target key list. Ranked local search uses TanStack Match Sorter.
+Each side exposes its selected and total counts, explicit empty/no-results states and independent
+local pagination when enabled. Buttons and keyboard remain complete alternatives to optional
+SortableJS drag-and-drop. Ordered target values submit as repeated `name[]` fields.
+
+The facade exposes `getTargetValues`, `setTargetValues`, `getSelection`, `setSelection`, `selectAll`,
+`move`, `reorder`, `setPage`, and `clearSelection`. `getTargetValues()` returns an ordered string
+array; `getSelection()` returns detached `{ source, target }` arrays. All mutations return booleans.
+`setSelection(side, values)`, `selectAll(side, scope='page')`, `setPage(side, page)`, and
+`clearSelection(side?)` accept `source` or `target`; `move(direction, values?)` accepts `to-target`
+or `to-source`. `selectAll` toggles the eligible items in the requested `page` or `filtered` scope.
+The configured `selectAllScope` controls the visible panel checkboxes. `oneWay=true` hides and rejects
+reverse transfers without removing target ordering.
+
+Events are `selection-change { side, values }`, `search { side, query }`,
+`page-change { side, page, pageSize, totalPages }`, `change { values, direction, movedValues }`,
+`reorder { values }`, and `error { code, message, maxItems?, values, ...context }`.
+`change.direction` is `to-target`, `to-source`, or `null` for a direct value replacement;
+`movedValues` is always an array.
+`reorder(values)` accepts only a complete permutation of the current target values. Disabled items
+cannot be selected, transferred, or repositioned by buttons, keyboard, facade or drag-and-drop.
+Native `change` continues to bubble when the ordered submitted value changes. Local pagination does
+not change submitted membership or ordering; remote pagination and virtualization are deliberately
+out of scope.
 
 ## Corrective development line
 

@@ -215,16 +215,33 @@ CSP exception. An unknown section is a rejected target returning `false`, not an
 
 ### Transfer List
 
-Select target items and use Move up / Move down, or press Alt+ArrowUp / Alt+ArrowDown on a
-target option to reorder without dragging. A filtered list keeps hidden values in their original
-slots, and disabled items cannot be displaced. These controls remain available with `sortable=false`.
+Transfer List presents two bounded assignment panels with selected/total counts, explicit empty
+states and a select-all checkbox. Selection can apply to the current page or every filtered result.
+Select target items and use the arrow controls, or press ArrowRight / ArrowLeft on an option to
+transfer it directly. Use the reorder buttons or Alt+ArrowUp / Alt+ArrowDown on a target option to
+change submission order without dragging. Disabled items cannot be selected or displaced.
 
 ```blade
 <x-daisy-kit::transfer-list
     name="assignees"
-    :items="$availableUsers"
+    label="Review team"
+    source-label="Company directory"
+    target-label="Assigned reviewers"
+    :items="$availableUsers->map(fn ($user) => [
+        'value' => (string) $user->getKey(),
+        'label' => $user->name,
+        'description' => $user->email,
+        'meta' => $user->team->name,
+        'avatar' => $user->avatar_url,
+        'initials' => $user->initials,
+        'disabled' => ! $user->can_review,
+    ])->all()"
     :value="$assignedUserIds"
     searchable
+    pagination
+    :page-size="10"
+    select-all-scope="page"
+    required
 />
 ```
 
@@ -235,15 +252,30 @@ import { mount } from '@daisy-kit/transfer-list.js';
 const root = document.querySelector('[data-daisy-kit-module="transfer-list"]');
 const transfer = mount(root);
 
-root.addEventListener('daisy-kit:transfer-list:change', ({ detail }) => console.log(detail.values));
-transfer.move('to-target', ['reviewer-42']);
+root.addEventListener('daisy-kit:transfer-list:change', ({ detail }) => {
+    console.log(detail.values, detail.direction, detail.movedValues);
+});
+root.addEventListener('daisy-kit:transfer-list:selection-change', ({ detail }) => {
+    console.log(detail.side, detail.values);
+});
+
+transfer.setSelection('source', ['reviewer-42', 'reviewer-84']);
+transfer.move('to-target');
 ```
 
-`getTargetValues()` returns an ordered snapshot; `setTargetValues`, `move`, `reorder`, and
-`clearSelection` return booleans. Events are `change { values }`, `reorder { values }`, and
-`error { code, message, values, ...context }`. Laravel receives ordered repeated `assignees[]`
-fields. Pages using Transfer List must allow `style-src-attr 'unsafe-inline'`; invalid directions,
-values, limits, disabled commands, and invalid reorder permutations emit structured errors.
+`getTargetValues()` returns an ordered snapshot and `getSelection()` returns detached source and
+target selections. `setTargetValues`, `setSelection`, `selectAll`, `move`, `reorder`, `setPage`, and
+`clearSelection` return booleans. `selectAll(side, 'page'|'filtered')` toggles only eligible items.
+Events are `selection-change { side, values }`, `search { side, query }`,
+`page-change { side, page, pageSize, totalPages }`,
+`change { values, direction, movedValues }`, `reorder { values }`, and
+`error { code, message, values, ...context }`.
+
+Laravel receives ordered repeated `assignees[]` fields, independently of search and pagination.
+Set `one-way` when assignments may only be added through the visible controls. Pages using Transfer
+List must allow `style-src-attr 'unsafe-inline'`; invalid sides, pages, directions, values, limits,
+disabled commands, and invalid reorder permutations emit structured errors. Item fields are always
+rendered as safe text or image attributes; Transfer List accepts no serialized HTML template.
 
 ### Combined Laravel form
 

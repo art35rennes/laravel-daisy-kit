@@ -39,3 +39,16 @@ it('demonstrates Copyable with its optional icon and visual feedback', function 
         ->assertSee('data-daisy-kit-copyable-feedback', false)
         ->assertSee('Release identifier copied.');
 });
+
+it('demonstrates Transfer List as a realistic paginated Laravel assignment form', function (): void {
+    $response = $this->get('/transfer-list');
+
+    $response->assertOk()
+        ->assertSee('Assign the release review team')
+        ->assertSee('Company directory')
+        ->assertSee('Assigned reviewers')
+        ->assertSee('data-daisy-kit-transfer-select-all="source"', false)
+        ->assertSee('"pagination":true', false)
+        ->assertSee('"pageSize":5', false)
+        ->assertSee('External auditor');
+});

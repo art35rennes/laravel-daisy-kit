@@ -177,6 +177,12 @@ Route::get('/_daisy-kit-test/tree/search', function (Request $request) {
 })->name('workbench.tree.search');
 
 Route::post('/_daisy-kit-test/reviews', function (Request $request) {
+    $returnRoute = [
+        'combobox' => 'workbench.combobox',
+        'signature' => 'workbench.signature',
+        'transfer-list' => 'workbench.transferList',
+    ][$request->string('return_to')->toString()] ?? 'workbench.combobox';
+
     $review = $request->validate([
         'reviewers' => ['array'],
         'reviewers.*' => ['string', 'max:100'],
@@ -186,7 +192,7 @@ Route::post('/_daisy-kit-test/reviews', function (Request $request) {
     ]);
 
     return redirect()
-        ->route('workbench.combobox')
+        ->route($returnRoute)
         ->with('workbench.review.saved', $review);
 })->name('workbench.reviews.store');
 

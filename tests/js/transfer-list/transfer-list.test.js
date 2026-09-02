@@ -15,7 +15,7 @@ vi.mock('sortablejs', () => ({
 import { getInstance, mount, mountAll, unmount } from '../../../resources/js/transfer-list.js';
 
 function markup(configuration) {
-    return `<section data-daisy-kit-module="transfer-list"><p data-daisy-kit-status hidden role="alert"></p><div><input data-daisy-kit-transfer-search="source"><ul data-daisy-kit-transfer-source role="listbox"></ul><button data-daisy-kit-transfer-move="to-target" type="button">add</button><button data-daisy-kit-transfer-move="to-source" type="button">remove</button><input data-daisy-kit-transfer-search="target"><ul data-daisy-kit-transfer-target role="listbox"></ul></div><div data-daisy-kit-transfer-values></div>${configuration.required ? '<input data-daisy-kit-transfer-required required>' : ''}<script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script></section>`;
+    return `<section data-daisy-kit-module="transfer-list"><p data-daisy-kit-status hidden role="alert"></p><div data-daisy-kit-transfer-panel="source"><input data-daisy-kit-transfer-select-all="source" type="checkbox"><span data-daisy-kit-transfer-count="source"></span><input data-daisy-kit-transfer-search="source"><ul data-daisy-kit-transfer-source role="listbox"></ul><p data-daisy-kit-transfer-empty="source"></p><button data-daisy-kit-transfer-page="source:previous" type="button">previous</button><span data-daisy-kit-transfer-page-status="source"></span><button data-daisy-kit-transfer-page="source:next" type="button">next</button></div><button data-daisy-kit-transfer-move="to-target" type="button">add</button><button data-daisy-kit-transfer-move="to-source" type="button">remove</button><div data-daisy-kit-transfer-panel="target"><input data-daisy-kit-transfer-select-all="target" type="checkbox"><span data-daisy-kit-transfer-count="target"></span><input data-daisy-kit-transfer-search="target"><ul data-daisy-kit-transfer-target role="listbox"></ul><p data-daisy-kit-transfer-empty="target"></p><button data-daisy-kit-transfer-page="target:previous" type="button">previous</button><span data-daisy-kit-transfer-page-status="target"></span><button data-daisy-kit-transfer-page="target:next" type="button">next</button></div><div data-daisy-kit-transfer-values></div>${configuration.required ? '<input data-daisy-kit-transfer-required required>' : ''}<script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script></section>`;
 }
 
 describe('transfer list', () => {
@@ -72,7 +72,17 @@ describe('transfer list', () => {
         const instance = mount(root);
         const required = root.querySelector('[data-daisy-kit-transfer-required]');
 
-        expect(Object.keys(instance).sort()).toEqual(['clearSelection', 'getTargetValues', 'move', 'reorder', 'setTargetValues']);
+        expect(Object.keys(instance).sort()).toEqual([
+            'clearSelection',
+            'getSelection',
+            'getTargetValues',
+            'move',
+            'reorder',
+            'selectAll',
+            'setPage',
+            'setSelection',
+            'setTargetValues',
+        ]);
         expect(required.checkValidity()).toBe(false);
         instance.setTargetValues(['read']);
         expect(required.checkValidity()).toBe(true);
@@ -91,7 +101,11 @@ describe('transfer list', () => {
         expect(instance.move('to-target', ['read'])).toBe(true);
         expect(instance.reorder(['read'])).toBe(true);
         expect(instance.clearSelection()).toBe(true);
-        expect(changes.mock.calls[0][0].detail).toEqual({ values: ['read'] });
+        expect(changes.mock.calls[0][0].detail).toEqual({
+            direction: 'to-target',
+            movedValues: ['read'],
+            values: ['read'],
+        });
     });
 
     it('rejects a transfer beyond the limit with a structured error', () => {
@@ -277,5 +291,187 @@ describe('transfer list', () => {
         expect(instance.getTargetValues()).toEqual(['read', 'locked', 'write']);
         expect([...target.querySelectorAll('[data-value]')].map((item) => item.dataset.value)).toEqual(['read', 'locked', 'write']);
         expect([...root.querySelectorAll('[name="permissions[]"]')].map((input) => input.value)).toEqual(['read', 'locked', 'write']);
+    });
+
+    it('renders safe rich rows, visible counts and action availability', () => {
+        document.body.innerHTML = markup({
+            sortable: false,
+            items: [
+                {
+                    value: 'ada',
+                    label: 'Ada Lovelace',
+                    description: 'ada@example.test',
+                    meta: 'Platform',
+                    avatar: '/avatars/ada.webp',
+                },
+                { value: 'grace', label: 'Grace Hopper', initials: 'GH', disabled: true },
+            ],
+            value: [],
+        });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        mount(root);
+
+        const ada = root.querySelector('[data-value="ada"]');
+        expect(ada.querySelector('.daisy-kit-transfer-list__item-check').getAttribute('aria-hidden')).toBe('true');
+        expect(ada.querySelector('img').getAttribute('src')).toBe('/avatars/ada.webp');
+        expect(ada.textContent).toContain('ada@example.test');
+        expect(ada.textContent).toContain('Platform');
+        expect(root.querySelector('[data-daisy-kit-transfer-count="source"]').textContent).toBe('0 selected · 2 total');
+        expect(root.querySelector('[data-daisy-kit-transfer-move="to-target"]').disabled).toBe(true);
+
+        ada.click();
+
+        expect(root.querySelector('[data-daisy-kit-transfer-count="source"]').textContent).toBe('1 selected · 2 total');
+        expect(root.querySelector('[data-daisy-kit-transfer-move="to-target"]').disabled).toBe(false);
+    });
+
+    it('selects the current page without selecting disabled rows and paginates each panel independently', () => {
+        document.body.innerHTML = markup({
+            pagination: true,
+            pageSize: 2,
+            selectAllScope: 'page',
+            sortable: false,
+            items: [
+                { value: 'one', label: 'One' },
+                { value: 'locked', label: 'Locked', disabled: true },
+                { value: 'three', label: 'Three' },
+                { value: 'four', label: 'Four' },
+                { value: 'five', label: 'Five' },
+            ],
+            value: [],
+        });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const pageChanges = vi.fn();
+        const selections = vi.fn();
+        root.addEventListener('daisy-kit:transfer-list:page-change', pageChanges);
+        root.addEventListener('daisy-kit:transfer-list:selection-change', selections);
+        const instance = mount(root);
+
+        expect(instance.selectAll('source', 'page')).toBe(true);
+        expect(instance.getSelection()).toEqual({ source: ['one'], target: [] });
+        expect(root.querySelector('[data-daisy-kit-transfer-select-all="source"]').checked).toBe(true);
+        expect(instance.setPage('source', 2)).toBe(true);
+        expect([...root.querySelectorAll('[data-daisy-kit-transfer-source] [data-value]')].map((item) => item.dataset.value)).toEqual(['three', 'four']);
+        expect(root.querySelector('[data-daisy-kit-transfer-page-status="source"]').textContent).toBe('Page 2 of 3');
+        expect(instance.selectAll('source', 'page')).toBe(true);
+        expect(instance.getSelection()).toEqual({ source: ['one', 'three', 'four'], target: [] });
+        expect(pageChanges.mock.calls[0][0].detail).toEqual({ page: 2, pageSize: 2, side: 'source', totalPages: 3 });
+        expect(selections).toHaveBeenCalled();
+
+        instance.clearSelection('source');
+        expect(instance.selectAll('source', 'filtered')).toBe(true);
+        expect(instance.getSelection()).toEqual({ source: ['one', 'three', 'four', 'five'], target: [] });
+    });
+
+    it('sets detached selections through the stable facade and moves them without DOM inspection', () => {
+        document.body.innerHTML = markup({
+            sortable: false,
+            items: [{ value: 'read', label: 'Read' }, { value: 'write', label: 'Write' }],
+            value: [],
+        });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const selections = vi.fn();
+        root.addEventListener('daisy-kit:transfer-list:selection-change', selections);
+        const instance = mount(root);
+
+        expect(instance.setSelection('source', ['write'])).toBe(true);
+        const snapshot = instance.getSelection();
+        snapshot.source.push('read');
+
+        expect(instance.getSelection()).toEqual({ source: ['write'], target: [] });
+        expect(instance.move('to-target')).toBe(true);
+        expect(instance.getTargetValues()).toEqual(['write']);
+        expect(selections.mock.calls[0][0].detail).toEqual({ side: 'source', values: ['write'] });
+    });
+
+    it('reports searches, distinguishes no results from empty lists and resets pagination', () => {
+        document.body.innerHTML = markup({
+            pagination: true,
+            pageSize: 1,
+            sortable: false,
+            items: [{ value: 'ada', label: 'Ada' }, { value: 'grace', label: 'Grace' }],
+            value: [],
+        });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const searches = vi.fn();
+        root.addEventListener('daisy-kit:transfer-list:search', searches);
+        const instance = mount(root);
+        instance.setPage('source', 2);
+        const search = root.querySelector('[data-daisy-kit-transfer-search="source"]');
+
+        search.value = 'nobody';
+        search.dispatchEvent(new Event('input', { bubbles: true }));
+
+        expect(searches.mock.calls[0][0].detail).toEqual({ query: 'nobody', side: 'source' });
+        expect(root.querySelector('[data-daisy-kit-transfer-empty="source"]').textContent).toBe('No matching items');
+        expect(root.querySelector('[data-daisy-kit-transfer-empty="source"]').hidden).toBe(false);
+        expect(root.querySelector('[data-daisy-kit-transfer-page-status="source"]').textContent).toBe('Page 1 of 1');
+    });
+
+    it('enforces one-way mode in the visible actions and facade', () => {
+        document.body.innerHTML = markup({
+            oneWay: true,
+            sortable: false,
+            items: [{ value: 'ada', label: 'Ada' }],
+            value: ['ada'],
+        });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const errors = vi.fn();
+        root.addEventListener('daisy-kit:transfer-list:error', errors);
+        const instance = mount(root);
+
+        expect(root.querySelector('[data-daisy-kit-transfer-move="to-source"]').hidden).toBe(true);
+        expect(instance.move('to-source', ['ada'])).toBe(false);
+        expect(errors.mock.calls[0][0].detail).toEqual({
+            code: 'one-way',
+            direction: 'to-source',
+            message: 'This transfer list only allows transfers to the target list.',
+            values: ['ada'],
+        });
+    });
+
+    it('does not submit values while the complete control is disabled', () => {
+        document.body.innerHTML = markup({
+            disabled: true,
+            name: 'assignees',
+            sortable: false,
+            items: [{ value: 'ada', label: 'Ada' }],
+            value: ['ada'],
+        });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const instance = mount(root);
+
+        expect(root.querySelector('[name="assignees[]"]').disabled).toBe(true);
+        expect(instance.move('to-source', ['ada'])).toBe(false);
+        expect(instance.getTargetValues()).toEqual(['ada']);
+    });
+
+    it('restores generated panel state when unmounted', () => {
+        document.body.innerHTML = markup({
+            pagination: true,
+            pageSize: 1,
+            sortable: false,
+            items: [{ value: 'ada', label: 'Ada' }, { value: 'grace', label: 'Grace' }],
+            value: [],
+        });
+        const root = document.querySelector('[data-daisy-kit-module]');
+        const count = root.querySelector('[data-daisy-kit-transfer-count="source"]');
+        const empty = root.querySelector('[data-daisy-kit-transfer-empty="source"]');
+        const selectAll = root.querySelector('[data-daisy-kit-transfer-select-all="source"]');
+        const add = root.querySelector('[data-daisy-kit-transfer-move="to-target"]');
+
+        mount(root);
+        root.querySelector('[data-value="ada"]').click();
+        expect(count.textContent).not.toBe('');
+        expect(add.disabled).toBe(false);
+
+        unmount(root);
+
+        expect(count.textContent).toBe('');
+        expect(empty.textContent).toBe('');
+        expect(selectAll.checked).toBe(false);
+        expect(selectAll.indeterminate).toBe(false);
+        expect(selectAll.disabled).toBe(false);
+        expect(add.disabled).toBe(false);
     });
 });
