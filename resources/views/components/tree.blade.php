@@ -7,7 +7,7 @@
     'persistenceKey' => null, 'initialExpandPaths' => [],
     'searchable' => false, 'searchSource' => null, 'searchMode' => 'auto',
     'searchMatch' => 'includes', 'searchDebounce' => 200, 'searchMin' => 0,
-    'searchParam' => 'query', 'nodeView' => null, 'labels' => [],
+    'searchParam' => 'query', 'highlightMatches' => false, 'nodeView' => null, 'labels' => [],
 ])
 @php
     $tree = \Art35rennes\DaisyKit\Tree\TreeConfiguration::make([
@@ -17,7 +17,8 @@
         'initialExpandPaths' => $initialExpandPaths, 'searchable' => $searchable,
         'searchSource' => $searchSource, 'searchMode' => $searchMode, 'searchMatch' => $searchMatch,
         'searchDebounce' => $searchDebounce, 'searchMin' => $searchMin,
-        'searchParam' => $searchParam, 'nodeView' => $nodeView, 'labels' => $labels,
+        'searchParam' => $searchParam, 'highlightMatches' => $highlightMatches,
+        'nodeView' => $nodeView, 'labels' => $labels,
     ]);
     $configuration = \Art35rennes\DaisyKit\Support\JsonConfiguration::encode($tree['configuration']);
     $treeLabels = $tree['configuration']['labels'];

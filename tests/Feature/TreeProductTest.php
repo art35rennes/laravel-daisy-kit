@@ -32,12 +32,16 @@ it('supports translated manual search and per-instance labels', function (): voi
         ->toContain('data-tree-command="applySearch"')->not->toContain('Search tree');
 });
 
+it('serializes opt-in match highlighting as CSP-safe configuration', function (): void {
+    expect(treeConfig(['highlightMatches' => true]))->toMatchArray(['highlightMatches' => true]);
+});
+
 it('rejects ambiguous or unsafe tree configuration', function (array $options): void {
     expect(fn () => view('daisy-kit::components.tree', $options)->render())->toThrow(ViewException::class);
 })->with([
     [['valueMode' => 'all']], [['searchMode' => 'invalid']], [['searchMatch' => 'invalid']],
     [['searchDebounce' => -1]], [['searchMin' => -1]], [['searchParam' => 'q&evil']],
-    [['multiple' => 'yes']], [['items' => [['id' => 'a', 'label' => 'A'], ['id' => 'a', 'label' => 'B']]]],
+    [['multiple' => 'yes']], [['highlightMatches' => 'yes']], [['items' => [['id' => 'a', 'label' => 'A'], ['id' => 'a', 'label' => 'B']]]],
     [['items' => [['label' => 'No id']]]], [['items' => [['id' => 'a', 'label' => 'A', 'source' => 'javascript:alert(1)']]]],
     [['searchSource' => 'data:text/html,evil']], [['labels' => ['clear' => []]]],
     [['initialExpandPaths' => ['not-a-path']]], [['multiple' => true, 'value' => 'a']],

@@ -1,6 +1,6 @@
 import { createModel, safeSource } from './model.js';
 import { createRenderer } from './render.js';
-import { matchingNodes } from './search.js';
+import { matchingNodes, nodeMatches } from './search.js';
 import { createTransport } from './transport.js';
 import { createPersistence } from './persistence.js';
 import { translator } from './labels.js';
@@ -47,9 +47,40 @@ export function initialize(root, configuration) {
     let typeTime = 0;
     let revision = 0;
     let searchError = false;
+    let customFilter = null;
+    let expansionBeforeFilter = null;
+    let filterErrorReported = false;
     const branchTasks = new Map();
 
-    function matches() { return source && query ? remoteMatches : matchingNodes(model, query, configuration.searchMatch); }
+    function nodeSnapshot(node) {
+        return Object.freeze({
+            id: node.id, parentId: node.parentId, label: node.label, description: node.description,
+            badge: node.badge, disabled: node.disabled, loaded: node.loaded, hasMore: node.nextCursor !== null,
+        });
+    }
+    function matches() {
+        const searched = source && query ? remoteMatches : matchingNodes(model, query, configuration.searchMatch);
+        if (!customFilter) return searched;
+        const filtered = new Set();
+        for (const node of model.nodes.values()) {
+            const matchesSearch = source && query
+                ? remoteMatches?.has(node.id)
+                : nodeMatches(node, query, configuration.searchMatch);
+            if (!matchesSearch) continue;
+            try {
+                if (!customFilter(nodeSnapshot(node))) continue;
+            } catch {
+                if (!filterErrorReported) {
+                    filterErrorReported = true;
+                    emit('error', { code: 'filter-failed', message: translate('filterError') });
+                }
+                continue;
+            }
+            filtered.add(node.id);
+            model.ancestors(node.id).forEach((id) => filtered.add(id));
+        }
+        return filtered;
+    }
     function visibleIds() { return model.visible(matches()); }
     function valueArray() {
         const value = model.getValue();
@@ -62,6 +93,10 @@ export function initialize(root, configuration) {
         return {
             value: model.getValue(), values, expandedIds: [...model.expanded], visibleIds: visible,
             query, searchDraft: draft, loadingIds: [...loadingIds], searching,
+            filter: Object.freeze({ active: customFilter !== null }),
+            pagination: Object.fromEntries([...model.nodes.values()]
+                .filter((node) => node.nextCursor !== null)
+                .map((node) => [node.id, { hasMore: true, nextCursor: node.nextCursor }])),
             selection: { total: values.length, visible: visibleSelected, hidden: values.length - visibleSelected },
         };
     }
@@ -73,7 +108,10 @@ export function initialize(root, configuration) {
     function render() {
         if (!active) return;
         const state = getState();
-        renderer.render({ visibleIds: state.visibleIds, loadingIds, errors });
+        renderer.render({
+            visibleIds: state.visibleIds, loadingIds, errors,
+            highlight: configuration.highlightMatches && query ? { query, mode: configuration.searchMatch } : null,
+        });
         root.setAttribute('aria-busy', String(searching || loadingIds.size > 0));
         const loading = root.querySelector('[data-daisy-kit-tree-loading]');
         if (loading) loading.textContent = searching || loadingIds.size > 0 ? translate('loading') : '';
@@ -133,17 +171,20 @@ export function initialize(root, configuration) {
         return true;
     }
 
-    function load(id, reload = false) {
+    function load(id, reload = false, append = false) {
         if (branchTasks.has(id)) return branchTasks.get(id);
         const node = model.nodes.get(id);
-        if (!active || !node?.source || (!reload && node.loaded)) return Promise.resolve(false);
+        if (!active || !node?.source || (!reload && (node.loaded || node.children.length > 0))) return Promise.resolve(false);
         const task = (async () => {
             errors.delete(id);
             const before = JSON.stringify(model.getValue());
             try {
-                const items = await transport.request(`branch:${id}`, node.source);
-                if (!active || items === null || !model.nodes.has(id)) return false;
-                model.merge(items, id, true);
+                const url = new URL(node.source);
+                if (append && node.nextCursor !== null) url.searchParams.set('cursor', node.nextCursor);
+                const result = await transport.request(`branch:${id}`, url);
+                if (!active || result === null || !model.nodes.has(id)) return false;
+                model.merge(result.items, id, result.nextCursor === null, !append);
+                model.nodes.get(id).nextCursor = result.nextCursor;
                 errors.delete(id);
                 render();
                 if (before !== JSON.stringify(model.getValue())) publish();
@@ -159,10 +200,15 @@ export function initialize(root, configuration) {
         branchTasks.set(id, task);
         return task;
     }
+    function loadMore(id) {
+        const node = model.nodes.get(id);
+        if (!active || !node?.source || node.nextCursor === null) return Promise.resolve(false);
+        return load(id, true, true);
+    }
     async function expand(id) {
         const node = model.nodes.get(id);
         if (!active || !node || !model.branch(id)) return false;
-        if (!node.loaded && !(await load(id))) return false;
+        if (!node.loaded && node.children.length === 0 && !(await load(id))) return false;
         if (!active) return false;
         if (!model.branch(id)) { render(); return true; }
         return model.expanded.has(id) || setExpanded(id, true);
@@ -198,12 +244,51 @@ export function initialize(root, configuration) {
     function selectVisible() {
         if (!active || !model.multiple || model.disabled) return false;
         let changed = false;
-        for (const id of visibleIds()) {
+        const visible = visibleIds();
+        const visibleSet = new Set(visible);
+        for (const id of visible) {
             const node = model.nodes.get(id);
-            if (node.loaded && node.children.length === 0) changed = model.select(id, true) || changed;
+            const hasVisibleDescendant = node.children.some((child) => visibleSet.has(child));
+            const selectableResult = model.rootMode
+                ? node.loaded && !hasVisibleDescendant
+                : node.loaded && node.children.length === 0;
+            if (selectableResult) changed = model.select(id, true) || changed;
         }
         if (changed) publish();
         return changed;
+    }
+
+    function setFilter(predicate) {
+        if (!active || typeof predicate !== 'function') return false;
+        const accepted = [];
+        try {
+            for (const node of model.nodes.values()) {
+                if (predicate(nodeSnapshot(node))) accepted.push(node.id);
+            }
+        } catch {
+            emit('error', { code: 'filter-failed', message: translate('filterError') });
+            return false;
+        }
+        customFilter = predicate;
+        filterErrorReported = false;
+        expansionBeforeFilter ??= new Set(model.expanded);
+        accepted.forEach((id) => model.ancestors(id).forEach((ancestor) => model.expanded.add(ancestor)));
+        render();
+        emit('filtered', { active: true, visibleIds: visibleIds() });
+        return true;
+    }
+    function clearFilter() {
+        if (!active || customFilter === null) return false;
+        customFilter = null;
+        filterErrorReported = false;
+        if (expansionBeforeFilter) {
+            model.expanded.clear();
+            expansionBeforeFilter.forEach((id) => model.expanded.add(id));
+            expansionBeforeFilter = null;
+        }
+        render();
+        emit('filtered', { active: false, visibleIds: visibleIds() });
+        return true;
     }
 
     function clearSearch() {
@@ -246,14 +331,14 @@ export function initialize(root, configuration) {
             if (source) {
                 const url = new URL(source);
                 url.searchParams.set(configuration.searchParam ?? 'query', term);
-                const items = await transport.request('search', url);
-                if (!active || items === null || term !== draft.trim()) return false;
-                model.merge(items);
+                const result = await transport.request('search', url);
+                if (!active || result === null || term !== draft.trim()) return false;
+                model.merge(result.items);
                 remoteMatches = new Set();
                 function index(items) {
                     items.forEach((item) => { remoteMatches.add(String(item.id)); index(item.children ?? []); });
                 }
-                index(items);
+                index(result.items);
             }
             query = term;
             const found = matches();
@@ -301,6 +386,18 @@ export function initialize(root, configuration) {
         const id = row.dataset.daisyKitTreeNode;
         const action = target.closest('[data-tree-action]')?.dataset.treeAction;
         if (action === 'toggle') void (model.expanded.has(id) ? collapse(id) : expand(id));
+        else if (action === 'load-more') {
+            const restoreFocus = document.activeElement === target;
+            void loadMore(id).then(() => {
+                if (!active || !restoreFocus) return;
+                const branch = [...root.querySelectorAll('[data-daisy-kit-tree-node]')]
+                    .find((element) => element.dataset.daisyKitTreeNode === id);
+                const next = branch?.querySelector('[data-tree-action="load-more"]');
+                if (next instanceof HTMLElement) next.focus();
+                else renderer.focus(id);
+            });
+            return;
+        }
         else if (action === 'retry') void expand(id);
         else select(id);
         renderer.focus(id);
@@ -311,6 +408,7 @@ export function initialize(root, configuration) {
             if (event.key === 'Escape') { event.preventDefault(); clearSearch(); }
             return;
         }
+        if (event.target.closest?.('[data-tree-action="load-more"], [data-tree-action="retry"]')) return;
         const row = event.target.closest?.('[data-daisy-kit-tree-node]');
         if (!row || !tree.contains(row)) return;
         const id = row.dataset.daisyKitTreeNode;
@@ -382,9 +480,9 @@ export function initialize(root, configuration) {
 
     return {
         getValue: () => model.getValue(), getState, setValue, clear, expand, collapse,
-        focus: (id) => active && renderer.focus(id), setSearch, applySearch, clearSearch,
+        focus: (id) => active && renderer.focus(id), setSearch, applySearch, clearSearch, setFilter, clearFilter,
         expandPath, expandAll, collapseAll, selectVisible,
-        reloadBranch: (id) => load(id, true),
+        loadMore, reloadBranch: (id) => load(id, true),
         destroy() {
             active = false;
             if (timer !== null) clearTimeout(timer);

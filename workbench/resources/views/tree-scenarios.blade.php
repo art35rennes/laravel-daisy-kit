@@ -6,7 +6,7 @@
             <p class="text-sm text-base-content/70">Choose an area for this document. Search keeps the parent path visible.</p>
             <x-daisy-kit::tree id="classification-tree" label="Document classification"
                 :items="\Workbench\App\TreeExamples::classification()" value="getting-started"
-                name="document_area" :searchable="true" search-match="fuzzy" />
+                name="document_area" :searchable="true" search-match="fuzzy" :highlight-matches="true" />
         </article>
         <article class="min-w-0 space-y-3" id="tree-permissions">
             <h3 class="text-lg font-medium">Team permissions</h3>
@@ -22,7 +22,7 @@
             <x-daisy-kit::tree id="catalogue-tree" label="Regional catalogue"
                 :items="\Workbench\App\TreeExamples::catalogue()" :multiple="true" value-mode="selected-roots"
                 name="regions" :searchable="true" search-mode="manual"
-                :search-source="route('workbench.tree.catalogueSearch')" persistence-key="workbench-catalogue" />
+                :search-source="route('workbench.tree.catalogueSearch')" persistence-key="workbench-catalogue-v2" />
         </article>
         <article class="min-w-0 space-y-3" id="tree-teams">
             <h3 class="text-lg font-medium">Project reviewers</h3>

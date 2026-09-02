@@ -142,7 +142,7 @@ describe('tree module', () => {
 
         expect(tree).toBe(getInstance(root));
         expect(mount(root)).toBe(tree);
-        expect(Object.keys(tree)).toEqual(expect.arrayContaining(['clear', 'collapse', 'expand', 'focus', 'getValue', 'setValue', 'getState', 'setSearch', 'applySearch', 'clearSearch', 'expandPath', 'expandAll', 'collapseAll', 'selectVisible', 'reloadBranch']));
+        expect(Object.keys(tree)).toEqual(expect.arrayContaining(['clear', 'collapse', 'expand', 'focus', 'getValue', 'setValue', 'getState', 'setSearch', 'applySearch', 'clearSearch', 'setFilter', 'clearFilter', 'expandPath', 'expandAll', 'collapseAll', 'selectVisible', 'loadMore', 'reloadBranch']));
         expect(await tree.expand('content')).toBe(true);
         expect(tree.focus('read')).toBe(true);
         expect(document.activeElement).toBe(root.querySelector('[data-daisy-kit-tree-node="read"]'));
