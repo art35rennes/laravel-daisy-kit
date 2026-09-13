@@ -631,6 +631,46 @@ describe('table module', () => {
         expect(root.querySelector('dialog[data-daisy-kit-table-detail="a"]')).toBeNull();
     });
 
+    it('preserves an unsaved cell draft when a pending search renders the table', () => {
+        vi.useFakeTimers();
+        document.body.innerHTML = tableMarkup({
+            columns: [{ key: 'name', label: 'Name' }],
+            editable: { columns: ['name'] },
+            rows: [{ id: 'ada', name: 'Ada Lovelace' }, { id: 'grace', name: 'Grace Hopper' }],
+            search: { debounce: 250, enabled: true, mode: 'includes' },
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+        const edits = [];
+        root.addEventListener('daisy-kit:table:edited', (event) => edits.push(event.detail));
+        mount(root);
+
+        const search = root.querySelector('[data-daisy-kit-table-filter=""]');
+        search.value = 'Grace';
+        search.dispatchEvent(new Event('input'));
+        root.querySelector('[data-daisy-kit-table-edit="grace:name"]').click();
+        const input = root.querySelector('[data-daisy-kit-table-edit-input="grace:name"]');
+        input.value = 'Grace Murray Hopper';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        expect(root.querySelector('tbody').textContent).toContain('Ada Lovelace');
+
+        vi.advanceTimersByTime(250);
+
+        const renderedInput = root.querySelector('[data-daisy-kit-table-edit-input="grace:name"]');
+        expect(root.querySelector('tbody').textContent).not.toContain('Ada Lovelace');
+        expect(renderedInput).not.toBe(input);
+        expect(renderedInput.value).toBe('Grace Murray Hopper');
+        root.querySelector('[data-daisy-kit-table-edit-save="grace:name"]').click();
+
+        expect(root.querySelector('tbody').textContent).toContain('Grace Murray Hopper');
+        expect(edits).toEqual([{
+            column: 'name',
+            row: { id: 'grace', name: 'Grace Murray Hopper' },
+            rowId: 'grace',
+            value: 'Grace Murray Hopper',
+        }]);
+        unmount(root);
+    });
+
     it('edits an explicitly editable cell and enriches the remote mutation with its row contract', async () => {
         const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
             row: { id: 'a', name: 'Approved' },
