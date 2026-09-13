@@ -267,6 +267,11 @@
     }
 }
 
+.daisy-kit-table thead input,
+.daisy-kit-table thead select {
+    color: var(--color-base-content);
+}
+
 .daisy-kit-table input::placeholder {
     color: color-mix(in oklab, var(--color-base-content) 70%, transparent);
 }
