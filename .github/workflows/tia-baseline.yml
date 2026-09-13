@@ -2,7 +2,7 @@ name: TIA baseline
 
 on:
   push:
-    branches: [next/v5]
+    branches: [dev, main]
 
 jobs:
   record:

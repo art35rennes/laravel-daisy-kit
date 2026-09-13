@@ -2,14 +2,22 @@ name: Quality
 
 on:
   push:
-    branches: [next/v5]
+    branches: [dev, main]
+    tags: ['v6.*']
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
@@ -18,15 +26,24 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - run: composer validate --strict
       - run: composer install --no-interaction --prefer-dist
       - run: npm ci --no-audit
       - run: npx playwright install --with-deps chromium
       - run: npm run build
+      - run: git diff --exit-code -- dist
       - run: composer build:workbench
       - run: composer lint:check
       - run: composer analyse
       - run: composer test:types
       - run: composer test:full
       - run: npm run test:js
+      - run: npm run test:vite-host
+      - name: Install the public tag in a fresh Vite host
+        if: startsWith(github.ref, 'refs/tags/v6.')
+        run: npm run test:vite-host
+        env:
+          DAISY_KIT_PACKAGE_REPOSITORY: https://github.com/art35rennes/laravel-daisy-kit
+          DAISY_KIT_PACKAGE_VERSION: ${{ github.ref_name }}
       - run: composer audit --no-interaction
-      - run: npm audit --audit-level=high
+      - run: npm audit

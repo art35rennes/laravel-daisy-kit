@@ -4,9 +4,10 @@ import { tmpdir } from 'node:os';
 import { extname, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { chromium } from 'playwright';
+import { preparePackageSource } from './package-source.mjs';
 
 const repositoryRoot = resolve(import.meta.dirname, '../..');
-const fixtureRoot = resolve(repositoryRoot, 'tests/fixtures/vite-host');
+const fixtureRoot = resolve(repositoryRoot, 'tests/Fixtures/vite-host');
 const hostRoot = mkdtempSync(resolve(tmpdir(), 'daisy-kit-vite-host-'));
 const entryStems = ['table', 'tree', 'blueprint', 'file-preview', 'map', 'copyable', 'combobox', 'signature', 'truncate', 'scrollspy', 'transfer-list'];
 const contentTypes = {
@@ -28,31 +29,6 @@ function run(command, arguments_, options = {}) {
     if (result.status !== 0) {
         throw new Error(`${command} ${arguments_.join(' ')} failed:\n${result.stdout}\n${result.stderr}`);
     }
-}
-
-function gitOutput(arguments_, cwd) {
-    const result = spawnSync('git', arguments_, { cwd, encoding: 'utf8' });
-
-    if (result.status !== 0) {
-        throw new Error(`git ${arguments_.join(' ')} failed:\n${result.stdout}\n${result.stderr}`);
-    }
-
-    return result.stdout.trim();
-}
-
-function activePackageReference() {
-    const branch = gitOutput(['branch', '--show-current'], repositoryRoot);
-    const commit = gitOutput(['rev-parse', 'HEAD'], repositoryRoot);
-
-    if (!/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(branch)) {
-        throw new Error('The Vite host fixture requires a checked-out package branch with a Composer-compatible name.');
-    }
-
-    if (!/^[a-f0-9]{40}$/.test(commit)) {
-        throw new Error('The Vite host fixture could not resolve the active package commit.');
-    }
-
-    return { branch, commit, version: `dev-${branch}#${commit}` };
 }
 
 function startHost(buildRoot) {
@@ -113,12 +89,11 @@ let browser;
 try {
     cpSync(fixtureRoot, hostRoot, { recursive: true });
 
-    const activePackage = activePackageReference();
-
-    const composerJson = readFileSync(resolve(hostRoot, 'composer.json'), 'utf8')
-        .replace('__PACKAGE_ROOT__', repositoryRoot)
-        .replace('__PACKAGE_BRANCH_VERSION__', activePackage.version);
-    writeFileSync(resolve(hostRoot, 'composer.json'), composerJson);
+    const activePackage = preparePackageSource(repositoryRoot, hostRoot);
+    const composerJson = JSON.parse(readFileSync(resolve(hostRoot, 'composer.json'), 'utf8'));
+    composerJson.repositories[0].url = activePackage.url;
+    composerJson.require['art35rennes/laravel-daisy-kit'] = activePackage.version;
+    writeFileSync(resolve(hostRoot, 'composer.json'), JSON.stringify(composerJson, null, 4));
 
     run('composer', ['install', '--no-interaction', '--no-scripts', '--prefer-dist']);
     run('npm', ['ci', '--no-audit', '--ignore-scripts']);
@@ -127,7 +102,8 @@ try {
     const manifest = JSON.parse(readFileSync(resolve(hostRoot, 'build/.vite/manifest.json'), 'utf8'));
 
     const distRoot = resolve(hostRoot, 'vendor/art35rennes/laravel-daisy-kit/dist');
-    const installedCommit = gitOutput(['-C', resolve(hostRoot, 'vendor/art35rennes/laravel-daisy-kit'), 'rev-parse', 'HEAD'], hostRoot);
+    const installedPackages = JSON.parse(readFileSync(resolve(hostRoot, 'vendor/composer/installed.json'), 'utf8'));
+    const installedCommit = installedPackages.packages.find((entry) => entry.name === 'art35rennes/laravel-daisy-kit')?.source?.reference;
     const everyEntryExists = entryStems.every((entry) => existsSync(resolve(distRoot, `${entry}.js`)) && existsSync(resolve(distRoot, `${entry}.css`)));
 
     if (!everyEntryExists || Object.keys(manifest).length === 0 || installedCommit !== activePackage.commit) {
