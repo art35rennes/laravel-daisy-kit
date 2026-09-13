@@ -24,14 +24,19 @@ it('renders the tree as a semantic CSP-safe module', function (): void {
         ->not->toContain('<img')
         ->not->toContain('style=')
         ->not->toContain('x-daisy::')
-        ->and(JsonConfiguration::decode(html_entity_decode($matches[1] ?? '')))->toBe([
+        ->and(JsonConfiguration::decode(html_entity_decode($matches[1] ?? '')))->toMatchArray([
             'items' => [
                 [
                     'id' => 'root',
                     'label' => '</script><img src=x onerror=alert(1)>',
-                    'children' => [['id' => 'child', 'label' => 'Child']],
+                    'children' => [['id' => 'child', 'label' => 'Child', 'children' => []]],
                 ],
             ],
+            'multiple' => false,
+            'name' => null,
+            'persistenceKey' => null,
+            'searchable' => false,
+            'searchSource' => null,
         ]);
 });
 
@@ -43,3 +48,16 @@ it('provides an accessible empty tree shell', function (): void {
         ->toContain('role="status"')
         ->toContain('aria-live="polite"');
 });
+
+it('renders one JSON-backed Laravel field in single and multiple modes', function (bool $multiple): void {
+    $html = view('daisy-kit::components.tree', [
+        'items' => [['id' => 'docs', 'label' => 'Documentation']],
+        'multiple' => $multiple,
+        'name' => 'areas',
+    ])->render();
+
+    expect($html)->toContain('name="areas"')
+        ->not->toContain('name="areas[]"')
+        ->toContain('data-daisy-kit-tree-value')
+        ->toContain('value="[]"');
+})->with([false, true]);

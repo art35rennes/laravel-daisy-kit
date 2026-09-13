@@ -2,23 +2,236 @@
 
 declare(strict_types=1);
 
-it('mounts the Workbench modules accessibly on desktop and mobile', function (): void {
+it('presents the Workbench module directory accessibly on desktop and mobile', function (): void {
     $desktop = $this->visit('/')->on()->desktop();
 
     $desktop
         ->assertSee('Daisy Kit v5 Workbench')
-        ->assertCount('[data-daisy-kit-module]', 7)
+        ->assertSee('Component modules')
+        ->assertCount('nav a.btn', 11)
+        ->assertCount('[data-daisy-kit-module]', 0)
+        ->assertNoSmoke()
+        ->assertNoAccessibilityIssues(1);
+
+    $this->visit('/')->on()->mobile()
+        ->assertCount('nav a.btn', 11)
+        ->assertCount('[data-daisy-kit-module]', 0)
+        ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
+        ->assertScript('window.innerWidth <= 430');
+})->group('browser');
+
+it('shows the Copyable affordance and transient visual feedback', function (): void {
+    $copyable = '[data-daisy-kit-module="copyable"]';
+    $explicit = '[data-copyable-scenario="explicit-value"] [data-daisy-kit-module="copyable"]';
+
+    $this->visit('/copyable')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->assertCount($copyable, 4)
+        ->assertCount("{$copyable} [data-daisy-kit-copyable-icon]", 4)
+        ->assertCount('[data-copyable-scenario="disabled"] button:disabled', 1)
+        ->assertSee('Deployment command')
+        ->assertSee('Webhook payload')
+        ->assertScript("(() => { const icon = document.querySelector('{$explicit} [data-daisy-kit-copyable-icon]'); const size = icon.getBoundingClientRect(); return size.width === 16 && size.height === 16; })()")
+        ->click("{$explicit} [data-daisy-kit-copyable-button]")
+        ->assertScript("(() => { const status = document.querySelector('{$explicit} [data-daisy-kit-status]'); return !status.hidden && ((status.classList.contains('badge-success') && status.textContent === 'Release identifier copied.') || (status.classList.contains('badge-error') && status.textContent === 'Copying failed.')); })()")
+        ->wait(6)
+        ->assertScript("document.querySelector('{$explicit} [data-daisy-kit-status]').hidden")
+        ->assertNoSmoke()
+        ->assertNoAccessibilityIssues(1);
+})->group('browser');
+
+it('composes the Table page with host DaisyUI primitives across themes and responsive widths', function (): void {
+    $page = $this->visit('/table')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->wait(1)
+        ->assertNoSmoke();
+
+    foreach ([320, 768, 1024, 1440] as $width) {
+        $page->resize($width, 900);
+
+        $diagnostics = $page->script(<<<'JS'
+                (() => {
+                    const roots = [...document.querySelectorAll('[data-daisy-kit-module]')];
+                    const modules = [['table', '[data-daisy-kit-module="table"] button']];
+                    const controls = [
+                        document.querySelector('[data-daisy-kit-table-filter]'),
+                    ];
+                    const failures = [];
+
+                    roots.forEach((root) => {
+                        const actionOnlyPreview = root.dataset.daisyKitModule === 'file-preview'
+                            && root.dataset.daisyKitLayout === 'action-only';
+                        if (!actionOnlyPreview && !root.classList.contains('card')) {
+                            failures.push(`root:${root.dataset.daisyKitModule}:missing-card`);
+                        }
+                    });
+                    modules.forEach(([module, selector]) => {
+                        const button = document.querySelector(selector);
+                        if (!button) failures.push(`button:${module}:missing`);
+                        else if (!button.classList.contains('btn')) failures.push(`button:${module}:missing-btn`);
+                        else {
+                            const style = getComputedStyle(button);
+                            if (Number.parseFloat(style.height) < 32 || style.paddingInlineStart === '0px' || style.borderTopStyle === 'none') {
+                                failures.push(`button:${module}:unstyled`);
+                            }
+                        }
+                    });
+                    controls.forEach((control) => {
+                        if (!control) failures.push('control:missing');
+                        else if (!control.classList.contains('input')) failures.push('control:missing-input');
+                        else if (getComputedStyle(control).borderTopStyle === 'none') failures.push('control:unstyled');
+                    });
+                    if (document.documentElement.scrollWidth > window.innerWidth) failures.push(`responsive:overflow:${document.documentElement.scrollWidth}>${window.innerWidth}`);
+
+                    return failures;
+                })()
+                JS);
+
+        expect($diagnostics)->toBe([]);
+
+        $page
+            ->assertNoAccessibilityIssues(1);
+    }
+
+    foreach (['light', 'dark'] as $theme) {
+        $page->script("document.documentElement.dataset.theme = '{$theme}';");
+
+        $page->assertScript(<<<'JS'
+                (() => {
+                    const table = document.querySelector('[data-daisy-kit-module="table"]');
+                    const tablePage = table.querySelector('[data-daisy-kit-table-page-status]');
+                    const tableResults = table.querySelector('[data-daisy-kit-table-results]');
+                    const tableApply = document.querySelector('[data-daisy-kit-table-apply-filters]');
+
+                    return table.classList.contains('bg-base-100')
+                        && table.classList.contains('border-base-300')
+                        && tablePage.classList.contains('text-base-content/70')
+                        && tableResults.classList.contains('text-base-content/70')
+                        && tableApply.classList.contains('btn-primary')
+                        && getComputedStyle(table).backgroundColor !== 'rgba(0, 0, 0, 0)';
+                })()
+                JS);
+    }
+})->group('browser');
+
+it('applies the Workbench server filters only on request', function (): void {
+    $table = '#server-queue-table';
+
+    $this->visit('/table')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->wait(1)
+        ->fill("{$table} [data-daisy-kit-table-filter=customer]", 'Maison')
+        ->assertScript("document.querySelector('{$table} [data-daisy-kit-table-apply-filters]').disabled === false")
+        ->assertCount("{$table} tbody tr", 3)
+        ->click("{$table} [data-daisy-kit-table-apply-filters]")
+        ->wait(1)
+        ->assertCount("{$table} tbody tr", 1)
+        ->assertSee('CASE-1044')
+        ->assertNoSmoke();
+})->group('browser');
+
+it('uses the remote Combobox in a native Laravel review form', function (): void {
+    $combobox = '#remote-reviewers-combobox';
+    $local = '#local-release-tags-combobox';
+
+    $page = $this->visit('/combobox')->on()->desktop();
+
+    $page
+        ->waitForEvent('networkidle')
+        ->wait(1)
+        ->assertCount('[data-daisy-kit-module="combobox"]', 2);
+    $page->click("{$combobox} [data-daisy-kit-combobox-input]")
+        ->wait(1)
+        ->assertCount("{$combobox} [role=option]", 6)
+        ->assertSee('ada@analytical-engine.org')
+        ->assertSee('Platform')
+        ->assertScript("getComputedStyle(document.querySelector('{$combobox} [data-daisy-kit-combobox-popup]')).position === 'absolute'")
+        ->assertScript("(() => { const shell = document.querySelector('{$combobox} [data-daisy-kit-combobox-shell]').getBoundingClientRect(); const control = document.querySelector('{$combobox} [data-daisy-kit-combobox-control]').getBoundingClientRect(); const popup = document.querySelector('{$combobox} [data-daisy-kit-combobox-popup]').getBoundingClientRect(); return shell.height < control.height + 8 && shell.height < popup.height / 2; })()")
+        ->assertNoAccessibilityIssues(1)
+        ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'missing-reviewer')
+        ->wait(1)
+        ->assertSee('No matching suggestions.')
+        ->assertScript("document.querySelector('{$combobox} [data-daisy-kit-combobox-token-label]').textContent === 'Ada Lovelace'")
+        ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'nasa.gov')
+        ->wait(1)
+        ->assertCount("{$combobox} [role=option]", 3)
+        ->assertSee('Margaret Hamilton')
+        ->click("{$combobox} [role=option][data-value=margaret]")
+        ->assertScript("document.querySelector('{$combobox} input[name=\"reviewers[]\"][value=margaret]') !== null")
+        ->keys("{$combobox} [data-daisy-kit-combobox-input]", 'Escape')
+        ->click("{$local} [data-daisy-kit-combobox-input]")
+        ->assertCount("{$local} [role=option]", 4)
+        ->fill("{$local} [data-daisy-kit-combobox-input]", 'assistive technology')
+        ->assertCount("{$local} [role=option]", 1)
+        ->click("{$local} [role=option]")
+        ->assertScript("document.querySelector('{$local} input[name=\"release_tags[]\"][value=accessibility]') !== null")
+        ->keys("{$local} [data-daisy-kit-combobox-input]", 'Escape')
+        ->click('button[type=submit]')
+        ->waitForEvent('networkidle')
+        ->assertSee('The review assignment was saved.')
+        ->assertNoSmoke();
+
+    $page->resize(390, 844)
+        ->click("{$combobox} [data-daisy-kit-combobox-input]")
+        ->wait(1)
+        ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
+        ->assertCount("{$combobox} [role=option]", 6)
+        ->assertNoAccessibilityIssues(1);
+})->group('browser');
+
+it('anchors Truncate disclosure to its ellipsis and supports pinned light dismiss', function (): void {
+    $trigger = '[data-daisy-kit-truncate-reveal][aria-label^="Show Grace"]';
+    $popover = '[data-daisy-kit-module="truncate"]:has([aria-label^="Show Grace"]) [data-daisy-kit-truncate-popover]';
+    $page = $this->visit('/truncate')->on()->desktop()
         ->waitForEvent('networkidle')
         ->wait(1)
         ->assertNoSmoke()
-        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module]')).every((root) => ['empty', 'ready'].includes(root.dataset.daisyKitState))")
-        ->click('[data-daisy-kit-tree-node="documentation"]')
-        ->keys('[data-daisy-kit-tree-node="documentation"]', ['ArrowRight', 'ArrowRight'])
-        ->assertScript("document.activeElement?.dataset.daisyKitTreeNode === 'getting-started'");
+        ->assertNoAccessibilityIssues(1)
+        ->assertScript("document.querySelector('{$trigger}').hidden === false")
+        ->assertScript(<<<'JS'
+            (() => {
+                const trigger = document.querySelector('[data-daisy-kit-truncate-reveal][aria-label^="Show Grace"]').getBoundingClientRect();
+                const text = document.querySelector('[data-daisy-kit-module="truncate"]:has([aria-label^="Show Grace"]) [data-daisy-kit-truncate-text]').getBoundingClientRect();
+                const popover = document.querySelector('[data-daisy-kit-module="truncate"]:has([aria-label^="Show Grace"]) [data-daisy-kit-truncate-popover]');
 
-    $this->visit('/')->on()->mobile()
-        ->assertCount('[data-daisy-kit-module]', 7)
-        ->assertScript('window.innerWidth <= 430');
+                return Math.abs(trigger.left - text.right) <= 8
+                    && popover.getAttribute('popover') === 'auto'
+                    && popover.classList.contains('card');
+            })()
+            JS);
+
+    $page->script("document.querySelector('{$trigger}').dispatchEvent(new PointerEvent('pointerenter'))");
+    $page->wait(1)
+        ->assertScript("document.querySelector('{$popover}').matches(':popover-open')")
+        ->assertScript(<<<'JS'
+            (() => {
+                const trigger = document.querySelector('[data-daisy-kit-truncate-reveal][aria-label^="Show Grace"]').getBoundingClientRect();
+                const popover = document.querySelector('[data-daisy-kit-module="truncate"]:has([aria-label^="Show Grace"]) [data-daisy-kit-truncate-popover]').getBoundingClientRect();
+                const horizontalGap = Math.min(Math.abs(trigger.left - popover.left), Math.abs(trigger.right - popover.right));
+                const verticalGap = Math.min(Math.abs(trigger.bottom - popover.top), Math.abs(trigger.top - popover.bottom));
+
+                return horizontalGap < 32
+                    && verticalGap < 32
+                    && popover.top > 0
+                    && popover.left > 0;
+            })()
+            JS)
+        ->click($trigger)
+        ->assertScript("document.querySelector('{$popover}').dataset.daisyKitTruncatePinned === 'true'")
+        ->assertScript("document.querySelector('{$popover}').dataset.daisyKitTruncateBackdrop === 'true'")
+        ->keys($trigger, 'Escape')
+        ->assertScript("!document.querySelector('{$popover}').matches(':popover-open')")
+        ->assertNoSmoke();
+
+    $page->resize(390, 844)
+        ->click($trigger)
+        ->assertScript(<<<'JS'
+            (() => {
+                const rect = document.querySelector('[data-daisy-kit-module="truncate"]:has([aria-label^="Show Grace"]) [data-daisy-kit-truncate-popover]').getBoundingClientRect();
+                return rect.left >= 0 && rect.right <= window.innerWidth && rect.top >= 0 && rect.bottom <= window.innerHeight;
+            })()
+            JS)
+        ->keys($trigger, 'Escape');
 })->group('browser');
 
 it('mounts the map without a browser CSP violation', function (): void {
@@ -30,8 +243,43 @@ it('mounts the map without a browser CSP violation', function (): void {
         ->assertNoSmoke();
 })->group('browser');
 
+it('runs the four Map product scenarios without host-specific map logic', function (): void {
+    $page = $this->visit('/map')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->wait(2)
+        ->assertNoSmoke()
+        ->assertCount('[data-daisy-kit-module="map"]', 4)
+        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=map]')).every((root) => root.dataset.daisyKitState === 'ready')")
+        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-map-measurement]')).every((output) => output.hidden)")
+        ->assertCount('#map-layers [data-daisy-kit-map-layer]', 3)
+        ->assertScript("Boolean(document.querySelector('#map-cluster .marker-cluster'))")
+        ->assertCount('#map-drawing [data-daisy-kit-map-object-type]', 1)
+        ->assertCount('#map-drawing [data-daisy-kit-map-draw-layer]', 1)
+        ->assertCount('#map-drawing [data-daisy-kit-map-mode="spatial-select"]', 1)
+        ->assertScript("Array.from(document.querySelectorAll('#map-controlled .leaflet-tile')).every((tile) => !tile.src.includes('tile.openstreetmap.org'))")
+        ->click('#map-drawing [data-daisy-kit-map-menu="drawing"] > summary')
+        ->click('#map-drawing [data-daisy-kit-map-menu="geometry"] > summary')
+        ->click('#map-drawing [data-daisy-kit-map-mode="point"]')
+        ->assertScript("document.querySelector('#map-drawing [data-daisy-kit-map-mode=point]').getAttribute('aria-pressed') === 'true'")
+        ->assertScript("document.querySelector('#map-controlled [data-daisy-kit-map-geolocate]') instanceof HTMLButtonElement")
+        ->click('#map-drawing .daisy-kit-map__direct-view-action[data-daisy-kit-map-fullscreen]')
+        ->wait(1)
+        ->assertScript("document.fullscreenElement?.id === 'map-drawing'")
+        ->assertScript("(() => { const root = document.querySelector('#map-drawing'); const content = root.querySelector('.daisy-kit-map__content'); const viewport = root.querySelector('.daisy-kit-map__viewport'); const attribution = root.querySelector('.leaflet-control-attribution'); const rootRect = root.getBoundingClientRect(); const viewportRect = viewport.getBoundingClientRect(); const attributionRect = attribution.getBoundingClientRect(); const bottomPadding = parseFloat(getComputedStyle(content).paddingBottom); return viewportRect.height > 0 && rootRect.bottom - viewportRect.bottom >= bottomPadding - 1 && attributionRect.bottom <= viewportRect.bottom && attributionRect.top >= viewportRect.top; })()")
+        ->click('#map-drawing .daisy-kit-map__direct-view-action[data-daisy-kit-map-fullscreen]')
+        ->wait(1)
+        ->assertScript('document.fullscreenElement === null');
+
+    foreach ([320, 390, 768, 1024, 1440] as $width) {
+        $page->resize($width, 1000)
+            ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
+            ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module=map]')).every((root) => { const viewport = root.querySelector('.daisy-kit-map__viewport').getBoundingClientRect(); return Array.from(root.querySelectorAll('.leaflet-control, [data-daisy-kit-map-menu], [data-daisy-kit-map-measurement], [data-daisy-kit-map-active-mode]')).every((control) => control.hidden || control.parentElement?.closest('details:not([open])') || control.getClientRects().length === 0 || (control.getBoundingClientRect().left >= viewport.left && control.getBoundingClientRect().right <= viewport.right)); })")
+            ->assertNoSmoke();
+    }
+})->group('browser');
+
 it('keeps Blueprint controls outside its inert SVG and supports keyboard selection', function (): void {
-    $this->visit('/')->on()->desktop()
+    $this->visit('/blueprint')->on()->desktop()
         ->waitForEvent('networkidle')
         ->wait(1)
         ->assertNoSmoke()
@@ -41,6 +289,33 @@ it('keeps Blueprint controls outside its inert SVG and supports keyboard selecti
         ->assertScript("document.activeElement?.dataset.nodeId === 'destination'")
         ->keys('[data-daisy-kit-blueprint-node-control][data-node-id="destination"]', 'Enter')
         ->assertScript("document.querySelector('[data-daisy-kit-blueprint-node-control][data-node-id=destination]').getAttribute('aria-pressed') === 'true'");
+})->group('browser');
+
+it('persists value-backed Blueprint structure through history and remounts', function (): void {
+    $blueprint = '[data-daisy-kit-module="blueprint"]';
+    $hiddenGraph = "JSON.parse(document.querySelector('{$blueprint} [data-daisy-kit-blueprint-value]').value)";
+
+    $this->visit('/blueprint')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->wait(1)
+        ->assertNoSmoke()
+        ->click("{$blueprint} [data-daisy-kit-blueprint-structure=add-node]")
+        ->assertCount("{$blueprint} [data-daisy-kit-blueprint-node-control]", 3)
+        ->assertScript("{$hiddenGraph}.nodes.some((node) => node.id === 'node-3')")
+        ->click("{$blueprint} [data-daisy-kit-blueprint-history=undo]")
+        ->assertCount("{$blueprint} [data-daisy-kit-blueprint-node-control]", 2)
+        ->click("{$blueprint} [data-daisy-kit-blueprint-history=redo]")
+        ->assertCount("{$blueprint} [data-daisy-kit-blueprint-node-control]", 3)
+        ->click("{$blueprint} [data-daisy-kit-blueprint-node-control][data-node-id=source]")
+        ->select("{$blueprint} [data-daisy-kit-blueprint-transition-target]", 'destination')
+        ->click("{$blueprint} [data-daisy-kit-blueprint-structure=add-transition]")
+        ->assertScript("{$hiddenGraph}.edges.some((edge) => edge.source === 'source' && edge.target === 'destination')")
+        ->click("{$blueprint} [data-daisy-kit-blueprint-node-control][data-node-id=node-3]")
+        ->click("{$blueprint} [data-daisy-kit-blueprint-structure=remove-node]")
+        ->assertCount("{$blueprint} [data-daisy-kit-blueprint-node-control]", 2)
+        ->assertScript("{$hiddenGraph}.nodes.map((node) => node.id).join(',') === 'source,destination'")
+        ->assertScript("{$hiddenGraph}.edges.length === 1")
+        ->assertNoSmoke();
 })->group('browser');
 
 it('isolates the file preview without a host CSP exception', function (): void {
@@ -55,6 +330,60 @@ it('isolates the file preview without a host CSP exception', function (): void {
         ->assertScript("document.querySelector('[data-daisy-kit-module=file-preview]').dataset.daisyKitState === 'ready'")
         ->assertScript("!document.querySelector('[data-daisy-kit-file-preview-frame]').sandbox.contains('allow-same-origin')")
         ->withinFrame('[data-daisy-kit-file-preview-frame]', function ($frame): void {
-            $frame->assertSee('Sandboxed file preview');
+            $frame->assertSee('Daisy Kit File Preview');
         });
+})->group('browser');
+
+it('mounts the nine strict modules without a CSP violation', function (): void {
+    $this->visit('/_daisy-kit-test/csp/strict')
+        ->assertSee('Daisy Kit strict CSP fixture')
+        ->waitForEvent('networkidle')
+        ->wait(1)
+        ->assertCount('[data-daisy-kit-module]', 9)
+        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module]')).every((root) => ['empty', 'ready'].includes(root.dataset.daisyKitState))")
+        ->assertNoSmoke();
+})->group('browser');
+
+it('mounts Signature and Transfer List under their documented CSP policy', function (): void {
+    $this->visit('/_daisy-kit-test/csp/dependency-styles')
+        ->assertSee('Daisy Kit dependency style CSP fixture')
+        ->waitForEvent('networkidle')
+        ->wait(1)
+        ->assertCount('[data-daisy-kit-module]', 2)
+        ->assertScript("Array.from(document.querySelectorAll('[data-daisy-kit-module]')).every((root) => root.dataset.daisyKitState === 'ready')")
+        ->assertNoSmoke();
+})->group('browser');
+
+it('uses Transfer List as a responsive paginated assignment control', function (): void {
+    $transfer = '[data-daisy-kit-module="transfer-list"]';
+
+    $page = $this->visit('/transfer-list')->on()->desktop()
+        ->waitForEvent('networkidle')
+        ->assertSee('Assign the release review team')
+        ->assertSee('0 selected · 13 total')
+        ->assertSee('0 selected · 3 total')
+        ->assertCount("{$transfer} [data-daisy-kit-transfer-source] [role=option]", 5)
+        ->assertCount("{$transfer} [data-daisy-kit-transfer-target] [role=option]", 3)
+        ->assertNoSmoke()
+        ->assertNoAccessibilityIssues(1);
+
+    $page
+        ->assertScript("(() => { const mark = document.querySelector('{$transfer} [data-daisy-kit-transfer-target] .daisy-kit-transfer-list__item-check'); const rect = mark.getBoundingClientRect(); return Number.parseFloat(getComputedStyle(mark).borderTopLeftRadius) < rect.height / 2; })()")
+        ->fill("{$transfer} [data-daisy-kit-transfer-search=target]", 'arg')
+        ->assertCount("{$transfer} [data-daisy-kit-transfer-target] [role=option]", 1)
+        ->assertSee('0 selected · 1 matching · 3 total')
+        ->assertSee('Margaret Hamilton')
+        ->fill("{$transfer} [data-daisy-kit-transfer-search=target]", '')
+        ->click("{$transfer} [data-daisy-kit-transfer-select-all=source]")
+        ->assertSee('5 selected · 13 total')
+        ->click("{$transfer} [data-daisy-kit-transfer-move=to-target]")
+        ->assertSee('0 selected · 8 total')
+        ->assertCount("{$transfer} [name='assignees[]']", 8)
+        ->fill("{$transfer} [data-daisy-kit-transfer-search=source]", 'not-a-person')
+        ->assertSee('No matching items');
+
+    $page->resize(390, 844)
+        ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
+        ->assertScript("getComputedStyle(document.querySelector('{$transfer} [data-daisy-kit-transfer-content]')).gridTemplateColumns.split(' ').length === 1")
+        ->assertNoSmoke();
 })->group('browser');

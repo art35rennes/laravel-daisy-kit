@@ -20,5 +20,5 @@
 /.codex
 /boost.json
 /CLAUDE.md
-/.DS_Store
+.DS_Store
 npm-debug.log

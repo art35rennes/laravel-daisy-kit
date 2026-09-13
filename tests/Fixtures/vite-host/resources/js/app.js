@@ -1,7 +1,3 @@
-import '@daisy-kit/forms-viewer.css';
-import { mountAll as mountFormsViewer } from '@daisy-kit/forms-viewer.js';
-import '@daisy-kit/forms-builder.css';
-import { mountAll as mountFormsBuilder } from '@daisy-kit/forms-builder.js';
 import '@daisy-kit/table.css';
 import { mountAll as mountTable } from '@daisy-kit/table.js';
 import '@daisy-kit/tree.css';
@@ -9,11 +5,24 @@ import { mountAll as mountTree } from '@daisy-kit/tree.js';
 import '@daisy-kit/blueprint.css';
 import { mount as mountBlueprint } from '@daisy-kit/blueprint.js';
 import '@daisy-kit/file-preview.css';
-import { mount as mountFilePreview } from '@daisy-kit/file-preview.js';
+import { mountAll as mountFilePreviews } from '@daisy-kit/file-preview.js';
 import '@daisy-kit/map.css';
 import { mountAll as mountMap } from '@daisy-kit/map.js';
+import '@daisy-kit/copyable.css';
+import { mountAll as mountCopyable } from '@daisy-kit/copyable.js';
+import '@daisy-kit/combobox.css';
+import { mountAll as mountCombobox } from '@daisy-kit/combobox.js';
+import '@daisy-kit/truncate.css';
+import { mountAll as mountTruncate } from '@daisy-kit/truncate.js';
+import '@daisy-kit/scrollspy.css';
+import { mountAll as mountScrollspy } from '@daisy-kit/scrollspy.js';
 
-void [mountFormsViewer, mountFormsBuilder, mountTable, mountTree, mountMap];
-
+mountTable(document);
+mountTree(document);
+mountMap(document);
 mountBlueprint(document.querySelector('[data-daisy-kit-module="blueprint"]'));
-mountFilePreview(document.querySelector('[data-daisy-kit-module="file-preview"]'));
+mountFilePreviews(document);
+mountCopyable(document);
+mountCombobox(document);
+mountTruncate(document);
+mountScrollspy(document);

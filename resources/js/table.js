@@ -1,38 +1,118 @@
 import {
-    createTable,
+    columnFilteringFeature,
+    columnPinningFeature,
+    columnVisibilityFeature,
+    constructTable,
+    createFilteredRowModel,
+    createPaginatedRowModel,
+    createSortedRowModel,
     functionalUpdate,
-    getCoreRowModel,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
+    globalFilteringFeature,
+    rowPaginationFeature,
+    rowSelectionFeature,
+    rowSortingFeature,
+    tableFeatures,
 } from '@tanstack/table-core';
+import { storeReactivityBindings } from '@tanstack/table-core/store-reactivity-bindings';
 
 import '../css/table.css';
 import { createMountable } from './core/mountable.js';
+
+const tableInstances = new WeakMap();
+
+const daisyKitTableFeatures = tableFeatures({
+    coreReactivityFeature: storeReactivityBindings(),
+    columnFilteringFeature,
+    globalFilteringFeature,
+    rowSortingFeature,
+    rowPaginationFeature,
+    rowSelectionFeature,
+    columnVisibilityFeature,
+    columnPinningFeature,
+    filteredRowModel: createFilteredRowModel(),
+    sortedRowModel: createSortedRowModel(),
+    paginatedRowModel: createPaginatedRowModel(),
+});
 
 function emit(root, name, detail) {
     root.dispatchEvent(new CustomEvent(`daisy-kit:table:${name}`, { bubbles: true, detail }));
 }
 
-function normalizeColumns(columns) {
+function normalizeColumns(columns, filters = []) {
     if (!Array.isArray(columns)) {
         return [];
     }
+
+    const standaloneFilters = new Map((Array.isArray(filters) ? filters : []).flatMap((filter) => {
+        if (!filter || Array.isArray(filter) || typeof filter !== 'object' || typeof filter.id !== 'string') {
+            return [];
+        }
+
+        return [[filter.id, filter]];
+    }));
 
     return columns.flatMap((column, index) => {
         if (!column || Array.isArray(column) || typeof column !== 'object') {
             return [];
         }
 
-        const id = typeof column.id === 'string' && column.id !== '' ? column.id : `column-${index}`;
+        const id = typeof column.key === 'string' && column.key !== ''
+            ? column.key
+            : (typeof column.id === 'string' && column.id !== '' ? column.id : `column-${index}`);
         const accessorKey = typeof column.accessor === 'string' && column.accessor !== '' ? column.accessor : id;
         const label = typeof column.label === 'string' && column.label !== '' ? column.label : id;
+        const configuredFilter = standaloneFilters.get(id);
+        const filter = column.filter && typeof column.filter === 'object' && !Array.isArray(column.filter)
+            ? column.filter
+            : (configuredFilter ?? null);
+        const filterType = ['boolean', 'date', 'number', 'select', 'text'].includes(filter?.type) ? filter.type : null;
+        const filterOptions = Array.isArray(filter?.options)
+            ? filter.options.flatMap((option) => {
+                if (typeof option === 'string' || typeof option === 'number') {
+                    return [{ label: String(option), value: String(option) }];
+                }
+
+                if (!option || Array.isArray(option) || typeof option !== 'object') {
+                    return [];
+                }
+
+                const value = option.value;
+                if (typeof value !== 'string' && typeof value !== 'number') {
+                    return [];
+                }
+
+                return [{
+                    label: typeof option.label === 'string' ? option.label : String(value),
+                    value: String(value),
+                }];
+            })
+            : [];
 
         return [{
             accessorKey,
             enableSorting: column.sortable !== false,
+            filterFn: filterType === 'number'
+                ? (row, columnId, value) => value === '' || Number(row.getValue(columnId)) === Number(value)
+                : ['boolean', 'date', 'select'].includes(filterType)
+                    ? (row, columnId, value) => value === '' || String(row.getValue(columnId)) === value
+                    : filterType === 'text'
+                        ? (row, columnId, value) => String(row.getValue(columnId)).toLocaleLowerCase().includes(String(value).toLocaleLowerCase())
+                        : undefined,
+            meta: {
+                cell: column.cell && !Array.isArray(column.cell) && typeof column.cell === 'object'
+                    ? column.cell
+                    : { renderer: 'text', view: null },
+                filterKey: typeof filter?.filterKey === 'string' && filter.filterKey !== ''
+                    ? filter.filterKey
+                    : id,
+                filterOptions,
+                filterPlacement: column.filter ? 'column' : (configuredFilter ? 'toolbar' : null),
+                filterType,
+                sortKey: typeof column.sortKey === 'string' && column.sortKey !== '' ? column.sortKey : id,
+            },
             header: label,
             id,
+            initialVisible: column.visible !== false,
         }];
     });
 }
@@ -53,6 +133,178 @@ function normalizePageSize(value) {
     return Math.min(value, 100);
 }
 
+function matchesGlobalFilter(value, query, mode) {
+    const haystack = String(value ?? '').toLocaleLowerCase();
+    const needle = String(query ?? '').trim().toLocaleLowerCase();
+
+    if (needle === '' || haystack.includes(needle)) {
+        return true;
+    }
+
+    if (mode !== 'fuzzy') {
+        return false;
+    }
+
+    let position = 0;
+
+    for (const character of needle) {
+        position = haystack.indexOf(character, position);
+
+        if (position === -1) {
+            return false;
+        }
+
+        position += 1;
+    }
+
+    return true;
+}
+
+function normalizeRowActions(actions) {
+    if (!Array.isArray(actions)) {
+        return [];
+    }
+
+    return actions.flatMap((action) => {
+        if (!action || Array.isArray(action) || typeof action !== 'object') {
+            return [];
+        }
+
+        if (typeof action.id !== 'string' || action.id === '' || typeof action.label !== 'string' || action.label === '') {
+            return [];
+        }
+
+        return [{ disabled: action.disabled === true, id: action.id, label: action.label }];
+    });
+}
+
+function normalizeRowDetails(details, labels) {
+    if (details === true) {
+        return { accessor: null, label: labels.details, mode: 'inline' };
+    }
+
+    if (!details || Array.isArray(details) || typeof details !== 'object') {
+        return null;
+    }
+
+    return {
+        accessor: typeof details.accessor === 'string' && details.accessor !== '' ? details.accessor : null,
+        label: typeof details.label === 'string' && details.label !== '' ? details.label : labels.details,
+        mode: details.mode === 'modal' ? 'modal' : 'inline',
+    };
+}
+
+function normalizeEditable(editable) {
+    if (editable === true) {
+        return { columns: [], endpoint: null, method: 'PATCH' };
+    }
+
+    if (!editable || Array.isArray(editable) || typeof editable !== 'object') {
+        return null;
+    }
+
+    const endpoint = normalizeSource(editable.endpoint);
+    const method = typeof editable.method === 'string' ? editable.method.toUpperCase() : 'PATCH';
+
+    return {
+        columns: Array.isArray(editable.columns) ? editable.columns.filter((column) => typeof column === 'string' && column !== '') : [],
+        endpoint,
+        method: ['PATCH', 'POST', 'PUT'].includes(method) ? method : 'PATCH',
+    };
+}
+
+function normalizePersistence(persistence) {
+    if (!persistence || Array.isArray(persistence) || typeof persistence !== 'object') {
+        return null;
+    }
+
+    const key = typeof persistence.key === 'string' && persistence.key !== '' ? persistence.key : null;
+
+    if (!key || !['local', 'url'].includes(persistence.mode)) {
+        return null;
+    }
+
+    return {
+        fields: Array.isArray(persistence.fields)
+            ? persistence.fields.filter((field) => ['columnFilters', 'columnPinning', 'columnVisibility', 'globalFilter', 'pagination', 'sorting'].includes(field))
+            : ['columnFilters', 'columnPinning', 'columnVisibility', 'globalFilter', 'pagination', 'sorting'],
+        key,
+        mode: persistence.mode,
+    };
+}
+
+function readPersistedState(persistence) {
+    if (!persistence) {
+        return {};
+    }
+
+    const storageKey = `daisy-kit-table[${persistence.key}]`;
+    let serialized = null;
+
+    if (persistence.mode === 'url') {
+        serialized = new URLSearchParams(window.location.search).get(storageKey);
+    } else {
+        try {
+            serialized = window.localStorage.getItem(storageKey);
+        } catch {
+            return {};
+        }
+    }
+
+    if (!serialized || serialized.length > 4096) {
+        return {};
+    }
+
+    try {
+        const state = JSON.parse(serialized);
+
+        return state && !Array.isArray(state) && typeof state === 'object' ? state : {};
+    } catch {
+        return {};
+    }
+}
+
+function persistState(persistence, state) {
+    if (!persistence) {
+        return;
+    }
+
+    const storageKey = `daisy-kit-table[${persistence.key}]`;
+    const selectedState = Object.fromEntries(persistence.fields.map((field) => [field, state[field]]));
+    const serialized = JSON.stringify(selectedState);
+
+    if (serialized.length > 4096) {
+        return;
+    }
+
+    if (persistence.mode === 'url') {
+        const url = new URL(window.location.href);
+        url.searchParams.set(storageKey, serialized);
+        window.history.replaceState({}, '', url);
+        return;
+    }
+
+    try {
+        window.localStorage.setItem(storageKey, serialized);
+    } catch {
+        // Storage can be disabled, full, or unavailable in a privacy-restricted host.
+    }
+}
+
+function normalizeSource(value) {
+    if (typeof value !== 'string' || value === '') {
+        return null;
+    }
+
+    try {
+        const source = new URL(value, window.location.href);
+
+        return ['http:', 'https:'].includes(source.protocol) ? source : null;
+    } catch {
+        return null;
+    }
+}
+
 function formatCell(value) {
     if (value === null || value === undefined) {
         return '';
@@ -63,6 +315,67 @@ function formatCell(value) {
     }
 
     return String(value);
+}
+
+function formatLabel(template, replacements) {
+    return Object.entries(replacements).sort(([first], [second]) => second.length - first.length).reduce(
+        (label, [key, value]) => label.replaceAll(`:${key}`, String(value)),
+        String(template),
+    );
+}
+
+function replaceColumnFilter(filters, id, value) {
+    const next = filters.filter((filter) => filter.id !== id);
+
+    if (value === '' || value === null || value === undefined || (Array.isArray(value) && value.length === 0)) {
+        return next;
+    }
+
+    return [...next, { id, value }];
+}
+
+function filterSignature(filters) {
+    return JSON.stringify([...filters].sort((first, second) => first.id.localeCompare(second.id)));
+}
+
+function renderCellValue(element, value, cell = {}) {
+    const formatted = formatCell(value);
+
+    if (['blade', 'trusted-html'].includes(cell.renderer)) {
+        element.innerHTML = formatted;
+        return;
+    }
+
+    element.textContent = formatted;
+}
+
+function normalizeServerPayload(payload, serverAdapter) {
+    if (serverAdapter === 'spatie-query-builder') {
+        const pagination = payload?.meta && !Array.isArray(payload.meta) && typeof payload.meta === 'object'
+            ? payload.meta
+            : payload;
+        const rows = payload?.data;
+        const total = Number(pagination?.total);
+        const page = Number(pagination?.current_page);
+        const pageSize = Number(pagination?.per_page);
+
+        if (!Array.isArray(rows) || !Number.isInteger(total) || total < 0) {
+            return null;
+        }
+
+        return {
+            page: Number.isInteger(page) && page > 0 ? page : null,
+            pageSize: Number.isInteger(pageSize) && pageSize > 0 ? pageSize : null,
+            rows,
+            total,
+        };
+    }
+
+    if (!payload || !Array.isArray(payload.rows) || !Number.isInteger(payload.total) || payload.total < 0) {
+        return null;
+    }
+
+    return { page: null, pageSize: null, rows: payload.rows, total: payload.total };
 }
 
 function updateStatus(root, message = null) {
@@ -77,48 +390,207 @@ function updateStatus(root, message = null) {
 }
 
 function initialize(root, configuration) {
+    const labels = {
+        actions: 'Actions',
+        all: 'All',
+        applyFilters: 'Apply filters',
+        cancel: 'Cancel',
+        close: 'Close',
+        columns: 'Columns',
+        details: 'Details',
+        edit: 'Edit',
+        editError: 'The table edit could not be saved.',
+        editResponseError: 'The table edit response must include the updated row.',
+        filterColumn: 'Filter :column',
+        loadingError: 'The table data could not be loaded.',
+        missingContent: 'This table is missing its required markup.',
+        noMatchingRows: 'No table rows match the current filter.',
+        noResults: 'No results',
+        normal: 'Normal',
+        page: 'Page :current of :total',
+        pinEnd: 'Pin end',
+        pinStart: 'Pin start',
+        save: 'Save',
+        selectAllResults: 'Select all :count results',
+        selectPageAria: 'Select every row on this page',
+        selectRowAria: 'Select row :row',
+        showingResults: ':from–:to of :total results',
+        sourceError: 'The table source did not respond successfully.',
+        sourceResponseError: 'The table source returned an invalid response.',
+        ...(configuration.labels ?? {}),
+    };
     const content = root.querySelector('[data-daisy-kit-content]');
     const tableElement = root.querySelector('[data-daisy-kit-table]');
     const filter = root.querySelector('[data-daisy-kit-table-filter]');
     const previousButton = root.querySelector('[data-daisy-kit-table-previous]');
     const nextButton = root.querySelector('[data-daisy-kit-table-next]');
     const page = root.querySelector('[data-daisy-kit-table-page]');
+    const pageSizeControl = root.querySelector('[data-daisy-kit-table-page-size]');
+    const results = root.querySelector('[data-daisy-kit-table-results]');
+    const selectionSummary = root.querySelector('[data-daisy-kit-table-selection]');
+    const selectionFeedback = root.querySelector('[data-daisy-kit-table-selection-summary]');
+    const selectionCount = root.querySelector('[data-daisy-kit-table-selection-count]');
+    const selectionPageCount = root.querySelector('[data-daisy-kit-table-selection-page-count]');
+    const selectionOffPageCount = root.querySelector('[data-daisy-kit-table-selection-off-page-count]');
+    const selectionBreakdown = root.querySelector('[data-daisy-kit-table-selection-breakdown]');
+    const selectPageButton = root.querySelector('[data-daisy-kit-table-select-page]');
+    const selectFilteredButton = root.querySelector('[data-daisy-kit-table-select-filtered]');
+    const clearSelectionButton = root.querySelector('[data-daisy-kit-table-clear-selection]');
+    const applyFiltersButton = root.querySelector('[data-daisy-kit-table-apply-filters]');
 
     if (!content || !tableElement || !filter || !previousButton || !nextButton || !page) {
-        updateStatus(root, 'This table is missing its required markup.');
+        updateStatus(root, labels.missingContent);
         root.dataset.daisyKitState = 'error';
-        emit(root, 'error', { reason: 'missing-content' });
+        emit(root, 'error', { code: 'missing-content', message: labels.missingContent });
 
         return;
     }
 
+    root.classList.add('card', 'border', 'border-base-300', 'bg-base-100', 'p-4', 'shadow-sm');
+    tableElement.classList.add('table', 'table-zebra');
+    filter.classList.add('input', 'input-bordered', 'w-full');
+    previousButton.classList.add('btn', 'btn-sm');
+    nextButton.classList.add('btn', 'btn-sm');
+
     const initialContent = content.innerHTML;
-    const state = {
-        columnPinning: { left: [], right: [] },
-        globalFilter: '',
-        pagination: { pageIndex: 0, pageSize: normalizePageSize(configuration.pageSize) },
-        sorting: [],
+    const source = normalizeSource(configuration.mode === 'server' ? configuration.endpoint : null);
+    const serverAdapter = configuration.serverAdapter === 'spatie-query-builder'
+        ? configuration.serverAdapter
+        : null;
+    const manualFilters = configuration.filterMode === 'manual';
+    const selection = configuration.selection && !Array.isArray(configuration.selection) && typeof configuration.selection === 'object'
+        ? configuration.selection
+        : {};
+    const selectionMode = ['single', 'multiple'].includes(selection.mode)
+        ? selection.mode
+        : 'none';
+    const selectable = selectionMode !== 'none';
+    const deferredSelectionFeedback = selection.summaryVisibility === 'after-first-selection';
+    let hasSelectedRows = false;
+    const rowKey = typeof selection.rowKey === 'string' && selection.rowKey !== '' ? selection.rowKey : 'id';
+    const bulkActions = Array.isArray(configuration.bulkActions) ? configuration.bulkActions.filter((action) => action && typeof action.id === 'string' && typeof action.label === 'string') : [];
+    const rowActions = normalizeRowActions(configuration.rowActions);
+    const rowDetails = normalizeRowDetails(configuration.rowDetails, labels);
+    const editable = normalizeEditable(configuration.editable);
+    const persistence = normalizePersistence(configuration.persistState);
+    const columns = normalizeColumns(configuration.columns, configuration.filters);
+    const toolbarFilters = [...root.querySelectorAll('[data-daisy-kit-table-filter]')]
+        .filter((control) => control.dataset.daisyKitTableFilter !== '');
+    const searchDebounce = configuration.search && !Array.isArray(configuration.search) && typeof configuration.search === 'object'
+        && Number.isInteger(configuration.search.debounce)
+        ? Math.max(0, Math.min(configuration.search.debounce, 5000))
+        : 0;
+    const searchMode = configuration.search?.mode === 'fuzzy' ? 'fuzzy' : 'includes';
+    const configuredState = configuration.initialState && !Array.isArray(configuration.initialState) && typeof configuration.initialState === 'object'
+        ? configuration.initialState
+        : {};
+    const configuredSelection = configuredState.selection && !Array.isArray(configuredState.selection) && typeof configuredState.selection === 'object'
+        ? configuredState.selection
+        : {};
+    let selectionState = {
+        allFilteredSelected: configuredSelection.allFilteredSelected === true,
+        excludedIds: new Set(Array.isArray(configuredSelection.excludedIds) ? configuredSelection.excludedIds.map(String) : []),
+        selectedIds: new Set(Array.isArray(configuredSelection.selectedIds) ? configuredSelection.selectedIds.map(String) : []),
     };
-    const table = createTable({
-        columns: normalizeColumns(configuration.columns),
-        data: normalizeRows(configuration.rows),
-        getCoreRowModel: getCoreRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
+    const persistedState = readPersistedState(persistence);
+    const expandedRowIds = new Set();
+    const detailDialogs = new Set();
+    let abortController = null;
+    const editAbortControllers = new Set();
+    let editing = null;
+    let requestSerial = 0;
+    let active = true;
+    let searchTimer = null;
+    let rows = normalizeRows(configuration.rows);
+    let total = rows.length;
+    const state = {
+        columnPinning: {
+            start: Array.isArray((persistedState.columnPinning ?? configuredState.columnPinning)?.start)
+                ? (persistedState.columnPinning ?? configuredState.columnPinning).start.filter((column) => typeof column === 'string')
+                : [],
+            end: Array.isArray((persistedState.columnPinning ?? configuredState.columnPinning)?.end)
+                ? (persistedState.columnPinning ?? configuredState.columnPinning).end.filter((column) => typeof column === 'string')
+                : [],
+        },
+        columnFilters: Array.isArray(persistedState.columnFilters ?? configuredState.columnFilters)
+            ? (persistedState.columnFilters ?? configuredState.columnFilters).filter((filter) => filter && typeof filter.id === 'string')
+            : [],
+        columnVisibility: {
+            ...Object.fromEntries(columns.map((column) => [column.id, column.initialVisible])),
+            ...(configuredState.columnVisibility ?? {}),
+            ...(persistedState.columnVisibility ?? {}),
+        },
+        globalFilter: typeof persistedState.globalFilter === 'string'
+            ? persistedState.globalFilter
+            : (typeof configuredState.globalFilter === 'string' ? configuredState.globalFilter : ''),
+        pagination: {
+            pageIndex: Number.isInteger((persistedState.pagination ?? configuredState.pagination)?.pageIndex) && (persistedState.pagination ?? configuredState.pagination).pageIndex >= 0
+                ? (persistedState.pagination ?? configuredState.pagination).pageIndex
+                : 0,
+            pageSize: normalizePageSize((persistedState.pagination ?? configuredState.pagination)?.pageSize ?? configuration.pageSize),
+        },
+        sorting: Array.isArray(persistedState.sorting ?? configuredState.sorting)
+            ? (persistedState.sorting ?? configuredState.sorting).filter((sorting) => sorting && typeof sorting.id === 'string' && typeof sorting.desc === 'boolean')
+            : [],
+        rowSelection: Object.fromEntries(Object.entries(configuredState.rowSelection ?? {})
+            .filter(([id, selected]) => typeof id === 'string' && selected === true)),
+    };
+    let pendingColumnFilters = state.columnFilters.map((columnFilter) => ({ ...columnFilter }));
+    const table = constructTable({
+        columns,
+        data: rows,
+        enableMultiRowSelection: selectionMode === 'multiple',
+        features: daisyKitTableFeatures,
+        getRowId: (row, index) => typeof row[rowKey] === 'string' || typeof row[rowKey] === 'number' ? String(row[rowKey]) : String(index),
+        globalFilterFn: (row, columnId, value) => matchesGlobalFilter(row.getValue(columnId), value, searchMode),
+        manualFiltering: source !== null,
+        manualPagination: source !== null,
+        manualSorting: source !== null,
+        pageCount: source ? Math.max(Math.ceil(total / state.pagination.pageSize), 1) : undefined,
         onGlobalFilterChange: (updater) => {
             state.globalFilter = functionalUpdate(updater, state.globalFilter);
             state.pagination.pageIndex = 0;
+            synchronizeTableState();
+            persistState(persistence, state);
             render();
             emit(root, 'filtered', { query: state.globalFilter });
+            requestRows();
+        },
+        onColumnFiltersChange: (updater) => {
+            state.columnFilters = functionalUpdate(updater, state.columnFilters);
+            state.pagination.pageIndex = 0;
+            synchronizeTableState();
+            persistState(persistence, state);
+            render();
+            emit(root, 'filtered', { filters: state.columnFilters });
+            requestRows();
+        },
+        onColumnPinningChange: (updater) => {
+            state.columnPinning = functionalUpdate(updater, state.columnPinning);
+            synchronizeTableState();
+            persistState(persistence, state);
+            render();
+            requestRows();
+        },
+        onColumnVisibilityChange: (updater) => {
+            state.columnVisibility = functionalUpdate(updater, state.columnVisibility);
+            synchronizeTableState();
+            persistState(persistence, state);
+            render();
+            requestRows();
         },
         onPaginationChange: (updater) => {
             state.pagination = functionalUpdate(updater, state.pagination);
+            synchronizeTableState();
+            persistState(persistence, state);
             render();
             emit(root, 'page-changed', { page: state.pagination.pageIndex + 1 });
+            requestRows();
         },
         onSortingChange: (updater) => {
             state.sorting = functionalUpdate(updater, state.sorting);
+            synchronizeTableState();
+            persistState(persistence, state);
             render();
 
             const [sorting] = state.sorting;
@@ -129,9 +601,229 @@ function initialize(root, configuration) {
                     direction: sorting.desc ? 'desc' : 'asc',
                 });
             }
+
+            requestRows();
         },
         state,
     });
+
+    function synchronizeTableState() {
+        table.setOptions((current) => ({ ...current, state: { ...state } }));
+    }
+
+    function filtersArePending() {
+        return filterSignature(pendingColumnFilters) !== filterSignature(state.columnFilters);
+    }
+
+    function stageColumnFilter(columnId, value) {
+        pendingColumnFilters = replaceColumnFilter(pendingColumnFilters, columnId, value);
+        if (applyFiltersButton) applyFiltersButton.disabled = !filtersArePending();
+    }
+
+    function applyPendingFilters() {
+        if (!manualFilters || !filtersArePending()) return false;
+
+        state.columnFilters = pendingColumnFilters.map((columnFilter) => ({ ...columnFilter }));
+        state.pagination.pageIndex = 0;
+        synchronizeTableState();
+        persistState(persistence, state);
+        render();
+        emit(root, 'filtered', { filters: state.columnFilters.map((columnFilter) => ({ ...columnFilter })) });
+        emit(root, 'filters-applied', { filters: state.columnFilters.map((columnFilter) => ({ ...columnFilter })) });
+        requestRows();
+
+        return true;
+    }
+
+    function updateRow(rowId, nextRow) {
+        rows = rows.map((row, index) => {
+            const id = typeof row[rowKey] === 'string' || typeof row[rowKey] === 'number' ? String(row[rowKey]) : String(index);
+
+            return id === rowId ? nextRow : row;
+        });
+        table.setOptions((current) => ({ ...current, data: rows }));
+    }
+
+    function isSelected(rowId) {
+        return selectionState.allFilteredSelected
+            ? !selectionState.excludedIds.has(rowId)
+            : selectionState.selectedIds.has(rowId);
+    }
+
+    function selectedIds() {
+        return [...selectionState.selectedIds];
+    }
+
+    function selectionActionPayload() {
+        if (!selectionState.allFilteredSelected) {
+            return { ids: selectedIds(), mode: 'ids' };
+        }
+
+        return {
+            columnFilters: state.columnFilters.map((filter) => ({ ...filter })),
+            excludedIds: [...selectionState.excludedIds],
+            globalFilter: state.globalFilter,
+            mode: 'filtered',
+            sorting: state.sorting.map((sorting) => ({ ...sorting })),
+        };
+    }
+
+    function selectionDetails(visibleRows = table.getRowModel().rows) {
+        const visibleSelectedCount = visibleRows.filter((row) => isSelected(row.id)).length;
+        const resultTotal = source ? total : table.getFilteredRowModel().rows.length;
+        const selectedTotal = selectionState.allFilteredSelected
+            ? Math.max(0, resultTotal - selectionState.excludedIds.size)
+            : selectionState.selectedIds.size;
+
+        return {
+            offPageCount: Math.max(0, selectedTotal - visibleSelectedCount),
+            selectedTotal,
+            visibleSelectedCount,
+        };
+    }
+
+    function emitSelectionChanged() {
+        if (selectionState.allFilteredSelected) {
+            emit(root, 'selection-changed', {
+                allFilteredSelected: true,
+                excludedIds: [...selectionState.excludedIds],
+                ...selectionDetails(),
+            });
+            return;
+        }
+
+        emit(root, 'selection-changed', { ids: selectedIds() });
+    }
+
+    function toggleRowSelection(rowId, selected) {
+        if (selectionMode === 'single') {
+            selectionState = {
+                allFilteredSelected: false,
+                excludedIds: new Set(),
+                selectedIds: new Set(selected ? [rowId] : []),
+            };
+        } else if (selectionState.allFilteredSelected) {
+            if (selected) selectionState.excludedIds.delete(rowId);
+            else selectionState.excludedIds.add(rowId);
+        } else if (selected) {
+            selectionState.selectedIds.add(rowId);
+        } else {
+            selectionState.selectedIds.delete(rowId);
+        }
+
+        emitSelectionChanged();
+        render();
+    }
+
+    function selectPage() {
+        if (selectionMode !== 'multiple') return false;
+
+        table.getRowModel().rows.forEach((row) => {
+            if (selectionState.allFilteredSelected) selectionState.excludedIds.delete(row.id);
+            else selectionState.selectedIds.add(row.id);
+        });
+        emitSelectionChanged();
+        render();
+
+        return true;
+    }
+
+    function clearPage() {
+        if (selectionMode !== 'multiple') return;
+
+        table.getRowModel().rows.forEach((row) => {
+            if (selectionState.allFilteredSelected) selectionState.excludedIds.add(row.id);
+            else selectionState.selectedIds.delete(row.id);
+        });
+        emitSelectionChanged();
+        render();
+    }
+
+    function selectFiltered() {
+        if (selectionMode !== 'multiple' || selection.selectFiltered !== true) return false;
+
+        selectionState = { allFilteredSelected: true, excludedIds: new Set(), selectedIds: new Set() };
+        emitSelectionChanged();
+        render();
+
+        return true;
+    }
+
+    function clearSelection(shouldRender = true) {
+        const hadSelection = selectionState.allFilteredSelected || selectionState.selectedIds.size > 0 || selectionState.excludedIds.size > 0;
+
+        selectionState = { allFilteredSelected: false, excludedIds: new Set(), selectedIds: new Set() };
+        if (hadSelection) emitSelectionChanged();
+        if (shouldRender) render();
+
+        return hadSelection;
+    }
+
+    async function saveEdit(row, column, value) {
+        const originalRow = { ...row.original };
+        const payload = {
+            column: column.id,
+            dirty: { [column.id]: value },
+            row: originalRow,
+            rowId: row.id,
+            value,
+        };
+        let nextRow = { ...originalRow, [column.columnDef.accessorKey]: value };
+        const editAbortController = editable?.endpoint ? new AbortController() : null;
+
+        if (editAbortController) {
+            editAbortControllers.add(editAbortController);
+        }
+
+        try {
+            if (editable?.endpoint) {
+                const endpoint = editable.endpoint.toString()
+                    .replaceAll('{rowId}', encodeURIComponent(row.id))
+                    .replaceAll('%7BrowId%7D', encodeURIComponent(row.id));
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const headers = { Accept: 'application/json', 'Content-Type': 'application/json' };
+
+                if (csrfToken && editable.endpoint.origin === window.location.origin) {
+                    headers['X-CSRF-TOKEN'] = csrfToken;
+                }
+
+                const response = await fetch(endpoint, {
+                    body: JSON.stringify(payload),
+                    credentials: 'same-origin',
+                    headers,
+                    method: editable.method,
+                    signal: editAbortController.signal,
+                });
+
+                if (!response.ok) {
+                    throw new Error(labels.editError);
+                }
+
+                const responsePayload = await response.json();
+
+                if (!responsePayload?.row || Array.isArray(responsePayload.row) || typeof responsePayload.row !== 'object') {
+                    throw new Error(labels.editResponseError);
+                }
+
+                nextRow = { ...nextRow, ...responsePayload.row };
+            }
+
+            if (!active) return;
+            updateRow(row.id, nextRow);
+            editing = null;
+            render();
+            emit(root, 'edited', { column: column.id, row: nextRow, rowId: row.id, value });
+        } catch (error) {
+            if (!active || (error instanceof DOMException && error.name === 'AbortError')) return;
+            const message = error instanceof Error ? error.message : labels.editError;
+            updateStatus(root, message);
+            emit(root, 'error', { code: 'edit-failed', column: column.id, message, rowId: row.id });
+        } finally {
+            if (editAbortController) {
+                editAbortControllers.delete(editAbortController);
+            }
+        }
+    }
 
     function render() {
         const head = tableElement.tHead;
@@ -143,22 +835,120 @@ function initialize(root, configuration) {
 
         head.replaceChildren();
         body.replaceChildren();
+        filter.value = state.globalFilter;
+        let visibilityControls = content.querySelector('[data-daisy-kit-table-column-controls]');
+        if (configuration.columnVisibility === false) {
+            visibilityControls?.closest('details')?.remove();
+            visibilityControls?.remove();
+            visibilityControls = null;
+        } else if (!visibilityControls) {
+            visibilityControls = document.createElement('fieldset');
+            visibilityControls.className = 'fieldset border border-base-300 rounded-box p-3';
+            visibilityControls.setAttribute('data-daisy-kit-table-column-controls', '');
+            const legend = document.createElement('legend');
+            legend.textContent = labels.columns;
+            visibilityControls.append(legend);
+            tableElement.parentElement.insertAdjacentElement('beforebegin', visibilityControls);
+        }
+        visibilityControls?.replaceChildren(...[...table.getAllLeafColumns()].flatMap((column) => {
+            const label = document.createElement('label');
+            const control = document.createElement('input');
+            label.className = 'label gap-2';
+            control.className = 'checkbox checkbox-sm';
+            control.checked = column.getIsVisible();
+            control.dataset.daisyKitTableColumnVisibility = column.id;
+            control.type = 'checkbox';
+            control.addEventListener('change', () => column.toggleVisibility(control.checked));
+            const pin = document.createElement('select');
+            pin.className = 'select select-bordered select-sm';
+            pin.dataset.daisyKitTableColumnPinning = column.id;
+            [['false', labels.normal], ['start', labels.pinStart], ['end', labels.pinEnd]].forEach(([value, text]) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = text;
+                pin.append(option);
+            });
+            pin.value = column.getIsPinned() || 'false';
+            pin.addEventListener('change', () => column.pin(pin.value === 'false' ? false : pin.value));
+            label.append(control, document.createTextNode(String(column.columnDef.header ?? column.id)), pin);
+            return [label];
+        }));
+        toolbarFilters.forEach((control) => {
+            const filters = manualFilters ? pendingColumnFilters : state.columnFilters;
+            const activeFilter = filters.find((item) => item.id === control.dataset.daisyKitTableFilter);
+            control.value = activeFilter?.value ?? '';
+        });
+        if (applyFiltersButton) applyFiltersButton.disabled = !filtersArePending();
+        let actions = content.querySelector('[data-daisy-kit-table-bulk-actions]');
+        if (!actions && bulkActions.length > 0) {
+            actions = document.createElement('div');
+            actions.setAttribute('data-daisy-kit-table-bulk-actions', '');
+            tableElement.parentElement.insertAdjacentElement('beforebegin', actions);
+        }
+        if (actions) {
+            actions.replaceChildren(...bulkActions.map((action) => {
+                const button = document.createElement('button');
+                button.className = 'btn btn-sm';
+                button.dataset.daisyKitTableBulkAction = action.id;
+                button.textContent = action.label;
+                button.type = 'button';
+                button.addEventListener('click', () => {
+                    const payload = selectionActionPayload();
+                    emit(root, 'bulk-action', payload.mode === 'ids'
+                        ? { id: action.id, ids: payload.ids }
+                        : { id: action.id, selection: payload });
+                });
+                return button;
+            }));
+        }
 
+        const visibleRows = table.getRowModel().rows;
         const headerRow = document.createElement('tr');
+        const hasRowControls = rowActions.length > 0 || rowDetails !== null;
 
-        table.getFlatHeaders().forEach((header) => {
+        if (selectable) {
+            const selectionHeader = document.createElement('th');
+            selectionHeader.scope = 'col';
+
+            if (selectionMode === 'multiple') {
+                const selectAll = document.createElement('input');
+                selectAll.className = 'checkbox checkbox-sm';
+                selectAll.setAttribute('aria-label', labels.selectPageAria);
+                const selectedOnPage = visibleRows.filter((row) => isSelected(row.id)).length;
+                selectAll.checked = visibleRows.length > 0 && selectedOnPage === visibleRows.length;
+                selectAll.indeterminate = selectedOnPage > 0 && selectedOnPage < visibleRows.length;
+                selectAll.type = 'checkbox';
+                selectAll.addEventListener('change', () => {
+                    if (selectAll.checked) {
+                        selectPage();
+                        return;
+                    }
+
+                    clearPage();
+                });
+                selectionHeader.append(selectAll);
+            }
+
+            headerRow.append(selectionHeader);
+        }
+
+        const visibleColumns = [
+            ...table.getStartVisibleLeafColumns(),
+            ...table.getCenterVisibleLeafColumns(),
+            ...table.getEndVisibleLeafColumns(),
+        ];
+        visibleColumns.forEach((column) => {
             const headerCell = document.createElement('th');
-            const column = header.column;
             const sortDirection = column.getIsSorted();
 
             headerCell.scope = 'col';
 
-            if (sortDirection) {
-                headerCell.setAttribute('aria-sort', sortDirection === 'desc' ? 'descending' : 'ascending');
-            }
+            headerCell.setAttribute('aria-sort', sortDirection === 'desc' ? 'descending' : (sortDirection === 'asc' ? 'ascending' : 'none'));
 
             if (column.getCanSort()) {
                 const button = document.createElement('button');
+
+                button.className = 'btn btn-ghost btn-sm';
 
                 button.type = 'button';
                 button.textContent = String(column.columnDef.header ?? column.id);
@@ -173,21 +963,222 @@ function initialize(root, configuration) {
             headerRow.append(headerCell);
         });
 
+        if (hasRowControls) {
+            const actionsHeader = document.createElement('th');
+            actionsHeader.scope = 'col';
+            actionsHeader.textContent = labels.actions;
+            headerRow.append(actionsHeader);
+        }
+
         head.append(headerRow);
 
-        const rows = table.getRowModel().rows;
+        const filterRow = document.createElement('tr');
+        let hasFilters = false;
 
-        rows.forEach((row) => {
+        if (selectable) filterRow.append(document.createElement('td'));
+
+        table.getAllLeafColumns().forEach((column) => {
+            const cell = document.createElement('td');
+            const { filterOptions, filterPlacement, filterType } = column.columnDef.meta ?? {};
+
+            if (filterType && filterPlacement === 'column') {
+                hasFilters = true;
+                const control = filterType === 'select' ? document.createElement('select') : document.createElement('input');
+
+                control.className = filterType === 'select' ? 'select select-bordered select-sm w-full' : 'input input-bordered input-sm w-full';
+
+                control.dataset.daisyKitTableColumnFilter = column.id;
+                control.setAttribute('aria-label', formatLabel(labels.filterColumn, { column: String(column.columnDef.header ?? column.id) }));
+                if (control instanceof HTMLInputElement) control.type = filterType === 'number' ? 'number' : 'search';
+                if (control instanceof HTMLSelectElement) {
+                    const emptyOption = document.createElement('option');
+                    emptyOption.value = '';
+                    emptyOption.textContent = labels.all;
+                    control.append(emptyOption);
+                    filterOptions.forEach((option) => {
+                        const element = document.createElement('option');
+                        element.value = option.value;
+                        element.textContent = option.label;
+                        control.append(element);
+                    });
+                }
+                const activeFilter = (manualFilters ? pendingColumnFilters : state.columnFilters)
+                    .find((item) => item.id === column.id);
+                control.value = activeFilter?.value ?? '';
+                control.addEventListener(control instanceof HTMLSelectElement ? 'change' : 'input', () => {
+                    if (manualFilters) {
+                        stageColumnFilter(column.id, control.value);
+                        return;
+                    }
+
+                    column.setFilterValue(control.value);
+                });
+                cell.append(control);
+            }
+            filterRow.append(cell);
+        });
+
+        if (hasFilters) head.append(filterRow);
+
+        visibleRows.forEach((row) => {
             const tableRow = document.createElement('tr');
 
-            row.getVisibleCells().forEach((cell) => {
-                const tableCell = document.createElement('td');
+            if (selectable) {
+                const selectionCell = document.createElement('td');
+                const selectRow = document.createElement('input');
 
-                tableCell.textContent = formatCell(cell.getValue());
+                selectRow.className = 'checkbox checkbox-sm';
+
+                selectRow.setAttribute('aria-label', formatLabel(labels.selectRowAria, { row: row.id }));
+                selectRow.dataset.daisyKitTableRowSelect = row.id;
+                selectRow.checked = isSelected(row.id);
+                selectRow.type = 'checkbox';
+                selectRow.addEventListener('change', () => {
+                    toggleRowSelection(row.id, selectRow.checked);
+                });
+                selectionCell.append(selectRow);
+                tableRow.append(selectionCell);
+            }
+
+            const cellsByColumn = new Map(row.getVisibleCells().map((cell) => [cell.column.id, cell]));
+            visibleColumns.forEach((column) => {
+                const cell = cellsByColumn.get(column.id);
+                const tableCell = document.createElement('td');
+                const editKey = `${row.id}:${column.id}`;
+                const cellRenderer = column.columnDef.meta?.cell ?? { renderer: 'text' };
+                const canEdit = cellRenderer.renderer === 'text'
+                    && editable !== null
+                    && (editable.columns.length === 0 || editable.columns.includes(column.id));
+
+                if (canEdit && editing?.key === editKey) {
+                    const input = document.createElement('input');
+                    const save = document.createElement('button');
+                    const cancel = document.createElement('button');
+                    const editor = document.createElement('div');
+                    const editorActions = document.createElement('div');
+
+                    input.className = 'input input-bordered input-sm';
+                    save.className = 'btn btn-primary btn-sm';
+                    cancel.className = 'btn btn-ghost btn-sm';
+                    editor.className = 'daisy-kit-table__cell-editor';
+                    editorActions.className = 'daisy-kit-table__cell-editor-actions';
+
+                    input.dataset.daisyKitTableEditInput = editKey;
+                    input.value = editing.value;
+                    save.dataset.daisyKitTableEditSave = editKey;
+                    save.textContent = labels.save;
+                    save.type = 'button';
+                    save.addEventListener('click', () => saveEdit(row, column, input.value));
+                    cancel.dataset.daisyKitTableEditCancel = editKey;
+                    cancel.textContent = labels.cancel;
+                    cancel.type = 'button';
+                    cancel.addEventListener('click', () => {
+                        editing = null;
+                        render();
+                    });
+                    editorActions.append(save, cancel);
+                    editor.append(input, editorActions);
+                    tableCell.append(editor);
+                } else if (canEdit) {
+                    const value = cell ? formatCell(cell.getValue()) : '';
+                    const output = document.createElement('span');
+                    const edit = document.createElement('button');
+                    const display = document.createElement('div');
+
+                    edit.className = 'btn btn-ghost btn-sm';
+                    display.className = 'daisy-kit-table__cell-display';
+
+                    renderCellValue(output, value, cellRenderer);
+                    edit.setAttribute('aria-label', `${labels.edit} ${String(column.columnDef.header ?? column.id)} ${row.id}`);
+                    edit.dataset.daisyKitTableEdit = editKey;
+                    edit.textContent = labels.edit;
+                    edit.type = 'button';
+                    edit.addEventListener('click', () => {
+                        editing = { key: editKey, value };
+                        render();
+                    });
+                    display.append(output, edit);
+                    tableCell.append(display);
+                } else {
+                    renderCellValue(tableCell, cell?.getValue(), cellRenderer);
+                }
                 tableRow.append(tableCell);
             });
 
+            if (hasRowControls) {
+                const actionCell = document.createElement('td');
+
+                if (rowDetails) {
+                    const toggle = document.createElement('button');
+
+                    toggle.className = 'btn btn-ghost btn-sm';
+
+                    toggle.setAttribute('aria-expanded', String(expandedRowIds.has(row.id)));
+                    toggle.dataset.daisyKitTableDetailToggle = row.id;
+                    toggle.textContent = rowDetails.label;
+                    toggle.type = 'button';
+                    toggle.addEventListener('click', () => {
+                        if (rowDetails.mode === 'modal') {
+                            const dialog = document.createElement('dialog');
+                            const title = document.createElement('h2');
+                            const close = document.createElement('button');
+
+                            dialog.className = 'modal';
+                            title.className = 'text-lg font-semibold';
+                            close.className = 'btn btn-sm';
+
+                            dialog.dataset.daisyKitTableDetail = row.id;
+                            title.textContent = rowDetails.label;
+                            close.textContent = labels.close;
+                            close.type = 'button';
+                            close.addEventListener('click', () => dialog.close());
+                            dialog.append(title, document.createTextNode(formatCell(rowDetails.accessor ? row.original[rowDetails.accessor] : row.original)), close);
+                            root.append(dialog);
+                            detailDialogs.add(dialog);
+                            if (typeof dialog.showModal === 'function') dialog.showModal();
+                            else dialog.setAttribute('open', '');
+                            return;
+                        }
+
+                        if (expandedRowIds.has(row.id)) expandedRowIds.delete(row.id);
+                        else expandedRowIds.add(row.id);
+                        render();
+                    });
+                    actionCell.append(toggle);
+                }
+
+                rowActions.forEach((action) => {
+                    const button = document.createElement('button');
+
+                    button.className = 'btn btn-sm';
+
+                    button.dataset.daisyKitTableRowAction = action.id;
+                    button.disabled = action.disabled;
+                    button.textContent = action.label;
+                    button.type = 'button';
+                    button.addEventListener('click', () => emit(root, 'row-action', {
+                        id: action.id,
+                        row: { ...row.original },
+                        rowId: row.id,
+                    }));
+                    actionCell.append(button);
+                });
+
+                tableRow.append(actionCell);
+            }
+
             body.append(tableRow);
+
+            if (rowDetails?.mode === 'inline' && expandedRowIds.has(row.id)) {
+                const detailRow = document.createElement('tr');
+                const detailCell = document.createElement('td');
+
+                detailCell.colSpan = visibleColumns.length + Number(selectable) + Number(hasRowControls);
+                detailCell.dataset.daisyKitTableDetail = row.id;
+                detailCell.textContent = formatCell(rowDetails.accessor ? row.original[rowDetails.accessor] : row.original);
+                detailRow.append(detailCell);
+                body.append(detailRow);
+            }
         });
 
         const filteredRows = table.getFilteredRowModel().rows;
@@ -195,17 +1186,168 @@ function initialize(root, configuration) {
 
         const empty = filteredRows.length === 0;
 
-        updateStatus(root, empty ? 'No table rows match the current filter.' : null);
+        updateStatus(root, empty ? labels.noMatchingRows : null);
         root.dataset.daisyKitState = empty ? 'empty' : 'ready';
         root.setAttribute('aria-busy', 'false');
         tableElement.setAttribute('aria-busy', 'false');
         previousButton.disabled = !table.getCanPreviousPage();
         nextButton.disabled = !table.getCanNextPage();
-        page.textContent = `Page ${state.pagination.pageIndex + 1} of ${pageCount}`;
+        page.textContent = formatLabel(labels.page, { current: state.pagination.pageIndex + 1, total: pageCount });
+        if (pageSizeControl) {
+            const pageSize = String(state.pagination.pageSize);
+
+            if (![...pageSizeControl.options].some((option) => option.value === pageSize)) {
+                const option = document.createElement('option');
+                option.value = pageSize;
+                option.textContent = pageSize;
+                const nextOption = [...pageSizeControl.options].find((option) => Number(option.value) > state.pagination.pageSize);
+                pageSizeControl.insertBefore(option, nextOption ?? null);
+            }
+
+            pageSizeControl.value = pageSize;
+        }
+
+        const resultTotal = source ? total : filteredRows.length;
+        const resultStart = resultTotal === 0 ? 0 : (state.pagination.pageIndex * state.pagination.pageSize) + 1;
+        const resultEnd = Math.min(resultStart + table.getRowModel().rows.length - 1, resultTotal);
+        if (results) {
+            results.textContent = resultTotal === 0
+                ? labels.noResults
+                : formatLabel(labels.showingResults, { from: resultStart, to: resultEnd, total: resultTotal });
+        }
+
+        const selectionSummaryState = selectionDetails(visibleRows);
+        hasSelectedRows ||= selectionSummaryState.selectedTotal > 0;
+        if (selectionFeedback) selectionFeedback.hidden = deferredSelectionFeedback && !hasSelectedRows;
+        if (selectionSummary) {
+            selectionSummary.hidden = selectionMode === 'single'
+                && (deferredSelectionFeedback ? !hasSelectedRows : selectionSummaryState.selectedTotal === 0);
+        }
+        if (selectionCount) selectionCount.textContent = String(selectionSummaryState.selectedTotal);
+        if (selectionPageCount) selectionPageCount.textContent = String(selectionSummaryState.visibleSelectedCount);
+        if (selectionOffPageCount) selectionOffPageCount.textContent = String(selectionSummaryState.offPageCount);
+        if (selectionBreakdown) selectionBreakdown.hidden = selectionSummaryState.offPageCount === 0;
+        if (selectPageButton) selectPageButton.disabled = visibleRows.length === 0 || visibleRows.every((row) => isSelected(row.id));
+        if (selectFilteredButton) {
+            selectFilteredButton.disabled = resultTotal === 0 || (selectionState.allFilteredSelected && selectionState.excludedIds.size === 0);
+            selectFilteredButton.textContent = formatLabel(labels.selectAllResults, { count: resultTotal });
+        }
+        if (clearSelectionButton) clearSelectionButton.disabled = selectionSummaryState.selectedTotal === 0;
+        root.dataset.daisyKitTableSelectionCount = String(selectionSummaryState.selectedTotal);
+        root.dataset.daisyKitTableSelectionPageCount = String(selectionSummaryState.visibleSelectedCount);
+        root.dataset.daisyKitTableSelectionOffPageCount = String(selectionSummaryState.offPageCount);
+    }
+
+    async function requestRows() {
+        if (!source) {
+            return false;
+        }
+
+        abortController?.abort();
+        abortController = new AbortController();
+        const requestSerialAtStart = ++requestSerial;
+        const request = new URL(source);
+        const [sorting] = state.sorting;
+
+        if (serverAdapter === 'spatie-query-builder') {
+            const globalFilterKey = typeof configuration.globalFilterKey === 'string' && configuration.globalFilterKey !== ''
+                ? configuration.globalFilterKey
+                : 'global';
+
+            request.searchParams.set('page[number]', String(state.pagination.pageIndex + 1));
+            request.searchParams.set('page[size]', String(state.pagination.pageSize));
+            if (state.globalFilter !== '') {
+                request.searchParams.set(`filter[${globalFilterKey}]`, state.globalFilter);
+            }
+            state.columnFilters.forEach((filter) => {
+                if (filter.value === '' || filter.value === null || filter.value === undefined) return;
+
+                const filterKey = table.getColumn(filter.id)?.columnDef.meta?.filterKey ?? filter.id;
+                const value = Array.isArray(filter.value) ? filter.value.join(',') : String(filter.value);
+                request.searchParams.set(`filter[${filterKey}]`, value);
+            });
+            if (sorting) {
+                const sortKey = table.getColumn(sorting.id)?.columnDef.meta?.sortKey ?? sorting.id;
+                request.searchParams.set('sort', `${sorting.desc ? '-' : ''}${sortKey}`);
+            }
+        } else {
+            request.searchParams.set('filter', state.globalFilter);
+            request.searchParams.set('page', String(state.pagination.pageIndex + 1));
+            request.searchParams.set('pageSize', String(state.pagination.pageSize));
+            if (sorting) {
+                request.searchParams.set('sort', sorting.id);
+                request.searchParams.set('direction', sorting.desc ? 'desc' : 'asc');
+            }
+            request.searchParams.set('columnFilters', JSON.stringify(state.columnFilters));
+            request.searchParams.set('columnPinning', JSON.stringify(state.columnPinning));
+            request.searchParams.set('columnVisibility', JSON.stringify(state.columnVisibility));
+        }
+
+        root.dataset.daisyKitState = 'loading';
+        root.setAttribute('aria-busy', 'true');
+        tableElement.setAttribute('aria-busy', 'true');
+
+        try {
+            const response = await fetch(request, { credentials: 'same-origin', signal: abortController.signal });
+
+            if (!response.ok) throw new Error(labels.sourceError);
+
+            const payload = await response.json();
+            if (requestSerialAtStart !== requestSerial) return false;
+
+            const normalizedPayload = normalizeServerPayload(payload, serverAdapter);
+
+            if (!normalizedPayload) {
+                throw new Error(labels.sourceResponseError);
+            }
+
+            rows = normalizeRows(normalizedPayload.rows);
+            total = normalizedPayload.total;
+            if (normalizedPayload.page !== null) state.pagination.pageIndex = normalizedPayload.page - 1;
+            if (normalizedPayload.pageSize !== null) state.pagination.pageSize = normalizedPayload.pageSize;
+            table.setOptions((current) => ({
+                ...current,
+                data: rows,
+                pageCount: Math.max(Math.ceil(total / state.pagination.pageSize), 1),
+                state: { ...state },
+            }));
+            render();
+
+            return true;
+        } catch (error) {
+            if (requestSerialAtStart !== requestSerial || (error instanceof DOMException && error.name === 'AbortError')) return false;
+
+            updateStatus(root, labels.loadingError);
+            root.dataset.daisyKitState = 'error';
+            root.setAttribute('aria-busy', 'false');
+            tableElement.setAttribute('aria-busy', 'false');
+            emit(root, 'error', { code: 'source-unavailable', message: labels.loadingError });
+
+            return false;
+        }
     }
 
     function onFilterInput(event) {
-        table.setGlobalFilter(event.currentTarget.value);
+        window.clearTimeout(searchTimer);
+        const value = event.currentTarget.value;
+
+        if (searchDebounce === 0) {
+            table.setGlobalFilter(value);
+            return;
+        }
+
+        searchTimer = window.setTimeout(() => table.setGlobalFilter(value), searchDebounce);
+    }
+
+    function onToolbarFilter(event) {
+        const column = table.getColumn(event.currentTarget.dataset.daisyKitTableFilter);
+
+        if (manualFilters && column) {
+            stageColumnFilter(column.id, event.currentTarget.value);
+            return;
+        }
+
+        column?.setFilterValue(event.currentTarget.value);
     }
 
     function onPreviousPage() {
@@ -216,19 +1358,182 @@ function initialize(root, configuration) {
         table.nextPage();
     }
 
+    function onPageSizeChange(event) {
+        const nextPageSize = Number.parseInt(event.currentTarget.value, 10);
+
+        if (Number.isInteger(nextPageSize) && nextPageSize > 0) {
+            table.setPageSize(nextPageSize);
+        }
+    }
+
+    const controller = Object.freeze({
+        clearFilters() {
+            state.columnFilters = [];
+            pendingColumnFilters = [];
+            state.globalFilter = '';
+            state.pagination.pageIndex = 0;
+            synchronizeTableState();
+            persistState(persistence, state);
+            render();
+            emit(root, 'filtered', { filters: [], query: '' });
+            requestRows();
+
+            return true;
+        },
+        clearSelection,
+        getState() {
+            const selectionSummaryState = selectionDetails();
+
+            return {
+                columnFilters: state.columnFilters.map((columnFilter) => ({ ...columnFilter })),
+                columnPinning: {
+                    end: [...state.columnPinning.end],
+                    start: [...state.columnPinning.start],
+                },
+                columnVisibility: { ...state.columnVisibility },
+                globalFilter: state.globalFilter,
+                pagination: { ...state.pagination },
+                pendingColumnFilters: pendingColumnFilters.map((columnFilter) => ({ ...columnFilter })),
+                selection: {
+                    allFilteredSelected: selectionState.allFilteredSelected,
+                    excludedIds: [...selectionState.excludedIds],
+                    selectedIds: [...selectionState.selectedIds],
+                    ...selectionSummaryState,
+                },
+                sorting: state.sorting.map((sorting) => ({ ...sorting })),
+                total: source ? total : table.getFilteredRowModel().rows.length,
+            };
+        },
+        getVisibleRows() {
+            return table.getRowModel().rows.map((row) => ({ ...row.original }));
+        },
+        refresh: requestRows,
+        applyFilters: applyPendingFilters,
+        selectAllResults: selectFiltered,
+        selectPage,
+        selectRow(rowId, selected = true) {
+            if (!selectable || (typeof rowId !== 'string' && typeof rowId !== 'number')) return false;
+
+            toggleRowSelection(String(rowId), selected === true);
+
+            return true;
+        },
+        setColumnFilter(columnId, value) {
+            const column = typeof columnId === 'string' ? table.getColumn(columnId) : null;
+
+            if (!column) return false;
+
+            if (manualFilters) {
+                stageColumnFilter(column.id, value);
+                render();
+            } else {
+                column.setFilterValue(value);
+            }
+
+            return true;
+        },
+        setColumnVisibility(columnId, visible) {
+            const column = typeof columnId === 'string' ? table.getColumn(columnId) : null;
+
+            if (!column) return false;
+
+            column.toggleVisibility(visible === true);
+
+            return true;
+        },
+        setGlobalFilter(value) {
+            table.setGlobalFilter(value === null || value === undefined ? '' : String(value));
+
+            return true;
+        },
+        setPage(pageNumber) {
+            if (!Number.isInteger(pageNumber) || pageNumber < 1) {
+                return false;
+            }
+
+            table.setPageIndex(pageNumber - 1);
+
+            return true;
+        },
+        setPageSize(pageSize) {
+            if (!Number.isInteger(pageSize) || pageSize < 1) {
+                return false;
+            }
+
+            table.setPageSize(pageSize);
+
+            return true;
+        },
+        setSorting(columnId, direction = 'asc') {
+            const column = typeof columnId === 'string' ? table.getColumn(columnId) : null;
+
+            if (!column || !['asc', 'desc', null].includes(direction)) return false;
+
+            table.setSorting(direction === null ? [] : [{ desc: direction === 'desc', id: columnId }]);
+
+            return true;
+        },
+    });
+
+    tableInstances.set(root, controller);
+
     filter.addEventListener('input', onFilterInput);
     previousButton.addEventListener('click', onPreviousPage);
     nextButton.addEventListener('click', onNextPage);
+    pageSizeControl?.addEventListener('change', onPageSizeChange);
+    selectPageButton?.addEventListener('click', selectPage);
+    selectFilteredButton?.addEventListener('click', selectFiltered);
+    clearSelectionButton?.addEventListener('click', clearSelection);
+    applyFiltersButton?.addEventListener('click', applyPendingFilters);
+    toolbarFilters.forEach((control) => control.addEventListener(
+        control instanceof HTMLSelectElement ? 'change' : 'input',
+        onToolbarFilter,
+    ));
     render();
+    requestRows();
 
     return () => {
+        active = false;
+        tableInstances.delete(root);
         filter.removeEventListener('input', onFilterInput);
         previousButton.removeEventListener('click', onPreviousPage);
         nextButton.removeEventListener('click', onNextPage);
+        pageSizeControl?.removeEventListener('change', onPageSizeChange);
+        selectPageButton?.removeEventListener('click', selectPage);
+        selectFilteredButton?.removeEventListener('click', selectFiltered);
+        clearSelectionButton?.removeEventListener('click', clearSelection);
+        applyFiltersButton?.removeEventListener('click', applyPendingFilters);
+        toolbarFilters.forEach((control) => control.removeEventListener(
+            control instanceof HTMLSelectElement ? 'change' : 'input',
+            onToolbarFilter,
+        ));
+        window.clearTimeout(searchTimer);
+        abortController?.abort();
+        editAbortControllers.forEach((editAbortController) => editAbortController.abort());
+        editAbortControllers.clear();
+        requestSerial += 1;
+        detailDialogs.forEach((dialog) => dialog.remove());
+        detailDialogs.clear();
         content.innerHTML = initialContent;
     };
 }
 
 const module = createMountable('table', initialize);
 
-export const { mount, mountAll, unmount } = module;
+export function getInstance(root) {
+    return tableInstances.get(root) ?? null;
+}
+
+export function mount(root) {
+    const mounted = module.mount(root);
+
+    return mounted ? getInstance(root) : null;
+}
+
+export function mountAll(scope = document) {
+    return [...scope.querySelectorAll('[data-daisy-kit-module="table"]')].map(mount);
+}
+
+export function unmount(root) {
+    return module.unmount(root);
+}

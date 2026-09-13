@@ -7,7 +7,7 @@ function packagePath(string $path = ''): string
     return dirname(__DIR__, 2).($path === '' ? '' : "/{$path}");
 }
 
-it('exposes only the v5 Blade component allowlist', function (): void {
+it('exposes only the v6 Blade component allowlist', function (): void {
     $components = collect([
         ...(glob(packagePath('resources/views/components/*.blade.php')) ?: []),
         ...(glob(packagePath('resources/views/components/*/*.blade.php')) ?: []),
@@ -22,12 +22,16 @@ it('exposes only the v5 Blade component allowlist', function (): void {
 
     expect($components)->toBe([
         'blueprint',
+        'combobox',
+        'copyable',
         'file-preview',
-        'forms/builder',
-        'forms/viewer',
         'map',
+        'scrollspy',
+        'signature',
         'table',
+        'transfer-list',
         'tree',
+        'truncate',
     ]);
 });
 
@@ -45,12 +49,12 @@ it('does not retain legacy runtime systems', function (): void {
     expect($contents)->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|codemirror|trix|gridstack|vendor:publish/i');
 });
 
-it('requires PHP 8.4 and keeps Livewire optional', function (): void {
+it('requires PHP 8.4 without a Forms or Livewire integration', function (): void {
     $composer = json_decode((string) file_get_contents(packagePath('composer.json')), true, 512, JSON_THROW_ON_ERROR);
 
     expect($composer['require']['php'])->toBe('^8.4')
         ->and($composer['require'])->not->toHaveKey('livewire/livewire')
-        ->and($composer['suggest'])->toHaveKey('livewire/livewire');
+        ->and($composer)->not->toHaveKey('suggest');
 });
 
 it('ships concise Laravel Boost resources for package consumers', function (): void {
@@ -61,10 +65,11 @@ it('ships concise Laravel Boost resources for package consumers', function (): v
         ->toContain('Laravel Daisy Kit')
         ->toContain('PHP 8.4')
         ->toContain('Laravel 13')
-        ->toContain('x-daisy-kit::forms.viewer')
-        ->toContain('`mount(root)`, `mountAll(scope = document)`, and `unmount(root)`')
+        ->toContain('x-daisy-kit::copyable')
+        ->toContain('`mount(root)`, `mountAll(scope = document)`, `unmount(root)`, and `getInstance(root)`')
         ->toContain('daisy-kit:{module}:*')
-        ->toContain('CSP');
+        ->toContain('CSP')
+        ->toContain('v6-product-contract-matrix.md');
 
     expect($skill)
         ->toStartWith("---\nname: laravel-daisy-kit-development\n")
@@ -72,7 +77,9 @@ it('ships concise Laravel Boost resources for package consumers', function (): v
         ->toContain('Pest 5')
         ->toContain('Test Impact Analysis')
         ->toContain('laravel-best-practices')
-        ->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|codemirror|trix|gridstack|vendor:publish/i');
+        ->toContain('v6-product-contract-matrix.md')
+        ->toContain('crypto.randomUUID()')
+        ->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|codemirror|\\btrix\\b|gridstack|vendor:publish/i');
 });
 
 it('documents the Vite alias for Composer-installed module entries', function (): void {
@@ -80,7 +87,7 @@ it('documents the Vite alias for Composer-installed module entries', function ()
         packagePath('AGENTS.md'),
         packagePath('README.md'),
         packagePath('docs/decisions/0003-vite-composer-alias.md'),
-        packagePath('docs/specs/v5-public-contract.md'),
+        packagePath('docs/specs/v6-public-contract.md'),
         packagePath('resources/boost/guidelines/core.blade.php'),
         packagePath('resources/boost/skills/laravel-daisy-kit-development/SKILL.md'),
     ])->mapWithKeys(fn (string $path): array => [$path => (string) file_get_contents($path)]);
@@ -97,27 +104,75 @@ it('documents the Vite alias for Composer-installed module entries', function ()
         ->toContain("from '@daisy-kit/table.js'");
 
     expect($documentation->implode("\n"))
-        ->toContain('@daisy-kit/forms-viewer.js')
-        ->toContain('@daisy-kit/forms-builder.css')
         ->toContain('@daisy-kit/tree.js')
         ->toContain('@daisy-kit/blueprint.css')
         ->toContain('@daisy-kit/file-preview.js')
         ->toContain('@daisy-kit/map.css')
+        ->toContain('@daisy-kit/copyable.js')
+        ->toContain('@daisy-kit/transfer-list.css')
         ->not->toMatch($fakeNpmImport);
+});
+
+it('documents the stable v6 contract with copyable examples for every module', function (): void {
+    $readme = (string) file_get_contents(packagePath('README.md'));
+    $examples = (string) file_get_contents(packagePath('docs/examples.md'));
+    $contract = (string) file_get_contents(packagePath('docs/specs/v6-public-contract.md'));
+    $dependencies = (string) file_get_contents(packagePath('docs/dependencies.md'));
+
+    expect($readme)
+        ->toContain('^6.0')
+        ->not->toContain('v5.0.0-alpha.2');
+
+    expect($readme)
+        ->toContain('v6.0.0')
+        ->toMatch('/v5\\.0\\.0 or its historical\\s+alpha releases/');
+
+    expect($examples)
+        ->toContain("'@daisy-kit': resolve(__dirname, 'vendor/art35rennes/laravel-daisy-kit/dist'),")
+        ->toContain('x-daisy-kit::table')
+        ->toContain('x-daisy-kit::tree')
+        ->toContain('x-daisy-kit::blueprint')
+        ->toContain('x-daisy-kit::file-preview')
+        ->toContain('x-daisy-kit::map')
+        ->toContain('x-daisy-kit::copyable')
+        ->toContain('x-daisy-kit::combobox')
+        ->toContain('x-daisy-kit::signature')
+        ->toContain('x-daisy-kit::truncate')
+        ->toContain('x-daisy-kit::scrollspy')
+        ->toContain('x-daisy-kit::transfer-list')
+        ->not->toMatch('/x-daisy::|daisy::/');
+
+    $fakeNpmImport = '/(?:from\\s+|import\\s*(?:\\(\\s*)?)[\'\"]art35rennes\\/laravel-daisy-kit\\/dist/';
+
+    expect($examples)->not->toMatch($fakeNpmImport);
+
+    expect($contract)
+        ->toMatch('/v5\\.0\\.0 or its\\s+historical alpha releases/');
+
+    expect($dependencies)
+        ->toContain('@tanstack/table-core | 9.2.3')
+        ->toContain('Laravel Boost | 2.7.0')
+        ->toContain('Official source');
 });
 
 it('keeps File Preview frame helpers relative to its Vite entry', function (): void {
     $entry = (string) file_get_contents(packagePath('resources/js/file-preview.js'));
+    $frameDocument = (string) file_get_contents(packagePath('resources/js/file-preview/frame-document.js'));
     $distribution = (string) file_get_contents(packagePath('dist/file-preview.js'));
 
     expect($entry)
-        ->toContain("new URL('./file-preview-frame-bootstrap.js', import.meta.url)")
-        ->toContain("new URL('../../.tmp/file-preview-frame/file-preview-frame.js', import.meta.url)")
+        ->toContain("'./file-preview/frame-document.js'")
+        ->not->toContain('file-preview-frame-bootstrap')
+        ->not->toContain("'/file-preview-frame.html'")
+        ->and($frameDocument)
+        ->toContain("new URL('../../../.tmp/file-preview-frame/file-preview-frame.js', import.meta.url)")
+        ->toContain("new URL('../../../.tmp/file-preview-frame/file-preview-frame.css', import.meta.url)")
+        ->not->toContain('file-preview-frame-bootstrap')
         ->not->toContain("'/file-preview-frame.html'");
 
     expect($distribution)
-        ->toContain('file-preview-frame-bootstrap.js')
         ->toContain('file-preview-frame.js')
+        ->not->toContain('file-preview-frame-bootstrap')
         ->not->toContain('/file-preview-frame.html')
         ->not->toContain('data:text/javascript');
 });

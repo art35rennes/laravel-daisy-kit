@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { mount, mountAll, unmount } from '../../../resources/js/blueprint.js';
+import { getInstance, mount, mountAll, unmount } from '../../../resources/js/blueprint.js';
 
 function root(configuration) {
     document.body.innerHTML = `
@@ -9,6 +9,7 @@ function root(configuration) {
             <div data-daisy-kit-content>
                 <svg data-daisy-kit-blueprint-canvas></svg>
                 <p data-daisy-kit-empty hidden></p>
+                <input data-daisy-kit-blueprint-value type="hidden">
             </div>
             <script data-daisy-kit-config type="application/json">${JSON.stringify(configuration)}</script>
         </section>
@@ -18,6 +19,40 @@ function root(configuration) {
 }
 
 describe('blueprint entry', () => {
+    it('exposes a stable facade across structural remounts', () => {
+        const element = root({
+            editable: true,
+            edges: [],
+            nodes: [{ id: 'first', label: 'First' }, { id: 'second', label: 'Second' }],
+        });
+
+        const blueprint = mount(element);
+
+        expect(blueprint).toBe(getInstance(element));
+        expect(Object.keys(blueprint).sort()).toEqual(['arrange', 'fit', 'getSelected', 'getValue', 'redo', 'select', 'setValue', 'undo']);
+        expect(blueprint.select('first')).toBe(true);
+        expect(blueprint.getSelected()).toEqual({ id: 'first', label: 'First' });
+        expect(blueprint.arrange()).toBe(true);
+        expect(blueprint.fit()).toBe(true);
+        expect(blueprint.setValue({
+            edges: [{ source: 'first', target: 'third' }],
+            nodes: [{ id: 'first', label: 'First' }, { id: 'third', label: 'Third' }],
+        })).toBe(true);
+        expect(getInstance(element)).toBe(blueprint);
+        expect(blueprint.getValue()).toEqual({
+            edges: [{ source: 'first', target: 'third' }],
+            nodes: [{ id: 'first', label: 'First' }, { id: 'third', label: 'Third' }],
+        });
+        expect(blueprint.select('third')).toBe(true);
+        expect(blueprint.undo()).toBe(false);
+        expect(blueprint.redo()).toBe(false);
+        expect(blueprint.setValue(null)).toBe(false);
+
+        unmount(element);
+
+        expect(getInstance(element)).toBeNull();
+    });
+
     it('lays out multiple nodes once and supports keyboard selection', () => {
         const element = root({
             nodes: [{ id: 'first', label: 'First' }, { id: 'second', label: 'Second' }],
@@ -37,6 +72,8 @@ describe('blueprint entry', () => {
 
         expect(nodes).toHaveLength(2);
         expect(controls).toHaveLength(2);
+        expect(controls.every((control) => control.classList.contains('btn-outline'))).toBe(true);
+        expect(element.querySelector('[data-daisy-kit-blueprint-view="arrange"]').classList.contains('btn')).toBe(true);
         expect(nodes.every((node) => !node.hasAttribute('role') && !node.hasAttribute('tabindex'))).toBe(true);
         expect(document.activeElement).toBe(controls[1]);
         expect(selected).toEqual(['second', 'first']);
@@ -53,5 +90,178 @@ describe('blueprint entry', () => {
 
         expect(element.dataset.daisyKitState).toBe('empty');
         expect(element.querySelector('[data-daisy-kit-empty]').hidden).toBe(false);
+    });
+
+    it('keeps structural controls out of read-only blueprints while arranging and fitting the diagram', () => {
+        const element = root({
+            edges: [{ source: 'first', target: 'second' }],
+            nodes: [{ id: 'first', label: 'First' }, { id: 'second', label: 'Second' }],
+        });
+        const events = [];
+        element.addEventListener('daisy-kit:blueprint:arrange', (event) => events.push(event.type));
+        element.addEventListener('daisy-kit:blueprint:fit', (event) => events.push(event.type));
+
+        mount(element);
+        const canvas = element.querySelector('[data-daisy-kit-blueprint-canvas]');
+        element.querySelector('[data-daisy-kit-blueprint-view="arrange"]').click();
+        element.querySelector('[data-daisy-kit-blueprint-view="fit"]').click();
+
+        expect(element.querySelector('[data-daisy-kit-blueprint-structure]')).toBeNull();
+        expect(events).toEqual(['daisy-kit:blueprint:arrange', 'daisy-kit:blueprint:fit']);
+        expect(canvas.getAttribute('preserveAspectRatio')).toBe('xMidYMid meet');
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes).toHaveLength(2);
+    });
+
+    it('edits labels with undo and redo while synchronizing hidden JSON', () => {
+        const element = root({
+            editable: true,
+            edges: [],
+            nodes: [{ id: 'first', label: 'First', value: { state: 'draft' } }, { id: 'second', label: 'Second' }],
+        });
+        const changes = [];
+        element.addEventListener('daisy-kit:blueprint:change', (event) => changes.push(event.detail.value));
+
+        mount(element);
+        element.querySelector('[data-daisy-kit-blueprint-node-control]').click();
+        const editor = element.querySelector('[data-daisy-kit-blueprint-editor]');
+        editor.value = 'Updated';
+        editor.dispatchEvent(new Event('change'));
+        const valueEditor = element.querySelector('[data-daisy-kit-blueprint-value-editor]');
+        valueEditor.value = '{"state":"published"}';
+        valueEditor.dispatchEvent(new Event('change'));
+
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].label).toBe('Updated');
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].value).toEqual({ state: 'published' });
+        expect(changes).toHaveLength(2);
+
+        element.querySelector('[data-daisy-kit-blueprint-history="undo"]').click();
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].value).toEqual({ state: 'draft' });
+        element.querySelector('[data-daisy-kit-blueprint-history="undo"]').click();
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].label).toBe('First');
+
+        element.querySelector('[data-daisy-kit-blueprint-history="redo"]').click();
+        element.querySelector('[data-daisy-kit-blueprint-history="redo"]').click();
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].label).toBe('Updated');
+
+        const search = element.querySelector('[data-daisy-kit-blueprint-search]');
+        search.value = 'second';
+        search.dispatchEvent(new Event('input'));
+        expect(element.querySelector('[data-node-id="first"]').hasAttribute('hidden')).toBe(true);
+        expect(element.querySelector('[data-node-id="second"]').hasAttribute('hidden')).toBe(false);
+
+        search.value = '';
+        search.dispatchEvent(new Event('input'));
+        element.querySelector('[data-daisy-kit-blueprint-structure="add-node"]').click();
+        expect(element.querySelectorAll('[data-daisy-kit-blueprint-node-control]')).toHaveLength(3);
+
+        element.querySelector('[data-daisy-kit-blueprint-history="undo"]').click();
+        expect(element.querySelectorAll('[data-daisy-kit-blueprint-node-control]')).toHaveLength(2);
+        element.querySelector('[data-daisy-kit-blueprint-history="redo"]').click();
+        expect(element.querySelectorAll('[data-daisy-kit-blueprint-node-control]')).toHaveLength(3);
+
+        element.querySelector('[data-daisy-kit-blueprint-node-control]').click();
+        element.querySelector('[data-daisy-kit-blueprint-transition-target]').value = 'second';
+        element.querySelector('[data-daisy-kit-blueprint-structure="add-transition"]').click();
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).edges).toContainEqual({ source: 'first', target: 'second' });
+
+        element.querySelector('[data-daisy-kit-blueprint-node-control]').click();
+        element.querySelector('[data-daisy-kit-blueprint-structure="remove-node"]').click();
+        expect(element.querySelectorAll('[data-daisy-kit-blueprint-node-control]')).toHaveLength(2);
+    });
+
+    it('keeps its named hidden JSON field synchronized after a structural edit', () => {
+        const element = root({
+            editable: true,
+            edges: [],
+            name: 'workflow',
+            nodes: [{ id: 'first', label: 'First' }],
+        });
+        const value = element.querySelector('[data-daisy-kit-blueprint-value]');
+        value.name = 'workflow';
+        const changes = [];
+        value.addEventListener('change', () => changes.push(value.value));
+
+        mount(element);
+        element.querySelector('[data-daisy-kit-blueprint-structure="add-node"]').click();
+
+        expect(value.name).toBe('workflow');
+        expect(JSON.parse(value.value).nodes).toHaveLength(2);
+        expect(changes).toHaveLength(1);
+    });
+
+    it('uses an initial JSON value as the named graph field contract', () => {
+        const element = root({
+            edges: [],
+            name: 'workflow',
+            nodes: [],
+            value: JSON.stringify({ edges: [], nodes: [{ id: 'from-value', label: 'From value' }] }),
+        });
+
+        mount(element);
+
+        expect(element.querySelector('[data-daisy-kit-blueprint-node-control]').textContent).toBe('From value');
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes[0].id).toBe('from-value');
+    });
+
+    it('retains structural edits, history, and hidden JSON after remounting an initial value graph', () => {
+        const element = root({
+            editable: true,
+            value: JSON.stringify({
+                edges: [],
+                nodes: [{ id: 'first', label: 'First' }, { id: 'second', label: 'Second' }],
+            }),
+        });
+
+        mount(element);
+        element.querySelector('[data-daisy-kit-blueprint-structure="add-node"]').click();
+
+        expect(element.querySelectorAll('[data-daisy-kit-blueprint-node-control]')).toHaveLength(3);
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes.map((node) => node.id))
+            .toEqual(['first', 'second', 'node-3']);
+
+        element.querySelector('[data-daisy-kit-blueprint-history="undo"]').click();
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes).toHaveLength(2);
+
+        element.querySelector('[data-daisy-kit-blueprint-history="redo"]').click();
+        element.querySelector('[data-daisy-kit-blueprint-node-control][data-node-id="first"]').click();
+        element.querySelector('[data-daisy-kit-blueprint-transition-target]').value = 'second';
+        element.querySelector('[data-daisy-kit-blueprint-structure="add-transition"]').click();
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).edges)
+            .toContainEqual({ source: 'first', target: 'second' });
+
+        element.querySelector('[data-daisy-kit-blueprint-node-control][data-node-id="node-3"]').click();
+        element.querySelector('[data-daisy-kit-blueprint-structure="remove-node"]').click();
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value).nodes.map((node) => node.id))
+            .toEqual(['first', 'second']);
+
+        unmount(element);
+        mount(element);
+
+        expect(JSON.parse(element.querySelector('[data-daisy-kit-blueprint-value]').value)).toEqual({
+            edges: [{ source: 'first', target: 'second' }],
+            nodes: [{ id: 'first', label: 'First' }, { id: 'second', label: 'Second' }],
+        });
+    });
+
+    it('keeps value-backed structural state isolated across multiple Blueprint instances', () => {
+        const first = root({
+            editable: true,
+            value: JSON.stringify({ edges: [], nodes: [{ id: 'first', label: 'First' }] }),
+        });
+        const second = first.cloneNode(true);
+
+        second.querySelector('[data-daisy-kit-config]').textContent = JSON.stringify({
+            editable: true,
+            value: JSON.stringify({ edges: [], nodes: [{ id: 'second', label: 'Second' }] }),
+        });
+        document.body.append(second);
+
+        mountAll();
+        first.querySelector('[data-daisy-kit-blueprint-structure="add-node"]').click();
+
+        expect(JSON.parse(first.querySelector('[data-daisy-kit-blueprint-value]').value).nodes.map((node) => node.id))
+            .toEqual(['first', 'node-2']);
+        expect(JSON.parse(second.querySelector('[data-daisy-kit-blueprint-value]').value).nodes.map((node) => node.id))
+            .toEqual(['second']);
     });
 });

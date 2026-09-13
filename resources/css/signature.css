@@ -1,0 +1,12 @@
+.daisy-kit-signature__canvas-wrap {
+    border: 1px solid currentColor;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.daisy-kit-signature canvas {
+    display: block;
+    max-width: 100%;
+    touch-action: none;
+    width: 100%;
+}

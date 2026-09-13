@@ -1,35 +1,105 @@
 @props([
-    'geojson' => null,
     'center' => [48.1173, -1.6778],
     'zoom' => 12,
+    'minZoom' => null,
+    'maxZoom' => null,
+    'fitBounds' => true,
+    'preferCanvas' => false,
+    'label' => null,
+    'geojson' => null,
+    'markers' => [],
+    'basemaps' => [],
+    'layers' => [],
+    'provider' => null,
+    'tileUrl' => null,
+    'tileAttribution' => '',
+    'tileOptions' => [],
+    'controls' => true,
+    'scale' => false,
+    'fullscreen' => false,
+    'gestureHandling' => false,
+    'geolocation' => false,
+    'cluster' => false,
     'drawing' => false,
-    'label' => 'Map',
+    'measure' => false,
+    'objectTypes' => [],
+    'drawLayers' => [],
+    'drawLayerSelection' => 'single',
+    'spatialSelection' => false,
+    'name' => null,
+    'value' => null,
+    'persistState' => false,
+    'stateKey' => null,
 ])
 
-<section
-    {{ $attributes->merge(['data-daisy-kit-module' => 'map']) }}
-    aria-label="{{ $label }}"
->
-    <p data-daisy-kit-status hidden role="alert"></p>
+@php
+    if ($controls instanceof \Illuminate\View\ComponentSlot) {
+        throw new \InvalidArgumentException('The Map controls slot was removed; pass a MapControls instance and named map slots instead.');
+    }
 
-    <div data-daisy-kit-content>
-        <div aria-label="{{ $label }}" data-daisy-kit-map-canvas role="application" tabindex="0"></div>
-        <p data-daisy-kit-empty hidden>No geographic data is available.</p>
-        <output aria-live="polite" data-daisy-kit-map-measurement></output>
-        @if($drawing)
-            <fieldset data-daisy-kit-map-tools>
-                <legend>Drawing tools</legend>
-                <button data-daisy-kit-map-mode="linestring" type="button">Draw line</button>
-                <button data-daisy-kit-map-mode="polygon" type="button">Draw area</button>
-            </fieldset>
-        @endif
-    </div>
-
-    <script data-daisy-kit-config type="application/json">{!! \Art35rennes\DaisyKit\Support\JsonConfiguration::encode([
-        'geojson' => $geojson,
+    $controlSlots = $__laravel_slots ?? [];
+    $resolvedProvider = $provider === false
+        ? false
+        : ($provider ?? ($tileUrl === null && $basemaps === [] ? 'osm.standard' : null));
+    $map = \Art35rennes\DaisyKit\Map\MapConfiguration::make([
         'center' => $center,
         'zoom' => $zoom,
-        'drawing' => $drawing,
+        'minZoom' => $minZoom,
+        'maxZoom' => $maxZoom,
+        'fitBounds' => $fitBounds,
+        'preferCanvas' => $preferCanvas,
         'label' => $label,
-    ]) !!}</script>
+        'geojson' => $geojson,
+        'markers' => $markers,
+        'basemaps' => $basemaps,
+        'layers' => $layers,
+        'provider' => $resolvedProvider,
+        'tileUrl' => $tileUrl,
+        'tileAttribution' => $tileAttribution,
+        'tileOptions' => $tileOptions,
+        'controls' => $controls,
+        'scale' => $scale,
+        'fullscreen' => $fullscreen,
+        'gestureHandling' => $gestureHandling,
+        'geolocation' => $geolocation,
+        'cluster' => $cluster,
+        'drawing' => $drawing,
+        'measure' => $measure,
+        'objectTypes' => $objectTypes,
+        'drawLayers' => $drawLayers,
+        'drawLayerSelection' => $drawLayerSelection,
+        'spatialSelection' => $spatialSelection,
+        'name' => $name,
+        'value' => $value,
+        'persistState' => $persistState,
+        'stateKey' => $stateKey,
+    ]);
+    $configuration = \Art35rennes\DaisyKit\Support\JsonConfiguration::encode($map['configuration']);
+    $mapView = $map['view'];
+    $mapId = 'daisy-kit-map-'.\Illuminate\Support\Str::uuid();
+@endphp
+
+<section
+    {{ $attributes
+        ->except(['aria-busy', 'data-daisy-kit-config', 'data-daisy-kit-module', 'data-daisy-kit-state', 'wms'])
+        ->class(['daisy-kit-map', 'card', 'border', 'border-base-300', 'bg-base-100', 'shadow-sm']) }}
+    aria-busy="true"
+    aria-label="{{ $mapView['label'] }}"
+    data-daisy-kit-module="map"
+>
+    <p class="daisy-kit-map__status alert alert-info" data-daisy-kit-status hidden role="status" aria-live="polite"></p>
+
+    <div class="daisy-kit-map__content" data-daisy-kit-content>
+        @include('daisy-kit::internal.map.canvas', ['controlSlots' => $controlSlots, 'mapId' => $mapId, 'mapView' => $mapView])
+        @include('daisy-kit::internal.map.states', ['mapView' => $mapView])
+
+        <input
+            data-daisy-kit-map-value
+            type="hidden"
+            @if ($mapView['name']) name="{{ $mapView['name'] }}" @endif
+            value="{{ json_encode($mapView['value'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}"
+        >
+    </div>
+
+    <script data-daisy-kit-config type="application/json">{!! $configuration !!}</script>
 </section>

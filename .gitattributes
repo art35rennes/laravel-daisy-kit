@@ -1,1 +1,5 @@
 dist/*.js whitespace=-trailing-space
+*.docx binary
+*.mp4 binary
+*.pdf binary
+*.wav binary

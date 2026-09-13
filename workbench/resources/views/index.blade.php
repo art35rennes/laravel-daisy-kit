@@ -1,71 +1,640 @@
+@php
+    if (! array_key_exists('module', get_defined_vars())) {
+        $module = 'map';
+    }
+    if (! array_key_exists('modules', get_defined_vars())) {
+        $modules = ['map' => 'Map'];
+    }
+    if ($module === 'map') {
+        $drawingMapControls = \Art35rennes\DaisyKit\Map\MapControls::make([
+            \Art35rennes\DaisyKit\Map\MapControl::menu('layers', 'Layers', [
+                \Art35rennes\DaisyKit\Map\MapControl::basemaps(),
+                \Art35rennes\DaisyKit\Map\MapControl::drawingLayers(),
+            ], icon: 'layers'),
+            \Art35rennes\DaisyKit\Map\MapControl::menu('drawing', 'Drawing', [
+                \Art35rennes\DaisyKit\Map\MapControl::objectTypeSelector(),
+                \Art35rennes\DaisyKit\Map\MapControl::drawLayerSelector(),
+                \Art35rennes\DaisyKit\Map\MapControl::menu('geometry', 'Geometry', [
+                    \Art35rennes\DaisyKit\Map\MapControl::drawPoint(),
+                    \Art35rennes\DaisyKit\Map\MapControl::drawLine(),
+                    \Art35rennes\DaisyKit\Map\MapControl::drawPolygon(),
+                    \Art35rennes\DaisyKit\Map\MapControl::drawRectangle(),
+                ]),
+            ], icon: 'drawing'),
+            \Art35rennes\DaisyKit\Map\MapControl::menu('selection', 'Selection', [
+                \Art35rennes\DaisyKit\Map\MapControl::edit(),
+                \Art35rennes\DaisyKit\Map\MapControl::select(),
+                \Art35rennes\DaisyKit\Map\MapControl::selectFeature(),
+                \Art35rennes\DaisyKit\Map\MapControl::selectByArea(),
+                \Art35rennes\DaisyKit\Map\MapControl::deleteSelected(),
+                \Art35rennes\DaisyKit\Map\MapControl::clearSelection(),
+            ], icon: 'selection'),
+            \Art35rennes\DaisyKit\Map\MapControl::menu('history', 'History', [
+                \Art35rennes\DaisyKit\Map\MapControl::undo(),
+                \Art35rennes\DaisyKit\Map\MapControl::redo(),
+                \Art35rennes\DaisyKit\Map\MapControl::export(),
+            ], icon: 'history'),
+            \Art35rennes\DaisyKit\Map\MapControl::fitBounds(),
+            \Art35rennes\DaisyKit\Map\MapControl::fullscreen(),
+        ]);
+        $controlledMapControls = \Art35rennes\DaisyKit\Map\MapControls::make([
+            \Art35rennes\DaisyKit\Map\MapControl::menu('host', 'Host controls', [
+                \Art35rennes\DaisyKit\Map\MapControl::slot('filters'),
+            ]),
+            \Art35rennes\DaisyKit\Map\MapControl::customAction('focus-depot', 'Focus the depot', 'location'),
+            \Art35rennes\DaisyKit\Map\MapControl::fitBounds(),
+            \Art35rennes\DaisyKit\Map\MapControl::geolocate(),
+            \Art35rennes\DaisyKit\Map\MapControl::fullscreen(),
+        ]);
+    }
+@endphp
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Daisy Kit v5 Workbench</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ $module === null ? 'Daisy Kit v5 Workbench' : $modules[$module].' · Daisy Kit Workbench' }}</title>
+    @vite($module === null ? ['resources/css/app.css'] : ['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body>
-    <main>
-        <header>
-            <h1>Daisy Kit v5 Workbench</h1>
-            <p>Each section is an independently mounted package module.</p>
+<body class="bg-base-200 text-base-content" data-workbench-module="{{ $module }}">
+    <main class="mx-auto max-w-6xl space-y-8 p-4 sm:p-8">
+        <header class="hero rounded-box bg-base-100 shadow-sm">
+            <div class="hero-content flex-col text-center">
+            <h1>{{ $module === null ? 'Daisy Kit v5 Workbench' : $modules[$module] }}</h1>
+            <p>{{ $module === null ? 'Choose a component module to open its dedicated Workbench.' : 'Dedicated component module preview.' }}</p>
+            @if($module !== null)
+                <a class="link text-base-content" href="{{ route('workbench.index') }}">Back to component modules</a>
+            @endif
+            </div>
         </header>
 
-        <section aria-labelledby="forms-viewer-heading">
-            <h2 id="forms-viewer-heading">Forms Viewer</h2>
-            <x-daisy-kit::forms.viewer />
-        </section>
+        @if($module === null)
+            <nav aria-labelledby="module-directory-heading">
+                <h2 id="module-directory-heading">Component modules</h2>
+                <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach($modules as $modulePath => $label)
+                        <li><a class="btn btn-outline w-full justify-between" href="/{{ $modulePath }}"><span>{{ $label }}</span><span aria-hidden="true">→</span></a></li>
+                    @endforeach
+                </ul>
+            </nav>
+        @endif
 
-        <section aria-labelledby="forms-builder-heading">
-            <h2 id="forms-builder-heading">Forms Builder</h2>
-            <x-daisy-kit::forms.builder />
-        </section>
-
-        <section aria-labelledby="table-heading">
+        @if($module === 'table')
+        <section class="min-w-0 space-y-6" aria-labelledby="table-heading">
             <h2 id="table-heading">Table</h2>
-            <x-daisy-kit::table />
-        </section>
 
-        <section aria-labelledby="tree-heading">
-            <h2 id="tree-heading">Tree</h2>
-            <x-daisy-kit::tree
-                :items="[
+            <h3 id="table-client-heading">Client directory</h3>
+            <x-daisy-kit::table
+                :columns="[
                     [
-                        'id' => 'documentation',
-                        'label' => 'Documentation',
-                        'expanded' => false,
-                        'children' => [
-                            ['id' => 'getting-started', 'label' => 'Getting started'],
+                        'key' => 'name',
+                        'label' => 'Name',
+                        'sortable' => true,
+                        'cell' => ['renderer' => 'blade', 'view' => 'workbench::table.cells.person'],
+                    ],
+                    ['key' => 'team', 'label' => 'Team', 'sortable' => true],
+                    ['key' => 'status', 'label' => 'Status', 'sortable' => true],
+                ]"
+                :rows="[
+                    ['id' => 'ada', 'name' => 'Ada Lovelace', 'team' => 'Platform', 'status' => 'ready'],
+                    ['id' => 'grace', 'name' => 'Grace Hopper', 'team' => 'Infrastructure', 'status' => 'review'],
+                    ['id' => 'margaret', 'name' => 'Margaret Hamilton', 'team' => 'Flight software', 'status' => 'ready'],
+                    ['id' => 'katherine', 'name' => 'Katherine Johnson', 'team' => 'Research', 'status' => 'paused'],
+                    ['id' => 'dorothy', 'name' => 'Dorothy Vaughan', 'team' => 'Research', 'status' => 'ready'],
+                    ['id' => 'mary', 'name' => 'Mary Jackson', 'team' => 'Platform', 'status' => 'review'],
+                    ['id' => 'annie', 'name' => 'Annie Easley', 'team' => 'Infrastructure', 'status' => 'paused'],
+                    ['id' => 'joan', 'name' => 'Joan Clarke', 'team' => 'Research', 'status' => 'ready'],
+                    ['id' => 'hedy', 'name' => 'Hedy Lamarr', 'team' => 'Platform', 'status' => 'review'],
+                    ['id' => 'radia', 'name' => 'Radia Perlman', 'team' => 'Infrastructure', 'status' => 'ready'],
+                    ['id' => 'evelyn', 'name' => 'Evelyn Boyd Granville', 'team' => 'Flight software', 'status' => 'paused'],
+                    ['id' => 'susan', 'name' => 'Susan Kare', 'team' => 'Platform', 'status' => 'ready'],
+                ]"
+                :filters="[
+                    ['id' => 'name', 'label' => 'Name', 'type' => 'text'],
+                    [
+                        'id' => 'team',
+                        'label' => 'Team',
+                        'type' => 'select',
+                        'options' => [
+                            ['value' => 'Platform', 'label' => 'Platform'],
+                            ['value' => 'Infrastructure', 'label' => 'Infrastructure'],
+                            ['value' => 'Flight software', 'label' => 'Flight software'],
+                            ['value' => 'Research', 'label' => 'Research'],
+                        ],
+                    ],
+                    [
+                        'id' => 'status',
+                        'label' => 'Status',
+                        'type' => 'select',
+                        'options' => [
+                            ['value' => 'ready', 'label' => 'Ready'],
+                            ['value' => 'review', 'label' => 'Review'],
+                            ['value' => 'paused', 'label' => 'Paused'],
                         ],
                     ],
                 ]"
+                :page-size="4"
+                :page-size-options="[4, 8, 12]"
+                caption="People directory"
+                state-key="workbench-client-directory"
+                persist-state="url"
+            />
+
+            <h3 id="table-server-heading">Server queue and bulk selection</h3>
+            <x-daisy-kit::table
+                id="server-queue-table"
+                mode="server"
+                :endpoint="route('workbench.table.rows')"
+                server-adapter="spatie-query-builder"
+                global-filter-key="global"
+                filter-mode="manual"
+                :columns="[
+                    ['key' => 'reference', 'label' => 'Reference', 'sortKey' => 'cases.reference'],
+                    ['key' => 'customer', 'label' => 'Customer', 'sortKey' => 'cases.customer'],
+                    ['key' => 'priority', 'label' => 'Priority', 'sortKey' => 'cases.priority'],
+                    ['key' => 'status', 'label' => 'Status', 'sortKey' => 'cases.status'],
+                ]"
+                :filters="[
+                    ['id' => 'customer', 'label' => 'Customer', 'type' => 'text'],
+                    ['id' => 'priority', 'label' => 'Priority', 'type' => 'select', 'options' => ['Urgent', 'High', 'Normal', 'Low']],
+                    ['id' => 'status', 'filterKey' => 'state', 'label' => 'Status', 'type' => 'select', 'options' => ['Open', 'Review', 'Waiting', 'Closed']],
+                ]"
+                selection="multiple"
+                row-key="id"
+                :bulk-actions="[
+                    ['id' => 'assign', 'label' => 'Assign selected'],
+                    ['id' => 'close', 'label' => 'Close selected'],
+                ]"
+                :page-size="3"
+                :page-size-options="[3, 6, 12]"
+                caption="Support queue"
+            />
+
+            <h3 id="table-details-heading">Contextual details</h3>
+            <x-daisy-kit::table
+                :columns="[
+                    ['key' => 'service', 'label' => 'Service'],
+                    ['key' => 'owner', 'label' => 'Owner'],
+                    ['key' => 'health', 'label' => 'Health'],
+                ]"
+                :rows="[
+                    ['id' => 'api', 'service' => 'Public API', 'owner' => 'Platform', 'health' => 'Operational', 'summary' => '12 instances across three regions. Last deployment succeeded.'],
+                    ['id' => 'worker', 'service' => 'Media workers', 'owner' => 'Content', 'health' => 'Degraded', 'summary' => 'Two delayed jobs. Automatic retry is in progress.'],
+                    ['id' => 'billing', 'service' => 'Billing gateway', 'owner' => 'Finance', 'health' => 'Operational', 'summary' => 'All payment providers are responding normally.'],
+                    ['id' => 'search', 'service' => 'Search index', 'owner' => 'Data', 'health' => 'Operational', 'summary' => 'The last full index completed 18 minutes ago.'],
+                    ['id' => 'mail', 'service' => 'Transactional mail', 'owner' => 'Growth', 'health' => 'Delayed', 'summary' => 'Delivery is delayed by approximately four minutes.'],
+                    ['id' => 'storage', 'service' => 'Object storage', 'owner' => 'Infrastructure', 'health' => 'Operational', 'summary' => 'Replication is healthy in all configured regions.'],
+                ]"
+                :row-details="['accessor' => 'summary', 'label' => 'Show details', 'mode' => 'inline']"
+                :page-size="3"
+                :page-size-options="[3, 6, 12]"
+                caption="Service health"
+            />
+
+            <h3 id="table-editing-heading">Inline editing</h3>
+            <x-daisy-kit::table
+                :columns="[
+                    ['key' => 'name', 'label' => 'Project'],
+                    ['key' => 'state', 'label' => 'State'],
+                    ['key' => 'owner', 'label' => 'Owner'],
+                ]"
+                :rows="[
+                    ['id' => 'atlas', 'name' => 'Atlas migration', 'state' => 'Review', 'owner' => 'Ada'],
+                    ['id' => 'relay', 'name' => 'Relay launch', 'state' => 'Draft', 'owner' => 'Grace'],
+                    ['id' => 'orbit', 'name' => 'Orbit billing', 'state' => 'Ready', 'owner' => 'Margaret'],
+                    ['id' => 'nova', 'name' => 'Nova search', 'state' => 'Review', 'owner' => 'Katherine'],
+                    ['id' => 'harbor', 'name' => 'Harbor storage', 'state' => 'Draft', 'owner' => 'Dorothy'],
+                    ['id' => 'signal', 'name' => 'Signal alerts', 'state' => 'Ready', 'owner' => 'Mary'],
+                ]"
+                :editable="[
+                    'columns' => ['name', 'state', 'owner'],
+                    'endpoint' => url('/_daisy-kit-test/table/rows/{rowId}'),
+                    'method' => 'PATCH',
+                ]"
+                :page-size="3"
+                :page-size-options="[3, 6, 12]"
+                caption="Project planning"
             />
         </section>
+        @endif
 
-        <section aria-labelledby="blueprint-heading">
+        @if($module === 'blueprint')
+        <section class="min-w-0" aria-labelledby="blueprint-heading">
             <h2 id="blueprint-heading">Blueprint</h2>
             <x-daisy-kit::blueprint
                 :nodes="[
-                    ['id' => 'source', 'label' => 'Source'],
+                    ['id' => 'source', 'label' => 'Source', 'value' => ['state' => 'ready']],
                     ['id' => 'destination', 'label' => 'Destination'],
                 ]"
                 :edges="[
                     ['source' => 'source', 'target' => 'destination'],
                 ]"
+                :value="[
+                    'nodes' => [
+                        ['id' => 'source', 'label' => 'Source', 'value' => ['state' => 'ready']],
+                        ['id' => 'destination', 'label' => 'Destination'],
+                    ],
+                    'edges' => [],
+                ]"
+                :editable="$blueprintEditable ?? true"
+                name="workbench_blueprint"
             />
         </section>
+        @endif
 
-        <section aria-labelledby="file-preview-heading">
-            <h2 id="file-preview-heading">File Preview</h2>
-            <x-daisy-kit::file-preview />
+        @if($module === 'file-preview')
+        <section class="min-w-0 space-y-6" aria-labelledby="file-preview-heading">
+            <div>
+                <h2 id="file-preview-heading">File Preview</h2>
+                <p class="text-base-content/70">Media, documents, custom actions and failures use the same isolated runtime.</p>
+            </div>
+
+            <div class="space-y-3" data-file-preview-scenario="media">
+                <h3>Media</h3>
+                <div class="grid items-start gap-4 lg:grid-cols-3">
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.svg"
+                        type="image"
+                        mime-type="image/svg+xml"
+                        name="Product illustration.svg"
+                        :file-size="1840"
+                        preview-mode="modal"
+                    />
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.wav"
+                        type="audio"
+                        mime-type="audio/wav"
+                        name="Interview excerpt.wav"
+                        :file-size="16044"
+                        layout="compact-list"
+                        preview-mode="inline"
+                    />
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.mp4"
+                        type="video"
+                        mime-type="video/mp4"
+                        name="Preview walkthrough.mp4"
+                        layout="compact-list"
+                        preview-mode="inline"
+                    />
+                </div>
+            </div>
+
+            <div class="space-y-3" data-file-preview-scenario="documents">
+                <h3>Documents</h3>
+                <div class="grid items-start gap-4 lg:grid-cols-3">
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.txt"
+                        type="text"
+                        name="Release notes.txt"
+                        preview-mode="inline"
+                        notice="Rendered in an isolated sandbox."
+                    />
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.pdf"
+                        type="pdf"
+                        mime-type="application/pdf"
+                        name="Release overview.pdf"
+                        preview-mode="modal"
+                    />
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview.docx"
+                        type="docx"
+                        mime-type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        name="Product brief.docx"
+                        preview-mode="modal"
+                        docx-view="width"
+                        :docx-zoom="100"
+                    />
+                </div>
+            </div>
+
+            <div class="space-y-3" data-file-preview-scenario="custom">
+                <h3>Custom list action</h3>
+                <x-daisy-kit::file-preview
+                    url="/_daisy-kit-test/files/preview.txt"
+                    type="text"
+                    name="Customer hand-off.txt"
+                    layout="action-only"
+                    preview-mode="modal"
+                >
+                    <x-slot:trigger>
+                        <button class="btn btn-secondary" type="button">Inspect customer hand-off</button>
+                    </x-slot:trigger>
+                    <x-slot:modalFooter>
+                        <p class="text-sm text-base-content/70">Custom footer supplied by the integrator.</p>
+                    </x-slot:modalFooter>
+                </x-daisy-kit::file-preview>
+            </div>
+
+            <div class="space-y-3" data-file-preview-scenario="errors">
+                <h3>Errors and limits</h3>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/preview-invalid.pdf"
+                        type="pdf"
+                        mime-type="application/pdf"
+                        name="Invalid contract.pdf"
+                        preview-mode="modal"
+                    />
+                    <x-daisy-kit::file-preview
+                        url="/_daisy-kit-test/files/forecast.xlsx"
+                        name="Forecast.xlsx"
+                        extension="xlsx"
+                        preview-mode="download"
+                    />
+                </div>
+            </div>
         </section>
+        @endif
 
-        <section aria-labelledby="map-heading">
+        @if(in_array($module, ['copyable', 'combobox', 'signature', 'transfer-list', 'truncate', 'scrollspy'], true))
+        <section class="card min-w-0 space-y-6 bg-base-100 p-6" aria-labelledby="focused-components-heading">
+            <h2 id="focused-components-heading">{{ $modules[$module] }}</h2>
+            @if($module === 'copyable')
+            <div class="grid gap-4 md:grid-cols-2">
+                <article class="card card-border bg-base-100" data-copyable-scenario="explicit-value">
+                    <div class="card-body gap-3">
+                        <h3 class="card-title text-base">Release identifier</h3>
+                        <p class="text-sm text-base-content/70">The visible action and copied technical value can differ.</p>
+                        <x-daisy-kit::copyable
+                            value="release-2026-08-29"
+                            show-icon
+                            :feedback-duration="5000"
+                            success-label="Release identifier copied."
+                        >Copy release identifier</x-daisy-kit::copyable>
+                    </div>
+                </article>
+                <article class="card card-border bg-base-100" data-copyable-scenario="visible-text">
+                    <div class="card-body gap-3">
+                        <h3 class="card-title text-base">Deployment command</h3>
+                        <p class="text-sm text-base-content/70">Without an explicit value, the displayed text is copied.</p>
+                        <x-daisy-kit::copyable show-icon success-label="Command copied."><code>php artisan boost:update --discover</code></x-daisy-kit::copyable>
+                    </div>
+                </article>
+                <article class="card card-border bg-base-100" data-copyable-scenario="structured-text">
+                    <div class="card-body gap-3">
+                        <h3 class="card-title text-base">Webhook payload</h3>
+                        <p class="text-sm text-base-content/70">Structured data remains inert plain text on the clipboard.</p>
+                        <x-daisy-kit::copyable
+                            value='{"release":"2026.08","channel":"stable"}'
+                            show-icon
+                            success-label="JSON payload copied."
+                        >Copy JSON payload</x-daisy-kit::copyable>
+                    </div>
+                </article>
+                <article class="card card-border bg-base-100" data-copyable-scenario="disabled">
+                    <div class="card-body gap-3">
+                        <h3 class="card-title text-base">Protected secret</h3>
+                        <p class="text-sm text-base-content/70">Unavailable values expose a native disabled action.</p>
+                        <x-daisy-kit::copyable value="not-available" show-icon disabled>Copy protected value</x-daisy-kit::copyable>
+                    </div>
+                </article>
+            </div>
+            @endif
+
+            @if(in_array($module, ['combobox', 'signature', 'transfer-list'], true))
+            @if(session()->has('workbench.review.saved'))
+                <p class="alert alert-success" role="status">The review assignment was saved.</p>
+            @endif
+
+            <form class="space-y-6" method="POST" action="{{ route('workbench.reviews.store') }}">
+                @csrf
+                <input name="return_to" type="hidden" value="{{ $module }}">
+                @if($module === 'combobox')
+                <div class="space-y-2">
+                    <h3>Remote people directory</h3>
+                    <p class="text-sm text-base-content/70">Search people by name, team or complete e-mail domain. Suggestions come from a Laravel JSON endpoint.</p>
+                    <x-daisy-kit::combobox
+                        id="remote-reviewers-combobox"
+                        name="reviewers"
+                        label="Reviewers"
+                        :multiple="true"
+                        :source="route('workbench.combobox.reviewers')"
+                        :min-chars="0"
+                        :max-items="4"
+                        :max-suggestions="8"
+                        :options="[[
+                            'value' => 'ada',
+                            'label' => 'Ada Lovelace',
+                            'description' => 'ada@analytical-engine.org',
+                            'initials' => 'AL',
+                            'meta' => 'Platform',
+                        ]]"
+                        :value="['ada']"
+                        placeholder="Name, team or e-mail domain…"
+                    />
+                </div>
+                <div class="space-y-2">
+                    <h3>Local release vocabulary</h3>
+                    <p class="text-sm text-base-content/70">These suggestions are embedded in Blade and custom tags remain available for project-specific terms.</p>
+                    <x-daisy-kit::combobox
+                        id="local-release-tags-combobox"
+                        name="release_tags"
+                        label="Release tags"
+                        :multiple="true"
+                        :allow-custom="true"
+                        :options="[
+                            ['value' => 'security', 'label' => 'Security review', 'description' => 'Threat model and dependency audit', 'meta' => 'Quality gate'],
+                            ['value' => 'accessibility', 'label' => 'Accessibility', 'description' => 'Keyboard and assistive technology', 'meta' => 'Quality gate'],
+                            ['value' => 'performance', 'label' => 'Performance', 'description' => 'Rendering and transport budget', 'meta' => 'Engineering'],
+                            ['value' => 'documentation', 'label' => 'Documentation', 'description' => 'Integrator guidance and examples', 'meta' => 'Release'],
+                        ]"
+                        :search-fields="['label', 'description', 'meta']"
+                        placeholder="Choose or create a tag…"
+                    />
+                </div>
+                @endif
+                @if($module === 'signature')
+                <x-daisy-kit::signature class="card" name="approval_signature" label="Approval signature" />
+                @endif
+                @if($module === 'transfer-list')
+                <div>
+                    <h3>Assign the release review team</h3>
+                    <p class="text-sm text-base-content/70">Search the directory, select several people and preserve the review order submitted to Laravel.</p>
+                </div>
+                <x-daisy-kit::transfer-list
+                    name="assignees"
+                    label="Review team"
+                    source-label="Company directory"
+                    target-label="Assigned reviewers"
+                    :items="[
+                        ['value' => 'ada', 'label' => 'Ada Lovelace', 'description' => 'ada@example.test', 'meta' => 'Platform', 'initials' => 'AL'],
+                        ['value' => 'grace', 'label' => 'Grace Hopper', 'description' => 'grace@example.test', 'meta' => 'Infrastructure', 'initials' => 'GH'],
+                        ['value' => 'margaret', 'label' => 'Margaret Hamilton', 'description' => 'margaret@example.test', 'meta' => 'Flight software', 'initials' => 'MH'],
+                        ['value' => 'katherine', 'label' => 'Katherine Johnson', 'description' => 'katherine@example.test', 'meta' => 'Research', 'initials' => 'KJ'],
+                        ['value' => 'dorothy', 'label' => 'Dorothy Vaughan', 'description' => 'dorothy@example.test', 'meta' => 'Research', 'initials' => 'DV'],
+                        ['value' => 'mary', 'label' => 'Mary Jackson', 'description' => 'mary@example.test', 'meta' => 'Platform', 'initials' => 'MJ'],
+                        ['value' => 'annie', 'label' => 'Annie Easley', 'description' => 'annie@example.test', 'meta' => 'Infrastructure', 'initials' => 'AE'],
+                        ['value' => 'joan', 'label' => 'Joan Clarke', 'description' => 'joan@example.test', 'meta' => 'Security', 'initials' => 'JC'],
+                        ['value' => 'hedy', 'label' => 'Hedy Lamarr', 'description' => 'hedy@example.test', 'meta' => 'Wireless', 'initials' => 'HL'],
+                        ['value' => 'radia', 'label' => 'Radia Perlman', 'description' => 'radia@example.test', 'meta' => 'Networks', 'initials' => 'RP'],
+                        ['value' => 'evelyn', 'label' => 'Evelyn Boyd Granville', 'description' => 'evelyn@example.test', 'meta' => 'Data', 'initials' => 'EG'],
+                        ['value' => 'susan', 'label' => 'Susan Kare', 'description' => 'susan@example.test', 'meta' => 'Design', 'initials' => 'SK'],
+                        ['value' => 'barbara', 'label' => 'Barbara Liskov', 'description' => 'barbara@example.test', 'meta' => 'Architecture', 'initials' => 'BL'],
+                        ['value' => 'frances', 'label' => 'Frances Allen', 'description' => 'frances@example.test', 'meta' => 'Compilers', 'initials' => 'FA'],
+                        ['value' => 'karen', 'label' => 'Karen Spärck Jones', 'description' => 'karen@example.test', 'meta' => 'Search', 'initials' => 'KJ'],
+                        ['value' => 'restricted', 'label' => 'External auditor', 'description' => 'Pending security clearance', 'meta' => 'Restricted', 'initials' => 'EA', 'disabled' => true],
+                    ]"
+                    :value="['ada', 'grace', 'margaret']"
+                    pagination
+                    :page-size="5"
+                    required
+                />
+                @endif
+                <button class="btn btn-primary" type="submit">Save review assignment</button>
+            </form>
+            @endif
+
+            @if($module === 'truncate')
+            <div class="overflow-x-auto">
+                <table class="table table-fixed table-sm w-full">
+                    <caption class="mb-3 text-left text-base font-semibold">Delivery addresses</caption>
+                    <colgroup><col><col class="w-80"><col></colgroup>
+                    <thead>
+                        <tr><th scope="col">Customer</th><th scope="col">Address</th><th scope="col">Status</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Ada Lovelace</th>
+                            <td class="max-w-64"><x-daisy-kit::truncate text="12 St James's Square, London SW1Y 4LB, United Kingdom" reveal-label="Show Ada Lovelace's full address" /></td>
+                            <td><span class="badge badge-success">Ready</span></td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Grace Hopper</th>
+                            <td class="max-w-64"><x-daisy-kit::truncate text="1701 North Beauregard Street, Alexandria, Virginia 22311, United States" reveal-label="Show Grace Hopper's full address" :backdrop="true" /></td>
+                            <td><span class="badge badge-warning">Review</span></td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Margaret Hamilton</th>
+                            <td class="max-w-64"><x-daisy-kit::truncate text="55 Fruit Street, Boston, Massachusetts 02114, United States" reveal-label="Show Margaret Hamilton's full address" /></td>
+                            <td><span class="badge badge-success">Ready</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            @endif
+            @if($module === 'scrollspy')
+            <div id="workbench-scrollspy-content" class="max-h-48 overflow-auto" tabindex="0">
+                <h3 id="workbench-overview">Overview</h3><p>{{ str_repeat('Overview content. ', 20) }}</p>
+                <h3 id="workbench-details">Details</h3><p>{{ str_repeat('Detailed content. ', 20) }}</p>
+            </div>
+            <x-daisy-kit::scrollspy
+                class="card"
+                target="#workbench-scrollspy-content"
+                :items="[['id' => 'workbench-overview', 'label' => 'Overview'], ['id' => 'workbench-details', 'label' => 'Details']]"
+            />
+            @endif
+        </section>
+        @endif
+
+        @if($module === 'map')
+        <section class="min-w-0" aria-labelledby="map-heading">
             <h2 id="map-heading">Map</h2>
-            <x-daisy-kit::map />
+
+            <div class="grid gap-8">
+                <article>
+                    <h3>Markers, popups and clustering</h3>
+                    <p class="text-base-content/70">Eight nearby operations sites are grouped as the view changes.</p>
+                    <x-daisy-kit::map
+                        id="map-cluster"
+                        label="Operations sites"
+                        :provider="config('workbench-map.external_tiles', true) ? 'osm.standard' : false"
+                        :fit-bounds="false"
+                        :zoom="12"
+                        :cluster="['maxClusterRadius' => 72]"
+                        :markers="[
+                            ['id' => 'rennes', 'label' => 'Rennes office', 'position' => [48.1173, -1.6778], 'popup' => 'Rennes office'],
+                            ['id' => 'depot', 'label' => 'Central depot', 'position' => [48.1181, -1.6769], 'popup' => 'Central depot'],
+                            ['id' => 'lab', 'label' => 'Materials lab', 'position' => [48.1167, -1.6786], 'popup' => ['renderer' => 'trusted-html', 'content' => '<strong>Materials lab</strong><br>Open 08:00–18:00']],
+                            ['id' => 'workshop', 'label' => 'Workshop', 'position' => [48.1178, -1.6791], 'popup' => 'Workshop'],
+                            ['id' => 'dispatch', 'label' => 'Dispatch center', 'position' => [48.1169, -1.6762], 'popup' => 'Dispatch center'],
+                            ['id' => 'storage', 'label' => 'Storage', 'position' => [48.1185, -1.6781], 'popup' => 'Storage'],
+                            ['id' => 'training', 'label' => 'Training room', 'position' => [48.1164, -1.6771], 'popup' => 'Training room'],
+                            ['id' => 'support', 'label' => 'Support desk', 'position' => [48.1175, -1.6758], 'popup' => 'Support desk'],
+                        ]"
+                    />
+                </article>
+
+                <article>
+                    <h3>OSM styles and business layers</h3>
+                    <p class="text-base-content/70">The menu presents service districts, scheduled works and planning constraints before their transport formats.</p>
+                    <x-daisy-kit::map
+                        id="map-layers"
+                        label="Network layers"
+                        :provider="false"
+                        :scale="true"
+                        :basemaps="! config('workbench-map.external_tiles', true) ? [] : [
+                            ['id' => 'standard', 'label' => 'OSM standard', 'provider' => 'osm.standard', 'selected' => true],
+                            ['id' => 'light', 'label' => 'OSM light', 'provider' => 'osm.light'],
+                            ['id' => 'dark', 'label' => 'OSM dark', 'provider' => 'osm.dark'],
+                            ['id' => 'voyager', 'label' => 'OSM voyager', 'provider' => 'osm.voyager'],
+                        ]"
+                        :layers="[
+                            ['id' => 'districts', 'label' => 'Service districts', 'type' => 'geojson', 'url' => '/_daisy-kit-test/map/districts.geojson', 'style' => ['color' => '#2563eb', 'weight' => 2]],
+                            ['id' => 'works', 'label' => 'Scheduled road works', 'type' => 'xyz', 'url' => '/_daisy-kit-test/map/tiles/works/{z}/{x}/{y}.png', 'visible' => false],
+                            ['id' => 'zoning', 'label' => 'Planning constraints', 'type' => 'wms', 'url' => '/_daisy-kit-test/map/wms', 'options' => ['layers' => 'workbench:zoning', 'format' => 'image/png', 'transparent' => true], 'visible' => false],
+                        ]"
+                    />
+                </article>
+
+                <article>
+                    <h3>Drawing, measurement and form export</h3>
+                    <p class="text-base-content/70">Draw objects, edit or select them, use history and submit the resulting GeoJSON.</p>
+                    <x-daisy-kit::map
+                        id="map-drawing"
+                        label="Maintenance drawing"
+                        :provider="config('workbench-map.external_tiles', true) ? 'osm.standard' : false"
+                        name="maintenance_geometry"
+                        :drawing="true"
+                        :controls="$drawingMapControls"
+                        :fullscreen="true"
+                        :measure="true"
+                        :spatial-selection="['mode' => 'both']"
+                        :value="[
+                            'type' => 'FeatureCollection',
+                            'features' => [
+                                ['type' => 'Feature', 'id' => 'site-north', 'properties' => ['name' => 'North maintenance site', 'drawLayer' => 'water'], 'geometry' => ['type' => 'Point', 'coordinates' => [-1.684, 48.124]]],
+                                ['type' => 'Feature', 'id' => 'site-south', 'properties' => ['name' => 'South maintenance site', 'drawLayer' => 'electricity'], 'geometry' => ['type' => 'Point', 'coordinates' => [-1.671, 48.109]]],
+                            ],
+                        ]"
+                        :object-types="[
+                            ['id' => 'hydrant', 'label' => 'Hydrant', 'geometry' => 'point'],
+                            ['id' => 'pipe', 'label' => 'Pipe', 'geometry' => 'line'],
+                            ['id' => 'zone', 'label' => 'Intervention zone', 'geometry' => 'polygon'],
+                        ]"
+                        :draw-layers="[
+                            ['id' => 'water', 'label' => 'Water network', 'visible' => true],
+                            ['id' => 'electricity', 'label' => 'Electricity network', 'visible' => false],
+                        ]"
+                        draw-layer-selection="multiple"
+                    />
+                </article>
+
+                <article>
+                    <h3>Persistence and geolocation</h3>
+                    <p class="text-base-content/70">The map restores its host-scoped view and offers its configured location controls.</p>
+                    <x-daisy-kit::map
+                        id="map-controlled"
+                        label="Externally controlled map"
+                        :provider="config('workbench-map.external_tiles', true) ? 'osm.standard' : false"
+                        :fullscreen="true"
+                        :gesture-handling="true"
+                        :geolocation="['watch' => true, 'setView' => true]"
+                        :persist-state="true"
+                        :controls="$controlledMapControls"
+                        state-key="workbench-controlled-map"
+                        :markers="[['id' => 'center', 'label' => 'Initial center', 'position' => [48.1173, -1.6778]]]"
+                    >
+                        <x-slot:mapFilters>
+                            <p class="text-xs text-base-content/70">This named slot can host product-specific filters without exposing Map internals.</p>
+                        </x-slot:mapFilters>
+                    </x-daisy-kit::map>
+                </article>
+            </div>
         </section>
+        @endif
     </main>
 </body>
 </html>

@@ -23,10 +23,23 @@ test('the blueprint component exposes semantic empty and error states', function
         ->toContain('data-daisy-kit-empty')
         ->toContain('role="alert"')
         ->toContain('data-daisy-kit-blueprint-canvas')
+        ->toContain('data-daisy-kit-blueprint-value')
         ->toContain('aria-hidden="true"')
         ->toContain('focusable="false"')
         ->not->toContain('role="img"')
         ->not->toContain('tabindex="0"');
+});
+
+test('the blueprint component binds the synchronized JSON to an optional field name', function (): void {
+    $html = view('daisy-kit::components.blueprint', [
+        'name' => 'workflow',
+        'value' => ['edges' => [], 'nodes' => [['id' => 'draft']]],
+    ])->render();
+
+    expect($html)
+        ->toContain('data-daisy-kit-blueprint-value')
+        ->toContain('name="workflow"')
+        ->toContain('"value"');
 });
 
 test('the blueprint component is available through the public blade namespace', function (): void {

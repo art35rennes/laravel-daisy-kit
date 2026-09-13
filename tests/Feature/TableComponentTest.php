@@ -13,6 +13,12 @@ it('renders the table as a CSP-safe explicitly mounted module', function (): voi
             ['name' => '</script><img src=x onerror=alert(1)>'],
         ],
         'pageSize' => 20,
+        'rowActions' => [['id' => 'approve', 'label' => 'Approve']],
+        'rowDetails' => ['accessor' => 'summary', 'mode' => 'inline'],
+        'editable' => ['columns' => ['name'], 'endpoint' => '/people/{rowId}'],
+        'persistState' => 'url',
+        'stateKey' => 'people',
+        'initialState' => ['globalFilter' => 'Ada'],
     ])->render();
 
     preg_match('/<script data-daisy-kit-config type="application\/json">(.*?)<\/script>/s', $html, $matches);
@@ -24,10 +30,22 @@ it('renders the table as a CSP-safe explicitly mounted module', function (): voi
         ->not->toContain('<img')
         ->not->toContain('style=')
         ->not->toContain('x-daisy::')
-        ->and(JsonConfiguration::decode(html_entity_decode($matches[1] ?? '')))->toBe([
-            'columns' => [['id' => 'name', 'label' => 'Name']],
+        ->and(JsonConfiguration::decode(html_entity_decode($matches[1] ?? '')))->toMatchArray([
+            'mode' => 'client',
+            'columns' => [[
+                'id' => 'name',
+                'key' => 'name',
+                'label' => 'Name',
+                'cell' => ['renderer' => 'text', 'view' => null],
+            ]],
             'rows' => [['name' => '</script><img src=x onerror=alert(1)>']],
             'pageSize' => 20,
+            'bulkActions' => [],
+            'rowActions' => [['id' => 'approve', 'label' => 'Approve']],
+            'rowDetails' => ['accessor' => 'summary', 'mode' => 'inline'],
+            'editable' => ['columns' => ['name'], 'endpoint' => '/people/{rowId}'],
+            'persistState' => ['mode' => 'url', 'key' => 'people'],
+            'initialState' => ['globalFilter' => 'Ada'],
         ]);
 });
 
@@ -42,4 +60,222 @@ it('renders a semantic table shell for an empty dataset', function (): void {
         ->toContain('<tbody')
         ->toContain('role="status"')
         ->toContain('aria-live="polite"');
+});
+
+it('renders custom page sizes and hides only deferred selection feedback before mounting', function (): void {
+    $html = view('daisy-kit::components.table', [
+        'pageSize' => 2,
+        'selection' => ['mode' => 'multiple', 'summaryVisibility' => 'after-first-selection'],
+    ])->render();
+    $document = new DOMDocument;
+    @$document->loadHTML($html);
+    $xpath = new DOMXPath($document);
+
+    expect($xpath->query('//select[@data-daisy-kit-table-page-size]/option[@value="2" and @selected]'))->toHaveCount(1)
+        ->and($xpath->query('//*[@data-daisy-kit-table-selection-summary and @hidden]'))->toHaveCount(1)
+        ->and($xpath->query('//*[@data-daisy-kit-table-selection and @hidden]'))->toHaveCount(0)
+        ->and($xpath->query('//button[@data-daisy-kit-table-select-page]'))->toHaveCount(1);
+});
+
+it('renders compact muted pagination with a readable page status', function (): void {
+    $html = view('daisy-kit::components.table')->render();
+
+    expect($html)
+        ->toContain('daisy-kit-table__pagination')
+        ->not->toContain('daisy-kit-table__pagination join')
+        ->not->toContain('join-item')
+        ->toContain('data-daisy-kit-table-page-status')
+        ->toContain('data-daisy-kit-table-previous')
+        ->toContain('data-daisy-kit-table-next');
+});
+
+it('renders a translated manual filter action on demand', function (): void {
+    app()->setLocale('fr');
+
+    $html = view('daisy-kit::components.table', [
+        'filterMode' => 'manual',
+        'columns' => [['key' => 'status', 'label' => 'Statut', 'filter' => ['type' => 'select']]],
+    ])->render();
+
+    expect($html)
+        ->toContain('data-daisy-kit-table-apply-filters')
+        ->toContain('Appliquer les filtres')
+        ->toContain('btn btn-primary btn-sm');
+});
+
+it('keeps host attributes while protecting module lifecycle hooks', function (): void {
+    $html = (string) $this->blade(<<<'BLADE'
+        <x-daisy-kit::table
+            id="people"
+            aria-label="People directory"
+            data-analytics="directory"
+            data-daisy-kit-module="host-override"
+            aria-busy="false"
+        />
+        BLADE);
+
+    expect($html)
+        ->toContain('id="people"')
+        ->toContain('aria-label="People directory"')
+        ->toContain('data-analytics="directory"')
+        ->toContain('data-daisy-kit-module="table"')
+        ->toContain('aria-busy="true"')
+        ->not->toContain('data-daisy-kit-module="host-override"');
+});
+
+it('renders the restored product table contract with private structured controls', function (): void {
+    $html = view('daisy-kit::components.table', [
+        'columns' => [
+            [
+                'key' => 'name',
+                'label' => 'Name',
+                'sortable' => true,
+                'filterable' => true,
+                'filter' => ['type' => 'text'],
+            ],
+            [
+                'key' => 'status',
+                'label' => 'Status',
+                'visible' => false,
+                'filterable' => true,
+                'filter' => [
+                    'type' => 'select',
+                    'options' => [['value' => 'ready', 'label' => 'Ready']],
+                ],
+            ],
+        ],
+        'rows' => [['id' => 'ada', 'name' => 'Ada Lovelace', 'status' => 'ready']],
+        'mode' => 'client',
+        'filters' => [
+            ['id' => 'active', 'label' => 'Active only', 'type' => 'boolean'],
+        ],
+        'initialState' => ['pagination' => ['pageSize' => 25]],
+        'pageSizeOptions' => [10, 25, 50],
+        'search' => true,
+        'searchDebounce' => 350,
+        'searchMode' => 'includes',
+        'columnVisibility' => true,
+        'selection' => 'multiple',
+        'rowKey' => 'id',
+        'persistState' => 'url',
+        'stateKey' => 'people-table',
+        'caption' => 'People directory',
+        'size' => 'sm',
+        'zebra' => true,
+        'hover' => true,
+    ])->render();
+
+    preg_match('/<script data-daisy-kit-config type="application\/json">(.*?)<\/script>/s', $html, $matches);
+    $configuration = JsonConfiguration::decode(html_entity_decode($matches[1] ?? ''));
+
+    expect($html)
+        ->toContain('daisy-kit-table__toolbar')
+        ->toContain('daisy-kit-table__filters')
+        ->toContain('daisy-kit-table__selection')
+        ->toContain('data-daisy-kit-table-selection-page-count')
+        ->toContain('data-daisy-kit-table-selection-off-page-count')
+        ->toContain('data-daisy-kit-table-select-page')
+        ->toContain('data-daisy-kit-table-select-filtered')
+        ->toContain('data-daisy-kit-table-clear-selection')
+        ->toContain('daisy-kit-table__results')
+        ->toContain('data-daisy-kit-table-page-size')
+        ->toContain('data-daisy-kit-table-column-controls')
+        ->toContain('data-daisy-kit-table-filter="active"')
+        ->toContain('<caption')
+        ->toContain('People directory')
+        ->not->toContain('x-daisy::')
+        ->not->toContain('style=')
+        ->and($configuration)->toMatchArray([
+            'mode' => 'client',
+            'pageSizeOptions' => [10, 25, 50],
+            'search' => [
+                'enabled' => true,
+                'debounce' => 350,
+                'mode' => 'includes',
+            ],
+            'columnVisibility' => true,
+            'selection' => ['mode' => 'multiple', 'rowKey' => 'id', 'selectFiltered' => true, 'summaryVisibility' => 'always'],
+            'persistState' => ['mode' => 'url', 'key' => 'people-table'],
+        ]);
+});
+
+it('renders explicit Blade cell views before serializing client rows', function (): void {
+    view()->addNamespace('table-test', __DIR__.'/../Fixtures/views');
+
+    $html = view('daisy-kit::components.table', [
+        'columns' => [[
+            'key' => 'name',
+            'label' => 'Name',
+            'cell' => ['renderer' => 'blade', 'view' => 'table-test::table.person'],
+        ]],
+        'rows' => [['id' => 'ada', 'name' => 'Ada', 'team' => 'Platform']],
+    ])->render();
+
+    preg_match('/<script data-daisy-kit-config type="application\/json">(.*?)<\/script>/s', $html, $matches);
+    $configuration = JsonConfiguration::decode(html_entity_decode($matches[1] ?? ''));
+
+    expect($configuration['columns'][0]['cell'])->toBe([
+        'renderer' => 'blade',
+        'view' => 'table-test::table.person',
+    ])->and($configuration['rows'][0]['name'])
+        ->toContain('data-person-cell')
+        ->toContain('<strong>Ada</strong>')
+        ->toContain('Platform');
+});
+
+it('uses package translations for Blade and runtime table labels', function (): void {
+    app()->setLocale('fr');
+
+    $html = view('daisy-kit::components.table')->render();
+    preg_match('/<script data-daisy-kit-config type="application\/json">(.*?)<\/script>/s', $html, $matches);
+    $configuration = JsonConfiguration::decode(html_entity_decode($matches[1] ?? ''));
+
+    expect($html)
+        ->toContain('Rechercher')
+        ->toContain('Lignes par page')
+        ->and($configuration['labels'])->toMatchArray([
+            'actions' => 'Actions',
+            'edit' => 'Modifier',
+            'page' => 'Page :current sur :total',
+            'showingResults' => ':from–:to sur :total résultats',
+        ]);
+});
+
+it('exposes the Spatie Query Builder adapter through the Blade contract', function (): void {
+    $html = (string) $this->blade(<<<'BLADE'
+        <x-daisy-kit::table
+            mode="server"
+            endpoint="/people"
+            server-adapter="spatie-query-builder"
+            global-filter-key="people"
+            :columns="[['key' => 'name', 'sortKey' => 'users.name']]"
+            :filters="[['id' => 'status', 'filterKey' => 'state']]"
+        />
+        BLADE);
+
+    preg_match('/<script data-daisy-kit-config type="application\/json">(.*?)<\/script>/s', $html, $matches);
+    $configuration = JsonConfiguration::decode(html_entity_decode($matches[1] ?? ''));
+
+    expect($configuration)->toMatchArray([
+        'mode' => 'server',
+        'endpoint' => '/people',
+        'serverAdapter' => 'spatie-query-builder',
+        'globalFilterKey' => 'people',
+    ])->and($configuration['columns'][0])->toMatchArray([
+        'key' => 'name',
+        'sortKey' => 'users.name',
+    ])->and($configuration['filters'][0])->toMatchArray([
+        'id' => 'status',
+        'filterKey' => 'state',
+    ]);
+});
+
+it('demonstrates cumulative Spatie Query Builder filters in the Workbench endpoint', function (): void {
+    $response = $this->get('/_daisy-kit-test/table/rows?filter%5Bstate%5D=Open&filter%5Bpriority%5D=Urgent&sort=-cases.reference&page%5Bnumber%5D=1&page%5Bsize%5D=1');
+
+    $response->assertOk()
+        ->assertJsonPath('data.0.reference', 'CASE-1052')
+        ->assertJsonPath('meta.current_page', 1)
+        ->assertJsonPath('meta.per_page', 1)
+        ->assertJsonPath('meta.total', 2);
 });
