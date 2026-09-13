@@ -27,10 +27,10 @@
                 <header class="daisy-kit-transfer-list__header">
                     <div class="min-w-0">
                         <h3 class="truncate font-semibold">{{ $sourceLabel }}</h3>
-                        <p class="text-xs text-base-content/60" data-daisy-kit-transfer-count="source" aria-live="polite"></p>
+                        <p class="text-xs text-base-content/70" data-daisy-kit-transfer-count="source" aria-live="polite"></p>
                     </div>
                     @if ($showSelectAll)
-                        <label class="daisy-kit-transfer-list__select-all label cursor-pointer gap-2">
+                        <label class="daisy-kit-transfer-list__select-all label text-base-content/70 cursor-pointer gap-2">
                             <span class="text-xs">Select all</span>
                             <input class="checkbox checkbox-sm" data-daisy-kit-transfer-select-all="source" type="checkbox" aria-label="Select all {{ $sourceLabel }}" @disabled($disabled)>
                         </label>
@@ -71,10 +71,10 @@
                 <header class="daisy-kit-transfer-list__header">
                     <div class="min-w-0">
                         <h3 class="truncate font-semibold">{{ $targetLabel }}</h3>
-                        <p class="text-xs text-base-content/60" data-daisy-kit-transfer-count="target" aria-live="polite"></p>
+                        <p class="text-xs text-base-content/70" data-daisy-kit-transfer-count="target" aria-live="polite"></p>
                     </div>
                     @if ($showSelectAll)
-                        <label class="daisy-kit-transfer-list__select-all label cursor-pointer gap-2">
+                        <label class="daisy-kit-transfer-list__select-all label text-base-content/70 cursor-pointer gap-2">
                             <span class="text-xs">Select all</span>
                             <input class="checkbox checkbox-sm" data-daisy-kit-transfer-select-all="target" type="checkbox" aria-label="Select all {{ $targetLabel }}" @disabled($disabled)>
                         </label>

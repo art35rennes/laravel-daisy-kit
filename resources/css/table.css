@@ -266,3 +266,7 @@
         transition-duration: 0.01ms !important;
     }
 }
+
+.daisy-kit-table input::placeholder {
+    color: color-mix(in oklab, var(--color-base-content) 70%, transparent);
+}

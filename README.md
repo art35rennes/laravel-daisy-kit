@@ -87,6 +87,8 @@ Dependency license texts are included in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NO
 
 ## Development
 
+Use Node.js 24 and npm with the committed lock file for reproducible builds.
+
 ```bash
 composer install
 npm ci

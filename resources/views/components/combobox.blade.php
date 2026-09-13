@@ -31,7 +31,7 @@
 
 <section {{ $attributes->class(['daisy-kit-combobox', 'form-control']) }} data-daisy-kit-module="combobox">
     <p class="alert alert-error" data-daisy-kit-status hidden role="alert"></p>
-    <label class="label" for="{{ $id }}"><span class="label-text">{{ $label }}</span></label>
+    <label class="label text-base-content/70" for="{{ $id }}"><span class="label-text">{{ $label }}</span></label>
     <div class="dropdown w-full" data-daisy-kit-combobox-shell>
         <div @class(['daisy-kit-combobox__control', 'input', 'input-bordered', 'w-full', $sizeClass]) data-daisy-kit-combobox-control>
             <div class="daisy-kit-combobox__tokens" data-daisy-kit-combobox-tokens></div>
