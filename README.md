@@ -83,6 +83,8 @@ dependencies write DOM style properties; the other entries retain the stricter p
 `@daisy-kit/file-preview.js` also causes Vite to emit File Preview's sandboxed-frame chunks;
 do not add a route, proxy, copy step, or manual asset import for them.
 
+Dependency license texts are included in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 ## Development
 
 ```bash

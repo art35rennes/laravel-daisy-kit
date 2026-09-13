@@ -1,4 +1,4 @@
-# v5 dependency provenance
+# v6 dependency provenance
 
 Dependencies are resolved from their official Composer and npm registries on 2026-08-27,
 using stable versions compatible with PHP 8.4 and Laravel 13. `composer.lock` and

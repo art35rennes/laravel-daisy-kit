@@ -332,7 +332,7 @@ out of scope.
 
 ## Corrective development line
 
-The corrective development contract deliberately has no compatibility layer for v5.0.0 or its
+The stable v6 contract deliberately has no compatibility layer for v5.0.0 or its
 historical alpha releases. Consumers pin the current VCS prerelease and use its documentation as
 one coherent contract; no alias, fallback dialect, or adapter is provided for prior v5 tags.
 

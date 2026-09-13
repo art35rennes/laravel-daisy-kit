@@ -205,4 +205,4 @@ origins to `img-src` and remote GeoJSON origins to `connect-src`. Local marker i
 - Replace alpha `controls.sections` and the `controls` slot with `MapControls`, `MapControl`
   factories and named slots referenced by `MapControl::slot()`.
 - Do not expect heatmaps, mini-maps, geocoding, or routing: they were not dependable v4 outcomes
-  and are intentionally outside the v5 contract.
+  and are intentionally outside the v6 contract.
