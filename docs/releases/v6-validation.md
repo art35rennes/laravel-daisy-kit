@@ -1,14 +1,14 @@
 # v6 release validation
 
-Status: candidate validation, **not published**. This record is updated as promotion gates finish; successful earlier candidates do not replace checks on the final stable commit.
+This is the pre-publication acceptance record. The GitHub stable release includes a publication receipt with final commits, tag checks and public installation verification. Successful earlier candidates do not replace checks on the final stable commit.
 
 ## Baseline and candidate
 
 - Package baseline: `c1fbea024bd09587454f627ff00266f584b45a51` on `dev`.
 - Demo baseline: `a030860d83753a9c7916b78f1d5d37d6ea8132dc` on `dev`; the five existing modified files were preserved and reviewed.
-- Current runtime candidate: `0a90b5c4835a09d0808e3a1384bb7433254ef0f7`.
+- Initial accepted runtime candidate: `0a90b5c4835a09d0808e3a1384bb7433254ef0f7`.
 - Public package promotion: https://github.com/art35rennes/laravel-daisy-kit/pull/1.
-- The demo uses the remote VCS branch with an exact source commit in `composer.lock`, without a path repository or vendor edits. Its final requirement must become exact `v6.0.0` after tag verification.
+- The demo uses Composer VCS without a path repository or vendor edits. Its SemVer requirement and exact tag/source in `composer.lock` are both checked; the first public stable delivery is `v6.0.1`.
 
 ## Completed evidence
 
@@ -34,12 +34,10 @@ Local demo candidate `04ae7bee33138ac13d21a8d370dbf83ab0a8bb9d` with package `0a
 
 [The targeted dependency assessment](v6-socket-review.md) records both High/Warn obfuscation findings, verified archive integrity and signatures, inspected upstream sources and actual runtime exposure. No Socket rule or alert has been suppressed. The exact detection locations were obtained from the public Socket pages and fully inspected: both findings are classified benign for the locked versions. The analysis covers textarea implementation and robust orientation arithmetic, including util.js; it does not rely on passing audit/CI checks.
 
-## Remaining promotion gates
+## Patch required after the initial tag
 
-1. Record the final documentation candidate Linux result and the demo Linux result.
-2. Promote both repositories through reviewed PRs to `main`, preserving `dev` alignment and historical tags.
-3. Validate final package `main`, create immutable `v6.0.0`, and keep the GitHub release draft until remote-tag verification succeeds.
-4. Install the remote tag in a fresh host and demo, rerun required controls, then tag the validated demo.
-5. Publish stable GitHub Latest; verify anonymous repository/tag/archive access and Composer resolution. No Packagist/npm publication or demo hosting.
+The immutable `v6.0.0` package tag points to `5e39be7bcd72d73fe562587f58fc902aa6ca3e23`. Its main and tag Linux checks passed, as did fresh remote-tag installation and anonymous Composer resolution. Its GitHub release remained a draft.
 
-After a public tag exists, never move it. A failed published version is corrected by a new patch version with explicit release notes.
+A subsequent demo run exposed a race: a pending debounced search could rerender an open Table cell editor and restore its initial value, losing unsaved text. The original demo test also failed to await its filtered result before editing. The patch preserves the editing draft through rerenders and adds a controlled-timer regression; the demo separately awaits the actual filtered result. This is a correctness fix, with no new public interface.
+
+The tag is not moved. `v6.0.1` receives the correction and the complete release gates again, then becomes the first stable public GitHub release of v6. The final publication receipt records its exact package/demo commits and CI runs. `v6.0.0` is affected and consumers should update to at least `v6.0.1`.

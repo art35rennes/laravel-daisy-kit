@@ -1065,6 +1065,9 @@ function initialize(root, configuration) {
 
                     input.dataset.daisyKitTableEditInput = editKey;
                     input.value = editing.value;
+                    input.addEventListener('input', () => {
+                        if (editing?.key === editKey) editing.value = input.value;
+                    });
                     save.dataset.daisyKitTableEditSave = editKey;
                     save.textContent = labels.save;
                     save.type = 'button';

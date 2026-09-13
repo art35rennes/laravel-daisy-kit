@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.0.1] - 2026-09-13
+
+### Fixed
+
+- Preserve unsaved Table cell text when a pending search completes and rerenders the editor. The immutable v6.0.0 tag is affected; v6.0.1 is the first public stable GitHub release of the v6 line.
+
 ## [6.0.0] - 2026-09-13
 
 ### Breaking release

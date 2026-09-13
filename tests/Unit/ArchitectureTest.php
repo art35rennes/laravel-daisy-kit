@@ -124,7 +124,7 @@ it('documents the stable v6 contract with copyable examples for every module', f
         ->not->toContain('v5.0.0-alpha.2');
 
     expect($readme)
-        ->toContain('v6.0.0')
+        ->toContain('v6.0.1')
         ->toMatch('/v5\\.0\\.0 or its historical\\s+alpha releases/');
 
     expect($examples)
