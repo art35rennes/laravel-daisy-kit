@@ -7,6 +7,11 @@
 - New major version because Forms Viewer/Builder and the Livewire integration from v5.0.0 are removed. No compatibility layer is provided.
 - Stable distribution through GitHub/VCS; require `^6.0` with Composer and the documented Vite alias.
 
+### Fixed
+
+- Preserve imported signatures through resize and undo, and cancel pending imports on clear, new strokes and unmount.
+- Build Testbench host assets before Feature tests so clean installations do not rely on local manifests.
+
 ### Added
 
 - Optional Copyable icon and transient visual success/error feedback backed by the existing accessible live status.
