@@ -49,13 +49,17 @@ it('restores URL-backed client filters and page size after a full reload', funct
     $client = '[data-daisy-kit-module="table"]:has([data-daisy-kit-table-filter=team])';
     $page = $this->visit('/table')->waitForEvent('networkidle');
 
-    $page->select("{$client} [data-daisy-kit-table-filter=team]", 'Research')
+    $page->assertScript("document.querySelector('{$client}').dataset.daisyKitState === 'ready'")
+        ->select("{$client} [data-daisy-kit-table-filter=team]", 'Research')
+        ->assertCount("{$client} tbody tr", 3)
         ->select("{$client} [data-daisy-kit-table-page-size]", '8')
+        ->assertScript("document.querySelector('{$client} [data-daisy-kit-table-page-size]').value === '8'")
         ->assertCount("{$client} tbody tr", 3)
         ->assertCount('#server-queue-table tbody tr', 3)
         ->assertScript('location.search.length > 0')
         ->refresh()
         ->waitForEvent('networkidle')
+        ->assertScript("document.querySelector('{$client}').dataset.daisyKitState === 'ready'")
         ->assertScript("document.querySelector('{$client} [data-daisy-kit-table-filter=team]').value === 'Research'")
         ->assertScript("document.querySelector('{$client} [data-daisy-kit-table-page-size]').value === '8'")
         ->assertCount("{$client} tbody tr", 3)
