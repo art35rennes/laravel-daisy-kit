@@ -7,7 +7,7 @@ function packagePath(string $path = ''): string
     return dirname(__DIR__, 2).($path === '' ? '' : "/{$path}");
 }
 
-it('exposes only the v5 Blade component allowlist', function (): void {
+it('exposes only the v6 Blade component allowlist', function (): void {
     $components = collect([
         ...(glob(packagePath('resources/views/components/*.blade.php')) ?: []),
         ...(glob(packagePath('resources/views/components/*/*.blade.php')) ?: []),
@@ -69,7 +69,7 @@ it('ships concise Laravel Boost resources for package consumers', function (): v
         ->toContain('`mount(root)`, `mountAll(scope = document)`, `unmount(root)`, and `getInstance(root)`')
         ->toContain('daisy-kit:{module}:*')
         ->toContain('CSP')
-        ->toContain('v5-product-contract-matrix.md');
+        ->toContain('v6-product-contract-matrix.md');
 
     expect($skill)
         ->toStartWith("---\nname: laravel-daisy-kit-development\n")
@@ -77,7 +77,7 @@ it('ships concise Laravel Boost resources for package consumers', function (): v
         ->toContain('Pest 5')
         ->toContain('Test Impact Analysis')
         ->toContain('laravel-best-practices')
-        ->toContain('v5-product-contract-matrix.md')
+        ->toContain('v6-product-contract-matrix.md')
         ->toContain('crypto.randomUUID()')
         ->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|codemirror|\\btrix\\b|gridstack|vendor:publish/i');
 });
@@ -87,7 +87,7 @@ it('documents the Vite alias for Composer-installed module entries', function ()
         packagePath('AGENTS.md'),
         packagePath('README.md'),
         packagePath('docs/decisions/0003-vite-composer-alias.md'),
-        packagePath('docs/specs/v5-public-contract.md'),
+        packagePath('docs/specs/v6-public-contract.md'),
         packagePath('resources/boost/guidelines/core.blade.php'),
         packagePath('resources/boost/skills/laravel-daisy-kit-development/SKILL.md'),
     ])->mapWithKeys(fn (string $path): array => [$path => (string) file_get_contents($path)]);
@@ -113,18 +113,18 @@ it('documents the Vite alias for Composer-installed module entries', function ()
         ->not->toMatch($fakeNpmImport);
 });
 
-it('documents the corrective development contract with copyable examples for every module', function (): void {
+it('documents the stable v6 contract with copyable examples for every module', function (): void {
     $readme = (string) file_get_contents(packagePath('README.md'));
     $examples = (string) file_get_contents(packagePath('docs/examples.md'));
-    $contract = (string) file_get_contents(packagePath('docs/specs/v5-public-contract.md'));
+    $contract = (string) file_get_contents(packagePath('docs/specs/v6-public-contract.md'));
     $dependencies = (string) file_get_contents(packagePath('docs/dependencies.md'));
 
     expect($readme)
-        ->toContain('v5.1.0-alpha.2')
+        ->toContain('^6.0')
         ->not->toContain('v5.0.0-alpha.2');
 
     expect($readme)
-        ->toMatch('/validation propriétaire en\\s+attente/')
+        ->toContain('v6.0.0')
         ->toMatch('/v5\\.0\\.0 or its historical\\s+alpha releases/');
 
     expect($examples)

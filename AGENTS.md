@@ -1,13 +1,13 @@
-# Laravel Daisy Kit v5
+# Laravel Daisy Kit v6
 
-This repository is the source package for `art35rennes/laravel-daisy-kit` v5.
+This repository is the source package for `art35rennes/laravel-daisy-kit` v6.
 
 ## Public surface
 
-The only supported Blade components are listed in `docs/specs/v5-public-contract.md`.
+The only supported Blade components are listed in `docs/specs/v6-public-contract.md`.
 Their namespace is `x-daisy-kit::`; do not add aliases, DaisyUI primitive wrappers,
 templates, routes, or asset publishing.
-`docs/specs/v5-product-contract-matrix.md` is the single business-contract oracle for
+`docs/specs/v6-product-contract-matrix.md` is the single business-contract oracle for
 those entries: restore its differentiated user outcomes with an outcome test rather than
 validating a mount state alone.
 

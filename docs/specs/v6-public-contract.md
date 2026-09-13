@@ -1,10 +1,10 @@
-# Daisy Kit v5 public contract
+# Daisy Kit v6 public contract
 
 ## Scope
 
 This is the complete supported Blade surface. Any component outside this table is an
 architecture-test failure. The detailed business outcomes and test oracle are in
-[`v5-product-contract-matrix.md`](v5-product-contract-matrix.md).
+[`v6-product-contract-matrix.md`](v6-product-contract-matrix.md).
 
 | Module | Blade component | Essential contract |
 | --- | --- | --- |
@@ -138,7 +138,7 @@ ordered id array in multiple mode; `expand()` returns `Promise<boolean>` because
 branch, while the other commands return booleans. Its canonical selection event is
 `change { value, values }`. Expansion events are `expanded { id, label }` and
 `collapsed { id, label }`; failures use `error { code, message, id?, query? }`. The earlier
-`selection-changed` and `selected` event suffixes are not part of the corrective v5 contract.
+`selection-changed` and `selected` event suffixes are not part of the v6 contract.
 When `name` is set, both modes submit one hidden field under that exact name. Its value is always
 an ordered JSON array: `[]` when empty, `["node-id"]` for a single selection, and multiple ids in
 selection order for multiple mode. Laravel integrators decode that field as JSON; Tree never adds
@@ -341,7 +341,7 @@ one coherent contract; no alias, fallback dialect, or adapter is provided for pr
 There are no `x-daisy` aliases, additional DaisyUI primitive wrappers, application templates,
 forms or Livewire integration, charts, calendars, CSRF routes, icon systems, asset publishing,
 CodeMirror, Trix, GridStack, or global bundle. The eleven entries above are the complete public
-surface. v4 compatibility is outside v5 and is served exclusively by `legacy/4.x` / `v4.0.0`.
+surface. v4 compatibility is outside v6 and is served exclusively by `legacy/4.x` / `v4.0.0`.
 
 ## Verification matrix
 

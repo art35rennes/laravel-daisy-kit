@@ -89,7 +89,7 @@ tokens. Never serialize HTML in option data.
 
 ## Product outcomes
 
-Treat `docs/specs/v5-product-contract-matrix.md` as the package's single business-contract
+Treat `docs/specs/v6-product-contract-matrix.md` as the package's single business-contract
 oracle. A module is not complete merely because it reaches `ready`: test the user outcome.
 Table and Tree preserve data-selection workflows; Blueprint preserves an accessible editor and
 synchronized JSON; File Preview preserves isolated media/document actions; Map preserves editable
@@ -118,7 +118,7 @@ resources on destruction.
 SignaturePad and SortableJS write runtime DOM styles. A page mounting Signature or Transfer List
 must allow the page-wide `style-src-attr 'unsafe-inline'` exception and should keep that page
 surface narrow. All other parent-page entries retain `style-src-attr 'none'`. Do not add TanStack
-Virtual; v5 deliberately avoids its inline-style cost and does not promise large remote transfer
+Virtual; v6 deliberately avoids its inline-style cost and does not promise large remote transfer
 datasets.
 
 ## Verification
@@ -142,5 +142,5 @@ not add a facade console, event logger, inspector, or visible control that exist
 exercise facades in Vitest or through browser-test scripts instead.
 
 Before changing the public boundary, record the decision in `docs/decisions/` and update
-`docs/specs/v5-public-contract.md`. Keep `dist/` reproducible and tracked; do not track
+`docs/specs/v6-public-contract.md`. Keep `dist/` reproducible and tracked; do not track
 dependency directories, TIA results, or Workbench build artifacts.

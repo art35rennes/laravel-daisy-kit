@@ -1,6 +1,6 @@
 # Laravel Daisy Kit
 
-Laravel Daisy Kit v5 is a small set of explicitly mounted Blade modules for Laravel 13
+Laravel Daisy Kit v6 is a small set of explicitly mounted Blade modules for Laravel 13
 applications that already compile Tailwind CSS and DaisyUI. It is a clean break from the
 legacy v4 line: it has no aliases, adapters, or migration layer.
 
@@ -17,7 +17,7 @@ Install it from GitHub/VCS rather than Packagist:
 ```json
 {
     "repositories": [{ "type": "vcs", "url": "https://github.com/art35rennes/laravel-daisy-kit" }],
-    "require": { "art35rennes/laravel-daisy-kit": "v5.1.0-alpha.2" }
+    "require": { "art35rennes/laravel-daisy-kit": "^6.0" }
 }
 ```
 
@@ -28,7 +28,7 @@ Install it from GitHub/VCS rather than Packagist:
 `x-daisy-kit::combobox`, `x-daisy-kit::signature`, `x-daisy-kit::truncate`,
 `x-daisy-kit::scrollspy`, and `x-daisy-kit::transfer-list` are the complete public surface.
 Their contracts are documented in
-[`docs/specs/v5-public-contract.md`](docs/specs/v5-public-contract.md).
+[`docs/specs/v6-public-contract.md`](docs/specs/v6-public-contract.md).
 
 ## Explicit assets
 
@@ -74,7 +74,7 @@ snapshots; synchronous commands return booleans and asynchronous commands return
 `Promise<boolean>`. Operational failures return `false` and emit a structured
 `daisy-kit:{module}:error` event. Lifecycle teardown is available only through `unmount(root)`;
 the internal `destroy` hook is not part of any facade. The complete facade and event payload contract is in the
-[public contract](docs/specs/v5-public-contract.md).
+[public contract](docs/specs/v6-public-contract.md).
 
 There is no global bootstrap or `vendor:publish` step. Configuration is
 rendered as encoded JSON, with no inline script or handler. Signature and Transfer List require
@@ -128,14 +128,19 @@ Boost's generated agent files are host-local state; this repository versions onl
 resources and its own [`AGENTS.md`](AGENTS.md) conventions. The package skill complements the
 official `laravel-best-practices` skill when Boost makes it available.
 
-## Status
+## Stable release and upgrading
 
-`v5.1.0-alpha.2` is a VCS-only corrective development prerelease; **validation propriétaire en
-attente**. It is not a stable release and must be pinned by its exact tag for demo integration.
-The corrective v5 contract deliberately has no compatibility layer for v5.0.0 or its historical
-alpha releases: use this documentation and tag as one coherent development line, rather than
-combining examples or runtime assumptions from earlier v5 tags.
+`v6.0.0` is the stable eleven-module contract, distributed through GitHub/VCS.
+It has no compatibility layer for v5.0.0 or its historical alpha releases.
+Forms Viewer/Builder and the package Livewire integration were removed. Applications
+must own their forms and any Livewire integration; changing a Composer constraint alone
+is not a migration. See [the upgrade guide](docs/upgrading-to-v6.md) and
+[release notes](docs/releases/v6.0.0.md).
 
-Existing v4 applications should remain on
-[`v4.0.0`](https://github.com/art35rennes/laravel-daisy-kit/releases/tag/v4.0.0) or the
-`legacy/4.x` branch until they choose to adopt the new API.
+The [executable demo](https://github.com/art35rennes/laravel-daisy-kit-demo/tree/v6.0.0)
+locks the same release and includes local installation instructions. No hosted demo is required.
+
+Existing v4 applications can remain on `v4.0.0` / `legacy/4.x` until they adopt the new API.
+Report reproducible bugs through [GitHub issues](https://github.com/art35rennes/laravel-daisy-kit/issues),
+including the installed tag, PHP/browser versions, module configuration and a minimal example.
+Do not include secrets or private documents.

@@ -1,6 +1,11 @@
 # Changelog
 
-## [Unreleased]
+## [6.0.0] - 2026-09-13
+
+### Breaking release
+
+- New major version because Forms Viewer/Builder and the Livewire integration from v5.0.0 are removed. No compatibility layer is provided.
+- Stable distribution through GitHub/VCS; require `^6.0` with Composer and the documented Vite alias.
 
 ### Added
 
@@ -23,7 +28,7 @@
 
 ### Changed
 
-- The v5 public allowlist now contains exactly eleven modules and the reference host uses DaisyUI `^5.7.22`.
+- The v6 public allowlist now contains exactly eleven modules and the reference host uses DaisyUI `^5.7.22`.
 - Lifecycle commands, facade returns, structured errors, and public event payloads are now consistent and documented across all eleven modules.
 - The Testbench Workbench is explicitly limited to a representative Laravel host; API documentation and facade diagnostics remain outside its visible UI.
 - Truncate now uses an anchored compact ellipsis preview, temporary hover/focus disclosure, pinned selectable text, native light dismiss, and an optional pinned-state backdrop.

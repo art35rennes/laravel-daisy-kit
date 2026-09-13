@@ -1,8 +1,7 @@
-# Laravel Daisy Kit v5 corrective examples
+# Laravel Daisy Kit v6 examples
 
-These examples target the corrective development line beginning with
-`v5.1.0-alpha.2`. Pin that VCS tag exactly while **validation propriétaire en attente**.
-They intentionally do not provide compatibility with v5.0.0 or its historical alpha releases.
+These examples target the stable `v6.0.0` contract. Require `^6.0` through Composer/VCS
+and commit your application lock file. They do not provide compatibility with v5.0.0 or its historical alpha releases.
 
 ## One host Vite alias, explicit module imports
 
@@ -82,7 +81,7 @@ root.addEventListener('daisy-kit:combobox:error', ({ detail }) => {
 
 The host compiles Tailwind CSS and DaisyUI; the package's CSS adds only module-specific layout and
 behavior. The complete method returns and `CustomEvent.detail` shapes are normative in
-[`specs/v5-public-contract.md`](specs/v5-public-contract.md).
+[`specs/v6-public-contract.md`](specs/v6-public-contract.md).
 
 ## Focused interaction modules
 
@@ -405,7 +404,7 @@ are aborted and late responses are ignored:
 
 ## Table
 
-Table uses the restored v4 product vocabulary on the v5 runtime. Use `mode="client"` with local
+Table uses the restored v4 product vocabulary on the v6 runtime. Use `mode="client"` with local
 rows or `mode="server"` with an `endpoint`. Search, typed filters, sorting, pagination, column
 controls and selection remain isolated per table. `persist-state` opts into URL or local state.
 

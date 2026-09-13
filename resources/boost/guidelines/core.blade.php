@@ -27,7 +27,7 @@ module require `style-src-attr 'unsafe-inline'`; all other parent-page modules k
 There is no compatibility layer, alias namespace, asset publication, route, or host template.
 The differentiated product outcomes (focused interaction, editable data/graph/geospatial workflows,
 and isolated document/media previews) are defined by the package's
-`docs/specs/v5-product-contract-matrix.md`; do not reduce them to a successful mount state.
+`docs/specs/v6-product-contract-matrix.md`; do not reduce them to a successful mount state.
 For implementation and verification details, activate the `laravel-daisy-kit-development` skill.
 Keep the package Workbench a representative Laravel host with normal Blade, Vite, routes, and
 forms. Do not turn it into an API explorer, event console, or interactive documentation surface.
