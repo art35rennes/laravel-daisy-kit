@@ -9,7 +9,12 @@ GitHub PR 1 has a Socket warning comment for diff scan `22749892-bd46-4214-92f0-
 - `jsdom@30.0.1`: **High**, action **Warn**, `Obfuscated code`, confidence **0.90**. [Alert](https://socket.dev/dashboard/org/perso-wtufz/diff-scan/22749892-bd46-4214-92f0-432fe6876111/alert/Qi17fzo_d1NlNQWtGnlmR0ojJmUHfwwYaBfuxfyvOE7s).
 - `robust-predicates@3.0.3`: **High**, action **Warn**, `Obfuscated code`, confidence **0.90**. [Alert](https://socket.dev/dashboard/org/perso-wtufz/diff-scan/22749892-bd46-4214-92f0-432fe6876111/alert/QdTTYMKCXBgG0x9aVxpiE6jwSSJw3uXocvpwTFgy9XlY).
 
-The bot comment identifies package versions and lockfile/dependency paths, but no triggering filename or code excerpt. The jsdom package page and authenticated-dashboard alert URL returned HTTP 403; the robust package page was also unavailable through the browser fetch. Therefore the exact Socket detection location remains unverified. The 90% score is the detector's confidence in obfuscation, not a demonstrated 90% probability of malware.
+The bot comment identifies package versions and lockfile/dependency paths, but no triggering filename. The initial HTTP fetches returned 403. A subsequent public-page review through the browser, reported by the coordinating agent, resolved both exact locations without the private dashboard:
+
+- [jsdom public alert](https://socket.dev/npm/package/jsdom/alerts/30.0.1?alert_name=obfuscatedFile): `lib/jsdom/living/nodes/HTMLTextAreaElement-impl.js`. Socket's analysis notes describe a normal textarea implementation and legitimate hard wrapping, without malicious activity or I/O.
+- [robust-predicates public alert](https://socket.dev/npm/package/robust-predicates/alerts/3.0.3?alert_name=obfuscatedFile): `esm/orient2d.js`. Socket's analysis notes describe legitimate adaptive 2D orientation and recommend checking `util.js`.
+
+The reviewer then read the complete exact-version textarea implementation, `esm/orient2d.js` and `esm/util.js` locally. Their archive integrity was established below. The 90% score is detector confidence in obfuscation, not a demonstrated probability of malware. The initial uncertainty about triggering files is now resolved.
 
 ## Verified provenance and integrity
 
@@ -34,19 +39,25 @@ The package's 373 files also present in the exact GitHub source archive match by
 
 The distributed JavaScript examined is readable, with descriptive identifiers and ordinary DOM/WebIDL implementation. Longest-line inspection found a maximum of 743 characters in generated CSS data; it did not reveal a packed single-line runtime loader. Generated bindings contain repetitive checks and plumbing, consistent with their generator. Dynamic evaluation/base64-related occurrences were inspected in context: `Window.js` implements `atob`, string helpers transform character case, script/navigation implementations execute supplied DOM scripts, and generated IDL utilities obtain JavaScript intrinsics. These are capabilities expected of a DOM emulator, not by themselves proof of hidden execution.
 
-Potential classification candidates are the generated bindings/data. **These are hypotheses, not confirmed Socket trigger files.** No concealed downloader, encoded payload decoder or unexpected install hook was identified in the inspected code. jsdom does have script/resource execution capabilities by design and must not be treated as a security sandbox.
+**Exact trigger review:** `HTMLTextAreaElement-impl.js` is handwritten, readable CommonJS, not a generated binding or minified payload. It imports normal jsdom element, constraint-validation, event, text and form helpers. Its methods implement value/defaultValue, CRLF normalization, selection ranges, replacement text, readonly/disabled constraints, validation and cloning. The concluding `textareaWrappingTransformation` scans newline-delimited text and inserts line breaks for `wrap="hard"`; its branches, counters and string slices perform precisely that text transformation. The only timer dispatches the normal DOM `select` event. There is no network/filesystem access, process execution, dynamic evaluation, hidden string-decoder or concealed execution in this file.
+
+This exact file belongs to the 373 files byte-identical to the upstream commit. **Classification: benign textarea implementation; the obfuscation alert is a false positive for malicious concealment.** The earlier hypothesis about generated bindings is superseded by the identified file. This conclusion is scoped to the reported alert, not a claim that jsdom is a security sandbox or free of every possible defect.
 
 Its npm manifest has generation/test scripts, including `prepare: wireit`, but no `preinstall`, `install` or `postinstall` hook. Registry-installed prepared output is what was compared; no source generator or lifecycle script was executed for this review.
 
 ### robust-predicates 3.0.3
 
-The five published files also present in GitHub source match exactly; the other **15 files are generated ESM/UMD variants**, including explicitly named `umd/*.min.js`. For example `umd/predicates.min.js` is a roughly 25 KB single line. Such minified distributions are an evident possible source of the warning, but Socket's specific filename remains unavailable.
+The five published files also present in GitHub source match exactly; the other **15 files are generated ESM/UMD variants**, including explicitly named `umd/*.min.js`. For example `umd/predicates.min.js` is a roughly 25 KB single line. These UMD files are not the actual alert location: the public alert identifies readable `esm/orient2d.js`. Their presence must not be used as the explanation for this alert.
 
 The readable ESM files implement numerical error bounds and floating-point expansion arithmetic (`orient2d`, `orient3d`, `incircle`, `insphere`). Upstream `compile.js` expands arithmetic macros such as `Two_Sum`, `Two_Product`, `Split` and `Cross_Product`; this explains short mathematical variables and long repetitive arithmetic sequences. The generation script was read, not run. The generated output was not independently regenerated byte for byte.
 
 Search across the exact package JavaScript found no `eval`, `new Function`, `atob`, base64 decoder, `child_process` or HTTP URL constructs. The examined ESM orientation routine consists of arithmetic, arrays and imported numerical helpers; no network/filesystem side effect was found. The manifest has no production dependencies and no install lifecycle hooks; build/prepublish scripts are upstream development tasks.
 
-Conclusion for this package: the visible compression/generation is consistent with a computational-geometry library. That is materially different from a concealed payload, but cannot establish the exact Socket warning as a false positive without its trigger details.
+**Exact trigger and helper review:** `esm/orient2d.js` imports only `epsilon`, `splitter`, `resulterrbound`, `estimate`, `vec` and `sum` from `./util.js`. Its fast path computes the signed two-dimensional determinant and compares it with an error bound. The adaptive path splits products/differences into high/low floating-point terms, sums expansions and returns the last expansion term when the sign cannot be resolved safely by the fast path. The small variable names (`ahi`, `alo`, `bvirt`, `s0`, `s1`, etc.) denote numerical intermediates, not decoded instructions.
+
+The complete `util.js` defines numerical constants, zero-eliminating expansion sum/scale operations, sign negation, an estimate sum and `vec(n) = new Float64Array(n)`. It imports nothing. No external resource, decoder, dynamic code generation, process access or network/filesystem operation appears in either file. Module-scope typed arrays are scratch space for those calculations. `orient2d.js` is generated from arithmetic macros in the inspected upstream compiler; the helper participates in the same transparent numerical algorithm.
+
+**Classification: benign adaptive computational-geometry implementation.** The exact alert is a false positive for malicious concealment, supported by the complete trigger/helper review, expected dependency use, integrity/provenance checks and Socket's own detailed notes. This is not a numerical proof of correctness for every floating-point input, nor a blanket approval of unrelated versions.
 
 ## Actual exposure in Laravel Daisy Kit
 
@@ -66,10 +77,11 @@ The actual 3.0.3 path is:
 
 There is also a distinct `robust-predicates@2.0.4` at the top-level node_modules path through Turf line-intersect. Its presence was recorded to avoid inspecting the wrong package. The Socket warning under review is for nested **3.0.3**; the detailed archive/source comparison above intentionally targets that version.
 
-## Release disposition and limitations
+## Final release disposition and limitations
 
-- No evidence of archive substitution, installed-byte tampering or concealed malicious payload was found in this targeted assessment.
-- Observed code generation/minification provides a plausible benign explanation, strongest for robust-predicates' explicit minified UMD files. **Neither alert has been conclusively mapped to its Socket trigger**, so neither is marked a confirmed false positive.
-- Keep both alerts visible and attach this assessment to the release evidence. Do not issue Socket ignore comments or globally suppress the rule on the basis of package reputation, npm audit results or a passing test suite.
-- If the release policy requires resolving every High/Warn classification, obtain the exact triggering files through the authenticated Socket dashboard before declaring that requirement satisfied. No technical need for an emergency dependency replacement was established by the source evidence currently available.
-- This is targeted source/provenance review, not exhaustive formal verification of jsdom's approximately 7 MB distribution or every transitive dependency. It does not claim full Sigstore verification or upstream build reproducibility. The blocked Socket detail view is an explicit remaining limitation.
+- **Both obfuscation findings have a documented benign classification for these exact versions and exact trigger files.** The former lack of file details is resolved. No further user input or private dashboard access is needed for this targeted assessment.
+- No archive substitution, installed-byte tampering, hidden downloader, decoder or malicious execution was found. The conclusion rests on actual trigger-file review, not package reputation, npm audit results, test success or speculation about minified UMD output.
+- Retaining `jsdom@30.0.1` and `robust-predicates@3.0.3` for this release is supported by the reviewed evidence; these two specific obfuscation warnings do not establish a reason to block publication or replace the dependencies.
+- Preserve this review and public alert links in the release evidence. No Socket ignore command, global rule suppression or GitHub comment has been issued. The dashboard classification itself is not claimed to have changed.
+- Exposure remains different: jsdom executes in developer/CI tests, while robust-predicates ESM reaches the Map runtime. The benign finding does not erase those trust boundaries.
+- Scope remains targeted, not exhaustive verification of jsdom's approximately 7 MB distribution or every transitive dependency. Full Sigstore transparency/certificate verification and upstream build reproduction were not performed. Registry signatures, SRI, installed files and shared upstream source bytes were verified as stated above. Public Socket detail observations were provided by the coordinating agent's browser inspection and then independently checked against the full local trigger files.

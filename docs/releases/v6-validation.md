@@ -28,13 +28,15 @@ Later candidate `51ba83ca89210368802651378c56613276397a66` also passed [Linux qu
 
 Local demo testing found and corrected secondary-text contrast in Cupcake, theme-transition timing, a stale Truncate test locator and a Signature background that made black ink unreadable in dark mode. The full browser suite is rerun after corrections: its prior failures are not treated as acceptance evidence. Coverage spans three themes and 320/768/1024/1440 px, with additional narrow Map/File Preview cases.
 
+Local demo candidate `04ae7bee33138ac13d21a8d370dbf83ab0a8bb9d` with package `0a90b5c4835a09d0808e3a1384bb7433254ef0f7` passed `composer run test:release`: **59 Feature/Architecture tests / 316 assertions; 157 browser tests / 1015 assertions**. No TIA or accessibility-rule exclusions were used. The contrast changes received independent review without remaining findings.
+
 ## Socket review
 
-[The targeted dependency assessment](v6-socket-review.md) records both High/Warn obfuscation findings, verified archive integrity and signatures, inspected upstream sources and actual runtime exposure. No Socket rule or alert has been suppressed. The exact detection locations require authenticated dashboard access and remain unverified. Passing audit/CI checks do not close these warnings.
+[The targeted dependency assessment](v6-socket-review.md) records both High/Warn obfuscation findings, verified archive integrity and signatures, inspected upstream sources and actual runtime exposure. No Socket rule or alert has been suppressed. The exact detection locations were obtained from the public Socket pages and fully inspected: both findings are classified benign for the locked versions. The analysis covers textarea implementation and robust orientation arithmetic, including util.js; it does not rely on passing audit/CI checks.
 
 ## Remaining promotion gates
 
-1. Record green full demo and final candidate Linux results, and finish the Socket disposition.
+1. Record the final documentation candidate Linux result and the demo Linux result.
 2. Promote both repositories through reviewed PRs to `main`, preserving `dev` alignment and historical tags.
 3. Validate final package `main`, create immutable `v6.0.0`, and keep the GitHub release draft until remote-tag verification succeeds.
 4. Install the remote tag in a fresh host and demo, rerun required controls, then tag the validated demo.
