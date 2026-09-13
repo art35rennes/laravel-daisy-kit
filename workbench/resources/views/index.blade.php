@@ -237,7 +237,7 @@
                     ],
                     'edges' => [],
                 ]"
-                :editable="true"
+                :editable="$blueprintEditable ?? true"
                 name="workbench_blueprint"
             />
         </section>

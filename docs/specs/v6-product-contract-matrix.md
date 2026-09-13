@@ -23,7 +23,7 @@ automated outcome test before it is considered delivered.
 | --- | --- | --- |
 | A technical identifier can be copied with pointer or keyboard input, can expose a familiar copy icon, and receives transient visual plus accessible success or failure feedback. | `resources/views/components/ui/utilities/copyable.blade.php`; `resources/js/modules/copyable.js` at `v4.0.0`. | Icon rendering, timed Clipboard-success/failure feedback, keyboard and unmount tests. |
 | Users discover suggestions on focus without layout shift, scan rich person/e-mail choices, search configured fields, feed choices locally or remotely, and keep selected labels plus the native form value stable across empty results. | `resources/views/components/ui/inputs/multi-select.blade.php`; `resources/js/modules/multi-select.js` at `v4.0.0`; current WAI-ARIA/MUI/Ant Design combobox patterns; ADR-0014. | Open-on-focus overlay, rich/default/custom rendering, client option facade, server domain search, token-label persistence, bounded results, keyboard, form-data and cancellation tests. |
-| A user can draw, clear and export a signature while the submitted form value stays synchronized. | `resources/views/components/ui/inputs/sign.blade.php`; `resources/js/modules/sign.js` at `v4.0.0`. | Pointer, resize, reset, form-data and CSP tests. |
+| A user can draw, clear and export a signature while the submitted form value stays synchronized. | `resources/views/components/ui/inputs/sign.blade.php`; `resources/js/modules/sign.js` at `v4.0.0`. | Pointer, resize, clear, form-data and CSP tests. |
 | Dense overflowing text ends with an adjacent ellipsis and has a native, responsive, selectable top-layer disclosure without mutating the original value; hover/focus is temporary and click/keyboard activation can pin it with optional backdrop. | `resources/views/components/ui/utilities/truncate-text.blade.php` at `v4.0.0`; corrective v5 UX ADR-0011 and ADR-0014. | Measured overflow, ellipsis adjacency, anchored hover/focus, native light-dismiss, responsive card, keyboard, backdrop and multiple-root tests. |
 | In-page navigation updates the active section while preserving accessible links and keyboard use. | `resources/views/components/ui/advanced/scrollspy.blade.php`; `resources/js/scrollspy.js` at `v4.0.0`. | Intersection, keyboard, teardown and multiple-root tests. |
 | Users can search, select and move assignments between two legible panels, with optional ordering. | `resources/views/components/ui/advanced/transfer.blade.php`; `resources/js/transfer.js` at `v4.0.0`. | Move, search, selection, ordering, form-data and teardown tests. |
@@ -91,7 +91,7 @@ automated outcome test before it is considered delivered.
    and Map layers/drawing each retain their own ESM/CSS entry and CSP proof.
 5. **Release checkpoint.** Rebuild `dist`, fresh host and representative Workbench browser gates, Pest
    full and TIA, Larastan, Pint, Vitest, Composer/npm audit, reproducibility and code
-   review. Publish only a new immutable prerelease after the package fixture is green.
+   review. Publish the immutable stable tag only after the package fixture and matching demo are green.
 
 ## Risks and mitigations
 

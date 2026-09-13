@@ -133,6 +133,7 @@ try {
             },
         });
     });
+    page.on('pageerror', (error) => consoleErrors.push(error.message));
     page.on('response', (response) => {
         if (response.status() >= 400) responses.push(`${response.status()} ${response.url()}`);
     });
@@ -341,6 +342,7 @@ try {
     if (consoleErrors.length > 0) {
         throw new Error(`The served HTTP host logged browser errors:\n${consoleErrors.join('\n')}`);
     }
+    console.log(`Fresh VCS host verified ${activePackage.version} at ${installedCommit}: 11 modules, served assets, browser outcomes and CSP passed.`);
 } finally {
     if (browser) await browser.close();
     if (server) await closeServer(server);

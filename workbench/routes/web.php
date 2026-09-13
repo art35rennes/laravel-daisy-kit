@@ -33,6 +33,12 @@ foreach (array_keys(array_diff_key($workbenchModules, ['tree' => true])) as $mod
     ])->name('workbench.'.lcfirst(str_replace('-', '', ucwords($module, '-'))));
 }
 
+Route::view('/_daisy-kit-test/blueprint/read-only', 'workbench::index', [
+    'module' => 'blueprint',
+    'modules' => $workbenchModules,
+    'blueprintEditable' => false,
+]);
+
 Route::get('/_daisy-kit-test/table/rows', function (Request $request) {
     $rows = collect([
         ['id' => 'case-1042', 'reference' => 'CASE-1042', 'customer' => 'Atelier 35', 'priority' => 'High', 'status' => 'Open'],
