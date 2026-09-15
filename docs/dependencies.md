@@ -36,14 +36,17 @@ Runtime requires only `illuminate/support` and `illuminate/view` 13.x.
 | terra-draw / leaflet adapter | 1.32.3 / 1.3.0 | MIT | Map drawing |
 | @turf/area / @turf/length / @turf/boolean-intersects | 7.4.0 | MIT | Map measurements and spatial selection |
 | leaflet.markercluster / leaflet-gesture-handling | 1.5.3 / 1.2.2 | MIT | Optional Map clustering and gesture controls |
+| Trix | 2.1.19 (`^2.1.19`) | MIT | WYSIWYG editing, bundled DOMPurify sanitization and attachment model |
 | Vite / Vitest | 8.2.2 / 4.1.11 | MIT | Reproducible module build and tests |
 | jsdom | 30.0.1 | MIT | Browser-like unit-test environment |
 
 Tailwind CSS and DaisyUI intentionally do not appear in the package bundle: the host owns
 their installation and compilation. The reference development host uses DaisyUI `^5.7.22`.
 
-SignaturePad and SortableJS write runtime DOM styles. Pages mounting Signature or Transfer List
-must document and allow `style-src-attr 'unsafe-inline'`; all other modules retain the strict
+SignaturePad, SortableJS and Trix write runtime DOM styles. Pages mounting Signature,
+Transfer List or WYSIWYG must document and allow `style-src-attr 'unsafe-inline'`.
+WYSIWYG pages also authorize the Trix style nonce in `style-src` and allow `img-src blob:`
+when local attachment previews are enabled. All other modules retain the strict
 `style-src-attr 'none'` parent-page policy.
 
 ## Major-version provenance

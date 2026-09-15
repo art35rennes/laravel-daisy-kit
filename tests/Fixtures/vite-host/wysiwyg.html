@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="trix-csp-nonce" content="wysiwyg-fixture">
+    <title>WYSIWYG host fixture</title>
+</head>
+<body>
+    <form>
+        <fieldset data-daisy-kit-module="wysiwyg" class="daisy-kit-wysiwyg">
+            <label for="fixture-wysiwyg" id="fixture-wysiwyg-label">Article body</label>
+            <p data-daisy-kit-status role="alert" hidden></p>
+            <div data-daisy-kit-wysiwyg-editor></div>
+            <input data-daisy-kit-wysiwyg-value id="fixture-wysiwyg-input" name="article_body" type="hidden" value="&lt;p&gt;Initial&lt;/p&gt;">
+            <input data-daisy-kit-wysiwyg-validation class="sr-only" type="text" required>
+            <template data-daisy-kit-wysiwyg-toolbar-template>
+                <div role="toolbar"><button type="button" data-trix-attribute="bold">Bold</button></div>
+            </template>
+            <script data-daisy-kit-config type="application/json">{"attachments":false,"editorId":"fixture-wysiwyg","labelId":"fixture-wysiwyg-label","required":true,"showToolbar":true}</script>
+        </fieldset>
+    </form>
+    <script type="module" src="/resources/js/wysiwyg.js"></script>
+</body>
+</html>

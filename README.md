@@ -26,7 +26,8 @@ Install it from GitHub/VCS rather than Packagist:
 `x-daisy-kit::table`, `x-daisy-kit::tree`, `x-daisy-kit::blueprint`,
 `x-daisy-kit::file-preview`, `x-daisy-kit::map`, `x-daisy-kit::copyable`,
 `x-daisy-kit::combobox`, `x-daisy-kit::signature`, `x-daisy-kit::truncate`,
-`x-daisy-kit::scrollspy`, `x-daisy-kit::transfer-list`, and `x-daisy-kit::code-editor` are the complete public surface.
+`x-daisy-kit::scrollspy`, `x-daisy-kit::transfer-list`, `x-daisy-kit::code-editor`, and
+`x-daisy-kit::wysiwyg` are the complete public surface.
 Their contracts are documented in
 [`docs/specs/v6-public-contract.md`](docs/specs/v6-public-contract.md).
 
@@ -61,7 +62,7 @@ mountAll();
 ```
 
 The available pairs are `table`, `tree`, `blueprint`, `file-preview`, `map`, `copyable`,
-`combobox`, `signature`, `truncate`, `scrollspy`, and `transfer-list`, plus `code-editor`. Do not import this
+`combobox`, `signature`, `truncate`, `scrollspy`, `transfer-list`, `code-editor`, and `wysiwyg`. Do not import this
 Composer package by its package name in a Vite source file.
 
 [`docs/examples.md`](docs/examples.md) contains copyable Blade and Vite examples for every
@@ -77,9 +78,10 @@ the internal `destroy` hook is not part of any facade. The complete facade and e
 [public contract](docs/specs/v6-public-contract.md).
 
 There is no global bootstrap or `vendor:publish` step. Configuration is
-rendered as encoded JSON, with no inline script or handler. Signature and Transfer List require
+rendered as encoded JSON, with no inline script or handler. Signature, Transfer List and WYSIWYG require
 `style-src-attr 'unsafe-inline'` on pages that mount them because their pinned third-party
-dependencies write DOM style properties; the other entries retain the stricter policy.
+dependencies write DOM style properties. WYSIWYG also requires a Trix style nonce and may require
+`img-src blob:` for attachment previews. The other entries retain the stricter policy.
 `@daisy-kit/file-preview.js` also causes Vite to emit File Preview's sandboxed-frame chunks;
 do not add a route, proxy, copy step, or manual asset import for them.
 
@@ -134,7 +136,8 @@ official `laravel-best-practices` skill when Boost makes it available.
 
 ## Stable release and upgrading
 
-`v6.0.1` is the stable eleven-module contract, distributed through GitHub/VCS.
+`v6.0.1` is the current stable release. The next minor release, `v6.1.0`, adds WYSIWYG
+to the v6 contract and is prepared for distribution through GitHub/VCS.
 It has no compatibility layer for v5.0.0 or its historical alpha releases.
 Forms Viewer/Builder and the package Livewire integration were removed. Applications
 must own their forms and any Livewire integration; changing a Composer constraint alone

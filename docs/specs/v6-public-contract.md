@@ -8,6 +8,7 @@ architecture-test failure. The detailed business outcomes and test oracle are in
 
 | Module | Blade component | Essential contract |
 | --- | --- | --- |
+| WYSIWYG | `x-daisy-kit::wysiwyg` | Trix rich text editor with native form semantics, host-coordinated attachments and a public Trix escape hatch. |
 | Code Editor | `x-daisy-kit::code-editor` | Single-document CodeMirror 6 editor with native form semantics, lazy grammars and DaisyUI themes. |
 | Table | `x-daisy-kit::table` | Client/server TanStack data workbench with typed filters, persistent selection and configurable data actions. |
 | Tree | `x-daisy-kit::tree` | Keyboard-accessible hierarchical selector with multiple/indeterminate selection, lazy loading and search. |
@@ -61,7 +62,7 @@ import specifier. Hosts configure `@daisy-kit` to resolve to
 `vendor/art35rennes/laravel-daisy-kit/dist`, then import explicit module pairs as
 `@daisy-kit/{module}.js` and `@daisy-kit/{module}.css`. The allowed entry stems are
 `table`, `tree`, `blueprint`, `file-preview`, `map`, `copyable`, `combobox`, `signature`,
-`truncate`, `scrollspy`, and `transfer-list`.
+`truncate`, `scrollspy`, `transfer-list`, `code-editor`, and `wysiwyg`.
 
 | Module | ESM import | CSS import |
 | --- | --- | --- |
@@ -76,15 +77,19 @@ import specifier. Hosts configure `@daisy-kit` to resolve to
 | Truncate | `@daisy-kit/truncate.js` | `@daisy-kit/truncate.css` |
 | Scrollspy | `@daisy-kit/scrollspy.js` | `@daisy-kit/scrollspy.css` |
 | Transfer list | `@daisy-kit/transfer-list.js` | `@daisy-kit/transfer-list.css` |
+| Code Editor | `@daisy-kit/code-editor.js` | `@daisy-kit/code-editor.css` |
+| WYSIWYG | `@daisy-kit/wysiwyg.js` | `@daisy-kit/wysiwyg.css` |
 
 Configuration is emitted in a non-executable `application/json` script element and is parsed with
 strict validation. Invalid JSON activates an accessible error state. No public Blade view emits an
 inline handler, executable script, or `style` attribute.
 
-Signature and Transfer List depend respectively on SignaturePad and SortableJS, which write DOM
-style properties while active. A host page using either module must allow
+Signature, Transfer List and WYSIWYG dependencies write DOM style properties while active. A host
+page using one of these modules must allow
 `style-src-attr 'unsafe-inline'`; the directive is page-wide, not scoped to the component. The
-other nine modules retain `style-src-attr 'none'`. TanStack Virtual is deliberately not shipped.
+other ten modules retain `style-src-attr 'none'`. WYSIWYG also needs a nonce-authorized
+`style-src` for Trix generated styles and `img-src blob:` when local file previews are used.
+TanStack Virtual is deliberately not shipped.
 
 ### Table configuration
 
@@ -341,7 +346,8 @@ one coherent contract; no alias, fallback dialect, or adapter is provided for pr
 
 There are no `x-daisy` aliases, additional DaisyUI primitive wrappers, application templates,
 forms or Livewire integration, charts, calendars, CSRF routes, icon systems, asset publishing,
-Trix, GridStack, or global bundle. The twelve entries above are the complete public
+GridStack, legacy lazy editors, or global bundle. Trix is allowed only inside the WYSIWYG
+entry and is not imported implicitly by any other module. The thirteen entries above are the complete public
 surface. v4 compatibility is outside v6 and is served exclusively by `legacy/4.x` / `v4.0.0`.
 
 ## Verification matrix
@@ -390,3 +396,32 @@ language-local suggestions. Saving, formatting, execution and LSP are host conce
 copied and required strings. `phrases` maps CodeMirror's English phrases to host
 translations. Supply the host response nonce to authorize generated CodeMirror
 styles through `style-src 'self' 'nonce-...'`. No inline script or global is added.
+
+## WYSIWYG configuration
+
+`x-daisy-kit::wysiwyg` requires `name` and accepts `label`, `value`, `placeholder`,
+`required`, `disabled`, `readonly`, `autofocus`, `showToolbar=true`,
+`attachments=false`, and `size='sm|md|lg'`. A named `toolbar` slot replaces the
+default Trix actions. The slot is ignored when the toolbar is hidden.
+
+The facade exposes `getValue()`, `setValue(html)`, `clear()`, `focus()`, `undo()`,
+`redo()`, `getAttachments()`, `setAttachmentProgress(id, percent)`,
+`resolveAttachment(id, { url, href? })`, `removeAttachment(id)`, and
+`getTrixEditor()`. The last method returns the active `Trix.Editor` or `null` after
+unmount. Native Trix events continue to bubble. Daisy Kit emits `change`,
+`attachment-add`, `attachment-progress`, `attachment-resolved`, `attachment-edit`,
+`attachment-remove`, `action`, `mounted`, `unmounted`, and `error` in the
+`daisy-kit:wysiwyg:*` namespace.
+
+Trix sanitizes editor HTML in the browser with its bundled DOMPurify configuration.
+The host remains responsible for server-side sanitization because HTTP clients can
+bypass the component. Attachments are blocked by default. When enabled, each file
+stays pending and makes the native form invalid until host code calls
+`resolveAttachment` with a permanent safe URL or removes it. Upload routes, storage,
+asset publication and Livewire integration are outside this package.
+
+Import `@daisy-kit/wysiwyg.js` and `@daisy-kit/wysiwyg.css` explicitly. Add a
+`<meta name="trix-csp-nonce" content="...">`, authorize the same nonce in
+`style-src`, and allow `style-src-attr 'unsafe-inline'`. Add `img-src blob:` when
+attachments display local previews. The entry removes Trix's global after element
+registration; advanced access goes through `getTrixEditor()`.

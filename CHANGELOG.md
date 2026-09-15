@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Add the independent Trix WYSIWYG Blade, ESM and CSS module for v6.1.0, with native forms, lifecycle, browser sanitization, host-coordinated attachments, CSP guidance and a public `getTrixEditor()` escape hatch.
+
 ## [6.0.1] - 2026-09-13
 
 ### Fixed

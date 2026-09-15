@@ -1,4 +1,8 @@
 const modules = [
+    ['wysiwyg', async () => {
+        await import('@daisy-kit/wysiwyg.css');
+        return import('@daisy-kit/wysiwyg.js');
+    }],
     ['code-editor', async () => {
         await import('@daisy-kit/code-editor.css');
         return import('@daisy-kit/code-editor.js');
@@ -61,6 +65,18 @@ if (loadModule) {
     const module = await loadModule();
 
     module.mountAll();
+
+    if (moduleName === 'wysiwyg') {
+        document.addEventListener('daisy-kit:wysiwyg:attachment-add', (event) => {
+            const editor = module.getInstance(event.target);
+            if (!(event.detail.file instanceof File)) return;
+
+            editor?.setAttachmentProgress(event.detail.id, 45);
+            editor?.resolveAttachment(event.detail.id, {
+                url: '/_daisy-kit-test/files/preview.svg',
+            });
+        });
+    }
 
     if (moduleName === 'map') {
         const controlledMap = document.querySelector('#map-controlled');

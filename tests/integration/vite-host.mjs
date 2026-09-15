@@ -9,7 +9,7 @@ import { preparePackageSource } from './package-source.mjs';
 const repositoryRoot = resolve(import.meta.dirname, '../..');
 const fixtureRoot = resolve(repositoryRoot, 'tests/Fixtures/vite-host');
 const hostRoot = mkdtempSync(resolve(tmpdir(), 'daisy-kit-vite-host-'));
-const entryStems = ['table', 'tree', 'blueprint', 'file-preview', 'map', 'copyable', 'combobox', 'signature', 'truncate', 'scrollspy', 'transfer-list', 'code-editor'];
+const entryStems = ['table', 'tree', 'blueprint', 'file-preview', 'map', 'copyable', 'combobox', 'signature', 'truncate', 'scrollspy', 'transfer-list', 'code-editor', 'wysiwyg'];
 const contentTypes = {
     '.css': 'text/css; charset=utf-8',
     '.html': 'text/html; charset=utf-8',
@@ -57,8 +57,10 @@ function startHost(buildRoot) {
                 return;
             }
 
-            const styleAttributePolicy = path === '/relaxed.html' ? "'unsafe-inline'" : "'none'";
-            const styleSources = path === '/code-editor.html' ? "'self' 'nonce-code-editor-fixture'" : "'self'";
+            const styleAttributePolicy = ['/relaxed.html', '/wysiwyg.html'].includes(path) ? "'unsafe-inline'" : "'none'";
+            const styleSources = path === '/code-editor.html'
+                ? "'self' 'nonce-code-editor-fixture'"
+                : path === '/wysiwyg.html' ? "'self' 'nonce-wysiwyg-fixture'" : "'self'";
 
             response.writeHead(200, {
                 'Content-Security-Policy': `default-src 'none'; base-uri 'none'; connect-src 'self'; form-action 'none'; frame-src 'self'; img-src 'self' data: blob:; object-src 'none'; script-src 'self'; script-src-attr 'none'; style-src ${styleSources}; style-src-attr ${styleAttributePolicy}`,
@@ -346,6 +348,15 @@ try {
         throw new Error(`Code Editor host submission or nonce CSP failed: ${JSON.stringify(editorViolations)}`);
     }
 
+    await page.goto(new URL('/wysiwyg.html', url).href, { waitUntil: 'networkidle' });
+    await page.waitForSelector('trix-editor');
+    await page.locator('trix-editor').fill('Safe rich text');
+    const wysiwygValue = await page.locator('input[name="article_body"]').inputValue();
+    const wysiwygViolations = await page.evaluate(() => window.__daisyKitCspViolations);
+    if (!wysiwygValue.includes('Safe rich text') || wysiwygViolations.length > 0) {
+        throw new Error(`WYSIWYG host submission or CSP failed: ${JSON.stringify(wysiwygViolations)}`);
+    }
+
     if (responses.length > 0) {
         throw new Error(`The served host requested missing assets:\n${responses.join('\n')}`);
     }
@@ -353,7 +364,7 @@ try {
     if (consoleErrors.length > 0) {
         throw new Error(`The served HTTP host logged browser errors:\n${consoleErrors.join('\n')}`);
     }
-    console.log(`Fresh VCS host verified ${activePackage.version} at ${installedCommit}: 12 modules, served assets, browser outcomes and CSP passed.`);
+    console.log(`Fresh VCS host verified ${activePackage.version} at ${installedCommit}: 13 modules, served assets, browser outcomes and CSP passed.`);
 } finally {
     if (browser) await browser.close();
     if (server) await closeServer(server);

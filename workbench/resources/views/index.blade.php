@@ -54,6 +54,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @if($module === 'wysiwyg')
+        <meta name="trix-csp-nonce" content="{{ $wysiwygNonce }}">
+    @endif
     <title>{{ $module === null ? 'Daisy Kit v5 Workbench' : $modules[$module].' · Daisy Kit Workbench' }}</title>
     @vite($module === null ? ['resources/css/app.css'] : ['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -82,6 +85,10 @@
 
         @if($module === 'code-editor')
             @include('workbench::code-editor')
+        @endif
+
+        @if($module === 'wysiwyg')
+            @include('workbench::wysiwyg')
         @endif
 
         @if($module === 'table')

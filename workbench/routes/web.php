@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Vite;
 
 $workbenchModules = [
+    'wysiwyg' => 'WYSIWYG',
     'code-editor' => 'Code Editor',
     'table' => 'Table',
     'tree' => 'Tree',
@@ -36,7 +37,15 @@ Route::get('/code-editor', function () use ($workbenchModules) {
     ])->header('Content-Security-Policy', "default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self' 'nonce-{$nonce}'; script-src-attr 'none'; style-src 'self' 'nonce-{$nonce}'; style-src-attr 'none'; img-src 'self' data:; form-action 'self'");
 })->name('workbench.codeEditor');
 
-foreach (array_keys(array_diff_key($workbenchModules, ['tree' => true, 'code-editor' => true])) as $module) {
+Route::get('/wysiwyg', function () use ($workbenchModules) {
+    $nonce = Vite::useCspNonce();
+
+    return response()->view('workbench::index', [
+        'module' => 'wysiwyg', 'modules' => $workbenchModules, 'wysiwygNonce' => $nonce,
+    ])->header('Content-Security-Policy', "default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self' 'nonce-{$nonce}'; script-src-attr 'none'; style-src 'self' 'nonce-{$nonce}'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; form-action 'self'");
+})->name('workbench.wysiwyg');
+
+foreach (array_keys(array_diff_key($workbenchModules, ['tree' => true, 'code-editor' => true, 'wysiwyg' => true])) as $module) {
     Route::view($module, 'workbench::index', [
         'module' => $module,
         'modules' => $workbenchModules,
@@ -199,6 +208,7 @@ Route::post('/_daisy-kit-test/reviews', function (Request $request) {
         'combobox' => 'workbench.combobox',
         'signature' => 'workbench.signature',
         'transfer-list' => 'workbench.transferList',
+        'wysiwyg' => 'workbench.wysiwyg',
     ][$request->string('return_to')->toString()] ?? 'workbench.combobox';
 
     $review = $request->validate([
@@ -209,6 +219,7 @@ Route::post('/_daisy-kit-test/reviews', function (Request $request) {
         'assignees' => ['array'],
         'assignees.*' => ['string', 'max:100'],
         'approval_signature' => ['nullable', 'string', 'starts_with:data:image/png;base64,'],
+        'article_body' => ['nullable', 'string', 'max:100000'],
     ]);
 
     return redirect()

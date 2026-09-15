@@ -415,5 +415,18 @@
     "css": [
       "truncate.css"
     ]
+  },
+  "resources/js/wysiwyg.js": {
+    "file": "wysiwyg.js",
+    "name": "wysiwyg",
+    "src": "resources/js/wysiwyg.js",
+    "isEntry": true,
+    "imports": [
+      "_mountable-sTObMtyP.js",
+      "_identifiers-DZhNBAcR.js"
+    ],
+    "css": [
+      "wysiwyg.css"
+    ]
   }
 }

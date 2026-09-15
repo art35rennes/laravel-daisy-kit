@@ -15,6 +15,7 @@ const entries = {
     truncate: resolve(import.meta.dirname, 'resources/js/truncate.js'),
     scrollspy: resolve(import.meta.dirname, 'resources/js/scrollspy.js'),
     'transfer-list': resolve(import.meta.dirname, 'resources/js/transfer-list.js'),
+    wysiwyg: resolve(import.meta.dirname, 'resources/js/wysiwyg.js'),
 };
 
 export default defineConfig({

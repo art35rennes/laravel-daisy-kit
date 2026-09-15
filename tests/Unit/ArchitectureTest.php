@@ -33,6 +33,7 @@ it('exposes only the v6 Blade component allowlist', function (): void {
         'transfer-list',
         'tree',
         'truncate',
+        'wysiwyg',
     ]);
 });
 
@@ -45,9 +46,12 @@ it('does not retain legacy runtime systems', function (): void {
         ...(glob(packagePath('resources/js/*.js')) ?: []),
         ...(glob(packagePath('resources/js/*/*.js')) ?: []),
     ]);
-    $contents = $files->map(fn (string $path): string => (string) file_get_contents($path))->implode("\n");
+    $contents = $files
+        ->reject(fn (string $path): bool => str_contains(str_replace('\\', '/', $path), '/wysiwyg'))
+        ->map(fn (string $path): string => (string) file_get_contents($path))
+        ->implode("\n");
 
-    expect($contents)->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|trix|gridstack|vendor:publish/i');
+    expect($contents)->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|trix|gridstack|vendor:publish|lazy-editors/i');
 });
 
 it('requires PHP 8.4 without a Forms or Livewire integration', function (): void {
@@ -67,6 +71,7 @@ it('ships concise Laravel Boost resources for package consumers', function (): v
         ->toContain('PHP 8.4')
         ->toContain('Laravel 13')
         ->toContain('x-daisy-kit::copyable')
+        ->toContain('x-daisy-kit::wysiwyg')
         ->toContain('`mount(root)`, `mountAll(scope = document)`, `unmount(root)`, and `getInstance(root)`')
         ->toContain('daisy-kit:{module}:*')
         ->toContain('CSP')
@@ -80,7 +85,7 @@ it('ships concise Laravel Boost resources for package consumers', function (): v
         ->toContain('laravel-best-practices')
         ->toContain('v6-product-contract-matrix.md')
         ->toContain('crypto.randomUUID()')
-        ->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|\\btrix\\b|gridstack|vendor:publish/i');
+        ->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|gridstack|vendor:publish|lazy-editors/i');
 });
 
 it('documents the Vite alias for Composer-installed module entries', function (): void {
@@ -111,6 +116,7 @@ it('documents the Vite alias for Composer-installed module entries', function ()
         ->toContain('@daisy-kit/map.css')
         ->toContain('@daisy-kit/copyable.js')
         ->toContain('@daisy-kit/transfer-list.css')
+        ->toContain('@daisy-kit/wysiwyg.js')
         ->not->toMatch($fakeNpmImport);
 });
 
@@ -141,6 +147,7 @@ it('documents the stable v6 contract with copyable examples for every module', f
         ->toContain('x-daisy-kit::truncate')
         ->toContain('x-daisy-kit::scrollspy')
         ->toContain('x-daisy-kit::transfer-list')
+        ->toContain('x-daisy-kit::wysiwyg')
         ->not->toMatch('/x-daisy::|daisy::/');
 
     $fakeNpmImport = '/(?:from\\s+|import\\s*(?:\\(\\s*)?)[\'\"]art35rennes\\/laravel-daisy-kit\\/dist/';
@@ -154,6 +161,26 @@ it('documents the stable v6 contract with copyable examples for every module', f
         ->toContain('@tanstack/table-core | 9.2.3')
         ->toContain('Laravel Boost | 2.7.0')
         ->toContain('Official source');
+});
+
+it('isolates Trix to the WYSIWYG module without exposing its global', function (): void {
+    $package = json_decode((string) file_get_contents(packagePath('package.json')), true, 512, JSON_THROW_ON_ERROR);
+    $javascriptFiles = collect(glob(packagePath('resources/js/*.js')) ?: []);
+    $wysiwyg = (string) file_get_contents(packagePath('resources/js/wysiwyg.js'));
+    $otherEntries = $javascriptFiles
+        ->reject(fn (string $path): bool => str_ends_with(str_replace('\\', '/', $path), '/wysiwyg.js'))
+        ->map(fn (string $path): string => (string) file_get_contents($path))
+        ->implode("\n");
+
+    expect($wysiwyg)
+        ->toContain("import Trix from 'trix'")
+        ->toContain("Reflect.deleteProperty(globalThis, 'Trix')")
+        ->not->toContain('lazy-editors')
+        ->and($package['dependencies']['trix'])->toBe('^2.1.19')
+        ->and(file_exists(packagePath('dist/wysiwyg.js')))->toBeTrue()
+        ->and(file_exists(packagePath('dist/wysiwyg.css')))->toBeTrue()
+        ->and($otherEntries)
+        ->not->toMatch('/(?:from|import)\\s*[\'(\"]trix/i');
 });
 
 it('keeps File Preview frame helpers relative to its Vite entry', function (): void {
