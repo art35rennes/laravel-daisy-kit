@@ -102,7 +102,7 @@ it('offers local JavaScript completion and folds JSON without changing the value
 it('keeps an enlarged editor inside a mobile viewport and toggles its controls', function (): void {
     $page = $this->visit('/code-editor')->on()->mobile()->waitForEvent('networkidle');
     $page->click('form [data-code-editor-action="expand"]')
-        ->assertSee('Restore editor')
+        ->assertSee('Collapse')
         ->click('form [data-code-editor-action="search"]')
         ->assertSee('Close search')
         ->click('form [data-code-editor-action="search"]')
@@ -113,15 +113,35 @@ it('keeps an enlarged editor inside a mobile viewport and toggles its controls',
                 const shell = root.querySelector('.daisy-kit-code-editor__shell');
                 const status = root.querySelector('.daisy-kit-code-editor__status').getBoundingClientRect();
                 const editor = root.querySelector('.cm-editor').getBoundingClientRect();
+                const bounds = root.getBoundingClientRect();
+                const title = root.querySelector('legend').getBoundingClientRect();
                 return status.bottom <= innerHeight && status.right <= innerWidth
+                    && title.top >= bounds.top && title.bottom < editor.top
                     && editor.bottom <= status.top + 1 && editor.height > 50
                     && getComputedStyle(shell).outlineStyle === 'none'
                     && document.documentElement.scrollWidth <= innerWidth;
             })()
             JS)
         ->click('form [data-code-editor-action="expand"]')
-        ->assertSee('Enlarge editor')
+        ->assertSee('Expand')
         ->assertCount('.daisy-kit-code-editor--expanded', 0)
+        ->assertNoSmoke();
+})->group('browser');
+
+it('collapses using the header minus button and backdrop and pairs typed delimiters', function (): void {
+    $page = $this->visit('/code-editor')->waitForEvent('networkidle');
+    $page->click('form [data-code-editor-action="expand"]')
+        ->click('form [data-code-editor-minimize]')
+        ->assertCount('.daisy-kit-code-editor--expanded', 0)
+        ->click('form [data-code-editor-action="expand"]')
+        ->assertScript('document.elementFromPoint(2, 2).matches("button.daisy-kit-code-editor__backdrop:not([hidden])")');
+    $page->script('document.elementFromPoint(2, 2).click()');
+    $page->assertCount('.daisy-kit-code-editor--expanded', 0)
+        ->fill('form .cm-content', '')
+        ->keys('form .cm-content', '[')
+        ->assertScript('document.querySelector("textarea").value === "[]"')
+        ->keys('form .cm-content', 'Enter')
+        ->assertScript('document.querySelector("textarea").value.includes("\\n") && document.querySelector("textarea").value.endsWith("]")')
         ->assertNoSmoke();
 })->group('browser');
 

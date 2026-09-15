@@ -39,8 +39,12 @@
 .daisy-kit-code-editor .tok-emphasis { font-style: italic; }
 .daisy-kit-code-editor .tok-link { text-decoration: underline; }
 .daisy-kit-code-editor-expanded-page { overflow: hidden; }
-.daisy-kit-code-editor--expanded { position: fixed; inset: 1rem; z-index: 1000; margin: 0; padding: .75rem; min-inline-size: 0; overflow: hidden; background: var(--color-base-100); border-radius: var(--radius-box); box-shadow: 0 0 0 100vmax color-mix(in oklab, var(--color-base-content) 35%, transparent); }
-.daisy-kit-code-editor--expanded .daisy-kit-code-editor__shell { position: absolute; inset: 2.5rem .75rem .75rem; display: flex; min-height: 0; min-width: 0; flex-direction: column; }
+.daisy-kit-code-editor__backdrop:not([hidden]) { display: block; position: fixed; inset: 0; width: 100%; height: 100%; z-index: 999; border: 0; padding: 0; background: color-mix(in oklab, var(--color-base-content) 35%, transparent); cursor: pointer; }
+.daisy-kit-code-editor__minimize { display: none; }
+.daisy-kit-code-editor--expanded { position: fixed; inset: 1rem; z-index: 1000; margin: 0; padding: .75rem; min-inline-size: 0; overflow: hidden; background: var(--color-base-100); border-radius: var(--radius-box); }
+.daisy-kit-code-editor--expanded > legend { position: absolute; inset-block-start: .75rem; inset-inline-start: .75rem; max-width: calc(100% - 4rem); margin: 0; padding: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.daisy-kit-code-editor--expanded > .daisy-kit-code-editor__minimize { display: inline-flex; position: absolute; inset-block-start: .25rem; inset-inline-end: .75rem; font-size: 1.25rem; }
+.daisy-kit-code-editor--expanded .daisy-kit-code-editor__shell { position: absolute; inset: 3rem .75rem .75rem; display: flex; min-height: 0; min-width: 0; flex-direction: column; }
 .daisy-kit-code-editor--expanded [data-code-editor-host] { flex: 1 1 0; min-height: 0; min-width: 0; }
 .daisy-kit-code-editor--expanded .cm-editor { height: 100%; min-height: 0; }
 .daisy-kit-code-editor--expanded .daisy-kit-code-editor__toolbar { flex: 0 0 auto; max-height: 40%; overflow: auto; }

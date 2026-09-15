@@ -8,6 +8,7 @@ import { autocompletion, completeAnyWord, closeBrackets, closeBracketsKeymap, co
 import { createMountable } from './core/mountable.js';
 import { createInstanceIdentifier } from './core/identifiers.js';
 import { loadLanguage } from './code-editor/languages.js';
+import { jsonNewline } from './code-editor/json-newline.js';
 import '../css/code-editor.css';
 
 const origin = Annotation.define();
@@ -19,7 +20,7 @@ function initialize(root, configuration) {
         throw new Error('Code Editor requires a textarea and editor host.');
     }
     const label = typeof configuration.label === 'string' ? configuration.label : 'Code';
-    const labels = { line: 'Ln', column: 'Col', readOnly: 'Read only', copied: 'Copied', required: 'Please enter code.', search: 'Search', closeSearch: 'Close search', expand: 'Enlarge editor', restore: 'Restore editor', wrap: 'Wrap lines', unwrap: 'Unwrap lines', ...(configuration.labels ?? {}) };
+    const labels = { line: 'Ln', column: 'Col', readOnly: 'Read only', copied: 'Copied', required: 'Please enter code.', search: 'Search', closeSearch: 'Close search', expand: 'Expand', restore: 'Collapse', wrap: 'Wrap lines', unwrap: 'Unwrap lines', ...(configuration.labels ?? {}) };
     const initialValue = input.value;
     const original = { tabIndex: input.getAttribute('tabindex'), ariaHidden: input.getAttribute('aria-hidden'), readOnly: input.readOnly, id: input.id };
     const languageSlot = new Compartment();
@@ -42,6 +43,12 @@ function initialize(root, configuration) {
     const feedback = root.querySelector('[data-code-editor-feedback]');
     const languageLabel = root.querySelector('[data-code-editor-language]');
     const controller = new AbortController();
+    const backdrop = document.createElement('button');
+    backdrop.type = 'button';
+    backdrop.className = 'daisy-kit-code-editor__backdrop';
+    backdrop.tabIndex = -1;
+    backdrop.hidden = true;
+    backdrop.setAttribute('aria-label', labels.restore);
     const disabled = () => input.matches(':disabled') || configuration.disabled === true;
     const emit = (name, detail = {}) => root.dispatchEvent(new CustomEvent(`daisy-kit:code-editor:${name}`, { bubbles: true, detail }));
     function error(code, message) {
@@ -91,7 +98,7 @@ function initialize(root, configuration) {
             EditorState.languageData.of(() => [{ autocomplete: completeAnyWord }]),
             EditorView.cspNonce.of(typeof configuration.nonce === 'string' ? configuration.nonce : ''),
             EditorState.phrases.of(configuration.phrases ?? {}),
-            keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap, ...historyKeymap, ...foldKeymap, ...completionKeymap]),
+            keymap.of([...closeBracketsKeymap, { key: 'Enter', run: editor => language === 'json' && jsonNewline(editor) }, ...defaultKeymap, ...searchKeymap, ...historyKeymap, ...foldKeymap, ...completionKeymap]),
             EditorView.updateListener.of(update => {
                 if (update.docChanged) {
                     input.value = update.state.doc.toString();
@@ -105,6 +112,7 @@ function initialize(root, configuration) {
         ] }),
     });
     input.id ||= createInstanceIdentifier('code-editor-value');
+    root.before(backdrop);
     input.tabIndex = -1;
     input.setAttribute('aria-hidden', 'true');
     input.classList.add('daisy-kit-code-editor__value');
@@ -165,6 +173,7 @@ function initialize(root, configuration) {
             previousScroll = { top: view.scrollDOM.scrollTop, left: view.scrollDOM.scrollLeft, x: window.scrollX, y: window.scrollY };
         }
         expanded = value;
+        backdrop.hidden = !value;
         root.classList.toggle('daisy-kit-code-editor--expanded', value);
         document.documentElement.classList.toggle('daisy-kit-code-editor-expanded-page', document.querySelector('.daisy-kit-code-editor--expanded') !== null);
         view.requestMeasure();
@@ -236,9 +245,11 @@ function initialize(root, configuration) {
         wrap: () => setLineWrapping(!lineWrapping), expand: () => setExpanded(!expanded),
     };
     root.addEventListener('click', event => {
+        if (event.target.closest('[data-code-editor-minimize]')) { setExpanded(false); return; }
         const button = event.target.closest('[data-code-editor-action]');
         if (button && root.contains(button) && !button.disabled) actions[button.dataset.codeEditorAction]?.();
     }, { signal: controller.signal });
+    backdrop.addEventListener('click', () => setExpanded(false), { signal: controller.signal });
     root.addEventListener('keydown', event => {
         if (event.key !== 'Escape') return;
         if (event.defaultPrevented || completionStatus(view.state) !== null) return;
@@ -277,6 +288,7 @@ function initialize(root, configuration) {
             active = false;
             languageRevision += 1;
             controller.abort();
+            backdrop.remove();
             observer.disconnect();
             clearTimeout(feedbackTimer);
             view.destroy();

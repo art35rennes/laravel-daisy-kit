@@ -8,7 +8,7 @@
 @php
     $controlLabels = array_replace([
         'copy' => 'Copy', 'search' => 'Search', 'undo' => 'Undo', 'redo' => 'Redo',
-        'wrap' => 'Wrap lines', 'expand' => 'Enlarge editor', 'complete' => 'Suggest',
+        'wrap' => 'Wrap lines', 'expand' => 'Expand', 'restore' => 'Collapse', 'complete' => 'Suggest',
         'fold-all' => 'Fold all', 'unfold-all' => 'Unfold all',
         'fold-others' => 'Fold other blocks', 'unfold-others' => 'Unfold other blocks',
     ], $labels);
@@ -22,6 +22,7 @@
 
 <fieldset {{ $attributes->only(['id', 'class', 'aria-describedby', 'data-theme'])->class(['fieldset', 'daisy-kit-code-editor']) }} data-daisy-kit-module="code-editor" @disabled($disabled)>
     <legend class="fieldset-legend">{{ $label }}</legend>
+    <button class="btn btn-ghost btn-sm daisy-kit-code-editor__minimize" type="button" data-code-editor-minimize aria-label="{{ $controlLabels['restore'] }}" title="{{ $controlLabels['restore'] }}"><span aria-hidden="true">−</span></button>
     <p class="alert alert-error" data-daisy-kit-status hidden role="alert"></p>
     <div class="daisy-kit-code-editor__shell">
         <div class="daisy-kit-code-editor__toolbar" data-code-editor-toolbar hidden role="group" aria-label="{{ $label }}">

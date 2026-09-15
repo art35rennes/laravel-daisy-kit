@@ -397,6 +397,13 @@ Reset restores the mount-time value. Disabled values do not submit. Read-only
 content stays focusable and searchable. Tab leaves the editor; Ctrl+Space opens
 language-local and document-word suggestions, also available through Suggest.
 Saving, formatting, execution and LSP are host concerns.
+Typing opening delimiters inserts their closing counterpart according to the
+language: JSON uses `[]`, `{}` and double quotes; JavaScript also supports `()`.
+Enter indents new lines. In JSON, Enter after a complete value repairs a missing
+comma only when another member follows. It does not add trailing commas before
+closing brackets, alter incomplete values, or insert commas in other languages.
+The expanded header keeps its title inside the editor and offers a minus button.
+Expand/Collapse, Escape and clicking the backdrop restore the inline editor.
 
 `labels` overrides copy, search, closeSearch, undo, redo, wrap, unwrap, expand,
 restore, complete, fold-all, unfold-all, fold-others, unfold-others, line, column, readOnly,
