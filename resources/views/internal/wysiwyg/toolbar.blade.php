@@ -50,7 +50,7 @@
 </div>
 <div class="daisy-kit-wysiwyg__dialogs" data-trix-dialogs>
     <div class="daisy-kit-wysiwyg__dialog" data-trix-dialog="href" data-trix-dialog-attribute="href">
-        <label class="input input-sm w-full">
+        <label class="input input-sm">
             <span class="sr-only">{{ __('daisy-kit::wysiwyg.url') }}</span>
             <input type="url" name="href" placeholder="{{ __('daisy-kit::wysiwyg.url_placeholder') }}" data-trix-validate-href required data-trix-input>
         </label>

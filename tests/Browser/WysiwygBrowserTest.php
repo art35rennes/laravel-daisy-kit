@@ -65,6 +65,24 @@ it('uses DaisyUI themes without overflowing supported widths', function (int $wi
     '1440 corporate' => [1440, 'corporate'],
 ])->group('browser');
 
+it('keeps the medium editor readable and contains the link dialog', function (int $width): void {
+    $page = $this->visit('/wysiwyg')->resize($width, 900)->waitForEvent('networkidle');
+
+    $page->click('form [data-trix-action="link"]');
+    $page->page()->waitForFunction('() => document.querySelector("form .daisy-kit-wysiwyg__dialog").classList.contains("trix-active")');
+
+    $page->assertScript('getComputedStyle(document.querySelector("form .daisy-kit-wysiwyg__editor")).fontSize === "16px"')
+        ->assertScript('getComputedStyle(document.querySelector("form .daisy-kit-wysiwyg__toolbar .btn")).fontSize === "14px"')
+        ->assertScript('document.querySelector("form .daisy-kit-wysiwyg__dialog .input").getBoundingClientRect().width >= document.querySelector("form .daisy-kit-wysiwyg__dialog").getBoundingClientRect().width / 2')
+        ->assertScript('document.querySelector("form .daisy-kit-wysiwyg__dialog").getBoundingClientRect().right <= document.querySelector("form .daisy-kit-wysiwyg").getBoundingClientRect().right')
+        ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
+        ->assertNoSmoke();
+})->with([
+    '320 pixels' => 320,
+    '768 pixels' => 768,
+    '1280 pixels' => 1280,
+])->group('browser');
+
 it('wraps rich text controls inside a narrow host card', function (): void {
     $page = $this->visit('/wysiwyg')->resize(390, 844)->waitForEvent('networkidle');
     $page->script("document.querySelector('form').style.width = '240px'");
