@@ -387,19 +387,24 @@ The search toolbar button toggles the panel; `openSearch()` always opens it.
 Other-block folding preserves the smallest block containing the cursor and its
 parents. Folding commands remain available in read-only mode and operate on the
 currently parsed syntax tree, without forcing a full parse of large documents.
-`setLanguage(string)` and `copy()` return `Promise<boolean>`.
+`setLanguage(string)`, `copy()` and `format()` return `Promise<boolean>`.
+The Format code action loads Prettier and the matching parser on demand for JSON,
+JavaScript/TypeScript, HTML, CSS, Markdown and YAML. Formatting is disabled for
+PHP, SQL and plain text, and hidden in read-only mode. It preserves undo history:
+Undo restores the document before formatting. Parsing failures leave the document
+unchanged and emit `error { code: 'format-failed', message }`.
 `setValue` resets history and selection, even in read-only mode; an identical value
 is a successful no-op. Read-only prevents user edits, not host updates.
 Stale or destroyed asynchronous commands return false without emitting errors.
 
-Events use `daisy-kit:code-editor:`: `change { value, origin }` (user, api, reset),
+Events use `daisy-kit:code-editor:`: `change { value, origin }` (user, api, reset, format),
 `language-changed { language }`, `copied {}`, `expanded { expanded }`,
-`error { code, message }`, and the standard lifecycle events.
+`formatted { language }`, `error { code, message }`, and the standard lifecycle events.
 Native textarea input is synchronized immediately; change fires when focus leaves.
 Reset restores the mount-time value. Disabled values do not submit. Read-only
 content stays focusable and searchable. Tab leaves the editor; Ctrl+Space opens
 language-local and document-word suggestions, also available through Suggest.
-Saving, formatting, execution and LSP are host concerns.
+Saving, execution and LSP are host concerns. Formatting runs locally in the browser.
 Typing opening delimiters inserts their closing counterpart according to the
 language: JSON uses `[]`, `{}` and double quotes; JavaScript also supports `()`.
 Enter indents new lines. In JSON, Enter after a complete value repairs a missing
@@ -409,7 +414,7 @@ The expanded header keeps its title inside the editor and offers a minus button.
 Expand editor/Collapse editor, Escape and clicking the backdrop restore the inline editor.
 
 `labels` overrides copy, search, closeSearch, undo, redo, wrap, unwrap, expand,
-restore, complete, fold-all, unfold-all, fold-others, unfold-others, line, column, readOnly,
+restore, complete, format, formatting, formatted, formatFailed, fold-all, unfold-all, fold-others, unfold-others, line, column, readOnly,
 copied, required, languageUnavailable, clipboardUnavailable, configurationInvalid
 and initializationFailed strings. Defaults follow the Laravel locale (English and
 French bundled); explicit instance labels override those defaults. `phrases` maps

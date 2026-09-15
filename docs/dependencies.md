@@ -37,6 +37,7 @@ Runtime requires only `illuminate/support` and `illuminate/view` 13.x.
 | @turf/area / @turf/length / @turf/boolean-intersects | 7.4.0 | MIT | Map measurements and spatial selection |
 | leaflet.markercluster / leaflet-gesture-handling | 1.5.3 / 1.2.2 | MIT | Optional Map clustering and gesture controls |
 | Trix | 2.1.19 (`^2.1.19`) | MIT | WYSIWYG editing, bundled DOMPurify sanitization and attachment model |
+| Prettier | 3.9.6 | MIT | Code Editor formatting, loaded on demand with the matching web-language parser |
 | Vite / Vitest | 8.2.2 / 4.1.11 | MIT | Reproducible module build and tests |
 | jsdom | 30.0.1 | MIT | Browser-like unit-test environment |
 
@@ -66,3 +67,8 @@ Code Editor adds the MIT-licensed CodeMirror 6 state, view, commands, language,
 search and autocomplete packages, @lezer/highlight, and official PHP, HTML, CSS,
 JavaScript/TypeScript, JSON, Markdown, SQL and YAML grammars. Exact versions are
 locked in package-lock.json. Consumers use compiled assets without npm installation.
+
+Code Editor also bundles Prettier standalone and its official web-language plugins
+as lazy chunks. Formatting JSON, JavaScript/TypeScript, HTML, CSS, Markdown and YAML
+runs locally in the browser, with no server request. PHP, SQL and plain text formatting
+are not included. Prettier and its parser chunks load only when formatting is requested.
