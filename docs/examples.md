@@ -722,3 +722,20 @@ spatial selection, measurements, history and GeoJSON export.
 Use provider URLs and attribution authorized by the host. All configuration remains encoded JSON
 and events use `daisy-kit:map:*`. The complete layer shapes, facade, events, CSP directives and
 migration notes are in [`map.md`](map.md).
+
+## Code Editor
+
+```blade
+<x-daisy-kit::code-editor name="source" label="Source code" language="php"
+    filename="example.php" :value="$source" :nonce="Vite::cspNonce()" />
+```
+
+```js
+import '@daisy-kit/code-editor.css';
+import { mountAll } from '@daisy-kit/code-editor.js';
+mountAll();
+```
+
+Pass the response nonce and include it in style-src. Use a host stylesheet to set
+--code-editor-height. The editor inherits the nearest DaisyUI theme. No Blade
+parser, executable preview, server persistence or remote completion is included.

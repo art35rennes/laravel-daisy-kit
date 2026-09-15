@@ -1,4 +1,8 @@
 const modules = [
+    ['code-editor', async () => {
+        await import('@daisy-kit/code-editor.css');
+        return import('@daisy-kit/code-editor.js');
+    }],
     ['table', async () => {
         await import('@daisy-kit/table.css');
 

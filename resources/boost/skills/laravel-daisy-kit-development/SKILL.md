@@ -26,6 +26,7 @@ Only these Blade components are supported:
 - `x-daisy-kit::truncate`
 - `x-daisy-kit::scrollspy`
 - `x-daisy-kit::transfer-list`
+- `x-daisy-kit::code-editor`
 
 Do not introduce aliases, additional primitive DaisyUI wrappers, host templates, routes,
 controllers, facades, migrations, asset publication, Forms or Livewire integration, or a
@@ -56,7 +57,7 @@ mountAll();
 ```
 
 The entry stems are `table`, `tree`, `blueprint`, `file-preview`, `map`, `copyable`, `combobox`,
-`signature`, `truncate`, `scrollspy`, and `transfer-list`; use `@daisy-kit/{stem}.js` and
+`signature`, `truncate`, `scrollspy`, and `transfer-list`, plus `code-editor`; use `@daisy-kit/{stem}.js` and
 `@daisy-kit/{stem}.css` only for modules rendered on the page.
 
 Each entry independently exposes `mount(root)`, `mountAll(scope = document)`, `unmount(root)`,
@@ -144,3 +145,12 @@ exercise facades in Vitest or through browser-test scripts instead.
 Before changing the public boundary, record the decision in `docs/decisions/` and update
 `docs/specs/v6-public-contract.md`. Keep `dist/` reproducible and tracked; do not track
 dependency directories, TIA results, or Workbench build artifacts.
+
+## Code Editor
+
+Use `x-daisy-kit::code-editor` with explicit `@daisy-kit/code-editor.js` and
+`@daisy-kit/code-editor.css` imports. Supply a response nonce for generated styles.
+Keep the CodeMirror engine private. It edits one document, synchronizes a native
+textarea, loads language grammars on demand and inherits the nearest DaisyUI theme.
+Read-only allows selection, search and copy. setValue replaces code and resets
+history. It does not execute code or save it remotely.

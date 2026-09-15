@@ -8,6 +8,7 @@ architecture-test failure. The detailed business outcomes and test oracle are in
 
 | Module | Blade component | Essential contract |
 | --- | --- | --- |
+| Code Editor | `x-daisy-kit::code-editor` | Single-document CodeMirror 6 editor with native form semantics, lazy grammars and DaisyUI themes. |
 | Table | `x-daisy-kit::table` | Client/server TanStack data workbench with typed filters, persistent selection and configurable data actions. |
 | Tree | `x-daisy-kit::tree` | Keyboard-accessible hierarchical selector with multiple/indeterminate selection, lazy loading and search. |
 | Blueprint | `x-daisy-kit::blueprint` | Accessible directed-graph viewer/editor with inspector, history and synchronized JSON. |
@@ -340,7 +341,7 @@ one coherent contract; no alias, fallback dialect, or adapter is provided for pr
 
 There are no `x-daisy` aliases, additional DaisyUI primitive wrappers, application templates,
 forms or Livewire integration, charts, calendars, CSRF routes, icon systems, asset publishing,
-CodeMirror, Trix, GridStack, or global bundle. The eleven entries above are the complete public
+Trix, GridStack, or global bundle. The twelve entries above are the complete public
 surface. v4 compatibility is outside v6 and is served exclusively by `legacy/4.x` / `v4.0.0`.
 
 ## Verification matrix
@@ -353,3 +354,39 @@ surface. v4 compatibility is outside v6 and is served exclusively by `legacy/4.x
   event logger, or visible test-only control.
 - Quality: fresh Composer installation, Pint, Larastan level max, Pest type coverage, Vitest,
   reproducible `dist` build, and zero Composer/npm audit findings.
+
+## Code Editor configuration
+
+`x-daisy-kit::code-editor` accepts `value=''`, `language='text'`, `name=null`,
+`label='Code'`, `filename=null`, `readOnly=false`, `disabled=false`, `required=false`,
+`lineNumbers=true`, `lineWrapping=false`, `tabSize=4` (1 to 16), `toolbar=true`,
+`statusBar=true`, `nonce=null`, `labels=[]`, and `phrases=[]`.
+Import `@daisy-kit/code-editor.js` and `@daisy-kit/code-editor.css` explicitly.
+Height is `var(--code-editor-height, 24rem)`; override it in host CSS.
+
+Languages: text, php, html, css, javascript, typescript, json, markdown, sql, yaml.
+Grammars load on demand, shared between instances. The editor starts as text.
+Unsupported or unavailable grammars leave the current language and document intact
+and emit `error { code: 'language-unavailable', message }`. No Blade-specific parser.
+
+Facade: `getValue(): string`, `getState(): { language, readOnly, disabled,
+lineWrapping, expanded, line, column }` (one-based cursor coordinates),
+`setValue(string)`, `setReadOnly(boolean)`, `setLineWrapping(boolean)`, `focus()`,
+`undo()`, `redo()`, `openSearch()`, `setExpanded(boolean)` return booleans.
+`setLanguage(string)` and `copy()` return `Promise<boolean>`.
+`setValue` resets history and selection, even in read-only mode; an identical value
+is a successful no-op. Read-only prevents user edits, not host updates.
+Stale or destroyed asynchronous commands return false without emitting errors.
+
+Events use `daisy-kit:code-editor:`: `change { value, origin }` (user, api, reset),
+`language-changed { language }`, `copied {}`, `expanded { expanded }`,
+`error { code, message }`, and the standard lifecycle events.
+Native textarea input is synchronized immediately; change fires when focus leaves.
+Reset restores the mount-time value. Disabled values do not submit. Read-only
+content stays focusable and searchable. Tab leaves the editor; Ctrl+Space opens
+language-local suggestions. Saving, formatting, execution and LSP are host concerns.
+
+`labels` overrides copy, search, undo, redo, wrap, expand, line, column, readOnly,
+copied and required strings. `phrases` maps CodeMirror's English phrases to host
+translations. Supply the host response nonce to authorize generated CodeMirror
+styles through `style-src 'self' 'nonce-...'`. No inline script or global is added.

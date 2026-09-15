@@ -101,3 +101,12 @@ automated outcome test before it is considered delivered.
 | Feature restoration creates opaque monoliths. | Small vertical commits, colocated module code and outcome-focused tests. |
 | File Preview fallback weakens frame authentication. | Authenticate with frame source plus a unique per-instance token; test wrong source/token and opaque origin. |
 | Leaflet third-party runtime violates strict style policy. | Use real CSP-violation browser proof and isolate/document the narrow exception. |
+
+## Code Editor
+
+| User outcome | Reference | V6 proof |
+| --- | --- | --- |
+| Read and edit one document, search/replace, fold, undo and copy. | CodeMirror 6 and Mantine CodeHighlight. | Real browser input, keyboard and command tests. |
+| Submit and reset code through a native form, including without JavaScript. | Native textarea semantics. | Pest escaping, FormData and reset tests. |
+| Switch themes and languages without losing content or history. | DaisyUI semantic variables and CodeMirror compartments. | Theme, multiple-instance and asynchronous grammar tests. |
+| Work with large documents without rendering all lines. | CodeMirror viewport rendering. | 100 KB and 1 MB browser measurements and DOM bounds. |

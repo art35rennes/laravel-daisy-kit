@@ -58,3 +58,8 @@ the major decisions rather than replacing those locks:
 | Laravel Boost 2.7.0 | [Laravel Boost source and releases](https://github.com/laravel/boost) | The locked source commit is `b19e98a8637cb69b2aab7b5b6c5fe9e2c79d182f`; package-owned agent resources follow Boost 2.x terminology and discovery. |
 
 ADR-005 records the upgrade process, source review, and the cache-independent validation rule.
+
+Code Editor adds the MIT-licensed CodeMirror 6 state, view, commands, language,
+search and autocomplete packages, @lezer/highlight, and official PHP, HTML, CSS,
+JavaScript/TypeScript, JSON, Markdown, SQL and YAML grammars. Exact versions are
+locked in package-lock.json. Consumers use compiled assets without npm installation.

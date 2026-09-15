@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Vite;
 
 $workbenchModules = [
+    'code-editor' => 'Code Editor',
     'table' => 'Table',
     'tree' => 'Tree',
     'blueprint' => 'Blueprint',
@@ -26,7 +28,15 @@ Route::view('/', 'workbench::index', [
 
 require __DIR__.'/tree.php';
 
-foreach (array_keys(array_diff_key($workbenchModules, ['tree' => true])) as $module) {
+Route::get('/code-editor', function () use ($workbenchModules) {
+    $nonce = Vite::useCspNonce();
+
+    return response()->view('workbench::index', [
+        'module' => 'code-editor', 'modules' => $workbenchModules, 'codeEditorNonce' => $nonce,
+    ])->header('Content-Security-Policy', "default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self' 'nonce-{$nonce}'; script-src-attr 'none'; style-src 'self' 'nonce-{$nonce}'; style-src-attr 'none'; img-src 'self' data:; form-action 'self'");
+})->name('workbench.codeEditor');
+
+foreach (array_keys(array_diff_key($workbenchModules, ['tree' => true, 'code-editor' => true])) as $module) {
     Route::view($module, 'workbench::index', [
         'module' => $module,
         'modules' => $workbenchModules,

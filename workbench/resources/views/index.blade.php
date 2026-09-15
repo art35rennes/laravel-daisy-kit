@@ -80,6 +80,10 @@
             </nav>
         @endif
 
+        @if($module === 'code-editor')
+            @include('workbench::code-editor')
+        @endif
+
         @if($module === 'table')
         <section class="min-w-0 space-y-6" aria-labelledby="table-heading">
             <h2 id="table-heading">Table</h2>

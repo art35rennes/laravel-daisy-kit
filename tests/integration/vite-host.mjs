@@ -9,7 +9,7 @@ import { preparePackageSource } from './package-source.mjs';
 const repositoryRoot = resolve(import.meta.dirname, '../..');
 const fixtureRoot = resolve(repositoryRoot, 'tests/Fixtures/vite-host');
 const hostRoot = mkdtempSync(resolve(tmpdir(), 'daisy-kit-vite-host-'));
-const entryStems = ['table', 'tree', 'blueprint', 'file-preview', 'map', 'copyable', 'combobox', 'signature', 'truncate', 'scrollspy', 'transfer-list'];
+const entryStems = ['table', 'tree', 'blueprint', 'file-preview', 'map', 'copyable', 'combobox', 'signature', 'truncate', 'scrollspy', 'transfer-list', 'code-editor'];
 const contentTypes = {
     '.css': 'text/css; charset=utf-8',
     '.html': 'text/html; charset=utf-8',
@@ -57,9 +57,10 @@ function startHost(buildRoot) {
             }
 
             const styleAttributePolicy = path === '/relaxed.html' ? "'unsafe-inline'" : "'none'";
+            const styleSources = path === '/code-editor.html' ? "'self' 'nonce-code-editor-fixture'" : "'self'";
 
             response.writeHead(200, {
-                'Content-Security-Policy': `default-src 'none'; base-uri 'none'; connect-src 'self'; form-action 'none'; frame-src 'self'; img-src 'self' data: blob:; object-src 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self'; style-src-attr ${styleAttributePolicy}`,
+                'Content-Security-Policy': `default-src 'none'; base-uri 'none'; connect-src 'self'; form-action 'none'; frame-src 'self'; img-src 'self' data: blob:; object-src 'none'; script-src 'self'; script-src-attr 'none'; style-src ${styleSources}; style-src-attr ${styleAttributePolicy}`,
                 'Content-Type': contentTypes[extname(file)] ?? 'application/octet-stream',
             });
             response.end(readFileSync(file));
@@ -335,6 +336,15 @@ try {
         throw new Error(`The dependency-style host reported CSP violations:\n${relaxedCspViolations.join('\n')}`);
     }
 
+    await page.goto(new URL('/code-editor.html', url).href, { waitUntil: 'networkidle' });
+    await page.waitForSelector('.cm-content');
+    await page.locator('.cm-content').fill('const edited = true;');
+    const source = await page.locator('textarea').inputValue();
+    const editorViolations = await page.evaluate(() => window.__daisyKitCspViolations);
+    if (source !== 'const edited = true;' || editorViolations.length > 0) {
+        throw new Error(`Code Editor host submission or nonce CSP failed: ${JSON.stringify(editorViolations)}`);
+    }
+
     if (responses.length > 0) {
         throw new Error(`The served host requested missing assets:\n${responses.join('\n')}`);
     }
@@ -342,7 +352,7 @@ try {
     if (consoleErrors.length > 0) {
         throw new Error(`The served HTTP host logged browser errors:\n${consoleErrors.join('\n')}`);
     }
-    console.log(`Fresh VCS host verified ${activePackage.version} at ${installedCommit}: 11 modules, served assets, browser outcomes and CSP passed.`);
+    console.log(`Fresh VCS host verified ${activePackage.version} at ${installedCommit}: 12 modules, served assets, browser outcomes and CSP passed.`);
 } finally {
     if (browser) await browser.close();
     if (server) await closeServer(server);

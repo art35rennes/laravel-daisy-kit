@@ -8,13 +8,13 @@ it('presents the Workbench module directory accessibly on desktop and mobile', f
     $desktop
         ->assertSee('Daisy Kit v5 Workbench')
         ->assertSee('Component modules')
-        ->assertCount('nav a.btn', 11)
+        ->assertCount('nav a.btn', 12)
         ->assertCount('[data-daisy-kit-module]', 0)
         ->assertNoSmoke()
         ->assertNoAccessibilityIssues(1);
 
     $this->visit('/')->on()->mobile()
-        ->assertCount('nav a.btn', 11)
+        ->assertCount('nav a.btn', 12)
         ->assertCount('[data-daisy-kit-module]', 0)
         ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
         ->assertScript('window.innerWidth <= 430');

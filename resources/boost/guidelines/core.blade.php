@@ -4,7 +4,7 @@ Laravel Daisy Kit is a PHP 8.4 / Laravel 13 package of focused Blade modules for
 that already own their Tailwind CSS and DaisyUI setup. It provides exactly these components:
 
 - `x-daisy-kit::table`, `x-daisy-kit::tree`, `x-daisy-kit::blueprint`, `x-daisy-kit::file-preview`, and `x-daisy-kit::map`
-- `x-daisy-kit::copyable`, `x-daisy-kit::combobox`, `x-daisy-kit::signature`, `x-daisy-kit::truncate`, `x-daisy-kit::scrollspy`, and `x-daisy-kit::transfer-list`
+- `x-daisy-kit::copyable`, `x-daisy-kit::combobox`, `x-daisy-kit::signature`, `x-daisy-kit::truncate`, `x-daisy-kit::scrollspy`, `x-daisy-kit::transfer-list`, and `x-daisy-kit::code-editor`
 
 This is a Composer/VCS package, not an npm package. In the host Vite configuration, resolve the
 stable `@daisy-kit` alias to `vendor/art35rennes/laravel-daisy-kit/dist`; then import each used

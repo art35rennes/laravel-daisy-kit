@@ -26,7 +26,7 @@ Install it from GitHub/VCS rather than Packagist:
 `x-daisy-kit::table`, `x-daisy-kit::tree`, `x-daisy-kit::blueprint`,
 `x-daisy-kit::file-preview`, `x-daisy-kit::map`, `x-daisy-kit::copyable`,
 `x-daisy-kit::combobox`, `x-daisy-kit::signature`, `x-daisy-kit::truncate`,
-`x-daisy-kit::scrollspy`, and `x-daisy-kit::transfer-list` are the complete public surface.
+`x-daisy-kit::scrollspy`, `x-daisy-kit::transfer-list`, and `x-daisy-kit::code-editor` are the complete public surface.
 Their contracts are documented in
 [`docs/specs/v6-public-contract.md`](docs/specs/v6-public-contract.md).
 
@@ -61,7 +61,7 @@ mountAll();
 ```
 
 The available pairs are `table`, `tree`, `blueprint`, `file-preview`, `map`, `copyable`,
-`combobox`, `signature`, `truncate`, `scrollspy`, and `transfer-list`. Do not import this
+`combobox`, `signature`, `truncate`, `scrollspy`, and `transfer-list`, plus `code-editor`. Do not import this
 Composer package by its package name in a Vite source file.
 
 [`docs/examples.md`](docs/examples.md) contains copyable Blade and Vite examples for every

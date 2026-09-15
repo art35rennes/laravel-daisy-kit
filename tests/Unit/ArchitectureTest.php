@@ -22,6 +22,7 @@ it('exposes only the v6 Blade component allowlist', function (): void {
 
     expect($components)->toBe([
         'blueprint',
+        'code-editor',
         'combobox',
         'copyable',
         'file-preview',
@@ -46,7 +47,7 @@ it('does not retain legacy runtime systems', function (): void {
     ]);
     $contents = $files->map(fn (string $path): string => (string) file_get_contents($path))->implode("\n");
 
-    expect($contents)->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|codemirror|trix|gridstack|vendor:publish/i');
+    expect($contents)->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|trix|gridstack|vendor:publish/i');
 });
 
 it('requires PHP 8.4 without a Forms or Livewire integration', function (): void {
@@ -79,7 +80,7 @@ it('ships concise Laravel Boost resources for package consumers', function (): v
         ->toContain('laravel-best-practices')
         ->toContain('v6-product-contract-matrix.md')
         ->toContain('crypto.randomUUID()')
-        ->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|codemirror|\\btrix\\b|gridstack|vendor:publish/i');
+        ->not->toMatch('/x-daisy::|daisy::|echarts|cally|calendar|\\btrix\\b|gridstack|vendor:publish/i');
 });
 
 it('documents the Vite alias for Composer-installed module entries', function (): void {
