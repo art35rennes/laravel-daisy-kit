@@ -38,6 +38,8 @@ Runtime requires only `illuminate/support` and `illuminate/view` 13.x.
 | leaflet.markercluster / leaflet-gesture-handling | 1.5.3 / 1.2.2 | MIT | Optional Map clustering and gesture controls |
 | Trix | 2.1.19 (`^2.1.19`) | MIT | WYSIWYG editing, bundled DOMPurify sanitization and attachment model |
 | Prettier | 3.9.6 | MIT | Code Editor formatting, loaded on demand with the matching web-language parser |
+| @prettier/plugin-php | 0.25.0 | MIT | On-demand PHP formatting in Code Editor |
+| sql-formatter | 15.8.2 | MIT | On-demand SQL formatting in Code Editor |
 | Vite / Vitest | 8.2.2 / 4.1.11 | MIT | Reproducible module build and tests |
 | jsdom | 30.0.1 | MIT | Browser-like unit-test environment |
 
@@ -70,5 +72,6 @@ locked in package-lock.json. Consumers use compiled assets without npm installat
 
 Code Editor also bundles Prettier standalone and its official web-language plugins
 as lazy chunks. Formatting JSON, JavaScript/TypeScript, HTML, CSS, Markdown and YAML
-runs locally in the browser, with no server request. PHP, SQL and plain text formatting
-are not included. Prettier and its parser chunks load only when formatting is requested.
+runs locally in the browser, with no server request. PHP uses the official Prettier PHP
+plugin and SQL uses sql-formatter. Plain text formatting is not included. Formatters
+and their parser chunks load only when formatting is requested.

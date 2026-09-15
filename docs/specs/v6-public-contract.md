@@ -389,8 +389,9 @@ parents. Folding commands remain available in read-only mode and operate on the
 currently parsed syntax tree, without forcing a full parse of large documents.
 `setLanguage(string)`, `copy()` and `format()` return `Promise<boolean>`.
 The Format code action loads Prettier and the matching parser on demand for JSON,
-JavaScript/TypeScript, HTML, CSS, Markdown and YAML. Formatting is disabled for
-PHP, SQL and plain text, and hidden in read-only mode. It preserves undo history:
+JavaScript/TypeScript, HTML, CSS, Markdown, YAML and PHP (via its official plugin).
+SQL uses sql-formatter. Formatting is disabled for plain text and hidden in
+read-only mode. It preserves undo history:
 Undo restores the document before formatting. Parsing failures leave the document
 unchanged and emit `error { code: 'format-failed', message }`.
 `setValue` resets history and selection, even in read-only mode; an identical value
