@@ -217,7 +217,7 @@ function initialize(root, configuration) {
         }
 
         const behavior = smooth ? 'smooth' : 'auto';
-        if (container && offset > 0) {
+        if (container) {
             const top = heading.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop - offset;
             container.scrollTo({ top, behavior });
         } else if (!container && offset > 0) {

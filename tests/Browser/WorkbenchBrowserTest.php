@@ -234,6 +234,24 @@ it('anchors Truncate disclosure to its ellipsis and supports pinned light dismis
         ->keys($trigger, 'Escape');
 })->group('browser');
 
+it('scrolls only the Scrollspy content panel when a navigation link is clicked', function (): void {
+    $content = '#workbench-scrollspy-content';
+    $detailsLink = '[data-daisy-kit-scrollspy-id="workbench-details"]';
+
+    $page = $this->visit('/scrollspy')->on()->mobile()
+        ->waitForEvent('networkidle')
+        ->assertScript("document.querySelector('{$content}').scrollTop === 0")
+        ->assertNoSmoke();
+
+    $page->script("document.querySelector('{$detailsLink}').addEventListener('click', () => { document.documentElement.dataset.scrollspyPageTop = String(window.scrollY); }, { capture: true, once: true });");
+    $page->click($detailsLink)
+        ->wait(1)
+        ->assertScript("document.querySelector('{$content}').scrollTop > 0")
+        ->assertScript('window.scrollY === Number(document.documentElement.dataset.scrollspyPageTop)')
+        ->assertNoJavaScriptErrors()
+        ->assertNoSmoke();
+})->group('browser');
+
 it('mounts the map without a browser CSP violation', function (): void {
     $this->visit('/_daisy-kit-test/csp/map')
         ->assertSee('Daisy Kit CSP Map')
