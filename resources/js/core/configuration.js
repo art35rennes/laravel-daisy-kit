@@ -19,7 +19,7 @@ export function readConfiguration(root) {
 }
 
 export function showConfigurationError(root) {
-    showError(root, 'This module configuration is invalid.');
+    showError(root, root.dataset.daisyKitConfigurationError ?? 'This module configuration is invalid.');
 }
 
 export function showError(root, message) {

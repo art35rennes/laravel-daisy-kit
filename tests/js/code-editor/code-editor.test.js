@@ -20,6 +20,24 @@ function fixture(config = {}) {
 afterEach(() => roots.splice(0).forEach(root => { unmount(root); root.remove(); }));
 
 describe('code editor native value contract', () => {
+    it('keeps excluded toolbar actions hidden after changes and read-only toggles', () => {
+        const root = fixture({ toolbarActions: ['copy'] });
+        root.querySelector('[data-code-editor-toolbar]').innerHTML = '<button data-code-editor-action="copy">Copy</button><button data-code-editor-action="undo">Undo</button>';
+        const editor = mount(root);
+        editor.setValue('edited');
+        editor.setReadOnly(true);
+        editor.setReadOnly(false);
+        expect(root.querySelector('[data-code-editor-action="undo"]').hidden).toBe(true);
+        expect(root.querySelector('[data-code-editor-action="copy"]').hidden).toBe(false);
+    });
+
+    it('uses translated asynchronous error messages', async () => {
+        const root = fixture({ labels: { languageUnavailable: 'Langage indisponible' } });
+        const editor = mount(root);
+        expect(await editor.setLanguage('unknown')).toBe(false);
+        expect(root.querySelector('[data-daisy-kit-status]').textContent).toBe('Langage indisponible');
+    });
+
     it('toggles search, wrapping and editor size with translated labels', () => {
         const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
         const root = fixture({ labels: { expand: 'Agrandir', restore: 'Restaurer' } });

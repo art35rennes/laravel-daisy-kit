@@ -20,7 +20,7 @@ export function createMountable(moduleName, initialize) {
                 bubbles: true,
                 detail: {
                     code: error,
-                    message: 'This module configuration is invalid.',
+                    message: root.dataset.daisyKitConfigurationError ?? 'This module configuration is invalid.',
                 },
             }));
 
@@ -32,7 +32,7 @@ export function createMountable(moduleName, initialize) {
         try {
             initialized = initialize(root, value);
         } catch (error) {
-            showError(root, 'This module could not be initialized.');
+            showError(root, root.dataset.daisyKitInitializationError ?? 'This module could not be initialized.');
             root.dispatchEvent(new CustomEvent(`daisy-kit:${moduleName}:error`, {
                 bubbles: true,
                 detail: {

@@ -2,6 +2,17 @@ import { describe, expect, it, vi } from 'vitest';
 import { createMountable } from '../../../resources/js/core/mountable.js';
 
 describe('mountable module contract', () => {
+    it('uses host translations even when configuration cannot be parsed', () => {
+        document.body.innerHTML = '<section data-daisy-kit-configuration-error="Configuration invalide" data-daisy-kit-initialization-error="Initialisation impossible"><p data-daisy-kit-status hidden></p><script data-daisy-kit-config type="application/json">{invalid}</script></section>';
+        const root = document.querySelector('section');
+        const module = createMountable('example', () => { throw new Error('Internal diagnostic'); });
+        expect(module.mount(root)).toBeNull();
+        expect(root.querySelector('[data-daisy-kit-status]').textContent).toBe('Configuration invalide');
+        root.querySelector('script').textContent = '{}';
+        expect(module.mount(root)).toBeNull();
+        expect(root.querySelector('[data-daisy-kit-status]').textContent).toBe('Initialisation impossible');
+    });
+
     it('mounts once, supports multiple roots, and destroys each instance', () => {
         document.body.innerHTML = `
             <section data-daisy-kit-module="example"><script data-daisy-kit-config type="application/json">{}</script></section>

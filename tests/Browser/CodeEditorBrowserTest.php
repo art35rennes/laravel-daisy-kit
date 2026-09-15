@@ -102,7 +102,7 @@ it('offers local JavaScript completion and folds JSON without changing the value
 it('keeps an enlarged editor inside a mobile viewport and toggles its controls', function (): void {
     $page = $this->visit('/code-editor')->on()->mobile()->waitForEvent('networkidle');
     $page->click('form [data-code-editor-action="expand"]')
-        ->assertSee('Collapse')
+        ->assertSee('Collapse editor')
         ->click('form [data-code-editor-action="search"]')
         ->assertSee('Close search')
         ->click('form [data-code-editor-action="search"]')
@@ -123,7 +123,7 @@ it('keeps an enlarged editor inside a mobile viewport and toggles its controls',
             })()
             JS)
         ->click('form [data-code-editor-action="expand"]')
-        ->assertSee('Expand')
+        ->assertSee('Expand editor')
         ->assertCount('.daisy-kit-code-editor--expanded', 0)
         ->assertNoSmoke();
 })->group('browser');

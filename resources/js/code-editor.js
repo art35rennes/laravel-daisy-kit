@@ -20,7 +20,7 @@ function initialize(root, configuration) {
         throw new Error('Code Editor requires a textarea and editor host.');
     }
     const label = typeof configuration.label === 'string' ? configuration.label : 'Code';
-    const labels = { line: 'Ln', column: 'Col', readOnly: 'Read only', copied: 'Copied', required: 'Please enter code.', search: 'Search', closeSearch: 'Close search', expand: 'Expand', restore: 'Collapse', wrap: 'Wrap lines', unwrap: 'Unwrap lines', ...(configuration.labels ?? {}) };
+    const labels = { line: 'Ln', column: 'Col', readOnly: 'Read only', copied: 'Copied', required: 'Please enter code.', search: 'Search', closeSearch: 'Close search', expand: 'Expand editor', restore: 'Collapse editor', wrap: 'Wrap lines', unwrap: 'Unwrap lines', languageUnavailable: 'The requested language could not be loaded.', clipboardUnavailable: 'Code could not be copied. Select it and copy manually.', ...(configuration.labels ?? {}) };
     const initialValue = input.value;
     const original = { tabIndex: input.getAttribute('tabindex'), ariaHidden: input.getAttribute('aria-hidden'), readOnly: input.readOnly, id: input.id };
     const languageSlot = new Compartment();
@@ -76,7 +76,7 @@ function initialize(root, configuration) {
         const toggles = { wrap: [lineWrapping, 'unwrap', 'wrap'], expand: [expanded, 'restore', 'expand'], search: [searchPanelOpen(view.state), 'closeSearch', 'search'] };
         root.querySelectorAll('[data-code-editor-action]').forEach(button => {
             const action = button.dataset.codeEditorAction;
-            button.hidden = ['undo', 'redo', 'complete'].includes(action) && readOnly;
+            button.hidden = (Array.isArray(configuration.toolbarActions) && !configuration.toolbarActions.includes(action)) || (['undo', 'redo', 'complete'].includes(action) && readOnly);
             button.disabled = disabled() || (action === 'undo' && undoDepth(view.state) === 0) || (action === 'redo' && redoDepth(view.state) === 0);
             if (toggles[action]) {
                 const [pressed, on, off] = toggles[action];
@@ -141,7 +141,7 @@ function initialize(root, configuration) {
             return true;
         } catch {
             if (!active || revision !== languageRevision) return false;
-            return error('language-unavailable', 'The requested language could not be loaded.');
+            return error('language-unavailable', labels.languageUnavailable);
         }
     }
     function setReadOnly(value) {
@@ -201,7 +201,7 @@ function initialize(root, configuration) {
             }
             emit('copied');
             return true;
-        } catch { return active ? error('clipboard-unavailable', 'Code could not be copied. Select it and copy manually.') : false; }
+        } catch { return active ? error('clipboard-unavailable', labels.clipboardUnavailable) : false; }
     }
     const command = operation => active && !disabled() && !readOnly ? operation(view) : false;
     const navigation = operation => active && !disabled() ? operation(view) : false;
