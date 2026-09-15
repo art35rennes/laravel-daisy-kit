@@ -4,6 +4,36 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Vite;
 
+it('formats code with the browser parser and preserves Undo', function (string $language, string $value): void {
+    $page = $this->visit('/code-editor')->waitForEvent('networkidle');
+    $entry = json_encode(Vite::asset('../dist/code-editor.js'), JSON_THROW_ON_ERROR);
+    $result = $page->script(str_replace(['__ENTRY__', '__LANGUAGE__', '__VALUE__'], [$entry, json_encode($language, JSON_THROW_ON_ERROR), json_encode($value, JSON_THROW_ON_ERROR)], <<<'JS'
+        (async () => {
+            const module = await import(__ENTRY__);
+            const root = document.querySelector('[data-daisy-kit-module="code-editor"]');
+            const editor = module.getInstance(root);
+            await editor.setLanguage(__LANGUAGE__);
+            editor.setValue(__VALUE__);
+            const success = await editor.format();
+            const formatted = editor.getValue();
+            const undone = editor.undo();
+            return { success, changed: formatted !== __VALUE__, restored: undone && editor.getValue() === __VALUE__ };
+        })()
+        JS));
+    expect($result)->toBe(['success' => true, 'changed' => true, 'restored' => true]);
+    $page->assertNoSmoke();
+})->with([
+    ['json', '{"enabled":true,"nested":{"value":1}}'],
+    ['javascript', 'function add(a,b){return a+b}'],
+    ['typescript', 'const value:number=1'],
+    ['html', '<div><p>Hello</p><p>World</p></div>'],
+    ['css', 'a{color:red;background:white}'],
+    ['markdown', "# Heading\n\n-   item\n"],
+    ['yaml', 'items: [one,two]'],
+    ['php', '<?php function add($a,$b){return $a+$b;}'],
+    ['sql', 'select id,name from users where active=1'],
+])->group('browser');
+
 it('edits code with history and native reset while read-only content stays selectable', function (): void {
     $page = $this->visit('/code-editor')->waitForEvent('networkidle');
     $page->assertCount('.cm-editor', 2)

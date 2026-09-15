@@ -9,7 +9,7 @@
     $label ??= __('daisy-kit::code-editor.label');
     $controlLabels = array_replace(__('daisy-kit::code-editor.controls'), $labels);
     $editorPhrases = array_replace(__('daisy-kit::code-editor.phrases'), $phrases);
-    $availableActions = ['search', 'undo', 'redo', 'complete', 'fold-all', 'unfold-all', 'fold-others', 'unfold-others', 'wrap', 'copy', 'expand'];
+    $availableActions = ['search', 'undo', 'redo', 'complete', 'format', 'fold-all', 'unfold-all', 'fold-others', 'unfold-others', 'wrap', 'copy', 'expand'];
     $visibleActions = $toolbarActions === null ? $availableActions : array_values(array_intersect($availableActions, $toolbarActions));
     $configuration = \Art35rennes\DaisyKit\Support\JsonConfiguration::encode([
         'language' => $language, 'label' => $label, 'readOnly' => $readOnly,

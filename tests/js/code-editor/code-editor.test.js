@@ -20,6 +20,42 @@ function fixture(config = {}) {
 afterEach(() => roots.splice(0).forEach(root => { unmount(root); root.remove(); }));
 
 describe('code editor native value contract', () => {
+    it('formats without clearing history and reports invalid code in the selected language', async () => {
+        const root = fixture({ labels: { formatFailed: 'Formatage impossible' } });
+        const editor = mount(root);
+        await editor.setLanguage('json');
+        const value = '{"enabled":true,"items":[1,2]}';
+        editor.setValue(value);
+        const changes = [];
+        root.addEventListener('daisy-kit:code-editor:change', event => changes.push(event.detail));
+        expect(await editor.format()).toBe(true);
+        expect(editor.getValue()).toContain('\n');
+        expect(changes[0].origin).toBe('format');
+        expect(editor.undo()).toBe(true);
+        expect(editor.getValue()).toBe(value);
+        editor.setValue('{invalid');
+        expect(await editor.format()).toBe(false);
+        expect(editor.getValue()).toBe('{invalid');
+        expect(root.querySelector('[data-daisy-kit-status]').textContent).toBe('Formatage impossible');
+        editor.setReadOnly(true);
+        expect(await editor.format()).toBe(false);
+    });
+
+    it('discards formatting after an intervening change or destruction', async () => {
+        const root = fixture();
+        const editor = mount(root);
+        await editor.setLanguage('javascript');
+        editor.setValue('const value=1');
+        const first = editor.format();
+        expect(await editor.format()).toBe(false);
+        editor.setValue('const value=2');
+        expect(await first).toBe(false);
+        expect(editor.getValue()).toBe('const value=2');
+        const second = editor.format();
+        unmount(root);
+        expect(await second).toBe(false);
+    });
+
     it('keeps excluded toolbar actions hidden after changes and read-only toggles', () => {
         const root = fixture({ toolbarActions: ['copy'] });
         root.querySelector('[data-code-editor-toolbar]').innerHTML = '<button data-code-editor-action="copy">Copy</button><button data-code-editor-action="undo">Undo</button>';

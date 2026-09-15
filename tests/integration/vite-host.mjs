@@ -341,10 +341,15 @@ try {
 
     await page.goto(new URL('/code-editor.html', url).href, { waitUntil: 'networkidle' });
     await page.waitForSelector('.cm-content');
-    await page.locator('.cm-content').fill('const edited = true;');
+    const earlyFormatterRequests = await page.evaluate(() => performance.getEntriesByType('resource').filter(entry => /\/(?:babel|estree|standalone|typescript|postcss|markdown|yaml|html|esm)-[^/]+\.js/.test(entry.name)).map(entry => entry.name));
+    if (earlyFormatterRequests.length > 0) throw new Error(`Formatters loaded before an explicit request: ${earlyFormatterRequests.join(', ')}`);
+    await page.locator('.cm-content').fill('const edited=true;');
+    await page.locator('[data-code-editor-action="format"]').click();
+    await page.waitForFunction(() => document.querySelector('textarea').value === 'const edited = true;\n');
+    await page.locator('[data-code-editor-action="undo"]').click();
     const editedCode = await page.locator('textarea').inputValue();
     const editorViolations = await page.evaluate(() => window.__daisyKitCspViolations);
-    if (editedCode !== 'const edited = true;' || editorViolations.length > 0) {
+    if (editedCode !== 'const edited=true;' || editorViolations.length > 0) {
         throw new Error(`Code Editor host submission or nonce CSP failed: ${JSON.stringify(editorViolations)}`);
     }
 

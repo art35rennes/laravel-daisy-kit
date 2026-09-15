@@ -391,7 +391,10 @@ currently parsed syntax tree, without forcing a full parse of large documents.
 The Format code action loads Prettier and the matching parser on demand for JSON,
 JavaScript/TypeScript, HTML, CSS, Markdown, YAML and PHP (via its official plugin).
 SQL uses sql-formatter. Formatting is disabled for plain text and hidden in
-read-only mode. It preserves undo history:
+read-only mode. PHP targets 8.4 without Composer detection; SQL uses the standard
+SQL dialect. Embedded-language formatting is disabled. Cursor mapping is supplied
+by Prettier; SQL keeps the cursor offset clamped to the new document length. Formatting
+preserves undo history:
 Undo restores the document before formatting. Parsing failures leave the document
 unchanged and emit `error { code: 'format-failed', message }`.
 `setValue` resets history and selection, even in read-only mode; an identical value

@@ -1,6 +1,6 @@
 import { Annotation, Compartment, EditorState } from '@codemirror/state';
 import { EditorView, drawSelection, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers } from '@codemirror/view';
-import { defaultKeymap, history, historyKeymap, undo, redo, undoDepth, redoDepth } from '@codemirror/commands';
+import { defaultKeymap, history, historyKeymap, isolateHistory, undo, redo, undoDepth, redoDepth } from '@codemirror/commands';
 import { bracketMatching, foldAll, unfoldAll, foldable, foldedRanges, foldEffect, unfoldEffect, foldGutter, foldKeymap, indentOnInput, syntaxHighlighting } from '@codemirror/language';
 import { classHighlighter } from '@lezer/highlight';
 import { search, searchKeymap, openSearchPanel, closeSearchPanel, searchPanelOpen } from '@codemirror/search';
@@ -9,6 +9,7 @@ import { createMountable } from './core/mountable.js';
 import { createInstanceIdentifier } from './core/identifiers.js';
 import { loadLanguage } from './code-editor/languages.js';
 import { jsonNewline } from './code-editor/json-newline.js';
+import { canFormat, formatCode } from './code-editor/formatters.js';
 import '../css/code-editor.css';
 
 const origin = Annotation.define();
@@ -20,7 +21,7 @@ function initialize(root, configuration) {
         throw new Error('Code Editor requires a textarea and editor host.');
     }
     const label = typeof configuration.label === 'string' ? configuration.label : 'Code';
-    const labels = { line: 'Ln', column: 'Col', readOnly: 'Read only', copied: 'Copied', required: 'Please enter code.', search: 'Search', closeSearch: 'Close search', expand: 'Expand editor', restore: 'Collapse editor', wrap: 'Wrap lines', unwrap: 'Unwrap lines', languageUnavailable: 'The requested language could not be loaded.', clipboardUnavailable: 'Code could not be copied. Select it and copy manually.', ...(configuration.labels ?? {}) };
+    const labels = { line: 'Ln', column: 'Col', readOnly: 'Read only', copied: 'Copied', required: 'Please enter code.', search: 'Search', closeSearch: 'Close search', expand: 'Expand editor', restore: 'Collapse editor', wrap: 'Wrap lines', unwrap: 'Unwrap lines', languageUnavailable: 'The requested language could not be loaded.', clipboardUnavailable: 'Code could not be copied. Select it and copy manually.', format: 'Format code', formatting: 'Formatting code…', formatted: 'Code formatted', formatFailed: 'The code could not be formatted.', ...(configuration.labels ?? {}) };
     const initialValue = input.value;
     const original = { tabIndex: input.getAttribute('tabindex'), ariaHidden: input.getAttribute('aria-hidden'), readOnly: input.readOnly, id: input.id };
     const languageSlot = new Compartment();
@@ -37,6 +38,7 @@ function initialize(root, configuration) {
     let previousScroll = null;
     let feedbackTimer = null;
     let lastError = null;
+    let formatting = false;
     let view;
     const toolbar = root.querySelector('[data-code-editor-toolbar]');
     const position = root.querySelector('[data-code-editor-position]');
@@ -76,8 +78,13 @@ function initialize(root, configuration) {
         const toggles = { wrap: [lineWrapping, 'unwrap', 'wrap'], expand: [expanded, 'restore', 'expand'], search: [searchPanelOpen(view.state), 'closeSearch', 'search'] };
         root.querySelectorAll('[data-code-editor-action]').forEach(button => {
             const action = button.dataset.codeEditorAction;
-            button.hidden = (Array.isArray(configuration.toolbarActions) && !configuration.toolbarActions.includes(action)) || (['undo', 'redo', 'complete'].includes(action) && readOnly);
-            button.disabled = disabled() || (action === 'undo' && undoDepth(view.state) === 0) || (action === 'redo' && redoDepth(view.state) === 0);
+            button.hidden = (Array.isArray(configuration.toolbarActions) && !configuration.toolbarActions.includes(action)) || (['undo', 'redo', 'complete', 'format'].includes(action) && readOnly);
+            button.disabled = disabled() || (action === 'undo' && undoDepth(view.state) === 0) || (action === 'redo' && redoDepth(view.state) === 0) || (action === 'format' && (formatting || !canFormat(language)));
+            if (action === 'format') {
+                button.setAttribute('aria-busy', String(formatting));
+                const text = formatting ? labels.formatting : labels.format;
+                if (button.textContent !== text) button.textContent = text;
+            }
             if (toggles[action]) {
                 const [pressed, on, off] = toggles[action];
                 button.setAttribute('aria-pressed', String(pressed));
@@ -135,6 +142,7 @@ function initialize(root, configuration) {
             if (!active || revision !== languageRevision) return false;
             view.dispatch({ effects: languageSlot.reconfigure(extension) });
             language = value;
+            updateControls();
             clearError('language-unavailable');
             if (languageLabel) languageLabel.textContent = value;
             emit('language-changed', { language });
@@ -203,6 +211,39 @@ function initialize(root, configuration) {
             return true;
         } catch { return active ? error('clipboard-unavailable', labels.clipboardUnavailable) : false; }
     }
+    async function format() {
+        if (!active || disabled() || readOnly || formatting || !canFormat(language)) return false;
+        const document = view.state.doc;
+        const selection = view.state.selection;
+        const revision = languageRevision;
+        const isCurrent = () => active && !disabled() && !readOnly && document === view.state.doc && revision === languageRevision && selection.eq(view.state.selection);
+        formatting = true;
+        updateControls();
+        try {
+            const result = await formatCode(document.toString(), language, view.state.facet(EditorState.tabSize), selection.main.head);
+            if (!isCurrent()) return false;
+            clearError('format-failed');
+            if (result.formatted !== document.toString()) {
+                view.dispatch({
+                    changes: { from: 0, to: document.length, insert: result.formatted },
+                    selection: { anchor: Math.max(0, Math.min(result.cursorOffset, result.formatted.length)) },
+                    annotations: [origin.of('format'), isolateHistory.of('full')],
+                });
+            }
+            if (feedback) {
+                feedback.textContent = labels.formatted;
+                clearTimeout(feedbackTimer);
+                feedbackTimer = setTimeout(() => { feedback.textContent = ''; }, 2000);
+            }
+            emit('formatted', { language });
+            return true;
+        } catch {
+            return isCurrent() ? error('format-failed', labels.formatFailed) : false;
+        } finally {
+            formatting = false;
+            if (active) updateControls();
+        }
+    }
     const command = operation => active && !disabled() && !readOnly ? operation(view) : false;
     const navigation = operation => active && !disabled() ? operation(view) : false;
     const openSearch = () => active && !disabled() ? openSearchPanel(view) : false;
@@ -237,7 +278,7 @@ function initialize(root, configuration) {
         return effects.length > 0;
     }
     const actions = {
-        copy, search: () => navigation(searchPanelOpen(view.state) ? closeSearchPanel : openSearchPanel),
+        copy, format, search: () => navigation(searchPanelOpen(view.state) ? closeSearchPanel : openSearchPanel),
         undo: () => command(undo), redo: () => command(redo),
         complete: () => { if (!focus() || readOnly) return false; return startCompletion(view); },
         'fold-all': () => navigation(foldAll), 'unfold-all': () => navigation(unfoldAll),
@@ -281,7 +322,7 @@ function initialize(root, configuration) {
         getValue: () => input.value,
         getState: () => ({ language, readOnly, disabled: disabled(), lineWrapping, expanded, line: view.state.doc.lineAt(view.state.selection.main.head).number, column: view.state.selection.main.head - view.state.doc.lineAt(view.state.selection.main.head).from + 1 }),
         setValue: value => setValue(value), setLanguage, setReadOnly, setLineWrapping, focus,
-        undo: actions.undo, redo: actions.redo, openSearch, copy, setExpanded,
+        undo: actions.undo, redo: actions.redo, openSearch, copy, setExpanded, format,
         complete: actions.complete, foldAll: actions['fold-all'], unfoldAll: actions['unfold-all'], foldOthers: actions['fold-others'], unfoldOthers: actions['unfold-others'],
         destroy() {
             if (expanded) setExpanded(false);
