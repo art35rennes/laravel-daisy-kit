@@ -23,11 +23,12 @@ function run(command, arguments_, options = {}) {
     const result = spawnSync(command, arguments_, {
         cwd: hostRoot,
         encoding: 'utf8',
+        shell: process.platform === 'win32' && ['composer', 'npm'].includes(command),
         ...options,
     });
 
     if (result.status !== 0) {
-        throw new Error(`${command} ${arguments_.join(' ')} failed:\n${result.stdout}\n${result.stderr}`);
+        throw new Error(`${command} ${arguments_.join(' ')} failed:\n${result.error?.message ?? ''}\n${result.stdout}\n${result.stderr}`);
     }
 }
 
@@ -339,9 +340,9 @@ try {
     await page.goto(new URL('/code-editor.html', url).href, { waitUntil: 'networkidle' });
     await page.waitForSelector('.cm-content');
     await page.locator('.cm-content').fill('const edited = true;');
-    const source = await page.locator('textarea').inputValue();
+    const editedCode = await page.locator('textarea').inputValue();
     const editorViolations = await page.evaluate(() => window.__daisyKitCspViolations);
-    if (source !== 'const edited = true;' || editorViolations.length > 0) {
+    if (editedCode !== 'const edited = true;' || editorViolations.length > 0) {
         throw new Error(`Code Editor host submission or nonce CSP failed: ${JSON.stringify(editorViolations)}`);
     }
 
