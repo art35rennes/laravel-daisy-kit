@@ -1,26 +1,25 @@
 @props([
-    'value' => '', 'language' => 'text', 'name' => null, 'label' => 'Code',
+    'value' => '', 'language' => 'text', 'name' => null, 'label' => null,
     'filename' => null, 'readOnly' => false, 'disabled' => false, 'required' => false,
     'lineNumbers' => true, 'lineWrapping' => false, 'tabSize' => 4,
-    'toolbar' => true, 'statusBar' => true, 'nonce' => null, 'labels' => [], 'phrases' => [],
+    'toolbar' => true, 'toolbarActions' => null, 'statusBar' => true, 'nonce' => null, 'labels' => [], 'phrases' => [],
 ])
 
 @php
-    $controlLabels = array_replace([
-        'copy' => 'Copy', 'search' => 'Search', 'undo' => 'Undo', 'redo' => 'Redo',
-        'wrap' => 'Wrap lines', 'expand' => 'Expand', 'restore' => 'Collapse', 'complete' => 'Suggest',
-        'fold-all' => 'Fold all', 'unfold-all' => 'Unfold all',
-        'fold-others' => 'Fold other blocks', 'unfold-others' => 'Unfold other blocks',
-    ], $labels);
+    $label ??= __('daisy-kit::code-editor.label');
+    $controlLabels = array_replace(__('daisy-kit::code-editor.controls'), $labels);
+    $editorPhrases = array_replace(__('daisy-kit::code-editor.phrases'), $phrases);
+    $availableActions = ['search', 'undo', 'redo', 'complete', 'fold-all', 'unfold-all', 'fold-others', 'unfold-others', 'wrap', 'copy', 'expand'];
+    $visibleActions = $toolbarActions === null ? $availableActions : array_values(array_intersect($availableActions, $toolbarActions));
     $configuration = \Art35rennes\DaisyKit\Support\JsonConfiguration::encode([
         'language' => $language, 'label' => $label, 'readOnly' => $readOnly,
         'disabled' => $disabled, 'lineNumbers' => $lineNumbers, 'lineWrapping' => $lineWrapping,
         'tabSize' => $tabSize, 'toolbar' => $toolbar, 'nonce' => $nonce,
-        'labels' => $labels, 'phrases' => $phrases,
+        'toolbarActions' => $visibleActions, 'labels' => $controlLabels, 'phrases' => $editorPhrases,
     ]);
 @endphp
 
-<fieldset {{ $attributes->only(['id', 'class', 'aria-describedby', 'data-theme'])->class(['fieldset', 'daisy-kit-code-editor']) }} data-daisy-kit-module="code-editor" @disabled($disabled)>
+<fieldset {{ $attributes->only(['id', 'class', 'aria-describedby', 'data-theme'])->class(['fieldset', 'daisy-kit-code-editor']) }} data-daisy-kit-module="code-editor" data-daisy-kit-configuration-error="{{ $controlLabels['configurationInvalid'] }}" data-daisy-kit-initialization-error="{{ $controlLabels['initializationFailed'] }}" @disabled($disabled)>
     <legend class="fieldset-legend">{{ $label }}</legend>
     <button class="btn btn-ghost btn-sm daisy-kit-code-editor__minimize" type="button" data-code-editor-minimize aria-label="{{ $controlLabels['restore'] }}" title="{{ $controlLabels['restore'] }}"><span aria-hidden="true">−</span></button>
     <p class="alert alert-error" data-daisy-kit-status hidden role="alert"></p>
@@ -29,7 +28,7 @@
             <span class="daisy-kit-code-editor__filename">{{ $filename }}</span>
             <span class="badge badge-ghost badge-sm" data-code-editor-language>{{ $language }}</span>
             <div class="daisy-kit-code-editor__actions">
-                @foreach (['search', 'undo', 'redo', 'complete', 'fold-all', 'unfold-all', 'fold-others', 'unfold-others', 'wrap', 'copy', 'expand'] as $action)
+                @foreach ($visibleActions as $action)
                     <button class="btn btn-ghost btn-xs" type="button" data-code-editor-action="{{ $action }}" @disabled($disabled)>{{ $controlLabels[$action] }}</button>
                 @endforeach
             </div>

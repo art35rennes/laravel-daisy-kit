@@ -364,9 +364,12 @@ surface. v4 compatibility is outside v6 and is served exclusively by `legacy/4.x
 ## Code Editor configuration
 
 `x-daisy-kit::code-editor` accepts `value=''`, `language='text'`, `name=null`,
-`label='Code'`, `filename=null`, `readOnly=false`, `disabled=false`, `required=false`,
+`label=null` (translated Code label), `filename=null`, `readOnly=false`, `disabled=false`, `required=false`,
 `lineNumbers=true`, `lineWrapping=false`, `tabSize=4` (1 to 16), `toolbar=true`,
-`statusBar=true`, `nonce=null`, `labels=[]`, and `phrases=[]`.
+`toolbarActions=null`, `statusBar=true`, `nonce=null`, `labels=[]`, and `phrases=[]`.
+`toolbarActions` restricts the visible buttons to a list of supported action names;
+`null` shows all actions, `[]` shows none, and unknown names are ignored.
+`toolbar=false` hides the entire toolbar without removing facade commands.
 Import `@daisy-kit/code-editor.js` and `@daisy-kit/code-editor.css` explicitly.
 Height is `var(--code-editor-height, 24rem)`; override it in host CSS.
 
@@ -403,12 +406,15 @@ Enter indents new lines. In JSON, Enter after a complete value repairs a missing
 comma only when another member follows. It does not add trailing commas before
 closing brackets, alter incomplete values, or insert commas in other languages.
 The expanded header keeps its title inside the editor and offers a minus button.
-Expand/Collapse, Escape and clicking the backdrop restore the inline editor.
+Expand editor/Collapse editor, Escape and clicking the backdrop restore the inline editor.
 
 `labels` overrides copy, search, closeSearch, undo, redo, wrap, unwrap, expand,
 restore, complete, fold-all, unfold-all, fold-others, unfold-others, line, column, readOnly,
-copied and required strings. `phrases` maps CodeMirror's English phrases to host
-translations. Supply the host response nonce to authorize generated CodeMirror
+copied, required, languageUnavailable, clipboardUnavailable, configurationInvalid
+and initializationFailed strings. Defaults follow the Laravel locale (English and
+French bundled); explicit instance labels override those defaults. `phrases` maps
+CodeMirror's English phrases to host translations and overrides the bundled
+search, completion, folding and accessibility translations. Supply the host response nonce to authorize generated CodeMirror
 styles through `style-src 'self' 'nonce-...'`. No inline script or global is added.
 
 ## WYSIWYG configuration
