@@ -9,9 +9,9 @@ it('formats, submits and resets rich text while preserving read-only content', f
 
     $page->assertCount('.daisy-kit-wysiwyg__editor', 2)
         ->fill('form .daisy-kit-wysiwyg__editor', 'Customer outcome')
+        ->assertScript('new FormData(document.querySelector("form")).get("article_body").includes("Customer outcome")')
         ->keys('form .daisy-kit-wysiwyg__editor', 'Control+A')
         ->click('form [data-trix-attribute="bold"]')
-        ->assertScript('new FormData(document.querySelector("form")).get("article_body").includes("Customer outcome")')
         ->assertScript('document.querySelector("input[name=article_body]").value.includes("<strong>")')
         ->click('Reset article')
         ->assertScript('document.querySelector("input[name=article_body]").value.includes("Release notes")')
@@ -64,3 +64,11 @@ it('uses DaisyUI themes without overflowing supported widths', function (int $wi
     '768 dark' => [768, 'dark'],
     '1440 corporate' => [1440, 'corporate'],
 ])->group('browser');
+
+it('wraps rich text controls inside a narrow host card', function (): void {
+    $page = $this->visit('/wysiwyg')->resize(390, 844)->waitForEvent('networkidle');
+    $page->script("document.querySelector('form').style.width = '240px'");
+
+    $page->assertScript("document.querySelector('form').scrollWidth <= 240")
+        ->assertNoSmoke();
+})->group('browser');

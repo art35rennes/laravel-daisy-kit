@@ -351,6 +351,7 @@ try {
     await page.goto(new URL('/wysiwyg.html', url).href, { waitUntil: 'networkidle' });
     await page.waitForSelector('trix-editor');
     await page.locator('trix-editor').fill('Safe rich text');
+    await page.waitForFunction(() => document.querySelector('input[name="article_body"]').value.includes('Safe rich text'));
     const wysiwygValue = await page.locator('input[name="article_body"]').inputValue();
     const wysiwygViolations = await page.evaluate(() => window.__daisyKitCspViolations);
     if (!wysiwygValue.includes('Safe rich text') || wysiwygViolations.length > 0) {

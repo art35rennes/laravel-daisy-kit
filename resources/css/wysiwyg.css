@@ -1,5 +1,7 @@
 .daisy-kit-wysiwyg {
     display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.5rem;
 }
 
@@ -17,6 +19,11 @@
 
 .daisy-kit-wysiwyg__toolbar .btn {
     min-width: 2.25rem;
+}
+
+.daisy-kit-wysiwyg__toolbar [data-trix-button-group] {
+    max-width: 100%;
+    flex-wrap: wrap;
 }
 
 .daisy-kit-wysiwyg__toolbar .btn.trix-active {
