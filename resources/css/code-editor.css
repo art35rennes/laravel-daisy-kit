@@ -1,7 +1,6 @@
 .daisy-kit-code-editor { min-width: 0; position: relative; }
 .daisy-kit-code-editor [hidden] { display: none !important; }
 .daisy-kit-code-editor__shell { overflow: hidden; border: var(--border, 1px) solid var(--color-base-300); border-radius: var(--radius-box); background: var(--color-base-100); color: var(--color-base-content); }
-.daisy-kit-code-editor__shell:focus-within { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .daisy-kit-code-editor__toolbar, .daisy-kit-code-editor__status { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; padding: .5rem .75rem; background: var(--color-base-200); }
 .daisy-kit-code-editor__toolbar { border-bottom: var(--border, 1px) solid var(--color-base-300); }
 .daisy-kit-code-editor__filename { font-weight: 600; overflow-wrap: anywhere; }
@@ -39,8 +38,11 @@
 .daisy-kit-code-editor .tok-heading, .daisy-kit-code-editor .tok-strong { font-weight: bold; }
 .daisy-kit-code-editor .tok-emphasis { font-style: italic; }
 .daisy-kit-code-editor .tok-link { text-decoration: underline; }
-.daisy-kit-code-editor--expanded { position: fixed; inset: 1rem; z-index: 1000; margin: 0; padding: .75rem; background: var(--color-base-100); border-radius: var(--radius-box); box-shadow: 0 0 0 100vmax color-mix(in oklab, var(--color-base-content) 35%, transparent); display: flex; flex-direction: column; }
-.daisy-kit-code-editor--expanded .daisy-kit-code-editor__shell { display: flex; flex: 1; min-height: 0; flex-direction: column; }
-.daisy-kit-code-editor--expanded [data-code-editor-host] { flex: 1; min-height: 0; }
-.daisy-kit-code-editor--expanded .cm-editor { height: 100%; }
+.daisy-kit-code-editor-expanded-page { overflow: hidden; }
+.daisy-kit-code-editor--expanded { position: fixed; inset: 1rem; z-index: 1000; margin: 0; padding: .75rem; min-inline-size: 0; overflow: hidden; background: var(--color-base-100); border-radius: var(--radius-box); box-shadow: 0 0 0 100vmax color-mix(in oklab, var(--color-base-content) 35%, transparent); }
+.daisy-kit-code-editor--expanded .daisy-kit-code-editor__shell { position: absolute; inset: 2.5rem .75rem .75rem; display: flex; min-height: 0; min-width: 0; flex-direction: column; }
+.daisy-kit-code-editor--expanded [data-code-editor-host] { flex: 1 1 0; min-height: 0; min-width: 0; }
+.daisy-kit-code-editor--expanded .cm-editor { height: 100%; min-height: 0; }
+.daisy-kit-code-editor--expanded .daisy-kit-code-editor__toolbar { flex: 0 0 auto; max-height: 40%; overflow: auto; }
+.daisy-kit-code-editor--expanded .daisy-kit-code-editor__status { flex: 0 0 auto; }
 @media (max-width: 40rem) { .daisy-kit-code-editor__actions { width: 100%; margin-inline-start: 0; } .daisy-kit-code-editor--expanded { inset: .25rem; } }

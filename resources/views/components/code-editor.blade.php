@@ -8,7 +8,9 @@
 @php
     $controlLabels = array_replace([
         'copy' => 'Copy', 'search' => 'Search', 'undo' => 'Undo', 'redo' => 'Redo',
-        'wrap' => 'Wrap lines', 'expand' => 'Expand',
+        'wrap' => 'Wrap lines', 'expand' => 'Enlarge editor', 'complete' => 'Suggest',
+        'fold-all' => 'Fold all', 'unfold-all' => 'Unfold all',
+        'fold-others' => 'Fold other blocks', 'unfold-others' => 'Unfold other blocks',
     ], $labels);
     $configuration = \Art35rennes\DaisyKit\Support\JsonConfiguration::encode([
         'language' => $language, 'label' => $label, 'readOnly' => $readOnly,
@@ -26,7 +28,7 @@
             <span class="daisy-kit-code-editor__filename">{{ $filename }}</span>
             <span class="badge badge-ghost badge-sm" data-code-editor-language>{{ $language }}</span>
             <div class="daisy-kit-code-editor__actions">
-                @foreach (['search', 'undo', 'redo', 'wrap', 'copy', 'expand'] as $action)
+                @foreach (['search', 'undo', 'redo', 'complete', 'fold-all', 'unfold-all', 'fold-others', 'unfold-others', 'wrap', 'copy', 'expand'] as $action)
                     <button class="btn btn-ghost btn-xs" type="button" data-code-editor-action="{{ $action }}" @disabled($disabled)>{{ $controlLabels[$action] }}</button>
                 @endforeach
             </div>

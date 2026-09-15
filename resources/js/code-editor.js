@@ -1,10 +1,10 @@
 import { Annotation, Compartment, EditorState } from '@codemirror/state';
 import { EditorView, drawSelection, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, undo, redo, undoDepth, redoDepth } from '@codemirror/commands';
-import { bracketMatching, foldGutter, foldKeymap, indentOnInput, syntaxHighlighting } from '@codemirror/language';
+import { bracketMatching, foldAll, unfoldAll, foldable, foldedRanges, foldEffect, unfoldEffect, foldGutter, foldKeymap, indentOnInput, syntaxHighlighting } from '@codemirror/language';
 import { classHighlighter } from '@lezer/highlight';
 import { search, searchKeymap, openSearchPanel, closeSearchPanel, searchPanelOpen } from '@codemirror/search';
-import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap, completionStatus, closeCompletion } from '@codemirror/autocomplete';
+import { autocompletion, completeAnyWord, closeBrackets, closeBracketsKeymap, completionKeymap, completionStatus, closeCompletion, startCompletion } from '@codemirror/autocomplete';
 import { createMountable } from './core/mountable.js';
 import { createInstanceIdentifier } from './core/identifiers.js';
 import { loadLanguage } from './code-editor/languages.js';
@@ -19,7 +19,7 @@ function initialize(root, configuration) {
         throw new Error('Code Editor requires a textarea and editor host.');
     }
     const label = typeof configuration.label === 'string' ? configuration.label : 'Code';
-    const labels = { line: 'Ln', column: 'Col', readOnly: 'Read only', copied: 'Copied', required: 'Please enter code.', ...(configuration.labels ?? {}) };
+    const labels = { line: 'Ln', column: 'Col', readOnly: 'Read only', copied: 'Copied', required: 'Please enter code.', search: 'Search', closeSearch: 'Close search', expand: 'Enlarge editor', restore: 'Restore editor', wrap: 'Wrap lines', unwrap: 'Unwrap lines', ...(configuration.labels ?? {}) };
     const initialValue = input.value;
     const original = { tabIndex: input.getAttribute('tabindex'), ariaHidden: input.getAttribute('aria-hidden'), readOnly: input.readOnly, id: input.id };
     const languageSlot = new Compartment();
@@ -66,12 +66,18 @@ function initialize(root, configuration) {
         const head = view.state.selection.main.head;
         const line = view.state.doc.lineAt(head);
         if (position) position.textContent = `${labels.line} ${line.number}, ${labels.column} ${head - line.from + 1}${readOnly ? ` · ${labels.readOnly}` : ''}`;
+        const toggles = { wrap: [lineWrapping, 'unwrap', 'wrap'], expand: [expanded, 'restore', 'expand'], search: [searchPanelOpen(view.state), 'closeSearch', 'search'] };
         root.querySelectorAll('[data-code-editor-action]').forEach(button => {
             const action = button.dataset.codeEditorAction;
-            button.hidden = ['undo', 'redo'].includes(action) && readOnly;
+            button.hidden = ['undo', 'redo', 'complete'].includes(action) && readOnly;
             button.disabled = disabled() || (action === 'undo' && undoDepth(view.state) === 0) || (action === 'redo' && redoDepth(view.state) === 0);
-            if (action === 'wrap') button.setAttribute('aria-pressed', String(lineWrapping));
-            if (action === 'expand') button.setAttribute('aria-pressed', String(expanded));
+            if (toggles[action]) {
+                const [pressed, on, off] = toggles[action];
+                button.setAttribute('aria-pressed', String(pressed));
+                button.classList.toggle('btn-active', pressed);
+                const text = labels[pressed ? on : off];
+                if (button.textContent !== text) button.textContent = text;
+            }
         });
     }
     view = new EditorView({
@@ -82,6 +88,7 @@ function initialize(root, configuration) {
             configuration.lineNumbers === false ? [] : [lineNumbers(), highlightActiveLineGutter()],
             drawSelection(), highlightActiveLine(), indentOnInput(), bracketMatching(), foldGutter(),
             syntaxHighlighting(classHighlighter), autocompletion(), closeBrackets(), search({ top: true }),
+            EditorState.languageData.of(() => [{ autocomplete: completeAnyWord }]),
             EditorView.cspNonce.of(typeof configuration.nonce === 'string' ? configuration.nonce : ''),
             EditorState.phrases.of(configuration.phrases ?? {}),
             keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap, ...historyKeymap, ...foldKeymap, ...completionKeymap]),
@@ -159,6 +166,7 @@ function initialize(root, configuration) {
         }
         expanded = value;
         root.classList.toggle('daisy-kit-code-editor--expanded', value);
+        document.documentElement.classList.toggle('daisy-kit-code-editor-expanded-page', document.querySelector('.daisy-kit-code-editor--expanded') !== null);
         view.requestMeasure();
         if (value) focus();
         else if (previousScroll) {
@@ -187,8 +195,46 @@ function initialize(root, configuration) {
         } catch { return active ? error('clipboard-unavailable', 'Code could not be copied. Select it and copy manually.') : false; }
     }
     const command = operation => active && !disabled() && !readOnly ? operation(view) : false;
+    const navigation = operation => active && !disabled() ? operation(view) : false;
     const openSearch = () => active && !disabled() ? openSearchPanel(view) : false;
-    const actions = { copy, search: openSearch, undo: () => command(undo), redo: () => command(redo), wrap: () => setLineWrapping(!lineWrapping), expand: () => setExpanded(!expanded) };
+    function foldOtherBlocks(unfold) {
+        if (!active || disabled()) return false;
+        const { state } = view;
+        const head = state.selection.main.head;
+        const ranges = [];
+        for (let number = 1; number <= state.doc.lines; number++) {
+            const line = state.doc.line(number);
+            const range = foldable(state, line.from, line.to);
+            if (range) ranges.push({ ...range, start: line.from });
+        }
+        const current = ranges.filter(range => range.start <= head && range.to >= head)
+            .sort((left, right) => (left.to - left.start) - (right.to - right.start))[0];
+        const isOther = (from, to) => current ? to < current.start || from > current.to : !(from <= head && to >= head);
+        const effects = [];
+        if (unfold) {
+            foldedRanges(state).between(0, state.doc.length, (from, to) => {
+                if (isOther(from, to)) effects.push(unfoldEffect.of({ from, to }));
+            });
+        } else {
+            let coveredUntil = -1;
+            for (const range of ranges) {
+                if (range.from > coveredUntil && isOther(range.start, range.to)) {
+                    effects.push(foldEffect.of(range));
+                    coveredUntil = range.to;
+                }
+            }
+        }
+        if (effects.length) view.dispatch({ effects });
+        return effects.length > 0;
+    }
+    const actions = {
+        copy, search: () => navigation(searchPanelOpen(view.state) ? closeSearchPanel : openSearchPanel),
+        undo: () => command(undo), redo: () => command(redo),
+        complete: () => { if (!focus() || readOnly) return false; return startCompletion(view); },
+        'fold-all': () => navigation(foldAll), 'unfold-all': () => navigation(unfoldAll),
+        'fold-others': () => foldOtherBlocks(false), 'unfold-others': () => foldOtherBlocks(true),
+        wrap: () => setLineWrapping(!lineWrapping), expand: () => setExpanded(!expanded),
+    };
     root.addEventListener('click', event => {
         const button = event.target.closest('[data-code-editor-action]');
         if (button && root.contains(button) && !button.disabled) actions[button.dataset.codeEditorAction]?.();
@@ -225,6 +271,7 @@ function initialize(root, configuration) {
         getState: () => ({ language, readOnly, disabled: disabled(), lineWrapping, expanded, line: view.state.doc.lineAt(view.state.selection.main.head).number, column: view.state.selection.main.head - view.state.doc.lineAt(view.state.selection.main.head).from + 1 }),
         setValue: value => setValue(value), setLanguage, setReadOnly, setLineWrapping, focus,
         undo: actions.undo, redo: actions.redo, openSearch, copy, setExpanded,
+        complete: actions.complete, foldAll: actions['fold-all'], unfoldAll: actions['unfold-all'], foldOthers: actions['fold-others'], unfoldOthers: actions['unfold-others'],
         destroy() {
             if (expanded) setExpanded(false);
             active = false;

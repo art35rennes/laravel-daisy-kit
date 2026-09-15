@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount, unmount, getInstance } from '../../../resources/js/code-editor.js';
+import { EditorView } from '@codemirror/view';
+import { foldedRanges } from '@codemirror/language';
 
 const roots = [];
 function fixture(config = {}) {
@@ -18,6 +20,49 @@ function fixture(config = {}) {
 afterEach(() => roots.splice(0).forEach(root => { unmount(root); root.remove(); }));
 
 describe('code editor native value contract', () => {
+    it('toggles search, wrapping and editor size with translated labels', () => {
+        const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+        const root = fixture({ labels: { expand: 'Agrandir', restore: 'Restaurer' } });
+        const toolbar = root.querySelector('[data-code-editor-toolbar]');
+        toolbar.innerHTML = ['search', 'wrap', 'expand'].map(action => `<button type="button" data-code-editor-action="${action}"></button>`).join('');
+        mount(root);
+        const search = toolbar.querySelector('[data-code-editor-action="search"]');
+        search.click();
+        expect(root.querySelector('.cm-search')).not.toBeNull();
+        expect(search.getAttribute('aria-pressed')).toBe('true');
+        search.click();
+        expect(root.querySelector('.cm-search')).toBeNull();
+        expect(search.getAttribute('aria-pressed')).toBe('false');
+        const expand = toolbar.querySelector('[data-code-editor-action="expand"]');
+        expand.click();
+        expect(expand.textContent).toBe('Restaurer');
+        expect(document.documentElement.classList.contains('daisy-kit-code-editor-expanded-page')).toBe(true);
+        expand.click();
+        expect(expand.textContent).toBe('Agrandir');
+        expect(document.documentElement.classList.contains('daisy-kit-code-editor-expanded-page')).toBe(false);
+        scrollTo.mockRestore();
+    });
+
+    it('folds other blocks while keeping the current block and its parents open', async () => {
+        const root = fixture({ readOnly: true });
+        const editor = mount(root);
+        editor.setValue('{\n  "first": {\n    "value": 1\n  },\n  "second": {\n    "value": 2\n  }\n}');
+        await editor.setLanguage('json');
+        const view = EditorView.findFromDOM(root.querySelector('.cm-content'));
+        view.dispatch({ selection: { anchor: editor.getValue().indexOf('1') } });
+        expect(editor.foldOthers()).toBe(true);
+        const ranges = [];
+        foldedRanges(view.state).between(0, view.state.doc.length, (from, to) => ranges.push(view.state.doc.sliceString(from, to)));
+        expect(ranges).toHaveLength(1);
+        expect(ranges[0]).toContain('2');
+        expect(editor.unfoldOthers()).toBe(true);
+        expect(foldedRanges(view.state).size).toBe(0);
+        expect(editor.foldAll()).toBe(true);
+        expect(editor.unfoldAll()).toBe(true);
+        expect(editor.complete()).toBe(false);
+        expect(editor.getValue()).toContain('"value": 1');
+    });
+
     it('mounts once and preserves current content on destruction', () => {
         const root = fixture();
         const editor = mount(root);

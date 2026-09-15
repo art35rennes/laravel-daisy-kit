@@ -378,7 +378,12 @@ and emit `error { code: 'language-unavailable', message }`. No Blade-specific pa
 Facade: `getValue(): string`, `getState(): { language, readOnly, disabled,
 lineWrapping, expanded, line, column }` (one-based cursor coordinates),
 `setValue(string)`, `setReadOnly(boolean)`, `setLineWrapping(boolean)`, `focus()`,
-`undo()`, `redo()`, `openSearch()`, `setExpanded(boolean)` return booleans.
+`undo()`, `redo()`, `openSearch()`, `setExpanded(boolean)`, `complete()`,
+`foldAll()`, `unfoldAll()`, `foldOthers()`, `unfoldOthers()` return booleans.
+The search toolbar button toggles the panel; `openSearch()` always opens it.
+Other-block folding preserves the smallest block containing the cursor and its
+parents. Folding commands remain available in read-only mode and operate on the
+currently parsed syntax tree, without forcing a full parse of large documents.
 `setLanguage(string)` and `copy()` return `Promise<boolean>`.
 `setValue` resets history and selection, even in read-only mode; an identical value
 is a successful no-op. Read-only prevents user edits, not host updates.
@@ -390,9 +395,11 @@ Events use `daisy-kit:code-editor:`: `change { value, origin }` (user, api, rese
 Native textarea input is synchronized immediately; change fires when focus leaves.
 Reset restores the mount-time value. Disabled values do not submit. Read-only
 content stays focusable and searchable. Tab leaves the editor; Ctrl+Space opens
-language-local suggestions. Saving, formatting, execution and LSP are host concerns.
+language-local and document-word suggestions, also available through Suggest.
+Saving, formatting, execution and LSP are host concerns.
 
-`labels` overrides copy, search, undo, redo, wrap, expand, line, column, readOnly,
+`labels` overrides copy, search, closeSearch, undo, redo, wrap, unwrap, expand,
+restore, complete, fold-all, unfold-all, fold-others, unfold-others, line, column, readOnly,
 copied and required strings. `phrases` maps CodeMirror's English phrases to host
 translations. Supply the host response nonce to authorize generated CodeMirror
 styles through `style-src 'self' 'nonce-...'`. No inline script or global is added.
