@@ -136,15 +136,15 @@ official `laravel-best-practices` skill when Boost makes it available.
 
 ## Stable release and upgrading
 
-`v6.0.1` is the current stable release. The next minor release, `v6.1.0`, adds WYSIWYG
-to the v6 contract and is prepared for distribution through GitHub/VCS.
+`v6.1.0` is the current stable release. It adds Code Editor and WYSIWYG to the
+v6 contract, which now contains thirteen independent modules distributed through GitHub/VCS.
 It has no compatibility layer for v5.0.0 or its historical alpha releases.
 Forms Viewer/Builder and the package Livewire integration were removed. Applications
 must own their forms and any Livewire integration; changing a Composer constraint alone
 is not a migration. See [the upgrade guide](docs/upgrading-to-v6.md) and
-[release notes](docs/releases/v6.0.1.md).
+[release notes](docs/releases/v6.1.0.md).
 
-The [executable demo](https://github.com/art35rennes/laravel-daisy-kit-demo/tree/v6.0.1)
+The [executable demo](https://github.com/art35rennes/laravel-daisy-kit-demo/tree/v6.1.0)
 locks the same release and includes local installation instructions. No hosted demo is required.
 
 Existing v4 applications can remain on `v4.0.0` / `legacy/4.x` until they adopt the new API.

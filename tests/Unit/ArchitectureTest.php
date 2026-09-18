@@ -64,7 +64,7 @@ it('requires PHP 8.4 without a Forms or Livewire integration', function (): void
 
 it('ships concise Laravel Boost resources for package consumers', function (): void {
     $guideline = (string) file_get_contents(packagePath('resources/boost/guidelines/core.blade.php'));
-    $skill = (string) file_get_contents(packagePath('resources/boost/skills/laravel-daisy-kit-development/SKILL.md'));
+    $skill = str_replace("\r\n", "\n", (string) file_get_contents(packagePath('resources/boost/skills/laravel-daisy-kit-development/SKILL.md')));
 
     expect($guideline)
         ->toContain('Laravel Daisy Kit')
@@ -131,7 +131,7 @@ it('documents the stable v6 contract with copyable examples for every module', f
         ->not->toContain('v5.0.0-alpha.2');
 
     expect($readme)
-        ->toContain('v6.0.1')
+        ->toContain('v6.1.0')
         ->toMatch('/v5\\.0\\.0 or its historical\\s+alpha releases/');
 
     expect($examples)
