@@ -134,27 +134,26 @@ it('uses the remote Combobox in a native Laravel review form', function (): void
     $combobox = '#remote-reviewers-combobox';
     $local = '#local-release-tags-combobox';
 
-    $page = $this->visit('/combobox')->on()->desktop();
-
-    $page
+    $page = $this->visit('/combobox')->on()->desktop()
         ->waitForEvent('networkidle')
-        ->wait(1)
         ->assertCount('[data-daisy-kit-module="combobox"]', 2);
-    $page->click("{$combobox} [data-daisy-kit-combobox-input]")
-        ->wait(1)
-        ->assertCount("{$combobox} [role=option]", 6)
+    $page->page()->locator("{$combobox}[data-daisy-kit-state=ready]")->waitFor();
+    $page->page()->locator("{$combobox} [data-daisy-kit-combobox-toggle]")->click();
+    $page->page()->locator("{$combobox} [role=option]")->nth(5)->waitFor();
+    $page->assertCount("{$combobox} [role=option]", 6)
         ->assertSee('ada@analytical-engine.org')
         ->assertSee('Platform')
         ->assertScript("getComputedStyle(document.querySelector('{$combobox} [data-daisy-kit-combobox-popup]')).position === 'absolute'")
         ->assertScript("(() => { const shell = document.querySelector('{$combobox} [data-daisy-kit-combobox-shell]').getBoundingClientRect(); const control = document.querySelector('{$combobox} [data-daisy-kit-combobox-control]').getBoundingClientRect(); const popup = document.querySelector('{$combobox} [data-daisy-kit-combobox-popup]').getBoundingClientRect(); return shell.height < control.height + 8 && shell.height < popup.height / 2; })()")
         ->assertNoAccessibilityIssues(1)
-        ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'missing-reviewer')
-        ->wait(1)
-        ->assertSee('No matching suggestions.')
+        ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'missing-reviewer');
+    $page->page()->locator($combobox)->getByText('No matching suggestions.', exact: true)->waitFor();
+    $page->assertSee('No matching suggestions.')
         ->assertScript("document.querySelector('{$combobox} [data-daisy-kit-combobox-token-label]').textContent === 'Ada Lovelace'")
-        ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'nasa.gov')
-        ->wait(1)
-        ->assertCount("{$combobox} [role=option]", 3)
+        ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'nasa.gov');
+    $page->page()->locator("{$combobox} [role=option]")->nth(3)->waitFor(['state' => 'detached']);
+    $page->page()->locator("{$combobox} [role=option]")->nth(2)->waitFor();
+    $page->assertCount("{$combobox} [role=option]", 3)
         ->assertSee('Margaret Hamilton')
         ->click("{$combobox} [role=option][data-value=margaret]")
         ->assertScript("document.querySelector('{$combobox} input[name=\"reviewers[]\"][value=margaret]') !== null")
@@ -171,10 +170,11 @@ it('uses the remote Combobox in a native Laravel review form', function (): void
         ->assertSee('The review assignment was saved.')
         ->assertNoSmoke();
 
+    $page->page()->locator("{$combobox}[data-daisy-kit-state=ready]")->waitFor();
     $page->resize(390, 844)
-        ->click("{$combobox} [data-daisy-kit-combobox-input]")
-        ->wait(1)
-        ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
+        ->click("{$combobox} [data-daisy-kit-combobox-toggle]");
+    $page->page()->locator("{$combobox} [role=option]")->nth(5)->waitFor();
+    $page->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
         ->assertCount("{$combobox} [role=option]", 6)
         ->assertNoAccessibilityIssues(1);
 })->group('browser');

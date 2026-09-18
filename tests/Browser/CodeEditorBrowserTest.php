@@ -177,14 +177,18 @@ it('collapses using the header minus button and backdrop and pairs typed delimit
 
 it('suggests words from the JSON document and exposes bulk folding actions', function (): void {
     $page = $this->visit('/code-editor')->waitForEvent('networkidle');
-    $page->click('form [data-code-editor-action="fold-all"]')
-        ->assertCount('form .cm-foldPlaceholder', 1)
-        ->click('form [data-code-editor-action="unfold-all"]')
-        ->assertCount('form .cm-foldPlaceholder', 0)
+    $page->page()->getByText('json', exact: true)->waitFor();
+    $page->click('form [data-code-editor-action="fold-all"]');
+    $page->page()->locator('form .cm-foldPlaceholder')->waitFor();
+    $page->assertCount('form .cm-foldPlaceholder', 1)
+        ->click('form [data-code-editor-action="unfold-all"]');
+    $page->page()->locator('form .cm-foldPlaceholder')->waitFor(['state' => 'detached']);
+    $page->assertCount('form .cm-foldPlaceholder', 0)
         ->fill('form .cm-content', "{\n  \"existingKey\": 1,\n  \"exis")
         ->keys('form .cm-content', 'Control+End')
-        ->click('form [data-code-editor-action="complete"]')
-        ->assertCount('.cm-tooltip-autocomplete', 1);
+        ->click('form [data-code-editor-action="complete"]');
+    $page->page()->locator('.cm-tooltip-autocomplete')->waitFor();
+    $page->assertCount('.cm-tooltip-autocomplete', 1);
     $page->wait(0.1);
     $page->keys('form .cm-content', 'Enter')
         ->assertScript('document.querySelector("textarea").value.endsWith("existingKey")')
