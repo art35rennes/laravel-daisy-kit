@@ -36,14 +36,20 @@ Runtime requires only `illuminate/support` and `illuminate/view` 13.x.
 | terra-draw / leaflet adapter | 1.32.3 / 1.3.0 | MIT | Map drawing |
 | @turf/area / @turf/length / @turf/boolean-intersects | 7.4.0 | MIT | Map measurements and spatial selection |
 | leaflet.markercluster / leaflet-gesture-handling | 1.5.3 / 1.2.2 | MIT | Optional Map clustering and gesture controls |
+| Trix | 2.1.19 (`^2.1.19`) | MIT | WYSIWYG editing, bundled DOMPurify sanitization and attachment model |
+| Prettier | 3.9.6 | MIT | Code Editor formatting, loaded on demand with the matching web-language parser |
+| @prettier/plugin-php | 0.25.0 | MIT | On-demand PHP formatting in Code Editor |
+| sql-formatter | 15.8.2 | MIT | On-demand SQL formatting in Code Editor |
 | Vite / Vitest | 8.2.2 / 4.1.11 | MIT | Reproducible module build and tests |
 | jsdom | 30.0.1 | MIT | Browser-like unit-test environment |
 
 Tailwind CSS and DaisyUI intentionally do not appear in the package bundle: the host owns
 their installation and compilation. The reference development host uses DaisyUI `^5.7.22`.
 
-SignaturePad and SortableJS write runtime DOM styles. Pages mounting Signature or Transfer List
-must document and allow `style-src-attr 'unsafe-inline'`; all other modules retain the strict
+SignaturePad, SortableJS and Trix write runtime DOM styles. Pages mounting Signature,
+Transfer List or WYSIWYG must document and allow `style-src-attr 'unsafe-inline'`.
+WYSIWYG pages also authorize the Trix style nonce in `style-src` and allow `img-src blob:`
+when local attachment previews are enabled. All other modules retain the strict
 `style-src-attr 'none'` parent-page policy.
 
 ## Major-version provenance
@@ -58,3 +64,14 @@ the major decisions rather than replacing those locks:
 | Laravel Boost 2.7.0 | [Laravel Boost source and releases](https://github.com/laravel/boost) | The locked source commit is `b19e98a8637cb69b2aab7b5b6c5fe9e2c79d182f`; package-owned agent resources follow Boost 2.x terminology and discovery. |
 
 ADR-005 records the upgrade process, source review, and the cache-independent validation rule.
+
+Code Editor adds the MIT-licensed CodeMirror 6 state, view, commands, language,
+search and autocomplete packages, @lezer/highlight, and official PHP, HTML, CSS,
+JavaScript/TypeScript, JSON, Markdown, SQL and YAML grammars. Exact versions are
+locked in package-lock.json. Consumers use compiled assets without npm installation.
+
+Code Editor also bundles Prettier standalone and its official web-language plugins
+as lazy chunks. Formatting JSON, JavaScript/TypeScript, HTML, CSS, Markdown and YAML
+runs locally in the browser, with no server request. PHP uses the official Prettier PHP
+plugin and SQL uses sql-formatter. Plain text formatting is not included. Formatters
+and their parser chunks load only when formatting is requested.

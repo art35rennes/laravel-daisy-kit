@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Code Editor host fixture</title></head>
+<body>
+    <form>
+        <fieldset data-daisy-kit-module="code-editor" class="daisy-kit-code-editor">
+            <legend>Source code</legend>
+            <p data-daisy-kit-status role="alert" hidden></p>
+            <div data-code-editor-toolbar hidden><button type="button" data-code-editor-action="format">Format code</button><button type="button" data-code-editor-action="undo">Undo</button></div>
+            <textarea name="source" aria-label="Source code">const answer = 42;</textarea>
+            <div data-code-editor-host></div>
+            <script data-daisy-kit-config type="application/json">{"language":"javascript","nonce":"code-editor-fixture"}</script>
+        </fieldset>
+    </form>
+    <script type="module" src="/resources/js/code-editor.js"></script>
+</body>
+</html>

@@ -134,6 +134,37 @@ describe('scrollspy entry', () => {
         expect(guide.scrollTo).toHaveBeenCalledWith({ behavior: 'auto', top: 96 });
     });
 
+    it('only scrolls the content container when a navigation link is clicked with no offset', () => {
+        vi.stubGlobal('IntersectionObserver', IntersectionObserverStub);
+        const pageScrollTo = vi.fn();
+        vi.stubGlobal('scrollTo', pageScrollTo);
+        const element = root({ target: '#guide', items: [], selector: 'h2[id]', smooth: false, offset: 0, rootMargin: '0px' });
+        const guide = document.getElementById('guide');
+        const container = document.createElement('section');
+        guide.before(container);
+        container.append(guide);
+        Object.defineProperties(container, {
+            clientHeight: { configurable: true, value: 100 },
+            scrollHeight: { configurable: true, value: 500 },
+            scrollTop: { configurable: true, value: 40, writable: true },
+        });
+        container.style.overflowY = 'auto';
+        container.scrollTo = vi.fn();
+        vi.spyOn(container, 'getBoundingClientRect').mockReturnValue({ top: 20 });
+        const install = document.getElementById('install');
+        vi.spyOn(install, 'getBoundingClientRect').mockReturnValue({ top: 100 });
+        install.scrollIntoView = vi.fn();
+        mount(element);
+
+        const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+        element.querySelector('[data-daisy-kit-scrollspy-id="install"]').dispatchEvent(click);
+
+        expect(click.defaultPrevented).toBe(true);
+        expect(container.scrollTo).toHaveBeenCalledWith({ behavior: 'auto', top: 120 });
+        expect(install.scrollIntoView).not.toHaveBeenCalled();
+        expect(pageScrollTo).not.toHaveBeenCalled();
+    });
+
     it('recalculates the scroll container when dynamic content changes overflow', () => {
         vi.stubGlobal('IntersectionObserver', IntersectionObserverStub);
         const element = root({ target: '#guide', items: [], selector: 'h2[id]', smooth: false, offset: 0, rootMargin: '0px' });

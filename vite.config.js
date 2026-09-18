@@ -3,6 +3,7 @@ import inject from '@rollup/plugin-inject';
 import { defineConfig } from 'vite';
 
 const entries = {
+    'code-editor': resolve(import.meta.dirname, 'resources/js/code-editor.js'),
     table: resolve(import.meta.dirname, 'resources/js/table.js'),
     tree: resolve(import.meta.dirname, 'resources/js/tree.js'),
     blueprint: resolve(import.meta.dirname, 'resources/js/blueprint.js'),
@@ -14,6 +15,7 @@ const entries = {
     truncate: resolve(import.meta.dirname, 'resources/js/truncate.js'),
     scrollspy: resolve(import.meta.dirname, 'resources/js/scrollspy.js'),
     'transfer-list': resolve(import.meta.dirname, 'resources/js/transfer-list.js'),
+    wysiwyg: resolve(import.meta.dirname, 'resources/js/wysiwyg.js'),
 };
 
 export default defineConfig({

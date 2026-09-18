@@ -30,6 +30,15 @@ automated outcome test before it is considered delivered.
 | Users understand multi-selection through a square checked affordance, the scope of bulk selection, complete versus filtered counts and the result of an empty search. | WAI-ARIA multi-select listbox convention; MDBootstrap Transfer interaction baseline; ADR-0013 and ADR-0014. | Selection affordance, ranked search results, select-all scope, filtered counts, disabled items and empty/no-results outcome tests. |
 | Local assignment sets remain usable on narrow screens and with dozens of rich people or catalogue rows. | ADR-0013 corrective product decision. | Independent panel pagination, rich safe rows, keyboard and responsive Workbench browser tests. |
 
+## WYSIWYG
+
+| User outcome | Reference | V6 proof |
+| --- | --- | --- |
+| Authors format headings, emphasis, links, quotes, code and lists with keyboard-accessible Trix controls while the exact configured field name receives canonical HTML. | Trix 2.1 and ADR-0017. | Blade, Vitest and browser formatting, keyboard and FormData tests. |
+| Malicious initial, API and pasted HTML is sanitized in the browser, while the host security boundary remains explicit. | Trix DOMPurify integration. | XSS regression tests and server-sanitization documentation assertions. |
+| Hosts opt into attachments, upload files themselves, report progress and resolve permanent URLs before form submission. | Trix attachment lifecycle and ADR-0017. | Pending validity, progress, caption, resolution, removal and reset tests. |
+| Advanced integrations use the active Trix editor without a copied abstraction, and disposed facades stay inert. | Public Trix dependency decision. | Facade identity, `getTrixEditor`, multiple-root, unmount and remount tests. |
+
 ## Table
 
 | User outcome | V4 evidence | V6 proof |
@@ -101,3 +110,12 @@ automated outcome test before it is considered delivered.
 | Feature restoration creates opaque monoliths. | Small vertical commits, colocated module code and outcome-focused tests. |
 | File Preview fallback weakens frame authentication. | Authenticate with frame source plus a unique per-instance token; test wrong source/token and opaque origin. |
 | Leaflet third-party runtime violates strict style policy. | Use real CSP-violation browser proof and isolate/document the narrow exception. |
+
+## Code Editor
+
+| User outcome | Reference | V6 proof |
+| --- | --- | --- |
+| Read and edit one document, search/replace, fold, undo and copy. | CodeMirror 6 and Mantine CodeHighlight. | Real browser input, keyboard and command tests. |
+| Submit and reset code through a native form, including without JavaScript. | Native textarea semantics. | Pest escaping, FormData and reset tests. |
+| Switch themes and languages without losing content or history. | DaisyUI semantic variables and CodeMirror compartments. | Theme, multiple-instance and asynchronous grammar tests. |
+| Work with large documents without rendering all lines. | CodeMirror viewport rendering. | 100 KB and 1 MB browser measurements and DOM bounds. |

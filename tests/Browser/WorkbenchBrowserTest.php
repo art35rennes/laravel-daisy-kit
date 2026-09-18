@@ -8,13 +8,13 @@ it('presents the Workbench module directory accessibly on desktop and mobile', f
     $desktop
         ->assertSee('Daisy Kit v5 Workbench')
         ->assertSee('Component modules')
-        ->assertCount('nav a.btn', 11)
+        ->assertCount('nav a.btn', 13)
         ->assertCount('[data-daisy-kit-module]', 0)
         ->assertNoSmoke()
         ->assertNoAccessibilityIssues(1);
 
     $this->visit('/')->on()->mobile()
-        ->assertCount('nav a.btn', 11)
+        ->assertCount('nav a.btn', 13)
         ->assertCount('[data-daisy-kit-module]', 0)
         ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
         ->assertScript('window.innerWidth <= 430');
@@ -134,27 +134,26 @@ it('uses the remote Combobox in a native Laravel review form', function (): void
     $combobox = '#remote-reviewers-combobox';
     $local = '#local-release-tags-combobox';
 
-    $page = $this->visit('/combobox')->on()->desktop();
-
-    $page
+    $page = $this->visit('/combobox')->on()->desktop()
         ->waitForEvent('networkidle')
-        ->wait(1)
         ->assertCount('[data-daisy-kit-module="combobox"]', 2);
-    $page->click("{$combobox} [data-daisy-kit-combobox-input]")
-        ->wait(1)
-        ->assertCount("{$combobox} [role=option]", 6)
+    $page->page()->locator("{$combobox}[data-daisy-kit-state=ready]")->waitFor();
+    $page->page()->locator("{$combobox} [data-daisy-kit-combobox-toggle]")->click();
+    $page->page()->locator("{$combobox} [role=option]")->nth(5)->waitFor();
+    $page->assertCount("{$combobox} [role=option]", 6)
         ->assertSee('ada@analytical-engine.org')
         ->assertSee('Platform')
         ->assertScript("getComputedStyle(document.querySelector('{$combobox} [data-daisy-kit-combobox-popup]')).position === 'absolute'")
         ->assertScript("(() => { const shell = document.querySelector('{$combobox} [data-daisy-kit-combobox-shell]').getBoundingClientRect(); const control = document.querySelector('{$combobox} [data-daisy-kit-combobox-control]').getBoundingClientRect(); const popup = document.querySelector('{$combobox} [data-daisy-kit-combobox-popup]').getBoundingClientRect(); return shell.height < control.height + 8 && shell.height < popup.height / 2; })()")
         ->assertNoAccessibilityIssues(1)
-        ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'missing-reviewer')
-        ->wait(1)
-        ->assertSee('No matching suggestions.')
+        ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'missing-reviewer');
+    $page->page()->locator($combobox)->getByText('No matching suggestions.', exact: true)->waitFor();
+    $page->assertSee('No matching suggestions.')
         ->assertScript("document.querySelector('{$combobox} [data-daisy-kit-combobox-token-label]').textContent === 'Ada Lovelace'")
-        ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'nasa.gov')
-        ->wait(1)
-        ->assertCount("{$combobox} [role=option]", 3)
+        ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'nasa.gov');
+    $page->page()->locator("{$combobox} [role=option]")->nth(3)->waitFor(['state' => 'detached']);
+    $page->page()->locator("{$combobox} [role=option]")->nth(2)->waitFor();
+    $page->assertCount("{$combobox} [role=option]", 3)
         ->assertSee('Margaret Hamilton')
         ->click("{$combobox} [role=option][data-value=margaret]")
         ->assertScript("document.querySelector('{$combobox} input[name=\"reviewers[]\"][value=margaret]') !== null")
@@ -171,10 +170,11 @@ it('uses the remote Combobox in a native Laravel review form', function (): void
         ->assertSee('The review assignment was saved.')
         ->assertNoSmoke();
 
+    $page->page()->locator("{$combobox}[data-daisy-kit-state=ready]")->waitFor();
     $page->resize(390, 844)
-        ->click("{$combobox} [data-daisy-kit-combobox-input]")
-        ->wait(1)
-        ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
+        ->click("{$combobox} [data-daisy-kit-combobox-toggle]");
+    $page->page()->locator("{$combobox} [role=option]")->nth(5)->waitFor();
+    $page->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
         ->assertCount("{$combobox} [role=option]", 6)
         ->assertNoAccessibilityIssues(1);
 })->group('browser');
@@ -232,6 +232,24 @@ it('anchors Truncate disclosure to its ellipsis and supports pinned light dismis
             })()
             JS)
         ->keys($trigger, 'Escape');
+})->group('browser');
+
+it('scrolls only the Scrollspy content panel when a navigation link is clicked', function (): void {
+    $content = '#workbench-scrollspy-content';
+    $detailsLink = '[data-daisy-kit-scrollspy-id="workbench-details"]';
+
+    $page = $this->visit('/scrollspy')->on()->mobile()
+        ->waitForEvent('networkidle')
+        ->assertScript("document.querySelector('{$content}').scrollTop === 0")
+        ->assertNoSmoke();
+
+    $page->script("document.querySelector('{$detailsLink}').addEventListener('click', () => { document.documentElement.dataset.scrollspyPageTop = String(window.scrollY); }, { capture: true, once: true });");
+    $page->click($detailsLink)
+        ->wait(1)
+        ->assertScript("document.querySelector('{$content}').scrollTop > 0")
+        ->assertScript('window.scrollY === Number(document.documentElement.dataset.scrollspyPageTop)')
+        ->assertNoJavaScriptErrors()
+        ->assertNoSmoke();
 })->group('browser');
 
 it('mounts the map without a browser CSP violation', function (): void {

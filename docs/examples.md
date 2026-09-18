@@ -722,3 +722,52 @@ spatial selection, measurements, history and GeoJSON export.
 Use provider URLs and attribution authorized by the host. All configuration remains encoded JSON
 and events use `daisy-kit:map:*`. The complete layer shapes, facade, events, CSP directives and
 migration notes are in [`map.md`](map.md).
+
+## Code Editor
+
+```blade
+<x-daisy-kit::code-editor name="source" label="Source code" language="php"
+    filename="example.php" :value="$source" :nonce="Vite::cspNonce()" />
+```
+
+```js
+import '@daisy-kit/code-editor.css';
+import { mountAll } from '@daisy-kit/code-editor.js';
+mountAll();
+```
+
+Pass the response nonce and include it in style-src. Use a host stylesheet to set
+--code-editor-height. The editor inherits the nearest DaisyUI theme. No Blade
+parser, executable preview, server persistence or remote completion is included.
+
+## WYSIWYG
+
+```blade
+<x-daisy-kit::wysiwyg
+    name="article_body"
+    label="Article body"
+    :value="$article->body"
+    :attachments="true"
+/>
+```
+
+```js
+import '@daisy-kit/wysiwyg.css';
+import { getInstance, mountAll } from '@daisy-kit/wysiwyg.js';
+
+for (const editor of mountAll()) {
+    editor?.getTrixEditor();
+}
+
+document.addEventListener('daisy-kit:wysiwyg:attachment-add', async (event) => {
+    const editor = getInstance(event.target);
+    const upload = await uploadFile(event.detail.file);
+    editor?.resolveAttachment(event.detail.id, { url: upload.url });
+});
+```
+
+The host must sanitize `article_body` on the server before storage or unescaped
+Blade rendering. Trix DOMPurify sanitization only protects the browser editing
+path. Configure a `trix-csp-nonce` meta element, allow the nonce in `style-src`,
+allow `style-src-attr 'unsafe-inline'`, and add `img-src blob:` when attachment
+previews are enabled.

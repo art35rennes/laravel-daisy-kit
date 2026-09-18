@@ -12,6 +12,8 @@ export default defineConfig({
             input: [
                 resolve(__dirname, 'index.html'),
                 resolve(__dirname, 'relaxed.html'),
+                resolve(__dirname, 'code-editor.html'),
+                resolve(__dirname, 'wysiwyg.html'),
             ],
         },
     },

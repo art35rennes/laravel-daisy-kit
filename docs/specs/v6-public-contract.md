@@ -8,6 +8,8 @@ architecture-test failure. The detailed business outcomes and test oracle are in
 
 | Module | Blade component | Essential contract |
 | --- | --- | --- |
+| WYSIWYG | `x-daisy-kit::wysiwyg` | Trix rich text editor with native form semantics, host-coordinated attachments and a public Trix escape hatch. |
+| Code Editor | `x-daisy-kit::code-editor` | Single-document CodeMirror 6 editor with native form semantics, lazy grammars and DaisyUI themes. |
 | Table | `x-daisy-kit::table` | Client/server TanStack data workbench with typed filters, persistent selection and configurable data actions. |
 | Tree | `x-daisy-kit::tree` | Keyboard-accessible hierarchical selector with multiple/indeterminate selection, lazy loading and search. |
 | Blueprint | `x-daisy-kit::blueprint` | Accessible directed-graph viewer/editor with inspector, history and synchronized JSON. |
@@ -60,7 +62,7 @@ import specifier. Hosts configure `@daisy-kit` to resolve to
 `vendor/art35rennes/laravel-daisy-kit/dist`, then import explicit module pairs as
 `@daisy-kit/{module}.js` and `@daisy-kit/{module}.css`. The allowed entry stems are
 `table`, `tree`, `blueprint`, `file-preview`, `map`, `copyable`, `combobox`, `signature`,
-`truncate`, `scrollspy`, and `transfer-list`.
+`truncate`, `scrollspy`, `transfer-list`, `code-editor`, and `wysiwyg`.
 
 | Module | ESM import | CSS import |
 | --- | --- | --- |
@@ -75,15 +77,19 @@ import specifier. Hosts configure `@daisy-kit` to resolve to
 | Truncate | `@daisy-kit/truncate.js` | `@daisy-kit/truncate.css` |
 | Scrollspy | `@daisy-kit/scrollspy.js` | `@daisy-kit/scrollspy.css` |
 | Transfer list | `@daisy-kit/transfer-list.js` | `@daisy-kit/transfer-list.css` |
+| Code Editor | `@daisy-kit/code-editor.js` | `@daisy-kit/code-editor.css` |
+| WYSIWYG | `@daisy-kit/wysiwyg.js` | `@daisy-kit/wysiwyg.css` |
 
 Configuration is emitted in a non-executable `application/json` script element and is parsed with
 strict validation. Invalid JSON activates an accessible error state. No public Blade view emits an
 inline handler, executable script, or `style` attribute.
 
-Signature and Transfer List depend respectively on SignaturePad and SortableJS, which write DOM
-style properties while active. A host page using either module must allow
+Signature, Transfer List and WYSIWYG dependencies write DOM style properties while active. A host
+page using one of these modules must allow
 `style-src-attr 'unsafe-inline'`; the directive is page-wide, not scoped to the component. The
-other nine modules retain `style-src-attr 'none'`. TanStack Virtual is deliberately not shipped.
+other ten modules retain `style-src-attr 'none'`. WYSIWYG also needs a nonce-authorized
+`style-src` for Trix generated styles and `img-src blob:` when local file previews are used.
+TanStack Virtual is deliberately not shipped.
 
 ### Table configuration
 
@@ -340,7 +346,8 @@ one coherent contract; no alias, fallback dialect, or adapter is provided for pr
 
 There are no `x-daisy` aliases, additional DaisyUI primitive wrappers, application templates,
 forms or Livewire integration, charts, calendars, CSRF routes, icon systems, asset publishing,
-CodeMirror, Trix, GridStack, or global bundle. The eleven entries above are the complete public
+GridStack, legacy lazy editors, or global bundle. Trix is allowed only inside the WYSIWYG
+entry and is not imported implicitly by any other module. The thirteen entries above are the complete public
 surface. v4 compatibility is outside v6 and is served exclusively by `legacy/4.x` / `v4.0.0`.
 
 ## Verification matrix
@@ -353,3 +360,97 @@ surface. v4 compatibility is outside v6 and is served exclusively by `legacy/4.x
   event logger, or visible test-only control.
 - Quality: fresh Composer installation, Pint, Larastan level max, Pest type coverage, Vitest,
   reproducible `dist` build, and zero Composer/npm audit findings.
+
+## Code Editor configuration
+
+`x-daisy-kit::code-editor` accepts `value=''`, `language='text'`, `name=null`,
+`label=null` (translated Code label), `filename=null`, `readOnly=false`, `disabled=false`, `required=false`,
+`lineNumbers=true`, `lineWrapping=false`, `tabSize=4` (1 to 16), `toolbar=true`,
+`toolbarActions=null`, `statusBar=true`, `nonce=null`, `labels=[]`, and `phrases=[]`.
+`toolbarActions` restricts the visible buttons to a list of supported action names;
+`null` shows all actions, `[]` shows none, and unknown names are ignored.
+`toolbar=false` hides the entire toolbar without removing facade commands.
+Import `@daisy-kit/code-editor.js` and `@daisy-kit/code-editor.css` explicitly.
+Height is `var(--code-editor-height, 24rem)`; override it in host CSS.
+
+Languages: text, php, html, css, javascript, typescript, json, markdown, sql, yaml.
+Grammars load on demand, shared between instances. The editor starts as text.
+Unsupported or unavailable grammars leave the current language and document intact
+and emit `error { code: 'language-unavailable', message }`. No Blade-specific parser.
+
+Facade: `getValue(): string`, `getState(): { language, readOnly, disabled,
+lineWrapping, expanded, line, column }` (one-based cursor coordinates),
+`setValue(string)`, `setReadOnly(boolean)`, `setLineWrapping(boolean)`, `focus()`,
+`undo()`, `redo()`, `openSearch()`, `setExpanded(boolean)`, `complete()`,
+`foldAll()`, `unfoldAll()`, `foldOthers()`, `unfoldOthers()` return booleans.
+The search toolbar button toggles the panel; `openSearch()` always opens it.
+Other-block folding preserves the smallest block containing the cursor and its
+parents. Folding commands remain available in read-only mode and operate on the
+currently parsed syntax tree, without forcing a full parse of large documents.
+`setLanguage(string)`, `copy()` and `format()` return `Promise<boolean>`.
+The Format code action loads Prettier and the matching parser on demand for JSON,
+JavaScript/TypeScript, HTML, CSS, Markdown, YAML and PHP (via its official plugin).
+SQL uses sql-formatter. Formatting is disabled for plain text and hidden in
+read-only mode. PHP targets 8.4 without Composer detection; SQL uses the standard
+SQL dialect. Embedded-language formatting is disabled. Cursor mapping is supplied
+by Prettier; SQL keeps the cursor offset clamped to the new document length. Formatting
+preserves undo history:
+Undo restores the document before formatting. Parsing failures leave the document
+unchanged and emit `error { code: 'format-failed', message }`.
+`setValue` resets history and selection, even in read-only mode; an identical value
+is a successful no-op. Read-only prevents user edits, not host updates.
+Stale or destroyed asynchronous commands return false without emitting errors.
+
+Events use `daisy-kit:code-editor:`: `change { value, origin }` (user, api, reset, format),
+`language-changed { language }`, `copied {}`, `expanded { expanded }`,
+`formatted { language }`, `error { code, message }`, and the standard lifecycle events.
+Native textarea input is synchronized immediately; change fires when focus leaves.
+Reset restores the mount-time value. Disabled values do not submit. Read-only
+content stays focusable and searchable. Tab leaves the editor; Ctrl+Space opens
+language-local and document-word suggestions, also available through Suggest.
+Saving, execution and LSP are host concerns. Formatting runs locally in the browser.
+Typing opening delimiters inserts their closing counterpart according to the
+language: JSON uses `[]`, `{}` and double quotes; JavaScript also supports `()`.
+Enter indents new lines. In JSON, Enter after a complete value repairs a missing
+comma only when another member follows. It does not add trailing commas before
+closing brackets, alter incomplete values, or insert commas in other languages.
+The expanded header keeps its title inside the editor and offers a minus button.
+Expand editor/Collapse editor, Escape and clicking the backdrop restore the inline editor.
+
+`labels` overrides copy, search, closeSearch, undo, redo, wrap, unwrap, expand,
+restore, complete, format, formatting, formatted, formatFailed, fold-all, unfold-all, fold-others, unfold-others, line, column, readOnly,
+copied, required, languageUnavailable, clipboardUnavailable, configurationInvalid
+and initializationFailed strings. Defaults follow the Laravel locale (English and
+French bundled); explicit instance labels override those defaults. `phrases` maps
+CodeMirror's English phrases to host translations and overrides the bundled
+search, completion, folding and accessibility translations. Supply the host response nonce to authorize generated CodeMirror
+styles through `style-src 'self' 'nonce-...'`. No inline script or global is added.
+
+## WYSIWYG configuration
+
+`x-daisy-kit::wysiwyg` requires `name` and accepts `label`, `value`, `placeholder`,
+`required`, `disabled`, `readonly`, `autofocus`, `showToolbar=true`,
+`attachments=false`, and `size='sm|md|lg'`. A named `toolbar` slot replaces the
+default Trix actions. The slot is ignored when the toolbar is hidden.
+
+The facade exposes `getValue()`, `setValue(html)`, `clear()`, `focus()`, `undo()`,
+`redo()`, `getAttachments()`, `setAttachmentProgress(id, percent)`,
+`resolveAttachment(id, { url, href? })`, `removeAttachment(id)`, and
+`getTrixEditor()`. The last method returns the active `Trix.Editor` or `null` after
+unmount. Native Trix events continue to bubble. Daisy Kit emits `change`,
+`attachment-add`, `attachment-progress`, `attachment-resolved`, `attachment-edit`,
+`attachment-remove`, `action`, `mounted`, `unmounted`, and `error` in the
+`daisy-kit:wysiwyg:*` namespace.
+
+Trix sanitizes editor HTML in the browser with its bundled DOMPurify configuration.
+The host remains responsible for server-side sanitization because HTTP clients can
+bypass the component. Attachments are blocked by default. When enabled, each file
+stays pending and makes the native form invalid until host code calls
+`resolveAttachment` with a permanent safe URL or removes it. Upload routes, storage,
+asset publication and Livewire integration are outside this package.
+
+Import `@daisy-kit/wysiwyg.js` and `@daisy-kit/wysiwyg.css` explicitly. Add a
+`<meta name="trix-csp-nonce" content="...">`, authorize the same nonce in
+`style-src`, and allow `style-src-attr 'unsafe-inline'`. Add `img-src blob:` when
+attachments display local previews. The entry removes Trix's global after element
+registration; advanced access goes through `getTrixEditor()`.

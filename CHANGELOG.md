@@ -1,5 +1,23 @@
 # Changelog
 
+## [Unreleased]
+
+## [6.1.0] - 2026-09-18
+
+### Added
+
+- Add the independent Code Editor Blade, ESM and CSS module with native form semantics, lazy CodeMirror grammars, localized controls, folding, completion and local on-demand formatting.
+- Add the independent Trix WYSIWYG Blade, ESM and CSS module for v6.1.0, with native forms, lifecycle, browser sanitization, host-coordinated attachments, CSP guidance and a public `getTrixEditor()` escape hatch.
+
+### Changed
+
+- Expand the supported v6 public surface from eleven to thirteen independent modules and update the package Boost guidance and fresh Vite host coverage.
+
+### Fixed
+
+- Keep Scrollspy navigation within its configured scrollable content panel.
+- Preserve asynchronous editor state across formatting, language loading and WYSIWYG host synchronization.
+
 ## [6.0.1] - 2026-09-13
 
 ### Fixed

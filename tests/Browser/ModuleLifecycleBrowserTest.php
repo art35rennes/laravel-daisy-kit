@@ -41,4 +41,5 @@ it('isolates instances and restores each public module through unmount and remou
 })->with([
     'table', 'tree', 'blueprint', 'file-preview', 'map', 'copyable', 'combobox',
     'signature', 'truncate', 'scrollspy', 'transfer-list',
+    'wysiwyg',
 ])->group('browser');

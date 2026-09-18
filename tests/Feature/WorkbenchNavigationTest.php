@@ -10,7 +10,7 @@ it('uses the Workbench root as a module directory', function (): void {
         ->assertSee('data-workbench-module=""', false)
         ->assertDontSee('data-daisy-kit-module=', false);
 
-    foreach (['table', 'tree', 'blueprint', 'file-preview', 'map', 'copyable', 'combobox', 'signature', 'truncate', 'scrollspy', 'transfer-list'] as $module) {
+    foreach (['table', 'tree', 'blueprint', 'file-preview', 'map', 'copyable', 'combobox', 'signature', 'truncate', 'scrollspy', 'transfer-list', 'code-editor', 'wysiwyg'] as $module) {
         $response->assertSee("href=\"/{$module}\"", false);
     }
 });
@@ -22,14 +22,14 @@ it('renders every component module on its own route', function (string $module):
         ->assertSee("data-workbench-module=\"{$module}\"", false)
         ->assertSee("data-daisy-kit-module=\"{$module}\"", false);
 
-    foreach (['table', 'tree', 'blueprint', 'file-preview', 'map', 'copyable', 'combobox', 'signature', 'truncate', 'scrollspy', 'transfer-list'] as $otherModule) {
+    foreach (['table', 'tree', 'blueprint', 'file-preview', 'map', 'copyable', 'combobox', 'signature', 'truncate', 'scrollspy', 'transfer-list', 'code-editor', 'wysiwyg'] as $otherModule) {
         if ($otherModule !== $module) {
             $response->assertDontSee("data-daisy-kit-module=\"{$otherModule}\"", false);
         }
     }
 })->with([
     'table', 'tree', 'blueprint', 'file-preview', 'map', 'copyable',
-    'combobox', 'signature', 'truncate', 'scrollspy', 'transfer-list',
+    'combobox', 'signature', 'truncate', 'scrollspy', 'transfer-list', 'code-editor', 'wysiwyg',
 ]);
 
 it('demonstrates Copyable with its optional icon and visual feedback', function (): void {

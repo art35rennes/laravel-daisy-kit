@@ -26,6 +26,8 @@ Only these Blade components are supported:
 - `x-daisy-kit::truncate`
 - `x-daisy-kit::scrollspy`
 - `x-daisy-kit::transfer-list`
+- `x-daisy-kit::code-editor`
+- `x-daisy-kit::wysiwyg`
 
 Do not introduce aliases, additional primitive DaisyUI wrappers, host templates, routes,
 controllers, facades, migrations, asset publication, Forms or Livewire integration, or a
@@ -56,7 +58,7 @@ mountAll();
 ```
 
 The entry stems are `table`, `tree`, `blueprint`, `file-preview`, `map`, `copyable`, `combobox`,
-`signature`, `truncate`, `scrollspy`, and `transfer-list`; use `@daisy-kit/{stem}.js` and
+`signature`, `truncate`, `scrollspy`, `transfer-list`, `code-editor`, and `wysiwyg`; use `@daisy-kit/{stem}.js` and
 `@daisy-kit/{stem}.css` only for modules rendered on the page.
 
 Each entry independently exposes `mount(root)`, `mountAll(scope = document)`, `unmount(root)`,
@@ -115,9 +117,10 @@ asset publication. Keep document scripts, forms, navigation, and unnecessary net
 disabled. Validate file type and size, and release frames, listeners, requests, and renderer
 resources on destruction.
 
-SignaturePad and SortableJS write runtime DOM styles. A page mounting Signature or Transfer List
-must allow the page-wide `style-src-attr 'unsafe-inline'` exception and should keep that page
-surface narrow. All other parent-page entries retain `style-src-attr 'none'`. Do not add TanStack
+SignaturePad, SortableJS and Trix write runtime DOM styles. A page mounting Signature, Transfer List
+or WYSIWYG must allow the page-wide `style-src-attr 'unsafe-inline'` exception and should keep that
+page surface narrow. WYSIWYG also needs the Trix nonce in `style-src` and `img-src blob:` for local
+attachment previews. All other parent-page entries retain `style-src-attr 'none'`. Do not add TanStack
 Virtual; v6 deliberately avoids its inline-style cost and does not promise large remote transfer
 datasets.
 
@@ -144,3 +147,22 @@ exercise facades in Vitest or through browser-test scripts instead.
 Before changing the public boundary, record the decision in `docs/decisions/` and update
 `docs/specs/v6-public-contract.md`. Keep `dist/` reproducible and tracked; do not track
 dependency directories, TIA results, or Workbench build artifacts.
+
+## Code Editor
+
+Use `x-daisy-kit::code-editor` with explicit `@daisy-kit/code-editor.js` and
+`@daisy-kit/code-editor.css` imports. Supply a response nonce for generated styles.
+Keep the CodeMirror engine private. It edits one document, synchronizes a native
+textarea, loads language grammars on demand and inherits the nearest DaisyUI theme.
+Read-only allows selection, search and copy. setValue replaces code and resets
+history. It does not execute code or save it remotely.
+
+## WYSIWYG
+
+Use `x-daisy-kit::wysiwyg` with explicit `@daisy-kit/wysiwyg.js` and
+`@daisy-kit/wysiwyg.css` imports. Trix is the supported engine and
+`getTrixEditor()` is the advanced escape hatch. Browser sanitization does not
+replace host-side sanitization of submitted HTML. Attachments are disabled by
+default; when enabled, the host uploads each emitted File and resolves it through
+the facade. Do not add an upload route, storage adapter, asset publication or
+Livewire integration to the package.
