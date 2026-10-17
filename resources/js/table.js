@@ -1110,6 +1110,9 @@ function initialize(root, configuration) {
 
             if (hasRowControls) {
                 const actionCell = document.createElement('td');
+                const actions = document.createElement('div');
+
+                actions.className = 'daisy-kit-table__row-actions';
 
                 if (rowDetails) {
                     const toggle = document.createElement('button');
@@ -1147,7 +1150,7 @@ function initialize(root, configuration) {
                         else expandedRowIds.add(row.id);
                         render();
                     });
-                    actionCell.append(toggle);
+                    actions.append(toggle);
                 }
 
                 rowActions.forEach((action) => {
@@ -1164,9 +1167,10 @@ function initialize(root, configuration) {
                         row: { ...row.original },
                         rowId: row.id,
                     }));
-                    actionCell.append(button);
+                    actions.append(button);
                 });
 
+                actionCell.append(actions);
                 tableRow.append(actionCell);
             }
 

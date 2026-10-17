@@ -590,7 +590,10 @@ describe('table module', () => {
         document.body.innerHTML = tableMarkup({
             columns: [{ id: 'name', label: 'Name' }, { id: 'summary', label: 'Summary' }],
             rows: [{ id: 'a', name: 'Alpha', summary: 'Ready for review' }],
-            rowActions: [{ id: 'approve', label: 'Approve' }],
+            rowActions: [
+                { id: 'approve', label: 'Approve' },
+                { id: 'reject', label: 'Reject', disabled: true },
+            ],
             rowDetails: { accessor: 'summary', label: 'Details', mode: 'inline' },
         });
         const root = document.querySelector('[data-daisy-kit-module="table"]');
@@ -598,6 +601,15 @@ describe('table module', () => {
         root.addEventListener('daisy-kit:table:row-action', (event) => events.push(event.detail));
 
         mount(root);
+        const actions = root.querySelector('.daisy-kit-table__row-actions');
+
+        expect(actions.parentElement.tagName).toBe('TD');
+        expect([...actions.querySelectorAll('button')].map(button => button.textContent)).toEqual([
+            'Details', 'Approve', 'Reject',
+        ]);
+        actions.querySelector('[data-daisy-kit-table-row-action="reject"]').click();
+        expect(events).toEqual([]);
+        expect(actions.querySelector('[data-daisy-kit-table-row-action="reject"]').disabled).toBe(true);
         root.querySelector('[data-daisy-kit-table-detail-toggle="a"]').click();
 
         expect(root.querySelector('[data-daisy-kit-table-detail="a"]').textContent).toContain('Ready for review');

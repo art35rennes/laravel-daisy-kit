@@ -156,6 +156,13 @@
     background: var(--color-base-200);
 }
 
+.daisy-kit-table__row-actions {
+    align-items: center;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
 .daisy-kit-table__cell-display {
     align-items: center;
     display: inline-flex;

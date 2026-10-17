@@ -197,6 +197,11 @@
                     ['id' => 'mail', 'service' => 'Transactional mail', 'owner' => 'Growth', 'health' => 'Delayed', 'summary' => 'Delivery is delayed by approximately four minutes.'],
                     ['id' => 'storage', 'service' => 'Object storage', 'owner' => 'Infrastructure', 'health' => 'Operational', 'summary' => 'Replication is healthy in all configured regions.'],
                 ]"
+                id="service-health-table"
+                :row-actions="[
+                    ['id' => 'inspect', 'label' => 'Inspect service'],
+                    ['id' => 'restart', 'label' => 'Restart service', 'disabled' => true],
+                ]"
                 :row-details="['accessor' => 'summary', 'label' => 'Show details', 'mode' => 'inline']"
                 :page-size="3"
                 :page-size-options="[3, 6, 12]"
