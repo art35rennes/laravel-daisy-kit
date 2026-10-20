@@ -443,7 +443,8 @@
     "src": "resources/js/table.js",
     "isEntry": true,
     "imports": [
-      "_mountable-Bsfcei8y.js"
+      "_mountable-Bsfcei8y.js",
+      "_identifiers-DZhNBAcR.js"
     ],
     "css": [
       "table.css"

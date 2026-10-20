@@ -163,6 +163,12 @@
     gap: 0.5rem;
 }
 
+.daisy-kit-table__detail-content {
+    margin-block-start: 1rem;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
 .daisy-kit-table__cell-display {
     align-items: center;
     display: inline-flex;

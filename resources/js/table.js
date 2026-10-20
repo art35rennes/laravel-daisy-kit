@@ -16,6 +16,7 @@ import {
 import { storeReactivityBindings } from '@tanstack/table-core/store-reactivity-bindings';
 
 import '../css/table.css';
+import { createInstanceIdentifier } from './core/identifiers.js';
 import { createMountable } from './core/mountable.js';
 
 const tableInstances = new WeakMap();
@@ -494,7 +495,7 @@ function initialize(root, configuration) {
     };
     const persistedState = readPersistedState(persistence);
     const expandedRowIds = new Set();
-    const detailDialogs = new Set();
+    const detailDialogs = new Map();
     let abortController = null;
     const editAbortControllers = new Set();
     let editing = null;
@@ -1119,28 +1120,71 @@ function initialize(root, configuration) {
 
                     toggle.className = 'btn btn-ghost btn-sm';
 
-                    toggle.setAttribute('aria-expanded', String(expandedRowIds.has(row.id)));
+                    if (rowDetails.mode === 'modal') {
+                        toggle.setAttribute('aria-haspopup', 'dialog');
+                    } else {
+                        toggle.setAttribute('aria-expanded', String(expandedRowIds.has(row.id)));
+                    }
                     toggle.dataset.daisyKitTableDetailToggle = row.id;
                     toggle.textContent = rowDetails.label;
                     toggle.type = 'button';
                     toggle.addEventListener('click', () => {
                         if (rowDetails.mode === 'modal') {
                             const dialog = document.createElement('dialog');
+                            const box = document.createElement('div');
                             const title = document.createElement('h2');
+                            const detail = document.createElement('div');
+                            const footer = document.createElement('div');
                             const close = document.createElement('button');
 
                             dialog.className = 'modal';
+                            box.className = 'modal-box bg-base-100 text-base-content';
                             title.className = 'text-lg font-semibold';
+                            detail.className = 'daisy-kit-table__detail-content';
+                            footer.className = 'modal-action';
                             close.className = 'btn btn-sm';
 
                             dialog.dataset.daisyKitTableDetail = row.id;
+                            title.id = createInstanceIdentifier('daisy-kit-table-detail-title');
                             title.textContent = rowDetails.label;
+                            dialog.setAttribute('aria-labelledby', title.id);
+                            detail.textContent = formatCell(rowDetails.accessor ? row.original[rowDetails.accessor] : row.original);
                             close.textContent = labels.close;
                             close.type = 'button';
-                            close.addEventListener('click', () => dialog.close());
-                            dialog.append(title, document.createTextNode(formatCell(rowDetails.accessor ? row.original[rowDetails.accessor] : row.original)), close);
+
+                            function cleanup(restoreFocus = true) {
+                                if (!detailDialogs.delete(dialog)) return;
+
+                                dialog.removeEventListener('close', onClose);
+                                dialog.removeEventListener('cancel', onCancel);
+                                close.removeEventListener('click', closeDialog);
+                                dialog.remove();
+
+                                if (restoreFocus && active && toggle.isConnected) toggle.focus();
+                            }
+
+                            function onClose() {
+                                cleanup();
+                            }
+
+                            function closeDialog() {
+                                if (typeof dialog.close === 'function') dialog.close();
+                                cleanup();
+                            }
+
+                            function onCancel(event) {
+                                event.preventDefault();
+                                closeDialog();
+                            }
+
+                            close.addEventListener('click', closeDialog);
+                            dialog.addEventListener('close', onClose);
+                            dialog.addEventListener('cancel', onCancel);
+                            footer.append(close);
+                            box.append(title, detail, footer);
+                            dialog.append(box);
                             root.append(dialog);
-                            detailDialogs.add(dialog);
+                            detailDialogs.set(dialog, cleanup);
                             if (typeof dialog.showModal === 'function') dialog.showModal();
                             else dialog.setAttribute('open', '');
                             return;
@@ -1519,7 +1563,7 @@ function initialize(root, configuration) {
         editAbortControllers.forEach((editAbortController) => editAbortController.abort());
         editAbortControllers.clear();
         requestSerial += 1;
-        detailDialogs.forEach((dialog) => dialog.remove());
+        detailDialogs.forEach((cleanup) => cleanup(false));
         detailDialogs.clear();
         content.innerHTML = initialContent;
     };
