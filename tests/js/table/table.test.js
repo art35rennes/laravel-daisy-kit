@@ -613,6 +613,8 @@ describe('table module', () => {
         root.querySelector('[data-daisy-kit-table-detail-toggle="a"]').click();
 
         expect(root.querySelector('[data-daisy-kit-table-detail="a"]').textContent).toContain('Ready for review');
+        expect(root.querySelector('[data-daisy-kit-table-detail-toggle="a"]').getAttribute('aria-expanded')).toBe('true');
+        expect(root.querySelector('[data-daisy-kit-table-detail-toggle="a"]').hasAttribute('aria-haspopup')).toBe(false);
 
         root.querySelector('[data-daisy-kit-table-row-action="approve"]').click();
         expect(events).toEqual([{
@@ -625,6 +627,93 @@ describe('table module', () => {
         expect(root.querySelector('[data-daisy-kit-table-detail="a"]')).toBeNull();
     });
 
+    it('opens a labelled modal box with multiline text without interpreting HTML', () => {
+        const summary = 'Presence: 09:00 to 18:00\nDiagnostic: <img src=x onerror=alert(1)>\nDesk: A12';
+        document.body.innerHTML = tableMarkup({
+            columns: [{ id: 'name', label: 'Name' }],
+            rowDetails: { accessor: 'summary', label: 'Reservation details', mode: 'modal' },
+            rows: [{ id: 'a', name: 'Alpha', summary }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+        const toggle = root.querySelector('[data-daisy-kit-table-detail-toggle="a"]');
+        toggle.click();
+        const dialog = root.querySelector('dialog');
+        const box = dialog.querySelector('.modal-box');
+        const title = box.querySelector('h2');
+
+        expect(toggle.getAttribute('aria-haspopup')).toBe('dialog');
+        expect(toggle.hasAttribute('aria-expanded')).toBe(false);
+        expect(dialog.open).toBe(true);
+        expect(dialog.getAttribute('aria-labelledby')).toBe(title.id);
+        expect(document.getElementById(title.id)).toBe(title);
+        expect(title.textContent).toBe('Reservation details');
+        expect(box.classList).toContain('bg-base-100');
+        expect(box.classList).toContain('text-base-content');
+        expect(box.querySelector('.daisy-kit-table__detail-content').textContent).toBe(summary);
+        expect(box.querySelector('img')).toBeNull();
+        expect(box.querySelector('.modal-action button').textContent).toBe('Close');
+    });
+
+    it('removes closed modal details and restores focus across reopening and Escape', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [{ id: 'name', label: 'Name' }],
+            rowDetails: { accessor: 'name', mode: 'modal' },
+            rows: [{ id: 'a', name: 'Alpha' }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+        const toggle = root.querySelector('[data-daisy-kit-table-detail-toggle="a"]');
+        toggle.click();
+        const firstDialog = root.querySelector('dialog');
+        const firstTitleId = firstDialog.getAttribute('aria-labelledby');
+        firstDialog.querySelector('button').focus();
+        firstDialog.querySelector('button').click();
+
+        expect(firstDialog.isConnected).toBe(false);
+        expect(document.activeElement).toBe(toggle);
+
+        toggle.click();
+        const secondDialog = root.querySelector('dialog');
+        expect(root.querySelectorAll('dialog')).toHaveLength(1);
+        expect(secondDialog.getAttribute('aria-labelledby')).not.toBe(firstTitleId);
+        secondDialog.querySelector('button').focus();
+        const escape = new Event('cancel', { cancelable: true });
+        secondDialog.dispatchEvent(escape);
+
+        expect(escape.defaultPrevented).toBe(true);
+        expect(root.querySelector('dialog')).toBeNull();
+        expect(document.activeElement).toBe(toggle);
+
+        toggle.click();
+        const thirdDialog = root.querySelector('dialog');
+        thirdDialog.dispatchEvent(new Event('close'));
+        expect(root.querySelector('dialog')).toBeNull();
+    });
+
+    it('does not focus a detached row trigger when a modal closes after rerendering', () => {
+        document.body.innerHTML = tableMarkup({
+            columns: [{ id: 'name', label: 'Name' }],
+            rowDetails: { accessor: 'name', mode: 'modal' },
+            rows: [{ id: 'a', name: 'Alpha' }],
+        });
+        const root = document.querySelector('[data-daisy-kit-module="table"]');
+
+        mount(root);
+        const toggle = root.querySelector('[data-daisy-kit-table-detail-toggle="a"]');
+        const focus = vi.spyOn(toggle, 'focus');
+        toggle.click();
+        const dialog = root.querySelector('dialog');
+        getInstance(root).setGlobalFilter('Beta');
+        expect(toggle.isConnected).toBe(false);
+        dialog.querySelector('button').click();
+
+        expect(focus).not.toHaveBeenCalled();
+        expect(root.querySelector('dialog')).toBeNull();
+    });
+
     it('removes a modal row detail when the table unmounts', () => {
         document.body.innerHTML = tableMarkup({
             columns: [{ id: 'name', label: 'Name' }],
@@ -634,13 +723,18 @@ describe('table module', () => {
         const root = document.querySelector('[data-daisy-kit-module="table"]');
 
         mount(root);
-        root.querySelector('[data-daisy-kit-table-detail-toggle="a"]').click();
+        const toggle = root.querySelector('[data-daisy-kit-table-detail-toggle="a"]');
+        const focus = vi.spyOn(toggle, 'focus');
+        toggle.click();
 
-        expect(root.querySelector('dialog[data-daisy-kit-table-detail="a"]')).not.toBeNull();
+        const dialog = root.querySelector('dialog[data-daisy-kit-table-detail="a"]');
+        expect(dialog).not.toBeNull();
 
         unmount(root);
 
         expect(root.querySelector('dialog[data-daisy-kit-table-detail="a"]')).toBeNull();
+        dialog.dispatchEvent(new Event('close'));
+        expect(focus).not.toHaveBeenCalled();
     });
 
     it('preserves an unsaved cell draft when a pending search renders the table', () => {

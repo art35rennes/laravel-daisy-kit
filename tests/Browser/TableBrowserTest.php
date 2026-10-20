@@ -2,6 +2,64 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Vite;
+
+it('shows readable modal row details and returns focus after close and Escape', function (int $width, string $theme): void {
+    $table = '#service-health-table';
+    $details = "{$table} [data-daisy-kit-table-detail-toggle=api]";
+    $dialog = "{$table} dialog[data-daisy-kit-table-detail=api]";
+    $page = $this->visit('/table')->resize($width, 900)->waitForEvent('networkidle');
+    $page->script(str_replace(
+        ['__ENTRY__', '__THEME__'],
+        [json_encode(Vite::asset('../dist/table.js'), JSON_THROW_ON_ERROR), json_encode($theme, JSON_THROW_ON_ERROR)],
+        <<<'JS'
+        (async () => {
+            document.documentElement.dataset.theme = __THEME__;
+            const module = await import(__ENTRY__);
+            const root = document.querySelector('#service-health-table');
+            module.unmount(root);
+            const configurationElement = root.querySelector('[data-daisy-kit-config]');
+            const configuration = JSON.parse(configurationElement.textContent);
+            configuration.rowDetails.mode = 'modal';
+            configuration.rows[0].summary = 'Presence: 09:00 to 18:00\nDiagnostic: <img src=x onerror=alert(1)>\nDesk: A12';
+            configurationElement.textContent = JSON.stringify(configuration);
+            module.mount(root);
+            root.dataset.modalReady = 'true';
+        })()
+        JS,
+    ));
+    $page->assertScript("document.querySelector('{$table}').dataset.modalReady === 'true'")
+        ->keys($details, 'Enter')
+        ->assertVisible("{$dialog} .modal-box")
+        ->assertScript(<<<'JS'
+            (() => {
+                const dialog = document.querySelector('#service-health-table dialog');
+                const box = dialog.querySelector('.modal-box');
+                const detail = box.querySelector('.daisy-kit-table__detail-content');
+                const bounds = box.getBoundingClientRect();
+                const trigger = document.querySelector('#service-health-table [data-daisy-kit-table-detail-toggle=api]');
+                return dialog.open
+                    && document.getElementById(dialog.getAttribute('aria-labelledby')).textContent === 'Show details'
+                    && detail.textContent.includes('\nDiagnostic: <img src=x onerror=alert(1)>\n')
+                    && !detail.querySelector('img')
+                    && getComputedStyle(detail).whiteSpace === 'pre-wrap'
+                    && bounds.left >= 0 && bounds.right <= innerWidth
+                    && trigger.getAttribute('aria-haspopup') === 'dialog'
+                    && !trigger.hasAttribute('aria-expanded');
+            })()
+            JS)
+        ->assertNoSmoke()
+        ->click("{$dialog} .modal-action button")
+        ->assertCount($dialog, 0)
+        ->assertScript("document.activeElement.dataset.daisyKitTableDetailToggle === 'api'")
+        ->keys($details, 'Enter')
+        ->assertVisible("{$dialog} .modal-box")
+        ->keys("{$dialog} button", 'Escape')
+        ->assertCount($dialog, 0)
+        ->assertScript("document.activeElement.dataset.daisyKitTableDetailToggle === 'api'")
+        ->assertNoSmoke();
+})->with([390, 1280])->with(['light', 'dark'])->group('browser');
+
 it('recovers from a failed server request without changing the client table', function (): void {
     $server = '#server-queue-table';
     $client = '[data-daisy-kit-module="table"]:has([data-daisy-kit-table-filter=team])';
