@@ -29,7 +29,12 @@ unescaped rendering.
 There is no compatibility layer, alias namespace, asset publication, route, or host template.
 The differentiated product outcomes (focused interaction, editable data/graph/geospatial workflows,
 and isolated document/media previews) are defined by the package's
-`docs/specs/v6-product-contract-matrix.md`; do not reduce them to a successful mount state.
-For implementation and verification details, activate the `laravel-daisy-kit-development` skill.
+`docs/specs/v6-product-contract-matrix.md`, relative to its Composer installation location
+(normally `vendor/art35rennes/laravel-daisy-kit`), not the host's documentation directory.
+Do not reduce them to a successful mount state. For implementation and verification details,
+use the `laravel-daisy-kit-development` skill only when approved under the host's rules.
+Availability through Boost is not authorization to install or activate a skill or MCP server.
+The host's approved runtime, tests and permissions still govern work in that application;
+package-development commands belong only in a dedicated package source checkout, never vendor.
 Keep the package Workbench a representative Laravel host with normal Blade, Vite, routes, and
 forms. Do not turn it into an API explorer, event console, or interactive documentation surface.
