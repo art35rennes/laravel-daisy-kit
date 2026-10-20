@@ -123,7 +123,9 @@ fresh, complete baseline artifact. `composer test:full` remains the cache-indepe
 This package ships concise, distributable Laravel Boost guidance for consuming applications:
 `resources/boost/guidelines/core.blade.php` is loaded as foundational context and
 `resources/boost/skills/laravel-daisy-kit-development/` is an on-demand package skill.
-With Laravel Boost 2.7+ installed in the consuming application, run:
+With Laravel Boost 2.7+ already approved and installed in the consuming application, run the
+following only when the host authorizes updating its agent resources, skills and MCP configuration,
+using that host's approved runtime:
 
 ```bash
 php artisan boost:install --guidelines --skills --mcp
@@ -132,7 +134,11 @@ php artisan boost:update --discover
 
 Boost's generated agent files are host-local state; this repository versions only the package
 resources and its own [`AGENTS.md`](AGENTS.md) conventions. The package skill complements the
-official `laravel-best-practices` skill when Boost makes it available.
+official `laravel-best-practices` skill when it is approved and available. Discovery through Boost
+does not itself authorize installing or activating a skill or MCP server. Package documentation
+paths are relative to the installed Composer package, normally `vendor/art35rennes/laravel-daisy-kit`,
+not the consuming application's documentation directory. Package maintenance and release commands
+belong in a dedicated package source checkout; follow the host's own tests when integrating it.
 
 ## Stable release and upgrading
 

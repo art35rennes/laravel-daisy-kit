@@ -8,8 +8,27 @@ description: Build, review, or test Laravel Daisy Kit's focused Blade modules an
 ## When to use this skill
 
 Use this skill when installing, composing, extending, reviewing, or testing Laravel Daisy Kit
-in a PHP 8.4 and Laravel 13 application. Use the official `laravel-best-practices` skill as well
-when it is available through Laravel Boost; it owns generic Laravel guidance.
+in a PHP 8.4 and Laravel 13 application. Follow the host application's instructions, approved
+runtime and permission rules. Use the official `laravel-best-practices` skill for generic Laravel
+guidance only when it is already approved and available in that environment. Availability through
+Laravel Boost does not authorize installing or activating another skill, plugin or MCP server.
+Complete any review or approval required by the host before doing so; this skill grants none.
+
+## Package documentation and working directories
+
+Resolve the installed Composer package's location before reading package documentation. In a
+host application the default package root is `vendor/art35rennes/laravel-daisy-kit`; use the actual
+Composer installation location if the host configures a different vendor directory. In a dedicated
+Laravel Daisy Kit source checkout, the package root is that checkout's root.
+
+Every `docs/` path below is relative to the package root, not the host application's root or the
+directory where Boost copied this skill. For example, the Tree reference in a normal host is
+`vendor/art35rennes/laravel-daisy-kit/docs/tree.md`; in the package checkout it is `docs/tree.md`.
+If a referenced package document is missing, report it rather than substituting a similarly named
+host document. Host configuration paths, such as `vite.config.js`, belong to the host application.
+
+Do not edit the installed package under vendor. Make generic module fixes in a dedicated package
+source checkout and integrate an approved version through the host's normal dependency workflow.
 
 ## Public boundary
 
@@ -126,17 +145,24 @@ datasets.
 
 ## Verification
 
-For package development, run the narrow relevant test first, then the repository quality gates:
+In a host application, use its existing tests, approved runtime and verification commands. Do not
+run the package maintenance commands below from the host root or its installed vendor package.
+
+Only in a dedicated package development checkout, with its dependencies and runtime already
+approved, run the narrow relevant test first and the package quality gates required for the change:
 
 ```bash
 npm run test:js
 composer test:types
 composer test:full
-composer test:tia:fresh
 ```
 
 Pest 5 Test Impact Analysis speeds iteration but never replaces `composer test:full`, the
-cache-independent release suite. Browser tests must cover actual CSP violations, lifecycle,
+cache-independent release suite. `composer test:tia:fresh` is the supplementary fresh-baseline
+command for package development. These commands can rebuild tracked dist output, temporary and
+Workbench assets, Workbench storage/database files and test caches. Preserve unrelated changes
+and follow the checkout's rules before running them; do not bootstrap or install dependencies
+merely to execute these examples. Browser tests must cover actual CSP violations, lifecycle,
 keyboard/focus behavior, multiple instances, and responsive states where they apply.
 
 The Testbench Workbench is an internal Laravel host, not product documentation. It may render
@@ -144,9 +170,11 @@ representative Blade, native forms, explicit Vite entries, and deterministic loc
 not add a facade console, event logger, inspector, or visible control that exists only for a test;
 exercise facades in Vitest or through browser-test scripts instead.
 
-Before changing the public boundary, record the decision in `docs/decisions/` and update
-`docs/specs/v6-public-contract.md`. Keep `dist/` reproducible and tracked; do not track
-dependency directories, TIA results, or Workbench build artifacts.
+For package development, before changing the public boundary record the decision in the package's
+`docs/decisions/` and update its `docs/specs/v6-public-contract.md`. This does not request new
+documentation in the host application. Keep package `dist/` reproducible and tracked; do not track
+dependency directories, TIA results, or Workbench build artifacts. Follow the repository's release
+and approval rules; these verification examples do not authorize publication or deployment.
 
 ## Code Editor
 

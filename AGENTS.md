@@ -35,12 +35,15 @@ specifier.
 - The package ships concise Laravel Boost resources in `resources/boost/`. Keep the
   guideline foundational and place detailed package instructions only in its on-demand
   skill; do not copy Laravel's generated guidance into this repository.
-- In a consuming Laravel application with Boost 2.7+, install positive capabilities with
+- Follow the consuming application's review, approval and runtime rules before installing,
+  updating or activating Boost resources, skills or MCP servers. Discovery is not approval.
+- In a consuming Laravel application with Boost 2.7+, when that host authorizes the change,
+  install positive capabilities with
   `php artisan boost:install --guidelines --skills --mcp`, then use
   `php artisan boost:update --discover` after adding or updating packages. These are host
   commands, not package-root commands.
 - Boost-generated agent outputs and caches (`.ai/`, `.agents/`, `.codex/`, `boost.json`,
   and `CLAUDE.md`) are local state. Version the package-owned sources above and this
   repository convention file instead.
-- When Boost exposes `laravel-best-practices`, activate it for Laravel PHP work; this
-  repository-specific skill complements it and does not restate generic Laravel rules.
+- When Boost exposes an already approved `laravel-best-practices`, use it for Laravel PHP work;
+  this repository-specific skill complements it and does not restate generic Laravel rules.
