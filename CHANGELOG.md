@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Keep Combobox suggestions and empty states on semantic theme surfaces without a light halo in dark themes.
+- Keep selected Combobox token labels readable when a theme's primary color has insufficient contrast on its soft background.
+
 ## [6.1.0] - 2026-09-18
 
 ### Added
