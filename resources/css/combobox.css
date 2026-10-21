@@ -28,6 +28,7 @@
 
 .daisy-kit-combobox__token {
     max-width: 100%;
+    color: var(--color-base-content);
 }
 
 .daisy-kit-combobox__token-label {
@@ -72,7 +73,8 @@
     border: 1px solid var(--color-base-300);
     border-radius: var(--radius-box);
     background: var(--color-base-100);
-    box-shadow: 0 0.5rem 1.25rem color-mix(in oklab, var(--color-base-content) 12%, transparent);
+    color: var(--color-base-content);
+    box-shadow: none;
     opacity: 1;
     pointer-events: auto;
     transform: none;

@@ -179,6 +179,28 @@ it('uses the remote Combobox in a native Laravel review form', function (): void
         ->assertNoAccessibilityIssues(1);
 })->group('browser');
 
+it('keeps Combobox suggestions and empty states free of a foreground-colored halo', function (string $theme, int $width): void {
+    $combobox = '#remote-reviewers-combobox';
+    $popup = "{$combobox} [data-daisy-kit-combobox-popup]";
+    $page = $this->visit('/combobox')->resize($width, 900)->waitForEvent('networkidle');
+    $page->script("document.documentElement.dataset.theme = '{$theme}'");
+    $page->page()->locator("{$combobox}[data-daisy-kit-state=ready]")->waitFor();
+    $page->click("{$combobox} [data-daisy-kit-combobox-toggle]");
+    $page->page()->locator("{$combobox} [role=option]")->nth(5)->waitFor();
+
+    $page->assertScript("getComputedStyle(document.querySelector('{$popup}')).boxShadow === 'none'")
+        ->assertScript("getComputedStyle(document.querySelector('{$popup}')).color === getComputedStyle(document.body).color")
+        ->fill("{$combobox} [data-daisy-kit-combobox-input]", 'missing-reviewer');
+    $page->page()->locator($combobox)->getByText('No matching suggestions.', exact: true)->waitFor();
+    $page->assertScript("getComputedStyle(document.querySelector('{$popup}')).boxShadow === 'none'")
+        ->assertScript('document.documentElement.scrollWidth <= window.innerWidth')
+        ->screenshot(false, "combobox-empty-{$theme}-{$width}")
+        ->assertNoSmoke()
+        ->assertNoAccessibilityIssues(1)
+        ->keys("{$combobox} [data-daisy-kit-combobox-input]", 'Escape')
+        ->assertScript("document.querySelector('{$popup}').hidden");
+})->with(['light', 'dark'])->with([390, 1280])->group('browser');
+
 it('anchors Truncate disclosure to its ellipsis and supports pinned light dismiss', function (): void {
     $trigger = '[data-daisy-kit-truncate-reveal][aria-label^="Show Grace"]';
     $popover = '[data-daisy-kit-module="truncate"]:has([aria-label^="Show Grace"]) [data-daisy-kit-truncate-popover]';
