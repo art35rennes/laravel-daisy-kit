@@ -29,7 +29,7 @@
         "@dagrejs/dagre": "^3.0.0",
         "@lezer/highlight": "^1.2.3",
         "@prettier/plugin-php": "^0.25.0",
-        "@tanstack/match-sorter-utils": "^8.19.4",
+        "@tanstack/match-sorter-utils": "^9.2.6",
         "@tanstack/table-core": "^9.2.3",
         "@turf/area": "^7.3.5",
         "@turf/boolean-intersects": "^7.4.0",
