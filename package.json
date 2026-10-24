@@ -50,13 +50,16 @@
     "devDependencies": {
         "@rollup/plugin-inject": "^5.0.5",
         "@tailwindcss/vite": "^4.3.2",
-        "@vitest/coverage-v8": "^4.1.10",
+        "@vitest/coverage-v8": "^4.1.12",
         "daisyui": "^5.7.22",
         "jsdom": "^30.0.1",
         "laravel-vite-plugin": "^3.1.0",
         "playwright": "^1.62.1",
         "tailwindcss": "^4.3.2",
-        "vite": "^8.1.4",
-        "vitest": "^4.1.10"
+        "vite": "^8.3.5",
+        "vitest": "^4.1.12"
+    },
+    "engines": {
+        "node": ">=24.22.1 <25"
     }
 }

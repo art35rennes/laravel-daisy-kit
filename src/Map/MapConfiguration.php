@@ -628,7 +628,7 @@ class MapConfiguration
         if ($renderer === 'blade') {
             $view = $popup['view'] ?? null;
 
-            if (! is_string($view) || trim($view) === '' || ! View::exists($view)) {
+            if (! is_string($view) || trim($view) === '' || ! view()->exists($view)) {
                 throw new InvalidArgumentException('Map Blade popup view does not exist.');
             }
 

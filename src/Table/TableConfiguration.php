@@ -155,7 +155,7 @@ final class TableConfiguration
 
         $view = is_string($cell['view'] ?? null) && trim($cell['view']) !== '' ? $cell['view'] : null;
 
-        if ($renderer === 'blade' && ($view === null || ! View::exists($view))) {
+        if ($renderer === 'blade' && ($view === null || ! view()->exists($view))) {
             throw new InvalidArgumentException("Table Blade cell view [{$view}] does not exist.");
         }
 
@@ -188,7 +188,7 @@ final class TableConfiguration
 
                 $view = $cell['view'] ?? null;
 
-                if (! is_string($view)) {
+                if (! is_string($view) || ! view()->exists($view)) {
                     continue;
                 }
 

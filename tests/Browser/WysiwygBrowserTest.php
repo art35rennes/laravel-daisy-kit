@@ -10,7 +10,7 @@ it('formats, submits and resets rich text while preserving read-only content', f
     $page->assertCount('.daisy-kit-wysiwyg__editor', 2)
         ->fill('form .daisy-kit-wysiwyg__editor', 'Customer outcome')
         ->assertScript('new FormData(document.querySelector("form")).get("article_body").includes("Customer outcome")')
-        ->keys('form .daisy-kit-wysiwyg__editor', 'Control+A')
+        ->keys('form .daisy-kit-wysiwyg__editor', 'ControlOrMeta+A')
         ->click('form [data-trix-attribute="bold"]')
         ->assertScript('document.querySelector("input[name=article_body]").value.includes("<strong>")')
         ->click('Reset article')

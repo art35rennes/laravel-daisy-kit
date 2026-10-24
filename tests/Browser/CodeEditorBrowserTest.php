@@ -119,7 +119,7 @@ it('offers local JavaScript completion and folds JSON without changing the value
             editor.setValue('const answer = 42;\nans');
         })()
         JS));
-    $page->keys('form .cm-content', ['Control+End', 'Control+Space'])
+    $page->keys('form .cm-content', ['ControlOrMeta+End', 'Control+Space'])
         ->assertSee('answer')
         ->assertCount('.cm-tooltip-autocomplete', 1);
     // CodeMirror ignores completion keys during its 75 ms accidental-acceptance guard.
@@ -185,7 +185,7 @@ it('suggests words from the JSON document and exposes bulk folding actions', fun
     $page->page()->locator('form .cm-foldPlaceholder')->waitFor(['state' => 'detached']);
     $page->assertCount('form .cm-foldPlaceholder', 0)
         ->fill('form .cm-content', "{\n  \"existingKey\": 1,\n  \"exis")
-        ->keys('form .cm-content', 'Control+End')
+        ->keys('form .cm-content', 'ControlOrMeta+End')
         ->click('form [data-code-editor-action="complete"]');
     $page->page()->locator('.cm-tooltip-autocomplete')->waitFor();
     $page->assertCount('.cm-tooltip-autocomplete', 1);
