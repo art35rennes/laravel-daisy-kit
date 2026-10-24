@@ -10,7 +10,7 @@
         "source": "https://github.com/art35rennes/laravel-daisy-kit"
     },
     "require": {
-        "php": "^8.4",
+        "php": "^8.4.27",
         "illuminate/support": "^13.0",
         "illuminate/view": "^13.0"
     },
@@ -25,6 +25,9 @@
         "pestphp/pest-plugin-laravel": "^5.0",
         "pestphp/pest-plugin-type-coverage": "^5.0",
         "phpstan/extension-installer": "^1.4"
+    },
+    "conflict": {
+        "php": ">=8.5.0 <8.5.12"
     },
     "autoload": {
         "psr-4": {
@@ -43,7 +46,7 @@
         "lint": ["vendor/bin/pint --parallel"],
         "lint:check": ["vendor/bin/pint --parallel --test"],
         "analyse": ["vendor/bin/phpstan analyse --memory-limit=1G"],
-        "test:types": ["vendor/bin/pest --ci --no-tia --exclude-group=browser --type-coverage --min=100"],
+        "test:types": ["@php -d memory_limit=1G vendor/bin/pest --ci --no-tia --exclude-group=browser --type-coverage --min=100"],
         "test:unit": ["npm run build:browser-assets", "vendor/bin/pest --ci --no-tia --parallel --exclude-group=browser"],
         "test:browser": ["npm run build", "npm run build:browser-assets", "vendor/bin/pest --ci --no-tia --group=browser"],
         "test:full": ["@test:unit", "@test:browser"],

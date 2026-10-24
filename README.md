@@ -6,11 +6,11 @@ legacy v4 line: it has no aliases, adapters, or migration layer.
 
 ## Requirements
 
-- PHP 8.4+
+- PHP 8.4.27+ (PHP 8.5 requires 8.5.12+)
 - Laravel / Illuminate 13
 - Tailwind CSS and DaisyUI configured by the host application
 
-PHP 8.4 is required consistently for runtime, Pest 5 development, and CI.
+Patched PHP 8.4.27+ is required for runtime and Pest 5 development. CI covers PHP 8.4 and 8.5.
 
 Install it from GitHub/VCS rather than Packagist:
 
@@ -89,7 +89,7 @@ Dependency license texts are included in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NO
 
 ## Development
 
-Use Node.js 24 and npm with the committed lock file for reproducible builds.
+Use patched Node.js 24.22.1+ (see `.nvmrc`) and npm with the committed lock file for reproducible builds.
 
 ```bash
 composer install

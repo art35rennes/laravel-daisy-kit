@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getInstance, mount, unmount } from '../../../resources/js/file-preview.js';
 
@@ -60,7 +60,13 @@ function dispatchFrameMessage(root, message) {
     }));
 }
 
+beforeEach(() => {
+    // jsdom and Node fetch use different Blob implementations. Browser coverage verifies real object URLs.
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview');
+});
+
 afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
     vi.useRealTimers();
 });

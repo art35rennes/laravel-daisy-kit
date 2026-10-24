@@ -7,6 +7,18 @@
 - Keep Combobox suggestions and empty states on semantic theme surfaces without a light halo in dark themes.
 - Keep selected Combobox token labels readable when a theme's primary color has insufficient contrast on its soft background.
 
+## [6.1.4] - 2026-10-24
+
+### Security
+
+- Require patched PHP 8.4.27+ or 8.5.12+, refresh compatible dependency locks and rebuild dist.
+- Update Vite/Vitest security patches and reject eMudhra trust paths in CI.
+
+### Maintenance
+
+- Pin Actions releases, validate PHP 8.4/8.5 on Ubuntu 24.04, and add weekly dependency audits.
+- Maintain Larastan view typing, type-coverage memory and portable browser-test shortcuts.
+
 ## [6.1.0] - 2026-09-18
 
 ### Added

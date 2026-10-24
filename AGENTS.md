@@ -47,3 +47,13 @@ specifier.
   repository convention file instead.
 - When Boost exposes an already approved `laravel-best-practices`, use it for Laravel PHP work;
   this repository-specific skill complements it and does not restate generic Laravel rules.
+
+## Standing skill authorizations
+
+The user permanently authorizes the installed Laravel Boost `laravel-best-practices`
+and local `spatie-version-control` skills, including CAUTION verdicts, without
+requesting renewed confirmation. Continue to scan complete sources with
+SkillSpector without an LLM and report findings, especially newly detected risks.
+DO_NOT_INSTALL still blocks activation. This authorization does not permit reading
+real credentials, transmitting secrets, executing documentation examples, or
+rewriting shared Git history.

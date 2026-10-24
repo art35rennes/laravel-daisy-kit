@@ -43,7 +43,7 @@ class TreeConfiguration
         $ids = [];
         $templates = [];
 
-        if ($options['nodeView'] !== null && ! View::exists($options['nodeView'])) {
+        if ($options['nodeView'] !== null && ! view()->exists($options['nodeView'])) {
             throw new InvalidArgumentException('Unknown tree node view.');
         }
         $options['items'] = self::nodes($options['items'], $ids, $templates, $options['nodeView']);
@@ -112,6 +112,7 @@ class TreeConfiguration
 
     /** @param array<string, bool> $ids
      * @param  array<string, string>  $templates
+     * @param  view-string|null  $view
      * @return list<array<string, mixed>>
      */
     private static function nodes(mixed $items, array &$ids, array &$templates, ?string $view, int $depth = 0): array

@@ -57,7 +57,7 @@ it('does not retain legacy runtime systems', function (): void {
 it('requires PHP 8.4 without a Forms or Livewire integration', function (): void {
     $composer = json_decode((string) file_get_contents(packagePath('composer.json')), true, 512, JSON_THROW_ON_ERROR);
 
-    expect($composer['require']['php'])->toBe('^8.4')
+    expect($composer['require']['php'])->toBe('^8.4.27')
         ->and($composer['require'])->not->toHaveKey('livewire/livewire')
         ->and($composer)->not->toHaveKey('suggest');
 });
@@ -158,8 +158,8 @@ it('documents the stable v6 contract with copyable examples for every module', f
         ->toMatch('/v5\\.0\\.0 or its\\s+historical alpha releases/');
 
     expect($dependencies)
-        ->toContain('@tanstack/table-core | 9.2.3')
-        ->toContain('Laravel Boost | 2.7.0')
+        ->toContain('@tanstack/table-core | 9.3.1')
+        ->toContain('Laravel Boost | 2.10.3')
         ->toContain('Official source');
 });
 
